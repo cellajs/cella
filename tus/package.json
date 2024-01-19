@@ -1,0 +1,24 @@
+{
+  "name": "tus",
+  "version": "1.0.0",
+  "description": "TUS server for imado",
+  "main": "index.js",
+  "scripts": {
+    "build": "NODE_ENV=production tsup",
+    "start": "NODE_ENV=production node dist/index.js",
+    "dev": "NODE_ENV=development tsup --watch --onSuccess \"node dist/index.js\""
+  },
+  "keywords": [
+    "tus",
+    "imado"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@cellajs/imado": "^0.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  }
+}

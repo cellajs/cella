@@ -1,0 +1,23 @@
+{
+  "name": "i18n",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "upload": "dotenv -e .env -- tsx scripts/upload.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "i18next": "^23.6.0",
+    "i18next-browser-languagedetector": "^7.1.0",
+    "i18next-http-backend": "^2.3.1",
+    "react-i18next": "^13.3.1"
+  },
+  "devDependencies": {
+    "axios": "^1.6.0",
+    "tsx": "^3.14.0"
+  }
+}

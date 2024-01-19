@@ -1,0 +1,57 @@
+{
+  "name": "backend",
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.9.0 <21.0.0"
+  },
+  "scripts": {
+    "start": "NODE_ENV=production tsx dist/index.cjs",
+    "build": "NODE_ENV=production tsup",
+    "build:dev": "NODE_ENV=development tsup",
+    "check:types": "tsc --noEmit",
+    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.cjs\"",
+    "seed:users": "tsx seed/users.ts",
+    "seed:organizations": "tsx seed/organizations.ts",
+    "generate": "drizzle-kit generate:pg",
+    "push": "drizzle-kit push:pg",
+    "migrate": "tsx src/db/migrate.ts",
+    "studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@appsignal/nodejs": "^3.0.30",
+    "@cellajs/imado": "^0.0.0",
+    "@hono/node-server": "^1.4.0",
+    "@hono/swagger-ui": "^0.2.1",
+    "@hono/zod-openapi": "0.9.5",
+    "@lucia-auth/adapter-drizzle": "1.0.0-beta.0",
+    "@lucia-auth/adapter-postgresql": "^2.0.2",
+    "@react-email/render": "^0.0.10",
+    "@types/jsonwebtoken": "^9.0.5",
+    "arctic": "^0.10.5",
+    "dotenv": "^16.3.1",
+    "drizzle-orm": "^0.29.3",
+    "drizzle-zod": "^0.5.1",
+    "enforce-unique": "^1.2.0",
+    "hono": "3.12.5",
+    "jsonwebtoken": "^9.0.2",
+    "lucia": "3.0.0-beta.11",
+    "nanoid": "^5.0.4",
+    "oslo": "^0.27.1",
+    "postgres": "^3.4.3",
+    "slugify": "^1.6.6",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@babel/preset-typescript": "^7.23.3",
+    "@faker-js/faker": "^8.3.1",
+    "drizzle-kit": "^0.20.13",
+    "pg": "^8.11.3",
+    "tsup": "^8.0.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "babel": {
+    "presets": ["@babel/preset-typescript"]
+  }  
+}

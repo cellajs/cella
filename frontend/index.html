@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>
+    <%= title %>
+  </title>
+  <meta name="description" content="<%= description %>" />
+  <meta name="keywords" content="<%= keywords %>" />
+  <meta name="author" content="<%= author %>" />
+  <meta property="og:title" content="<%= title %>" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="<%= url %>" />
+  <meta property="og:description" content="<%= description %>" />
+  <meta property="og:site_name" content="<%= title %>" />
+  <meta name="msapplication-TileColor" content="<%= color %>" />
+  <meta name="theme-color" content="<%= color %>" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

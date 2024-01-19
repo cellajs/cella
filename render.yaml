@@ -1,0 +1,133 @@
+previewsEnabled: true
+previewsExpireAfterDays: 3
+
+# Make sure to replace *.cellajs.com with your domain name(s) 
+
+services:
+  # Backend
+  - type: web
+    name: cella-backend
+    runtime: node
+    region: frankfurt
+    plan: starter
+    previewPlan: starter
+    rootDir: backend
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    preDeployCommand: pnpm run migrate:prod
+    numInstances: 1
+    healthCheckPath: /ping
+    envVars:
+      - key: VITE_FRONTEND_URL
+        fromService:
+          name: cella-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cella-db
+          property: connectionString
+      - key: APPSIGNAL_BACKEND_KEY
+        sync: false
+      - key: TUS_UPLOAD_API_SECRET
+        sync: false
+      - key: AWS_CLOUDFRONT_KEY_ID
+        sync: false
+      - key: AWS_CLOUDFRONT_PRIVATE_KEY
+        sync: false
+    buildFilter:
+      paths:
+        - backend/**/*.?s
+
+  - type: web
+    name: cella-tus
+    runtime: node
+    region: frankfurt
+    plan: starter
+    previewPlan: starter
+    rootDir: tus
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    numInstances: 1
+    envVars:
+      - key: TUS_UPLOAD_API_SECRET
+        sync: false
+      - key: AWS_S3_UPLOAD_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_S3_UPLOAD_SECRET_ACCESS_KEY
+        sync: false
+    buildFilter:
+      paths:
+        - tus/**/*.?s
+
+  # Frontend
+  - type: web
+    name: cella-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: pnpm install && pnpm build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /*
+        key: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        key: Content-Security-Policy
+        value: |
+          default-src 'self';
+          script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com;
+          connect-src 'self' blob: *.cellajs.com *.appsignal.com https://cella.app.n8n.cloud;
+          img-src 'self' blob: https: data:;
+          media-src 'self' blob: data: https://i.ytimg.com;
+          frame-src 'self' *.youtube.com *.vimeo.com;
+          style-src 'self' https://fonts.googleapis.com;
+          font-src 'self' data: https://fonts.gstatic.com;
+      - path: /*
+        key: Referrer-Policy
+        value: same-origin
+      - path: /*
+        key: Strict-Transport-Security
+        value: max-age=15768000
+      - path: /*
+        key: X-XSS-Protection
+        value: 1; mode=block
+      - path: /*
+        key: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), midi=()
+      - path: /*
+        key: X-Frame-Options
+        value: "SAMEORIGIN"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: SKIP_INSTALL_DEPS
+        value: true
+      - key: VITE_BACKEND_URL
+        fromService:
+          name: cella-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_FRONTEND_URL
+        fromService:
+          name: cella-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_TUS_URL
+        fromService:
+          name: cella-tus
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+    buildFilter:
+      paths:
+        - frontend/**/*.?s
+
+databases:
+  - name: cella-db
+    databaseName: cella
+    region: frankfurt
+    plan: starter
+    previewPlan: starter
+    postgresMajorVersion: 15

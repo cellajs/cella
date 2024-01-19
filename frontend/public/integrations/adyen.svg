@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="256" height="256">
+<title>Adyen</title>
+  <g style="stroke:none;stroke-width:0;stroke-dasharray:none;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;fill:none;fill-rule:nonzero;opacity:1">
+    <path d="M12.7 37.1H.3v4h8.1c.5 0 .9.4.9.9v7H7.5a.9.9 0 0 1-.9-.9v-5H3.2A3.2 3.2 0 0 0 0 46.2v3.6C0 51.5 1.4 53 3.2 53h12.6V40.3c0-1.8-1.4-3.2-3.1-3.2zM27.8 49H26a.9.9 0 0 1-.9-.9v-11h-3.4a3.2 3.2 0 0 0-3.2 3.2v9.5c0 1.7 1.4 3.2 3.2 3.2h12.6V30.5h-6.6V49zM46.3 49h-1.8a.9.9 0 0 1-.9-.9v-11H37v12.7c0 1.7 1.4 3.2 3.2 3.2h6v2h-9v4.5h12.5c1.8 0 3.2-1.4 3.2-3.2V37.1h-6.6V49zM68.2 37.1H55.5v12.7c0 1.7 1.4 3.2 3.2 3.2h12.5v-4H63a.9.9 0 0 1-.9-.9v-7H64c.5 0 .9.4.9.9v5h3.4c1.8 0 3.2-1.4 3.2-3.1v-3.6c0-1.8-1.4-3.2-3.2-3.2zM86.7 37.1H74.1V53h6.6V41h1.8c.5 0 .9.4.9.9v11H90V40.3c0-1.8-1.5-3.2-3.3-3.2z" style="stroke:none;stroke-width:1;stroke-dasharray:none;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;fill:#35b454;fill-rule:nonzero;opacity:1" transform="matrix(2.81 0 0 2.81 1.4 1.4)"/>
+  </g>
+</svg>

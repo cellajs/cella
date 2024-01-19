@@ -1,0 +1,7 @@
+packages:
+  - 'backend'
+  - 'frontend'
+  - 'i18n'
+  - 'proxy'
+  - 'emails'
+  - 'tus'

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["NODE_ENV", "VITE_*"],
+  "globalDotEnv": ["env/.env"],
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "build:dev": {
+      "dependsOn": ["^build:dev"],
+      "outputs": ["dist/**"]
+    },
+    "start": {
+      "dependsOn": ["^build"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "migrate": {},
+    "push": {},
+    "generate": {},
+    "studio": {},
+    "seed:users": {},
+    "seed:organizations": {},
+    "check:types": {}
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./src/*"],
+      "backend/*": ["../backend/src/*"],
+      "i18n/*": ["../i18n/*"],
+      "env": ["../env/env.ts"],
+      "config": ["../config/index.ts"],
+      "emails/*": ["../emails/*"]
+    },
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src", "vite.config.ts", "../env/env.ts", "../config/index.ts"]
+}
