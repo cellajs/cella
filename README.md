@@ -22,7 +22,7 @@ You can read the [Architecture](/info/ARCHITECTURE.md) file for specs and some c
 #### Clone project & open directory
 
 ```bash
-git clone https://github.com/shareworks/cella.git && cd cella
+git clone https://github.com/cellajs/cella.git && cd cella
 ```
 
 #### Env variables
@@ -57,7 +57,7 @@ _TIP: Use [TablePlus](https://tableplus.com/) to manage your local Postgres db w
 
 #### Run devcontainer
 - Open VSCode and click one of these buttons to run the container:
-  <img width="1177" alt="Screenshot 2023-11-30 at 12 55 50" src="https://github.com/shareworks/cella/assets/238946/8ad1411b-749f-4383-ae53-3b9ed6593c66">
+  <img width="1177" alt="Screenshot 2023-11-30 at 12 55 50" src="https://github.com/cellajs/cella/assets/238946/8ad1411b-749f-4383-ae53-3b9ed6593c66">
 - Alternatively, open the project in VSCode and use `⌘+⇧+p` to run the `Remote-Containers: Reopen in Container` command.
 
 #### Open database in TablePlus

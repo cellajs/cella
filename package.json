@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "repository": "https://github.com/shareworks/cella",
+  "repository": "https://github.com/cellajs/cella",
   "description": "A no-nonsense & intuitive TypeScript template to build modern web apps.",
   "keywords": [
     "template",
