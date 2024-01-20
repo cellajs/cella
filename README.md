@@ -81,7 +81,7 @@ If starting from scratch, you will need to run a database migration to build the
 pnpm run migrate
 ```
 
-You need the users seed script to add an ADMIN user. Look into the [seed](/backend/seed/users.ts) for details. There is also an optional organizations seed to add organizations and users with fake.js. 
+You need the users seed script to add an ADMIN user. Look into the [seed](/backend/seed/users.ts) for details. There is also an optional organizations seed to add organizations and users with [faker.js](https://github.com/faker-js/faker). 
 
 ```bash
 pnpm run seed:users
