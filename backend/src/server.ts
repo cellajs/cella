@@ -73,6 +73,14 @@ app.doc31('/openapi.json', {
       name: 'organizations',
       description: 'Organizations',
     },
+    {
+      name: 'uploads',
+      description: 'Uploads',
+    },
+    {
+      name: 'public',
+      description: 'Public',
+    },
   ],
   security: [
     {

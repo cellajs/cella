@@ -70,10 +70,10 @@ services:
     pullRequestPreviewsEnabled: true
     headers:
       - path: /*
-        key: X-Content-Type-Options
+        name: X-Content-Type-Options
         value: nosniff
       - path: /*
-        key: Content-Security-Policy
+        name: Content-Security-Policy
         value: |
           default-src 'self';
           script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com;
@@ -84,20 +84,20 @@ services:
           style-src 'self' https://fonts.googleapis.com;
           font-src 'self' data: https://fonts.gstatic.com;
       - path: /*
-        key: Referrer-Policy
+        name: Referrer-Policy
         value: same-origin
       - path: /*
-        key: Strict-Transport-Security
+        name: Strict-Transport-Security
         value: max-age=15768000
       - path: /*
-        key: X-XSS-Protection
+        name: X-XSS-Protection
         value: 1; mode=block
       - path: /*
-        key: Permissions-Policy
+        name: Permissions-Policy
         value: camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), midi=()
       - path: /*
-        key: X-Frame-Options
-        value: "SAMEORIGIN"
+        name: X-Frame-Options
+        value: SAMEORIGIN
     routes:
       - type: rewrite
         source: /*

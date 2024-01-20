@@ -6,7 +6,7 @@ Cella will make it easy to deploy on [Render](https://www.render.com) (server & 
 
 Go to [blueprints](https://dashboard.render.com/select-repo?type=blueprint) and select the repo by clicking `Connect`.
 
-For your production environment you will need to overwite the `VITE_BACKEND_URL` for the frontend and `VITE_FRONTEND_URL` in the backend (for CORS). All deployed PRs will use the onrender.com domain.
+Speed up the process by using the existing `render.yaml` file in the root. For your production environment you will need to overwite the `VITE_BACKEND_URL` for the frontend and `VITE_FRONTEND_URL` in the backend (for CORS). All deployed PRs will use the onrender.com domain.
 
 ## Deploy Cloudflare Proxy
 
@@ -20,7 +20,7 @@ Now run `pnpm run proxy:deploy` and follow the steps from there.
 
 ## Alternative: Deploy frontend on [Netlify](https://app.netlify.com)
 
-Deploying the frontend on Netlify can be done by adapting the `netlify.toml` file in the frontend.
+Deploying the frontend on Netlify can be done by adapting the `netlify.toml` file in the /frontend folder.
 
 ## Manage translations
 

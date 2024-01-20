@@ -8,7 +8,7 @@ const config = {
   aboutUrl: 'https://about.example.com',
   statusUrl: 'https://status.example.com',
 
-  notificationsEmail: 'notifications@shareworks.nl',
+  notificationsEmail: 'notifications@cellajs.com',
 
   debug: false,
   maintenance: false,

@@ -35,13 +35,12 @@
   // Use 'postCreateCommand' to run commands after the container is created.
   // "postCreateCommand": "pnpm install && pnpm run migrate",
   // "postAttachCommand": "pnpm run dev",
-  "customizations": {
+   // Configure tool-specific properties.
+   "customizations": {
     "vscode": {
       "extensions": ["biomejs.biome"]
     }
   }
-  // Configure tool-specific properties.
-  // "customizations": {},
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
   // "remoteUser": "root"
 }

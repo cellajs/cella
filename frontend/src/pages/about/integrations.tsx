@@ -17,7 +17,7 @@ const integrations: Integrations[] = [
     name: 'Hanko',
     purpose: 'Authentication',
     planned: true,
-    text: 'Hanko is a passwordless authentication solution that allows you to integrate FIDO2/WebAuthn into your application.',
+    text: 'Hanko is an open source passwordless authentication solution that allows you to integrate passkeys into your application.',
     country: 'DE',
     url: 'hanko.io',
     logo: 'hanko.svg',
