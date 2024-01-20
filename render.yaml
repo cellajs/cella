@@ -14,7 +14,7 @@ services:
     rootDir: backend
     buildCommand: pnpm install && pnpm build
     startCommand: pnpm start
-    preDeployCommand: pnpm run migrate:prod
+    preDeployCommand: pnpm run migrate
     numInstances: 1
     healthCheckPath: /ping
     envVars:
