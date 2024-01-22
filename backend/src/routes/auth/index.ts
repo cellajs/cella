@@ -273,13 +273,13 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user || !user.hashedPassword) {
-      return ctx.json(createError(i18n, 'error.invalid_email_or_password', 'Invalid email or password'), 401);
+      return ctx.json(createError(i18n, 'error.invalid_email_or_password', 'Invalid email or password'), 400);
     }
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
 
     if (!validPassword) {
-      return ctx.json(createError(i18n, 'error.invalid_email_or_password', 'Invalid email or password'), 401);
+      return ctx.json(createError(i18n, 'error.invalid_email_or_password', 'Invalid email or password'), 400);
     }
 
     if (!user.emailVerified) {

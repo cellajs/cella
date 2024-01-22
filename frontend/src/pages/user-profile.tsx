@@ -18,7 +18,7 @@ const UserProfile = () => {
         setUser(result);
       },
     );
-  }, [userIdentifier, apiWrapper]);
+  }, [userIdentifier]);
 
   return (
     <>

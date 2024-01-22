@@ -16,7 +16,7 @@ const defaultMessages = (t: ReturnType<typeof useTranslation>['t']) => ({
   }),
 });
 
-export const useApiWrapper = () => {
+export const  useApiWrapper = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { location } = useRouterState();
@@ -38,22 +38,18 @@ export const useApiWrapper = () => {
         setError(e as Error);
 
         if (e instanceof ApiError) {
-          for (const [status, message] of Object.entries(preparedMessages)) {
-            if (e.status === status) {
-              if (status === '401') {
-                navigate({
-                  to: '/auth/sign-in',
-                  search: {
-                    redirect: location.pathname,
-                  },
-                });
-              }
-
-              toast.error(message);
-            }
-          }
-
+          toast.error(preparedMessages[e.status] || e.message);
+          
           onError?.(e);
+
+          if (e.status === '401') {
+            navigate({
+              to: '/auth/sign-in',
+              search: {
+                redirect: location.pathname,
+              },
+            });
+          }
         }
       } finally {
         setPending(false);
