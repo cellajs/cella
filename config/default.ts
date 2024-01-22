@@ -49,7 +49,7 @@ const config = {
     appsignalFrontendKey: undefined,
   },
 
-  description: 'A no-nonsense TypeScript template to build modern web apps.',
+  description: 'A no-nonsense TypeScript template to build modern web apps. Open source.',
   keywords:
     'saas starter kit, fullstack starter kit, monorepo template, typescript starter kit, hono starter kit, hono boilerplate, hono, drizzle, shadcn, pwa',
 
@@ -77,6 +77,7 @@ const config = {
     googleMapsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     twitterUrl: 'https://twitter.com/flipvanhaaren',
+    twitterHandle: '@flipvanhaaren',
     githubUrl: 'https://github.com/cellajs/cella',
     coordinates: {
       lat: 51.92760809717153,

@@ -18,7 +18,7 @@ const whyItems = [
 ];
 
 // Slides for light and dark themes
-const lightSlides = [{ src: '/screenshots/signin-with-cella.png' }, { src: '/screenshots/app-with-cella.png' }];
+const lightSlides = [{ src: '/screenshots/signin-with-cella.png' }, { src: '/screenshots/app-with-cella.png' }, { src: '/screenshots/org-page.png' }];
 const darkSlides = [{ src: '/screenshots/dark/signin-with-cella.png' }, { src: '/screenshots/dark/app-with-cella.png' }];
 
 const Why = () => (

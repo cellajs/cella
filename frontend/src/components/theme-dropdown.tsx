@@ -36,7 +36,7 @@ const ThemeDropdown = ({ size = 24 }: ThemeDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" aria-label="Change site theme">
           {mode === 'light' ? (
             <Sun size={size} strokeWidth={config.theme.strokeWidth} />
           ) : (
