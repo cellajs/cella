@@ -1,6 +1,6 @@
 import { render } from '@react-email/render';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import VerificationEmail from 'emails/emails/email-verification';
 import ResetPasswordEmail from 'emails/emails/reset-password';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
@@ -14,13 +14,12 @@ import emailSender from 'emails/index';
 import { getI18n } from '../../../../i18n';
 import { db } from '../../db/db';
 import { auth, githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
-import { membershipsTable, oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';
+import { oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';
 import { createError, unauthorizedError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { transformDatabaseUser } from '../../lib/transformDatabaseUser';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { customLogger } from '../middlewares/customLogger';
-import { meRoute } from '../users/schema';
 import {
   checkEmailRoute,
   githubSignInCallbackRoute,
@@ -898,29 +897,6 @@ const authRoutes = app
 
       throw error;
     }
-  })
-  .openapi(meRoute, async (ctx) => {
-    const user = ctx.get('user');
-
-    const [{ total: membershipCount }] = await db
-      .select({
-        total: sql<number>`count(*)`.mapWith(Number),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, user.id));
-
-    customLogger('User returned', {
-      userId: user.id,
-      userSlug: user.slug,
-    });
-
-    return ctx.json({
-      success: true,
-      data: {
-        ...transformDatabaseUser(user),
-        membershipCount,
-      },
-    });
   })
   .openapi(signOutRoute, async (ctx) => {
     const cookieHeader = ctx.req.raw.headers.get('Cookie');

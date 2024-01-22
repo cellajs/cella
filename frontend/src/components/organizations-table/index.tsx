@@ -1,4 +1,4 @@
-import { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
+import { InfiniteData, QueryKey, UseInfiniteQueryResult, useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ColumnFiltersState, SortingState, Table as TableType, VisibilityState, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useEffect, useState } from 'react';
@@ -11,7 +11,7 @@ import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
 import CreateOrganizationForm from '../create-organization-form';
 import { DataTable } from '../data-table';
-import Count from '../data-table/count';
+import CountAndLoading from '../data-table/count-and-loading';
 import { DataTableViewOptions } from '../data-table/options';
 import { dialog } from '../dialoger/state';
 import { Button } from '../ui/button';
@@ -23,7 +23,16 @@ type QueryData = Awaited<ReturnType<typeof getOrganizations>>;
 interface CustomDataTableToolbarProps {
   table: TableType<Organization>;
   filter?: string;
-  totalCount?: number;
+  queryResult: UseInfiniteQueryResult<
+    InfiniteData<
+      {
+        items: Organization[];
+        total: number;
+      },
+      unknown
+    >,
+    Error
+  >;
   rowSelection: Record<string, boolean>;
   isFiltered?: boolean;
   callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void;
@@ -31,7 +40,7 @@ interface CustomDataTableToolbarProps {
 
 export function CustomDataTableToolbar({
   table,
-  totalCount,
+  queryResult,
   // rowSelection,
   isFiltered,
   filter = 'name',
@@ -72,8 +81,9 @@ export function CustomDataTableToolbar({
             })}
           </Button>
         )}
-        <Count
-          count={totalCount}
+        <CountAndLoading
+          count={queryResult.data?.pages[0].total}
+          isLoading={queryResult.isFetching}
           singular={t('label.singular_organization', {
             defaultValue: 'organization',
           })}
@@ -280,7 +290,6 @@ const OrganizationsTable = () => {
     <DataTable
       {...{
         // className: 'h-[500px]',
-        columns,
         queryResult,
         table,
         isFiltered,
@@ -289,13 +298,7 @@ const OrganizationsTable = () => {
           table.resetRowSelection();
         },
         CustomToolbarComponent: (
-          <CustomDataTableToolbar
-            table={table}
-            callback={callback}
-            isFiltered={isFiltered}
-            totalCount={queryResult.data?.pages[0].total}
-            rowSelection={rowSelection}
-          />
+          <CustomDataTableToolbar table={table} callback={callback} isFiltered={isFiltered} queryResult={queryResult} rowSelection={rowSelection} />
         ),
       }}
     />

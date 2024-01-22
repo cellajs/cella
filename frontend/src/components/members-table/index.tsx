@@ -1,4 +1,4 @@
-import { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
+import { InfiniteData, QueryKey, UseInfiniteQueryResult, useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ColumnFiltersState, SortingState, Table as TableType, VisibilityState, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useContext, useEffect, useMemo, useState } from 'react';
@@ -18,7 +18,7 @@ import { OrganizationContext } from '~/pages/organization';
 import { queryClient } from '~/router';
 import { MemberSearch, MembersTableRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
-import Count from '../data-table/count';
+import CountAndLoading from '../data-table/count-and-loading';
 import { dialog } from '../dialoger/state';
 import { useColumns } from './columns';
 import InviteUsersForm from './invite-users-form';
@@ -28,13 +28,21 @@ type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationId>>;
 
 interface CustomDataTableToolbarProps {
   table: TableType<Member>;
+  queryResult: UseInfiniteQueryResult<
+    InfiniteData<
+      {
+        items: Member[];
+        total: number;
+      },
+      unknown
+    >,
+    Error
+  >;
   filter?: string;
   organization: Organization;
-  totalCount?: number;
   role: GetMembersParams['role'];
   rowSelection: Record<string, boolean>;
   callback: (member?: Member) => void;
-  refetch: () => void;
   isFiltered?: boolean;
   setRole: React.Dispatch<React.SetStateAction<GetMembersParams['role']>>;
 }
@@ -56,12 +64,11 @@ const items = [
 
 export function CustomDataTableToolbar({
   table,
+  queryResult,
   role,
   setRole,
   organization,
   callback,
-  totalCount,
-  refetch,
   rowSelection,
   isFiltered,
   filter = 'name',
@@ -77,7 +84,7 @@ export function CustomDataTableToolbar({
         dialog
         callback={() => {
           table.resetRowSelection();
-          refetch();
+          queryResult.refetch();
         }}
         members={members}
       />,
@@ -142,8 +149,9 @@ export function CustomDataTableToolbar({
           )
         )}
         {Object.keys(rowSelection).length === 0 && (
-          <Count
-            count={totalCount}
+          <CountAndLoading
+            count={queryResult.data?.pages[0].total}
+            isLoading={queryResult.isFetching}
             singular={t('label.singular_member', {
               defaultValue: 'member',
             })}
@@ -380,7 +388,6 @@ const MembersTable = () => {
     <DataTable
       {...{
         // className: 'h-[500px]',
-        columns,
         table,
         queryResult,
         overflowNoRows: true,
@@ -400,11 +407,10 @@ const MembersTable = () => {
           <CustomDataTableToolbar
             table={table}
             filter={'email'}
+            queryResult={queryResult}
             isFiltered={isFiltered}
             callback={callback}
-            refetch={queryResult.refetch}
             organization={organization}
-            totalCount={queryResult.data?.pages[0].total}
             role={role}
             rowSelection={rowSelection}
             setRole={setRole}

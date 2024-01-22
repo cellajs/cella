@@ -1,7 +1,7 @@
 import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
-import { ColumnDef, Row, Table as TableType, flexRender } from '@tanstack/react-table';
+import { Row, Table as TableType, flexRender } from '@tanstack/react-table';
 import { Loader2, Search, XCircle } from 'lucide-react';
-import { Fragment, useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table';
@@ -13,7 +13,6 @@ import { DataTableToolbar } from './toolbar';
 
 interface DataTableProps<TData> {
   className?: string;
-  columns: ColumnDef<TData>[];
   table: TableType<TData>;
   queryResult: UseInfiniteQueryResult<
     InfiniteData<
@@ -106,7 +105,7 @@ function RowList<TData>({
   }
 
   if (error) {
-    rowList.push(<ErrorMessage colSpan={colSpan} error={new Error('Unable to load more. Reload or try again later')} key="error" />);
+    rowList.push(<ErrorMessageRow colSpan={colSpan} error={new Error('Unable to load more. Reload or try again later')} key="error" />);
   }
 
   return rowList;
@@ -154,6 +153,18 @@ const NoRows = ({
 };
 
 const ErrorMessage = ({
+  error,
+}: {
+  error: Error;
+}) => {
+  return (
+    <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
+      <div className="text-center text-red-500">{error.message}</div>
+    </div>
+  );
+};
+
+const ErrorMessageRow = ({
   colSpan,
   error,
 }: {
@@ -171,7 +182,6 @@ const ErrorMessage = ({
 
 export function DataTable<TData>({
   className,
-  columns,
   table,
   filter,
   queryResult,
@@ -184,20 +194,21 @@ export function DataTable<TData>({
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const { error, isLoading, isFetching } = queryResult;
   const { rows } = table.getRowModel();
-
-  const initial = useRef(false);
+  const [initial, setInitial] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !initial.current) {
-      initial.current = true;
+    if (error || !isLoading) {
+      setInitial(true);
     }
-  }, [isLoading]);
+  }, [isLoading, error]);
 
   return (
     <div className={cn('flex w-full flex-col space-y-4 h-full', className)}>
       {CustomToolbarComponent ? CustomToolbarComponent : <DataTableToolbar table={table} filter={filter} />}
-      {initial.current &&
-        (!rows.length ? (
+      {initial &&
+        (error ? (
+          <ErrorMessage error={error} />
+        ) : !rows.length ? (
           <NoRows isFiltered={isFiltered} isFetching={isFetching} onResetFilters={onResetFilters} customComponent={NoRowsComponent} />
         ) : (
           <div className="grow overflow-hidden rounded-md relative">
@@ -227,11 +238,7 @@ export function DataTable<TData>({
                 ))}
               </TableHeader>
               <TableBody>
-                {error ? (
-                  <ErrorMessage colSpan={columns.length} error={error} />
-                ) : (
-                  <RowList rows={rows} colSpan={table.getAllColumns().length} renderSubComponent={renderSubComponent} queryResult={queryResult} />
-                )}
+                <RowList rows={rows} colSpan={table.getAllColumns().length} renderSubComponent={renderSubComponent} queryResult={queryResult} />
               </TableBody>
             </Table>
           </div>

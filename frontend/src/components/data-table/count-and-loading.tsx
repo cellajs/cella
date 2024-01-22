@@ -4,20 +4,21 @@ import { Button } from '../ui/button';
 
 interface Props {
   count?: number;
+  isLoading?: boolean;
   singular: string;
   plural: string;
   isFiltered?: boolean;
   onResetFilters?: () => void;
 }
 
-const Count = ({ count, singular, plural, isFiltered, onResetFilters }: Props) => {
+const CountAndLoading = ({ count, singular, plural, isFiltered, onResetFilters, isLoading }: Props) => {
   const { t } = useTranslation();
 
   return (
     <div className="text-muted-foreground text-sm pl-2 pr-4 flex items-center">
-      {count === undefined ? (
+      {isLoading ? (
         <Loader2 className="animate-spin" />
-      ) : (
+      ) : count !== undefined && (
         <>
           <div className="w-max">
             {count} {count === 1 ? singular : plural}
@@ -39,4 +40,4 @@ const Count = ({ count, singular, plural, isFiltered, onResetFilters }: Props) =
   );
 };
 
-export default Count;
+export default CountAndLoading;

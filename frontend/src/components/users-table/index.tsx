@@ -1,4 +1,4 @@
-import { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
+import { InfiniteData, QueryKey, UseInfiniteQueryResult, useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import {
   ColumnFiltersState,
@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { dateShort } from '~/lib/utils';
 import { queryClient } from '~/router';
 import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
-import Count from '../data-table/count';
+import CountAndLoading from '../data-table/count-and-loading';
 import { DataTableViewOptions } from '../data-table/options';
 import { Input } from '../ui/input';
 import { useColumns } from './columns';
@@ -49,14 +49,31 @@ const items = [
 interface CustomDataTableToolbarProps {
   table: TableType<User>;
   filter?: string;
-  totalCount?: number;
+  queryResult: UseInfiniteQueryResult<
+    InfiniteData<
+      {
+        items: User[];
+        total: number;
+      },
+      unknown
+    >,
+    Error
+  >;
   rowSelection: Record<string, boolean>;
   isFiltered?: boolean;
   role: GetUsersParams['role'];
   setRole: React.Dispatch<React.SetStateAction<GetUsersParams['role']>>;
 }
 
-export function CustomDataTableToolbar({ table, totalCount, rowSelection, isFiltered, filter = 'name', role, setRole }: CustomDataTableToolbarProps) {
+export function CustomDataTableToolbar({
+  table,
+  queryResult,
+  rowSelection,
+  isFiltered,
+  filter = 'name',
+  role,
+  setRole,
+}: CustomDataTableToolbarProps) {
   const { t } = useTranslation();
   const [, setOpen] = useState(false);
 
@@ -73,8 +90,9 @@ export function CustomDataTableToolbar({ table, totalCount, rowSelection, isFilt
             })}
           </Button>
         )}
-        <Count
-          count={totalCount}
+        <CountAndLoading
+          count={queryResult.data?.pages[0].total}
+          isLoading={queryResult.isFetching}
           singular={t('label.singular_user', {
             defaultValue: 'user',
           })}
@@ -368,7 +386,6 @@ const UsersTable = () => {
     <DataTable<User>
       {...{
         // className: 'h-[500px]',
-        columns,
         table,
         queryResult,
         isFiltered,
@@ -384,7 +401,7 @@ const UsersTable = () => {
             filter="email"
             setRole={setRole}
             isFiltered={isFiltered}
-            totalCount={queryResult.data?.pages[0].total}
+            queryResult={queryResult}
             rowSelection={rowSelection}
           />
         ),

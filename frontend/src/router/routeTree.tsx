@@ -166,7 +166,7 @@ const IndexRoute = new Route({
 
       // redirect to /auth/sign-in if not signed in
       if (!user) {
-        throw redirect({ to: '/auth/sign-in', search: { redirect: location.pathname } });
+        throw redirect({ to: '/auth/sign-in', search: { redirect: location.pathname} });
       }
     }
   },
@@ -254,6 +254,7 @@ const OrganizationRoute = new Route({
   },
   loader: ({ context: { queryClient }, params: { organizationIdentifier } }) =>
     queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier)),
+  errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
   component: () => <Organization />,
 });
 
