@@ -64,7 +64,7 @@ const authRoutes = app
         .values({
           id: userId,
           slug: slugExists ? userId : slug,
-          firstName: slugExists ? undefined : slug,
+          firstName: slug,
           email: email.toLowerCase(),
           hashedPassword,
         })
@@ -451,13 +451,7 @@ const authRoutes = app
 
       const [slug] = primaryEmail.email.split('@');
 
-      const response = await fetch(`${config.backendUrl + checkSlugRoute.path.replace('{slug}', slug)}`, {
-        method: checkSlugRoute.method,
-      });
-
-      const { data: slugExists } = (await response.json()) as { data: boolean };
-
-      const [firstName, lastName] = githubUser.name ? githubUser.name.split(' ') : [slugExists ? undefined : slug, undefined];
+      const [firstName, lastName] = githubUser.name ? githubUser.name.split(' ') : [slug, undefined];
 
       const inviteToken = getCookie(ctx, 'oauth_invite_token');
 
