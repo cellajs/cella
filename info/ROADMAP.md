@@ -5,7 +5,7 @@ For now, we maintain a very rough roadmap here. Its a work in progress and thing
 * Undecided on rendering strategy: the plan is to have a hybrid rendering strategy, with CSR being the most common rendering mode. There are many open source libraries working on this.
 
 ## Current projects
-* [Lucia Auth v3](https://lucia-auth.com/)
+* [Lucia Auth v3](https://v3.lucia-auth.com/)
 * Modularity / file structure
 * Lots of refactoring
 
