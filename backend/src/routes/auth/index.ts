@@ -36,6 +36,7 @@ import {
   signUpRoute,
   verifyEmailRoute,
 } from './schema';
+import { checkSlugRoute } from '../users/schema';
 
 const i18n = getI18n('backend');
 
@@ -49,12 +50,21 @@ const authRoutes = app
     const hashedPassword = await new Argon2id().hash(password);
     const userId = nanoid();
 
+    const [slug] = email.split('@');
+
+    const response = await fetch(`${config.backendUrl + checkSlugRoute.path.replace('{slug}', slug)}`, {
+      method: checkSlugRoute.method,
+    });
+
+    const { data: slugExists } = (await response.json()) as { data: boolean };
+
     try {
       const [user] = await db
         .insert(usersTable)
         .values({
           id: userId,
-          slug: userId,
+          slug: slugExists ? userId : slug,
+          firstName: slugExists ? undefined : slug,
           email: email.toLowerCase(),
           hashedPassword,
         })
@@ -439,7 +449,15 @@ const authRoutes = app
         return ctx.json(createError(i18n, 'error.no_email_found', 'No email found'), 400);
       }
 
-      const [firstName, lastName] = githubUser.name ? githubUser.name.split(' ') : [undefined, undefined];
+      const [slug] = primaryEmail.email.split('@');
+
+      const response = await fetch(`${config.backendUrl + checkSlugRoute.path.replace('{slug}', slug)}`, {
+        method: checkSlugRoute.method,
+      });
+
+      const { data: slugExists } = (await response.json()) as { data: boolean };
+
+      const [firstName, lastName] = githubUser.name ? githubUser.name.split(' ') : [slugExists ? undefined : slug, undefined];
 
       const inviteToken = getCookie(ctx, 'oauth_invite_token');
 
@@ -471,7 +489,6 @@ const authRoutes = app
         await db
           .update(usersTable)
           .set({
-            slug: existingUser.slug === existingUser.id ? githubUser.login.toLowerCase() : existingUser.slug,
             thumbnailUrl: existingUser.thumbnailUrl || githubUser.avatar_url,
             bio: existingUser.bio || githubUser.bio,
             emailVerified,

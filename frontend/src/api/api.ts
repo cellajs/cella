@@ -96,6 +96,22 @@ export const checkEmail = async (email: string) => {
   return json.data;
 };
 
+export const checkSlug = async (slug: string) => {
+  const response = await client.users['check-slug'][':slug'].$get({
+    param: {
+      slug,
+    },
+  });
+
+  const json = await response.json();
+
+  if ('error' in json) {
+    throw new ApiError(response.status, json.error);
+  }
+
+  return json.data;
+};
+
 export const signIn = async (email: string, password: string) => {
   const response = await client['sign-in'].$post({
     json: {

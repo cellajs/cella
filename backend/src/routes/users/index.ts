@@ -9,7 +9,8 @@ import { createError, forbiddenError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transformDatabaseUser';
 import { CustomHono } from '../../types/common';
 import { customLogger } from '../middlewares/customLogger';
-import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './schema';
+import { checkSlugRoute, deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './schema';
+import config from 'config';
 
 const i18n = getI18n('backend');
 
@@ -93,6 +94,20 @@ const usersRoutes = app
     }
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+
+    if (slug) {
+      const response = await fetch(`${config.backendUrl + checkSlugRoute.path.replace('{slug}', slug)}`, {
+        method: checkSlugRoute.method,
+      });
+
+      const { data: slugExists } = (await response.json()) as { data: boolean };
+
+      if (slugExists) {
+        customLogger('Slug already exists', { slug });
+
+        return ctx.json(createError(i18n, 'error.slug_already_exists', 'Slug already exists'), 400);
+      }
+    }
 
     const [updatedUser] = await db
       .update(usersTable)
@@ -265,6 +280,21 @@ const usersRoutes = app
     return ctx.json({
       success: true,
       data: transformDatabaseUser(targetUser),
+    });
+  })
+  .openapi(checkSlugRoute, async (ctx) => {
+    const { slug } = ctx.req.valid('param');
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.slug, slug));
+
+    customLogger('Slug checked', {
+      slug,
+      available: !!user,
+    });
+
+    return ctx.json({
+      success: true,
+      data: !!user,
     });
   });
 

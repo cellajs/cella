@@ -18,5 +18,6 @@
   "error.invalid_origin": "Invalid origin",
   "error.invalid_token": "Invalid token",
   "error.invalid_email": "Invalid email",
-  "error.user_already_member_of_organization": "User already member of organization"
+  "error.user_already_member_of_organization": "User already member of organization",
+  "error.slug_already_exists": "Slug already exists"
 }

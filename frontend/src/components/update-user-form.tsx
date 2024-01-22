@@ -4,6 +4,7 @@ import config from 'config';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { User } from '~/types';
+import { useEffect } from 'react';
 
 import CountryFlag from '~/components/country-flag';
 import { Button } from '~/components/ui/button';
@@ -22,6 +23,8 @@ import { useUserStore } from '~/store/user';
 import { dialog } from './dialoger/state';
 import { Textarea } from './ui/textarea';
 import { UploadImage } from './upload-image';
+import { checkSlug } from '~/api/api';
+import { useWatch } from 'react-hook-form';
 
 interface Props {
   user: User;
@@ -35,7 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
-  const { user: currentUser, getMe } = useUserStore();
+  const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
   const [apiWrapper, pending] = useApiWrapper();
@@ -52,6 +55,11 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
       language: user.language,
       newsletter: user.newsletter,
     },
+  });
+
+  const slug = useWatch({
+    control: form.control,
+    name: 'slug',
   });
 
   useBeforeUnload(form.formState.isDirty);
@@ -71,7 +79,6 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
         }
 
         if (isSelf) {
-          await getMe();
           toast.success(t('success.you_updated', { defaultValue: 'Your profile has been updated' }));
         } else toast.success(t('success.updated_user', { defaultValue: 'User updated' }));
       },
@@ -86,6 +93,26 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   const setImageUrl = (url: string) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
+
+  useEffect(() => {
+    if (slug && slug !== user.slug) {
+      apiWrapper(
+        () => checkSlug(slug),
+        (isExists) => {
+          if (isExists) {
+            form.setError('slug', {
+              type: 'manual',
+              message: t('error.slug_already_exists', {
+                defaultValue: 'This username is already taken',
+              }),
+            });
+          } else {
+            form.clearErrors('slug');
+          }
+        },
+      );
+    }
+  }, [slug, apiWrapper, form.setError, t, user.slug, form.clearErrors]);
 
   return (
     <Form {...form}>
@@ -232,7 +259,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           )}
         />
         <div className="flex space-x-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
+          <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={pending}>
             {t('action.save_changes', {
               defaultValue: 'Save changes',
             })}
