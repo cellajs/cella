@@ -16,7 +16,7 @@ const defaultMessages = (t: ReturnType<typeof useTranslation>['t']) => ({
   }),
 });
 
-export const  useApiWrapper = () => {
+export const useApiWrapper = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { location } = useRouterState();
@@ -39,7 +39,7 @@ export const  useApiWrapper = () => {
 
         if (e instanceof ApiError) {
           toast.error(preparedMessages[e.status] || e.message);
-          
+
           onError?.(e);
 
           if (e.status === '401') {

@@ -35,8 +35,8 @@
   // Use 'postCreateCommand' to run commands after the container is created.
   // "postCreateCommand": "pnpm install && pnpm run migrate",
   // "postAttachCommand": "pnpm run dev",
-   // Configure tool-specific properties.
-   "customizations": {
+  // Configure tool-specific properties.
+  "customizations": {
     "vscode": {
       "extensions": ["biomejs.biome"]
     }

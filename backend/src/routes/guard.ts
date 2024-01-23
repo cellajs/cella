@@ -1,5 +1,9 @@
 import { CustomHono } from '../types/common';
 
+import { createRoute } from '@hono/zod-openapi';
+import { MiddlewareHandler } from 'hono';
+import authMiddleware from './middlewares/auth-middleware';
+import organizationAuthMiddleware from './middlewares/organization-auth-middleware';
 import {
   createOrganizationRoute,
   deleteOrganizationRoute,
@@ -11,12 +15,8 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './organizations/schema';
-import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/schema';
 import { getOrganizationUploadTokenRoute, getPersonalUploadTokenRoute } from './other/schema';
-import authMiddleware from './middlewares/auth-middleware';
-import organizationAuthMiddleware from './middlewares/organization-auth-middleware';
-import { MiddlewareHandler } from 'hono';
-import { createRoute } from '@hono/zod-openapi';
+import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/schema';
 
 // authMiddleware() is used for all routes that require authentication
 // organizationAuthMiddleware() is used for all routes that require organization membership; it also requires authMiddleware() to be used before and organizationId to be in the path

@@ -1,4 +1,4 @@
-import { ParseKeys, getI18n } from 'i18n';
+import { ParseKeys, getI18n } from 'i18n/index';
 
 type i18n = ReturnType<typeof getI18n>;
 

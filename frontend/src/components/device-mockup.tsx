@@ -106,7 +106,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
           <DialogHeader>
             <DialogTitle className="text-center font-semibold text-lg">View screenshot</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-wrap justify-center grow">{renderCarousel({ inDialog: true , slide: carouselSlide })}</div>
+          <div className="flex flex-wrap justify-center grow">{renderCarousel({ inDialog: true, slide: carouselSlide })}</div>
         </DialogContent>
       </Dialog>
     </div>

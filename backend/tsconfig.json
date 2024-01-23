@@ -21,7 +21,7 @@
     "noFallthroughCasesInSwitch": true,
 
     "paths": {
-      "i18n": ["../i18n/index.ts"],
+      "i18n/*": ["../i18n/*"],
       "config": ["../config/index.ts"],
       "env": ["../env/env.ts"],
       "emails/*": ["../emails/*"]

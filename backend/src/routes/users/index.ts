@@ -1,8 +1,8 @@
 import { AnyColumn, SQL, and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm';
 
 import config from 'config';
+import { getI18n } from 'i18n/index';
 import { User } from 'lucia';
-import { getI18n } from 'i18n';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { membershipsTable, organizationsTable, usersTable } from '../../db/schema';
@@ -102,9 +102,9 @@ const usersRoutes = app
 
       const { data: slugExists } = (await response.json()) as { data: boolean };
 
-      if (slugExists) {
+      if (slugExists && slug !== targetUser.slug) {
         customLogger('Slug already exists', { slug });
-        
+
         return ctx.json(createError(i18n, 'error.slug_already_exists', 'Slug already exists'), 400);
       }
     }

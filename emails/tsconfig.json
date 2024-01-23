@@ -22,11 +22,11 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "i18n": ["../i18n/index.ts"],
+      "i18n/*": ["../i18n/*"],
       "env": ["../env/env.ts"],
       "config": ["../config/index.ts"],
     },
     "allowSyntheticDefaultImports": true
   },
-  "include": ["emails", "../env/env.ts", "../config/index.ts",]
+  "include": ["emails", "../env/env.ts", "../config/index.ts"]
 }

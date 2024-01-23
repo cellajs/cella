@@ -1,6 +1,6 @@
 import { and, eq, or } from 'drizzle-orm';
 import { MiddlewareHandler } from 'hono';
-import { getI18n } from 'i18n';
+import { getI18n } from 'i18n/index';
 import { db } from '../../db/db';
 import { MembershipModel, membershipsTable, organizationsTable } from '../../db/schema';
 import { createError, forbiddenError } from '../../lib/errors';

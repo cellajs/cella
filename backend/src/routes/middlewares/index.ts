@@ -5,7 +5,7 @@ import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
-import { getI18n } from 'i18n';
+import { getI18n } from 'i18n/index';
 import { CustomHono } from '../../types/common';
 import { customLogger } from './custom-logger';
 

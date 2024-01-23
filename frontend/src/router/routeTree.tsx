@@ -156,19 +156,11 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
 const IndexRoute = new Route({
   id: 'layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ location }) => {
+  beforeLoad: () => {
     const storedUser = useUserStore.getState().user;
 
-    if (!storedUser) {
-      const getMe = useUserStore.getState().getMe;
-
-      const user = await getMe();
-
-      // redirect to /auth/sign-in if not signed in
-      if (!user) {
-        throw redirect({ to: '/auth/sign-in', search: { redirect: location.pathname} });
-      }
-    }
+    // If no user, redirect to /about
+    if (!storedUser) throw redirect({ to: '/about' });
   },
   component: () => <App />,
 });

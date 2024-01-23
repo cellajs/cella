@@ -1,10 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateUserJsonSchema } from 'backend/schemas/user';
 import config from 'config';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { User } from '~/types';
-import { useEffect } from 'react';
 
 import CountryFlag from '~/components/country-flag';
 import { Button } from '~/components/ui/button';
@@ -16,6 +16,8 @@ import useBeforeUnload from '~/hooks/useBeforeUnload';
 
 import { toast } from 'sonner';
 
+import { useWatch } from 'react-hook-form';
+import { checkSlug } from '~/api/api';
 import { useApiWrapper } from '~/hooks/useApiWrapper';
 import useFormWithDraft from '~/hooks/useDraftForm';
 import { useUpdateUserMutation } from '~/router/routeTree';
@@ -23,8 +25,6 @@ import { useUserStore } from '~/store/user';
 import { dialog } from './dialoger/state';
 import { Textarea } from './ui/textarea';
 import { UploadImage } from './upload-image';
-import { checkSlug } from '~/api/api';
-import { useWatch } from 'react-hook-form';
 
 interface Props {
   user: User;
@@ -38,7 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
-  const { user: currentUser } = useUserStore();
+  const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
   const [apiWrapper, pending] = useApiWrapper();
@@ -79,6 +79,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
         }
 
         if (isSelf) {
+          setUser(result);
           toast.success(t('success.you_updated', { defaultValue: 'Your profile has been updated' }));
         } else toast.success(t('success.updated_user', { defaultValue: 'User updated' }));
       },

@@ -15,15 +15,19 @@ import { sendResetPasswordEmail, signIn } from '~/api/api';
 import { dialog } from '~/components/dialoger/state';
 import { useApiWrapper } from '~/hooks/useApiWrapper';
 import { SignInRoute } from '~/router/routeTree';
+import { useUserStore } from '~/store/user';
+import { User } from '~/types';
 
 const formSchema = signInJsonSchema;
 
 export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: string) => void }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { setUser } = useUserStore();
+
   const { redirect } = useSearch({
     from: SignInRoute.id,
   });
-  const { t } = useTranslation();
 
   const [apiWrapper, pending] = useApiWrapper();
 
@@ -38,7 +42,9 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     apiWrapper(
       () => signIn(values.email, values.password),
-      () => {
+      (result) => {
+        setUser(result as User);
+
         navigate({
           to: redirect || '/',
         });

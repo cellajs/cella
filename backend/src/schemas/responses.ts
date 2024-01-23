@@ -5,8 +5,7 @@ type Responses = Parameters<typeof createRoute>[0]['responses'];
 
 export const errorResponses = {
   400: {
-    description:
-      'Bad Request - a problem reading or understanding the request.',
+    description: 'Bad Request - a problem reading or understanding the request.',
     content: {
       'application/json': {
         schema: errorResponseSchema,
@@ -22,8 +21,7 @@ export const errorResponses = {
     },
   },
   403: {
-    description:
-      "Forbidden - insuffucient permissions to proccess the request.",
+    description: 'Forbidden - insuffucient permissions to proccess the request.',
     content: {
       'application/json': {
         schema: errorResponseSchema,
@@ -31,8 +29,7 @@ export const errorResponses = {
     },
   },
   404: {
-    description:
-      'Not Found - the requested resource does not exist.',
+    description: 'Not Found - the requested resource does not exist.',
     content: {
       'application/json': {
         schema: errorResponseSchema,

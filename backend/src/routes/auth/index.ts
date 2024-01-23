@@ -11,7 +11,7 @@ import postgres from 'postgres';
 
 import config from 'config';
 import emailSender from 'emails/index';
-import { getI18n } from 'i18n';
+import { getI18n } from 'i18n/index';
 import { db } from '../../db/db';
 import { auth, githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';

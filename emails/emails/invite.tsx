@@ -1,7 +1,7 @@
 import { Body, Button, Column, Container, Head, Heading, Html, Img, Preview, Row, Section, Tailwind, Text } from '@react-email/components';
 
 import config from 'config';
-import { getI18n } from 'i18n';
+import { getI18n } from 'i18n/index';
 
 interface Props {
   username?: string;
