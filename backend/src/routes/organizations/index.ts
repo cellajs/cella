@@ -10,12 +10,12 @@ import { createDate, isWithinExpirationDate } from 'oslo';
 import { Argon2id } from 'oslo/password';
 import slugify from 'slugify';
 import { getI18n } from 'i18n';
-import { db } from '~/db/db';
-import { auth } from '~/db/lucia';
-import { MembershipModel, membershipsTable, organizationsTable, tokensTable, usersTable } from '~/db/schema';
-import { createError } from '~/lib/errors';
-import { transformDatabaseUser } from '~/lib/transform-database-user';
-import { CustomHono, ErrorResponse } from '~/types/common';
+import { db } from '../../db/db';
+import { auth } from '../../db/lucia';
+import { MembershipModel, membershipsTable, organizationsTable, tokensTable, usersTable } from '../../db/schema';
+import { createError } from '../../lib/errors';
+import { transformDatabaseUser } from '../../lib/transform-database-user';
+import { CustomHono, ErrorResponse } from '../../types/common';
 import { githubSignInRoute } from '../auth/schema';
 import { customLogger } from '../middlewares/custom-logger';
 import {

@@ -5,10 +5,10 @@ import {
   successResponseWithDataSchema,
   successResponseWithPaginationSchema,
   successResponseWithoutDataSchema,
-} from '~/schemas/common';
-import { userMenuSchema } from '~/schemas/organizations';
-import { errorResponses } from '~/schemas/responses';
-import { apiUserSchema, apiUserWithMembershipCountSchema, getUserParamSchema, updateUserJsonSchema, updateUserParamSchema } from '~/schemas/user';
+} from '../../schemas/common';
+import { userMenuSchema } from '../../schemas/organizations';
+import { errorResponses } from '../../schemas/responses';
+import { apiUserSchema, apiUserWithMembershipCountSchema, getUserParamSchema, updateUserJsonSchema, updateUserParamSchema } from '../../schemas/user';
 
 export const meRoute = createRoute({
   method: 'get',

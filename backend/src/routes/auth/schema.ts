@@ -1,7 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { cookieSchema, successResponseWithDataSchema, successResponseWithoutDataSchema } from '~/schemas/common';
-import { errorResponses } from '~/schemas/responses';
+import { cookieSchema, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../schemas/common';
+import { errorResponses } from '../../schemas/responses';
 import {
   apiUserSchema,
   checkEmailJsonSchema,
@@ -9,7 +9,7 @@ import {
   resetPasswordJsonSchema,
   signInJsonSchema,
   signUpJsonSchema,
-} from '~/schemas/user';
+} from '../../schemas/user';
 
 export const signUpRoute = createRoute({
   method: 'post',

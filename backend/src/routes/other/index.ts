@@ -2,9 +2,9 @@ import { sql } from 'drizzle-orm';
 
 import { env } from 'env';
 import jwt from 'jsonwebtoken';
-import { db } from '~/db/db';
-import { organizationsTable, usersTable } from '~/db/schema';
-import { CustomHono } from '~/types/common';
+import { db } from '../../db/db';
+import { organizationsTable, usersTable } from '../../db/schema';
+import { CustomHono } from '../../types/common';
 import { customLogger } from '../middlewares/custom-logger';
 import { getOrganizationUploadTokenRoute, getPersonalUploadTokenRoute, getPublicCountsRoute } from './schema';
 

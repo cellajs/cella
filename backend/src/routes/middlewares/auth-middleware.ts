@@ -2,11 +2,11 @@ import { eq } from 'drizzle-orm';
 import { MiddlewareHandler } from 'hono';
 import { User } from 'lucia';
 import { getI18n } from 'i18n';
-import { db } from '~/db/db';
-import { auth } from '~/db/lucia';
-import { usersTable } from '~/db/schema';
-import { forbiddenError, unauthorizedError } from '~/lib/errors';
-import { ErrorResponse } from '~/types/common';
+import { db } from '../../db/db';
+import { auth } from '../../db/lucia';
+import { usersTable } from '../../db/schema';
+import { forbiddenError, unauthorizedError } from '../../lib/errors';
+import { ErrorResponse } from '../../types/common';
 import { customLogger } from './custom-logger';
 
 const i18n = getI18n('backend');

@@ -1,4 +1,4 @@
-import { appSignal } from '~/lib/appsignal';
+import { appSignal } from '../../lib/appsignal';
 
 type Severity = 'trace' | 'debug' | 'info' | 'log' | 'warn' | 'error';
 
