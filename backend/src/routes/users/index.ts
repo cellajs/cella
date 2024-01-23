@@ -104,7 +104,7 @@ const usersRoutes = app
 
       if (slugExists) {
         customLogger('Slug already exists', { slug });
-
+        
         return ctx.json(createError(i18n, 'error.slug_already_exists', 'Slug already exists'), 400);
       }
     }

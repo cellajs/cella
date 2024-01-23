@@ -63,7 +63,7 @@ const authRoutes = app
         .insert(usersTable)
         .values({
           id: userId,
-          slug: slugExists ? userId : slug,
+          slug: slugExists ? `${slug}-${userId}` : slug,
           firstName: slug,
           email: email.toLowerCase(),
           hashedPassword,

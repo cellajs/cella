@@ -1,5 +1,6 @@
 import { swaggerUI } from '@hono/swagger-ui';
 import { CustomHono } from '../types/common';
+import config from 'config';
 
 const openAPITags = [
   { name: 'auth', description: 'Authentication' },
@@ -15,13 +16,13 @@ const docs = (app: CustomHono) => {
   registry.registerComponent('securitySchemes', 'cookieAuth', {
     type: 'apiKey',
     in: 'cookie',
-    name: 'auth_session',
+    name: `${config.slug}-session`,
     description: "Authentication cookie. If you don't have it, you need to sign in or sign up first.",
   });
 
   app.doc31('/openapi.json', {
     info: {
-      title: 'Cella API',
+      title: `${config.name} API`,
       version: 'v1',
       description: 'This is a showcase API documentation built using hono middleware: zod-openapi.',
     },
