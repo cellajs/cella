@@ -1,7 +1,7 @@
 import { Hook } from '@hono/zod-openapi';
-import { customLogger } from '../routes/middlewares/customLogger';
-import { Env } from '../types/common';
 import { ZodError } from 'zod';
+import { customLogger } from '../routes/middlewares/custom-logger';
+import { Env } from '../types/common';
 
 const defaultHook: Hook<unknown, Env, '', unknown> = (result, ctx) => {
   if (!result.success && result.error instanceof ZodError) {

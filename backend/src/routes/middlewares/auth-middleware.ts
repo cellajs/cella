@@ -7,7 +7,7 @@ import { auth } from '../../db/lucia';
 import { usersTable } from '../../db/schema';
 import { forbiddenError, unauthorizedError } from '../../lib/errors';
 import { ErrorResponse } from '../../types/common';
-import { customLogger } from './customLogger';
+import { customLogger } from './custom-logger';
 
 const i18n = getI18n('backend');
 

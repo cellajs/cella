@@ -14,10 +14,10 @@ import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { MembershipModel, membershipsTable, organizationsTable, tokensTable, usersTable } from '../../db/schema';
 import { createError } from '../../lib/errors';
-import { transformDatabaseUser } from '../../lib/transformDatabaseUser';
+import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { githubSignInRoute } from '../auth/schema';
-import { customLogger } from '../middlewares/customLogger';
+import { customLogger } from '../middlewares/custom-logger';
 import {
   acceptInvitationToOrganizationRoute,
   checkIsEmailExistsByInviteTokenRoute,

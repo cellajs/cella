@@ -5,7 +5,7 @@ import { db } from '../../db/db';
 import { MembershipModel, membershipsTable, organizationsTable } from '../../db/schema';
 import { createError, forbiddenError } from '../../lib/errors';
 import { Env, ErrorResponse } from '../../types/common';
-import { customLogger } from './customLogger';
+import { customLogger } from './custom-logger';
 
 const i18n = getI18n('backend');
 

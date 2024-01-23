@@ -5,8 +5,8 @@ import otherRoutes from './routes/other';
 import usersRoutes from './routes/users';
 import { CustomHono } from './types/common';
 import docs from './routes/docs';
-import defaultHook from './lib/defaultHook';
-import errorHandler from './lib/errorHandler';
+import defaultHook from './lib/default-hook';
+import errorHandler from './lib/error-handler';
 import guard from './routes/guard';
 
 // Set default hook to catch validation errors

@@ -1,6 +1,6 @@
-import { ErrorHandler } from 'hono';
-import { customLogger } from '../routes/middlewares/customLogger';
 import { sendError, setCustomData, setNamespace } from '@appsignal/nodejs';
+import { ErrorHandler } from 'hono';
+import { customLogger } from '../routes/middlewares/custom-logger';
 
 const errorHandler: ErrorHandler = (err, c) => {
   customLogger('Error', { errorMessage: `${err}` }, 'error');

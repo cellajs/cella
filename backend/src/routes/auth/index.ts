@@ -17,9 +17,10 @@ import { auth, githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';
 import { createError, unauthorizedError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
-import { transformDatabaseUser } from '../../lib/transformDatabaseUser';
+import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
-import { customLogger } from '../middlewares/customLogger';
+import { customLogger } from '../middlewares/custom-logger';
+import { checkSlugRoute } from '../users/schema';
 import {
   checkEmailRoute,
   githubSignInCallbackRoute,
@@ -36,7 +37,6 @@ import {
   signUpRoute,
   verifyEmailRoute,
 } from './schema';
-import { checkSlugRoute } from '../users/schema';
 
 const i18n = getI18n('backend');
 

@@ -13,8 +13,8 @@ import {
 } from './organizations/schema';
 import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/schema';
 import { getOrganizationUploadTokenRoute, getPersonalUploadTokenRoute } from './other/schema';
-import authMiddleware from './middlewares/authMiddleware';
-import organizationAuthMiddleware from './middlewares/organizationAuthMiddleware';
+import authMiddleware from './middlewares/auth-middleware';
+import organizationAuthMiddleware from './middlewares/organization-auth-middleware';
 import { MiddlewareHandler } from 'hono';
 import { createRoute } from '@hono/zod-openapi';
 
