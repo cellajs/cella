@@ -50,8 +50,7 @@ const config = {
   },
 
   description: 'A no-nonsense TypeScript template to build modern web apps. Open source.',
-  keywords:
-    'saas starter kit, fullstack starter kit, monorepo template, typescript starter kit, hono starter kit, hono boilerplate, hono, drizzle, shadcn, pwa',
+  keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
 
   languages: [
     {
