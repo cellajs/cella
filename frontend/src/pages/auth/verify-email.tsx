@@ -1,9 +1,9 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import AuthPage from '.';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
 import { useEffect } from 'react';
 import { verifyEmail } from '~/api/api';
 import { Button } from '~/components/ui/button';
+import { useApiWrapper } from '~/hooks/useApiWrapper';
+import AuthPage from '.';
 
 const VerifyEmail = () => {
   const { token } = useParams({ strict: false });

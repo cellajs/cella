@@ -166,12 +166,12 @@ const IndexRoute = new Route({
     const storedUser = useUserStore.getState().user;
 
     if (!storedUser) {
-    // If no stored user and no desired path, redirect to about
-    if (location.pathname === '/') throw redirect({ to: '/about' });
+      // If no stored user and no desired path, redirect to about
+      if (location.pathname === '/') throw redirect({ to: '/about' });
 
       const getMe = useUserStore.getState().getMe;
       const user = await getMe();
-  
+
       // redirect to sign-in if not signed in, else proceed to any app route
       if (!user) {
         throw redirect({ to: '/auth/sign-in', search: { redirect: location.pathname } });

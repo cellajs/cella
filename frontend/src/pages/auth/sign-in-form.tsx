@@ -60,7 +60,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        { lastUser ? 'Welcome back' : 'Sign in as' } <br />
+        {lastUser ? 'Welcome back' : 'Sign in as'} <br />
         <Button variant="ghost" onClick={cancel} className="font-light mt-2 text-xl">
           {email}
           <ChevronDown size={16} className="ml-2" />

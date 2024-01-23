@@ -85,7 +85,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
                 className={`w-4 h-4 mr-2 ${option.name === 'Github' ? invertClass : ''}`}
                 loading="lazy"
               />
-              { actionType === 'acceptInvite' ? 'Accept' : actionType === 'signUp' ? 'Sign up' : 'Sign in' } with {option.name}
+              {actionType === 'acceptInvite' ? 'Accept' : actionType === 'signUp' ? 'Sign up' : 'Sign in'} with {option.name}
             </Button>
           );
         })}

@@ -79,7 +79,7 @@ const Accept = () => {
           </Button>
         </form>
       </Form>
-      <OauthOptions isAccepting={true} />
+      <OauthOptions actionType="acceptInvite" />
     </AuthPage>
   );
 };

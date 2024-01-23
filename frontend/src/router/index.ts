@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { Router } from '@tanstack/react-router';
-import { routeTree, routeMasks } from './routeTree';
+import { routeMasks, routeTree } from './routeTree';
 
 export const queryClient = new QueryClient();
 
