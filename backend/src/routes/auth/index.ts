@@ -145,7 +145,7 @@ const authRoutes = app
       userSlug: user.slug,
     });
 
-    return ctx.redirect(config.frontendUrl, 302);
+    return ctx.redirect(config.frontendUrl + config.defaultRedirectPath, 302);
   })
   .openapi(sendVerificationEmailRoute, async (ctx) => {
     const { email } = ctx.req.valid('json');
@@ -366,7 +366,8 @@ const authRoutes = app
     }
 
     const redirectCookie = getCookie(ctx, 'oauth_redirect');
-    const redirectUrl = redirectCookie ? config.frontendUrl + decodeURIComponent(redirectCookie) : config.frontendUrl;
+    let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
+    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie)
 
     try {
       const { accessToken } = await githubAuth.validateAuthorizationCode(code);
@@ -428,7 +429,6 @@ const authRoutes = app
         return ctx.json({}, 302, {
           Location: redirectUrl,
         });
-        // return ctx.redirect(config.frontendUrl, 302);
       }
 
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
@@ -517,7 +517,6 @@ const authRoutes = app
         return ctx.json({}, 302, {
           Location: redirectUrl,
         });
-        // return ctx.redirect(config.frontendUrl, 302);
       }
 
       const userId = nanoid();
@@ -563,9 +562,8 @@ const authRoutes = app
       });
 
       return ctx.json({}, 302, {
-        Location: config.frontendUrl,
+        Location: config.frontendUrl + config.defaultRedirectPath,
       });
-      // return ctx.redirect(config.frontendUrl, 302);
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
         // bad verification code, invalid credentials, etc
@@ -634,7 +632,8 @@ const authRoutes = app
     }
 
     const redirectCookie = getCookie(ctx, 'oauth_redirect');
-    const redirectUrl = redirectCookie ? config.frontendUrl + decodeURIComponent(redirectCookie) : config.frontendUrl;
+    let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
+    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie)
 
     try {
       const { accessToken } = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
@@ -672,7 +671,6 @@ const authRoutes = app
         return ctx.json({}, 302, {
           Location: redirectUrl,
         });
-        // return ctx.redirect(config.frontendUrl, 302);
       }
 
       const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, user.email.toLowerCase()));
@@ -696,7 +694,6 @@ const authRoutes = app
         return ctx.json({}, 302, {
           Location: redirectUrl,
         });
-        // return ctx.redirect(config.frontendUrl, 302);
       }
 
       const userId = nanoid();
@@ -725,9 +722,8 @@ const authRoutes = app
       });
 
       return ctx.json({}, 302, {
-        Location: config.frontendUrl,
+        Location: config.frontendUrl + config.defaultRedirectPath,
       });
-      // return ctx.redirect(config.frontendUrl, 302);
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
         // bad verification code, invalid credentials, etc
@@ -796,7 +792,8 @@ const authRoutes = app
     }
 
     const redirectCookie = getCookie(ctx, 'oauth_redirect');
-    const redirectUrl = redirectCookie ? config.frontendUrl + decodeURIComponent(redirectCookie) : config.frontendUrl;
+    let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
+    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie)
 
     try {
       const { accessToken } = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
@@ -832,7 +829,6 @@ const authRoutes = app
         return ctx.json({}, 302, {
           Location: redirectUrl,
         });
-        // return ctx.redirect(config.frontendUrl, 302);
       }
 
       if (!user.email) {
@@ -860,7 +856,6 @@ const authRoutes = app
         return ctx.json({}, 302, {
           Location: redirectUrl,
         });
-        // return ctx.redirect(config.frontendUrl, 302);
       }
 
       const userId = nanoid();
@@ -889,9 +884,8 @@ const authRoutes = app
       });
 
       return ctx.json({}, 302, {
-        Location: config.frontendUrl,
+        Location: config.frontendUrl + config.defaultRedirectPath,
       });
-      // return ctx.redirect(config.frontendUrl, 302);
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
         // bad verification code, invalid credentials, etc

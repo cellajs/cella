@@ -156,17 +156,34 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
 const IndexRoute = new Route({
   id: 'layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: () => {
+  beforeLoad: async ({ location }) => {
     const storedUser = useUserStore.getState().user;
 
-    // If no user, redirect to /about
-    if (!storedUser) throw redirect({ to: '/about' });
+    if (!storedUser) {
+    // If no stored user and no desired path, redirect to about
+    if (location.pathname === '/') throw redirect({ to: '/about' });
+
+      const getMe = useUserStore.getState().getMe;
+      const user = await getMe();
+  
+      // redirect to sign-in if not signed in, else proceed to any app route
+      if (!user) {
+        throw redirect({ to: '/auth/sign-in', search: { redirect: location.pathname} });
+      }
+    }
   },
   component: () => <App />,
 });
 
 const HomeRoute = new Route({
   path: '/',
+  getParentRoute: () => IndexRoute,
+  component: () => <Home />,
+});
+
+// We need an alias to forward users better if coming from the backend
+const HomeAliasRoute = new Route({
+  path: '/home',
   getParentRoute: () => IndexRoute,
   component: () => <Home />,
 });
@@ -283,6 +300,7 @@ export const routeTree = rootRoute.addChildren([
   SignOutRoute,
   IndexRoute.addChildren([
     HomeRoute,
+    HomeAliasRoute,
     SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute]),
     UserProfileRoute,
     UserSettingsRoute,

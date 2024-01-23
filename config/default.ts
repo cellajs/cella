@@ -5,6 +5,8 @@ const config = {
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:4000',
 
+  defaultRedirectPath: '/home',
+
   aboutUrl: 'https://about.example.com',
   statusUrl: 'https://status.example.com',
 
