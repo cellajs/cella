@@ -36,16 +36,15 @@ const oauthOptions = [
 ];
 
 interface OauthOptionsProps {
-  isAccepting?: boolean;
+  actionType: 'check' | 'signIn' | 'signUp' | 'acceptInvite';
 }
 
-// TODO clean this up
-const OauthOptions = ({ isAccepting = false }: OauthOptionsProps) => {
+const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   const { mode } = useThemeStore();
   const { token } = useParams({ strict: false });
   const invertClass = mode === 'dark' ? 'invert' : '';
   let redirect = '';
-  if (!isAccepting) {
+  if (actionType !== 'acceptInvite') {
     const searchResult = useSearch({
       from: SignInRoute.id,
     });
@@ -70,7 +69,7 @@ const OauthOptions = ({ isAccepting = false }: OauthOptionsProps) => {
               type="button"
               variant="outline"
               onClick={
-                isAccepting && token
+                actionType === 'acceptInvite' && token
                   ? () =>
                       option.acceptInvite(token).then((url) => {
                         window.location.href = url;
@@ -86,7 +85,7 @@ const OauthOptions = ({ isAccepting = false }: OauthOptionsProps) => {
                 className={`w-4 h-4 mr-2 ${option.name === 'Github' ? invertClass : ''}`}
                 loading="lazy"
               />
-              {isAccepting ? 'Accept' : 'Sign in'} with {option.name}
+              { actionType === 'acceptInvite' ? 'Accept' : actionType === 'signUp' ? 'Sign up' : 'Sign in' } with {option.name}
             </Button>
           );
         })}

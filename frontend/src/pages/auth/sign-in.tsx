@@ -33,7 +33,7 @@ const SignIn = () => {
       {step === 'signIn' && <SignInForm email={email} setStep={handleSetStep} />}
       {step === 'signUp' && <SignUpForm email={email} setStep={handleSetStep} />}
 
-      <OauthOptions />
+      <OauthOptions actionType={step} />
     </AuthPage>
   );
 };

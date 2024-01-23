@@ -56,7 +56,7 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="hidden">
               <FormControl>
                 <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('label.email', { defaultValue: 'Email' })} />
               </FormControl>
