@@ -74,9 +74,7 @@ export const signUp = async (email: string, password: string) => {
   });
   const json = await response.json();
 
-  if ('error' in json) {
-    throw new ApiError(response.status, json.error);
-  }
+  if ('error' in json) throw new ApiError(response.status, json.error);
 
   return json.data;
 };
@@ -89,9 +87,7 @@ export const checkEmail = async (email: string) => {
   });
   const json = await response.json();
 
-  if ('error' in json) {
-    throw new ApiError(response.status, json.error);
-  }
+  if ('error' in json) throw new ApiError(response.status, json.error);
 
   return json.data;
 };
@@ -105,9 +101,7 @@ export const checkSlug = async (slug: string) => {
 
   const json = await response.json();
 
-  if ('error' in json) {
-    throw new ApiError(response.status, json.error);
-  }
+  if ('error' in json) throw new ApiError(response.status, json.error);
 
   return json.data;
 };
@@ -124,9 +118,7 @@ export const verifyEmail = async (token: string, resend = false) => {
 
   const json = await response.json();
 
-  if ('error' in json) {
-    throw new ApiError(response.status, json.error);
-  }
+  if ('error' in json) throw new ApiError(response.status, json.error);
 
   return;
 };
@@ -140,9 +132,7 @@ export const signIn = async (email: string, password: string) => {
   });
   const json = await response.json();
 
-  if ('error' in json) {
-    throw new ApiError(response.status, json.error);
-  }
+  if ('error' in json) throw new ApiError(response.status, json.error);
 
   return json.data;
 };
@@ -155,9 +145,7 @@ export const sendVerificationEmail = async (email: string) => {
   });
   const json = await response.json();
 
-  if ('error' in json) {
-    throw new ApiError(response.status, json.error);
-  }
+  if ('error' in json) throw new ApiError(response.status, json.error);
 
   return;
 };
@@ -170,9 +158,7 @@ export const sendResetPasswordEmail = async (email: string) => {
   });
   const json = await response.json();
 
-  if ('error' in json) {
-    throw new ApiError(response.status, json.error);
-  }
+  if ('error' in json) throw new ApiError(response.status, json.error);
 
   return;
 };
@@ -188,9 +174,7 @@ export const resetPassword = async (token: string, password: string) => {
   });
   const json = await response.json();
 
-  if ('error' in json) {
-    throw new ApiError(response.status, json.error);
-  }
+  if ('error' in json) throw new ApiError(response.status, json.error);
 
   return;
 };

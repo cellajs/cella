@@ -23,7 +23,7 @@ const formSchema = signInJsonSchema;
 export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: string) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setUser } = useUserStore();
+  const { setUser, lastUser, clearLastUser } = useUserStore();
 
   const { redirect } = useSearch({
     from: SignInRoute.id,
@@ -52,11 +52,16 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
     );
   };
 
+  const cancel = () => {
+    clearLastUser();
+    setStep('check');
+  };
+
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        Sign in as <br />
-        <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-2 text-xl">
+        { lastUser ? 'Welcome back' : 'Sign in as' } <br />
+        <Button variant="ghost" onClick={cancel} className="font-light mt-2 text-xl">
           {email}
           <ChevronDown size={16} className="ml-2" />
         </Button>
