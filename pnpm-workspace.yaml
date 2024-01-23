@@ -4,4 +4,5 @@ packages:
   - 'i18n'
   - 'proxy'
   - 'emails'
+  - 'emails/.react-email'
   - 'tus'

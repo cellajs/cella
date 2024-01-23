@@ -10,10 +10,10 @@
     "export": "email export"
   },
   "dependencies": {
-    "@react-email/components": "0.0.12",
-    "@sendgrid/mail": "^7.7.0",
+    "@react-email/components": "0.0.14",
+    "@sendgrid/mail": "^8.1.0",
     "react": "^18.2.0",
-    "react-email": "1.10.0",
+    "react-email": "2.0.0",
     "react-i18next": "^13.5.0"
   },
   "devDependencies": {
