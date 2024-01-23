@@ -14,7 +14,7 @@ import config from 'config';
 
 const i18n = getI18n('backend');
 
-export const app = new CustomHono();
+const app = new CustomHono();
 
 // routes
 const usersRoutes = app

@@ -8,7 +8,7 @@ import { CustomHono } from '../../types/common';
 import { customLogger } from '../middlewares/customLogger';
 import { getOrganizationUploadTokenRoute, getPersonalUploadTokenRoute, getPublicCountsRoute } from './schema';
 
-export const app = new CustomHono();
+const app = new CustomHono();
 
 // routes
 const otherRoutes = app
