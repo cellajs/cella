@@ -5,8 +5,8 @@ import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
-import { getI18n } from '../../../../i18n';
-import { CustomHono } from '../../types/common';
+import { getI18n } from 'i18n';
+import { CustomHono } from '~/types/common';
 import { customLogger } from './custom-logger';
 
 const i18n = getI18n('backend');

@@ -5,7 +5,7 @@ import {
   successResponseWithDataSchema,
   successResponseWithPaginationSchema,
   successResponseWithoutDataSchema,
-} from '../../schemas/common';
+} from '~/schemas/common';
 import {
   acceptInvitationToOrganizationJsonSchema,
   apiOrganizationSchema,
@@ -21,8 +21,8 @@ import {
   updateOrganizationParamSchema,
   updateUserInOrganizationJsonSchema,
   updateUserInOrganizationParamSchema,
-} from '../../schemas/organizations';
-import { errorResponses } from '../../schemas/responses';
+} from '~/schemas/organizations';
+import { errorResponses } from '~/schemas/responses';
 
 export const createOrganizationRoute = createRoute({
   method: 'post',

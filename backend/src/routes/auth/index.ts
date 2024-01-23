@@ -11,14 +11,14 @@ import postgres from 'postgres';
 
 import config from 'config';
 import emailSender from 'emails/index';
-import { getI18n } from '../../../../i18n';
-import { db } from '../../db/db';
-import { auth, githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
-import { oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';
-import { createError, unauthorizedError } from '../../lib/errors';
-import { nanoid } from '../../lib/nanoid';
-import { transformDatabaseUser } from '../../lib/transform-database-user';
-import { CustomHono, ErrorResponse } from '../../types/common';
+import { getI18n } from 'i18n';
+import { db } from '~/db/db';
+import { auth, githubAuth, googleAuth, microsoftAuth } from '~/db/lucia';
+import { oauthAccountsTable, tokensTable, usersTable } from '~/db/schema';
+import { createError, unauthorizedError } from '~/lib/errors';
+import { nanoid } from '~/lib/nanoid';
+import { transformDatabaseUser } from '~/lib/transform-database-user';
+import { CustomHono, ErrorResponse } from '~/types/common';
 import { customLogger } from '../middlewares/custom-logger';
 import { checkSlugRoute } from '../users/schema';
 import {
