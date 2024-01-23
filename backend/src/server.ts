@@ -9,22 +9,28 @@ import defaultHook from './lib/defaultHook';
 import errorHandler from './lib/errorHandler';
 import guard from './routes/guard';
 
+// Set default hook to catch validation errors
 export const app = new CustomHono({
   defaultHook,
 });
 
+// Add middleware
 app.route('', middlewares);
 
-// docs
+// Generate OpenAPI Docs
 docs(app);
 
 // Error handler
 app.onError(errorHandler);
 
-// guard
+// Set guard middleware
 guard(app);
 
-// routes
-const route = app.route('/', authRoutes).route('/', usersRoutes).route('/', organizationsRoutes).route('/', otherRoutes);
+// Add routes for each module
+const route = app
+.route('/', authRoutes)
+.route('/', usersRoutes)
+.route('/', organizationsRoutes)
+.route('/', otherRoutes);
 
 export type AppRoute = typeof route;
