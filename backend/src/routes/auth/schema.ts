@@ -49,16 +49,21 @@ export const verifyEmailRoute = createRoute({
   summary: 'Verify a user email address',
   security: [],
   request: {
+    query: z.object({
+      resend: z.string().optional(),
+    }),
     params: z.object({
       token: z.string(),
     }),
   },
   responses: {
-    302: {
+    200: {
       description: 'Email address verified',
-      headers: z.object({
-        Location: z.string(),
-      }),
+      content: {
+        'application/json': {
+          schema: successResponseWithoutDataSchema,
+        },
+      },
     },
     ...errorResponses,
   },

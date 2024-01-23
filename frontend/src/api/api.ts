@@ -112,6 +112,25 @@ export const checkSlug = async (slug: string) => {
   return json.data;
 };
 
+export const verifyEmail = async (token: string, resend = false) => {
+  const response = await client['verify-email'][':token'].$get({
+    param: {
+      token,
+    },
+    query: {
+      resend: String(resend),
+    },
+  });
+
+  const json = await response.json();
+
+  if ('error' in json) {
+    throw new ApiError(response.status, json.error);
+  }
+
+  return;
+};
+
 export const signIn = async (email: string, password: string) => {
   const response = await client['sign-in'].$post({
     json: {

@@ -113,18 +113,53 @@ const authRoutes = app
     }
   })
   .openapi(verifyEmailRoute, async (ctx) => {
+    const { resend } = ctx.req.valid('query');
     const verificationToken = ctx.req.valid('param').token;
 
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
-    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
+    // await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
+      if (resend === 'true' && token && token.email) {
+        fetch(config.backendUrl + sendVerificationEmailRoute.path, {
+          method: sendVerificationEmailRoute.method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: token.email,
+          }),
+        });
+        await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
+
+        return ctx.json({
+          success: true,
+        });
+      }
+
       return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     if (!user || user.email !== token.email) {
+      if (resend === 'true' && token && token.email) {
+        fetch(config.backendUrl + sendVerificationEmailRoute.path, {
+          method: sendVerificationEmailRoute.method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: token.email,
+          }),
+        });
+        await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
+
+        return ctx.json({
+          success: true,
+        });
+      }
+
       return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
     }
 
@@ -145,7 +180,9 @@ const authRoutes = app
       userSlug: user.slug,
     });
 
-    return ctx.redirect(config.frontendUrl + config.defaultRedirectPath, 302);
+    return ctx.json({
+      success: true,
+    });
   })
   .openapi(sendVerificationEmailRoute, async (ctx) => {
     const { email } = ctx.req.valid('json');
@@ -168,7 +205,7 @@ const authRoutes = app
 
     const emailHtml = render(
       VerificationEmail({
-        verificationLink: `${config.backendUrl}/verify-email/${verificationToken}`,
+        verificationLink: `${config.frontendUrl}/auth/verify-email/${verificationToken}`,
         i18n,
       }),
     );
@@ -182,7 +219,6 @@ const authRoutes = app
 
     return ctx.json({
       success: true,
-      data: undefined,
     });
   })
   .openapi(checkEmailRoute, async (ctx) => {
@@ -292,7 +328,7 @@ const authRoutes = app
     }
 
     if (!user.emailVerified) {
-      await fetch(config.backendUrl + sendVerificationEmailRoute.path, {
+      fetch(config.backendUrl + sendVerificationEmailRoute.path, {
         method: sendVerificationEmailRoute.method,
         headers: {
           'Content-Type': 'application/json',
@@ -302,7 +338,7 @@ const authRoutes = app
         }),
       });
 
-      return ctx.redirect(`${config.frontendUrl}/auth/verify-email`, 302);
+      return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
     }
 
     const session = await auth.createSession(user.id, {});
@@ -353,7 +389,7 @@ const authRoutes = app
 
     customLogger('User redirected to GitHub');
 
-    return ctx.redirect(url.toString(), 302);
+    return ctx.redirect(url.toString());
   })
   .openapi(githubSignInCallbackRoute, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
@@ -367,7 +403,7 @@ const authRoutes = app
 
     const redirectCookie = getCookie(ctx, 'oauth_redirect');
     let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
-    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie)
+    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie);
 
     try {
       const { accessToken } = await githubAuth.validateAuthorizationCode(code);
@@ -502,7 +538,7 @@ const authRoutes = app
             }),
           });
 
-          return ctx.redirect(`${config.frontendUrl}/auth/verify-email`, 302);
+          return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
         }
 
         const session = await auth.createSession(existingUser.id, {});
@@ -633,7 +669,7 @@ const authRoutes = app
 
     const redirectCookie = getCookie(ctx, 'oauth_redirect');
     let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
-    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie)
+    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie);
 
     try {
       const { accessToken } = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
@@ -793,7 +829,7 @@ const authRoutes = app
 
     const redirectCookie = getCookie(ctx, 'oauth_redirect');
     let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
-    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie)
+    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie);
 
     try {
       const { accessToken } = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);

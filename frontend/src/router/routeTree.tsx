@@ -1,5 +1,5 @@
 import { DefaultError, QueryClient, queryOptions, useMutation } from '@tanstack/react-query';
-import { Outlet, Route, redirect, rootRouteWithContext } from '@tanstack/react-router';
+import { Outlet, Route, createRouteMask, redirect, rootRouteWithContext } from '@tanstack/react-router';
 import { z } from 'zod';
 import {
   UpdateOrganizationParams,
@@ -102,6 +102,12 @@ export const VerifyEmailRoute = new Route({
   component: () => <VerifyEmail />,
 });
 
+export const VerifyEmailRouteWithToken = new Route({
+  path: '/auth/verify-email/$token',
+  getParentRoute: () => AuthRoute,
+  component: () => <VerifyEmail />,
+});
+
 export const SignOutRoute = new Route({
   getParentRoute: () => rootRoute,
   path: '/sign-out',
@@ -168,7 +174,7 @@ const IndexRoute = new Route({
   
       // redirect to sign-in if not signed in, else proceed to any app route
       if (!user) {
-        throw redirect({ to: '/auth/sign-in', search: { redirect: location.pathname} });
+        throw redirect({ to: '/auth/sign-in', search: { redirect: location.pathname } });
       }
     }
   },
@@ -296,7 +302,7 @@ export const routeTree = rootRoute.addChildren([
   PrivacyRoute,
   AccessibilityRoute,
   ErrorPageRoute,
-  AuthRoute.addChildren([SignInRoute, AcceptRoute, ResetPasswordRoute, VerifyEmailRoute]),
+  AuthRoute.addChildren([SignInRoute, AcceptRoute, ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken])]),
   SignOutRoute,
   IndexRoute.addChildren([
     HomeRoute,
@@ -307,3 +313,12 @@ export const routeTree = rootRoute.addChildren([
     OrganizationRoute.addChildren([MembersTableRoute, OrganizationSettingsRoute]),
   ]),
 ]);
+
+export const VerifyEmailRouteWithTokenMask = createRouteMask({
+  routeTree,
+  from: '/auth/verify-email/$token',
+  to: '/auth/verify-email',
+  params: true,
+});
+
+export const routeMasks = [VerifyEmailRouteWithTokenMask];
