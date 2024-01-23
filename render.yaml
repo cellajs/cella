@@ -39,6 +39,7 @@ services:
       paths:
         - backend/**/*.?s
 
+  # TUS upload server
   - type: web
     name: cella-tus
     runtime: node
@@ -124,6 +125,7 @@ services:
       paths:
         - frontend/**/*.?s
 
+# Postgres database
 databases:
   - name: cella-db
     databaseName: cella

@@ -44,9 +44,6 @@ coming soon, will still change into a more modular structure.
 ## API Design
 An OpenAPI is built using Hono middleware called [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started.
 
-Want to change the API? Describe the new routes in the `/backend/src/routes` folder. Then add those in the `/backend/src/server.ts`. To see the updates in the docs, you need to restart/redeploy the server.
-
-
 ## Security
 
 Link to valuable resources:
