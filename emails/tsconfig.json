@@ -23,8 +23,10 @@
     "baseUrl": ".",
     "paths": {
       "i18n/*": ["../i18n/*"],
+      "env": ["../env/env.ts"],
+      "config": ["../config/index.ts"],
     },
     "allowSyntheticDefaultImports": true
   },
-  "include": ["emails"]
+  "include": ["emails", "../env/env.ts", "../config/index.ts", "../i18n/*"]
 }

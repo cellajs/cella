@@ -1,8 +1,8 @@
 import sendgrid from '@sendgrid/mail';
+import config from 'config';
+import { env } from 'env';
 
-import config from '../config';
-
-sendgrid.setApiKey(process.env.SENDGRID_API_KEY ?? '');
+sendgrid.setApiKey(env.SENDGRID_API_KEY ?? '');
 
 export default {
   send: async (to: string, subject: string, html: string) => {
