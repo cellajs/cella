@@ -17,6 +17,7 @@
     "react-i18next": "^13.5.0"
   },
   "devDependencies": {
+    "@types/classnames": "2.3.1",
     "@types/node": "^20.11.2",
     "@types/react": "^18.2.42"
   }
