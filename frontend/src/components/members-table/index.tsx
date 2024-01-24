@@ -89,7 +89,7 @@ export function CustomDataTableToolbar({
         members={members}
       />,
       {
-        className: 'sm:max-w-xl ',
+        className: 'sm:max-w-xl',
         title: t('label.remove_member', {
           defaultValue: 'Remove member',
         }),

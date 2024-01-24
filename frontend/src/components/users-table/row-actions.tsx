@@ -24,7 +24,7 @@ const DataTableRowActions = ({ user, callback }: Props) => {
         onClick={() => {
           dialog(<UpdateUserForm user={user} dialog callback={(user) => callback(user, 'update')} />, {
             drawerOnMobile: false,
-            className: 'sm:max-w-[64rem] my-4 sm:my-8',
+            className: 'sm:max-w-2xl my-4 sm:my-8',
             title: t('action.edit_user', {
               defaultValue: 'Edit user',
             }),
@@ -39,8 +39,7 @@ const DataTableRowActions = ({ user, callback }: Props) => {
         className="h-8 w-8"
         onClick={() => {
           dialog(<DeleteUserForm user={user} dialog callback={(user) => callback(user, 'delete')} />, {
-            drawerOnMobile: false,
-            className: 'sm:max-w-[64rem] my-4 sm:my-8',
+            className: 'sm:max-w-[64rem]',
             title: t('action.delete_user', {
               defaultValue: 'Delete user',
             }),
