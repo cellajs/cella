@@ -24,8 +24,8 @@ const Contact = () => {
 
       <div className="container mb-12 mx-auto">
         <div className="flex flex-wrap justify-evenly gap-2">
-          {methods.map((method, index) => (
-            <div key={`method-${index}`} className="mb-10 text-center h-[200px] w-[160px] sm:w-[200px]">
+          {methods.map((method) => (
+            <div key={method.title} className="mb-10 text-center h-[200px] w-[160px] sm:w-[200px]">
               <div className="text-primary mx-auto mb-5 flex h-[100px] w-[100px] items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 sm:h-[130px] sm:w-[130px]">
                 <method.icon size={48} strokeWidth={config.theme.strokeWidth} />
               </div>

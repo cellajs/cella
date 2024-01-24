@@ -49,15 +49,15 @@ function FooterLinks() {
   return (
     <nav>
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
-        {footerSections.map((section, sectionIndex) => (
-          <li key={`section-${sectionIndex}`} className={section.hideOnMobile ? 'hidden sm:block' : ''}>
+        {footerSections.map((section) => (
+          <li key={section.title} className={section.hideOnMobile ? 'hidden sm:block' : ''}>
             <div className="font-display text-sm font-semibold tracking-wider text-white/40">{section.title}</div>
 
             <ul className="mt-4 text-sm text-white/90">
-              {section.links.map((link, linkIndex) => {
+              {section.links.map((link) => {
                 const target = link.href.startsWith('http') ? 'blank' : 'self';
                 return (
-                  <li key={`link-${sectionIndex}-${linkIndex}`} className="mt-4">
+                  <li key={link.title} className="mt-4">
                     {target === 'self' && (
                       <Link to={link.href} className="underline-offset-4 transition hover:underline">
                         {link.title}
@@ -114,8 +114,8 @@ export function PublicFooter() {
           </Link>
 
           <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-6 gap-y-4 border-t border-white/20 pt-12 text-center text-xs text-white/60">
-            {legalLinks.map((link, index) => (
-              <li key={`legal-link-${index}`}>
+            {legalLinks.map((link) => (
+              <li key={link.title}>
                 <Link to={link.href} className="underline-offset-4 transition hover:underline">
                   {link.title}
                 </Link>

@@ -380,7 +380,7 @@ const UsersTable = () => {
         search: (prev) => ({ ...prev, role: undefined }),
       });
     }
-  }, [columnFilters, sorting, role, navigate]);
+  }, [columnFilters, sorting[0], role]);
 
   return (
     <DataTable<User>

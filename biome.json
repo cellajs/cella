@@ -8,9 +8,11 @@
   },
   "linter": {
     "enabled": true,
-
     "rules": {
       "recommended": true,
+      "correctness": {
+        "useExhaustiveDependencies": "off"
+      },
       "style": {
         "useEnumInitializers": "off"
       }

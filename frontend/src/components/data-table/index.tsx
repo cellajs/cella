@@ -60,7 +60,6 @@ function RowList<TData>({
   const totalDBRowCount = data?.pages?.[0]?.total ?? 0;
   const totalFetched = rows.length;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: without this, requests will be doubled
   useEffect(() => {
     if (isIntersecting && !isFetching && totalFetched < totalDBRowCount) {
       fetchNextPage();

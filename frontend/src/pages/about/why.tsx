@@ -26,7 +26,7 @@ const Why = () => (
     <div className="w-full lg:w-6/12">
       <div className="flex flex-wrap">
         {whyItems.map((item, index) => (
-          <div className="w-full" key={index + 1}>
+          <div className="w-full" key={item.title}>
             <div className="group mb-12 flex">
               <div className="border-primary text-l md:text-1xl mr-6 flex h-[32px] w-full max-w-[32px] items-center justify-center rounded-full border-2 font-semibold group-hover:bg-transparent md:h-[48px] md:max-w-[48px]">
                 {index + 1}

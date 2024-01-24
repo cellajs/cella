@@ -284,7 +284,7 @@ const OrganizationsTable = () => {
         search: (prev) => ({ ...prev, sort: undefined, order: undefined }),
       });
     }
-  }, [columnFilters, sorting, navigate]);
+  }, [columnFilters, sorting[0]]);
 
   return (
     <DataTable

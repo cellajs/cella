@@ -113,7 +113,7 @@ const AppNav = () => {
           if (isSystemItem && !isSystemAdmin) return null;
 
           return (
-            <Fragment key={`nav-item-${index}`}>
+            <Fragment key={navItem.id}>
               {isSecondItem && <div className="hidden xs:flex xs:grow md:hidden" />}
               <li className={isSystemItem ? 'hidden md:block' : `md:grow-0 ${listItemClass}`} key={navItem.id}>
                 <NavButton navItem={navItem} isActive={isActive} onClick={() => handleButtonClick(navItem)} />

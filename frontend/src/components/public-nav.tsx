@@ -38,11 +38,11 @@ export function PublicNav() {
   const { ref, inView } = useInView();
 
   const renderNavItems = () => {
-    return publicNavConfig.map((item, index) => (
+    return publicNavConfig.map((item) => (
       <Link
         to="/about"
         hash={item.hash}
-        key={`public-nav-${index}`}
+        key={item.title}
         onClick={() => toggleSheet(false)}
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
       >

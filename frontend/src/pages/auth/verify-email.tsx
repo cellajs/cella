@@ -14,7 +14,6 @@ const VerifyEmail = () => {
     verifyEmail(token, true);
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: call apiWrapper only once
   useEffect(() => {
     if (!token) {
       return;

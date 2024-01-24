@@ -113,7 +113,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
         },
       );
     }
-  }, [slug, apiWrapper, form.setError, t, user.slug, form.clearErrors]);
+  }, [slug]);
 
   return (
     <Form {...form}>

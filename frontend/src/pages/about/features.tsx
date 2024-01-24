@@ -89,8 +89,8 @@ const Features = () => {
   return (
     <>
       <div className="mx-auto grid max-w-[64rem] justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">
-        {visibleFeatures.map((feature, index) => (
-          <Feature key={`feature-${index}`} {...feature} invertClass={invertClass} />
+        {visibleFeatures.map((feature) => (
+          <Feature key={feature.title} {...feature} invertClass={invertClass} />
         ))}
       </div>
 

@@ -55,7 +55,7 @@ export const useApiWrapper = () => {
         setPending(false);
       }
     },
-    [location.pathname, navigate, t],
+    [],
   );
 
   return [apiWrapper, pending, error] as const;
