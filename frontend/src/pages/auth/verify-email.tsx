@@ -26,9 +26,6 @@ const VerifyEmail = () => {
           to: '/home',
         });
       },
-      (error) => {
-        console.error(error);
-      },
     );
   }, []);
 
@@ -38,7 +35,7 @@ const VerifyEmail = () => {
         <AuthPage>
           <div className="text-center">
             <h1 className="text-2xl">Something went wrong</h1>
-            <p className="font-light mt-4">{error.message}</p>
+            <p className="font-light mt-4">Token is invalid or expired. Please request a new one.</p>
             <Button className="mt-8" onClick={resendEmail}>
               Resend email
             </Button>

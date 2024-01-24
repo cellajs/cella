@@ -137,7 +137,7 @@ const authRoutes = app
         });
       }
 
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
+      return ctx.json(createError(i18n, 'error.invalid_token_or_expired', 'Invalid token or expired'), 400);
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
