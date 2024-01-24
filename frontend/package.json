@@ -87,9 +87,11 @@
     "vite-plugin-pwa": "^0.17.4",
     "vite-plugin-static-copy": "^1.0.0"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not op_mini all"
-  ]
+  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "postcss": {
+    "plugins": {
+      "tailwindcss": {},
+      "autoprefixer": {}
+    }
+  }
 }
