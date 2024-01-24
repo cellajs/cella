@@ -1,15 +1,17 @@
 import PublicPage from '~/components/public-page';
 
-const Privacy = () => {
+export const PrivacyText = () => {
+  return <p>Put privacy statement here</p>;
+};
+
+export const Privacy = () => {
   return (
     <PublicPage title="Privacy Policy">
       <section className="py-16 bg-background">
         <div className="mx-auto max-w-[48rem] px-4 md:px-8 font-light min-h-screen">
-          <p>Put privacy policy here</p>
+          <PrivacyText />
         </div>
       </section>
     </PublicPage>
   );
 };
-
-export default Privacy;

@@ -73,7 +73,7 @@ const Pricing = () => {
 
             <ul className="mt-4 space-y-2">
               {plan.features.map((feature, index) => (
-                <li key={`plan-feature-${index}`} className="flex text-sm font-light items-center">
+                <li key={`${plan.title}-${index}`} className="flex text-sm font-light items-center">
                   <Check className="mr-2 p-1 text-sm text-success" />
                   {feature}
                 </li>

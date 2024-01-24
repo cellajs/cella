@@ -13,6 +13,7 @@ import { acceptOrganizationInvite } from '~/api/api';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { LegalNotice } from './sign-up-form';
 
 const formSchema = acceptInvitationToOrganizationJsonSchema;
 
@@ -51,7 +52,9 @@ const Accept = () => {
         <h1 className="text-2xl text-center">
           Accept invitation <br /> <span className="font-light text-xl">for {'"email here"'}</span>
         </h1>
-        <p className="font-light text-sm">Set a password to complete your account. By accepting you agree to the terms & privacy policy.</p>
+
+        <LegalNotice />
+
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
