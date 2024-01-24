@@ -1,5 +1,5 @@
 import { swaggerUI } from '@hono/swagger-ui';
-import config from 'config';
+import { config } from 'config';
 import { CustomHono } from '../types/common';
 
 const openAPITags = [

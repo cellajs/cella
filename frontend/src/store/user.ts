@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
-import type {} from '@redux-devtools/extension';
+import type { } from '@redux-devtools/extension';
 
-import config from 'config';
+import { config } from 'config';
 import { immer } from 'zustand/middleware/immer';
 import { client } from '~/api/api';
 import { User } from '~/types';

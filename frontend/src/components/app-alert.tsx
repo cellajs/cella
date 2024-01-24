@@ -1,4 +1,4 @@
-import config from 'config';
+import { config } from 'config';
 import { Info, X } from 'lucide-react';
 import { Alert, AlertDescription } from '~/components/ui/alert';
 import { useAlertsStore } from '~/store/alerts';

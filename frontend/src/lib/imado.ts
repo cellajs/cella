@@ -1,7 +1,7 @@
 import { UploadResult, Uppy, UppyOptions } from '@uppy/core';
 
 import Tus from '@uppy/tus';
-import config from 'config';
+import { config } from 'config';
 import { getUploadToken } from '../api/api';
 import { UploadParams, UploadType } from '../types';
 

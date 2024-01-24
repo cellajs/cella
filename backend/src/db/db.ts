@@ -1,4 +1,4 @@
-import config from 'config';
+import { config } from 'config';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { env } from 'env';
 import postgres from 'postgres';

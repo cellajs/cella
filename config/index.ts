@@ -3,11 +3,11 @@ import development from './development';
 import production from './production';
 import tunnel from './tunnel';
 
-export function isObject(item: object) {
+function isObject(item: object) {
   return item && typeof item === 'object' && !Array.isArray(item);
 }
 
-export function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...sources: U[]) {
+function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...sources: U[]) {
   if (!sources.length) return target;
   const source = sources.shift();
 
@@ -33,6 +33,4 @@ const configVersions = {
 
 type Version = keyof typeof configVersions;
 
-const config = mergeDeep(_default, configVersions[process.env.NODE_ENV as Version]);
-
-export default config;
+export const config = mergeDeep(_default, configVersions[process.env.NODE_ENV as Version]);

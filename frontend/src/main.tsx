@@ -1,6 +1,6 @@
 import './index.css';
 
-import { getI18n } from 'i18n/index';
+import { getI18n } from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Theming } from '~/hooks/useTheme';

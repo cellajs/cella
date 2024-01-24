@@ -5,7 +5,7 @@ import { PublicNav } from '~/components/public-nav';
 import { buttonVariants } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 
-import config from 'config';
+import { config } from 'config';
 import { ArrowDown } from 'lucide-react';
 import { useEffect } from 'react';
 // import Counters from './counters';

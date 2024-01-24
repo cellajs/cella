@@ -1,5 +1,5 @@
 import sendgrid from '@sendgrid/mail';
-import config from 'config';
+import { config } from 'config';
 import { env } from 'env';
 
 sendgrid.setApiKey(env.SENDGRID_API_KEY ?? '');

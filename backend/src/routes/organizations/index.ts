@@ -1,10 +1,10 @@
 import { render } from '@react-email/render';
-import config from 'config';
+import { config } from 'config';
 import { AnyColumn, SQL, and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
-import InviteUserToOrganizationEmail from 'emails/emails/invite';
-import emailSender from 'emails/index';
+import emailSender from 'emails';
+import InviteUserToOrganizationEmail from 'emails/invite';
 import { setCookie } from 'hono/cookie';
-import { getI18n } from 'i18n/index';
+import { getI18n } from 'i18n';
 import { TimeSpan, User, generateId } from 'lucia';
 import { nanoid } from 'nanoid';
 import { createDate, isWithinExpirationDate } from 'oslo';

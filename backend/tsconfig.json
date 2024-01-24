@@ -19,13 +19,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-
-    "paths": {
-      "i18n/*": ["../i18n/*"],
-      "config": ["../config/index.ts"],
-      "env": ["../env/env.ts"],
-      "emails/*": ["../emails/*"]
-    }
   },
-  "include": ["src", "../config/index.ts", "../env/env.ts", "drizzle.config.ts"]
+  "include": ["src", "drizzle.config.ts"]
 }

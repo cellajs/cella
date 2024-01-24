@@ -1,5 +1,5 @@
 import { ImadoTus } from '@cellajs/imado';
-import config from 'config';
+import { config } from 'config';
 import { env } from 'env';
 
 const tus = ImadoTus({

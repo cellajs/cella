@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { MiddlewareHandler } from 'hono';
-import { getI18n } from 'i18n/index';
+import { getI18n } from 'i18n';
 import { User } from 'lucia';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';

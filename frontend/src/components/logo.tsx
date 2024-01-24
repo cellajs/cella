@@ -1,4 +1,4 @@
-import config from 'config';
+import { config } from 'config';
 import { useThemeStore } from '~/store/theme';
 
 export interface LogoProps extends React.SVGProps<SVGSVGElement> {

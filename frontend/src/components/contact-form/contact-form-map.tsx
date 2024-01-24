@@ -1,4 +1,4 @@
-import config from 'config';
+import { config } from 'config';
 import L from 'leaflet';
 import { useEffect, useRef } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';

@@ -2,6 +2,7 @@
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": ["NODE_ENV", "VITE_*"],
   "globalDotEnv": ["env/.env"],
+  "globalDependencies": ["config"],
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],

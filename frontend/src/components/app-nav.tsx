@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import config from 'config';
+import { config } from 'config';
 import { Bell, Home, LucideProps, Menu, Search, User, Wrench } from 'lucide-react';
 import React, { Fragment } from 'react';
 import { Button } from '~/components/ui/button';

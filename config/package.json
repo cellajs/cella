@@ -1,0 +1,6 @@
+{
+    "name": "config",
+    "exports": {
+        ".": "./index.ts"
+    }
+}

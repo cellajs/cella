@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import config from 'config';
+import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { signUp } from '~/api/api';
 import { dialog } from '~/components/dialoger/state';
