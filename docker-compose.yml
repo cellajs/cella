@@ -9,8 +9,10 @@ services:
     restart: always
     ports:
       - 4000:4000
-    networks:
-      - app_network
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/cella
 
   frontend:
     container_name: frontend
@@ -20,8 +22,6 @@ services:
     restart: always
     ports:
       - 3000:3000
-    networks:
-      - app_network
 
   db:
     container_name: db
@@ -36,14 +36,6 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - 5432:5432
-    networks:
-      - app_network
 
 volumes:
   postgres-data:
-
-# Define a network, which allows containers to communicate
-# with each other, by using their container name as a hostname
-networks:
-  app_network:
-    external: true

@@ -13,7 +13,7 @@ export default defineConfig(() => {
 
   const viteConfig = {
     server: {
-      host: frontendUrl.hostname,
+      host: '0.0.0.0',
       port: Number(frontendUrl.port),
       https: frontendUrl.protocol === 'https:',
     },

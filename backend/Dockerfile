@@ -5,7 +5,7 @@ FROM node:20-alpine AS alpine
 
 # Setup pnpm and turbo on the alpine base
 FROM alpine as base
-RUN npm install pnpm turbo --global
+RUN yarn global add pnpm turbo
 RUN pnpm config set store-dir ~/.pnpm-store
 
 FROM base AS builder
@@ -15,7 +15,8 @@ RUN apk update
 # Set working directory
 WORKDIR /app
 COPY . .
-RUN turbo prune config backend --docker
+
+RUN turbo prune backend --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
@@ -27,11 +28,13 @@ WORKDIR /app
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 RUN pnpm install --ignore-scripts
 
 # Build the project and its dependencies
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
+COPY tsconfig.json tsconfig.json
 
 # Uncomment and use build args to enable remote caching
 # ARG TURBO_TEAM
@@ -40,15 +43,16 @@ COPY turbo.json turbo.json
 # ARG TURBO_TOKEN
 # ENV TURBO_TOKEN=$TURBO_TOKEN
 
-RUN pnpm turbo build --filter=backend...
+RUN pnpm turbo build:dev --filter=backend...
 
 FROM base AS runner
 WORKDIR /app
 
 # Don't run production as root
-RUN addgroup --system --gid 1001 backend
-RUN adduser --system --uid 1001 backend
-USER backend
+# RUN addgroup --system --gid 1001 backend
+# RUN adduser --system --uid 1001 backend
+# USER backend
 COPY --from=installer /app .
 
-CMD cd backend && pnpm start
+# Run migrations and start the server
+CMD cd backend && NODE_ENV=development pnpm start

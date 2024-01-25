@@ -5,7 +5,7 @@ FROM node:20-alpine AS alpine
 
 # Setup pnpm and turbo on the alpine base
 FROM alpine as base
-RUN npm install pnpm turbo --global
+RUN yarn global add pnpm turbo
 RUN pnpm config set store-dir ~/.pnpm-store
 
 FROM base AS builder
@@ -27,11 +27,13 @@ WORKDIR /app
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 RUN pnpm install --ignore-scripts
 
 # Build the project
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
+COPY tsconfig.json tsconfig.json
 
 # Uncomment and use build args to enable remote caching
 # ARG TURBO_TEAM
@@ -40,15 +42,15 @@ COPY turbo.json turbo.json
 # ARG TURBO_TOKEN
 # ENV TURBO_TOKEN=$TURBO_TOKEN
 
-RUN pnpm turbo build --filter=frontend...
+RUN pnpm turbo build:dev --filter=frontend...
 
 FROM base AS runner
 WORKDIR /app
 
 # Don't run production as root
-RUN addgroup --system --gid 1001 frontend
-RUN adduser --system --uid 1001 frontend
-USER frontend
+# RUN addgroup --system --gid 1001 frontend
+# RUN adduser --system --uid 1001 frontend
+# USER frontend
 COPY --from=installer /app .
 
-CMD cd frontend && pnpm start
+CMD cd frontend && NODE_ENV=development pnpm start

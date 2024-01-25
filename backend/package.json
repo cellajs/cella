@@ -6,7 +6,7 @@
     "node": ">=20.9.0 <21.0.0"
   },
   "scripts": {
-    "start": "NODE_ENV=production tsx dist/index.cjs",
+    "start": "tsx dist/index.cjs",
     "build": "NODE_ENV=production tsup",
     "build:dev": "NODE_ENV=development tsup",
     "check:types": "tsc --noEmit",
