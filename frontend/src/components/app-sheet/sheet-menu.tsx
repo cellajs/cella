@@ -1,5 +1,4 @@
-import { Dispatch, SetStateAction, createContext, memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { getUserMenu } from '~/api/api';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Page, UserMenu } from '~/types';
 
 import { Checkbox } from '~/components/ui/checkbox';
@@ -21,12 +20,6 @@ export type SectionItem = {
 // Here you declare the menu sections
 export const menuSections: SectionItem[] = [{ name: 'organizations', type: 'organization', createForm: <CreateOrganizationForm dialog /> }];
 
-interface MenuContextValue {
-  menu: UserMenu;
-  setMenu: React.Dispatch<SetStateAction<UserMenu>>;
-}
-
-export const MenuContext = createContext({} as MenuContextValue);
 
 interface ShowSectionsType {
   [key: string]: boolean;
@@ -49,24 +42,9 @@ export const initialSearchResults = menuSections.reduce(
 
 export type SearchResultsType = typeof initialSearchResults;
 
-export const useMenu = (): [UserMenu, Dispatch<SetStateAction<UserMenu>>] => {
-  const initialMenuState = menuSections.reduce<UserMenu>((acc, section) => {
-    acc[section.name as keyof UserMenu] = { active: [], inactive: [], canCreate: false };
-    return acc;
-  }, {} as UserMenu);
-
-  const [menu, setMenu] = useState<UserMenu>(initialMenuState);
-
-  useEffect(() => {
-    getUserMenu().then(setMenu);
-  }, []);
-
-  return [menu, setMenu];
-};
-
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
-  const [menu, setMenu] = useMenu();
+  const { menu } = useNavigationStore()
   const isMobile = useMediaQuery('(max-width: 1024px)');
 
   const { keepMenuOpen, toggleKeepMenu, activeSections, setActiveSections, setSheet } = useNavigationStore((state) => ({
@@ -147,10 +125,10 @@ export const SheetMenu = memo(() => {
   }, []);
 
   return (
-    <MenuContext.Provider value={{ menu, setMenu }}>
+    <>
       <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSearchResultsChange={handleSearchResultsChange} />
 
-      {searchTerm ? (
+      {searchTerm && (
         <div className="search-results mt-6">
           {searchResultsListItems().length > 0 ? (
             searchResultsListItems()
@@ -162,28 +140,28 @@ export const SheetMenu = memo(() => {
             </div>
           )}
         </div>
-      ) : (
-        <>
-          {renderedSections}
-
-          <div className="my-4 flex items-center justify-center space-x-2">
-            <Checkbox
-              id="keepMenuOpen"
-              checked={keepMenuOpen}
-              onCheckedChange={handleCheckboxChange}
-              aria-label="Keep menu open"
-              className="duration-250 opacity-0 transition-opacity ease-in-out lg:translate-x-0 lg:opacity-100"
-            />
-            <label
-              htmlFor="keepMenuOpen"
-              className="duration-250 cursor-pointer select-none text-sm font-medium leading-none opacity-0 transition-opacity ease-in-out lg:translate-x-0 lg:opacity-100"
-            >
-              Keep menu open
-            </label>
-          </div>
-        </>
       )}
-    </MenuContext.Provider>
+
+      {!searchTerm && renderedSections}
+
+      {!searchTerm && (
+        <div className="my-4 flex items-center justify-center space-x-2">
+          <Checkbox
+            id="keepMenuOpen"
+            checked={keepMenuOpen}
+            onCheckedChange={handleCheckboxChange}
+            aria-label="Keep menu open"
+            className="duration-250 opacity-0 transition-opacity ease-in-out lg:translate-x-0 lg:opacity-100"
+          />
+          <label
+            htmlFor="keepMenuOpen"
+            className="duration-250 cursor-pointer select-none text-sm font-medium leading-none opacity-0 transition-opacity ease-in-out lg:translate-x-0 lg:opacity-100"
+          >
+            Keep menu open
+          </label>
+        </div>
+      )}
+    </>
   );
 });
 

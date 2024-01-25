@@ -1,9 +1,15 @@
+import { useEffect } from 'react';
 import { Sheet, SheetContent } from '~/components/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
 
 const AppSheet = () => {
-  const { activeSheet, setSheet } = useNavigationStore();
+  const { activeSheet, setSheet, getMenu } = useNavigationStore();
   const isMirrorSide = activeSheet?.mirrorOnMobile;
+
+  // Get menu on mount
+  useEffect(() => {
+    getMenu();
+  }, [getMenu]);
 
   return (
     <Sheet open={!!activeSheet} modal={false}>
