@@ -104,7 +104,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
             form.setError('slug', {
               type: 'manual',
               message: t('error.slug_already_exists', {
-                defaultValue: 'This username is already taken',
+                defaultValue: 'This user handle is already taken',
               }),
             });
           } else {
@@ -140,8 +140,8 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t('label.username', {
-                  defaultValue: 'Username',
+                {t('label.user_handle', {
+                  defaultValue: 'User handle',
                 })}
               </FormLabel>
               <FormControl>

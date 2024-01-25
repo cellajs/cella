@@ -16,12 +16,12 @@ interface Props {
 const baseUrl = config.frontendUrl;
 
 export const InviteUserToOrganizationEmail = ({
-  username = 'John Doe',
+  username = 'Unknown name',
   userImage = '../static/user.png',
-  orgName = 'Microsoft',
+  orgName = 'Unknown organization',
   orgImage = '../static/org.png',
   inviteUrl = '',
-  invitedBy = 'Michael Scott',
+  invitedBy = 'Unknown inviter',
   i18n = getI18n('backend'),
 }: Props) => {
   return (
@@ -56,7 +56,7 @@ export const InviteUserToOrganizationEmail = ({
                 dangerouslySetInnerHTML={{
                   __html: i18n.t('email.invited_to_organization__description', {
                     defaultValue:
-                      'Hi {{username}}, you has been invited to <strong>{{orgName}}</strong> on <strong>Cella</strong> by <strong>{{invitedBy}}</strong>',
+                      'Hi {{username}}, you have been invited to <strong>{{orgName}}</strong> on <strong>Cella</strong> by <strong>{{invitedBy}}</strong>',
                     username,
                     invitedBy,
                     orgName,

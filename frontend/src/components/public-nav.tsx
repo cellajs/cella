@@ -94,7 +94,7 @@ export function PublicNav() {
               </Button>
             </div>
             <ThemeDropdown />
-            <Link to="/auth/sign-in" className={cn('ml-2', buttonVariants())}>
+            <Link to="/auth/sign-in" preload={false} className={cn('ml-2', buttonVariants())}>
               Sign in
             </Link>
           </div>

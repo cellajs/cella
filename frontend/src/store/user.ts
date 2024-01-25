@@ -1,11 +1,9 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
-import type { } from '@redux-devtools/extension';
-
 import { config } from 'config';
 import { immer } from 'zustand/middleware/immer';
-import { client } from '~/api/api';
+import { client, getMe } from '~/api/api';
 import { User } from '~/types';
 
 type PartialUser = Partial<User>;
@@ -37,25 +35,16 @@ export const useUserStore = create<UserState>()(
           });
         },
         async getMe() {
-          const response = await client.me.$get();
-          const json = await response.json();
-
-          if ('error' in json) {
+          const user = await getMe();
+          if (!user) {
             set({ user: null as unknown as User });
-
             return null;
           }
-
-          const user = json.data;
-
           set({ user: user, lastUser: { email: user.email, name: user.name, id: user.id, slug: user.slug } });
-
-          return json.data;
+          return user;
         },
-
         async signOut() {
           await client['sign-out'].$get();
-
           set({ user: null as unknown as User });
         },
       })),

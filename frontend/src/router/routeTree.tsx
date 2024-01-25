@@ -46,14 +46,20 @@ const AuthRoute = new Route({
   id: 'auth-layout',
   getParentRoute: () => rootRoute,
   beforeLoad: async () => {
-    const getMe = useUserStore.getState().getMe;
+    // If stored user, redirect to home
+    const storedUser = useUserStore.getState().user;
+    if (storedUser) throw redirect({ to: '/', replace: true });
 
-    const user = await getMe();
-
-    // redirect to / if signed in
-    if (user) {
-      throw redirect({ to: '/', replace: true });
+    try {
+      const getMe = useUserStore.getState().getMe;
+      await getMe();
+    } catch (error) {
+      return console.error('Not authenticated');
     }
+
+    // If authenticated, redirect to home
+    console.log('Authenticated, go to home');
+    throw redirect({ to: '/', replace: true });
   },
   component: () => <Outlet />,
 });
@@ -167,14 +173,14 @@ const IndexRoute = new Route({
 
     if (!storedUser) {
       // If no stored user and no desired path, redirect to about
-      if (location.pathname === '/') throw redirect({ to: '/about' });
+      if (location.pathname === '/') throw redirect({ to: '/about', replace: true });
 
-      const getMe = useUserStore.getState().getMe;
-      const user = await getMe();
-
-      // redirect to sign-in if not signed in, else proceed to any app route
-      if (!user) {
-        throw redirect({ to: '/auth/sign-in', search: { redirect: location.pathname } });
+      try {
+        const getMe = useUserStore.getState().getMe;
+        await getMe();
+      } catch {
+        console.log('Not authenticated, redirect to sign in');
+        throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
       }
     }
   },
