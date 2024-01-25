@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { Page, UserMenu } from '~/types';
 
 import { Checkbox } from '~/components/ui/checkbox';
@@ -14,22 +14,11 @@ import { MenuSection } from './sheet-menu-section';
 export type SectionItem = {
   name: string;
   type: string;
-  createForm: React.ReactNode;
+  createForm?: React.ReactNode;
 };
 
 // Here you declare the menu sections
 export const menuSections: SectionItem[] = [{ name: 'organizations', type: 'organization', createForm: <CreateOrganizationForm dialog /> }];
-
-
-interface ShowSectionsType {
-  [key: string]: boolean;
-}
-
-// Set all sections to false
-const initialShowSectionsState = menuSections.reduce((acc, section) => {
-  acc[section.name] = false;
-  return acc;
-}, {} as ShowSectionsType);
 
 // Set search results to empty array for each menu type
 export const initialSearchResults = menuSections.reduce(
@@ -44,45 +33,13 @@ export type SearchResultsType = typeof initialSearchResults;
 
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
-  const { menu } = useNavigationStore()
+  const { menu } = useNavigationStore();
   const isMobile = useMediaQuery('(max-width: 1024px)');
 
-  const { keepMenuOpen, toggleKeepMenu, activeSections, setActiveSections, setSheet } = useNavigationStore((state) => ({
-    keepMenuOpen: state.keepMenuOpen,
-    toggleKeepMenu: state.toggleKeepMenu,
-    activeSections: state.activeSections,
-    setActiveSections: state.setActiveSections,
-    setSheet: state.setSheet,
-  }));
+  const { keepMenuOpen, toggleKeepMenu, activeSections, toggleSection, setSheet } = useNavigationStore();
 
-  const handleKeepMenuChange = (isMenuOpen: boolean) => {
-    toggleKeepMenu(isMenuOpen);
-  };
-
-  const [showSections, setShowSections] = useState<ShowSectionsType>(initialShowSectionsState);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<SearchResultsType>(initialSearchResults);
-
-  // Handle keep menu open change
-  const handleCheckboxChange = useCallback(
-    (checked: boolean | 'indeterminate') => {
-      handleKeepMenuChange?.(checked === true);
-    },
-    [handleKeepMenuChange],
-  );
-
-  // Toggle section visibility
-  const toggleSection = useCallback(
-    (section: keyof ShowSectionsType) => {
-      setShowSections((prev) => {
-        const updatedSections = { ...prev, [section]: !prev[section] };
-
-        setActiveSections(updatedSections);
-        return updatedSections;
-      });
-    },
-    [setActiveSections],
-  );
 
   // Handle menu item click
   const handleItemClick = () => {
@@ -106,19 +63,15 @@ export const SheetMenu = memo(() => {
             key={section.name}
             section={section}
             data={menuSection}
-            isSectionVisible={showSections[section.name as keyof ShowSectionsType]}
+            isSectionVisible={activeSections[section.name]}
             toggleSection={() => toggleSection(section.name)}
             handleItemClick={handleItemClick}
             itemCount={menuSection.active.length + menuSection.inactive.length}
           />
         );
       }),
-    [menu, showSections, toggleSection, handleItemClick],
+    [menu, activeSections, toggleSection, handleItemClick],
   );
-
-  useEffect(() => {
-    setShowSections(activeSections);
-  }, [activeSections]);
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {
     setSearchResults(results);
@@ -149,7 +102,7 @@ export const SheetMenu = memo(() => {
           <Checkbox
             id="keepMenuOpen"
             checked={keepMenuOpen}
-            onCheckedChange={handleCheckboxChange}
+            onCheckedChange={toggleKeepMenu}
             aria-label="Keep menu open"
             className="duration-250 opacity-0 transition-opacity ease-in-out lg:translate-x-0 lg:opacity-100"
           />

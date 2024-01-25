@@ -34,7 +34,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">No {section.type} yet</li>;
     }
 
-    if (items.length === 0 && data.canCreate) {
+    if (items.length === 0 && data.canCreate && section.createForm) {
       return (
         <div className="flex items-center">
           <Button className="w-full" variant="ghost" onClick={createDialog}>
@@ -59,7 +59,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
 
           <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
         </Button>
-        {isSectionVisible && data.canCreate && (
+        {isSectionVisible && data.canCreate && section.createForm && (
           <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
             <Plus size={16} />
           </Button>
