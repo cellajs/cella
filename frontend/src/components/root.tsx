@@ -1,5 +1,5 @@
 import { Outlet, ScrollRestoration } from '@tanstack/react-router';
-import config from 'config';
+import { config } from 'config';
 import { Suspense, lazy } from 'react';
 
 import { Dialoger } from '~/components/dialoger';

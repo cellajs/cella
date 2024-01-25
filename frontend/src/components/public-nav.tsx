@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import config from 'config';
+import { config } from 'config';
 import { Book, Github } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useInView } from 'react-intersection-observer';

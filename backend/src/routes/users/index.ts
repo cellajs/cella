@@ -1,7 +1,7 @@
 import { AnyColumn, SQL, and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm';
 
-import config from 'config';
-import { getI18n } from 'i18n/index';
+import { config } from 'config';
+import { getI18n } from 'i18n';
 import { User } from 'lucia';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';

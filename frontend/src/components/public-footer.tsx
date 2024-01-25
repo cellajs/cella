@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
-import config from 'config';
+import { config } from 'config';
 import { Github, Twitter } from 'lucide-react';
 
 import Logo from '~/components/logo';

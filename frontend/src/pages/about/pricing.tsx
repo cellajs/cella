@@ -1,4 +1,4 @@
-import config from 'config';
+import { config } from 'config';
 import { Check, Sparkles } from 'lucide-react';
 import ContactForm from '~/components/contact-form/contact-form';
 import { dialog } from '~/components/dialoger/state';

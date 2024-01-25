@@ -1,5 +1,5 @@
 import type { AppRoute } from 'backend/server';
-import config from 'config';
+import { config } from 'config';
 import { hc } from 'hono/client';
 import { Member, UploadParams, UploadType } from '~/types';
 

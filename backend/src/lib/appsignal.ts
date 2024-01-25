@@ -1,5 +1,5 @@
 import { Appsignal } from '@appsignal/nodejs';
-import config from 'config';
+import { config } from 'config';
 import { env } from 'env';
 
 // Monitoring is active when debug is enabled or when not in development mode

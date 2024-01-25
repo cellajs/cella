@@ -1,5 +1,5 @@
 import { ImadoUrl } from '@cellajs/imado';
-import config from 'config';
+import { config } from 'config';
 import { env } from 'env';
 
 export const getImadoUrl = new ImadoUrl({

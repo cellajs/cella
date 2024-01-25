@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
-import config from 'config';
+import { config } from 'config';
 import { immer } from 'zustand/middleware/immer';
 import { client, getMe } from '~/api/api';
 import { User } from '~/types';

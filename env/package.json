@@ -1,0 +1,6 @@
+{
+    "name": "env",
+    "exports": {
+        ".": "./index.ts"
+    }
+}

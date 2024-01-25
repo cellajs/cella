@@ -1,5 +1,5 @@
 import { useRouterState } from '@tanstack/react-router';
-import config from 'config';
+import { config } from 'config';
 import { Home, RefreshCw } from 'lucide-react';
 import React from 'react';
 import { AppFooter } from '~/components/app-footer';

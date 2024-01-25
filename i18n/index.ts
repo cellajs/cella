@@ -3,7 +3,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
 
-import config from '../config/index';
+import { config } from 'config';
 import enBackend from './locales/en/backend.json';
 import enFrontend from './locales/en/frontend.json';
 import nlBackend from './locales/nl/backend.json';

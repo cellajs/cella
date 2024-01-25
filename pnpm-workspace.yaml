@@ -6,3 +6,5 @@ packages:
   - 'emails'
   - 'emails/.react-email'
   - 'tus'
+  - 'config'
+  - 'env'

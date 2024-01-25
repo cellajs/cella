@@ -23,13 +23,8 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"],
-      "backend/*": ["../backend/src/*"],
-      "i18n/*": ["../i18n/*"],
-      "env": ["../env/env.ts"],
-      "config": ["../config/index.ts"],
-      "emails/*": ["../emails/*"]
     },
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src", "vite.config.ts", "../env/env.ts", "../config/index.ts"]
+  "include": ["src", "vite.config.ts"]
 }

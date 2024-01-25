@@ -1,7 +1,7 @@
 import { Send } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-import config from 'config';
+import { config } from 'config';
 import { toast } from 'sonner';
 import { Button } from '~/components/ui/button';
 

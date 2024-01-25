@@ -1,4 +1,4 @@
-import config from 'config';
+import { config } from 'config';
 import { useInView } from 'react-intersection-observer';
 import { Badge } from '~/components/ui/badge';
 import { useThemeStore } from '~/store/theme';

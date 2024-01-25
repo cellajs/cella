@@ -5,7 +5,7 @@ import { UserConfig, defineConfig, splitVendorChunkPlugin } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import config from '../config/index.ts';
+import { config } from '../config/index';
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
@@ -13,7 +13,7 @@ export default defineConfig(() => {
 
   const viteConfig = {
     server: {
-      host: frontendUrl.hostname,
+      host: '0.0.0.0',
       port: Number(frontendUrl.port),
       https: frontendUrl.protocol === 'https:',
     },
@@ -102,10 +102,6 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '~': path.resolve(__dirname, './src'),
-        backend: path.resolve(__dirname, '../backend/src'),
-        i18n: path.resolve(__dirname, '../i18n'),
-        config: path.resolve(__dirname, '../config/index.ts'),
-        emails: path.resolve(__dirname, '../emails'),
       },
     },
     define: {

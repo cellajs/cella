@@ -1,11 +1,11 @@
-import config from 'config';
+import { config } from 'config';
 import { compress } from 'hono/compress';
 import { getCookie } from 'hono/cookie';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
-import { getI18n } from 'i18n/index';
+import { getI18n } from 'i18n';
 import { CustomHono } from '../../types/common';
 import { customLogger } from './custom-logger';
 

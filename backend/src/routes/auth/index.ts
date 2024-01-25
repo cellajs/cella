@@ -1,17 +1,17 @@
 import { render } from '@react-email/render';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import { and, eq } from 'drizzle-orm';
-import VerificationEmail from 'emails/emails/email-verification';
-import ResetPasswordEmail from 'emails/emails/reset-password';
+import VerificationEmail from 'emails/email-verification';
+import ResetPasswordEmail from 'emails/reset-password';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { Argon2id } from 'oslo/password';
 import postgres from 'postgres';
 
-import config from 'config';
-import emailSender from 'emails/index';
-import { getI18n } from 'i18n/index';
+import { config } from 'config';
+import emailSender from 'emails';
+import { getI18n } from 'i18n';
 import { db } from '../../db/db';
 import { auth, githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';
@@ -22,20 +22,20 @@ import { CustomHono, ErrorResponse } from '../../types/common';
 import { customLogger } from '../middlewares/custom-logger';
 import { checkSlugRoute } from '../users/schema';
 import {
-  checkEmailRoute,
-  githubSignInCallbackRoute,
-  githubSignInRoute,
-  googleSignInCallbackRoute,
-  googleSignInRoute,
-  microsoftSignInCallbackRoute,
-  microsoftSignInRoute,
-  resetPasswordCallbackRoute,
-  resetPasswordRoute,
-  sendVerificationEmailRoute,
-  signInRoute,
-  signOutRoute,
-  signUpRoute,
-  verifyEmailRoute,
+    checkEmailRoute,
+    githubSignInCallbackRoute,
+    githubSignInRoute,
+    googleSignInCallbackRoute,
+    googleSignInRoute,
+    microsoftSignInCallbackRoute,
+    microsoftSignInRoute,
+    resetPasswordCallbackRoute,
+    resetPasswordRoute,
+    sendVerificationEmailRoute,
+    signInRoute,
+    signOutRoute,
+    signUpRoute,
+    verifyEmailRoute,
 } from './schema';
 
 const i18n = getI18n('backend');

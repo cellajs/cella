@@ -1,4 +1,4 @@
-import config from 'config';
+import { config } from 'config';
 import { ArrowUpRight, CalendarCheck, Mail, MapPin, PhoneCall } from 'lucide-react';
 
 import ContactFormMap from '~/components/contact-form/contact-form';

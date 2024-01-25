@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateUserJsonSchema } from 'backend/schemas/user';
-import config from 'config';
+import { config } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

@@ -1,6 +1,6 @@
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle';
 import { GitHub, Google, MicrosoftEntraId } from 'arctic';
-import config from 'config';
+import { config } from 'config';
 import { Lucia, TimeSpan } from 'lucia';
 
 import { env } from 'env';

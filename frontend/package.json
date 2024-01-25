@@ -14,6 +14,9 @@
     "preview": "vite preview --port 3000"
   },
   "dependencies": {
+    "config": "workspace:*",
+    "i18n": "workspace:*",
+    "backend": "workspace:*",
     "@appsignal/javascript": "^1.3.28",
     "@appsignal/react": "^1.0.23",
     "@hookform/resolvers": "^3.3.4",
@@ -87,7 +90,11 @@
     "vite-plugin-pwa": "^0.17.4",
     "vite-plugin-static-copy": "^1.0.0"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "tailwindcss": {},
