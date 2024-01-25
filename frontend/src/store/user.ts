@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
-import type {} from '@redux-devtools/extension';
-
 import config from 'config';
 import { immer } from 'zustand/middleware/immer';
 import { client, getMe } from '~/api/api';
@@ -42,15 +40,11 @@ export const useUserStore = create<UserState>()(
             set({ user: null as unknown as User });
             return null;
           }
-
           set({ user: user, lastUser: { email: user.email, name: user.name, id: user.id, slug: user.slug } });
-
           return user;
         },
-
         async signOut() {
           await client['sign-out'].$get();
-
           set({ user: null as unknown as User });
         },
       })),

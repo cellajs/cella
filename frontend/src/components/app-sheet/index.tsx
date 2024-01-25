@@ -8,7 +8,7 @@ const AppSheet = () => {
   const { getMe } = useUserStore();
   const isMirrorSide = activeSheet?.mirrorOnMobile;
 
-  // TODO: Perhaps move or refactor? Get menu and update user on mount
+  // TODO: Perhaps move or refactor? Get menu and update user on mount. After fresh auth, getMe is called twice.
   useEffect(() => {
     getMenu();
     getMe();

@@ -46,17 +46,20 @@ const AuthRoute = new Route({
   id: 'auth-layout',
   getParentRoute: () => rootRoute,
   beforeLoad: async () => {
-    const getMe = useUserStore.getState().getMe;
+    // If stored user, redirect to home
+    const storedUser = useUserStore.getState().user;
+    if (storedUser) throw redirect({ to: '/', replace: true });
 
     try {
-      const user = await getMe();
-      if (user) {
-        console.log('Authenticated, go to home');
-        throw redirect({ to: '/', replace: true });
-      }
+      const getMe = useUserStore.getState().getMe;
+      await getMe();
     } catch (error) {
-      console.log('Not authenticated');
+      return console.error('Not authenticated');
     }
+
+    // If authenticated, redirect to home
+    console.log('Authenticated, go to home');
+    throw redirect({ to: '/', replace: true });
   },
   component: () => <Outlet />,
 });
