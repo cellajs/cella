@@ -51,11 +51,11 @@ const AuthRoute = new Route({
     try {
       const user = await getMe();
       if (user) {
-        console.log('Authenticated, go to home')
+        console.log('Authenticated, go to home');
         throw redirect({ to: '/', replace: true });
       }
     } catch (error) {
-      console.log('Not authenticated')
+      console.log('Not authenticated');
     }
   },
   component: () => <Outlet />,
@@ -170,14 +170,13 @@ const IndexRoute = new Route({
 
     if (!storedUser) {
       // If no stored user and no desired path, redirect to about
-      if (location.pathname === '/') throw redirect({ to: '/about', replace: true});
+      if (location.pathname === '/') throw redirect({ to: '/about', replace: true });
 
       try {
-      const getMe = useUserStore.getState().getMe;
-      await getMe();
-      }
-      catch {
-        console.log('Not authenticated, redirect to sign in')
+        const getMe = useUserStore.getState().getMe;
+        await getMe();
+      } catch {
+        console.log('Not authenticated, redirect to sign in');
         throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
       }
     }

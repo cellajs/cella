@@ -38,7 +38,7 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSheet = component;
             });
           },
-          async getMenu () {
+          async getMenu() {
             const menu = await getUserMenu();
             set((state) => {
               state.menu = menu as UserMenu;
