@@ -3,7 +3,7 @@ import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardFooter } from '~/components/ui/card';
+import { Card, CardContent } from '~/components/ui/card';
 
 import { useContext } from 'react';
 import { OrganizationContext } from '~/pages/organization';
@@ -18,7 +18,7 @@ const OrganizationSettings = () => {
   const { organizationIdentifier } = useParams({ strict: false });
 
   return (
-    <Card className="sm:w-[500px] mx-auto">
+    <Card className="sm:w-[600px] mx-auto">
       <CardContent className="pt-6">
         <UpdateOrganizationForm
           organization={organization}
@@ -34,8 +34,14 @@ const OrganizationSettings = () => {
             }
           }}
         />
-      </CardContent>
-      <CardFooter className="flex">
+
+        <hr className="my-6" />
+
+        <p className="font-light mb-4 text-sm">
+          Want to permanently delete the organization <strong>{organization.name}</strong>?
+          Use the button below. Please note that this action is irreversible.
+        </p>
+
         <Button
           aria-label="Delete"
           variant="destructive"
@@ -66,7 +72,7 @@ const OrganizationSettings = () => {
             })}
           </span>
         </Button>
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 };
