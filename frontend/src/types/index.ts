@@ -1,12 +1,6 @@
 import { InferResponseType } from 'hono/client';
 import { client } from '~/api/api';
 
-// enum UserRole {
-//   Student = 'student',
-//   Staff = 'staff',
-//   Owner = 'owner',
-// }
-
 export enum UploadType {
   Personal,
   Organization,

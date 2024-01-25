@@ -12,7 +12,7 @@ interface Props {
 const baseUrl = config.frontendUrl;
 const resetPasswordUrl = `${baseUrl}/auth/reset-password`;
 
-export const ResetPasswordEmail = ({ username = 'John Doe', resetPasswordLink = 'https://cellajs.com', i18n = getI18n('backend') }: Props) => {
+export const ResetPasswordEmail = ({ username = 'Unknown name', resetPasswordLink = 'https://cellajs.com', i18n = getI18n('backend') }: Props) => {
   return (
     <Html>
       <Head />

@@ -44,7 +44,7 @@ export const useNavigationStore = create<NavigationState>()(
             // TODO: How to get the React Elements in the object after refresh? activeSheet: state.activeSheet,
             activeSections: state.activeSections,
           }),
-          storage: createJSONStorage(() => sessionStorage),
+          storage: createJSONStorage(() => localStorage),
         },
       ),
     ),
