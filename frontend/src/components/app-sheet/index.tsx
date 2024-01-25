@@ -1,15 +1,18 @@
 import { useEffect } from 'react';
 import { Sheet, SheetContent } from '~/components/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
+import { useUserStore } from '~/store/user';
 
 const AppSheet = () => {
   const { activeSheet, setSheet, getMenu } = useNavigationStore();
+  const { getMe } = useUserStore();
   const isMirrorSide = activeSheet?.mirrorOnMobile;
 
-  // Get menu on mount
+  // TODO: Perhaps move or refactor? Get menu and update user on mount
   useEffect(() => {
     getMenu();
-  }, [getMenu]);
+    getMe();
+  }, []);
 
   return (
     <Sheet open={!!activeSheet} modal={false}>

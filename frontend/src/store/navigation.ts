@@ -11,7 +11,7 @@ interface NavigationState {
   activeSheet: NavItem | null;
   setSheet: (activeSheet: NavItem | null) => void;
   menu: UserMenu;
-  getMenu(): Promise<void>;
+  getMenu(): Promise<UserMenu | null>;
   keepMenuOpen: boolean;
   toggleKeepMenu: (status: boolean) => void;
   activeSections: Record<string, boolean>;
@@ -38,11 +38,13 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSheet = component;
             });
           },
-          async getMenu() {
+          async getMenu () {
             const menu = await getUserMenu();
             set((state) => {
-              state.menu = menu;
+              state.menu = menu as UserMenu;
             });
+
+            return menu || null;
           },
           toggleKeepMenu: (status) => {
             set((state) => {

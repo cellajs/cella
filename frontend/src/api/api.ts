@@ -179,6 +179,16 @@ export const resetPassword = async (token: string, password: string) => {
   return;
 };
 
+export const getMe = async () => {
+  const response = await client.me.$get();
+
+  const json = await response.json();
+
+  if ('error' in json) throw new ApiError(response.status, json.error);
+
+  return json.data;
+};
+
 export const getUserMenu = async () => {
   const response = await client.menu.$get();
 
