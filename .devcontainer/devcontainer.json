@@ -1,20 +1,20 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/javascript-node-postgres
 {
-  "name": "Node.js & PostgreSQL",
+  "name": "Cella Devcontainer",
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "features": {
     "ghcr.io/devcontainers-community/npm-features/typescript:1": {},
     "ghcr.io/devcontainers-contrib/features/pnpm:2": {},
-    "ghcr.io/devcontainers-contrib/features/turborepo-npm:1": {}
+    "ghcr.io/devcontainers-contrib/features/turborepo-npm:1": {},
+    "ghcr.io/devcontainers-contrib/features/lefthook-asdf:1": {}
   },
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // This can be used to network with other containers or with the host.
-  // "forwardPorts": [],
   "portsAttributes": {
     "4000": {
       "label": "API port",
@@ -30,15 +30,19 @@
       "label": "frontend port",
       "onAutoForward": "openBrowser",
       "requireLocalPort": true
+    },
+    "5432": {
+      "label": "database port",
+      "onAutoForward": "ignore",
+      "requireLocalPort": true
     }
   },
-  // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "pnpm install && pnpm run migrate",
-  // "postAttachCommand": "pnpm run dev",
+  // Use post commands to run commands after the container is created.
+  "postCreateCommand": "pnpm install && pnpm run migrate && pnpm run seed:users",
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
-      "extensions": ["biomejs.biome"]
+      "extensions": ["biomejs.biome", "gitlens.gitlens"]
     }
   }
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.

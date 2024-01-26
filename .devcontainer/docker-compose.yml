@@ -5,6 +5,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - ./../env/.env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/cella
 
     volumes:
       - ../..:/workspaces:cached
