@@ -24,7 +24,6 @@
     "paths": {
       "~/*": ["./src/*"],
     },
-    "allowSyntheticDefaultImports": true
   },
   "include": ["src", "vite.config.ts"]
 }

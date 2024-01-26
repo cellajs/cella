@@ -2,7 +2,7 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { } from '@redux-devtools/extension';
+import type {} from '@redux-devtools/extension';
 
 import { immer } from 'zustand/middleware/immer';
 
