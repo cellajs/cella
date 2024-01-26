@@ -5,11 +5,11 @@ import { Mode, Theme, useThemeStore } from '~/store/theme';
 import { Ban, Circle, LucideProps, Moon, Sun } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
 
 interface ThemeDropdownProps {

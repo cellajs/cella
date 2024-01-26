@@ -38,8 +38,8 @@ const OrganizationSettings = () => {
         <hr className="my-6" />
 
         <p className="font-light mb-4 text-sm">
-          Want to permanently delete the organization <strong>{organization.name}</strong>?
-          Use the button below. Please note that this action is irreversible.
+          As an admin you can permanently delete the organization <strong>{organization.name}</strong>. All members will loose access to this
+          organization and its data. Please note that this action is irreversible.
         </p>
 
         <Button
@@ -48,6 +48,7 @@ const OrganizationSettings = () => {
           onClick={() => {
             dialog(
               <DeleteOrganization
+                dialog
                 organization={organization}
                 callback={() => {
                   navigate({

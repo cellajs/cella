@@ -1,9 +1,9 @@
 import { serve } from '@hono/node-server';
 
-import { env } from 'env';
-import { app } from './server';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { env } from 'env';
 import { db } from './db/db';
+import { app } from './server';
 
 const main = async () => {
   await migrate(db, { migrationsFolder: 'drizzle' });

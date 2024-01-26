@@ -97,7 +97,7 @@ export function PublicFooter() {
       </div>
 
       <section className={sectionClass}>
-        <div className="container flex max-w-[64rem] pt-8 flex-col items-center gap-4">
+        <div className="container flex max-w-[64rem] pt-8 px-8 flex-col items-center gap-4">
           <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
             <FooterLinks />
             <div className="">

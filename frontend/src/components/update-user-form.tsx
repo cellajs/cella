@@ -6,15 +6,15 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { User } from '~/types';
 
+import { Undo } from 'lucide-react';
+import { toast } from 'sonner';
 import CountryFlag from '~/components/country-flag';
 import { Button } from '~/components/ui/button';
 import { Checkbox } from '~/components/ui/checkbox';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
 import useBeforeUnload from '~/hooks/useBeforeUnload';
-
-import { toast } from 'sonner';
 
 import { useWatch } from 'react-hook-form';
 import { checkSlug } from '~/api/api';
@@ -62,6 +62,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
     name: 'slug',
   });
 
+  // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
@@ -93,6 +94,10 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
 
   const setImageUrl = (url: string) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
+  };
+
+  const revertSlug = () => {
+    form.setValue('slug', user.slug, { shouldDirty: true, shouldValidate: true });
   };
 
   useEffect(() => {
@@ -144,8 +149,19 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
                   defaultValue: 'User handle',
                 })}
               </FormLabel>
+              <FormDescription>A unique handle for your profile URL.</FormDescription>
               <FormControl>
-                <Input {...field} />
+                {/* TODO: This breaks accessibility of the form label? */}
+                <div className="relative">
+                  <Input {...field} />
+                  {user.slug !== form.getValues('slug') && (
+                    <div className="absolute inset-y-1 right-1 flex justify-end">
+                      <Button variant="ghost" size="sm" aria-label="Revert to current user handle" onClick={revertSlug} className="h-full">
+                        <Undo size={16} className="mr-2" /> Revert to <strong className="ml-1">{user.slug}</strong>
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -230,9 +246,9 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
                   </SelectTrigger>
                   <SelectContent>
                     {config.languages.map((language) => (
-                      <SelectItem key={language.code} value={language.code}>
-                        <CountryFlag countryCode={language.code} imgType="png" className="mr-2" />
-                        {language.name}
+                      <SelectItem key={language.value} value={language.value}>
+                        <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
+                        {language.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
