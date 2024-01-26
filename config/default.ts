@@ -56,12 +56,12 @@ const config = {
 
   languages: [
     {
-      code: 'en',
-      name: 'English',
+      value: 'en',
+      label: 'English',
     },
     {
-      code: 'nl',
-      name: 'Nederlands',
+      value: 'nl',
+      label: 'Nederlands',
     },
   ],
   defaultLanguage: 'en',

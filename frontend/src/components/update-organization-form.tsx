@@ -5,17 +5,21 @@ import { z } from 'zod';
 import CountryFlag from '~/components/country-flag';
 import { Organization } from '~/types';
 
+import { config } from 'config';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '~/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
 import { useApiWrapper } from '~/hooks/useApiWrapper';
+import useBeforeUnload from '~/hooks/useBeforeUnload';
 import useFormWithDraft from '~/hooks/useDraftForm';
 import countries from '~/lib/countries.json';
 import timezones from '~/lib/timezones.json';
 import { useUpdateOrganizationMutation } from '~/router/routeTree';
 import { dialog } from './dialoger/state';
+import MultipleSelector, { Option } from './ui/multiple-selector';
 
 interface Props {
   organization: Organization;
@@ -36,10 +40,18 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: organization.name,
+      shortName: organization.shortName,
+      websiteUrl: organization.websiteUrl,
+      notificationEmail: organization.shortName,
       timezone: organization.timezone,
       country: organization.country,
+      defaultLanguage: organization.defaultLanguage,
+      languages: organization.languages || [],
     },
   });
+
+  // Prevent data loss
+  useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
     apiWrapper(
@@ -66,6 +78,16 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     isDialog && dialog.remove();
   };
 
+  const initLanguages = config.languages.filter((language) => organization.languages?.includes(language.value)) || [];
+  const [selectedLanguages, setSelectedLanguages] = useState(initLanguages);
+
+  // TODO: the multiple selector should be able to an array of values too, not just an array of objects
+  const selectedLanguagesChange = (value: Option[]) => {
+    setSelectedLanguages(value);
+    const updatedLanguages = value.map((language) => language.value);
+    form.setValue('languages', updatedLanguages, { shouldDirty: true, shouldValidate: true });
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -81,6 +103,112 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
               </FormLabel>
               <FormControl>
                 <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="shortName"
+          render={({ field: { value, ...rest } }) => (
+            <FormItem>
+              <FormLabel>
+                {t('label.short_name', {
+                  defaultValue: 'Short name',
+                })}
+              </FormLabel>
+              <FormControl>
+              <Input value={value ?? ''} {...rest} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="notificationEmail"
+          render={({ field: { value, ...rest } }) => (
+            <FormItem>
+              <FormLabel>
+                {t('label.notification_email', {
+                  defaultValue: 'Notification email',
+                })}
+              </FormLabel>
+              <FormDescription>Receive announcements and product updates through this email address.</FormDescription>
+              <FormControl>
+                <Input type="email" value={value ?? ''} {...rest} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="websiteUrl"
+          render={({ field: { value, ...rest } }) => (
+            <FormItem>
+              <FormLabel>
+                {t('label.website_url', {
+                  defaultValue: 'Website url',
+                })}
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="https://" type="url" value={value ?? ''} {...rest} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="languages"
+          render={() => (
+            <FormItem>
+              <FormLabel>
+                {t('label.languages', {
+                  defaultValue: 'Languages',
+                })}
+              </FormLabel>
+              <FormControl>
+                <MultipleSelector
+                  value={selectedLanguages}
+                  onChange={selectedLanguagesChange}
+                  defaultOptions={config.languages}
+                  placeholder="Select languages"
+                  emptyIndicator="No more languages"
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="defaultLanguage"
+          render={({ field: { value, onChange } }) => (
+            <FormItem>
+              <FormLabel>
+                {t('label.default_language', {
+                  defaultValue: 'Default language',
+                })}
+              </FormLabel>
+              <FormDescription>
+                The language that will be given to new members of <strong>{organization.name}</strong>.
+              </FormDescription>
+              <FormControl>
+                <Select onValueChange={onChange} defaultValue={value ?? undefined}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {config.languages.map((language: { value: string; label: string }) => (
+                      <SelectItem key={language.value} value={language.value} disabled={!form.getValues('languages')?.includes(language.value)}>
+                        <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
+                        {language.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>

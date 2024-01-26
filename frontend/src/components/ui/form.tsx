@@ -3,8 +3,11 @@ import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
 import { Controller, ControllerProps, FieldPath, FieldValues, FormProvider, useFormContext } from 'react-hook-form';
 
+import { ChevronUp, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
 import { Label } from '~/components/ui/label';
 import { cn } from '~/lib/utils';
+import { Button } from './button';
 
 const Form = FormProvider;
 
@@ -88,11 +91,35 @@ const FormControl = React.forwardRef<React.ElementRef<typeof Slot>, React.Compon
 });
 FormControl.displayName = 'FormControl';
 
-const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({ className, ...props }, ref) => {
-  const { formDescriptionId } = useFormField();
+const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ children, className, ...props }, ref) => {
+    const { formDescriptionId } = useFormField();
+    const [collapsed, setCollapsed] = useState(true);
 
-  return <p ref={ref} id={formDescriptionId} className={cn('text-muted-foreground text-sm', className)} {...props} />;
-});
+    const toggleCollapsed = (e: { preventDefault: () => void }) => {
+      setCollapsed(!collapsed);
+      e.preventDefault();
+    };
+
+    // REMINDER: This is customized to allow for collapsible descriptions
+    return (
+      <div ref={ref} id={formDescriptionId} className={cn('text-muted-foreground font-light relative !mt-0 text-sm', className)} {...props}>
+        <div className="flex justify-between">
+          <Button
+            variant="link"
+            size="sm"
+            onClick={toggleCollapsed}
+            className="right-1 -top-7 absolute text-regular opacity-50 hover:opacity-100 p-2 h-auto"
+          >
+            {collapsed && <HelpCircle size={16} />}
+            {!collapsed && <ChevronUp size={16} />}
+          </Button>
+          {!collapsed && <span>{children}</span>}
+        </div>
+      </div>
+    );
+  },
+);
 FormDescription.displayName = 'FormDescription';
 
 const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({ className, children, ...props }, ref) => {
