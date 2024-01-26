@@ -9,6 +9,7 @@ const hashedPassword = await new Argon2id().hash('12345678');
 await db.insert(usersTable).values({
   id: nanoid(),
   email: 'admin-test@cellajs.com',
+  emailVerified: true,
   slug: 'admin-user',
   role: 'ADMIN',
   hashedPassword,

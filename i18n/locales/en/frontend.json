@@ -33,6 +33,8 @@
 
   "question.dont_have_account": "Don't have an account?",
   "question.already_have_account": "Already have an account?",
+  "question.are_you_sure_to_delete_user": "Are you sure you want to delete user with <strong>{{email}}</strong> email?",
+  "question.are_you_sure_to_delete_your_account": "Are you sure you want to delete your account with <strong>{{email}}</strong> email?",
   "question.are_you_sure_to_remove_member": "Are you sure you want to remove <strong>{{emails}}</strong> from the organization?",
   "question.are_you_sure_to_delete_organization": "Are you sure you want to delete <strong>{{name}}</strong> organization?",
 

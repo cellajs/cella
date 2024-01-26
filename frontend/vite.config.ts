@@ -5,7 +5,7 @@ import { UserConfig, defineConfig, splitVendorChunkPlugin } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import { config } from '../config/index';
+import { config } from '../config';
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
@@ -15,7 +15,8 @@ export default defineConfig(() => {
     server: {
       host: '0.0.0.0',
       port: Number(frontendUrl.port),
-      https: frontendUrl.protocol === 'https:',
+      // TODO: fix it
+      // https: frontendUrl.protocol === 'https:',
     },
     plugins: [
       react(),
@@ -109,7 +110,7 @@ export default defineConfig(() => {
         NODE_ENV: JSON.stringify(process.env.NODE_ENV),
       },
     },
-  } as unknown as UserConfig;
+  } satisfies UserConfig;
 
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   return viteConfig;
