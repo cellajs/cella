@@ -3,7 +3,7 @@ import { updateOrganizationJsonSchema } from 'backend/schemas/organizations';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import CountryFlag from '~/components/country-flag';
-import { Language, Organization } from '~/types';
+import { Organization } from '~/types';
 
 import { config } from 'config';
 import { useState } from 'react';
@@ -19,7 +19,7 @@ import countries from '~/lib/countries.json';
 import timezones from '~/lib/timezones.json';
 import { useUpdateOrganizationMutation } from '~/router/routeTree';
 import { dialog } from './dialoger/state';
-import MultipleSelector from './ui/multiple-selector';
+import MultipleSelector, { Option } from './ui/multiple-selector';
 
 interface Props {
   organization: Organization;
@@ -40,9 +40,9 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: organization.name,
-      shortName: organization.shortName || '',
-      websiteUrl: organization.websiteUrl || '',
-      notificationEmail: organization.shortName || '',
+      shortName: organization.shortName,
+      websiteUrl: organization.websiteUrl,
+      notificationEmail: organization.shortName,
       timezone: organization.timezone,
       country: organization.country,
       defaultLanguage: organization.defaultLanguage,
@@ -79,10 +79,10 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   };
 
   const initLanguages = config.languages.filter((language) => organization.languages?.includes(language.value)) || [];
-  const [selectedLanguages, setSelectedLanguages] = useState(initLanguages as [Language]);
+  const [selectedLanguages, setSelectedLanguages] = useState(initLanguages);
 
   // TODO: the multiple selector should be able to an array of values too, not just an array of objects
-  const selectedLanguagesChange = (value: [Language]) => {
+  const selectedLanguagesChange = (value: Option[]) => {
     setSelectedLanguages(value);
     const updatedLanguages = value.map((language) => language.value);
     form.setValue('languages', updatedLanguages, { shouldDirty: true, shouldValidate: true });
@@ -111,7 +111,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <FormField
           control={form.control}
           name="shortName"
-          render={({ field }) => (
+          render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>
                 {t('label.short_name', {
@@ -119,7 +119,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
                 })}
               </FormLabel>
               <FormControl>
-                <Input {...field} />
+              <Input value={value ?? ''} {...rest} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -128,7 +128,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <FormField
           control={form.control}
           name="notificationEmail"
-          render={({ field }) => (
+          render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>
                 {t('label.notification_email', {
@@ -137,7 +137,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
               </FormLabel>
               <FormDescription>Receive announcements and product updates through this email address.</FormDescription>
               <FormControl>
-                <Input type="email" {...field} />
+                <Input type="email" value={value ?? ''} {...rest} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -146,7 +146,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <FormField
           control={form.control}
           name="websiteUrl"
-          render={({ field }) => (
+          render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>
                 {t('label.website_url', {
@@ -154,7 +154,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
                 })}
               </FormLabel>
               <FormControl>
-                <Input placeholder="https://" type="url" {...field} />
+                <Input placeholder="https://" type="url" value={value ?? ''} {...rest} />
               </FormControl>
               <FormMessage />
             </FormItem>

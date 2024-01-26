@@ -15,11 +15,6 @@ export enum UserRole {
   MEMBER = 'Member',
 }
 
-export interface Language {
-  value: string;
-  label: string;
-}
-
 export interface Page {
   id: string;
   slug: string;
