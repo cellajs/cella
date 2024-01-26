@@ -9,7 +9,7 @@
     "start": "tsx dist/index.cjs",
     "build": "NODE_ENV=production tsup",
     "build:dev": "NODE_ENV=development tsup",
-    "check:types": "tsc --noEmit",
+    "check:types": "tsc",
     "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.cjs\"",
     "seed:users": "tsx seed/users.ts",
     "seed:organizations": "tsx seed/organizations.ts",

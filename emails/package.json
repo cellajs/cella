@@ -1,6 +1,7 @@
 {
   "name": "emails",
   "version": "0.0.18",
+  "type": "module",
   "private": true,
   "workspaces": [
     ".react-email"

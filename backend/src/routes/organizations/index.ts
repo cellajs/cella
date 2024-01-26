@@ -1,8 +1,8 @@
 import { render } from '@react-email/render';
 import { config } from 'config';
 import { AnyColumn, SQL, and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
-import emailSender from 'emails';
-import InviteUserToOrganizationEmail from 'emails/invite';
+import { emailSender } from 'emails';
+import { InviteUserToOrganizationEmail } from 'emails/invite';
 import { setCookie } from 'hono/cookie';
 import { getI18n } from 'i18n';
 import { TimeSpan, User, generateId } from 'lucia';

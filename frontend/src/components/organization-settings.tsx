@@ -38,8 +38,8 @@ const OrganizationSettings = () => {
         <hr className="my-6" />
 
         <p className="font-light mb-4 text-sm">
-          Want to permanently delete the organization <strong>{organization.name}</strong>?
-          Use the button below. Please note that this action is irreversible.
+          Want to permanently delete the organization <strong>{organization.name}</strong>? Use the button below. Please note that this action is
+          irreversible.
         </p>
 
         <Button

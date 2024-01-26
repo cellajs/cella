@@ -20,5 +20,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
   },
-  "include": ["src", "drizzle.config.ts"]
+  "include": ["src", "drizzle.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

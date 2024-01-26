@@ -4,7 +4,7 @@ import { env } from 'env';
 
 sendgrid.setApiKey(env.SENDGRID_API_KEY ?? '');
 
-export default {
+export const emailSender = {
   send: async (to: string, subject: string, html: string) => {
     await sendgrid.send({
       to,
