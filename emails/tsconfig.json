@@ -23,5 +23,6 @@
     "baseUrl": ".",
     "allowSyntheticDefaultImports": true
   },
-  "include": ["emails"]
+  "include": ["emails"],
+  "exclude": ["node_modules", "dist"]
 }
