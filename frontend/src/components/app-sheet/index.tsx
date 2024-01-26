@@ -1,9 +1,11 @@
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { Sheet, SheetContent } from '~/components/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
 const AppSheet = () => {
+  const navigate = useNavigate();
   const { activeSheet, setSheet, getMenu, keepMenuOpen } = useNavigationStore();
   const { getMe } = useUserStore();
   const isMirrorSide = activeSheet?.mirrorOnMobile;
@@ -15,7 +17,11 @@ const AppSheet = () => {
   // TODO: Move to loader somehow or refactor? Get menu and update user on mount only. After fresh auth, getMe is called twice.
   useEffect(() => {
     getMenu();
-    getMe();
+    getMe().then(() => {
+      console.log('getMe called');
+    }).catch(() => {    
+      console.log('getMe failed');
+      navigate({ to: '/sign-out' }) });
   }, []);
 
   return (

@@ -53,4 +53,4 @@ WORKDIR /app
 # USER frontend
 COPY --from=installer /app .
 
-CMD cd frontend && NODE_ENV=development pnpm start
+CMD cd frontend && pnpm run dev

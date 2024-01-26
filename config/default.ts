@@ -1,4 +1,5 @@
-const config = {
+// Due to vite.config challenges this one cannot have env vars
+export const config = {
   mode: 'development',
   name: 'Cella',
   slug: 'cella',

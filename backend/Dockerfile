@@ -55,4 +55,4 @@ WORKDIR /app
 COPY --from=installer /app .
 
 # Run migrations and start the server
-CMD cd backend && NODE_ENV=development pnpm start
+CMD cd backend && pnpm run dev

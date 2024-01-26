@@ -6,22 +6,35 @@ services:
     build:
       context: .
       dockerfile: ./backend/Dockerfile
+      no_cache: true
     restart: always
+    volumes:
+      - ./:/app
+      - /app/node_modules
     ports:
       - 4000:4000
     depends_on:
       - db
+    env_file:
+      - ./env/.env
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/cella
+      DATABASE_URL: postgres://postgres:postgres@db:5432/cella
 
   frontend:
     container_name: frontend
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
+      no_cache: true
     restart: always
+    volumes:
+    - ./:/app
+    - /app/node_modules
     ports:
       - 3000:3000
+    env_file:
+      - ./env/.env
+
 
   db:
     container_name: db

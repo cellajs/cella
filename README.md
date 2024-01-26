@@ -23,7 +23,7 @@ In the `env` folder, you add a .env file using the `.env.example`. The minimum i
 
 ### Step 2
 
-There are two ways to run Cella: A. Directly on local - or - B. From inside a container.
+There are three ways to run Cella: A. Directly on local, B. From inside a VS devcontainer - or - C. From inside docker container(s).
 
 <details>
   <summary>A: Directly on local machine</summary>
@@ -39,7 +39,26 @@ Install PostgreSQL 16.x on your machine, for example using [Postgres.app](https:
 </details>
 
 <details>
-  <summary>B: From inside a container</summary>
+  <summary>B: From inside a VS devcontainer</summary>
+
+#### Prerequisites
+- [Dev containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+- [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/)
+
+#### Run devcontainer
+- Open VSCode and click one of these buttons to run the container:
+  <img width="1177" alt="Screenshot" src="https://github.com/cellajs/cella/tree/main/info/devcontainer.png">
+- Alternatively, open the project in VSCode and use `⌘+⇧+p` to run the `Remote-Containers: Reopen in Container` command.
+
+#### Problems?
+
+- **Rebuilding the docker container**: Just open Orbstack and delete the container and volume that has `cella` in the name.
+
+- **CORS issues**: Make sure to open `http://localhost:3000/` and not `http://127.0.0.1:3000/`
+</details>
+
+<details>
+  <summary>C: As a basic docker image</summary>
 
 #### Prerequisites
 - [Dev containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)

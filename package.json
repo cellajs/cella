@@ -28,6 +28,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "lefthook install",
+    "docker": "docker-compose --env-file env/.env up",
     "start": "dotenv -e env/.env -- turbo start --filter backend --filter frontend --filter tus",
     "dev": "dotenv -e env/.env -- turbo dev --filter backend --filter frontend --filter tus",
     "build": "dotenv -e env/.env -- turbo build --filter backend --filter frontend --filter tus",

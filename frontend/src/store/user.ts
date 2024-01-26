@@ -38,6 +38,7 @@ export const useUserStore = create<UserState>()(
           const user = await getMe();
           if (!user) {
             set({ user: null as unknown as User });
+            await client['sign-out'].$get();
             return null;
           }
           set({ user: user, lastUser: { email: user.email, name: user.name, id: user.id, slug: user.slug } });

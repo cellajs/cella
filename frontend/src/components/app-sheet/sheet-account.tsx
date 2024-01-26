@@ -31,16 +31,12 @@ export const SheetAccount = () => {
   const { setSheet } = useNavigationStore();
 
   const navigateTo = (path: string) => {
-    navigate({
-      to: path,
-    });
+    navigate({ to: path });
     setSheet(null);
   };
 
   const onSignOut = () => {
-    navigate({
-      to: '/sign-out',
-    });
+    navigate({ to: '/sign-out' });
     setSheet(null);
   };
 

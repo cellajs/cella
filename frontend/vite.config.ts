@@ -5,7 +5,7 @@ import { UserConfig, defineConfig, splitVendorChunkPlugin } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import { config } from '../config';
+import { config } from '../config/default';
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
@@ -15,8 +15,6 @@ export default defineConfig(() => {
     server: {
       host: '0.0.0.0',
       port: Number(frontendUrl.port),
-      // TODO: fix it
-      // https: frontendUrl.protocol === 'https:',
     },
     plugins: [
       react(),
@@ -44,6 +42,9 @@ export default defineConfig(() => {
         },
       }),
       VitePWA({
+        devOptions: {
+          enabled: false
+        },
         manifest: {
           name: config.name,
           short_name: config.name,
