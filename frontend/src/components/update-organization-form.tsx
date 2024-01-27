@@ -119,7 +119,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
                 })}
               </FormLabel>
               <FormControl>
-              <Input value={value ?? ''} {...rest} />
+                <Input value={value ?? ''} {...rest} />
               </FormControl>
               <FormMessage />
             </FormItem>

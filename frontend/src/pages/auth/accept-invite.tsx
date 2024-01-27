@@ -20,7 +20,7 @@ const formSchema = acceptInvitationToOrganizationJsonSchema;
 const Accept = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { token } = useParams({ strict: false });
+  const { token }: { token: string } = useParams({ strict: false });
 
   const [apiWrapper, pending] = useApiWrapper();
 

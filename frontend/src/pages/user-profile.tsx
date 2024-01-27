@@ -7,7 +7,7 @@ import { ContentHeader } from '~/components/content-header';
 import { useApiWrapper } from '~/hooks/useApiWrapper';
 
 const UserProfile = () => {
-  const { userIdentifier } = useParams({ strict: false });
+  const { userIdentifier }: { userIdentifier: string } = useParams({ strict: false });
   const [user, setUser] = useState<User | null>(null);
   const [apiWrapper] = useApiWrapper();
 

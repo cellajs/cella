@@ -24,7 +24,7 @@ const organizationTabs = [
 export const OrganizationContext = createContext({} as OrganizationContextValue);
 
 const OrganizationPage = () => {
-  const { organizationIdentifier } = useParams({ strict: false });
+  const { organizationIdentifier }: { organizationIdentifier: string } = useParams({ strict: false });
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(organizationIdentifier));
   const organization = organizationQuery.data;
 

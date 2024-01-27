@@ -15,7 +15,7 @@ const OrganizationSettings = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { organization } = useContext(OrganizationContext);
-  const { organizationIdentifier } = useParams({ strict: false });
+  const { organizationIdentifier }: { organizationIdentifier: string } = useParams({ strict: false });
 
   return (
     <Card className="sm:w-[600px] mx-auto">

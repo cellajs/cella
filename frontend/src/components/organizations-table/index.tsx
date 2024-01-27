@@ -261,6 +261,7 @@ const OrganizationsTable = () => {
   useEffect(() => {
     if (columnFilters[0]) {
       navigate({
+        params: {},
         search: (prev) => ({
           ...prev,
           q: columnFilters[0].value as OrganizationsSearch['q'],
@@ -268,11 +269,13 @@ const OrganizationsTable = () => {
       });
     } else {
       navigate({
+        params: {},
         search: (prev) => ({ ...prev, q: undefined }),
       });
     }
     if (sorting[0]) {
       navigate({
+        params: {},
         search: (prev) => ({
           ...prev,
           sort: sorting[0].id as OrganizationsSearch['sort'],
@@ -281,6 +284,7 @@ const OrganizationsTable = () => {
       });
     } else {
       navigate({
+        params: {},
         search: (prev) => ({ ...prev, sort: undefined, order: undefined }),
       });
     }
@@ -289,7 +293,6 @@ const OrganizationsTable = () => {
   return (
     <DataTable
       {...{
-        // className: 'h-[500px]',
         queryResult,
         table,
         isFiltered,

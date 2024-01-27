@@ -6,7 +6,7 @@ import { useApiWrapper } from '~/hooks/useApiWrapper';
 import AuthPage from '.';
 
 const VerifyEmail = () => {
-  const { token } = useParams({ strict: false });
+  const { token }: { token: string } = useParams({ strict: false });
   const [apiWrapper, , error] = useApiWrapper();
   const navigate = useNavigate();
 

@@ -17,7 +17,7 @@ const formSchema = resetPasswordJsonSchema;
 
 const ResetPassword = () => {
   const { t } = useTranslation();
-  const { token } = useParams({ strict: false });
+  const { token }: { token: string } = useParams({ strict: false });
   const navigate = useNavigate();
 
   const [apiWrapper, pending] = useApiWrapper();

@@ -345,6 +345,7 @@ const UsersTable = () => {
   useEffect(() => {
     if (columnFilters[0]) {
       navigate({
+        params: {},
         search: (prev) => ({
           ...prev,
           q: columnFilters[0].value as UsersSearch['q'],
@@ -352,11 +353,13 @@ const UsersTable = () => {
       });
     } else {
       navigate({
+        params: {},
         search: (prev) => ({ ...prev, q: undefined }),
       });
     }
     if (sorting[0]) {
       navigate({
+        params: {},
         search: (prev) => ({
           ...prev,
           sort: sorting[0].id as UsersSearch['sort'],
@@ -365,11 +368,13 @@ const UsersTable = () => {
       });
     } else {
       navigate({
+        params: {},
         search: (prev) => ({ ...prev, sort: undefined, order: undefined }),
       });
     }
     if (role) {
       navigate({
+        params: {},
         search: (prev) => ({
           ...prev,
           role,
@@ -377,6 +382,7 @@ const UsersTable = () => {
       });
     } else {
       navigate({
+        params: {},
         search: (prev) => ({ ...prev, role: undefined }),
       });
     }

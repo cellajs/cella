@@ -41,7 +41,7 @@ interface OauthOptionsProps {
 
 const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   const { mode } = useThemeStore();
-  const { token } = useParams({ strict: false });
+  const { token }: { token: string } = useParams({ strict: false });
   const invertClass = mode === 'dark' ? 'invert' : '';
   let redirect = '';
   if (actionType !== 'acceptInvite') {

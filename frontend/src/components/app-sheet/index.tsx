@@ -17,7 +17,11 @@ const AppSheet = () => {
   // TODO: Move to loader somehow or refactor? Get menu and update user on mount only. After fresh auth, getMe is called twice.
   useEffect(() => {
     getMenu();
-    getMe().then(() => {}).catch(() => { navigate({ to: '/sign-out' }) });
+    getMe()
+      .then(() => {})
+      .catch(() => {
+        navigate({ to: '/sign-out' });
+      });
   }, []);
 
   return (

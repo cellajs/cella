@@ -43,7 +43,7 @@ export default defineConfig(() => {
       }),
       VitePWA({
         devOptions: {
-          enabled: false
+          enabled: false,
         },
         manifest: {
           name: config.name,
