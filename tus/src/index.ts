@@ -15,9 +15,11 @@ const tus = ImadoTus({
   },
 });
 
+const tusUrl = new URL(config.tusUrl as string);
+
 tus.listen({
   host: '0.0.0.0',
-  port: config.tusPort,
+  port: Number(config.tusPort),
 });
 
-console.log(`TUS upload server running on port ${config.tusPort}`);
+console.log(`TUS upload server running on ${tusUrl}`);
