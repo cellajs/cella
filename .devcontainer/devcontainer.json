@@ -21,11 +21,6 @@
       "onAutoForward": "ignore",
       "requireLocalPort": true
     },
-    "1080": {
-      "label": "upload port",
-      "onAutoForward": "ignore",
-      "requireLocalPort": true
-    },
     "3000": {
       "label": "frontend port",
       "onAutoForward": "openBrowser",
@@ -35,6 +30,11 @@
       "label": "database port",
       "onAutoForward": "ignore",
       "requireLocalPort": true
+    },
+    "1080": {
+      "label": "upload port",
+      "onAutoForward": "ignore",
+      "requireLocalPort": true
     }
   },
   // Use post commands to run commands after the container is created.
@@ -42,7 +42,7 @@
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
-      "extensions": ["biomejs.biome", "gitlens.gitlens"]
+      "extensions": ["biomejs.biome"]
     }
   }
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.

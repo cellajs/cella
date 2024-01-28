@@ -120,5 +120,6 @@ Replace `*PID*` with a space separated list of `PID` that still run.
 kill -9 *PID*
 ```
 - Got pnpm cache issues? Try `pnpm store prune`
-- Got turbo cache issues? Try `--force` to the command
+- Got turbo cache issues? Try adding `--force` to the command.
+- Got docker cache issues? Try `docker builder prune --force`
 

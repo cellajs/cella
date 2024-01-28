@@ -14,8 +14,6 @@ dist-ssr
 *.local
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
 .idea
 .DS_Store
 *.suo
@@ -25,11 +23,8 @@ dist-ssr
 *.sw?
 .turbo
 .env
-.env.server
-.env.client
-.env.production
-.env.development
-.env.staging
+.env.*
+!.env.example
 
 # Other
 .netlify
