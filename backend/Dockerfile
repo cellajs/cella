@@ -54,5 +54,5 @@ WORKDIR /app
 # USER backend
 COPY --from=installer /app .
 
-# Run migrations and start the server
-CMD cd backend && pnpm run dev
+# Run migrations, seeds and start the app
+CMD cd backend && pnpm migrate:script && pnpm seeds:script && pnpm dev

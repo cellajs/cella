@@ -6,16 +6,18 @@
     "node": ">=20.9.0 <21.0.0"
   },
   "scripts": {
-    "start": "tsx dist/index.cjs",
+    "start": "tsx dist/src/index.cjs",
     "build": "NODE_ENV=production tsup",
     "build:dev": "NODE_ENV=development tsup",
     "check:types": "tsc",
-    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.cjs\"",
+    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/src/index.cjs\"",
     "seed:users": "tsx seed/users.ts",
     "seed:organizations": "tsx seed/organizations.ts",
     "generate": "drizzle-kit generate:pg",
     "push": "drizzle-kit push:pg",
     "migrate": "tsx src/db/migrate.ts",
+    "migrate:script": "tsx dist/src/db/migrate.cjs",
+    "seeds:script": "tsx dist/seed/users.cjs && tsx dist/seed/organizations.cjs",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {

@@ -1,17 +1,17 @@
 {
   "remote.localPortHost": "localhost",
   "files.exclude": {
-    "**/package-lock.json": true,
-    "**/dist/**": true,
-    "/backend/drizzle/meta/**": true,
-    "/backend/drizzle/*.sql": true
+    // "**/package-lock.json": true,
+    // "**/dist/**": true,
+    // "/backend/drizzle/meta/**": true,
+    // "/backend/drizzle/*.sql": true
  },
   "files.watcherExclude": {
-    "**/node_modules/**": true,
+    // "**/node_modules/**": true,
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
-    "**/dist/**": true,
-    "**/build/**": true,
+    // "**/dist/**": true,
+    // "**/build/**": true,
     "**/.vscode/**": true,
     "**/.pnpm/**": true
   },

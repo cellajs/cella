@@ -4,17 +4,24 @@ import { db } from '../src/db/db';
 import { usersTable } from '../src/db/schema';
 import { nanoid } from '../src/lib/nanoid';
 
-const hashedPassword = await new Argon2id().hash('12345678');
+const main = async () => {
+  const hashedPassword = await new Argon2id().hash('12345678');
 
-await db.insert(usersTable).values({
-  id: nanoid(),
-  email: 'admin-test@cellajs.com',
-  emailVerified: true,
-  slug: 'admin-user',
-  role: 'ADMIN',
-  hashedPassword,
-});
+  await db
+    .insert(usersTable)
+    .values({
+      id: nanoid(),
+      email: 'admin-test@cellajs.com',
+      emailVerified: true,
+      slug: 'admin-user',
+      role: 'ADMIN',
+      hashedPassword,
+    })
+    .onConflictDoNothing();
 
-console.log('Created user: admin');
+  console.log('Seeded users');
 
-process.exit(0);
+  process.exit(0);
+};
+
+main();
