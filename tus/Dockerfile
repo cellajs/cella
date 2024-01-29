@@ -1,7 +1,7 @@
 FROM node:20-alpine AS alpine
 
-# This Dockerfile is copy-pasted into our main docs at /docs/handbook/deploying-with-docker.
-# Make sure you update both files!
+# The web Dockerfile is copy-pasted into our main docs at /docs/handbook/deploying-with-docker.
+# Make sure you update this Dockerfile, the Dockerfile in the web workspace and copy that over to Dockerfile in the docs.
 
 # Setup pnpm and turbo on the alpine base
 FROM alpine as base
@@ -15,7 +15,8 @@ RUN apk update
 # Set working directory
 WORKDIR /app
 COPY . .
-RUN turbo prune frontend --docker
+
+RUN turbo prune tus --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
@@ -23,14 +24,14 @@ RUN apk add --no-cache libc6-compat
 RUN apk update
 WORKDIR /app
 
-# First install the dependencies (as they change less often)
+# First install dependencies (as they change less often)
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 RUN pnpm install --ignore-scripts
 
-# Build the project
+# Build the project and its dependencies
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 COPY tsconfig.json tsconfig.json
@@ -42,15 +43,16 @@ COPY tsconfig.json tsconfig.json
 # ARG TURBO_TOKEN
 # ENV TURBO_TOKEN=$TURBO_TOKEN
 
-RUN pnpm turbo build:dev --filter=frontend...
+RUN pnpm turbo build:dev --filter=tus...
 
 FROM base AS runner
 WORKDIR /app
 
 # Don't run production as root
-# RUN addgroup --system --gid 1001 frontend
-# RUN adduser --system --uid 1001 frontend
-# USER frontend
+# RUN addgroup --system --gid 1001 tus
+# RUN adduser --system --uid 1001 tus
+# USER tus
 COPY --from=installer /app .
 
-CMD cd frontend && pnpm dev
+# Start the app
+CMD cd tus && pnpm dev
