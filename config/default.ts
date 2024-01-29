@@ -12,6 +12,7 @@ export const config = {
   statusUrl: 'https://status.example.com',
 
   notificationsEmail: 'notifications@cellajs.com',
+  senderIsReceiver: false,
 
   debug: false,
   maintenance: false,

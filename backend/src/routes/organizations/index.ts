@@ -31,6 +31,7 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './schema';
+import { env } from 'env';
 
 const i18n = getI18n('backend');
 
@@ -384,22 +385,23 @@ const organizationsRoutes = app
   })
   .openapi(inviteUserToOrganizationRoute, async (ctx) => {
     const { emails } = ctx.req.valid('json');
+    const user = ctx.get('user');
 
     for (const email of emails) {
-      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
+      const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
       const organization = ctx.get('organization');
 
-      if (user) {
+      if (targetUser) {
         const [existingMembership] = await db
           .select()
           .from(membershipsTable)
-          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user?.id)));
+          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
 
         if (existingMembership) {
           customLogger('User already member of organization', {
-            userId: user?.id,
-            userSlug: user?.slug,
+            userId: targetUser.id,
+            userSlug: targetUser.slug,
             organizationId: organization.id,
             organizationSlug: organization.slug,
           });
@@ -411,7 +413,7 @@ const organizationsRoutes = app
       const verificationToken = generateId(40);
       await db.insert(tokensTable).values({
         id: verificationToken,
-        userId: user?.id,
+        userId: targetUser?.id,
         email: email.toLowerCase(),
         organizationId: organization.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
@@ -421,15 +423,19 @@ const organizationsRoutes = app
         InviteUserToOrganizationEmail({
           orgName: organization.name || '',
           orgImage: organization.logoUrl || '',
-          userImage: user?.thumbnailUrl || '',
-          username: user?.name || email.toLowerCase() || '',
+          userImage: targetUser?.thumbnailUrl || '',
+          username: targetUser?.name || email.toLowerCase() || '',
           inviteUrl: `${config.frontendUrl}/auth/accept-invite/${verificationToken}`,
           i18n,
         }),
       );
 
       try {
-        emailSender.send(email.toLowerCase(), `Added to ${organization.name} on Cella`, emailHtml);
+        emailSender.send(
+          env.SEND_ALL_TO_EMAIL || config.senderIsReceiver ? user.email : email.toLowerCase(),
+          `Added to ${organization.name} on Cella`,
+          emailHtml,
+        );
       } catch (error) {
         customLogger(
           'Error sending email',
