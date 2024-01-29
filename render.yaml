@@ -1,7 +1,7 @@
 previewsEnabled: true
 previewsExpireAfterDays: 3
 
-# Make sure to replace *.cellajs.com with your domain name(s) 
+# Make sure to replace everything with *.cella* with own domain name(s), etc
 
 services:
   # Backend
@@ -60,7 +60,6 @@ services:
   - type: web
     name: cella-frontend
     runtime: static
-    region: frankfurt
     plan: starter
     previewPlan: starter
     rootDir: frontend
@@ -107,19 +106,6 @@ services:
     buildFilter:
       paths:
         - frontend/**/*.?s
-
-  # Cron job TODO: startCommand is required
-  # - type: cron
-  #   name: cella-cron
-  #   region: frankfurt
-  #   plan: starter
-  #   previewPlan: starter
-  #   schedule: 0 0 * * 0
-  #   startCommand: 
-  #   envVars:
-  #   buildFilter:
-  #     paths:
-  #       - cron/**/*.?s
 
 # Postgres database
 databases:
