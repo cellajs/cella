@@ -22,8 +22,10 @@ export async function ImadoUppy(
 ): Promise<Uppy> {
   // Get upload token and check if public or private files
   const token = await getUploadToken(type, { public: opts.public }, organizationId);
+
   const { public: isPublic, sub, imado: useImadoAPI } = readJwt(token);
-  const rootUrl = isPublic ? config.publicFilesUrl : config.privateFilesUrl;
+
+  const rootUrl = isPublic ? config.publicCDNUrl : config.privateCDNUrl;
 
   // Create Uppy instance
   const imadoUppy = new Uppy({

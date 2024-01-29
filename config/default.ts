@@ -24,8 +24,8 @@ export const config = {
   tusPort: 1080,
   s3UploadBucket: 'cella-uploads',
   s3UploadRegion: 'eu-west-1',
-  privateFilesUrl: 'https://cdn-priv.cellajs.com',
-  publicFilesUrl: 'https://cdn.cellajs.com',
+  privateCDNUrl: 'https://cdn-priv.cellajs.com',
+  publicCDNUrl: 'https://cdn.cellajs.com',
 
   theme: {
     rose: { primary: '#e11d48' },

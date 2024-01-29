@@ -3,7 +3,7 @@ import { config } from 'config';
 import { env } from 'env';
 
 export const getImadoUrl = new ImadoUrl({
-  signUrl: config.privateFilesUrl,
+  signUrl: config.privateCDNUrl,
   cloudfrontKeyId: env.AWS_CLOUDFRONT_KEY_ID,
   cloudfrontPrivateKey: env.AWS_CLOUDFRONT_PRIVATE_KEY,
 });
