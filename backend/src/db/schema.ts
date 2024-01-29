@@ -13,11 +13,6 @@ export const usersTable = pgTable(
     lastName: varchar('last_name'),
     email: varchar('email').notNull().unique(),
     emailVerified: boolean('email_verified').notNull().default(false),
-    role: varchar('role', {
-      enum: ['USER', 'ADMIN'],
-    })
-      .notNull()
-      .default('USER'),
     bio: varchar('bio'),
     language: varchar('language'),
     bannerUrl: varchar('banner_url'),
@@ -36,6 +31,9 @@ export const usersTable = pgTable(
     createdBy: varchar('created_by'),
     modifiedAt: timestamp('modified_at'),
     modifiedBy: varchar('modified_by'),
+    role: varchar('role', { enum: ['USER', 'ADMIN'] })
+      .notNull()
+      .default('USER'),
   },
   (table) => {
     return {
@@ -69,9 +67,7 @@ export const oauthAccountsTable = pgTable(
     providerUserId: varchar('provider_user_id').notNull(),
     userId: varchar('user_id')
       .notNull()
-      .references(() => usersTable.id, {
-        onDelete: 'cascade',
-      }),
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
   },
   (table) => {
     return {
@@ -86,28 +82,16 @@ export const sessionsTable = pgTable('sessions', {
   id: varchar('id').primaryKey(),
   userId: varchar('user_id')
     .notNull()
-    .references(() => usersTable.id, {
-      onDelete: 'cascade',
-    }),
-  expiresAt: timestamp('expires_at', {
-    withTimezone: true,
-    mode: 'date',
-  }).notNull(),
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
 });
 
 export const tokensTable = pgTable('tokens', {
   id: varchar('id').primaryKey(),
-  userId: varchar('user_id').references(() => usersTable.id, {
-    onDelete: 'cascade',
-  }),
   email: varchar('email'),
-  organizationId: varchar('organization_id').references(() => organizationsTable.id, {
-    onDelete: 'cascade',
-  }),
-  expiresAt: timestamp('expires_at', {
-    withTimezone: true,
-    mode: 'date',
-  }).notNull(),
+  userId: varchar('user_id').references(() => usersTable.id, { onDelete: 'cascade' }),
+  organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
 });
 
 export const organizationsTable = pgTable(
@@ -160,9 +144,7 @@ export const membershipsTable = pgTable(
     userId: varchar('user_id')
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    role: varchar('role', {
-      enum: ['ADMIN', 'MEMBER'],
-    })
+    role: varchar('role', { enum: ['ADMIN', 'MEMBER'] })
       .notNull()
       .default('MEMBER'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
