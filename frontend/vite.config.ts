@@ -5,7 +5,7 @@ import { UserConfig, defineConfig, splitVendorChunkPlugin } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import { config } from '../config/default';
+import { config } from 'config';
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
@@ -41,6 +41,21 @@ export default defineConfig(() => {
           },
         },
       }),
+    ],
+    resolve: {
+      alias: {
+        '~': path.resolve(__dirname, './src'),
+      },
+    },
+    define: {
+      'process.env': {
+        NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+      },
+    },
+  } satisfies UserConfig;
+
+  if (config.has.pwaSupport)
+    viteConfig.plugins?.push(
       VitePWA({
         devOptions: {
           enabled: false,
@@ -85,33 +100,10 @@ export default defineConfig(() => {
                 },
               },
             },
-            // {
-            //   urlPattern: ({ url }) => {
-            //     return url.hostname === 'localhost' || url.pathname.startsWith('/api/v1');
-            //   },
-            //   handler: 'CacheFirst',
-            //   options: {
-            //     cacheName: 'api-cache',
-            //     cacheableResponse: {
-            //       statuses: [0, 200],
-            //     },
-            //   },
-            // },
           ],
         },
       }),
-    ],
-    resolve: {
-      alias: {
-        '~': path.resolve(__dirname, './src'),
-      },
-    },
-    define: {
-      'process.env': {
-        NODE_ENV: JSON.stringify(process.env.NODE_ENV),
-      },
-    },
-  } satisfies UserConfig;
+    );
 
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   return viteConfig;

@@ -38,7 +38,7 @@ export const config = {
   // Feature flags
   has: {
     chatSupport: true, // TODO: implement
-    pwaSupport: true, // TODO: implement
+    pwaSupport: true,
     darkMode: true, // TODO: implement
     notifications: true, // TODO: implement
     userProfiles: true, // TODO: implement
