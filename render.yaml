@@ -60,6 +60,9 @@ services:
   - type: web
     name: cella-frontend
     runtime: static
+    region: frankfurt
+    plan: starter
+    previewPlan: starter
     rootDir: frontend
     buildCommand: pnpm install && pnpm build
     staticPublishPath: ./dist
@@ -105,17 +108,18 @@ services:
       paths:
         - frontend/**/*.?s
 
-  # Cron job
-  - type: cron
-    name: cella-cron
-    region: frankfurt
-    plan: starter
-    previewPlan: starter
-    schedule: 0 0 * * 0
-    envVars:
-    buildFilter:
-      paths:
-        - cron/**/*.?s
+  # Cron job TODO: startCommand is required
+  # - type: cron
+  #   name: cella-cron
+  #   region: frankfurt
+  #   plan: starter
+  #   previewPlan: starter
+  #   schedule: 0 0 * * 0
+  #   startCommand: 
+  #   envVars:
+  #   buildFilter:
+  #     paths:
+  #       - cron/**/*.?s
 
 # Postgres database
 databases:
