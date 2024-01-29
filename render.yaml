@@ -60,8 +60,6 @@ services:
   - type: web
     name: cella-frontend
     runtime: static
-    plan: starter
-    previewPlan: starter
     rootDir: frontend
     buildCommand: pnpm install && pnpm build
     staticPublishPath: ./dist
