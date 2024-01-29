@@ -12,5 +12,5 @@ export const resetDb = async () => {
   await usersSeed();
   await organizationsAndMembersSeed();
 
-  process.exit(0);
+  console.log('Database reset complete.');
 };

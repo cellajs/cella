@@ -11,7 +11,7 @@ export const organizationsAndMembersSeed = async () => {
 
   if (organizationsInTable.length > 0) {
     console.log('Organizations table is not empty, skipping seeding');
-    process.exit(0);
+    return;
   }
 
   const organizationsUniqueEnforcer = new UniqueEnforcer();
@@ -99,8 +99,6 @@ export const organizationsAndMembersSeed = async () => {
   }
 
   console.log('Seeded members and memberships');
-
-  process.exit(0);
 };
 
 organizationsAndMembersSeed();

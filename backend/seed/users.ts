@@ -20,8 +20,6 @@ export const usersSeed = async () => {
     .onConflictDoNothing();
 
   console.log('Seeded users');
-
-  process.exit(0);
 };
 
 usersSeed();
