@@ -4,7 +4,7 @@ import { db } from '../src/db/db';
 import { usersTable } from '../src/db/schema';
 import { nanoid } from '../src/lib/nanoid';
 
-const main = async () => {
+export const usersSeed = async () => {
   const hashedPassword = await new Argon2id().hash('12345678');
 
   await db
@@ -24,4 +24,4 @@ const main = async () => {
   process.exit(0);
 };
 
-main();
+usersSeed();

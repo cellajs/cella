@@ -125,6 +125,33 @@ services:
       paths:
         - frontend/**/*.?s
 
+  # Cron job
+  - type: cron
+    name: cella-cron
+    region: frankfurt
+    plan: starter
+    previewPlan: starter
+    schedule: 0 0 * * 0
+    envVars:
+      - key: VITE_BACKEND_URL
+        fromService:
+          name: cella-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_FRONTEND_URL
+        fromService:
+          name: cella-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_TUS_URL
+        fromService:
+          name: cella-tus
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+    buildFilter:
+      paths:
+        - cron/**/*.?s
+
 # Postgres database
 databases:
   - name: cella-db

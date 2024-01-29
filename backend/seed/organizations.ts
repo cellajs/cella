@@ -6,7 +6,7 @@ import { db } from '../src/db/db';
 import { InsertMembershipModel, InsertOrganizationModel, InsertUserModel, membershipsTable, organizationsTable, usersTable } from '../src/db/schema';
 import { nanoid } from '../src/lib/nanoid';
 
-const main = async () => {
+export const organizationsAndMembersSeed = async () => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
   if (organizationsInTable.length > 0) {
@@ -103,4 +103,4 @@ const main = async () => {
   process.exit(0);
 };
 
-main();
+organizationsAndMembersSeed();
