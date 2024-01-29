@@ -3,6 +3,7 @@ import { config } from 'config';
 import { AnyColumn, SQL, and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
 import { emailSender } from 'emails';
 import { InviteUserToOrganizationEmail } from 'emails/invite';
+import { env } from 'env';
 import { setCookie } from 'hono/cookie';
 import { getI18n } from 'i18n';
 import { TimeSpan, User, generateId } from 'lucia';
@@ -31,7 +32,6 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './schema';
-import { env } from 'env';
 
 const i18n = getI18n('backend');
 

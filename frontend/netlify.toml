@@ -16,7 +16,7 @@
 # here but we recommend using the Netlify UI for sensitive
 # values to keep them out of your source repository.
 [context.production]
-  environment = { NODE_ENV = 'production', VITE_BACKEND_URL = 'https://api.cellajs.com', NODE_VERSION = 20 }
+  environment = { NODE_ENV = 'production', NODE_VERSION = 20 }
 
 # Set security headers and make sure to replace *.cellajs.com with your domain name(s) 
 # [[headers]]

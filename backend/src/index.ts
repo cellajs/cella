@@ -3,9 +3,9 @@ import cron from 'node-cron';
 
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { env } from 'env';
+import { resetDb } from './cron/resetDb';
 import { db } from './db/db';
 import { app } from './server';
-import { resetDb } from './cron/resetDb';
 
 const main = async () => {
   // Reset db every Sunday at midnight

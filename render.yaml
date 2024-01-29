@@ -18,11 +18,6 @@ services:
     numInstances: 1
     healthCheckPath: /ping
     envVars:
-      - key: VITE_FRONTEND_URL
-        fromService:
-          name: cella-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
       - key: DATABASE_URL
         fromDatabase:
           name: cella-db
@@ -106,21 +101,6 @@ services:
     envVars:
       - key: SKIP_INSTALL_DEPS
         value: true
-      - key: VITE_BACKEND_URL
-        fromService:
-          name: cella-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-      - key: VITE_FRONTEND_URL
-        fromService:
-          name: cella-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-      - key: VITE_TUS_URL
-        fromService:
-          name: cella-tus
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
     buildFilter:
       paths:
         - frontend/**/*.?s
@@ -133,21 +113,6 @@ services:
     previewPlan: starter
     schedule: 0 0 * * 0
     envVars:
-      - key: VITE_BACKEND_URL
-        fromService:
-          name: cella-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-      - key: VITE_FRONTEND_URL
-        fromService:
-          name: cella-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-      - key: VITE_TUS_URL
-        fromService:
-          name: cella-tus
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
     buildFilter:
       paths:
         - cron/**/*.?s

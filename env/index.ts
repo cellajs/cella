@@ -2,20 +2,12 @@ import { createEnv } from '@t3-oss/env-core';
 import { z } from 'zod';
 
 export const env = createEnv({
-  clientPrefix: 'VITE_',
-  client: {
-    VITE_BACKEND_URL: z.string().url().optional(),
-    VITE_FRONTEND_URL: z.string().url().optional(),
-    VITE_TUS_URL: z.string().url().optional(),
-  },
   server: {
     DATABASE_URL: z.string().url().optional(),
     PORT: z.string().optional(),
 
     SEND_ALL_TO_EMAIL: z.string().optional(),
-
     SENDGRID_API_KEY: z.string().optional(),
-
     APPSIGNAL_BACKEND_KEY: z.string().optional(),
 
     GITHUB_CLIENT_ID: z.string().optional(),

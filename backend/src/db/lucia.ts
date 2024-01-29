@@ -1,7 +1,7 @@
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle';
 import { GitHub, Google, MicrosoftEntraId } from 'arctic';
 import { config } from 'config';
-import { Lucia, TimeSpan, SessionCookieOptions } from 'lucia';
+import { Lucia, SessionCookieOptions, TimeSpan } from 'lucia';
 
 import { env } from 'env';
 import { githubSignInCallbackRoute, googleSignInCallbackRoute, microsoftSignInCallbackRoute } from '../routes/auth/schema';
