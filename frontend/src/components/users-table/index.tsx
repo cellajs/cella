@@ -12,7 +12,7 @@ import {
 } from '@tanstack/react-table';
 import { useEffect, useState } from 'react';
 
-import { GetUsersParams, getUserBySlugOrId, getUsers } from '~/api/api';
+import { GetUsersParams, getUserBySlugOrId, getUsers } from '~/api/users';
 import { User } from '~/types';
 
 import { Loader2, X } from 'lucide-react';

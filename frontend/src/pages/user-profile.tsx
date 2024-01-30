@@ -1,6 +1,6 @@
 import { useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { getUserBySlugOrId } from '~/api/api';
+import { getUserBySlugOrId } from '~/api/users';
 import { User } from '~/types';
 
 import { ContentHeader } from '~/components/content-header';

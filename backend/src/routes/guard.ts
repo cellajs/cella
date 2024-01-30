@@ -2,8 +2,17 @@ import { CustomHono } from '../types/common';
 
 import { createRoute } from '@hono/zod-openapi';
 import { MiddlewareHandler } from 'hono';
+import {
+  checkEmailRoute,
+  resetPasswordCallbackRoute,
+  resetPasswordRoute,
+  sendVerificationEmailRoute,
+  signInRoute,
+  verifyEmailRoute,
+} from './auth/schema';
 import authMiddleware from './middlewares/auth-middleware';
 import organizationAuthMiddleware from './middlewares/organization-auth-middleware';
+import { rateLimiter, signInRateLimiter } from './middlewares/rate-limiter';
 import {
   acceptInvitationToOrganizationRoute,
   createOrganizationRoute,
@@ -16,17 +25,8 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './organizations/schema';
-import { getOrganizationUploadTokenRoute, getPersonalUploadTokenRoute } from './other/schema';
+import { getUploadTokenRoute } from './other/schema';
 import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/schema';
-import { rateLimiter, signInRateLimiter } from './middlewares/rate-limiter';
-import {
-  checkEmailRoute,
-  resetPasswordCallbackRoute,
-  resetPasswordRoute,
-  sendVerificationEmailRoute,
-  signInRoute,
-  verifyEmailRoute,
-} from './auth/schema';
 
 // authMiddleware() is used for all routes that require authentication
 // organizationAuthMiddleware() is used for all routes that require organization membership; it also requires authMiddleware() to be used before and organizationId to be in the path
@@ -116,19 +116,19 @@ const routesMiddlewares: {
   },
   {
     route: inviteUserToOrganizationRoute,
-    middlewares: [authMiddleware(), organizationAuthMiddleware(['ADMIN']), rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 30 }, 'success')],
+    middlewares: [
+      authMiddleware(),
+      organizationAuthMiddleware(['ADMIN']),
+      rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 30 }, 'success'),
+    ],
   },
   {
     route: deleteUserFromOrganizationRoute,
     middlewares: [authMiddleware(), organizationAuthMiddleware(['ADMIN'])],
   },
   {
-    route: getPersonalUploadTokenRoute,
+    route: getUploadTokenRoute,
     middlewares: [authMiddleware()],
-  },
-  {
-    route: getOrganizationUploadTokenRoute,
-    middlewares: [authMiddleware(), organizationAuthMiddleware()],
   },
 ];
 

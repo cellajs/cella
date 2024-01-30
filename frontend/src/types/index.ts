@@ -1,5 +1,5 @@
 import { InferResponseType } from 'hono/client';
-import { client } from '~/api/api';
+import { client } from '~/api';
 
 export enum UploadType {
   Personal,
@@ -8,6 +8,7 @@ export enum UploadType {
 
 export interface UploadParams {
   public: boolean;
+  organizationId?: string;
 }
 
 export enum UserRole {

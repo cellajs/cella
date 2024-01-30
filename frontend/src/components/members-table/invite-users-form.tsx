@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { inviteUsersToOrganization } from '~/api/api';
+import { inviteUsersToOrganization } from '~/api/organizations';
 import { Organization } from '~/types';
 
 import { toast } from 'sonner';

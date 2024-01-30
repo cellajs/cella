@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { removeMemberFromOrganization } from '~/api/api';
+import { removeMemberFromOrganization } from '~/api/organizations';
 import { Member, Organization } from '~/types';
 
 import { dialog } from '~/components/dialoger/state';

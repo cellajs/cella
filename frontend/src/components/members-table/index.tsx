@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ColumnFiltersState, SortingState, Table as TableType, VisibilityState, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { GetMembersParams, getMembersByOrganizationId } from '~/api/api';
+import { GetMembersParams, getMembersByOrganizationId } from '~/api/organizations';
 import { Member, Organization } from '~/types';
 
 import { DataTable } from '~/components/data-table';

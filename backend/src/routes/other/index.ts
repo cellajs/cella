@@ -6,40 +6,30 @@ import { db } from '../../db/db';
 import { organizationsTable, usersTable } from '../../db/schema';
 import { CustomHono } from '../../types/common';
 import { customLogger } from '../middlewares/custom-logger';
-import { getOrganizationUploadTokenRoute, getPersonalUploadTokenRoute, getPublicCountsRoute } from './schema';
+import { getPublicCountsRoute, getUploadTokenRoute } from './schema';
 
 const app = new CustomHono();
 
 // routes
 const otherRoutes = app
-  .openapi(getPersonalUploadTokenRoute, async (ctx) => {
+  .openapi(getUploadTokenRoute, async (ctx) => {
     const isPublic = ctx.req.query('public');
     const user = ctx.get('user');
+    // TODO: validate query param organization
+    const organizationId = ctx.req.query('organizationId');
 
-    const token = jwt.sign({ sub: user.id, public: isPublic === 'true', imado: !!env.AWS_CLOUDFRONT_KEY_ID }, env.TUS_UPLOAD_API_SECRET);
-
-    customLogger('Personal upload token returned');
-
-    return ctx.json({
-      success: true,
-      data: token,
-    });
-  })
-  .openapi(getOrganizationUploadTokenRoute, async (ctx) => {
-    const isPublic = ctx.req.query('public');
-    const user = ctx.get('user');
-    const { organizationId } = ctx.req.valid('param');
+    const sub = organizationId ? `${organizationId}/${user.id}` : user.id;
 
     const token = jwt.sign(
       {
-        sub: `${organizationId}/${user.id}`,
+        sub: sub,
         public: isPublic === 'true',
         imado: !!env.AWS_S3_UPLOAD_ACCESS_KEY_ID,
       },
       env.TUS_UPLOAD_API_SECRET,
     );
 
-    customLogger('Organization upload token returned');
+    customLogger('Upload token returned');
 
     return ctx.json({
       success: true,

@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import useBeforeUnload from '~/hooks/useBeforeUnload';
 
 import { useWatch } from 'react-hook-form';
-import { checkSlug } from '~/api/api';
+import { checkSlug } from '~/api/authentication';
 import { useApiWrapper } from '~/hooks/useApiWrapper';
 import useFormWithDraft from '~/hooks/useDraftForm';
 import { useUpdateUserMutation } from '~/router/routeTree';

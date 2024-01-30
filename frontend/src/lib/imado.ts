@@ -2,7 +2,7 @@ import { UploadResult, Uppy, UppyOptions } from '@uppy/core';
 
 import Tus from '@uppy/tus';
 import { config } from 'config';
-import { getUploadToken } from '../api/api';
+import { getUploadToken } from '../api/general';
 import { UploadParams, UploadType } from '../types';
 
 import '@uppy/core/dist/style.min.css';
@@ -21,7 +21,7 @@ export async function ImadoUppy(
   organizationId?: string,
 ): Promise<Uppy> {
   // Get upload token and check if public or private files
-  const token = await getUploadToken(type, { public: opts.public }, organizationId);
+  const token = await getUploadToken(type, { public: opts.public, organizationId });
 
   const { public: isPublic, sub, imado: useImadoAPI } = readJwt(token);
 
@@ -48,10 +48,7 @@ export async function ImadoUppy(
       console.error('Upload error:', error);
     })
     .on('complete', (result: UploadResult) => {
-      if (!useImadoAPI)
-        console.warn(
-          'Imado API is disabled, files will not be uploaded to Imado and you need to handle the completion yourself (move `./files/` to CDN) to serve files.',
-        );
+      if (!useImadoAPI) console.warn('Imado API is disabled, files will not be uploaded to Imado.');
 
       if (result.successful && useImadoAPI) {
         const urls = result.successful.map((file) => {

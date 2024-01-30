@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/component
 import { Input } from '~/components/ui/input';
 
 import { ArrowRight } from 'lucide-react';
-import { checkEmail } from '~/api/api';
+import { checkEmail } from '~/api/authentication';
 import { useApiWrapper } from '~/hooks/useApiWrapper';
 
 const formSchema = checkEmailJsonSchema;

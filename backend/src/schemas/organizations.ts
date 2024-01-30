@@ -73,10 +73,6 @@ export const getOrganizationParamSchema = z.object({
   organizationId: slugSchema.or(idSchema),
 });
 
-export const getOrganizationUploadTokenParamSchema = z.object({
-  organizationId: idSchema,
-});
-
 export const updateOrganizationParamSchema = z.object({
   organizationId: idSchema,
 });

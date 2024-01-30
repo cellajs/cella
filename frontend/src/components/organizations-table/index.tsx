@@ -2,7 +2,7 @@ import { InfiniteData, QueryKey, UseInfiniteQueryResult, useInfiniteQuery } from
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ColumnFiltersState, SortingState, Table as TableType, VisibilityState, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useEffect, useState } from 'react';
-import { getOrganizations } from '~/api/api';
+import { getOrganizations } from '~/api/organizations';
 
 import { useTranslation } from 'react-i18next';
 import { queryClient } from '~/router';

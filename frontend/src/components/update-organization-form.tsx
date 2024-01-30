@@ -192,9 +192,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
                   defaultValue: 'Default language',
                 })}
               </FormLabel>
-              <FormDescription>
-                The language that will be given to new members.
-              </FormDescription>
+              <FormDescription>The language that will be given to new members.</FormDescription>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
                   <SelectTrigger className="w-full">

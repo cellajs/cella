@@ -1,5 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next';
-import { deleteOrganizationById } from '~/api/api';
+import { deleteOrganizationById } from '~/api/organizations';
 import { Organization } from '~/types';
 
 import { toast } from 'sonner';

@@ -1,6 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import { successResponseWithDataSchema } from '../../schemas/common';
-import { getOrganizationUploadTokenParamSchema } from '../../schemas/organizations';
 import { errorResponses } from '../../schemas/responses';
 
 export const getPublicCountsRoute = createRoute({
@@ -30,14 +29,15 @@ export const getPublicCountsRoute = createRoute({
   },
 });
 
-export const getPersonalUploadTokenRoute = createRoute({
+export const getUploadTokenRoute = createRoute({
   method: 'get',
   path: '/uploadtoken',
   tags: ['general'],
-  summary: 'Get personal upload token',
+  summary: 'Get upload token for user or organization',
   request: {
     query: z.object({
       public: z.string().optional().default('false'),
+      organization: z.string().optional(),
       width: z.string().optional(),
       height: z.string().optional(),
       quality: z.string().optional(),
@@ -46,35 +46,7 @@ export const getPersonalUploadTokenRoute = createRoute({
   },
   responses: {
     200: {
-      description: 'Upload token',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(
-            z.string().openapi({
-              description: 'The upload token (JWT)',
-            }),
-          ),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const getOrganizationUploadTokenRoute = createRoute({
-  method: 'get',
-  path: '/organizations/{organizationId}/uploadtoken',
-  tags: ['general'],
-  summary: 'Get organization upload token',
-  request: {
-    params: getOrganizationUploadTokenParamSchema,
-    query: z.object({
-      public: z.string().optional().default('false'),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'Upload token with a scope for an organization',
+      description: 'Upload token with a scope for a user or organization',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(

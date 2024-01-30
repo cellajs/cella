@@ -1,6 +1,7 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { acceptOrganizationInvite, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/api';
+import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
+import { acceptOrganizationInvite } from '~/api/organizations';
 import { Button } from '~/components/ui/button';
 import { SignInRoute } from '~/router/routeTree';
 import { useThemeStore } from '~/store/theme';

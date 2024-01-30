@@ -9,7 +9,7 @@ import AuthPage from '.';
 import OauthOptions from './oauth-options';
 
 import { ArrowRight } from 'lucide-react';
-import { acceptOrganizationInvite } from '~/api/api';
+import { acceptOrganizationInvite } from '~/api/organizations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/useApiWrapper';

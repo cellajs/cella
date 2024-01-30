@@ -1,5 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next';
-import { deleteUserById } from '~/api/api';
+import { deleteUserById } from '~/api/users';
 import { User } from '~/types';
 
 import { toast } from 'sonner';

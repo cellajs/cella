@@ -2,7 +2,7 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ApiError } from '~/api/api';
+import { ApiError } from '~/api';
 
 const defaultMessages = (t: ReturnType<typeof useTranslation>['t']) => ({
   '401': t('error.unauthorized_action', {

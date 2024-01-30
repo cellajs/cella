@@ -3,13 +3,12 @@ import { Outlet, Route, createRouteMask, redirect, rootRouteWithContext } from '
 import { z } from 'zod';
 import {
   UpdateOrganizationParams,
-  UpdateUserParams,
   acceptOrganizationInvite,
   checkIsEmailExistsByInviteToken,
   getOrganizationBySlugOrId,
   updateOrganization,
-  updateUser,
-} from '~/api/api';
+} from '~/api/organizations';
+import { UpdateUserParams, updateUser } from '~/api/users';
 import { Root } from '~/components/root';
 import VerifyEmail from '~/pages/auth/verify-email';
 import { useUserStore } from '~/store/user';

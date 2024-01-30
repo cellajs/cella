@@ -7,7 +7,7 @@ import * as z from 'zod';
 
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { signUp } from '~/api/api';
+import { signUp } from '~/api/authentication';
 import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
