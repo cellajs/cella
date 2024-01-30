@@ -17,6 +17,8 @@ import {
 } from './organizations/schema';
 import { getOrganizationUploadTokenRoute, getPersonalUploadTokenRoute } from './other/schema';
 import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/schema';
+import { rateLimiter, signInRateLimiter } from './middlewares/rate-limiter';
+import { signInRoute } from './auth/schema';
 
 // authMiddleware() is used for all routes that require authentication
 // organizationAuthMiddleware() is used for all routes that require organization membership; it also requires authMiddleware() to be used before and organizationId to be in the path
@@ -24,6 +26,10 @@ const routesMiddlewares: {
   route: ReturnType<typeof createRoute>;
   middlewares: MiddlewareHandler[];
 }[] = [
+  {
+    route: signInRoute,
+    middlewares: [signInRateLimiter()],
+  },
   {
     route: meRoute,
     middlewares: [authMiddleware()],
@@ -54,7 +60,13 @@ const routesMiddlewares: {
   },
   {
     route: getOrganizationsRoute,
-    middlewares: [authMiddleware()],
+    middlewares: [
+      authMiddleware(),
+      rateLimiter({
+        points: 1,
+        duration: 60,
+      }),
+    ],
   },
   {
     route: getOrganizationByIdOrSlugRoute,

@@ -5,7 +5,7 @@ import { UserConfig, defineConfig, splitVendorChunkPlugin } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import { config } from 'config';
+import { config } from '../config';
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {

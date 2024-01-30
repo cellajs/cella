@@ -1,6 +1,7 @@
 {
   "error.unauthorized": "Unauthorized",
   "error.forbidden": "Forbidden",
+  "error.too_many_requests": "Too many requests",
   "error.email_already_exists": "Email already exists",
   "error.invalid_email_or_password": "Invalid email or password",
   "error.user_not_found": "User not found",

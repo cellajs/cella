@@ -46,6 +46,7 @@
     "node-cron": "^3.0.3",
     "oslo": "^1.0.1",
     "postgres": "^3.4.3",
+    "rate-limiter-flexible": "^4.0.1",
     "slugify": "^1.6.6",
     "zod": "^3.22.4"
   },

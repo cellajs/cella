@@ -28,7 +28,15 @@ const handler: ExportedHandler<Env> = {
       const pathname = url.pathname.split('/api/v1').pop();
       const apiServerUrl = env.BACKEND_RENDER_URL + pathname + url.search;
       // Here we preserve the original request's headers and method
-      const apiRequest = new Request(apiServerUrl, request);
+      const apiRequest = new Request(apiServerUrl, {
+        ...request,
+        headers: {
+          ...request.headers,
+          'X-Forwarded-For': request.headers.get('CF-Connecting-IP') || '',
+          'X-Forwarded-Host': url.host,
+          'X-Forwarded-Proto': url.protocol.replace(':', ''),
+        },
+      });
       return fetch(apiRequest);
     }
 
