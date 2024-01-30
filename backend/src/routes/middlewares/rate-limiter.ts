@@ -13,11 +13,11 @@ class RateLimiter extends RateLimiterMemory {
   public middleware(): MiddlewareHandler<Env> {
     return async (ctx, next) => {
       const ipAddr = ctx.req.header('x-forwarded-for');
-      const body = await ctx.req.json();
+      const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.json() : undefined;
       const user = ctx.get('user');
       const username = body?.email || user?.id;
 
-      if (!ipAddr || !username) {
+      if (!ipAddr && !username) {
         return next();
       }
 
