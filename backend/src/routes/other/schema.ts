@@ -6,7 +6,7 @@ import { errorResponses } from '../../schemas/responses';
 export const getPublicCountsRoute = createRoute({
   method: 'get',
   path: '/public/counts',
-  tags: ['public'],
+  tags: ['general'],
   summary: 'Get public counts',
   responses: {
     200: {
@@ -33,7 +33,7 @@ export const getPublicCountsRoute = createRoute({
 export const getPersonalUploadTokenRoute = createRoute({
   method: 'get',
   path: '/uploadtoken',
-  tags: ['uploads'],
+  tags: ['general'],
   summary: 'Get personal upload token',
   request: {
     query: z.object({
@@ -64,7 +64,7 @@ export const getPersonalUploadTokenRoute = createRoute({
 export const getOrganizationUploadTokenRoute = createRoute({
   method: 'get',
   path: '/organizations/{organizationId}/uploadtoken',
-  tags: ['uploads'],
+  tags: ['general'],
   summary: 'Get organization upload token',
   request: {
     params: getOrganizationUploadTokenParamSchema,

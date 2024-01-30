@@ -6,8 +6,7 @@ const openAPITags = [
   { name: 'auth', description: 'Authentication' },
   { name: 'users', description: 'Users' },
   { name: 'organizations', description: 'Organizations' },
-  { name: 'uploads', description: 'Uploads' },
-  { name: 'public', description: 'Public' },
+  { name: 'general', description: 'General' },
 ];
 
 const docs = (app: CustomHono) => {
@@ -16,7 +15,7 @@ const docs = (app: CustomHono) => {
   registry.registerComponent('securitySchemes', 'cookieAuth', {
     type: 'apiKey',
     in: 'cookie',
-    name: `${config.slug}-session`,
+    name: `${config.slug}-session-v1`,
     description: "Authentication cookie. If you don't have it, you need to sign in or sign up first.",
   });
 
