@@ -39,10 +39,6 @@ export const config = {
   has: {
     chatSupport: true, // TODO: implement
     pwaSupport: true,
-    darkMode: true, // TODO: implement
-    notifications: true, // TODO: implement
-    userProfiles: true, // TODO: implement
-    newsletters: true, // TODO: implement
     signUp: true, // TODO: implement
     waitlist: true, // TODO: implement
   },

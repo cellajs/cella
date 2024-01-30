@@ -6,9 +6,6 @@
   "scripts": {
     "upload": "dotenv -e .env -- tsx scripts/upload.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "config": "workspace:*",
     "dotenv": "^16.3.1",

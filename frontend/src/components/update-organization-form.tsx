@@ -175,7 +175,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
                   value={selectedLanguages}
                   onChange={selectedLanguagesChange}
                   defaultOptions={config.languages}
-                  placeholder="Select languages"
+                  placeholder="Select ..."
                   emptyIndicator="No more languages"
                 />
               </FormControl>
@@ -193,7 +193,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
                 })}
               </FormLabel>
               <FormDescription>
-                The language that will be given to new members of <strong>{organization.name}</strong>.
+                The language that will be given to new members.
               </FormDescription>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
