@@ -1,25 +1,8 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "skipLibCheck": true,
-
     /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
     "jsx": "react-jsx",
-
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
   },
-  "include": ["src", "drizzle.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src", "drizzle.config.ts"]
 }
