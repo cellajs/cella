@@ -41,6 +41,7 @@ const app = new CustomHono();
 const organizationsRoutes = app
   .openapi(createOrganizationRoute, async (ctx) => {
     const { name } = ctx.req.valid('json');
+    const user = ctx.get('user');
 
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.name, name));
 
@@ -60,6 +61,7 @@ const organizationsRoutes = app
         slug: slugify(name, {
           lower: true,
         }),
+        createdBy: user.id,
       })
       .returning();
 
@@ -410,14 +412,19 @@ const organizationsRoutes = app
         }
       }
 
-      const verificationToken = generateId(40);
+      const token = generateId(40);
       await db.insert(tokensTable).values({
-        id: verificationToken,
+        id: token,
+        type: 'INVITATION',
         userId: targetUser?.id,
         email: email.toLowerCase(),
         organizationId: organization.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
+
+      const emailLanguage = organization.defaultLanguage || targetUser.language;
+
+      await i18n.changeLanguage(i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage);
 
       const emailHtml = render(
         InviteUserToOrganizationEmail({
@@ -425,7 +432,7 @@ const organizationsRoutes = app
           orgImage: organization.logoUrl || '',
           userImage: targetUser?.thumbnailUrl || '',
           username: targetUser?.name || email.toLowerCase() || '',
-          inviteUrl: `${config.frontendUrl}/auth/accept-invite/${verificationToken}`,
+          inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
           i18n,
         }),
       );
@@ -520,6 +527,7 @@ const organizationsRoutes = app
         .values({
           id: userId,
           slug: userId,
+          language: organization.defaultLanguage || config.defaultLanguage,
           email: token.email,
           emailVerified: true,
           hashedPassword,

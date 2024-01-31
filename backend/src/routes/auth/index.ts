@@ -66,6 +66,7 @@ const authRoutes = app
           slug: slugExists ? `${slug}-${userId}` : slug,
           firstName: slug,
           email: email.toLowerCase(),
+          language: config.defaultLanguage,
           hashedPassword,
         })
         .returning();
@@ -195,9 +196,10 @@ const authRoutes = app
 
     // creating email verification token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
-    const verificationToken = generateId(40);
+    const token = generateId(40);
     await db.insert(tokensTable).values({
-      id: verificationToken,
+      id: token,
+      type: 'EMAIL_VERIFICATION',
       userId: user.id,
       email,
       expiresAt: createDate(new TimeSpan(2, 'h')),
@@ -205,7 +207,7 @@ const authRoutes = app
 
     const emailHtml = render(
       VerificationEmail({
-        verificationLink: `${config.frontendUrl}/auth/verify-email/${verificationToken}`,
+        verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
         i18n,
       }),
     );
@@ -244,9 +246,10 @@ const authRoutes = app
 
     // creating password reset token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
-    const verificationToken = generateId(40);
+    const token = generateId(40);
     await db.insert(tokensTable).values({
-      id: verificationToken,
+      id: token,
+      type: 'PASSWORD_RESET',
       userId: user.id,
       email,
       expiresAt: createDate(new TimeSpan(2, 'h')),
@@ -254,7 +257,7 @@ const authRoutes = app
 
     const emailHtml = render(
       ResetPasswordEmail({
-        resetPasswordLink: `${config.frontendUrl}/auth/reset-password/${verificationToken}`,
+        resetPasswordLink: `${config.frontendUrl}/auth/reset-password/${token}`,
         i18n,
       }),
     );
@@ -565,6 +568,7 @@ const authRoutes = app
         thumbnailUrl: githubUser.avatar_url,
         bio: githubUser.bio,
         emailVerified: primaryEmail.verified,
+        language: config.defaultLanguage,
         firstName,
         lastName,
       });
@@ -738,6 +742,7 @@ const authRoutes = app
         slug: userId,
         email: user.email.toLowerCase(),
         name: user.given_name,
+        language: config.defaultLanguage,
         thumbnailUrl: user.picture,
         firstName: user.given_name,
         lastName: user.family_name,
@@ -898,6 +903,7 @@ const authRoutes = app
       await db.insert(usersTable).values({
         id: userId,
         slug: userId,
+        language: config.defaultLanguage,
         email: user.email.toLowerCase(),
         name: user.given_name,
         thumbnailUrl: user.picture,

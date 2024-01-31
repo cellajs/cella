@@ -5,6 +5,7 @@ import { Argon2id } from 'oslo/password';
 import { db } from '../src/db/db';
 import { InsertMembershipModel, InsertOrganizationModel, InsertUserModel, membershipsTable, organizationsTable, usersTable } from '../src/db/schema';
 import { nanoid } from '../src/lib/nanoid';
+import { config } from 'config';
 
 export const organizationsAndMembersSeed = async () => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
@@ -75,6 +76,7 @@ export const organizationsAndMembersSeed = async () => {
         id: nanoid(),
         firstName,
         lastName,
+        language: config.defaultLanguage,
         name,
         email,
         hashedPassword,

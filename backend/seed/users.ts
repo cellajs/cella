@@ -3,6 +3,7 @@ import { Argon2id } from 'oslo/password';
 import { db } from '../src/db/db';
 import { usersTable } from '../src/db/schema';
 import { nanoid } from '../src/lib/nanoid';
+import { config } from 'config';
 
 export const usersSeed = async () => {
   const hashedPassword = await new Argon2id().hash('12345678');
@@ -13,6 +14,7 @@ export const usersSeed = async () => {
       id: nanoid(),
       email: 'admin-test@cellajs.com',
       emailVerified: true,
+      language: config.defaultLanguage,
       slug: 'admin-user',
       role: 'ADMIN',
       hashedPassword,

@@ -7,10 +7,7 @@ import { idSchema, passwordSchema, slugSchema } from './common';
 export const apiUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
   clearSessionsAt: z.string().nullable(),
-  acceptInvitationAt: z.string().nullable(),
-  invitationAt: z.string().nullable(),
   lastEmailAt: z.string().nullable(),
-  lastPostAt: z.string().nullable(),
   lastSeenAt: z.string().nullable(),
   lastVisitAt: z.string().nullable(),
   lastSignInAt: z.string().nullable(),

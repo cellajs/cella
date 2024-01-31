@@ -59,7 +59,6 @@ const authMiddleware =
       .update(usersTable)
       .set({
         lastSeenAt: new Date(),
-        lastPostAt: method === 'post' || method === 'put' ? new Date() : undefined,
         lastVisitAt: method === 'get' && path === '/me' ? new Date() : undefined,
       })
       .where(eq(usersTable.id, user.id));

@@ -14,21 +14,16 @@ export const usersTable = pgTable(
     email: varchar('email').notNull().unique(),
     emailVerified: boolean('email_verified').notNull().default(false),
     bio: varchar('bio'),
-    language: varchar('language'),
+    language: varchar('language').notNull(),
     bannerUrl: varchar('banner_url'),
     thumbnailUrl: varchar('thumbnail_url'),
-    demoUser: boolean('demo_user').notNull().default(false),
     newsletter: boolean('newsletter').notNull().default(false),
     clearSessionsAt: timestamp('clear_sessions_at'), // all sessions should be treated as expired if set before this date
-    acceptInvitationAt: timestamp('accept_invitation_at'), // time invite was accepted by the user
-    invitationAt: timestamp('invitation_at'), // time the has been invite was sent
     lastEmailAt: timestamp('last_email_at'), // last time an email notification was successfully sent
-    lastPostAt: timestamp('last_post_at'), // last time a put or post has been made
     lastSeenAt: timestamp('last_seen_at'), // last time any request has been made
     lastVisitAt: timestamp('last_visit_at'), // last time GET me
     lastSignInAt: timestamp('last_sign_in_at'), // last time user went through authentication flow
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    createdBy: varchar('created_by'),
     modifiedAt: timestamp('modified_at'),
     modifiedBy: varchar('modified_by'),
     role: varchar('role', { enum: ['USER', 'ADMIN'] })
@@ -39,10 +34,6 @@ export const usersTable = pgTable(
     return {
       nameIndex: index('users_name_index').on(table.name),
       emailIndex: index('users_email_index').on(table.email),
-      createdByReference: foreignKey({
-        columns: [table.createdBy],
-        foreignColumns: [table.id],
-      }),
       modifiedByReference: foreignKey({
         columns: [table.modifiedBy],
         foreignColumns: [table.id],
@@ -68,6 +59,7 @@ export const oauthAccountsTable = pgTable(
     userId: varchar('user_id')
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => {
     return {
@@ -83,14 +75,19 @@ export const sessionsTable = pgTable('sessions', {
   userId: varchar('user_id')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
 });
 
 export const tokensTable = pgTable('tokens', {
   id: varchar('id').primaryKey(),
+  type: varchar('type', {
+    enum: ['EMAIL_VERIFICATION', 'PASSWORD_RESET', 'INVITATION'],
+  }).notNull(),
   email: varchar('email'),
   userId: varchar('user_id').references(() => usersTable.id, { onDelete: 'cascade' }),
   organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
 });
 
