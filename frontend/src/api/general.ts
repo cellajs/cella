@@ -38,3 +38,14 @@ export const getPublicCounts = async () => {
   if ('error' in json) throw new ApiError(response.status, json.error);
   return json.data;
 };
+
+// Check if slug is available
+export const checkSlug = async (slug: string) => {
+  const response = await client['check-slug'][':slug'].$get({
+    param: { slug },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(response.status, json.error);
+  return json.data;
+};

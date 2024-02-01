@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import useBeforeUnload from '~/hooks/useBeforeUnload';
 
 import { useWatch } from 'react-hook-form';
-import { checkSlug } from '~/api/authentication';
+import { checkSlug } from '~/api/general';
 import { useApiWrapper } from '~/hooks/useApiWrapper';
 import useFormWithDraft from '~/hooks/useDraftForm';
 import { useUpdateUserMutation } from '~/router/routeTree';
@@ -97,7 +97,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   };
 
   const revertSlug = () => {
-    form.setValue('slug', user.slug, { shouldDirty: true, shouldValidate: true });
+    form.resetField('slug');
   };
 
   useEffect(() => {
@@ -154,7 +154,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
                 {/* TODO: This breaks accessibility of the form label? */}
                 <div className="relative">
                   <Input {...field} />
-                  {user.slug !== form.getValues('slug') && (
+                  {user.slug !== slug && (
                     <div className="absolute inset-y-1 right-1 flex justify-end">
                       <Button variant="ghost" size="sm" aria-label="Revert to current user handle" onClick={revertSlug} className="h-full">
                         <Undo size={16} className="mr-2" /> Revert to <strong className="ml-1">{user.slug}</strong>

@@ -9,8 +9,9 @@ import { membershipsTable, organizationsTable, usersTable } from '../../db/schem
 import { createError, forbiddenError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono } from '../../types/common';
+import { checkSlugRoute } from '../general/schema';
 import { customLogger } from '../middlewares/custom-logger';
-import { checkSlugRoute, deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './schema';
+import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './schema';
 
 const i18n = getI18n('backend');
 
@@ -280,21 +281,6 @@ const usersRoutes = app
     return ctx.json({
       success: true,
       data: transformDatabaseUser(targetUser),
-    });
-  })
-  .openapi(checkSlugRoute, async (ctx) => {
-    const { slug } = ctx.req.valid('param');
-
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.slug, slug));
-
-    customLogger('Slug checked', {
-      slug,
-      available: !!user,
-    });
-
-    return ctx.json({
-      success: true,
-      data: !!user,
     });
   });
 

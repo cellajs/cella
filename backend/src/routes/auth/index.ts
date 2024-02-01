@@ -19,23 +19,23 @@ import { createError, unauthorizedError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
+import { checkSlugRoute } from '../general/schema';
 import { customLogger } from '../middlewares/custom-logger';
-import { checkSlugRoute } from '../users/schema';
 import {
-  checkEmailRoute,
-  githubSignInCallbackRoute,
-  githubSignInRoute,
-  googleSignInCallbackRoute,
-  googleSignInRoute,
-  microsoftSignInCallbackRoute,
-  microsoftSignInRoute,
-  resetPasswordCallbackRoute,
-  resetPasswordRoute,
-  sendVerificationEmailRoute,
-  signInRoute,
-  signOutRoute,
-  signUpRoute,
-  verifyEmailRoute,
+    checkEmailRoute,
+    githubSignInCallbackRoute,
+    githubSignInRoute,
+    googleSignInCallbackRoute,
+    googleSignInRoute,
+    microsoftSignInCallbackRoute,
+    microsoftSignInRoute,
+    resetPasswordCallbackRoute,
+    resetPasswordRoute,
+    sendVerificationEmailRoute,
+    signInRoute,
+    signOutRoute,
+    signUpRoute,
+    verifyEmailRoute,
 } from './schema';
 
 const i18n = getI18n('backend');

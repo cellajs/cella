@@ -32,6 +32,7 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './schema';
+import { checkSlugRoute } from '../general/schema';
 
 const i18n = getI18n('backend');
 
@@ -159,6 +160,7 @@ const organizationsRoutes = app
 
     const {
       name,
+      slug,
       shortName,
       country,
       timezone,
@@ -176,15 +178,25 @@ const organizationsRoutes = app
       chatSupport,
     } = ctx.req.valid('json');
 
+    if (slug) {
+      const response = await fetch(`${config.backendUrl + checkSlugRoute.path.replace('{slug}', slug)}`, {
+        method: checkSlugRoute.method,
+      });
+
+      const { data: slugExists } = (await response.json()) as { data: boolean };
+
+      if (slugExists && slug !== organization.slug) {
+        customLogger('Slug already exists', { slug });
+
+        return ctx.json(createError(i18n, 'error.slug_already_exists', 'Slug already exists'), 400);
+      }
+    }
+
     const [updatedOrganization] = await db
       .update(organizationsTable)
       .set({
         name,
-        slug: name
-          ? slugify(name, {
-              lower: true,
-            })
-          : undefined,
+        slug,
         shortName,
         country,
         timezone,

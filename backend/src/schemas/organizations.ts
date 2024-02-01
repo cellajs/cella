@@ -50,6 +50,7 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
   authStrategies: z.array(z.string()).optional(),
 })
   .pick({
+    slug: true,
     name: true,
     shortName: true,
     country: true,

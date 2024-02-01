@@ -27,17 +27,6 @@ export const checkEmail = async (email: string) => {
   return json.data;
 };
 
-// Check if slug is available
-export const checkSlug = async (slug: string) => {
-  const response = await client.users['check-slug'][':slug'].$get({
-    param: { slug },
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
-  return json.data;
-};
-
 // Verify the user's email with token sent by email
 export const verifyEmail = async (token: string, resend = false) => {
   const response = await client['verify-email'][':token'].$get({

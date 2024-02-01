@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
 
 import { env } from 'env';
 import jwt from 'jsonwebtoken';
@@ -6,12 +6,12 @@ import { db } from '../../db/db';
 import { organizationsTable, usersTable } from '../../db/schema';
 import { CustomHono } from '../../types/common';
 import { customLogger } from '../middlewares/custom-logger';
-import { getPublicCountsRoute, getUploadTokenRoute } from './schema';
+import { checkSlugRoute, getPublicCountsRoute, getUploadTokenRoute } from './schema';
 
 const app = new CustomHono();
 
 // routes
-const otherRoutes = app
+const generalRoutes = app
   .openapi(getUploadTokenRoute, async (ctx) => {
     const isPublic = ctx.req.query('public');
     const user = ctx.get('user');
@@ -56,6 +56,23 @@ const otherRoutes = app
         users,
       },
     });
+  })
+  .openapi(checkSlugRoute, async (ctx) => {
+    const { slug } = ctx.req.valid('param');
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.slug, slug));
+
+    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.slug, slug));
+
+    customLogger('Slug checked', {
+      slug,
+      available: !!user || !!organization,
+    });
+
+    return ctx.json({
+      success: true,
+      data: !!user || !!organization,
+    });
   });
 
-export default otherRoutes;
+export default generalRoutes;

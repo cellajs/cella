@@ -6,7 +6,7 @@ import CountryFlag from '~/components/country-flag';
 import { Organization } from '~/types';
 
 import { config } from 'config';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
@@ -20,6 +20,9 @@ import timezones from '~/lib/timezones.json';
 import { useUpdateOrganizationMutation } from '~/router/routeTree';
 import { dialog } from './dialoger/state';
 import MultipleSelector, { Option } from './ui/multiple-selector';
+import { useWatch } from 'react-hook-form';
+import { checkSlug } from '~/api/general';
+import { Undo } from 'lucide-react';
 
 interface Props {
   organization: Organization;
@@ -39,6 +42,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, {
     resolver: zodResolver(formSchema),
     defaultValues: {
+      slug: organization.slug,
       name: organization.name,
       shortName: organization.shortName,
       websiteUrl: organization.websiteUrl,
@@ -48,6 +52,11 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       defaultLanguage: organization.defaultLanguage,
       languages: organization.languages || [],
     },
+  });
+
+  const slug = useWatch({
+    control: form.control,
+    name: 'slug',
   });
 
   // Prevent data loss
@@ -88,9 +97,61 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     form.setValue('languages', updatedLanguages, { shouldDirty: true, shouldValidate: true });
   };
 
+  const revertSlug = () => {
+    form.resetField('slug');
+  };
+
+  useEffect(() => {
+    if (slug && slug !== organization.slug) {
+      apiWrapper(
+        () => checkSlug(slug),
+        (isExists) => {
+          if (isExists) {
+            form.setError('slug', {
+              type: 'manual',
+              message: t('error.slug_already_exists', {
+                defaultValue: 'Slug already exists',
+              }),
+            });
+          } else {
+            form.clearErrors('slug');
+          }
+        },
+      );
+    }
+  }, [slug]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="slug"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {t('label.organization_handle', {
+                  defaultValue: 'Organization handle',
+                })}
+              </FormLabel>
+              <FormDescription>A unique handle for organization URL.</FormDescription>
+              <FormControl>
+                {/* TODO: This breaks accessibility of the form label? */}
+                <div className="relative">
+                  <Input {...field} />
+                  {organization.slug !== slug && (
+                    <div className="absolute inset-y-1 right-1 flex justify-end">
+                      <Button variant="ghost" size="sm" aria-label="Revert to current organization handle" onClick={revertSlug} className="h-full">
+                        <Undo size={16} className="mr-2" /> Revert to <strong className="ml-1">{organization.slug}</strong>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="name"

@@ -178,26 +178,3 @@ export const deleteUserRoute = createRoute({
     ...errorResponses,
   },
 });
-
-export const checkSlugRoute = createRoute({
-  method: 'get',
-  path: '/users/check-slug/{slug}',
-  tags: ['users'],
-  summary: 'Check if a slug is already in use',
-  request: {
-    params: z.object({
-      slug: z.string(),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'User',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(z.boolean()),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
