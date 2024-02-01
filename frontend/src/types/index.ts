@@ -29,7 +29,7 @@ export type User = Extract<InferResponseType<(typeof client.me)['$get']>, { data
 export type Organization = Extract<InferResponseType<(typeof client.organizations)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Member = Extract<
-  InferResponseType<(typeof client.organizations)[':organizationId']['members']['$get']>,
+  InferResponseType<(typeof client.organizations)[':organizationIdentifier']['members']['$get']>,
   { data: unknown }
 >['data']['items'][number];
 

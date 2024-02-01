@@ -12,12 +12,12 @@ export const createOrganization = async (name: string) => {
   return json.data;
 };
 
-export type UpdateOrganizationParams = Parameters<(typeof client.organizations)[':organizationId']['$put']>['0']['json'];
+export type UpdateOrganizationParams = Parameters<(typeof client.organizations)[':organizationIdentifier']['$put']>['0']['json'];
 
 // Update an organization
-export const updateOrganization = async (organizationId: string, params: UpdateOrganizationParams) => {
-  const response = await client.organizations[':organizationId'].$put({
-    param: { organizationId },
+export const updateOrganization = async (organizationIdentifier: string, params: UpdateOrganizationParams) => {
+  const response = await client.organizations[':organizationIdentifier'].$put({
+    param: { organizationIdentifier },
     json: params,
   });
 
@@ -66,8 +66,8 @@ export const getOrganizations = async (
 
 // Get an organization by its slug or ID
 export const getOrganizationBySlugOrId = async (organizationIdentifier: string) => {
-  const response = await client.organizations[':organizationId'].$get({
-    param: { organizationId: organizationIdentifier },
+  const response = await client.organizations[':organizationIdentifier'].$get({
+    param: { organizationIdentifier },
   });
 
   const json = await response.json();
@@ -76,9 +76,9 @@ export const getOrganizationBySlugOrId = async (organizationIdentifier: string) 
 };
 
 // Update a user's role in an organization
-export const updateUserInOrganization = async (organizationId: string, userId: string, role: Member['organizationRole']) => {
-  const response = await client.organizations[':organizationId'].members[':userId'].$put({
-    param: { organizationId, userId },
+export const updateUserInOrganization = async (organizationIdentifier: string, userId: string, role: Member['organizationRole']) => {
+  const response = await client.organizations[':organizationIdentifier'].members[':userId'].$put({
+    param: { organizationIdentifier, userId },
     json: { role },
   });
 
@@ -88,9 +88,9 @@ export const updateUserInOrganization = async (organizationId: string, userId: s
 };
 
 // Delete an organization
-export const deleteOrganizationById = async (organizationId: string) => {
-  const response = await client.organizations[':organizationId'].$delete({
-    param: { organizationId },
+export const deleteOrganization = async (organizationIdentifier: string) => {
+  const response = await client.organizations[':organizationIdentifier'].$delete({
+    param: { organizationIdentifier },
   });
 
   const json = await response.json();
@@ -99,9 +99,9 @@ export const deleteOrganizationById = async (organizationId: string) => {
 };
 
 // Invite users to an organization
-export const inviteUsersToOrganization = async (organizationId: string, emails: string[]) => {
-  const response = await client.organizations[':organizationId'].members.invite.$post({
-    param: { organizationId },
+export const inviteUsersToOrganization = async (organizationIdentifier: string, emails: string[]) => {
+  const response = await client.organizations[':organizationIdentifier'].members.invite.$post({
+    param: { organizationIdentifier },
     json: { emails },
   });
 
@@ -142,22 +142,22 @@ export const checkIsEmailExistsByInviteToken = async (token: string) => {
 };
 
 export type GetMembersParams = Partial<
-  Omit<Parameters<(typeof client.organizations)[':organizationId']['members']['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client.organizations)[':organizationIdentifier']['members']['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
     page: number;
   }
 >;
 
 // Get a list of members in an organization
-export const getMembersByOrganizationId = async (
-  organizationId: string,
+export const getMembersByOrganizationIdentifier = async (
+  organizationIdentifier: string,
   { q, sort = 'id', order = 'asc', role, page = 0, limit = 50 }: GetMembersParams = {},
   signal?: AbortSignal,
 ) => {
-  const response = await client.organizations[':organizationId'].members.$get(
+  const response = await client.organizations[':organizationIdentifier'].members.$get(
     {
       param: {
-        organizationId,
+        organizationIdentifier,
       },
       query: {
         q,
@@ -185,9 +185,9 @@ export const getMembersByOrganizationId = async (
 };
 
 // Remove a member from an organization
-export const removeMemberFromOrganization = async (organizationId: string, userId: string) => {
-  const response = await client.organizations[':organizationId'].members[':userId'].$delete({
-    param: { organizationId, userId },
+export const removeMemberFromOrganization = async (organizationIdentifier: string, userId: string) => {
+  const response = await client.organizations[':organizationIdentifier'].members[':userId'].$delete({
+    param: { organizationIdentifier, userId },
   });
 
   const json = await response.json();

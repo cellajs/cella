@@ -1,10 +1,11 @@
-import { DefaultError, QueryClient, queryOptions, useMutation } from '@tanstack/react-query';
-import { Outlet, Route, createRouteMask, redirect, rootRouteWithContext } from '@tanstack/react-router';
+import { DefaultError, QueryClient, infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
+import { Outlet, createRoute, createRouteMask, redirect, rootRouteWithContext } from '@tanstack/react-router';
 import { z } from 'zod';
 import {
   UpdateOrganizationParams,
   acceptOrganizationInvite,
   checkIsEmailExistsByInviteToken,
+  getMembersByOrganizationIdentifier,
   getOrganizationBySlugOrId,
   updateOrganization,
 } from '~/api/organizations';
@@ -41,7 +42,7 @@ const rootRoute = rootRouteWithContext<{
   component: () => <Root />,
 });
 
-const AuthRoute = new Route({
+const AuthRoute = createRoute({
   id: 'auth-layout',
   getParentRoute: () => rootRoute,
   beforeLoad: async () => {
@@ -63,7 +64,7 @@ const AuthRoute = new Route({
   component: () => <Outlet />,
 });
 
-export const SignInRoute = new Route({
+export const SignInRoute = createRoute({
   path: '/auth/sign-in',
   getParentRoute: () => AuthRoute,
   component: () => <SignIn />,
@@ -72,7 +73,7 @@ export const SignInRoute = new Route({
   }),
 });
 
-export const AcceptRoute = new Route({
+export const AcceptRoute = createRoute({
   path: '/auth/accept-invite/$token',
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ params: { token } }) => {
@@ -95,61 +96,61 @@ export const AcceptRoute = new Route({
   }),
 });
 
-export const ResetPasswordRoute = new Route({
+export const ResetPasswordRoute = createRoute({
   path: '/auth/reset-password/$token',
   getParentRoute: () => AuthRoute,
   component: () => <ResetPassword />,
 });
 
-export const VerifyEmailRoute = new Route({
+export const VerifyEmailRoute = createRoute({
   path: '/auth/verify-email',
   getParentRoute: () => AuthRoute,
   component: () => <VerifyEmail />,
 });
 
-export const VerifyEmailRouteWithToken = new Route({
+export const VerifyEmailRouteWithToken = createRoute({
   path: '/auth/verify-email/$token',
   getParentRoute: () => AuthRoute,
   component: () => <VerifyEmail />,
 });
 
-export const SignOutRoute = new Route({
+export const SignOutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-out',
   component: SignOut,
 });
 
-const AboutRoute = new Route({
+const AboutRoute = createRoute({
   path: '/about',
   getParentRoute: () => rootRoute,
   component: () => <About />,
 });
 
-const ContactRoute = new Route({
+const ContactRoute = createRoute({
   path: '/contact',
   getParentRoute: () => rootRoute,
   component: () => <Contact />,
 });
 
-const TermsRoute = new Route({
+const TermsRoute = createRoute({
   path: '/terms',
   getParentRoute: () => rootRoute,
   component: () => <Terms />,
 });
 
-const PrivacyRoute = new Route({
+const PrivacyRoute = createRoute({
   path: '/privacy',
   getParentRoute: () => rootRoute,
   component: () => <Privacy />,
 });
 
-const AccessibilityRoute = new Route({
+const AccessibilityRoute = createRoute({
   path: '/accessibility',
   getParentRoute: () => rootRoute,
   component: () => <Accessibility />,
 });
 
-const ErrorPageRoute = new Route({
+const ErrorPageRoute = createRoute({
   path: '/error',
   getParentRoute: () => rootRoute,
   component: () => <ErrorPage />,
@@ -164,7 +165,7 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
   });
 };
 
-const IndexRoute = new Route({
+const IndexRoute = createRoute({
   id: 'layout',
   getParentRoute: () => rootRoute,
   beforeLoad: async ({ location }) => {
@@ -186,20 +187,20 @@ const IndexRoute = new Route({
   component: () => <App />,
 });
 
-const HomeRoute = new Route({
+const HomeRoute = createRoute({
   path: '/',
   getParentRoute: () => IndexRoute,
   component: () => <Home />,
 });
 
 // We need an alias to forward users better if coming from the backend
-const HomeAliasRoute = new Route({
+const HomeAliasRoute = createRoute({
   path: '/home',
   getParentRoute: () => IndexRoute,
   component: () => <Home />,
 });
 
-const SystemPanelRoute = new Route({
+const SystemPanelRoute = createRoute({
   path: '/system',
   getParentRoute: () => IndexRoute,
   component: () => <SystemPanel />,
@@ -214,7 +215,7 @@ const UsersSearchSchema = z.object({
 
 export type UsersSearch = z.infer<typeof UsersSearchSchema>;
 
-export const UsersTableRoute = new Route({
+export const UsersTableRoute = createRoute({
   path: '/',
   getParentRoute: () => SystemPanelRoute,
   component: () => <UsersTable />,
@@ -229,20 +230,20 @@ const organizationsSearchSchema = z.object({
 
 export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
 
-export const OrganizationsTableRoute = new Route({
+export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
   getParentRoute: () => SystemPanelRoute,
   component: () => <OrganizationsTable />,
   validateSearch: organizationsSearchSchema,
 });
 
-const UserProfileRoute = new Route({
+const UserProfileRoute = createRoute({
   path: '/user/$userIdentifier',
   getParentRoute: () => IndexRoute,
   component: () => <UserProfile />,
 });
 
-const UserSettingsRoute = new Route({
+const UserSettingsRoute = createRoute({
   path: '/user/settings',
   getParentRoute: () => IndexRoute,
   component: () => <UserSettings />,
@@ -250,7 +251,7 @@ const UserSettingsRoute = new Route({
 
 export const organizationQueryOptions = (organizationIdentifier: string) =>
   queryOptions({
-    queryKey: ['organizations', { organizationIdentifier }],
+    queryKey: ['organizations', organizationIdentifier],
     queryFn: () => getOrganizationBySlugOrId(organizationIdentifier),
   });
 
@@ -263,7 +264,7 @@ export const useUpdateOrganizationMutation = (organizationIdentifier: string) =>
   });
 };
 
-const OrganizationRoute = new Route({
+const OrganizationRoute = createRoute({
   path: '$organizationIdentifier',
   getParentRoute: () => IndexRoute,
   beforeLoad: ({ location, params }) => {
@@ -287,14 +288,53 @@ const memberSearchSchema = z.object({
 
 export type MemberSearch = z.infer<typeof memberSearchSchema>;
 
-export const MembersTableRoute = new Route({
+export const membersQueryOptions = ({
+  organizationIdentifier,
+  q,
+  sort,
+  order,
+  role,
+}: {
+  organizationIdentifier: string;
+  q?: string;
+  sort?: MemberSearch['sort'];
+  order?: MemberSearch['order'];
+  role?: MemberSearch['role'];
+}) =>
+  infiniteQueryOptions({
+    queryKey: ['members', organizationIdentifier, q, sort, order, role],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam, signal }) => {
+      const fetchedData = await getMembersByOrganizationIdentifier(
+        organizationIdentifier,
+        {
+          page: pageParam,
+          q,
+          sort,
+          order,
+          role,
+        },
+        signal,
+      );
+
+      return fetchedData;
+    },
+    getNextPageParam: (_lastGroup, groups) => groups.length,
+    refetchOnWindowFocus: false,
+  });
+
+export const MembersTableRoute = createRoute({
   path: '/members',
   getParentRoute: () => OrganizationRoute,
   component: () => <MembersTable />,
   validateSearch: memberSearchSchema,
+  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
+  loader: ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) =>
+    queryClient.ensureQueryData(membersQueryOptions({ organizationIdentifier, q, sort, order, role })),
+  pendingComponent: () => null,
 });
 
-const OrganizationSettingsRoute = new Route({
+const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   getParentRoute: () => OrganizationRoute,
   component: () => <OrganizationSettings />,

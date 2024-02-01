@@ -70,32 +70,32 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
   .partial();
 
 export const getOrganizationParamSchema = z.object({
-  organizationId: slugSchema.or(idSchema),
+  organizationIdentifier: slugSchema.or(idSchema),
 });
 
 export const updateOrganizationParamSchema = z.object({
-  organizationId: idSchema,
+  organizationIdentifier: slugSchema.or(idSchema),
 });
 
 export const getUsersByOrganizationIdParamSchema = z.object({
-  organizationId: idSchema,
+  organizationIdentifier: slugSchema.or(idSchema),
 });
 
 export const inviteUserToOrganizationParamSchema = z.object({
-  organizationId: idSchema,
+  organizationIdentifier: slugSchema.or(idSchema),
 });
 
 export const deleteOrganizationParamSchema = z.object({
-  organizationId: idSchema,
+  organizationIdentifier: slugSchema.or(idSchema),
 });
 
 export const updateUserInOrganizationParamSchema = z.object({
-  organizationId: idSchema,
+  organizationIdentifier: slugSchema.or(idSchema),
   userId: idSchema,
 });
 
 export const deleteUserFromOrganizationParamSchema = z.object({
-  organizationId: idSchema,
+  organizationIdentifier: slugSchema.or(idSchema),
   userId: idSchema,
 });
 

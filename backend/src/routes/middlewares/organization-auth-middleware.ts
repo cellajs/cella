@@ -11,9 +11,9 @@ const i18n = getI18n('backend');
 
 // organizationAuthMiddleware() is checking if the user has membership in the organization and if the user has the required role
 const organizationAuthMiddleware =
-  (accessibleFor?: MembershipModel['role'][]): MiddlewareHandler<Env, ':organizationId'> =>
+  (accessibleFor?: MembershipModel['role'][]): MiddlewareHandler<Env, ':organizationIdentifier'> =>
   async (ctx, next) => {
-    const organizationIdentifier = ctx.req.param('organizationId').toLowerCase();
+    const organizationIdentifier = ctx.req.param('organizationIdentifier').toLowerCase();
     const user = ctx.get('user');
 
     const [organization] = await db

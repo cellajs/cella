@@ -1,4 +1,4 @@
-import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
+import { InfiniteData, UseInfiniteQueryResult, UseSuspenseInfiniteQueryResult } from '@tanstack/react-query';
 import { Row, Table as TableType, flexRender } from '@tanstack/react-table';
 import { Loader2, Search, XCircle } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
@@ -14,16 +14,27 @@ import { DataTableToolbar } from './toolbar';
 interface DataTableProps<TData> {
   className?: string;
   table: TableType<TData>;
-  queryResult: UseInfiniteQueryResult<
-    InfiniteData<
-      {
-        items: TData[];
-        total: number;
-      },
-      unknown
-    >,
-    Error
-  >;
+  queryResult:
+    | UseSuspenseInfiniteQueryResult<
+        InfiniteData<
+          {
+            items: TData[];
+            total: number;
+          },
+          unknown
+        >,
+        Error
+      >
+    | UseInfiniteQueryResult<
+        InfiniteData<
+          {
+            items: TData[];
+            total: number;
+          },
+          unknown
+        >,
+        Error
+      >;
   filter?: string;
   isFiltered?: boolean;
   onResetFilters?: () => void;

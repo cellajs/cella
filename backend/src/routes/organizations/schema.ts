@@ -57,7 +57,7 @@ export const createOrganizationRoute = createRoute({
 
 export const updateOrganizationRoute = createRoute({
   method: 'put',
-  path: '/organizations/{organizationId}',
+  path: '/organizations/{organizationIdentifier}',
   tags: ['organizations'],
   summary: 'Update organization',
   description: `
@@ -90,7 +90,7 @@ export const updateOrganizationRoute = createRoute({
 
 export const deleteOrganizationRoute = createRoute({
   method: 'delete',
-  path: '/organizations/{organizationId}',
+  path: '/organizations/{organizationIdentifier}',
   tags: ['organizations'],
   summary: 'Delete organization',
   description: `
@@ -152,7 +152,7 @@ export const getOrganizationsRoute = createRoute({
 
 export const getOrganizationByIdOrSlugRoute = createRoute({
   method: 'get',
-  path: '/organizations/{organizationId}',
+  path: '/organizations/{organizationIdentifier}',
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
   description: `
@@ -178,7 +178,7 @@ export const getOrganizationByIdOrSlugRoute = createRoute({
 
 export const getUsersByOrganizationIdRoute = createRoute({
   method: 'get',
-  path: '/organizations/{organizationId}/members',
+  path: '/organizations/{organizationIdentifier}/members',
   tags: ['organizations'],
   summary: 'Get members(users) of organization',
   description: `
@@ -223,7 +223,7 @@ export const getUsersByOrganizationIdRoute = createRoute({
 
 export const updateUserInOrganizationRoute = createRoute({
   method: 'put',
-  path: '/organizations/{organizationId}/members/{userId}',
+  path: '/organizations/{organizationIdentifier}/members/{userId}',
   tags: ['organizations'],
   summary: 'Update member(user) in organization',
   description: `
@@ -256,7 +256,7 @@ export const updateUserInOrganizationRoute = createRoute({
 
 export const deleteUserFromOrganizationRoute = createRoute({
   method: 'delete',
-  path: '/organizations/{organizationId}/members/{userId}',
+  path: '/organizations/{organizationIdentifier}/members/{userId}',
   tags: ['organizations'],
   summary: 'Delete member(user) from organization',
   description: `
@@ -282,7 +282,7 @@ export const deleteUserFromOrganizationRoute = createRoute({
 
 export const inviteUserToOrganizationRoute = createRoute({
   method: 'post',
-  path: '/organizations/{organizationId}/members/invite',
+  path: '/organizations/{organizationIdentifier}/members/invite',
   tags: ['organizations'],
   summary: 'Invite a new member(user) to organization',
   description: `

@@ -154,8 +154,8 @@ const organizationsRoutes = app
     });
   })
   .openapi(updateOrganizationRoute, async (ctx) => {
-    const { organizationId } = ctx.req.valid('param');
     const user = ctx.get('user');
+    const organization = ctx.get('organization');
 
     const {
       name,
@@ -203,7 +203,7 @@ const organizationsRoutes = app
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })
-      .where(eq(organizationsTable.id, organizationId))
+      .where(eq(organizationsTable.id, organization.id))
       .returning();
 
     customLogger('Organization updated', {
@@ -266,9 +266,9 @@ const organizationsRoutes = app
     });
   })
   .openapi(deleteOrganizationRoute, async (ctx) => {
-    const { organizationId } = ctx.req.valid('param');
+    const organization = ctx.get('organization');
 
-    const [organization] = await db.delete(organizationsTable).where(eq(organizationsTable.id, organizationId)).returning();
+    await db.delete(organizationsTable).where(eq(organizationsTable.id, organization.id));
 
     customLogger('Organization deleted', {
       organizationId: organization.id,

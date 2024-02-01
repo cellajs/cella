@@ -1,9 +1,9 @@
-import { InfiniteData, QueryKey, UseInfiniteQueryResult, useInfiniteQuery } from '@tanstack/react-query';
+import { InfiniteData, UseSuspenseInfiniteQueryResult, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ColumnFiltersState, SortingState, Table as TableType, VisibilityState, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { GetMembersParams, getMembersByOrganizationId } from '~/api/organizations';
+import { GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { Member, Organization } from '~/types';
 
 import { DataTable } from '~/components/data-table';
@@ -16,7 +16,7 @@ import { Bird } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { OrganizationContext } from '~/pages/organization';
 import { queryClient } from '~/router';
-import { MemberSearch, MembersTableRoute } from '~/router/routeTree';
+import { MemberSearch, MembersTableRoute, membersQueryOptions } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import CountAndLoading from '../data-table/count-and-loading';
 import { dialog } from '../dialoger/state';
@@ -24,11 +24,11 @@ import { useColumns } from './columns';
 import InviteUsersForm from './invite-users-form';
 import RemoveMembersForm from './remove-member-form';
 
-type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationId>>;
+type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>;
 
 interface CustomDataTableToolbarProps {
   table: TableType<Member>;
-  queryResult: UseInfiniteQueryResult<
+  queryResult: UseSuspenseInfiniteQueryResult<
     InfiniteData<
       {
         items: Member[];
@@ -292,31 +292,15 @@ const MembersTable = () => {
     }
   };
 
-  const queryResult = useInfiniteQuery<QueryData, Error, InfiniteData<QueryData>, QueryKey, number>({
-    queryKey: ['members', columnFilters, sorting, role, organization],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      if (!organization.slug) {
-        throw new Error('Organization identifier is not defined');
-      }
-
-      const fetchedData = await getMembersByOrganizationId(
-        organization.slug,
-        {
-          page: pageParam,
-          q: columnFilters[0]?.value as string | undefined,
-          sort: sorting[0]?.id as GetMembersParams['sort'],
-          order: sorting[0]?.desc ? 'desc' : 'asc',
-          role,
-        },
-        signal,
-      );
-
-      return fetchedData;
-    },
-    getNextPageParam: (_lastGroup, groups) => groups.length,
-    refetchOnWindowFocus: false,
-  });
+  const queryResult = useSuspenseInfiniteQuery(
+    membersQueryOptions({
+      organizationIdentifier: organization.slug,
+      q: columnFilters[0]?.value as MemberSearch['q'],
+      sort: sorting[0]?.id as MemberSearch['sort'],
+      order: sorting[0]?.desc ? 'desc' : 'asc',
+      role,
+    }),
+  );
 
   const table = useReactTable({
     data: flatData,

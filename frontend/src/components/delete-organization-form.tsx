@@ -1,5 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next';
-import { deleteOrganizationById } from '~/api/organizations';
+import { deleteOrganization } from '~/api/organizations';
 import { Organization } from '~/types';
 
 import { toast } from 'sonner';
@@ -19,7 +19,7 @@ const DeleteOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
 
   const onDelete = () => {
     apiWrapper(
-      () => deleteOrganizationById(organization.id),
+      () => deleteOrganization(organization.id),
       () => {
         callback?.(organization);
 
