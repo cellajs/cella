@@ -9,8 +9,6 @@ services:
     name: cella-backend
     runtime: node
     region: frankfurt
-    plan: starter
-    previewPlan: starter
     rootDir: backend
     buildCommand: pnpm install && pnpm build
     startCommand: pnpm start
@@ -39,8 +37,6 @@ services:
     name: cella-tus
     runtime: node
     region: frankfurt
-    plan: starter
-    previewPlan: starter
     rootDir: tus
     buildCommand: pnpm install && pnpm build
     startCommand: pnpm start
