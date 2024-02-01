@@ -31,7 +31,7 @@ export const getPublicCountsRoute = createRoute({
 
 export const getUploadTokenRoute = createRoute({
   method: 'get',
-  path: '/uploadtoken',
+  path: '/upload-token',
   tags: ['general'],
   summary: 'Get upload token for user or organization',
   request: {
