@@ -1,4 +1,4 @@
-import { sql, eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { env } from 'env';
 import jwt from 'jsonwebtoken';

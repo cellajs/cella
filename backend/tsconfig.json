@@ -4,5 +4,6 @@
     /* Bundler mode */
     "jsx": "react-jsx",
   },
+  "files": ["../i18n/i18next.d.ts"],
   "include": ["src", "drizzle.config.ts"]
 }

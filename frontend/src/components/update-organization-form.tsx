@@ -6,8 +6,11 @@ import CountryFlag from '~/components/country-flag';
 import { Organization } from '~/types';
 
 import { config } from 'config';
+import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
+import { checkSlug } from '~/api/general';
 import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
@@ -20,9 +23,6 @@ import timezones from '~/lib/timezones.json';
 import { useUpdateOrganizationMutation } from '~/router/routeTree';
 import { dialog } from './dialoger/state';
 import MultipleSelector, { Option } from './ui/multiple-selector';
-import { useWatch } from 'react-hook-form';
-import { checkSlug } from '~/api/general';
-import { Undo } from 'lucide-react';
 
 interface Props {
   organization: Organization;

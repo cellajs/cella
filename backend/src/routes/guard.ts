@@ -3,28 +3,28 @@ import { CustomHono } from '../types/common';
 import { createRoute } from '@hono/zod-openapi';
 import { MiddlewareHandler } from 'hono';
 import {
-    checkEmailRoute,
-    resetPasswordCallbackRoute,
-    resetPasswordRoute,
-    sendVerificationEmailRoute,
-    signInRoute,
-    verifyEmailRoute,
+  checkEmailRoute,
+  resetPasswordCallbackRoute,
+  resetPasswordRoute,
+  sendVerificationEmailRoute,
+  signInRoute,
+  verifyEmailRoute,
 } from './auth/schema';
 import { getUploadTokenRoute } from './general/schema';
 import authMiddleware from './middlewares/auth-middleware';
 import organizationAuthMiddleware from './middlewares/organization-auth-middleware';
 import { rateLimiter, signInRateLimiter } from './middlewares/rate-limiter';
 import {
-    acceptInvitationToOrganizationRoute,
-    createOrganizationRoute,
-    deleteOrganizationRoute,
-    deleteUserFromOrganizationRoute,
-    getOrganizationByIdOrSlugRoute,
-    getOrganizationsRoute,
-    getUsersByOrganizationIdRoute,
-    inviteUserToOrganizationRoute,
-    updateOrganizationRoute,
-    updateUserInOrganizationRoute,
+  acceptInvitationToOrganizationRoute,
+  createOrganizationRoute,
+  deleteOrganizationRoute,
+  deleteUserFromOrganizationRoute,
+  getOrganizationByIdOrSlugRoute,
+  getOrganizationsRoute,
+  getUsersByOrganizationIdRoute,
+  inviteUserToOrganizationRoute,
+  updateOrganizationRoute,
+  updateUserInOrganizationRoute,
 } from './organizations/schema';
 import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/schema';
 

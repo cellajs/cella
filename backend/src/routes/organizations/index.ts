@@ -18,6 +18,7 @@ import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { githubSignInRoute } from '../auth/schema';
+import { checkSlugRoute } from '../general/schema';
 import { customLogger } from '../middlewares/custom-logger';
 import {
   acceptInvitationToOrganizationRoute,
@@ -32,7 +33,6 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './schema';
-import { checkSlugRoute } from '../general/schema';
 
 const i18n = getI18n('backend');
 
