@@ -293,12 +293,7 @@ const authRoutes = app
 
     await auth.invalidateUserSessions(user.id);
     const hashedPassword = await new Argon2id().hash(password);
-    await db
-      .update(usersTable)
-      .set({
-        hashedPassword,
-      })
-      .where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ hashedPassword }).where(eq(usersTable.id, user.id));
 
     const session = await auth.createSession(user.id, {});
     const sessionCookie = auth.createSessionCookie(session.id);
@@ -346,13 +341,9 @@ const authRoutes = app
 
     const session = await auth.createSession(user.id, {});
     const sessionCookie = auth.createSessionCookie(session.id);
+    const lastSignInAt = new Date();
 
-    await db
-      .update(usersTable)
-      .set({
-        lastSignInAt: new Date(),
-      })
-      .where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
 
     ctx.header('Set-Cookie', sessionCookie.serialize());
 

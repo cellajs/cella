@@ -12,6 +12,7 @@ const i18n = getI18n('backend');
 
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
 
+// TODO: Currently uses memory store, eventually we need redis
 class RateLimiter extends RateLimiterMemory {
   public middleware(mode: 'success' | 'fail' | 'limit' = 'limit'): MiddlewareHandler<Env> {
     if (mode === 'success' || mode === 'fail') {
@@ -86,7 +87,7 @@ class RateLimiter extends RateLimiterMemory {
 
 export const rateLimiter = (options: IRateLimiterOptions, mode: 'success' | 'fail' | 'limit' = 'limit') => new RateLimiter(options).middleware(mode);
 
-// Login rate limiter
+// Sign in rate limiter
 const maxWrongAttemptsByIPperDay = 100;
 const maxConsecutiveFailsByUsernameAndIP = 5;
 
