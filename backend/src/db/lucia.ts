@@ -27,13 +27,14 @@ export const microsoftAuth = new MicrosoftEntraId(
 
 // Create Lucia adapter instance
 const adapter = new DrizzlePostgreSQLAdapter(db, sessionsTable, usersTable);
+const isProduction = config.mode === 'production';
 
 const sessionCookieOptions: SessionCookieOptions = {
   name: `${config.slug}-session-v1`,
   expires: true,
   attributes: {
-    secure: config.mode === 'production',
-    sameSite: config.mode === 'production' ? 'strict' : 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'strict' : 'lax',
   },
 };
 
