@@ -106,7 +106,7 @@ const limiterConsecutiveFailsByUsernameAndIP = new RateLimiterMemory({
 
 export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next) => {
   const ipAddr = ctx.req.header('x-forwarded-for') || '';
-  const body = await ctx.req.json();
+  const body = await ctx.req.raw.clone().json();
 
   if (!body.email) {
     return next();
