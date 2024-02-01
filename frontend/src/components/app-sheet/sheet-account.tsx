@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { CircleUserRound, LogOut, LucideProps, Settings } from 'lucide-react';
+import { CircleUserRound, LogOut, LucideProps, Settings, Wrench } from 'lucide-react';
 import React from 'react';
 
 import { Button } from '~/components/ui/button';
@@ -29,6 +29,7 @@ export const SheetAccount = () => {
   const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
+  const isSystemAdmin = user?.role === 'ADMIN';
 
   const navigateTo = (path: string) => {
     navigate({ to: path });
@@ -51,6 +52,7 @@ export const SheetAccount = () => {
           clickAction={() => navigateTo(`/user/${user.slug}`)}
         />
         <AccountButton lucideButton={Settings} id="btn-account" label="Account settings" clickAction={() => navigateTo('/user/settings')} />
+        {isSystemAdmin && <AccountButton lucideButton={Wrench} id="btn-system" label="System panel" clickAction={() => navigateTo('/system')} />}
         <AccountButton lucideButton={LogOut} id="btn-signout" label="Sign out" clickAction={onSignOut} />
       </div>
     </>

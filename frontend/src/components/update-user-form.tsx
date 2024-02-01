@@ -275,19 +275,17 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
             </FormItem>
           )}
         />
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={pending}>
             {t('action.save_changes', {
               defaultValue: 'Save changes',
             })}
           </Button>
-          {form.formState.isDirty && (
-            <Button variant="secondary" onClick={cancel}>
-              {t('action.cancel', {
-                defaultValue: 'Cancel',
-              })}
-            </Button>
-          )}
+          <Button variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
+            {t('action.cancel', {
+              defaultValue: 'Cancel',
+            })}
+          </Button>
         </div>
       </form>
     </Form>

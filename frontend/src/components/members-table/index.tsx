@@ -77,6 +77,19 @@ export function CustomDataTableToolbar({
   const user = useUserStore((state) => state.user);
   const members = useMemo(() => Object.keys(rowSelection).map((id) => table.getRow(id).original), [rowSelection, table]);
 
+  const openInviteDialog = () => {
+    dialog(<InviteUsersForm organization={organization} callback={callback} dialog />, {
+      drawerOnMobile: false,
+      className: 'max-w-xl',
+      title: t('label.invite', {
+        defaultValue: 'Invite',
+      }),
+      description: t('description.invite_members', {
+        defaultValue: 'Invited members will receive an email with invitation link.',
+      }),
+    });
+  };
+
   const openRemoveDialog = () => {
     dialog(
       <RemoveMembersForm
@@ -129,17 +142,7 @@ export function CustomDataTableToolbar({
           !isFiltered && (
             <>
               {(user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
-                <Button
-                  onClick={() => {
-                    dialog(<InviteUsersForm organization={organization} callback={callback} dialog />, {
-                      drawerOnMobile: false,
-                      className: 'max-w-xl',
-                      title: t('label.invite', {
-                        defaultValue: 'Invite',
-                      }),
-                    });
-                  }}
-                >
+                <Button onClick={openInviteDialog}>
                   {t('action.invite', {
                     defaultValue: 'Invite',
                   })}

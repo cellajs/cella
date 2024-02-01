@@ -27,7 +27,7 @@ export const Hero = ({ title, subtitle, description, children }: HeroProps) => {
       <section id="hero" className={sectionClass}>
         <header ref={ref} className={headerClass}>
           <div className="container flex max-w-[64rem] flex-col items-center gap-4 text-center">
-            <Badge>⚠️ Prerelease! ⚠️</Badge>
+            <Badge className="hidden sm:block">Prerelease</Badge>
             <h1 className="font-heading test-primary mt-6 mb-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
               <span>{title}</span>
               <br />

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { inviteUsersToOrganization } from '~/api/organizations';
 import { Organization } from '~/types';
 
+import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
@@ -89,7 +90,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
                   creatable
                   creatablePlaceholder="Invite"
                   defaultOptions={OPTIONS}
-                  placeholder="Input emails..."
+                  placeholder="Type emails ..."
                   // emptyIndicator={<p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">no results found.</p>}
                 />
               </FormControl>
@@ -97,8 +98,9 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
             </FormItem>
           )}
         />
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" loading={pending}>
+            <Send size={16} className="mr-2" />
             {t('action.invite', {
               defaultValue: 'Invite',
             })}

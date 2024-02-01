@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { dialog } from '~/components/dialoger/state';
 
+import { useTranslation } from 'react-i18next';
 import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
@@ -78,6 +79,7 @@ export async function submitContactForm(data: FormData) {
 // Main contact form map component
 const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const { t } = useTranslation();
 
   const form = useFormWithDraft<FormData>('contact-form', {
     resolver: zodResolver(formSchema),
@@ -108,16 +110,18 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
               <CustomFormField control={form.control} name="email" label="Email" type="email" icon={Mail} />
               <CustomFormField control={form.control} name="message" label="Message" type="textarea" icon={MessageSquare} />
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="submit">
                   <Send size={16} className="mr-2" />
-                  Send
+                  {t('action.send', {
+                    defaultValue: 'Send',
+                  })}
                 </Button>
-                {form.formState.isDirty && (
-                  <Button variant="secondary" onClick={cancel}>
-                    Cancel
-                  </Button>
-                )}
+                <Button variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
+                  {t('action.cancel', {
+                    defaultValue: 'Cancel',
+                  })}
+                </Button>
               </div>
             </form>
           </Form>

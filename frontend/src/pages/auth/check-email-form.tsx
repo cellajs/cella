@@ -38,7 +38,7 @@ export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: str
 
   return (
     <Form {...form}>
-      <h1 className="text-2xl text-center mt-4">Sign in or sign up</h1>
+      <h1 className="text-2xl text-center pb-2 mt-4">Sign in or sign up</h1>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField

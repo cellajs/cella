@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { Bell, Home, LucideProps, Menu, Search, User, Wrench } from 'lucide-react';
+import { Bell, Home, LucideProps, Menu, Search, User } from 'lucide-react';
 import React, { Fragment } from 'react';
 import { Button } from '~/components/ui/button';
 import { useThemeStore } from '~/store/theme';
@@ -30,7 +30,6 @@ export const navItems: NavItem[] = [
   { id: 'notifications', name: 'Notifications', sheet: <SheetNotifications />, icon: Bell, mirrorOnMobile: true },
   { id: 'search', name: 'Search', icon: Search },
   { id: 'account', name: 'Account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
-  { id: 'system', name: 'System', icon: Wrench, href: '/system' },
 ];
 
 interface NavButtonProps {
@@ -45,8 +44,6 @@ const AppNav = () => {
   const isMobile = useMediaQuery('(max-width: 1024px)');
   const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore();
   const { theme } = useThemeStore();
-
-  const isSystemAdmin = user?.role === 'ADMIN';
 
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
   const navIconColor = theme !== 'none' ? 'text-primary-foreground' : '';
@@ -102,20 +99,16 @@ const AppNav = () => {
       <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1">
         {navItems.map((navItem: NavItem, index: number) => {
           const isSecondItem = index === 1;
-          const isSystemItem = navItem.id === 'system';
           const isActive = activeSheet?.id === navItem.id;
 
           const listItemClass = isSecondItem
             ? 'flex xs:absolute xs:left-1/2 md:left-0 transform xs:-translate-x-1/2 md:relative md:transform-none md:justify-start'
             : 'flex justify-start';
 
-          // Only show system button if user is sys admin
-          if (isSystemItem && !isSystemAdmin) return null;
-
           return (
             <Fragment key={navItem.id}>
               {isSecondItem && <div className="hidden xs:flex xs:grow md:hidden" />}
-              <li className={isSystemItem ? 'hidden md:block' : `md:grow-0 ${listItemClass}`} key={navItem.id}>
+              <li className={`md:grow-0 ${listItemClass}`} key={navItem.id}>
                 <NavButton navItem={navItem} isActive={isActive} onClick={() => handleButtonClick(navItem)} />
               </li>
             </Fragment>

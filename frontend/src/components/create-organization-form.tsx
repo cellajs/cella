@@ -95,19 +95,17 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
             </FormItem>
           )}
         />
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
             {t('action.create', {
               defaultValue: 'Create',
             })}
           </Button>
-          {form.formState.isDirty && (
-            <Button variant="secondary" aria-label="Cancel" onClick={cancel}>
-              {t('action.cancel', {
-                defaultValue: 'Cancel',
-              })}
-            </Button>
-          )}
+          <Button variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
+            {t('action.cancel', {
+              defaultValue: 'Cancel',
+            })}
+          </Button>
         </div>
       </form>
     </Form>
