@@ -1,5 +1,5 @@
-import { organizationsAndMembersSeed } from '../../seed/organizations';
-import { usersSeed } from '../../seed/users';
+import { organizationsAndMembersSeed } from '../../seed';
+import { usersSeed } from '../../seed';
 import { db } from '../db/db';
 import { organizationsTable, usersTable } from '../db/schema';
 

@@ -3,7 +3,7 @@ import cron from 'node-cron';
 
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { env } from 'env';
-import { resetDb } from './cron/resetDb';
+import { resetDb } from './cron/reset-db';
 import { db } from './db/db';
 import { app } from './server';
 
