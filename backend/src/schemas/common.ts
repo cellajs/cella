@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { config } from 'config';
 
 export const successResponseWithoutDataSchema = z.object({
   success: z.boolean(),
@@ -25,7 +26,7 @@ export const passwordSchema = z.string().min(8).max(100).openapi({
 });
 
 export const cookieSchema = z.string().openapi({
-  example: 'auth_session=4z32pgmh91th9xigf6nlu1stptms03jdafch4khr; Expires=Wed, 06 Nov 2024 09:20:00 GMT; Path=/; Secure; HttpOnly; Domain=localhost',
+  example: `${config.slug}-session-v1=4z32pgmh91th9xigf6nlu1stptms03jdafch4khr; Expires=Wed, 06 Nov 2024 09:20:00 GMT; Path=/; Secure; HttpOnly; Domain=localhost`,
   description: 'Cookie containing the session id',
 });
 
@@ -94,5 +95,5 @@ export const idSchema = z.string().openapi({
 });
 
 export const slugSchema = z.string().openapi({
-  examples: ['0eiVSdgpaHjd9v92PAxbw', 'john-doe'],
+  examples: ['john-doe'],
 });

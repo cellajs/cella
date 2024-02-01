@@ -12,7 +12,7 @@ const main = async () => {
   cron
     .schedule('0 0 * * 0', resetDb, {
       scheduled: true,
-      timezone: 'America/New_York',
+      timezone: 'UTC',
     })
     .start();
 

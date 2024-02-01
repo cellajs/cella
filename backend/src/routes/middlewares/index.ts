@@ -40,6 +40,7 @@ app.use('*', secureHeaders());
 // Logger
 app.use('*', logger(customLogger as unknown as Parameters<typeof logger>[0]));
 
+// Rate limiter
 app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30 }, 'fail'));
 
 // CORS
