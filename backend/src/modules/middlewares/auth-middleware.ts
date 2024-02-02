@@ -40,8 +40,7 @@ const authMiddleware =
 
     if (accessibleFor && !accessibleFor.includes(user.role)) {
       customLogger('User forbidden', {
-        userId: user.id,
-        userSlug: user.slug,
+        user: user.id,
       });
 
       return ctx.json<ErrorResponse>(forbiddenError(i18n), 403);
@@ -66,8 +65,7 @@ const authMiddleware =
     ctx.set('user', user);
 
     customLogger('User authenticated', {
-      userId: user.id,
-      userSlug: user.slug,
+      user: user.id,
     });
 
     await next();

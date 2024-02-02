@@ -10,8 +10,8 @@ const errorHandler: ErrorHandler<Env> = (err, c) => {
   const data = {
     requestPath: c.req.path,
     requestMethod: c.req.method,
-    userId: user?.id,
-    organizationId: organization?.id,
+    user: user?.id,
+    organization: organization?.id,
     error: `${err}`,
     errorCode: 500,
   };

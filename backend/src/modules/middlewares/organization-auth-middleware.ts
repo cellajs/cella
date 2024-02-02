@@ -22,7 +22,7 @@ const organizationAuthMiddleware =
       .where(or(eq(organizationsTable.id, organizationIdentifier), eq(organizationsTable.slug, organizationIdentifier)));
 
     if (!organization) {
-      customLogger('Organization not found', { organizationIdentifier });
+      customLogger('Organization not found', { organization: organizationIdentifier });
 
       return ctx.json<ErrorResponse>(createError(i18n, 'error.organization_not_found', 'Organization not found'), 404);
     }
@@ -34,8 +34,8 @@ const organizationAuthMiddleware =
 
     if ((!membership || (accessibleFor && !accessibleFor.includes(membership.role))) && user.role !== 'ADMIN') {
       customLogger('User forbidden in organization', {
-        userId: user.id,
-        organizationId: organization.id,
+        user: user.id,
+        organization: organization.id,
       });
 
       return ctx.json<ErrorResponse>(forbiddenError(i18n), 403);
@@ -44,8 +44,8 @@ const organizationAuthMiddleware =
     ctx.set('organization', organization);
 
     customLogger('User authenticated in organization', {
-      userId: user.id,
-      organizationId: organization.id,
+      user: user.id,
+      organization: organization.id,
     });
 
     await next();

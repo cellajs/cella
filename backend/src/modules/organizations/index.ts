@@ -4,7 +4,6 @@ import { AnyColumn, SQL, and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
 import { emailSender } from 'emails';
 import { InviteUserToOrganizationEmail } from 'emails/invite';
 import { env } from 'env';
-import { setCookie } from 'hono/cookie';
 import { getI18n } from 'i18n';
 import { TimeSpan, User, generateId } from 'lucia';
 import { nanoid } from 'nanoid';
@@ -33,6 +32,7 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './routes';
+import { setCookie } from '../../lib/cookies';
 
 const i18n = getI18n('backend');
 
@@ -67,8 +67,7 @@ const organizationsRoutes = app
       .returning();
 
     customLogger('Organization created', {
-      organizationId: createdOrganization.id,
-      organizationSlug: createdOrganization.slug,
+      organization: createdOrganization.id,
     });
 
     return ctx.json({
@@ -219,8 +218,7 @@ const organizationsRoutes = app
       .returning();
 
     customLogger('Organization updated', {
-      organizationId: updatedOrganization.id,
-      organizationSlug: updatedOrganization.slug,
+      organization: updatedOrganization.id,
     });
 
     return ctx.json({
@@ -240,7 +238,7 @@ const organizationsRoutes = app
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
-      customLogger('User not found', { userId });
+      customLogger('User not found', { user: userId });
 
       return ctx.json(createError(i18n, 'error.user_not_found', 'User not found'), 404);
     }
@@ -253,20 +251,16 @@ const organizationsRoutes = app
 
     if (!membership) {
       customLogger('Membership not found', {
-        userId: targetUser.id,
-        userSlug: targetUser.slug,
-        organizationId: organization.id,
-        organizationSlug: organization.slug,
+        user: targetUser.id,
+        organization: organization.id,
       });
 
       return ctx.json(createError(i18n, 'error.user_not_found', 'User not found'), 404);
     }
 
     customLogger('User updated in organization', {
-      userId: targetUser.id,
-      userSlug: targetUser.slug,
-      organizationId: organization.id,
-      organizationSlug: organization.slug,
+      user: targetUser.id,
+      organization: organization.id,
     });
 
     return ctx.json({
@@ -283,8 +277,7 @@ const organizationsRoutes = app
     await db.delete(organizationsTable).where(eq(organizationsTable.id, organization.id));
 
     customLogger('Organization deleted', {
-      organizationId: organization.id,
-      organizationSlug: organization.slug,
+      organization: organization.id,
     });
 
     return ctx.json({
@@ -298,8 +291,7 @@ const organizationsRoutes = app
 
     if (user.role === 'ADMIN') {
       customLogger('Organization returned', {
-        organizationId: organization.id,
-        organizationSlug: organization.slug,
+        organization: organization.id,
       });
 
       return ctx.json({
@@ -317,8 +309,7 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
 
     customLogger('Organization returned', {
-      organizationId: organization.id,
-      organizationSlug: organization.slug,
+      organization: organization.id,
     });
 
     return ctx.json({
@@ -414,10 +405,8 @@ const organizationsRoutes = app
 
         if (existingMembership) {
           customLogger('User already member of organization', {
-            userId: targetUser.id,
-            userSlug: targetUser.slug,
-            organizationId: organization.id,
-            organizationSlug: organization.slug,
+            user: targetUser.id,
+            organization: organization.id,
           });
 
           continue;
@@ -466,10 +455,8 @@ const organizationsRoutes = app
       }
 
       customLogger('User invited to organization', {
-        userId: user?.id,
-        userSlug: user?.slug,
-        organizationId: organization.id,
-        organizationSlug: organization.slug,
+        user: user?.id,
+        organization: organization.id,
       });
     }
 
@@ -580,12 +567,7 @@ const organizationsRoutes = app
         ctx.header('Set-Cookie', response.headers.get('Set-Cookie') ?? '', {
           append: true,
         });
-        setCookie(ctx, 'oauth_invite_token', verificationToken, {
-          secure: config.mode === 'production', // set `Secure` flag in HTTPS
-          path: '/',
-          httpOnly: true,
-          maxAge: 60 * 10, // 10 min
-        });
+        setCookie(ctx, 'oauth_invite_token', verificationToken);
 
         return ctx.json({
           success: true,
@@ -613,7 +595,7 @@ const organizationsRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!user) {
-      customLogger('User not found', { userId });
+      customLogger('User not found', { user: userId });
 
       return ctx.json(createError(i18n, 'error.user_not_found', 'User not found'), 404);
     }
@@ -624,10 +606,8 @@ const organizationsRoutes = app
       .returning();
 
     customLogger('User deleted from organization', {
-      userId: user.id,
-      userSlug: user.slug,
-      organizationId: organization.id,
-      organizationSlug: organization.slug,
+      user: user.id,
+      organization: organization.id,
     });
 
     return ctx.json({
