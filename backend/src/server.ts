@@ -1,13 +1,13 @@
 import defaultHook from './lib/default-hook';
 import errorHandler from './lib/error-handler';
-import authRoutes from './routes/auth';
-import docs from './routes/docs';
-import generalRoutes from './routes/general';
-import guard from './routes/guard';
-import middlewares from './routes/middlewares';
-import { customLogger } from './routes/middlewares/custom-logger';
-import organizationsRoutes from './routes/organizations';
-import usersRoutes from './routes/users';
+import authRoutes from './modules/auth';
+import docs from './modules/docs';
+import generalRoutes from './modules/general';
+import guard from './modules/guard';
+import middlewares from './modules/middlewares';
+import { customLogger } from './modules/middlewares/custom-logger';
+import organizationsRoutes from './modules/organizations';
+import usersRoutes from './modules/users';
 import { CustomHono } from './types/common';
 
 // Set default hook to catch validation errors

@@ -9,9 +9,9 @@ import { membershipsTable, organizationsTable, usersTable } from '../../db/schem
 import { createError, forbiddenError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono } from '../../types/common';
-import { checkSlugRoute } from '../general/schema';
+import { checkSlugRoute } from '../general/routes';
 import { customLogger } from '../middlewares/custom-logger';
-import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './schema';
+import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './routes';
 
 const i18n = getI18n('backend');
 

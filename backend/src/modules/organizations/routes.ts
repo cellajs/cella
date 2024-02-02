@@ -1,11 +1,12 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
+import { paginationQuerySchema } from '../../schemas/common';
 import {
-  paginationQuerySchema,
+  errorResponses,
   successResponseWithDataSchema,
   successResponseWithPaginationSchema,
   successResponseWithoutDataSchema,
-} from '../../schemas/common';
+} from '../../schemas/responses';
 import {
   acceptInvitationToOrganizationJsonSchema,
   apiOrganizationSchema,
@@ -21,8 +22,7 @@ import {
   updateOrganizationParamSchema,
   updateUserInOrganizationJsonSchema,
   updateUserInOrganizationParamSchema,
-} from '../../schemas/organizations';
-import { errorResponses } from '../../schemas/responses';
+} from './schema';
 
 export const createOrganizationRoute = createRoute({
   method: 'post',

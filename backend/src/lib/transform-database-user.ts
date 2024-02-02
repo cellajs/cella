@@ -1,5 +1,5 @@
 import { UserModel } from '../db/schema';
-import { ApiUser } from '../schemas/user';
+import { ApiUser } from '../modules/users/schema';
 import { getImadoUrl } from './imado-url';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

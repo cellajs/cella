@@ -1,6 +1,6 @@
 import { Hook } from '@hono/zod-openapi';
 import { ZodError } from 'zod';
-import { customLogger } from '../routes/middlewares/custom-logger';
+import { customLogger } from '../modules/middlewares/custom-logger';
 import { Env } from '../types/common';
 
 const defaultHook: Hook<unknown, Env, '', unknown> = (result, ctx) => {

@@ -17,8 +17,8 @@ import { MembershipModel, membershipsTable, organizationsTable, tokensTable, use
 import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
-import { githubSignInRoute } from '../auth/schema';
-import { checkSlugRoute } from '../general/schema';
+import { githubSignInRoute } from '../auth/routes';
+import { checkSlugRoute } from '../general/routes';
 import { customLogger } from '../middlewares/custom-logger';
 import {
   acceptInvitationToOrganizationRoute,
@@ -32,7 +32,7 @@ import {
   inviteUserToOrganizationRoute,
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
-} from './schema';
+} from './routes';
 
 const i18n = getI18n('backend');
 

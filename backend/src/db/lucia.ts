@@ -4,7 +4,7 @@ import { config } from 'config';
 import { Lucia, SessionCookieOptions, TimeSpan } from 'lucia';
 
 import { env } from 'env';
-import { githubSignInCallbackRoute, googleSignInCallbackRoute, microsoftSignInCallbackRoute } from '../routes/auth/schema';
+import { githubSignInCallbackRoute, googleSignInCallbackRoute, microsoftSignInCallbackRoute } from '../modules/auth/routes';
 import { db } from './db';
 import { UserModel, sessionsTable, usersTable } from './schema';
 

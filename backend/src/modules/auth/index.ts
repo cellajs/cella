@@ -19,7 +19,7 @@ import { createError, unauthorizedError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
-import { checkSlugRoute } from '../general/schema';
+import { checkSlugRoute } from '../general/routes';
 import { customLogger } from '../middlewares/custom-logger';
 import {
   checkEmailRoute,
@@ -36,7 +36,7 @@ import {
   signOutRoute,
   signUpRoute,
   verifyEmailRoute,
-} from './schema';
+} from './routes';
 
 const i18n = getI18n('backend');
 

@@ -9,8 +9,8 @@ import {
   sendVerificationEmailRoute,
   signInRoute,
   verifyEmailRoute,
-} from './auth/schema';
-import { getUploadTokenRoute } from './general/schema';
+} from './auth/routes';
+import { getUploadTokenRoute } from './general/routes';
 import authMiddleware from './middlewares/auth-middleware';
 import organizationAuthMiddleware from './middlewares/organization-auth-middleware';
 import { rateLimiter, signInRateLimiter } from './middlewares/rate-limiter';
@@ -25,8 +25,8 @@ import {
   inviteUserToOrganizationRoute,
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
-} from './organizations/schema';
-import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/schema';
+} from './organizations/routes';
+import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/routes';
 
 // authMiddleware() is used for all routes that require authentication
 // organizationAuthMiddleware() is used for all routes that require organization membership; it also requires authMiddleware() to be used before and organizationId to be in the path

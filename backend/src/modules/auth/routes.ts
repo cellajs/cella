@@ -1,15 +1,9 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { cookieSchema, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../schemas/common';
-import { errorResponses } from '../../schemas/responses';
-import {
-  apiUserSchema,
-  checkEmailJsonSchema,
-  emailExistsJsonSchema,
-  resetPasswordJsonSchema,
-  signInJsonSchema,
-  signUpJsonSchema,
-} from '../../schemas/user';
+import { cookieSchema } from '../../schemas/common';
+import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../schemas/responses';
+import { apiUserSchema } from '../users/schema';
+import { checkEmailJsonSchema, emailExistsJsonSchema, resetPasswordJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
 
 export const signUpRoute = createRoute({
   method: 'post',

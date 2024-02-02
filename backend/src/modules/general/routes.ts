@@ -1,6 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { successResponseWithDataSchema } from '../../schemas/common';
-import { errorResponses } from '../../schemas/responses';
+import { errorResponses, successResponseWithDataSchema } from '../../schemas/responses';
 
 export const getPublicCountsRoute = createRoute({
   method: 'get',

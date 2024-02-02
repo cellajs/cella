@@ -1,7 +1,27 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, z } from '@hono/zod-openapi';
 import { errorResponseSchema } from './common';
 
 type Responses = Parameters<typeof createRoute>[0]['responses'];
+
+export const successResponseWithoutDataSchema = z.object({
+  success: z.boolean(),
+});
+
+export const successResponseWithDataSchema = <T extends z.ZodTypeAny>(schema: T) => z.object({ success: z.boolean(), data: schema });
+
+export const successResponseWithPaginationSchema = <T extends z.ZodTypeAny>(schema: T) =>
+  z.object({
+    success: z.boolean(),
+    data: z.object({
+      items: schema.array().openapi({
+        description: 'The items',
+      }),
+      total: z.number().openapi({
+        description: 'The total number of items',
+        example: 1,
+      }),
+    }),
+  });
 
 export const errorResponses = {
   400: {

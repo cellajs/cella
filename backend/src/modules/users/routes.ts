@@ -1,14 +1,14 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
+import { paginationQuerySchema } from '../../schemas/common';
 import {
-  paginationQuerySchema,
+  errorResponses,
   successResponseWithDataSchema,
   successResponseWithPaginationSchema,
   successResponseWithoutDataSchema,
-} from '../../schemas/common';
-import { userMenuSchema } from '../../schemas/organizations';
-import { errorResponses } from '../../schemas/responses';
-import { apiUserSchema, apiUserWithMembershipCountSchema, getUserParamSchema, updateUserJsonSchema, updateUserParamSchema } from '../../schemas/user';
+} from '../../schemas/responses';
+import { userMenuSchema } from '../organizations/schema';
+import { apiUserSchema, apiUserWithMembershipCountSchema, getUserParamSchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
 
 export const meRoute = createRoute({
   method: 'get',

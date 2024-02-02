@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
-import { usersTable } from '../db/schema';
-import { idSchema, passwordSchema, slugSchema } from './common';
+import { usersTable } from '../../db/schema';
+import { idSchema, slugSchema } from '../../schemas/common';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
@@ -22,28 +22,6 @@ export const apiUserWithMembershipCountSchema = apiUserSchema.setKey('membership
 export type ApiUserWithMembershipCount = z.infer<typeof apiUserWithMembershipCountSchema>;
 
 export type ApiUser = z.infer<typeof apiUserSchema>;
-
-export const checkEmailJsonSchema = z.object({
-  email: apiUserSchema.shape.email,
-});
-
-export const emailExistsJsonSchema = z.object({
-  exists: z.boolean(),
-});
-
-export const signInJsonSchema = z.object({
-  email: apiUserSchema.shape.email,
-  password: passwordSchema,
-});
-
-export const resetPasswordJsonSchema = z.object({
-  password: passwordSchema,
-});
-
-export const signUpJsonSchema = z.object({
-  email: apiUserSchema.shape.email,
-  password: passwordSchema,
-});
 
 export const updateUserParamSchema = z.object({
   userId: idSchema,

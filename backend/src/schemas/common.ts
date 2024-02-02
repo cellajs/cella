@@ -1,26 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { config } from 'config';
 
-export const successResponseWithoutDataSchema = z.object({
-  success: z.boolean(),
-});
-
-export const successResponseWithDataSchema = <T extends z.ZodTypeAny>(schema: T) => z.object({ success: z.boolean(), data: schema });
-
-export const successResponseWithPaginationSchema = <T extends z.ZodTypeAny>(schema: T) =>
-  z.object({
-    success: z.boolean(),
-    data: z.object({
-      items: schema.array().openapi({
-        description: 'The items',
-      }),
-      total: z.number().openapi({
-        description: 'The total number of items',
-        example: 1,
-      }),
-    }),
-  });
-
 export const passwordSchema = z.string().min(8).max(100).openapi({
   example: '12345678',
 });

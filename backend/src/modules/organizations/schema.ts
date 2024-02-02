@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
-import { membershipsTable, organizationsTable } from '../db/schema';
-import { idSchema, passwordSchema, slugSchema } from './common';
-import { apiUserSchema } from './user';
+import { membershipsTable, organizationsTable } from '../../db/schema';
+import { idSchema, passwordSchema, slugSchema } from '../../schemas/common';
+import { apiUserSchema } from '../users/schema';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
 

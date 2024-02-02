@@ -1,5 +1,5 @@
-import { ApiOrganization, ApiOrganizationUser } from '../schemas/organizations';
-import { ApiUser } from '../schemas/user';
+import { ApiOrganization, ApiOrganizationUser } from '../modules/organizations/schema';
+import { ApiUser } from '../modules/users/schema';
 
 export const sortUsersByRole = (order: 'asc' | 'desc') => (a: ApiUser, b: ApiUser) => {
   if (order === 'asc') {

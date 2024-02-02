@@ -6,7 +6,7 @@ import { db } from '../../db/db';
 import { organizationsTable, usersTable } from '../../db/schema';
 import { CustomHono } from '../../types/common';
 import { customLogger } from '../middlewares/custom-logger';
-import { checkSlugRoute, getPublicCountsRoute, getUploadTokenRoute } from './schema';
+import { checkSlugRoute, getPublicCountsRoute, getUploadTokenRoute } from './routes';
 
 const app = new CustomHono();
 
