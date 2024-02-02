@@ -12,8 +12,8 @@ import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { Textarea } from '~/components/ui/textarea';
-import useFormWithDraft from '~/hooks/useDraftForm';
-import { useMediaQuery } from '~/hooks/useMediaQuery';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { ContactFormMap } from './contact-form-map';
 
 interface CustomFormFieldProps<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>> {
@@ -78,7 +78,7 @@ export async function submitContactForm(data: FormData) {
 
 // Main contact form map component
 const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isMediumScreen = useBreakpoints('min', 'md');
   const { t } = useTranslation();
 
   const form = useFormWithDraft<FormData>('contact-form', {
@@ -127,7 +127,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
           </Form>
         </div>
       </div>
-      {!isMobile && (
+      {isMediumScreen && (
         <div className="w-full">
           <ContactFormMap />
         </div>

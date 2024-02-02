@@ -14,12 +14,12 @@ import { Checkbox } from '~/components/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import useBeforeUnload from '~/hooks/useBeforeUnload';
+import { useBeforeUnload } from '~/hooks/use-before-unload';
 
 import { useWatch } from 'react-hook-form';
 import { checkSlug } from '~/api/general';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
-import useFormWithDraft from '~/hooks/useDraftForm';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useUpdateUserMutation } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { dialog } from './dialoger/state';

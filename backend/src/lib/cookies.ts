@@ -1,8 +1,8 @@
+import { config } from 'config';
 import { Context } from 'hono';
+import { setCookie as baseSetCookie } from 'hono/cookie';
 import { User } from 'lucia';
 import { auth } from '../db/lucia';
-import { config } from 'config';
-import { setCookie as baseSetCookie } from 'hono/cookie';
 
 export const setCookie = (ctx: Context, name: string, value: string) =>
   baseSetCookie(ctx, name, value, {

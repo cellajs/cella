@@ -12,7 +12,7 @@ import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { PrivacyText } from '../other/privacy';
 import { TermsText } from '../other/terms';
 

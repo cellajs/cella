@@ -2,7 +2,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { verifyEmail } from '~/api/authentication';
 import { Button } from '~/components/ui/button';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import AuthPage from '.';
 
 const VerifyEmail = () => {

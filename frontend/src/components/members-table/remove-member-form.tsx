@@ -4,7 +4,7 @@ import { Member, Organization } from '~/types';
 
 import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 
 interface Props {
   organization: Organization;

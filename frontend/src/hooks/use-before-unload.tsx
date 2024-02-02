@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const useBeforeUnload = (isChanged: boolean) => {
+export const useBeforeUnload = (isChanged: boolean) => {
   useEffect(() => {
     const message = 'You have unsaved changes. Are you sure you want to leave?';
 
@@ -18,5 +18,3 @@ const useBeforeUnload = (isChanged: boolean) => {
     };
   }, [isChanged]);
 };
-
-export default useBeforeUnload;

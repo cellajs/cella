@@ -13,12 +13,14 @@ import { getI18n } from 'i18n';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { tokensTable, usersTable } from '../../db/schema';
+import { removeSessionCookie, setSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError, unauthorizedError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { checkSlugRoute } from '../general/routes';
+import oauthRoutes from './oauth';
 import {
   checkEmailRoute,
   resetPasswordCallbackRoute,
@@ -29,8 +31,6 @@ import {
   signUpRoute,
   verifyEmailRoute,
 } from './routes';
-import oauthRoutes from './oauth';
-import { removeSessionCookie, setSessionCookie } from '../../lib/cookies';
 
 const i18n = getI18n('backend');
 

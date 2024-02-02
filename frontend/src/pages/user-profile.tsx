@@ -4,7 +4,7 @@ import { getUserBySlugOrId } from '~/api/users';
 import { User } from '~/types';
 
 import { ContentHeader } from '~/components/content-header';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 
 const UserProfile = () => {
   const { userIdentifier }: { userIdentifier: string } = useParams({ strict: false });

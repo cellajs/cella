@@ -3,7 +3,7 @@ import './index.css';
 import { getI18n } from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Theming } from '~/hooks/useTheme';
+import { Theming } from '~/hooks/use-theme';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';

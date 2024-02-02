@@ -4,7 +4,7 @@ import { Organization } from '~/types';
 
 import { toast } from 'sonner';
 import { Button } from '~/components/ui/button';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { dialog } from './dialoger/state';
 
 interface Props {

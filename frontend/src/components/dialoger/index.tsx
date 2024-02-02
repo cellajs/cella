@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/components/ui/drawer';
-import { useMediaQuery } from '~/hooks/useMediaQuery';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { DialogState, DialogT, DialogToRemove } from './state';
 
 export function Dialoger() {
   const [open] = useState(true);
   const [dialogs, setDialogs] = useState<DialogT[]>([]);
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useBreakpoints('max', 'sm');
 
   const onOpenChange = (dialog: DialogT) => (open: boolean) => {
     if (!open) {

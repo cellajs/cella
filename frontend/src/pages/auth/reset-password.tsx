@@ -11,7 +11,7 @@ import { ArrowRight } from 'lucide-react';
 import { resetPassword } from '~/api/authentication';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 
 const formSchema = resetPasswordJsonSchema;
 

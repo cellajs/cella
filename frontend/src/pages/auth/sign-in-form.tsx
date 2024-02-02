@@ -13,7 +13,7 @@ import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useRef } from 'react';
 import { sendResetPasswordEmail, signIn } from '~/api/authentication';
 import { dialog } from '~/components/dialoger/state';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { SignInRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { User } from '~/types';

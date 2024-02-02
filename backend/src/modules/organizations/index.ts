@@ -13,6 +13,7 @@ import slugify from 'slugify';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { MembershipModel, membershipsTable, organizationsTable, tokensTable, usersTable } from '../../db/schema';
+import { setCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
@@ -32,7 +33,6 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './routes';
-import { setCookie } from '../../lib/cookies';
 
 const i18n = getI18n('backend');
 

@@ -13,7 +13,7 @@ These are the core concepts:
 - [Postgres](https://www.postgresql.org) + [Drizzle ORM](https://orm.drizzle.team/)
 - [Zod](https://github.com/colinhacks/zod)
 - [OpenAPI](https://www.openapis.org)
-- [Lucia Auth](https://github.com/aidenybai/lucia-auth)
+- [Lucia Auth](https://lucia-auth.com/)
 - [React Email](https://react.email/)
 
 ### Frontend

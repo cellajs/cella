@@ -9,7 +9,7 @@ import { AvatarWrap } from './avatar-wrap';
 
 import { dialog } from '~/components/dialoger/state';
 import { Input } from '~/components/ui/input';
-import { useMediaQuery } from '~/hooks/useMediaQuery';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/store/navigation';
 import { SheetAccount } from './app-sheet/sheet-account';
 import { SheetMenu } from './app-sheet/sheet-menu';
@@ -41,7 +41,7 @@ interface NavButtonProps {
 const AppNav = () => {
   const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
-  const isMobile = useMediaQuery('(max-width: 1024px)');
+  const isSmallScreen = useBreakpoints('max', 'lg');
   const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore();
   const { theme } = useThemeStore();
 
@@ -86,7 +86,7 @@ const AppNav = () => {
 
     // If its a route, navigate to it, otherwise open sheet component
     if (navItem.href) {
-      if (!keepMenuOpen || isMobile || activeSheet?.id !== 'menu') setSheet(null);
+      if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
       navigate({ to: navItem.href });
     } else {
       const isNew = !activeSheet || activeSheet.id !== navItem.id;

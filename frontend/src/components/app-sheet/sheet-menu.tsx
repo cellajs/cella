@@ -5,7 +5,7 @@ import { Checkbox } from '~/components/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
 
 import { useTranslation } from 'react-i18next';
-import { useMediaQuery } from '~/hooks/useMediaQuery';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CreateOrganizationForm from '../create-organization-form';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
@@ -34,7 +34,7 @@ export type SearchResultsType = typeof initialSearchResults;
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
-  const isMobile = useMediaQuery('(max-width: 1024px)');
+  const isSmallScreen = useBreakpoints('max', 'lg');
 
   const { keepMenuOpen, toggleKeepMenu, activeSections, toggleSection, setSheet } = useNavigationStore();
 
@@ -43,7 +43,7 @@ export const SheetMenu = memo(() => {
 
   // Handle menu item click
   const handleItemClick = () => {
-    if (isMobile || !keepMenuOpen) setSheet(null);
+    if (isSmallScreen || !keepMenuOpen) setSheet(null);
   };
 
   // Render search results

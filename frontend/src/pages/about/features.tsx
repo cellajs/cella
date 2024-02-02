@@ -71,14 +71,14 @@ import { ArrowDown } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
-import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useBreakpoints } from '../../hooks/use-breakpoints';
 
 const Features = () => {
   const { mode } = useThemeStore();
   const invertClass = mode === 'dark' ? 'invert' : '';
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isMediumScreen = useBreakpoints('min', 'md');
 
-  const [showAllFeatures, setShowAllFeatures] = useState(!isMobile);
+  const [showAllFeatures, setShowAllFeatures] = useState(isMediumScreen);
 
   const visibleFeatures = showAllFeatures ? features : features.slice(0, 4);
 

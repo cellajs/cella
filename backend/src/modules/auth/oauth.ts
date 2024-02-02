@@ -8,6 +8,7 @@ import { getI18n } from 'i18n';
 import { db } from '../../db/db';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';
+import { setCookie, setSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
@@ -21,7 +22,6 @@ import {
   microsoftSignInRoute,
   sendVerificationEmailRoute,
 } from './routes';
-import { setCookie, setSessionCookie } from '../../lib/cookies';
 
 const i18n = getI18n('backend');
 

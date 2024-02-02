@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
-import useFormWithDraft from '~/hooks/useDraftForm';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { useFormWithDraft } from '~/hooks/use-draft-form';
 import MultipleSelector, { Option } from '../ui/multiple-selector';
 
 interface Props {

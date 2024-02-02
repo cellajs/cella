@@ -10,7 +10,7 @@ import { Input } from '~/components/ui/input';
 
 import { ArrowRight } from 'lucide-react';
 import { checkEmail } from '~/api/authentication';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 
 const formSchema = checkEmailJsonSchema;
 

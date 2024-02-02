@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table';
 import { cn } from '~/lib/utils';
 
-import useOnScreen from '~/hooks/useOnScreen';
+import { useOnScreen } from '~/hooks/use-on-screen';
 import { Button } from '../ui/button';
 import { DataTableToolbar } from './toolbar';
 

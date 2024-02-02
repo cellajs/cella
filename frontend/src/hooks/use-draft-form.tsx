@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { FieldValues, Path, UseFormProps, UseFormReturn, useForm } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
-function useFormWithDraft<
+export function useFormWithDraft<
   TFieldValues extends FieldValues = FieldValues,
   // biome-ignore lint/suspicious/noExplicitAny: any is required here
   TContext = any,
@@ -40,5 +40,3 @@ function useFormWithDraft<
     },
   };
 }
-
-export default useFormWithDraft;

@@ -1,6 +1,10 @@
-/** @type {import('tailwindcss').Config} */
+import { Config } from 'tailwindcss';
+import animatePlugin from 'tailwindcss-animate';
+
+/** @type {Config} */
+
 export default {
-  darkMode: ['class'],
+  darkMode: 'media',
   content: ['./pages/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
   theme: {
     screens: {
@@ -19,7 +23,9 @@ export default {
       },
     },
     extend: {
-      translate: ['active'],
+      translate: {
+        active: 'translate(0, 0)',
+      },
       transitionProperty: {
         spacing: 'margin, padding',
       },
@@ -66,12 +72,12 @@ export default {
       },
       keyframes: {
         'accordion-down': {
-          from: { height: 0 },
+          from: { height: '0' },
           to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
           from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: 0 },
+          to: { height: '0' },
         },
       },
       animation: {
@@ -80,5 +86,5 @@ export default {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
-};
+  plugins: [animatePlugin],
+} satisfies Config;

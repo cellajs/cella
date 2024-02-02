@@ -2,7 +2,7 @@ import { Outlet } from '@tanstack/react-router';
 import { RefObject, useEffect, useRef } from 'react';
 import { AppAlert } from '~/components/app-alert';
 import { AppFooter } from '~/components/app-footer';
-import { useMediaQuery } from '~/hooks/useMediaQuery';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/store/navigation';
 
 const useClickInside = (ref: RefObject<HTMLDivElement>, callback: () => void) => {
@@ -23,11 +23,11 @@ const useClickInside = (ref: RefObject<HTMLDivElement>, callback: () => void) =>
 export const AppContent = () => {
   const { activeSheet, keepMenuOpen, setSheet } = useNavigationStore();
   const addPadding = keepMenuOpen && activeSheet?.id === 'menu' ? 'lg:pl-80' : 'pl-0';
-  const isMobile = useMediaQuery('(max-width: 1024px)');
+  const isLargeScreen = useBreakpoints('min', 'lg');
 
   // Listen to clicks inside the app content and close the sheet if it's open
   const onClickInside = () => {
-    if (keepMenuOpen && activeSheet?.id === 'menu' && !isMobile) return;
+    if (keepMenuOpen && activeSheet?.id === 'menu' && isLargeScreen) return;
     setSheet(null);
   };
 

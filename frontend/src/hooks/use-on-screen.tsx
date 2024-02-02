@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-const useOnScreen = (
+export const useOnScreen = (
   {
     root,
     rootMargin,
@@ -37,5 +37,3 @@ const useOnScreen = (
 
   return { measureRef, isIntersecting, observer };
 };
-
-export default useOnScreen;

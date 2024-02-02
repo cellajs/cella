@@ -12,7 +12,7 @@ import { ArrowRight } from 'lucide-react';
 import { acceptOrganizationInvite } from '~/api/organizations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
-import { useApiWrapper } from '~/hooks/useApiWrapper';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { LegalNotice } from './sign-up-form';
 
 const formSchema = acceptInvitationToOrganizationJsonSchema;
