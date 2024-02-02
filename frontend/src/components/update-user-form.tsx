@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { updateUserJsonSchema } from 'backend/schemas/user';
+import { updateUserJsonSchema } from 'backend/modules/users/schema';
 import { config } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';

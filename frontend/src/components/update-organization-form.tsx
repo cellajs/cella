@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { updateOrganizationJsonSchema } from 'backend/schemas/organizations';
+import { updateOrganizationJsonSchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import CountryFlag from '~/components/country-flag';

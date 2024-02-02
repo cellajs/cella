@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
 // Change this in the future on current schema
-import { createOrganizationJsonSchema } from 'backend/schemas/organizations';
+import { createOrganizationJsonSchema } from 'backend/modules/organizations/schema';
 import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';

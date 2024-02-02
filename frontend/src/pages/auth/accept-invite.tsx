@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { acceptInvitationToOrganizationJsonSchema } from 'backend/schemas/organizations';
+import { acceptInvitationToOrganizationJsonSchema } from 'backend/modules/organizations/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
