@@ -5,6 +5,7 @@ import docs from './routes/docs';
 import generalRoutes from './routes/general';
 import guard from './routes/guard';
 import middlewares from './routes/middlewares';
+import { customLogger } from './routes/middlewares/custom-logger';
 import organizationsRoutes from './routes/organizations';
 import usersRoutes from './routes/users';
 import { CustomHono } from './types/common';
@@ -19,6 +20,13 @@ app.route('', middlewares);
 
 // Generate OpenAPI Docs
 docs(app);
+
+// Not found handler
+app.notFound((ctx) => {
+  customLogger('Error', { errorMessage: 'Not found', errorCode: 404 }, 'warn');
+
+  return ctx.json({ success: false, error: 'Not found' }, 404);
+});
 
 // Error handler
 app.onError(errorHandler);

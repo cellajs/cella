@@ -1,14 +1,30 @@
 import { sendError, setCustomData, setNamespace } from '@appsignal/nodejs';
 import { ErrorHandler } from 'hono';
 import { customLogger } from '../routes/middlewares/custom-logger';
+import { Env } from '../types/common';
 
-const errorHandler: ErrorHandler = (err, c) => {
-  customLogger('Error', { errorMessage: `${err}` }, 'error');
+const errorHandler: ErrorHandler<Env> = (err, c) => {
+  const user = c.get('user');
+  const organization = c.get('organization');
+
+  customLogger(
+    'Error',
+    {
+      userId: user?.id,
+      organizationId: organization?.id,
+      error: `${err}`,
+      errorCode: 500,
+    },
+    'error',
+  );
 
   sendError(err, () => {
     setCustomData({
       requestPath: c.req.path,
       requestMethod: c.req.method,
+      userId: user?.id,
+      organizationId: organization?.id,
+      error: `${err}`,
       errorCode: 500,
     });
     setNamespace('backend');

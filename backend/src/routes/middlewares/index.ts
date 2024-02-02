@@ -38,6 +38,8 @@ const app = new CustomHono();
 app.use('*', secureHeaders());
 
 // Logger
+// remove customLogger for /ping route
+app.use('/ping', logger());
 app.use('*', logger(customLogger as unknown as Parameters<typeof logger>[0]));
 
 // Rate limiter
