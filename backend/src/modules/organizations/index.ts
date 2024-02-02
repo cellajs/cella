@@ -14,12 +14,12 @@ import slugify from 'slugify';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { MembershipModel, membershipsTable, organizationsTable, tokensTable, usersTable } from '../../db/schema';
+import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { githubSignInRoute } from '../auth/routes';
 import { checkSlugRoute } from '../general/routes';
-import { customLogger } from '../middlewares/custom-logger';
 import {
   acceptInvitationToOrganizationRoute,
   checkIsEmailExistsByInviteTokenRoute,

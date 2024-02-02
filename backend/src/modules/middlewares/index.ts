@@ -6,8 +6,8 @@ import { csrf } from 'hono/csrf';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
 import { getI18n } from 'i18n';
+import { customLogger } from '../../lib/custom-logger';
 import { CustomHono } from '../../types/common';
-import { customLogger } from './custom-logger';
 import { rateLimiter } from './rate-limiter';
 
 const i18n = getI18n('backend');

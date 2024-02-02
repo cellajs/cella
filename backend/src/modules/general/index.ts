@@ -4,8 +4,8 @@ import { env } from 'env';
 import jwt from 'jsonwebtoken';
 import { db } from '../../db/db';
 import { organizationsTable, usersTable } from '../../db/schema';
+import { customLogger } from '../../lib/custom-logger';
 import { CustomHono } from '../../types/common';
-import { customLogger } from '../middlewares/custom-logger';
 import { checkSlugRoute, getPublicCountsRoute, getUploadTokenRoute } from './routes';
 
 const app = new CustomHono();

@@ -15,12 +15,12 @@ import { getI18n } from 'i18n';
 import { db } from '../../db/db';
 import { auth, githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';
+import { customLogger } from '../../lib/custom-logger';
 import { createError, unauthorizedError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { checkSlugRoute } from '../general/routes';
-import { customLogger } from '../middlewares/custom-logger';
 import {
   checkEmailRoute,
   githubSignInCallbackRoute,

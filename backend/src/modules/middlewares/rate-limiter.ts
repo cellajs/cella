@@ -5,8 +5,8 @@ import { tooManyRequestsError } from '../../lib/errors';
 
 import { getI18n } from 'i18n';
 
+import { customLogger } from '../../lib/custom-logger';
 import { Env } from '../../types/common';
-import { customLogger } from './custom-logger';
 
 const i18n = getI18n('backend');
 

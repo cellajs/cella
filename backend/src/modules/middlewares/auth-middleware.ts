@@ -5,9 +5,9 @@ import { User } from 'lucia';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { usersTable } from '../../db/schema';
+import { customLogger } from '../../lib/custom-logger';
 import { forbiddenError, unauthorizedError } from '../../lib/errors';
 import { ErrorResponse } from '../../types/common';
-import { customLogger } from './custom-logger';
 
 const i18n = getI18n('backend');
 
