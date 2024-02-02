@@ -37,9 +37,10 @@ const app = new CustomHono();
 // Secure headers
 app.use('*', secureHeaders());
 
+// Health check for render.com
+app.get('/ping', (c) => c.text('pong'));
+
 // Logger
-// remove customLogger for /ping route
-app.use('/ping', logger());
 app.use('*', logger(customLogger as unknown as Parameters<typeof logger>[0]));
 
 // Rate limiter
@@ -55,9 +56,6 @@ app.use(
     allowHeaders: [],
   }),
 );
-
-// Health check for render.com
-app.get('/ping', (c) => c.text('pong'));
 
 // Compress middleware
 app.use('*', compress());

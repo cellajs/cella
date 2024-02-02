@@ -7,26 +7,19 @@ const errorHandler: ErrorHandler<Env> = (err, c) => {
   const user = c.get('user');
   const organization = c.get('organization');
 
-  customLogger(
-    'Error',
-    {
-      userId: user?.id,
-      organizationId: organization?.id,
-      error: `${err}`,
-      errorCode: 500,
-    },
-    'error',
-  );
+  const data = {
+    requestPath: c.req.path,
+    requestMethod: c.req.method,
+    userId: user?.id,
+    organizationId: organization?.id,
+    error: `${err}`,
+    errorCode: 500,
+  };
+
+  customLogger('Error', data, 'error');
 
   sendError(err, () => {
-    setCustomData({
-      requestPath: c.req.path,
-      requestMethod: c.req.method,
-      userId: user?.id,
-      organizationId: organization?.id,
-      error: `${err}`,
-      errorCode: 500,
-    });
+    setCustomData(data);
     setNamespace('backend');
   });
 

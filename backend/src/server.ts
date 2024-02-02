@@ -23,7 +23,14 @@ docs(app);
 
 // Not found handler
 app.notFound((ctx) => {
-  customLogger('Error', { errorMessage: 'Not found', errorCode: 404 }, 'warn');
+  const data = {
+    requestPath: ctx.req.path,
+    requestMethod: ctx.req.method,
+    error: 'Not found',
+    errorCode: 404,
+  };
+
+  customLogger('Error', data, 'warn');
 
   return ctx.json({ success: false, error: 'Not found' }, 404);
 });
