@@ -1,7 +1,6 @@
 # Cella Architecture
 This document describes the high-level architecture of Cella.
 
-These are the core concepts:
  1. Only build what you are going to use yourself.
  2. Stay humble and remain a template, not a framework. So prevent abstraction layers.
  3. A single, opinionated stack: ie. Cella uses Drizzle ORM and will not make it replacable with another ORM.
@@ -16,13 +15,12 @@ These are the core concepts:
 - [Lucia Auth](https://lucia-auth.com/)
 - [React Email](https://react.email/)
 
-### Frontend
+### Frontend / UI
 - [React](https://reactjs.org)
 - [Tanstack Router](https://github.com/tanstack/router)
 - [Tanstack Query](https://github.com/tanstack/query)
+- [Tanstack Table](https://github.com/tanstack/table)
 - [Zustand](https://github.com/pmndrs/zustand)
-
-### UI
 - [Shadcn UI](https://ui.shadcn.com)
 - [I18next](https://www.i18next.com)
 - [Lucide icons](https://lucide.dev)

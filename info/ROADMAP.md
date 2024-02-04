@@ -8,18 +8,22 @@ For now, we maintain a very rough roadmap here. Its a work in progress and thing
 * [Lucia Auth v3](https://v3.lucia-auth.com/)
 * Modularity / file structure
 * Lots of refactoring
+* [imado.eu](imado.eu) for file handling
 
 ## Future: Modularity
 * A scaffolding solution is necessary to keep the template useful while the project is growing. Perhaps we can collaborate with a dev which is already maintaining a scaffolding tool?
+* An activity log module for in-app (security) monitoring
+* A bruteforce module with redis store
 
 ## Future: Authorization
-* [CASL](https://casl.js.org/)
+* A customizable, extendable permission system
 
 ## Future: Testing
 * Vitest + Playwright with visual regression testing?! How does Storybook fit in here?
 * Automated security audit / testing solution
 
 ## Future: Optional third party tooling
+This list is anything but definitive
 * [Hanko](https://www.hanko.io/) (OS, German) for more security/auth options
 * [Gleap.io](https://www.gleap.io/) (German) for chat support
 * [OhDear](https://ohdear.app/) (Belgium) for status pages
@@ -33,7 +37,6 @@ For now, we maintain a very rough roadmap here. Its a work in progress and thing
 * [Mave.io](https://www.mave.io/) (Dutch) for videos
 * [Mockoon](https://mockoon.com/) (Luxembourg) for mocking APIs
 * [StaticHost](https://www.statichost.eu/) (Sweden) as alternative to Netlify/Render
-* [imado.eu](imado.eu) (Dutch) for file handling
 * [n8n](https://github.com/n8n-io/n8n) (German) zapier alternative
 
 ## Future: Native app support
