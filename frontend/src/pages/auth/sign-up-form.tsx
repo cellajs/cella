@@ -15,6 +15,7 @@ import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { PrivacyText } from '../other/privacy';
 import { TermsText } from '../other/terms';
+import { PasswordStrength } from '~/components/password-strength';
 
 const formSchema = signUpJsonSchema;
 
@@ -74,13 +75,16 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input
-                  type="password"
-                  autoFocus
-                  placeholder={t('label.new_password', { defaultValue: 'New Password' })}
-                  autoComplete="new-password"
-                  {...field}
-                />
+                <div className="relative">
+                  <Input
+                    type="password"
+                    autoFocus
+                    placeholder={t('label.new_password', { defaultValue: 'New Password' })}
+                    autoComplete="new-password"
+                    {...field}
+                  />
+                  <PasswordStrength password={form.getValues('password')} minLength={8} />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -110,8 +114,7 @@ export const LegalNotice = () => {
 
   return (
     <p className="font-light text-sm space-x-1">
-      <span>Set new password or use Github.</span>
-      <span>By signing up you agree to the</span>
+      <span>By signing up with a new account, you agree to the</span>
       <Button variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
         terms
       </Button>

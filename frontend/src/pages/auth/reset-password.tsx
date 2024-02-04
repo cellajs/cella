@@ -12,6 +12,7 @@ import { resetPassword } from '~/api/authentication';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { PasswordStrength } from '~/components/password-strength';
 
 const formSchema = resetPasswordJsonSchema;
 
@@ -53,13 +54,16 @@ const ResetPassword = () => {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input
-                    type="password"
-                    autoFocus
-                    placeholder={t('label.new_password', { defaultValue: 'New password' })}
-                    autoComplete="new-password"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <Input
+                      type="password"
+                      autoFocus
+                      placeholder={t('label.new_password', { defaultValue: 'New password' })}
+                      autoComplete="new-password"
+                      {...field}
+                    />
+                    <PasswordStrength password={form.getValues('password')} minLength={8} />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

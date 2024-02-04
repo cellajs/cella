@@ -71,7 +71,8 @@
     "vaul": "^0.8.9",
     "workbox-window": "^7.0.0",
     "zod": "^3.22.4",
-    "zustand": "^4.4.7"
+    "zustand": "^4.4.7",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@redux-devtools/extension": "^3.3.0",
@@ -79,6 +80,7 @@
     "@types/node": "^20.10.7",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
+    "@types/zxcvbn": "^4.4.4",
     "@vitejs/plugin-basic-ssl": "^1.0.2",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",

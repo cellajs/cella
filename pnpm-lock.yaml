@@ -356,6 +356,9 @@ importers:
       zustand:
         specifier: ^4.4.7
         version: 4.5.0(@types/react@18.2.48)(immer@10.0.3)(react@18.2.0)
+      zxcvbn:
+        specifier: ^4.4.2
+        version: 4.4.2
     devDependencies:
       '@redux-devtools/extension':
         specifier: ^3.3.0
@@ -372,6 +375,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.2.18
         version: 18.2.18
+      '@types/zxcvbn':
+        specifier: ^4.4.4
+        version: 4.4.4
       '@vitejs/plugin-basic-ssl':
         specifier: ^1.0.2
         version: 1.1.0(vite@5.0.12)
@@ -7647,6 +7653,10 @@ packages:
       - webpack-cli
     dev: false
 
+  /@types/zxcvbn@4.4.4:
+    resolution: {integrity: sha512-Tuk4q7q0DnpzyJDI4aMeghGuFu2iS1QAdKpabn8JfbtfGmVDUgvZv1I7mEjP61Bvnp3ljKCC8BE6YYSTNxmvRQ==}
+    dev: true
+
   /@uppy/companion-client@3.7.0:
     resolution: {integrity: sha512-37qJNMkqo01SM9h2gkFbV6e+aXM02s2zAda2dGsRLRsjvl/Tx69NlmxJ3xqG/7HWRnYcbBWtspb7y0tt1i/afg==}
     dependencies:
@@ -14206,4 +14216,8 @@ packages:
       immer: 10.0.3
       react: 18.2.0
       use-sync-external-store: 1.2.0(react@18.2.0)
+    dev: false
+
+  /zxcvbn@4.4.2:
+    resolution: {integrity: sha512-Bq0B+ixT/DMyG8kgX2xWcI5jUvCwqrMxSFam7m0lAf78nf04hv6lNCsyLYdyYTrCVMqNDY/206K7eExYCeSyUQ==}
     dev: false
