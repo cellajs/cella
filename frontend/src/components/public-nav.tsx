@@ -64,8 +64,22 @@ export function PublicNav() {
               <HamburgerButton isOpen={showSheet} toggle={setShowSheet} />
             </div>
 
-            <Link to="/about" hash="" className="md:ml-2 hover:opacity-90 active:scale-95" aria-label="Go to about page">
+            <Link to="/about" hash="" className="md:ml-2 hover:opacity-90 active:scale-95 relative" aria-label="Go to about page">
               <Logo height={30} />
+
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0 -right-4">
+                <title>We support Ukraine</title>
+                <g fill="none" fill-rule="nonzero">
+                  <path
+                    fill="#FFD500"
+                    d="M0 6s1 .5 3.2.5c2 0 3.5-1 5.6-1 1.7 0 3.2.5 3.2.5v4c0 .4-.3.7-.7.6-.6-.1-1.5-.3-2.5-.3-2 0-3.5 1-5.6 1-1.3 0-2.2-.2-2.7-.4a.7.7 0 0 1-.5-.6V6Z"
+                  />
+                  <path
+                    fill="#0974E5"
+                    d="M0 2c0-.4.4-.6.7-.5l2.5.2c2 0 3.5-1 5.6-1 1 0 2 .2 2.6.4.4 0 .6.4.6.7V6s-1.5-.5-3.2-.5c-2 0-3.5 1-5.6 1C1.1 6.5 0 6 0 6V2Z"
+                  />
+                </g>
+              </svg>
             </Link>
 
             {publicNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>}
