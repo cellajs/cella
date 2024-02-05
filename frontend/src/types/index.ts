@@ -21,7 +21,7 @@ export interface Page {
   slug: string;
   name: string;
   thumbnailUrl: string | null;
-  userRole: keyof typeof UserRole;
+  userRole: keyof typeof UserRole | null;
 }
 
 export type User = Extract<InferResponseType<(typeof client.me)['$get']>, { data: unknown }>['data'];

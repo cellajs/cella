@@ -22,9 +22,11 @@ export const SheetMenuItem = ({ item, handleClick }: SheetMenuItemProps) => {
       </div>
       <div className="truncate p-2 pl-0 text-left">
         <div className="truncate leading-5">{item.name}</div>
-        <div className="text-muted-foreground text-sm font-light opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-100">
-          {UserRole[item.userRole]}
-        </div>
+        {item.userRole && (
+          <div className="text-muted-foreground text-sm font-light opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-100">
+            {UserRole[item.userRole]}
+          </div>
+        )}
       </div>
     </Link>
   );

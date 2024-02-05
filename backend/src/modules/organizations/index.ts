@@ -99,7 +99,7 @@ const organizationsRoutes = app
 
     const filter: SQL | undefined = q ? ilike(organizationsTable.name, `%${q}%`) : undefined;
 
-    const organizationsQuery = db.select().from(organizationsTable).where(filter).orderBy(orderFunc(orderColumn));
+    const organizationsQuery = db.select().from(organizationsTable).where(filter).orderBy(orderFunc(orderColumn)).limit(+limit).offset(+offset);
 
     const [{ total }] = await db
       .select({
@@ -107,40 +107,27 @@ const organizationsRoutes = app
       })
       .from(organizationsQuery.as('organizations'));
 
-    if (user.role === 'ADMIN') {
-      const result = await organizationsQuery.limit(+limit).offset(+offset);
+    // TODO: Review and refactor this logic
 
-      const organizations = result.map((organization) => ({
-        ...organization,
-        userRole: 'ADMIN' as const,
-      }));
-
-      customLogger('Organizations returned');
-
-      return ctx.json({
-        success: true,
-        data: {
-          items: organizations,
-          total,
-        },
-      });
-    }
-
-    const result = await db
+    const organizationsWithMemberships = await db
       .select({
-        organization: organizationsTable,
         membership: membershipsTable,
+        organization: organizationsTable,
       })
       .from(organizationsQuery.as('organizations'))
+      .leftJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id))
       .where(eq(membershipsTable.userId, user.id))
-      .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id))
-      .orderBy(sort === 'userRole' ? orderFunc(membershipsTable.role) : asc(organizationsTable.id))
-      .limit(+limit)
-      .offset(+offset);
+      .orderBy(sort === 'userRole' ? orderFunc(membershipsTable.role) : asc(organizationsTable.id));
 
-    const organizations = result.map(({ organization, membership }) => ({
+    const organizations = await organizationsQuery;
+
+    const filteredOrganizations = organizations
+      .filter((organization) => !organizationsWithMemberships.find((m) => m.organization?.id === organization.id))
+      .map((organization) => ({ organization, membership: null }));
+
+    const result = organizationsWithMemberships.concat(filteredOrganizations).map(({ organization, membership }) => ({
       ...organization,
-      userRole: membership.role,
+      userRole: membership?.role || null,
     }));
 
     customLogger('Organizations returned');
@@ -148,7 +135,7 @@ const organizationsRoutes = app
     return ctx.json({
       success: true,
       data: {
-        items: organizations,
+        items: result,
         total,
       },
     });
@@ -289,20 +276,6 @@ const organizationsRoutes = app
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
-    if (user.role === 'ADMIN') {
-      customLogger('Organization returned', {
-        organization: organization.id,
-      });
-
-      return ctx.json({
-        success: true,
-        data: {
-          ...organization,
-          userRole: 'ADMIN' as const,
-        },
-      });
-    }
-
     const [membership] = await db
       .select()
       .from(membershipsTable)
@@ -316,7 +289,7 @@ const organizationsRoutes = app
       success: true,
       data: {
         ...organization,
-        userRole: membership.role,
+        userRole: membership?.role || null,
       },
     });
   })
@@ -391,11 +364,10 @@ const organizationsRoutes = app
   .openapi(inviteUserToOrganizationRoute, async (ctx) => {
     const { emails } = ctx.req.valid('json');
     const user = ctx.get('user');
+    const organization = ctx.get('organization');
 
     for (const email of emails) {
       const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
-
-      const organization = ctx.get('organization');
 
       if (targetUser) {
         const [existingMembership] = await db
@@ -410,6 +382,18 @@ const organizationsRoutes = app
           });
 
           continue;
+        }
+
+        if (user.id === targetUser.id) {
+          await db
+            .insert(membershipsTable)
+            .values({
+              organizationId: organization.id,
+              userId: user.id,
+              role: 'MEMBER',
+              createdBy: user.id,
+            })
+            .returning();
         }
       }
 

@@ -36,7 +36,10 @@ export function useFormWithDraft<
 
   useEffect(() => {
     if (form.formState.isDirty) {
-      return setForm(formId, allFields);
+      const values = Object.fromEntries(Object.entries(allFields).filter(([_, value]) => value !== undefined));
+      if (Object.keys(values).length > 0) {
+        return setForm(formId, values);
+      }
     }
   }, [allFields, setForm, formId]);
 

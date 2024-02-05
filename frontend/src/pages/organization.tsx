@@ -1,9 +1,15 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
 import { createContext } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { inviteUsersToOrganization } from '~/api/organizations';
 import { PageHeader } from '~/components/page-header';
 import PageNav from '~/components/page-nav';
+import { Button } from '~/components/ui/button';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { organizationQueryOptions } from '~/router/routeTree';
+import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
 
 interface OrganizationContextValue {
@@ -24,13 +30,44 @@ const organizationTabs = [
 export const OrganizationContext = createContext({} as OrganizationContextValue);
 
 const OrganizationPage = () => {
+  const user = useUserStore((state) => state.user);
+  const { t } = useTranslation();
+  const [apiWrapper] = useApiWrapper();
   const { organizationIdentifier }: { organizationIdentifier: string } = useParams({ strict: false });
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(organizationIdentifier));
   const organization = organizationQuery.data;
 
+  const onJoin = () => {
+    apiWrapper(
+      () => inviteUsersToOrganization(organization.id, [user.email]),
+      () => {
+        organizationQuery.refetch();
+        toast.success(
+          t('success.you_joined_organization', {
+            defaultValue: 'You have joined the organization',
+          }),
+        );
+      },
+    );
+  };
+
   return (
     <OrganizationContext.Provider value={{ organization }}>
-      <PageHeader title={organization.name} type="organization" avatar={organization} bannerUrl={organization.bannerUrl} />
+      <PageHeader
+        title={organization.name}
+        type="organization"
+        avatar={organization}
+        bannerUrl={organization.bannerUrl}
+        panel={
+          <div className="flex items-center p-2">
+            {!organization.userRole && (
+              <Button size="sm" onClick={onJoin}>
+                Join
+              </Button>
+            )}
+          </div>
+        }
+      />
       <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
       <div className="container mt-4 flex-[1_1_0]">
         <Outlet />

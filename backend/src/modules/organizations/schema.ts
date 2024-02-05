@@ -23,7 +23,7 @@ export const apiOrganizationSchema = z.object({
   languages: z.array(z.string()).nullable(),
   emailDomains: z.array(z.string()).nullable(),
   authStrategies: z.array(z.string()).nullable(),
-  userRole: membershipSchema.shape.role.openapi({
+  userRole: membershipSchema.shape.role.nullable().openapi({
     description: 'The role of the current user in the organization',
   }),
 });
