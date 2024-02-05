@@ -12,8 +12,9 @@ For now, we maintain a very rough roadmap here. Its a work in progress and thing
 
 ## Future: Modularity
 * A scaffolding solution is necessary to keep the template useful while the project is growing. Perhaps we can collaborate with a dev which is already maintaining a scaffolding tool?
-* An activity log module for in-app (security) monitoring
-* A bruteforce module with redis store
+* Activity log module for in-app (security) monitoring
+* Bruteforce module with redis store
+* Notifications module
 
 ## Future: Authorization
 * A customizable, extendable permission system

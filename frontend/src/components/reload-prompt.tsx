@@ -22,7 +22,6 @@ function ReloadPrompt() {
             r.update();
           }, 20000 /* 20s for testing purposes */);
       } else {
-        // eslint-disable-next-line prefer-template
         console.log(`SW Registered: ${r}`);
       }
     },
@@ -37,7 +36,7 @@ function ReloadPrompt() {
   };
 
   return (
-    <div>
+    <>
       {(offlineReady || needRefresh) && (
         <div className="fixed right-0 bottom-0 m-[16px] p-[12px] border rounded-[4px] z-[200] text-left bg-background">
           <div className="mb-[8px]">
@@ -52,7 +51,7 @@ function ReloadPrompt() {
         </div>
       )}
       <div className="hidden">{buildDate}</div>
-    </div>
+    </>
   );
 }
 
