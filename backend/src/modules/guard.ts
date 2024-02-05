@@ -108,7 +108,7 @@ const routesMiddlewares: {
   },
   {
     route: deleteOrganizationRoute,
-    middlewares: [authMiddleware(['ADMIN'])],
+    middlewares: [authMiddleware(['ADMIN']), organizationAuthMiddleware(['ADMIN'])],
   },
   {
     route: updateUserInOrganizationRoute,

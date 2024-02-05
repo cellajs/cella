@@ -1,15 +1,30 @@
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
-import { Controller, ControllerProps, FieldPath, FieldValues, FormProvider, useFormContext } from 'react-hook-form';
+import { Controller, ControllerProps, FieldPath, FieldValues, FormProvider, FormProviderProps, useFormContext } from 'react-hook-form';
 
 import { ChevronUp, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Label } from '~/components/ui/label';
 import { cn } from '~/lib/utils';
 import { Button } from './button';
+import { Badge } from './badge';
 
-const Form = FormProvider;
+// biome-ignore lint/suspicious/noExplicitAny: any is required here
+const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValues extends FieldValues = TFieldValues>({
+  children,
+  unsavedChanges,
+  ...props
+}: FormProviderProps<TFieldValues, TContext, TTransformedValues> & {
+  unsavedChanges?: boolean;
+}) => {
+  return (
+    <FormProvider {...props}>
+      {unsavedChanges && <Badge className='w-fit'>Unsaved changes</Badge>}
+      {children}
+    </FormProvider>
+  );
+};
 
 type FormFieldContextValue<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>> = {
   name: TName;
