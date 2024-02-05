@@ -6,7 +6,7 @@ export function useFormWithDraft<
   TFieldValues extends FieldValues = FieldValues,
   // biome-ignore lint/suspicious/noExplicitAny: any is required here
   TContext = any,
-  TTransformedValues extends FieldValues | undefined = undefined,
+  TTransformedValues extends FieldValues = TFieldValues
 >(formId: string, props?: UseFormProps<TFieldValues, TContext>): UseFormReturn<TFieldValues, TContext, TTransformedValues> {
   const form = useForm<TFieldValues, TContext, TTransformedValues>(props);
   const getForm = useDraftStore((state) => state.getForm);
