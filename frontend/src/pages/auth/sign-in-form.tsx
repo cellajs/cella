@@ -17,6 +17,7 @@ import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { SignInRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { User } from '~/types';
+import { toast } from 'sonner';
 
 const formSchema = signInJsonSchema;
 
@@ -117,6 +118,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
     apiWrapper(
       () => sendResetPasswordEmail(resetEmailRef.current),
       () => {
+        toast.success('Reset link sent');
         dialog.remove();
       },
     );
