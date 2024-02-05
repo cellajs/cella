@@ -3,7 +3,7 @@ import { Outlet, useParams } from '@tanstack/react-router';
 import { createContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { inviteUsersToOrganization } from '~/api/organizations';
+import { inviteUsersToOrganization, removeMemberFromOrganization } from '~/api/organizations';
 import { PageHeader } from '~/components/page-header';
 import PageNav from '~/components/page-nav';
 import { Button } from '~/components/ui/button';
@@ -51,6 +51,20 @@ const OrganizationPage = () => {
     );
   };
 
+  const onLeave = () => {
+    apiWrapper(
+      () => removeMemberFromOrganization(organizationIdentifier, user.id),
+      () => {
+        organizationQuery.refetch();
+        toast.success(
+          t('success.you_left_organization', {
+            defaultValue: 'You have left the organization',
+          }),
+        );
+      },
+    );
+  };
+
   return (
     <OrganizationContext.Provider value={{ organization }}>
       <PageHeader
@@ -60,7 +74,11 @@ const OrganizationPage = () => {
         bannerUrl={organization.bannerUrl}
         panel={
           <div className="flex items-center p-2">
-            {!organization.userRole && (
+            {organization.userRole ? (
+              <Button size="sm" onClick={onLeave}>
+                Leave
+              </Button>
+            ) : (
               <Button size="sm" onClick={onJoin}>
                 Join
               </Button>
