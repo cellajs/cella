@@ -16,7 +16,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "@cellajs/imado": "^0.1.0",
+    "@cellajs/imado": "^0.1.2",
     "config": "workspace:*",
     "env": "workspace:*",
     "tsx": "^4.7.0"

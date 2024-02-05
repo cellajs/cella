@@ -4,7 +4,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 interface AlertsState {
-  alertSeen: string;
+  alertsSeen: string[];
   setAlertSeen: (alertSeen: string) => void;
 }
 
@@ -13,17 +13,17 @@ export const useAlertsStore = create<AlertsState>()(
     immer(
       persist(
         (set) => ({
-          alertSeen: 'none',
+          alertsSeen: [],
           setAlertSeen: (alertSeen) => {
             set((state) => {
-              state.alertSeen = alertSeen;
+              state.alertsSeen.push(alertSeen);
             });
           },
         }),
         {
-          name: `${config.slug}-alertSeen`,
+          name: `${config.slug}-alerts-seen`,
           partialize: (state) => ({
-            alertSeen: state.alertSeen,
+            alertsSeen: state.alertsSeen,
           }),
           storage: createJSONStorage(() => localStorage),
         },
