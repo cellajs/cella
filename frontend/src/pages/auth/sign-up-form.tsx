@@ -15,7 +15,9 @@ import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { PrivacyText } from '../other/privacy';
 import { TermsText } from '../other/terms';
-import { PasswordStrength } from '~/components/password-strength';
+import { Suspense, lazy } from 'react';
+
+const PasswordStrength = lazy(() => import('~/components/password-strength'));
 
 const formSchema = signUpJsonSchema;
 
@@ -83,7 +85,9 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
                     autoComplete="new-password"
                     {...field}
                   />
-                  <PasswordStrength password={form.getValues('password')} minLength={8} />
+                  <Suspense>
+                    <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
+                  </Suspense>
                 </div>
               </FormControl>
               <FormMessage />

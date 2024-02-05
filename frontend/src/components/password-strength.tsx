@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import zxcvbn from 'zxcvbn';
 
-export interface PasswordStrengthProps {
+interface PasswordStrengthProps {
   className?: string;
   password: string;
   userInputs?: string[];
@@ -9,12 +9,12 @@ export interface PasswordStrengthProps {
   minLength?: number;
 }
 
-export const PasswordStrength: React.FunctionComponent<PasswordStrengthProps> = ({
+const PasswordStrength = ({
   password,
   userInputs = [],
   barColors = ['#cccccc30', '#ef4836', '#f6b44d', '#2b90ef', '#25c281'],
   minLength = 4,
-}) => {
+}: PasswordStrengthProps) => {
   const [score, setScore] = useState(0);
 
   useEffect(() => {
@@ -38,3 +38,5 @@ export const PasswordStrength: React.FunctionComponent<PasswordStrengthProps> = 
     </div>
   );
 };
+
+export default PasswordStrength;

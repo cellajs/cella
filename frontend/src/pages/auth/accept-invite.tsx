@@ -14,6 +14,9 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/component
 import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { LegalNotice } from './sign-up-form';
+import { Suspense, lazy } from 'react';
+
+const PasswordStrength = lazy(() => import('~/components/password-strength'));
 
 const formSchema = acceptInvitationToOrganizationJsonSchema;
 
@@ -62,13 +65,18 @@ const Accept = () => {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input
-                    type="password"
-                    autoFocus
-                    placeholder={t('label.new_password', { defaultValue: 'New password' })}
-                    autoComplete="new-password"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <Input
+                      type="password"
+                      autoFocus
+                      placeholder={t('label.new_password', { defaultValue: 'New password' })}
+                      autoComplete="new-password"
+                      {...field}
+                    />
+                    <Suspense>
+                      <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
+                    </Suspense>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
