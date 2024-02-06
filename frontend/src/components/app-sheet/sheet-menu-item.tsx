@@ -4,14 +4,14 @@ import { Page, UserRole } from '~/types';
 
 interface SheetMenuItemProps {
   item: Page;
-  handleClick: () => void;
+  menutItemClick: () => void;
 }
 
-export const SheetMenuItem = ({ item, handleClick }: SheetMenuItemProps) => {
+export const SheetMenuItem = ({ item, menutItemClick }: SheetMenuItemProps) => {
   return (
     <Link
       className="group mb-2 flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-2 ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground"
-      onClick={handleClick}
+      onClick={menutItemClick}
       aria-label={`Select ${item.name}`}
       to="/$organizationIdentifier"
       params={{ organizationIdentifier: item.slug }}

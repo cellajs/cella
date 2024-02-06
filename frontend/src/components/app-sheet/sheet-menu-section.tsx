@@ -13,11 +13,11 @@ interface MenuSectionProps {
   data: UserMenu[keyof UserMenu];
   isSectionVisible: boolean;
   toggleSection: () => void;
-  handleItemClick: () => void;
+  menutItemClick: () => void;
   itemCount?: number;
 }
 
-export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSectionVisible, toggleSection, handleItemClick, itemCount }) => {
+export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSectionVisible, toggleSection, menutItemClick, itemCount }) => {
   const { t } = useTranslation();
 
   const createDialog = () => {
@@ -45,7 +45,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
       );
     }
 
-    return items.map((item) => <SheetMenuItem key={item.id} item={item} handleClick={handleItemClick} />);
+    return items.map((item) => <SheetMenuItem key={item.id} item={item} menutItemClick={menutItemClick} />);
   };
 
   return (

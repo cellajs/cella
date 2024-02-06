@@ -42,16 +42,16 @@ export const SheetMenu = memo(() => {
   const [searchResults, setSearchResults] = useState<SearchResultsType>(initialSearchResults);
 
   // Handle menu item click
-  const handleItemClick = () => {
+  const menutItemClick = () => {
     if (isSmallScreen || !keepMenuOpen) setSheet(null);
   };
 
   // Render search results
   const searchResultsListItems = useCallback(() => {
     return Object.entries(searchResults).flatMap(([_, items]) => {
-      return items.length > 0 ? items.map((item: Page) => <SheetMenuItem key={item.id} item={item} handleClick={handleItemClick} />) : [];
+      return items.length > 0 ? items.map((item: Page) => <SheetMenuItem key={item.id} item={item} menutItemClick={menutItemClick} />) : [];
     });
-  }, [searchResults, handleItemClick]);
+  }, [searchResults, menutItemClick]);
 
   const renderedSections = useMemo(
     () =>
@@ -65,12 +65,12 @@ export const SheetMenu = memo(() => {
             data={menuSection}
             isSectionVisible={activeSections[section.name]}
             toggleSection={() => toggleSection(section.name)}
-            handleItemClick={handleItemClick}
+            menutItemClick={menutItemClick}
             itemCount={menuSection.active.length + menuSection.inactive.length}
           />
         );
       }),
-    [menu, activeSections, toggleSection, handleItemClick],
+    [menu, activeSections, toggleSection, menutItemClick],
   );
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {

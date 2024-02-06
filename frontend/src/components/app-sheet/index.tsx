@@ -8,6 +8,7 @@ const AppSheet = () => {
   const navigate = useNavigate();
   const { activeSheet, setSheet, getMenu, keepMenuOpen } = useNavigationStore();
   const { getMe } = useUserStore();
+  
   const isMirrorSide = activeSheet?.mirrorOnMobile;
   const hideShadow = keepMenuOpen && activeSheet?.id === 'menu';
   const sheetClass = `${

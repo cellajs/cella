@@ -48,6 +48,7 @@ const AppNav = () => {
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
   const navIconColor = theme !== 'none' ? 'text-primary-foreground' : '';
 
+  // Create a nav button component for each navItem
   const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
     const activeClass = isActive ? 'bg-accent/20 hover:bg-accent/20' : '';
     const isAccountItem = navItem.id === 'account';
@@ -72,7 +73,7 @@ const AppNav = () => {
     );
   };
 
-  const handleButtonClick = (navItem: NavItem) => {
+  const navButtonClick = (navItem: NavItem) => {
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
       dialog(<Input placeholder={'Search ...'} />, {
@@ -109,7 +110,7 @@ const AppNav = () => {
             <Fragment key={navItem.id}>
               {isSecondItem && <div className="hidden xs:flex xs:grow md:hidden" />}
               <li className={`md:grow-0 ${listItemClass}`} key={navItem.id}>
-                <NavButton navItem={navItem} isActive={isActive} onClick={() => handleButtonClick(navItem)} />
+                <NavButton navItem={navItem} isActive={isActive} onClick={() => navButtonClick(navItem)} />
               </li>
             </Fragment>
           );
