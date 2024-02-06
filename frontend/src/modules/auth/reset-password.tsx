@@ -1,29 +1,27 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { acceptInviteJsonSchema } from 'backend/modules/general/schema';
+import { resetPasswordJsonSchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import { Button } from '~/components/ui/button';
 import AuthPage from '.';
-import OauthOptions from './oauth-options';
 
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
-import { acceptInvite } from '~/api/general';
+import { resetPassword } from '~/api/authentication';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
-import { LegalNotice } from './sign-up-form';
 
-const PasswordStrength = lazy(() => import('~/components/password-strength'));
+const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
-const formSchema = acceptInviteJsonSchema;
+const formSchema = resetPasswordJsonSchema;
 
-const Accept = () => {
+const ResetPassword = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { token }: { token: string } = useParams({ strict: false });
+  const navigate = useNavigate();
 
   const [apiWrapper, pending] = useApiWrapper();
 
@@ -36,14 +34,10 @@ const Accept = () => {
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     apiWrapper(
-      () =>
-        acceptInvite({
-          token,
-          password: values.password,
-        }),
-      (path) => {
+      () => resetPassword(token, values.password),
+      () => {
         navigate({
-          to: path,
+          to: '/',
         });
       },
     );
@@ -53,11 +47,8 @@ const Accept = () => {
     <AuthPage>
       <Form {...form}>
         <h1 className="text-2xl text-center">
-          Accept invitation <br /> <span className="font-light text-xl">for {'"email here"'}</span>
+          Reset password <br /> <span className="font-light text-xl">for {'"email here"'}</span>
         </h1>
-
-        <LegalNotice />
-
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
@@ -74,7 +65,7 @@ const Accept = () => {
                       {...field}
                     />
                     <Suspense>
-                      <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
+                      <PasswordStrength password={form.getValues('password')} minLength={8} />
                     </Suspense>
                   </div>
                 </FormControl>
@@ -83,16 +74,15 @@ const Accept = () => {
             )}
           />
           <Button type="submit" loading={pending} className="w-full">
-            {t('action.accept', {
-              defaultValue: 'Accept',
+            {t('action.reset', {
+              defaultValue: 'Reset',
             })}
             <ArrowRight size={16} className="ml-2" />
           </Button>
         </form>
       </Form>
-      <OauthOptions actionType="acceptInvite" />
     </AuthPage>
   );
 };
 
-export default Accept;
+export default ResetPassword;

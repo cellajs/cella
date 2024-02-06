@@ -4,7 +4,7 @@ import { User } from '~/types';
 import { Pencil, Trash } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import UpdateUserForm from '~/components/update-user-form';
-import DeleteUserForm from '../delete-user-form';
+import DeleteUser from '../../modules/users/delete-user';
 import { dialog } from '../dialoger/state';
 
 interface Props {
@@ -38,10 +38,13 @@ const DataTableRowActions = ({ user, callback }: Props) => {
         size="icon"
         className="h-8 w-8"
         onClick={() => {
-          dialog(<DeleteUserForm user={user} dialog callback={(user) => callback(user, 'delete')} />, {
+          dialog(<DeleteUser user={user} dialog callback={(user) => callback(user, 'delete')} />, {
             className: 'sm:max-w-[64rem]',
             title: t('action.delete_user', {
               defaultValue: 'Delete user',
+            }),
+            description: t('question.are_you_sure_to_delete_user', {
+              defaultValue: 'Are you sure you want to delete this user?',
             }),
           });
         }}

@@ -71,7 +71,7 @@ import { ArrowDown } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
-import { useBreakpoints } from '../../hooks/use-breakpoints';
+import { useBreakpoints } from '../../../hooks/use-breakpoints';
 
 const Features = () => {
   const { mode } = useThemeStore();

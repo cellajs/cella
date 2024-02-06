@@ -5,7 +5,7 @@ import { Organization } from '~/types';
 import { Button } from '~/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/components/ui/dropdown-menu';
 
-import DeleteOrganizationForm from '../delete-organization-form';
+import DeleteOrganization from '../../modules/organizations/delete-organization';
 import { dialog } from '../dialoger/state';
 import UpdateOrganizationForm from '../update-organization-form';
 
@@ -46,10 +46,13 @@ const DataTableRowActions = ({ organization, callback }: Props) => {
             variant="destructive"
             className="w-full"
             onClick={() => {
-              dialog(<DeleteOrganizationForm organization={organization} dialog callback={(organization) => callback(organization, 'delete')} />, {
+              dialog(<DeleteOrganization organization={organization} dialog callback={(organization) => callback(organization, 'delete')} />, {
                 className: 'sm:max-w-xl',
                 title: t('label.delete_organization', {
                   defaultValue: 'Delete organization',
+                }),
+                description: t('description.delete_organization', {
+                  defaultValue: 'Are you sure you want to delete this organization?',
                 }),
               });
             }}

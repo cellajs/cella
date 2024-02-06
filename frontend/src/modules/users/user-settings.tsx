@@ -1,16 +1,17 @@
 import { SimpleHeader } from '~/components/simple-header';
 import { Card, CardContent } from '~/components/ui/card';
 
-import DeleteAccountForm from '~/components/delete-account-form';
+import DeleteUser from './delete-user';
 import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
 import { useUserStore } from '~/store/user';
-import UpdateUserForm from '../components/update-user-form';
-import { useNavigate } from '@tanstack/react-router';
+
+import UpdateUserForm from '../../components/update-user-form';
+import { useTranslation } from 'react-i18next';
 
 const UserSettings = () => {
   const user = useUserStore((state) => state.user);
-  const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -29,21 +30,15 @@ const UserSettings = () => {
             <Button
               variant="destructive"
               onClick={() => {
-                dialog(
-                  <DeleteAccountForm
-                    user={user}
-                    callback={() => {
-                      navigate({
-                        to: '/auth/sign-in',
-                      });
-                    }}
-                    dialog
-                  />,
-                  {
-                    title: 'Delete account',
-                    className: 'sm:w-[600px]',
-                  },
-                );
+                dialog(<DeleteUser user={user} dialog />, {
+                  className: 'sm:max-w-[64rem]',
+                  title: t('action.delete_user', {
+                    defaultValue: 'Delete user',
+                  }),
+                  description: t('question.are_you_sure_to_delete_your_account', {
+                    email: user.email,
+                  }),
+                });
               }}
             >
               Delete account

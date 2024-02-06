@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 
 import { Bird } from 'lucide-react';
 import { cn } from '~/lib/utils';
-import { OrganizationContext } from '~/pages/organization';
+import { OrganizationContext } from '~/modules/organizations/organization';
 import { queryClient } from '~/router';
 import { MemberSearch, MembersTableRoute, membersQueryOptions } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';

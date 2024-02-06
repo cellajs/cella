@@ -14,10 +14,10 @@ import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
-import { PrivacyText } from '../other/privacy';
-import { TermsText } from '../other/terms';
+import { PrivacyText } from '../marketing/privacy';
+import { TermsText } from '../marketing/terms';
 
-const PasswordStrength = lazy(() => import('~/components/password-strength'));
+const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
 const formSchema = signUpJsonSchema;
 

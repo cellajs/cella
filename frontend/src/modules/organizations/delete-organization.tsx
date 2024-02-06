@@ -1,11 +1,11 @@
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import { deleteOrganization } from '~/api/organizations';
 import { Organization } from '~/types';
 
 import { toast } from 'sonner';
-import { Button } from '~/components/ui/button';
+import { DeleteForm } from '~/components/delete-form';
+import { dialog } from '~/components/dialoger/state';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
-import { dialog } from './dialoger/state';
 
 interface Props {
   organization: Organization;
@@ -36,29 +36,7 @@ const DeleteOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     );
   };
 
-  return (
-    <>
-      <p>
-        <Trans
-          i18nKey="question.are_you_sure_to_delete_organization"
-          values={{ name: organization.name }}
-          defaults="Are you sure you want to delete <strong>{{name}}</strong> organization?"
-        />
-      </p>
-      <div className="flex flex-col-reverse sm:flex-row gap-2">
-        <Button type="submit" variant="destructive" onClick={onDelete} loading={pending}>
-          {t('action.delete', {
-            defaultValue: 'Delete',
-          })}
-        </Button>
-        <Button variant="secondary" aria-label="Cancel" onClick={() => dialog.remove()}>
-          {t('action.cancel', {
-            defaultValue: 'Cancel',
-          })}
-        </Button>
-      </div>
-    </>
-  );
+  return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={pending} />;
 };
 
 export default DeleteOrganizationForm;

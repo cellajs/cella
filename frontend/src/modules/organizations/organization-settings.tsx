@@ -6,10 +6,10 @@ import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 
 import { useContext } from 'react';
-import { OrganizationContext } from '~/pages/organization';
-import DeleteOrganization from './delete-organization-form';
-import { dialog } from './dialoger/state';
-import UpdateOrganizationForm from './update-organization-form';
+import { OrganizationContext } from '~/modules/organizations/organization';
+import { dialog } from '../../components/dialoger/state';
+import UpdateOrganizationForm from '../../components/update-organization-form';
+import DeleteOrganization from './delete-organization';
 
 const OrganizationSettings = () => {
   const { t } = useTranslation();
@@ -61,6 +61,9 @@ const OrganizationSettings = () => {
                 className: 'sm:max-w-xl',
                 title: t('label.delete_organization', {
                   defaultValue: 'Delete organization',
+                }),
+                description: t('description.delete_organization', {
+                  defaultValue: 'Are you sure you want to delete this organization?',
                 }),
               },
             );
