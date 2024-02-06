@@ -98,49 +98,6 @@ export const deleteOrganization = async (organizationIdentifier: string) => {
   return;
 };
 
-// Invite users to an organization
-export const inviteUsersToOrganization = async (organizationIdentifier: string, emails: string[]) => {
-  const response = await client.organizations[':organizationIdentifier'].members.invite.$post({
-    param: { organizationIdentifier },
-    json: { emails },
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
-  return;
-};
-
-// Accept an invitation to join an organization
-export const acceptOrganizationInvite = async ({
-  token,
-  password,
-  oauth,
-}: {
-  token: string;
-  password?: string;
-  oauth?: 'github' | 'google' | 'microsoft';
-}) => {
-  const response = await client.organizations['accept-invitation'][':token'].$post({
-    param: { token },
-    json: { password, oauth },
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
-  return json.data;
-};
-
-// Check if an email exists for a given invitation token
-export const checkIsEmailExistsByInviteToken = async (token: string) => {
-  const response = await client.organizations['check-email-exists-by-invite-token'][':token'].$get({
-    param: { token },
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
-  return json.success;
-};
-
 export type GetMembersParams = Partial<
   Omit<Parameters<(typeof client.organizations)[':organizationIdentifier']['members']['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;

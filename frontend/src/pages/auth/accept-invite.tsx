@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { acceptInvitationToOrganizationJsonSchema } from 'backend/modules/organizations/schema';
+import { acceptInviteJsonSchema } from 'backend/modules/general/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
@@ -10,7 +10,7 @@ import OauthOptions from './oauth-options';
 
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
-import { acceptOrganizationInvite } from '~/api/organizations';
+import { acceptInvite } from '~/api/general';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
@@ -18,7 +18,7 @@ import { LegalNotice } from './sign-up-form';
 
 const PasswordStrength = lazy(() => import('~/components/password-strength'));
 
-const formSchema = acceptInvitationToOrganizationJsonSchema;
+const formSchema = acceptInviteJsonSchema;
 
 const Accept = () => {
   const { t } = useTranslation();
@@ -37,13 +37,13 @@ const Accept = () => {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     apiWrapper(
       () =>
-        acceptOrganizationInvite({
+        acceptInvite({
           token,
           password: values.password,
         }),
-      (url) => {
+      (path) => {
         navigate({
-          to: url,
+          to: path,
         });
       },
     );

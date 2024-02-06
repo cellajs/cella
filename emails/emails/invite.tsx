@@ -10,30 +10,36 @@ interface Props {
   orgName?: string;
   orgImage?: string;
   inviteUrl?: string;
-  invitedBy?: string;
+  invitedBy?: string | null;
   i18n?: ReturnType<typeof getI18n>;
+  type?: 'system' | 'organization';
 }
 
 const baseUrl = config.frontendUrl;
 
-export const InviteUserToOrganizationEmail = ({
+export const InviteEmail = ({
   username = 'Unknown name',
   userImage = '../static/user.png',
   orgName = 'Unknown organization',
   orgImage = '../static/org.png',
   inviteUrl = '',
-  invitedBy = 'Unknown inviter',
+  invitedBy,
   i18n = getI18n('backend'),
+  type = 'organization',
 }: Props) => {
   return (
     <React.Fragment>
       <Html>
         <Head />
         <Preview>
-          {i18n.t('email.created_account_in_organization__preview_text', {
-            defaultValue: 'You have been invited to join {{orgName}} on Cella',
-            orgName,
-          })}
+          {type === 'system'
+            ? i18n.t('email.invite__preview_text', {
+                defaultValue: 'You have been invited to join Cella',
+              })
+            : i18n.t('email.invite_in_organization__preview_text', {
+                defaultValue: 'You have been invited to join {{orgName}} on Cella',
+                orgName,
+              })}
         </Preview>
         <Tailwind>
           <Body className="m-auto bg-white font-sans">
@@ -45,10 +51,15 @@ export const InviteUserToOrganizationEmail = ({
                 <div
                   // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                   dangerouslySetInnerHTML={{
-                    __html: i18n.t('email.invited_to_organization__title', {
-                      defaultValue: 'You are invited to <strong>{{orgName}}</strong>',
-                      orgName: orgName,
-                    }),
+                    __html:
+                      type === 'system'
+                        ? i18n.t('email.invite__title', {
+                            defaultValue: 'You have been invited to join <strong>Cella</strong>',
+                          })
+                        : i18n.t('email.invite_to_organization__title', {
+                            defaultValue: 'You have been invited to join <strong>{{orgName}}</strong>',
+                            orgName: orgName,
+                          }),
                   }}
                 />
               </Heading>
@@ -56,13 +67,20 @@ export const InviteUserToOrganizationEmail = ({
                 <div
                   // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                   dangerouslySetInnerHTML={{
-                    __html: i18n.t('email.invited_to_organization__description', {
-                      defaultValue:
-                        'Hi {{username}}, you have been invited to <strong>{{orgName}}</strong> on <strong>Cella</strong> by <strong>{{invitedBy}}</strong>',
-                      username,
-                      invitedBy,
-                      orgName,
-                    }),
+                    __html:
+                      type === 'system'
+                        ? i18n.t('email.invite__description', {
+                            defaultValue: 'Hi {{username}}, you have been invited to <strong>Cella</strong> by <strong>{{invitedBy}}</strong>',
+                            username,
+                            invitedBy: invitedBy || 'Unknown inviter',
+                          })
+                        : i18n.t('email.invite_to_organization__description', {
+                            defaultValue:
+                              'Hi {{username}}, you have been invited to <strong>{{orgName}}</strong> on <strong>Cella</strong> by <strong>{{invitedBy}}</strong>',
+                            username,
+                            invitedBy: invitedBy || 'Unknown inviter',
+                            orgName,
+                          }),
                   }}
                 />
               </Text>
@@ -75,7 +93,11 @@ export const InviteUserToOrganizationEmail = ({
                     <Img src="../static/arrow.png" width="12" height="9" alt="invited to" />
                   </Column>
                   <Column align="left">
-                    <Img className="rounded-full" src={orgImage} width="64" height="64" />
+                    {type === 'system' ? (
+                      <Img src={`${baseUrl}/static/logo.png`} height="37" alt="Cella" className="mx-auto my-0" />
+                    ) : (
+                      <Img className="rounded-full" src={orgImage} width="64" height="64" />
+                    )}
                   </Column>
                 </Row>
               </Section>
@@ -94,4 +116,4 @@ export const InviteUserToOrganizationEmail = ({
   );
 };
 
-export default InviteUserToOrganizationEmail;
+export default InviteEmail;

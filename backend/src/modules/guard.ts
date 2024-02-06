@@ -10,19 +10,17 @@ import {
   signInRoute,
   verifyEmailRoute,
 } from './auth/routes';
-import { getUploadTokenRoute } from './general/routes';
+import { getUploadTokenRoute, inviteRoute, acceptInviteRoute } from './general/routes';
 import authMiddleware from './middlewares/auth-middleware';
 import organizationAuthMiddleware from './middlewares/organization-auth-middleware';
 import { rateLimiter, signInRateLimiter } from './middlewares/rate-limiter';
 import {
-  acceptInvitationToOrganizationRoute,
   createOrganizationRoute,
   deleteOrganizationRoute,
   deleteUserFromOrganizationRoute,
   getOrganizationByIdOrSlugRoute,
   getOrganizationsRoute,
   getUsersByOrganizationIdRoute,
-  inviteUserToOrganizationRoute,
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './organizations/routes';
@@ -47,7 +45,7 @@ const routesMiddlewares: {
     middlewares: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10 }, 'fail')],
   },
   {
-    route: acceptInvitationToOrganizationRoute,
+    route: acceptInviteRoute,
     middlewares: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10 }, 'fail')],
   },
   {
@@ -115,7 +113,7 @@ const routesMiddlewares: {
     middlewares: [authMiddleware(), organizationAuthMiddleware(['ADMIN'])],
   },
   {
-    route: inviteUserToOrganizationRoute,
+    route: inviteRoute,
     middlewares: [
       authMiddleware(),
       organizationAuthMiddleware(['ADMIN']),

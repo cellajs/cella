@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { inviteUsersToOrganization } from '~/api/organizations';
+import { invite } from '~/api/general';
 import { Organization } from '~/types';
 
 import { Send } from 'lucide-react';
@@ -11,10 +11,10 @@ import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import MultipleSelector, { Option } from '../ui/multiple-selector';
+import MultipleSelector, { Option } from './ui/multiple-selector';
 
 interface Props {
-  organization: Organization;
+  organization?: Organization;
   callback?: () => void;
   dialog?: boolean;
 }
@@ -37,16 +37,16 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
   const { t } = useTranslation();
   const [apiWrapper, pending] = useApiWrapper();
 
-  const form = useFormWithDraft<FormValues>(`invite-users-${organization.id}`, {
+  const form = useFormWithDraft<FormValues>('invite-users', {
     resolver: zodResolver(formSchema),
   });
 
   const onSubmit = (values: FormValues) => {
     apiWrapper(
       () =>
-        inviteUsersToOrganization(
-          organization.id,
+        invite(
           values.emails.map((e) => e.value),
+          organization?.id,
         ),
       () => {
         form.reset(values);

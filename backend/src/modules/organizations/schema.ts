@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 import { membershipsTable, organizationsTable } from '../../db/schema';
-import { idSchema, passwordSchema, slugSchema } from '../../schemas/common';
+import { idSchema, slugSchema } from '../../schemas/common';
 import { apiUserSchema } from '../users/schema';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
@@ -82,10 +82,6 @@ export const getUsersByOrganizationIdParamSchema = z.object({
   organizationIdentifier: slugSchema.or(idSchema),
 });
 
-export const inviteUserToOrganizationParamSchema = z.object({
-  organizationIdentifier: slugSchema.or(idSchema),
-});
-
 export const deleteOrganizationParamSchema = z.object({
   organizationIdentifier: slugSchema.or(idSchema),
 });
@@ -104,20 +100,6 @@ export const updateUserInOrganizationJsonSchema = z.object({
   role: membershipSchema.shape.role.openapi({
     description: 'The role of the user in the organization',
   }),
-});
-
-export const inviteUserToOrganizationJsonSchema = z.object({
-  emails: apiOrganizationUserSchema.shape.email
-    .openapi({
-      description: 'The email of the user to add to the organization',
-    })
-    .array()
-    .min(1),
-});
-
-export const acceptInvitationToOrganizationJsonSchema = z.object({
-  password: passwordSchema.optional(),
-  oauth: z.enum(['google', 'microsoft', 'github']).optional(),
 });
 
 export const userMenuSchema = z.object({

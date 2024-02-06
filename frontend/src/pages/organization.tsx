@@ -3,7 +3,8 @@ import { Outlet, useParams } from '@tanstack/react-router';
 import { createContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { inviteUsersToOrganization, removeMemberFromOrganization } from '~/api/organizations';
+import { invite } from '~/api/general';
+import { removeMemberFromOrganization } from '~/api/organizations';
 import { PageHeader } from '~/components/page-header';
 import PageNav from '~/components/page-nav';
 import { Button } from '~/components/ui/button';
@@ -39,7 +40,7 @@ const OrganizationPage = () => {
 
   const onJoin = () => {
     apiWrapper(
-      () => inviteUsersToOrganization(organization.id, [user.email]),
+      () => invite([user.email], organization.id),
       () => {
         organizationQuery.refetch();
         toast.success(

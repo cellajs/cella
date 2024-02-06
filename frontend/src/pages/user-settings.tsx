@@ -6,9 +6,11 @@ import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
 import { useUserStore } from '~/store/user';
 import UpdateUserForm from '../components/update-user-form';
+import { useNavigate } from '@tanstack/react-router';
 
 const UserSettings = () => {
   const user = useUserStore((state) => state.user);
+  const navigate = useNavigate();
 
   return (
     <>
@@ -27,10 +29,21 @@ const UserSettings = () => {
             <Button
               variant="destructive"
               onClick={() => {
-                dialog(<DeleteAccountForm user={user} dialog />, {
-                  title: 'Delete account',
-                  className: 'sm:w-[600px]',
-                });
+                dialog(
+                  <DeleteAccountForm
+                    user={user}
+                    callback={() => {
+                      navigate({
+                        to: '/auth/sign-in',
+                      });
+                    }}
+                    dialog
+                  />,
+                  {
+                    title: 'Delete account',
+                    className: 'sm:w-[600px]',
+                  },
+                );
               }}
             >
               Delete account

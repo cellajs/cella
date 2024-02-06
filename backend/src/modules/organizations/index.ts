@@ -1,35 +1,21 @@
-import { render } from '@react-email/render';
 import { config } from 'config';
 import { AnyColumn, SQL, and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
-import { emailSender } from 'emails';
-import { InviteUserToOrganizationEmail } from 'emails/invite';
-import { env } from 'env';
 import { getI18n } from 'i18n';
-import { TimeSpan, User, generateId } from 'lucia';
-import { nanoid } from 'nanoid';
-import { createDate, isWithinExpirationDate } from 'oslo';
-import { Argon2id } from 'oslo/password';
 import slugify from 'slugify';
 import { db } from '../../db/db';
-import { auth } from '../../db/lucia';
-import { MembershipModel, membershipsTable, organizationsTable, tokensTable, usersTable } from '../../db/schema';
-import { setCookie } from '../../lib/cookies';
+import { MembershipModel, membershipsTable, organizationsTable, usersTable } from '../../db/schema';
 import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
-import { githubSignInRoute } from '../auth/routes';
 import { checkSlugRoute } from '../general/routes';
 import {
-  acceptInvitationToOrganizationRoute,
-  checkIsEmailExistsByInviteTokenRoute,
   createOrganizationRoute,
   deleteOrganizationRoute,
   deleteUserFromOrganizationRoute,
   getOrganizationByIdOrSlugRoute,
   getOrganizationsRoute,
   getUsersByOrganizationIdRoute,
-  inviteUserToOrganizationRoute,
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './routes';
@@ -359,217 +345,6 @@ const organizationsRoutes = app
         items: members,
         total,
       },
-    });
-  })
-  .openapi(inviteUserToOrganizationRoute, async (ctx) => {
-    const { emails } = ctx.req.valid('json');
-    const user = ctx.get('user');
-    const organization = ctx.get('organization');
-
-    for (const email of emails) {
-      const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
-
-      if (targetUser) {
-        const [existingMembership] = await db
-          .select()
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
-
-        if (existingMembership) {
-          customLogger('User already member of organization', {
-            user: targetUser.id,
-            organization: organization.id,
-          });
-
-          continue;
-        }
-
-        if (user.id === targetUser.id) {
-          await db
-            .insert(membershipsTable)
-            .values({
-              organizationId: organization.id,
-              userId: user.id,
-              role: 'MEMBER',
-              createdBy: user.id,
-            })
-            .returning();
-        }
-      }
-
-      const token = generateId(40);
-      await db.insert(tokensTable).values({
-        id: token,
-        type: 'INVITATION',
-        userId: targetUser?.id,
-        email: email.toLowerCase(),
-        organizationId: organization.id,
-        expiresAt: createDate(new TimeSpan(7, 'd')),
-      });
-
-      const emailLanguage = organization.defaultLanguage || targetUser.language;
-
-      await i18n.changeLanguage(i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage);
-
-      const emailHtml = render(
-        InviteUserToOrganizationEmail({
-          orgName: organization.name || '',
-          orgImage: organization.logoUrl || '',
-          userImage: targetUser?.thumbnailUrl || '',
-          username: targetUser?.name || email.toLowerCase() || '',
-          inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
-          i18n,
-        }),
-      );
-
-      try {
-        emailSender.send(
-          env.SEND_ALL_TO_EMAIL || config.senderIsReceiver ? user.email : email.toLowerCase(),
-          `Added to ${organization.name} on Cella`,
-          emailHtml,
-        );
-      } catch (error) {
-        customLogger(
-          'Error sending email',
-          {
-            errorMessage: (error as Error).message,
-          },
-          'error',
-        );
-      }
-
-      customLogger('User invited to organization', {
-        user: user?.id,
-        organization: organization.id,
-      });
-    }
-
-    return ctx.json({
-      success: true,
-      data: undefined,
-    });
-  })
-  .openapi(checkIsEmailExistsByInviteTokenRoute, async (ctx) => {
-    const token = ctx.req.valid('param').token;
-
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, token)));
-
-    if (tokenRecord?.email) {
-      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
-
-      if (user) {
-        return ctx.json({
-          success: true,
-        });
-      }
-    }
-
-    return ctx.json({
-      success: false,
-    });
-  })
-  .openapi(acceptInvitationToOrganizationRoute, async (ctx) => {
-    const { password, oauth } = ctx.req.valid('json');
-    const verificationToken = ctx.req.valid('param').token;
-
-    const [token] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, verificationToken)));
-
-    if (!token || !token.organizationId || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
-    }
-
-    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, token.organizationId));
-
-    if (!organization) {
-      return ctx.json(createError(i18n, 'error.organization_not_found', 'Organization not found'), 404);
-    }
-
-    let user: User;
-
-    if (token.userId) {
-      [user] = await db
-        .select()
-        .from(usersTable)
-        .where(and(eq(usersTable.id, token.userId)));
-
-      if (!user || user.email !== token.email) {
-        return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
-      }
-    } else if (password || oauth) {
-      const hashedPassword = password ? await new Argon2id().hash(password) : undefined;
-      const userId = nanoid();
-
-      [user] = await db
-        .insert(usersTable)
-        .values({
-          id: userId,
-          slug: userId,
-          language: organization.defaultLanguage || config.defaultLanguage,
-          email: token.email,
-          emailVerified: true,
-          hashedPassword,
-        })
-        .returning();
-
-      if (password) {
-        await db.delete(tokensTable).where(and(eq(tokensTable.id, verificationToken)));
-
-        const session = await auth.createSession(userId, {});
-        const sessionCookie = auth.createSessionCookie(session.id);
-
-        ctx.header('Set-Cookie', sessionCookie.serialize());
-      }
-    } else {
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
-    }
-
-    await db
-      .insert(membershipsTable)
-      .values({
-        organizationId: token.organizationId,
-        userId: user.id,
-        role: 'MEMBER',
-        createdBy: user.id,
-      })
-      .returning();
-
-    if (oauth === 'github') {
-      const response = await fetch(`${config.backendUrl + githubSignInRoute.path}?redirect=${organization.slug}`, {
-        method: githubSignInRoute.method,
-        redirect: 'manual',
-      });
-
-      const url = response.headers.get('Location');
-
-      if (response.status === 302 && url) {
-        ctx.header('Set-Cookie', response.headers.get('Set-Cookie') ?? '', {
-          append: true,
-        });
-        setCookie(ctx, 'oauth_invite_token', verificationToken);
-
-        return ctx.json({
-          success: true,
-          data: url,
-        });
-
-        // return ctx.json({}, 302, {
-        //   Location: url,
-        // });
-        // return ctx.redirect(url, 302);
-      }
-
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
-    }
-
-    return ctx.json({
-      success: true,
-      data: `${config.frontendUrl}/${organization.slug}`,
     });
   })
   .openapi(deleteUserFromOrganizationRoute, async (ctx) => {

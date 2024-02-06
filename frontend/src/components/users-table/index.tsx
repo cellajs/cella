@@ -28,6 +28,9 @@ import CountAndLoading from '../data-table/count-and-loading';
 import { DataTableViewOptions } from '../data-table/options';
 import { Input } from '../ui/input';
 import { useColumns } from './columns';
+import InviteUsersForm from '../invite-users-form';
+import { useUserStore } from '~/store/user';
+import { dialog } from '../dialoger/state';
 
 type QueryData = Awaited<ReturnType<typeof getUsers>>;
 
@@ -76,11 +79,25 @@ export function CustomDataTableToolbar({
 }: CustomDataTableToolbarProps) {
   const { t } = useTranslation();
   const [, setOpen] = useState(false);
+  const user = useUserStore((state) => state.user);
+
+  const openInviteDialog = () => {
+    dialog(<InviteUsersForm dialog />, {
+      drawerOnMobile: false,
+      className: 'max-w-xl',
+      title: t('label.invite', {
+        defaultValue: 'Invite',
+      }),
+      description: t('description.invite_users', {
+        defaultValue: 'Invited users will receive an email with an invitation link.',
+      }),
+    });
+  };
 
   return (
     <div className="items-center justify-between sm:flex">
       <div className="flex items-center space-x-2">
-        {Object.keys(rowSelection).length > 0 && (
+        {Object.keys(rowSelection).length > 0 ? (
           <Button variant="destructive" className="relative" onClick={() => setOpen(true)}>
             <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
               <span className="text-xs font-medium text-white">{Object.keys(rowSelection).length}</span>
@@ -89,6 +106,18 @@ export function CustomDataTableToolbar({
               defaultValue: 'Remove',
             })}
           </Button>
+        ) : (
+          !isFiltered && (
+            <>
+              {user.role === 'ADMIN' && (
+                <Button onClick={openInviteDialog}>
+                  {t('action.invite', {
+                    defaultValue: 'Invite',
+                  })}
+                </Button>
+              )}
+            </>
+          )
         )}
         <CountAndLoading
           count={queryResult.data?.pages[0].total}

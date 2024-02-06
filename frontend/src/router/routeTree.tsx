@@ -1,14 +1,7 @@
 import { DefaultError, QueryClient, infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { Outlet, createRoute, createRouteMask, redirect, rootRouteWithContext } from '@tanstack/react-router';
 import { z } from 'zod';
-import {
-  UpdateOrganizationParams,
-  acceptOrganizationInvite,
-  checkIsEmailExistsByInviteToken,
-  getMembersByOrganizationIdentifier,
-  getOrganizationBySlugOrId,
-  updateOrganization,
-} from '~/api/organizations';
+import { UpdateOrganizationParams, getMembersByOrganizationIdentifier, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
 import { UpdateUserParams, updateUser } from '~/api/users';
 import { Root } from '~/components/root';
 import VerifyEmail from '~/pages/auth/verify-email';
@@ -35,6 +28,7 @@ import SystemPanel from '../pages/system-panel';
 import UserProfile from '../pages/user-profile';
 import UserSettings from '../pages/user-settings';
 import { Organization as OrganizationType, User } from '../types';
+import { acceptInvite, checkInvite } from '~/api/general';
 
 const rootRoute = rootRouteWithContext<{
   queryClient: QueryClient;
@@ -77,10 +71,10 @@ export const AcceptRoute = createRoute({
   path: '/auth/accept-invite/$token',
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ params: { token } }) => {
-    const isEmailExists = await checkIsEmailExistsByInviteToken(token);
+    const isInviteExists = await checkInvite(token);
 
-    if (isEmailExists) {
-      const organizationIdentifier = await acceptOrganizationInvite({
+    if (isInviteExists) {
+      const organizationIdentifier = await acceptInvite({
         token,
       });
 

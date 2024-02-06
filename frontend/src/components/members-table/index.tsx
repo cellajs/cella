@@ -20,9 +20,9 @@ import { MemberSearch, MembersTableRoute, membersQueryOptions } from '~/router/r
 import { useUserStore } from '~/store/user';
 import CountAndLoading from '../data-table/count-and-loading';
 import { dialog } from '../dialoger/state';
-import { useColumns } from './columns';
-import InviteUsersForm from './invite-users-form';
 import RemoveMembersForm from './remove-member-form';
+import InviteUsersForm from '../invite-users-form';
+import { useColumns } from './columns';
 
 type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>;
 

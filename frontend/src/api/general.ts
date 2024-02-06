@@ -49,3 +49,45 @@ export const checkSlug = async (slug: string) => {
   if ('error' in json) throw new ApiError(response.status, json.error);
   return json.data;
 };
+
+// Invite users
+export const invite = async (emails: string[], organizationIdentifier?: string) => {
+  const response = await client.invite.$post({
+    json: { emails, organizationIdentifier },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(response.status, json.error);
+  return;
+};
+
+// Accept an invitation
+export const acceptInvite = async ({
+  token,
+  password,
+  oauth,
+}: {
+  token: string;
+  password?: string;
+  oauth?: 'github' | 'google' | 'microsoft';
+}) => {
+  const response = await client['accept-invite'][':token'].$post({
+    param: { token },
+    json: { password, oauth },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(response.status, json.error);
+  return json.data;
+};
+
+// Check invite
+export const checkInvite = async (token: string) => {
+  const response = await client['check-invite'][':token'].$get({
+    param: { token },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(response.status, json.error);
+  return json.success;
+};

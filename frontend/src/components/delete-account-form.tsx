@@ -2,7 +2,6 @@ import { Trans, useTranslation } from 'react-i18next';
 import { deleteUserById } from '~/api/users';
 import { User } from '~/types';
 
-import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { Button } from '~/components/ui/button';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
@@ -16,7 +15,6 @@ interface Props {
 
 const DeleteAccountForm = ({ user, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [apiWrapper, pending] = useApiWrapper();
 
   const onDelete = () => {
@@ -24,10 +22,6 @@ const DeleteAccountForm = ({ user, callback, dialog: isDialog }: Props) => {
       () => deleteUserById(user.id),
       () => {
         callback?.(user);
-
-        navigate({
-          to: '/auth/sign-in',
-        });
 
         if (isDialog) {
           dialog.remove();

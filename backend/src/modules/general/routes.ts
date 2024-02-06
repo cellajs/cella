@@ -1,5 +1,6 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { errorResponses, successResponseWithDataSchema } from '../../schemas/responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../schemas/responses';
+import { acceptInviteJsonSchema, inviteJsonSchema } from './schema';
 
 export const getPublicCountsRoute = createRoute({
   method: 'get',
@@ -76,6 +77,97 @@ export const checkSlugRoute = createRoute({
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(z.boolean()),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const inviteRoute = createRoute({
+  method: 'post',
+  path: '/invite',
+  tags: ['general'],
+  summary: 'Invite a new member(user) to organization or system',
+  description: `
+    Permissions:
+      - Users with role 'ADMIN'
+      - Users, who are members of the organization and have role 'ADMIN' in the organization
+  `,
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: inviteJsonSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Invitation was sent',
+      content: {
+        'application/json': {
+          schema: successResponseWithoutDataSchema,
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const acceptInviteRoute = createRoute({
+  method: 'post',
+  path: '/accept-invite/{token}',
+  tags: ['general'],
+  summary: 'Accept invitation',
+  request: {
+    params: z.object({
+      token: z.string(),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: acceptInviteJsonSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Invitation was accepted',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(z.string()),
+        },
+      },
+    },
+    302: {
+      description: 'Redirect to github',
+      headers: z.object({
+        Location: z.string(),
+      }),
+    },
+    ...errorResponses,
+  },
+});
+
+export const checkInviteRoute = createRoute({
+  method: 'get',
+  path: '/check-invite/{token}',
+  tags: ['general'],
+  summary: 'Check invite by invite token',
+  request: {
+    params: z.object({
+      token: z.string(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Emails of invited users',
+      content: {
+        'application/json': {
+          schema: successResponseWithoutDataSchema,
         },
       },
     },

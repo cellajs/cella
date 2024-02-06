@@ -1,7 +1,7 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
-import { acceptOrganizationInvite } from '~/api/organizations';
+import { acceptInvite } from '~/api/general';
 import { Button } from '~/components/ui/button';
 import { SignInRoute } from '~/router/routeTree';
 import { useThemeStore } from '~/store/theme';
@@ -11,7 +11,7 @@ const oauthOptions = [
     name: 'Github',
     url: githubSignInUrl,
     acceptInvite: (token: string) =>
-      acceptOrganizationInvite({
+      acceptInvite({
         token,
         oauth: 'github',
       }),
@@ -20,7 +20,7 @@ const oauthOptions = [
     name: 'Google',
     url: googleSignInUrl,
     acceptInvite: (token: string) =>
-      acceptOrganizationInvite({
+      acceptInvite({
         token,
         oauth: 'google',
       }),
@@ -29,7 +29,7 @@ const oauthOptions = [
     name: 'Microsoft',
     url: microsoftSignInUrl,
     acceptInvite: (token: string) =>
-      acceptOrganizationInvite({
+      acceptInvite({
         token,
         oauth: 'microsoft',
       }),
