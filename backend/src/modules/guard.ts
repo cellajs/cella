@@ -10,7 +10,7 @@ import {
   signInRoute,
   verifyEmailRoute,
 } from './auth/routes';
-import { getUploadTokenRoute, inviteRoute, acceptInviteRoute } from './general/routes';
+import { acceptInviteRoute, getUploadTokenRoute, inviteRoute } from './general/routes';
 import authMiddleware from './middlewares/auth-middleware';
 import organizationAuthMiddleware from './middlewares/organization-auth-middleware';
 import { rateLimiter, signInRateLimiter } from './middlewares/rate-limiter';

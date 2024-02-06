@@ -18,11 +18,11 @@ import { OrganizationContext } from '~/modules/organizations/organization';
 import { queryClient } from '~/router';
 import { MemberSearch, MembersTableRoute, membersQueryOptions } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
+import InviteUsersForm from '../../modules/users/invite-users-form';
 import CountAndLoading from '../data-table/count-and-loading';
 import { dialog } from '../dialoger/state';
-import RemoveMembersForm from './remove-member-form';
-import InviteUsersForm from '../invite-users-form';
 import { useColumns } from './columns';
+import RemoveMembersForm from './remove-member-form';
 
 type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>;
 

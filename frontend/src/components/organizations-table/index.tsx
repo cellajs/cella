@@ -9,7 +9,7 @@ import { queryClient } from '~/router';
 import { OrganizationsSearch, OrganizationsTableRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
-import CreateOrganizationForm from '../create-organization-form';
+import CreateOrganizationForm from '../../modules/organizations/create-organization-form';
 import { DataTable } from '../data-table';
 import CountAndLoading from '../data-table/count-and-loading';
 import { DataTableViewOptions } from '../data-table/options';

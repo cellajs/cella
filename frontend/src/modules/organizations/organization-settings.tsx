@@ -8,8 +8,8 @@ import { Card, CardContent } from '~/components/ui/card';
 import { useContext } from 'react';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { dialog } from '../../components/dialoger/state';
-import UpdateOrganizationForm from '../../components/update-organization-form';
 import DeleteOrganization from './delete-organization';
+import UpdateOrganizationForm from './update-organization-form';
 
 const OrganizationSettings = () => {
   const { t } = useTranslation();

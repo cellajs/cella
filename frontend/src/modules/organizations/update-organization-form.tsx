@@ -21,8 +21,8 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import countries from '~/lib/countries.json';
 import timezones from '~/lib/timezones.json';
 import { useUpdateOrganizationMutation } from '~/router/routeTree';
-import { dialog } from './dialoger/state';
-import MultipleSelector, { Option } from './ui/multiple-selector';
+import { dialog } from '../../components/dialoger/state';
+import MultipleSelector, { Option } from '../../components/ui/multiple-selector';
 
 interface Props {
   organization: Organization;

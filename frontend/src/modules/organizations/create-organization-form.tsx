@@ -16,7 +16,7 @@ import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useNavigationStore } from '~/store/navigation';
 import { Organization } from '~/types';
-import { dialog } from './dialoger/state';
+import { dialog } from '../../components/dialoger/state';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;

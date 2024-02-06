@@ -6,7 +6,7 @@ import { useNavigationStore } from '~/store/navigation';
 
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import CreateOrganizationForm from '../create-organization-form';
+import CreateOrganizationForm from '../../modules/organizations/create-organization-form';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';

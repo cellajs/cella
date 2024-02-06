@@ -13,7 +13,7 @@ interface Props {
   dialog?: boolean;
 }
 
-const DeleteOrganizationForm = ({ organization, callback, dialog: isDialog }: Props) => {
+const DeleteOrganization = ({ organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   const [apiWrapper, pending] = useApiWrapper();
 
@@ -39,4 +39,4 @@ const DeleteOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={pending} />;
 };
 
-export default DeleteOrganizationForm;
+export default DeleteOrganization;

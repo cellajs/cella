@@ -3,7 +3,7 @@ import { User } from '~/types';
 
 import { Pencil, Trash } from 'lucide-react';
 import { Button } from '~/components/ui/button';
-import UpdateUserForm from '~/components/update-user-form';
+import UpdateUserForm from '~/modules/users/update-user-form';
 import DeleteUser from '../../modules/users/delete-user';
 import { dialog } from '../dialoger/state';
 

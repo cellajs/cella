@@ -1,13 +1,13 @@
 import { SimpleHeader } from '~/components/simple-header';
 import { Card, CardContent } from '~/components/ui/card';
 
-import DeleteUser from './delete-user';
 import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
 import { useUserStore } from '~/store/user';
+import DeleteUser from './delete-user';
 
-import UpdateUserForm from '../../components/update-user-form';
 import { useTranslation } from 'react-i18next';
+import UpdateUserForm from '~/modules/users/update-user-form';
 
 const UserSettings = () => {
   const user = useUserStore((state) => state.user);

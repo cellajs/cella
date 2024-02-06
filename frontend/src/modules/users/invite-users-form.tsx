@@ -11,7 +11,7 @@ import { Button } from '~/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import MultipleSelector, { Option } from './ui/multiple-selector';
+import MultipleSelector, { Option } from '../../components/ui/multiple-selector';
 
 interface Props {
   organization?: Organization;

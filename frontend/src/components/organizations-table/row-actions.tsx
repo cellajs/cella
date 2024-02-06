@@ -6,8 +6,8 @@ import { Button } from '~/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/components/ui/dropdown-menu';
 
 import DeleteOrganization from '../../modules/organizations/delete-organization';
+import UpdateOrganizationForm from '../../modules/organizations/update-organization-form';
 import { dialog } from '../dialoger/state';
-import UpdateOrganizationForm from '../update-organization-form';
 
 interface Props {
   organization: Organization;

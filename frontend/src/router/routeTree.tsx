@@ -1,6 +1,7 @@
 import { DefaultError, QueryClient, infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { Outlet, createRoute, createRouteMask, redirect, rootRouteWithContext } from '@tanstack/react-router';
 import { z } from 'zod';
+import { acceptInvite, checkInvite } from '~/api/general';
 import { UpdateOrganizationParams, getMembersByOrganizationIdentifier, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
 import { UpdateUserParams, updateUser } from '~/api/users';
 import { Root } from '~/components/root';
@@ -28,7 +29,6 @@ import SystemPanel from '../modules/system-panel';
 import UserProfile from '../modules/users/user-profile';
 import UserSettings from '../modules/users/user-settings';
 import { Organization as OrganizationType, User } from '../types';
-import { acceptInvite, checkInvite } from '~/api/general';
 
 const rootRoute = rootRouteWithContext<{
   queryClient: QueryClient;

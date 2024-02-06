@@ -24,13 +24,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { dateShort } from '~/lib/utils';
 import { queryClient } from '~/router';
 import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
+import { useUserStore } from '~/store/user';
+import InviteUsersForm from '../../modules/users/invite-users-form';
 import CountAndLoading from '../data-table/count-and-loading';
 import { DataTableViewOptions } from '../data-table/options';
+import { dialog } from '../dialoger/state';
 import { Input } from '../ui/input';
 import { useColumns } from './columns';
-import InviteUsersForm from '../invite-users-form';
-import { useUserStore } from '~/store/user';
-import { dialog } from '../dialoger/state';
 
 type QueryData = Awaited<ReturnType<typeof getUsers>>;
 

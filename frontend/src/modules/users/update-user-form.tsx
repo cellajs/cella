@@ -23,8 +23,8 @@ import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useUpdateUserMutation } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
-import { dialog } from './dialoger/state';
-import { Textarea } from './ui/textarea';
+import { dialog } from '../../components/dialoger/state';
+import { Textarea } from '../../components/ui/textarea';
 
 interface Props {
   user: User;
