@@ -13,7 +13,7 @@ export const signUp = async (email: string, password: string) => {
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(response.status, json.error);
-  return json.data;
+  return json.success;
 };
 
 // Check if email exists

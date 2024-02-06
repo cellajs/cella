@@ -1,19 +1,18 @@
 import { UserModel } from '../db/schema';
-import { ApiUser } from '../modules/users/schema';
 import { getImadoUrl } from './imado-url';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-export const transformDatabaseUser = ({ hashedPassword, thumbnailUrl, ...apiUser }: PartialBy<UserModel, 'hashedPassword'>): ApiUser => {
+export const transformDatabaseUser = ({ hashedPassword, thumbnailUrl, ...user }: PartialBy<UserModel, 'hashedPassword'>) => {
   return {
-    ...apiUser,
+    ...user,
     thumbnailUrl: getImadoUrl.generate(thumbnailUrl, { width: 100, format: 'avif' }),
-    clearSessionsAt: apiUser.clearSessionsAt?.toISOString() ?? null,
-    lastEmailAt: apiUser.lastEmailAt?.toISOString() ?? null,
-    lastSeenAt: apiUser.lastSeenAt?.toISOString() ?? null,
-    lastVisitAt: apiUser.lastVisitAt?.toISOString() ?? null,
-    lastSignInAt: apiUser.lastSignInAt?.toISOString() ?? null,
-    createdAt: apiUser.createdAt.toISOString(),
-    modifiedAt: apiUser.modifiedAt?.toISOString() ?? null,
+    clearSessionsAt: user.clearSessionsAt?.toISOString() ?? null,
+    lastEmailAt: user.lastEmailAt?.toISOString() ?? null,
+    lastSeenAt: user.lastSeenAt?.toISOString() ?? null,
+    lastVisitAt: user.lastVisitAt?.toISOString() ?? null,
+    lastSignInAt: user.lastSignInAt?.toISOString() ?? null,
+    createdAt: user.createdAt.toISOString(),
+    modifiedAt: user.modifiedAt?.toISOString() ?? null,
   };
 };

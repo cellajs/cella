@@ -13,13 +13,25 @@ export const apiUserSchema = createSelectSchema(usersTable, {
   lastSignInAt: z.string().nullable(),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-}).omit({
-  hashedPassword: true,
-});
+})
+  .omit({
+    hashedPassword: true,
+  })
+  .setKey(
+    'counts',
+    z.object({
+      memberships: z.number(),
+    }),
+  );
 
-export const apiUserWithMembershipCountSchema = apiUserSchema.setKey('membershipCount', z.number());
+// export const apiUserWithMembershipCountSchema = apiUserSchema.setKey(
+//   'counts',
+//   z.object({
+//     memberships: z.number(),
+//   }),
+// );
 
-export type ApiUserWithMembershipCount = z.infer<typeof apiUserWithMembershipCountSchema>;
+// export type ApiUserWithMembershipCount = z.infer<typeof apiUserWithMembershipCountSchema>;
 
 export type ApiUser = z.infer<typeof apiUserSchema>;
 

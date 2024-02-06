@@ -8,7 +8,7 @@ import {
   successResponseWithoutDataSchema,
 } from '../../schemas/responses';
 import { userMenuSchema } from '../organizations/schema';
-import { apiUserSchema, apiUserWithMembershipCountSchema, getUserParamSchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
+import { apiUserSchema, getUserParamSchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
 
 export const meRoute = createRoute({
   method: 'get',
@@ -65,7 +65,7 @@ export const getUsersRoute = createRoute({
       description: 'Users',
       content: {
         'application/json': {
-          schema: successResponseWithPaginationSchema(apiUserWithMembershipCountSchema),
+          schema: successResponseWithPaginationSchema(apiUserSchema),
         },
       },
     },

@@ -134,7 +134,7 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
       ),
     },
     {
-      accessorKey: 'membershipCount',
+      accessorKey: 'counts.memberships',
       enableSorting: false,
       size: 100,
       header: ({ column }) => (

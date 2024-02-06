@@ -269,7 +269,10 @@ const UsersTable = () => {
               items: [
                 {
                   ...user,
-                  membershipCount: 0,
+                  counts: {
+                    ...user.counts,
+                    memberships: 0,
+                  },
                 },
                 ...data.pages[0].items,
               ],
@@ -289,7 +292,10 @@ const UsersTable = () => {
                 if (item.id === user.id) {
                   return {
                     ...user,
-                    membershipCount: item.membershipCount,
+                    counts: {
+                      ...user.counts,
+                      ...item.counts,
+                    },
                   };
                 }
 

@@ -26,6 +26,10 @@ export const apiOrganizationSchema = z.object({
   userRole: membershipSchema.shape.role.nullable().openapi({
     description: 'The role of the current user in the organization',
   }),
+  counts: z.object({
+    admins: z.number(),
+    members: z.number(),
+  }),
 });
 // .extend({
 //   createdAt: z.string(),

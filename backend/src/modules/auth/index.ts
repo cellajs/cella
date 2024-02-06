@@ -54,7 +54,7 @@ const authRoutes = app
     const { data: slugExists } = (await response.json()) as { data: boolean };
 
     try {
-      const [user] = await db
+      await db
         .insert(usersTable)
         .values({
           id: userId,
@@ -85,7 +85,6 @@ const authRoutes = app
 
       return ctx.json({
         success: true,
-        data: transformDatabaseUser(user),
       });
     } catch (error) {
       if (error instanceof postgres.PostgresError && error.message.startsWith('duplicate key')) {

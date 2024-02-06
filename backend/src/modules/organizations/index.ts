@@ -9,6 +9,7 @@ import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { checkSlugRoute } from '../general/routes';
+import { countDistinct } from 'drizzle-orm';
 import {
   createOrganizationRoute,
   deleteOrganizationRoute,
@@ -60,7 +61,11 @@ const organizationsRoutes = app
       success: true,
       data: {
         ...createdOrganization,
-        userRole: 'ADMIN' as const,
+        userRole: null,
+        counts: {
+          admins: 0,
+          members: 0,
+        },
       },
     });
   })
@@ -111,10 +116,32 @@ const organizationsRoutes = app
       .filter((organization) => !organizationsWithMemberships.find((m) => m.organization?.id === organization.id))
       .map((organization) => ({ organization, membership: null }));
 
-    const result = organizationsWithMemberships.concat(filteredOrganizations).map(({ organization, membership }) => ({
-      ...organization,
-      userRole: membership?.role || null,
-    }));
+    const result = await Promise.all(
+      organizationsWithMemberships.concat(filteredOrganizations).map(async ({ organization, membership }) => {
+        const [{ admins }] = await db
+          .select({
+            admins: countDistinct(membershipsTable.userId),
+          })
+          .from(membershipsTable)
+          .where(and(eq(membershipsTable.role, 'ADMIN'), eq(membershipsTable.organizationId, organization.id)));
+
+        const [{ members }] = await db
+          .select({
+            members: countDistinct(membershipsTable.userId),
+          })
+          .from(membershipsTable)
+          .where(eq(membershipsTable.organizationId, organization.id));
+
+        return {
+          ...organization,
+          userRole: membership?.role || null,
+          counts: {
+            members,
+            admins,
+          },
+        };
+      }),
+    );
 
     customLogger('Organizations returned');
 
@@ -190,6 +217,25 @@ const organizationsRoutes = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
+    const [membership] = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
+
+    const [{ admins }] = await db
+      .select({
+        admins: countDistinct(membershipsTable.userId),
+      })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.role, 'ADMIN')));
+
+    const [{ members }] = await db
+      .select({
+        members: countDistinct(membershipsTable.userId),
+      })
+      .from(membershipsTable)
+      .where(eq(membershipsTable.organizationId, organization.id));
+
     customLogger('Organization updated', {
       organization: updatedOrganization.id,
     });
@@ -198,7 +244,11 @@ const organizationsRoutes = app
       success: true,
       data: {
         ...updatedOrganization,
-        userRole: 'ADMIN' as const,
+        userRole: membership?.role || null,
+        counts: {
+          admins,
+          members,
+        },
       },
     });
   })
@@ -231,6 +281,13 @@ const organizationsRoutes = app
       return ctx.json(createError(i18n, 'error.user_not_found', 'User not found'), 404);
     }
 
+    const [{ memberships }] = await db
+      .select({
+        memberships: countDistinct(membershipsTable.userId),
+      })
+      .from(membershipsTable)
+      .where(eq(membershipsTable.organizationId, organization.id));
+
     customLogger('User updated in organization', {
       user: targetUser.id,
       organization: organization.id,
@@ -241,6 +298,9 @@ const organizationsRoutes = app
       data: {
         ...transformDatabaseUser(targetUser),
         organizationRole: membership.role,
+        counts: {
+          memberships,
+        },
       },
     });
   })
@@ -267,6 +327,20 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
 
+    const [{ admins }] = await db
+      .select({
+        admins: countDistinct(membershipsTable.userId),
+      })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.role, 'ADMIN')));
+
+    const [{ members }] = await db
+      .select({
+        members: countDistinct(membershipsTable.userId),
+      })
+      .from(membershipsTable)
+      .where(eq(membershipsTable.organizationId, organization.id));
+
     customLogger('Organization returned', {
       organization: organization.id,
     });
@@ -276,6 +350,10 @@ const organizationsRoutes = app
       data: {
         ...organization,
         userRole: membership?.role || null,
+        counts: {
+          admins,
+          members,
+        },
       },
     });
   })
@@ -334,10 +412,24 @@ const organizationsRoutes = app
 
     const result = await membersQuery.limit(+limit).offset(+offset);
 
-    const members = result.map(({ user, membership }) => ({
-      ...transformDatabaseUser(user),
-      organizationRole: membership.role,
-    }));
+    const members = await Promise.all(
+      result.map(async ({ user, membership }) => {
+        const [{ memberships }] = await db
+          .select({
+            memberships: countDistinct(membershipsTable.userId),
+          })
+          .from(membershipsTable)
+          .where(eq(membershipsTable.userId, user.id));
+
+        return {
+          ...user,
+          organizationRole: membership?.role || null,
+          counts: {
+            memberships,
+          },
+        };
+      }),
+    );
 
     return ctx.json({
       success: true,
@@ -364,6 +456,13 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)))
       .returning();
 
+    const [{ memberships }] = await db
+      .select({
+        memberships: countDistinct(membershipsTable.userId),
+      })
+      .from(membershipsTable)
+      .where(eq(membershipsTable.organizationId, organization.id));
+
     customLogger('User deleted from organization', {
       user: user.id,
       organization: organization.id,
@@ -374,6 +473,9 @@ const organizationsRoutes = app
       data: {
         ...transformDatabaseUser(user),
         organizationRole: membership.role,
+        counts: {
+          memberships,
+        },
       },
     });
   });

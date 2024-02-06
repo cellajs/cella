@@ -28,7 +28,7 @@ export const signUpRoute = createRoute({
       }),
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiUserSchema),
+          schema: successResponseWithoutDataSchema,
         },
       },
     },

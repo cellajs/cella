@@ -1,4 +1,4 @@
-import { AnyColumn, SQL, and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { AnyColumn, SQL, and, asc, countDistinct, desc, eq, ilike, or, sql } from 'drizzle-orm';
 
 import { config } from 'config';
 import { getI18n } from 'i18n';
@@ -22,9 +22,9 @@ const usersRoutes = app
   .openapi(meRoute, async (ctx) => {
     const user = ctx.get('user');
 
-    const [{ total: membershipCount }] = await db
+    const [{ memberships }] = await db
       .select({
-        total: sql<number>`count(*)`.mapWith(Number),
+        memberships: countDistinct(membershipsTable.userId),
       })
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, user.id));
@@ -38,14 +38,16 @@ const usersRoutes = app
       success: true,
       data: {
         ...transformDatabaseUser(user),
-        membershipCount,
+        counts: {
+          memberships,
+        },
       },
     });
   })
   .openapi(getUserMenuRoute, async (ctx) => {
     const user = ctx.get('user');
 
-    const result = await db
+    const organizationsWithMemberships = await db
       .select({
         organization: organizationsTable,
         membership: membershipsTable,
@@ -55,10 +57,32 @@ const usersRoutes = app
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
-    const organizations = result.map(({ organization, membership }) => ({
-      ...organization,
-      userRole: membership.role,
-    }));
+    const organizations = await Promise.all(
+      organizationsWithMemberships.map(async ({ organization, membership }) => {
+        const [{ admins }] = await db
+          .select({
+            admins: countDistinct(membershipsTable.userId),
+          })
+          .from(membershipsTable)
+          .where(and(eq(membershipsTable.role, 'ADMIN'), eq(membershipsTable.organizationId, organization.id)));
+
+        const [{ members }] = await db
+          .select({
+            members: countDistinct(membershipsTable.userId),
+          })
+          .from(membershipsTable)
+          .where(eq(membershipsTable.organizationId, organization.id));
+
+        return {
+          ...organization,
+          userRole: membership?.role || null,
+          counts: {
+            members,
+            admins,
+          },
+        };
+      }),
+    );
 
     customLogger('User menu returned');
 
@@ -129,6 +153,13 @@ const usersRoutes = app
       .where(eq(usersTable.id, userId))
       .returning();
 
+    const [{ memberships }] = await db
+      .select({
+        memberships: countDistinct(membershipsTable.userId),
+      })
+      .from(membershipsTable)
+      .where(eq(membershipsTable.userId, updatedUser.id));
+
     customLogger('User updated', {
       userId: updatedUser.id,
       userSlug: updatedUser.slug,
@@ -136,7 +167,12 @@ const usersRoutes = app
 
     return ctx.json({
       success: true,
-      data: transformDatabaseUser(updatedUser),
+      data: {
+        ...transformDatabaseUser(updatedUser),
+        counts: {
+          memberships,
+        },
+      },
     });
   })
   .openapi(getUsersRoute, async (ctx) => {
@@ -177,7 +213,7 @@ const usersRoutes = app
     const usersQuery = db
       .select({
         user: usersTable,
-        membershipCount: sql<number>`count(${membershipsTable.userId})`.mapWith(Number),
+        memberships: countDistinct(membershipsTable.userId),
       })
       .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
@@ -193,9 +229,11 @@ const usersRoutes = app
 
     const result = await usersQuery.limit(+limit).offset(+offset);
 
-    const users = result.map(({ user, membershipCount }) => ({
+    const users = result.map(({ user, memberships }) => ({
       ...transformDatabaseUser(user),
-      membershipCount,
+      counts: {
+        memberships,
+      },
     }));
 
     customLogger('Users returned');
@@ -273,6 +311,13 @@ const usersRoutes = app
       return ctx.json(forbiddenError(i18n), 403);
     }
 
+    const [{ memberships }] = await db
+      .select({
+        memberships: countDistinct(membershipsTable.userId),
+      })
+      .from(membershipsTable)
+      .where(eq(membershipsTable.userId, targetUser.id));
+
     customLogger('User returned', {
       userId: targetUser.id,
       userSlug: targetUser.slug,
@@ -280,7 +325,12 @@ const usersRoutes = app
 
     return ctx.json({
       success: true,
-      data: transformDatabaseUser(targetUser),
+      data: {
+        ...transformDatabaseUser(targetUser),
+        counts: {
+          memberships,
+        },
+      },
     });
   });
 
