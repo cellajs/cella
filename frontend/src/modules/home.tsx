@@ -1,4 +1,4 @@
-import { SimpleHeader } from '~/components/simple-header';
+import { SimpleHeader } from '~/modules/common/simple-header';
 
 const Home = () => {
   return (

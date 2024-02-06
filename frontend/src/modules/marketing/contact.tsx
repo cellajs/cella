@@ -1,8 +1,8 @@
 import { config } from 'config';
 import { ArrowUpRight, CalendarCheck, Mail, MapPin, PhoneCall } from 'lucide-react';
 
-import ContactFormMap from '~/components/contact-form/contact-form';
-import PublicPage from '~/components/public-page';
+import ContactFormMap from '~/modules/common/contact-form/contact-form';
+import PublicPage from '~/modules/common/public-page';
 
 const methods = [
   { icon: MapPin, title: 'Visit', link: config.company.googleMapsUrl, text: config.company.streetAddress },

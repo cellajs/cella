@@ -2,12 +2,12 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '~/components/ui/button';
-import { Card, CardContent } from '~/components/ui/card';
+import { Button } from '~/modules/ui/button';
+import { Card, CardContent } from '~/modules/ui/card';
 
 import { useContext } from 'react';
 import { OrganizationContext } from '~/modules/organizations/organization';
-import { dialog } from '../../components/dialoger/state';
+import { dialog } from '../common/dialoger/state';
 import DeleteOrganization from './delete-organization';
 import UpdateOrganizationForm from './update-organization-form';
 

@@ -4,14 +4,14 @@ import { resetPasswordJsonSchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
-import { Button } from '~/components/ui/button';
+import { Button } from '~/modules/ui/button';
 import AuthPage from '.';
 
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { resetPassword } from '~/api/authentication';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
-import { Input } from '~/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));

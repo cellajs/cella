@@ -1,6 +1,6 @@
 import { ArrowUpRight } from 'lucide-react';
-import CountryFlag from '~/components/country-flag';
-import { ScrollArea, ScrollBar } from '~/components/ui/scroll-area';
+import CountryFlag from '~/modules/common/country-flag';
+import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 
 interface Integrations {
   name: string;

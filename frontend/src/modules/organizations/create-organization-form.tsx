@@ -9,14 +9,14 @@ import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { Button } from '~/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
-import { Input } from '~/components/ui/input';
+import { Button } from '~/modules/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useNavigationStore } from '~/store/navigation';
 import { Organization } from '~/types';
-import { dialog } from '../../components/dialoger/state';
+import { dialog } from '../common/dialoger/state';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;

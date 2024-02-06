@@ -2,7 +2,7 @@ import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
 import { acceptInvite } from '~/api/general';
-import { Button } from '~/components/ui/button';
+import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/router/routeTree';
 import { useThemeStore } from '~/store/theme';
 

@@ -4,9 +4,9 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import { Button } from '~/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
-import { Input } from '~/components/ui/input';
+import { Button } from '~/modules/ui/button';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
 
 import { ArrowRight } from 'lucide-react';
 import { checkEmail } from '~/api/authentication';

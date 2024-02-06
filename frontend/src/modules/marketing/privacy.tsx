@@ -1,4 +1,4 @@
-import PublicPage from '~/components/public-page';
+import PublicPage from '~/modules/common/public-page';
 
 export const PrivacyText = () => {
   return <p>Put privacy statement here</p>;

@@ -1,8 +1,8 @@
-import { SimpleHeader } from '~/components/simple-header';
-import { Card, CardContent } from '~/components/ui/card';
+import { SimpleHeader } from '~/modules/common/simple-header';
+import { Card, CardContent } from '~/modules/ui/card';
 
-import { dialog } from '~/components/dialoger/state';
-import { Button } from '~/components/ui/button';
+import { dialog } from '~/modules/common/dialoger/state';
+import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUser from './delete-user';
 

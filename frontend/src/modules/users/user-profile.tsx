@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { getUserBySlugOrId } from '~/api/users';
 import { User } from '~/types';
 
-import { ContentHeader } from '~/components/content-header';
+import { ContentHeader } from '~/modules/common/content-header';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 
 const UserProfile = () => {

@@ -3,8 +3,8 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { getUserMenu } from '~/api/users';
-import { NavItem } from '~/components/app-nav';
-import { menuSections } from '~/components/app-sheet/sheet-menu';
+import { NavItem } from '~/modules/common/app-nav';
+import { menuSections } from '~/modules/common/app-sheet/sheet-menu';
 import { UserMenu } from '~/types';
 
 interface NavigationState {

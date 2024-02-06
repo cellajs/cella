@@ -6,8 +6,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useUserStore } from '~/store/user';
-import { DeleteForm } from '../../components/delete-form';
-import { dialog } from '../../components/dialoger/state';
+import { DeleteForm } from '../common/delete-form';
+import { dialog } from '../common/dialoger/state';
 
 interface Props {
   user: User;

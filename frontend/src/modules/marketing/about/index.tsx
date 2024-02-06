@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 
-import { PublicFooter } from '~/components/public-footer';
-import { PublicNav } from '~/components/public-nav';
-import { buttonVariants } from '~/components/ui/button';
+import { PublicFooter } from '~/modules/common/public-footer';
+import { PublicNav } from '~/modules/common/public-nav';
+import { buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/lib/utils';
 
 import { config } from 'config';

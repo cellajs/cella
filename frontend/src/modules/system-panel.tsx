@@ -1,6 +1,6 @@
 import { Outlet } from '@tanstack/react-router';
-import PageNav from '~/components/page-nav';
-import { SimpleHeader } from '~/components/simple-header';
+import PageNav from '~/modules/common/page-nav';
+import { SimpleHeader } from '~/modules/common/simple-header';
 
 const systemTabs = [
   {

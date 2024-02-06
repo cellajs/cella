@@ -1,4 +1,4 @@
-import DeviceMockup from '~/components/device-mockup';
+import DeviceMockup from '~/modules/common/device-mockup';
 
 const whyItems = [
   {

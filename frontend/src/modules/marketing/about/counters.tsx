@@ -4,7 +4,7 @@ import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
 import { getPublicCounts } from '~/api/general';
 
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 type IconType = ElementType;
 

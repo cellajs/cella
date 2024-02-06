@@ -69,8 +69,8 @@ const Feature = ({ title, description, icon, invertClass }: FeatureProps) => (
 
 import { ArrowDown } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
 import { useBreakpoints } from '../../../hooks/use-breakpoints';
 
 const Features = () => {

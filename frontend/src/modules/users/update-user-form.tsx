@@ -8,23 +8,23 @@ import { User } from '~/types';
 
 import { Undo } from 'lucide-react';
 import { toast } from 'sonner';
-import CountryFlag from '~/components/country-flag';
-import { Button } from '~/components/ui/button';
-import { Checkbox } from '~/components/ui/checkbox';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
-import { Input } from '~/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+import CountryFlag from '~/modules/common/country-flag';
+import { Button } from '~/modules/ui/button';
+import { Checkbox } from '~/modules/ui/checkbox';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 
 import { useWatch } from 'react-hook-form';
 import { checkSlug } from '~/api/general';
-import { UploadImage } from '~/components/upload/upload-image';
+import { UploadImage } from '~/modules/common/upload/upload-image';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useUpdateUserMutation } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
-import { dialog } from '../../components/dialoger/state';
-import { Textarea } from '../../components/ui/textarea';
+import { dialog } from '../common/dialoger/state';
+import { Textarea } from '../ui/textarea';
 
 interface Props {
   user: User;

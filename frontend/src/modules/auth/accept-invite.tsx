@@ -4,15 +4,15 @@ import { acceptInviteJsonSchema } from 'backend/modules/general/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
-import { Button } from '~/components/ui/button';
+import { Button } from '~/modules/ui/button';
 import AuthPage from '.';
 import OauthOptions from './oauth-options';
 
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { acceptInvite } from '~/api/general';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/components/ui/form';
-import { Input } from '~/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { LegalNotice } from './sign-up-form';
 

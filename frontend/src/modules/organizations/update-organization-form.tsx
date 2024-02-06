@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { updateOrganizationJsonSchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import CountryFlag from '~/components/country-flag';
+import CountryFlag from '~/modules/common/country-flag';
 import { Organization } from '~/types';
 
 import { config } from 'config';
@@ -11,18 +11,18 @@ import { useEffect, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { checkSlug } from '~/api/general';
-import { Button } from '~/components/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form';
-import { Input } from '~/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+import { Button } from '~/modules/ui/button';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import countries from '~/lib/countries.json';
 import timezones from '~/lib/timezones.json';
 import { useUpdateOrganizationMutation } from '~/router/routeTree';
-import { dialog } from '../../components/dialoger/state';
-import MultipleSelector, { Option } from '../../components/ui/multiple-selector';
+import { dialog } from '../common/dialoger/state';
+import MultipleSelector, { Option } from '../ui/multiple-selector';
 
 interface Props {
   organization: Organization;

@@ -1,4 +1,4 @@
-import PublicPage from '~/components/public-page';
+import PublicPage from '~/modules/common/public-page';
 
 export const TermsText = () => {
   return <p>Put terms here</p>;

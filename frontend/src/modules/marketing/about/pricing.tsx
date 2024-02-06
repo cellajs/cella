@@ -1,9 +1,9 @@
 import { config } from 'config';
 import { Check, Sparkles } from 'lucide-react';
-import ContactForm from '~/components/contact-form/contact-form';
-import { dialog } from '~/components/dialoger/state';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
+import ContactForm from '~/modules/common/contact-form/contact-form';
+import { dialog } from '~/modules/common/dialoger/state';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
 
 const pricingPlans = [
   {
