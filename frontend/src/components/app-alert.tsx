@@ -20,7 +20,7 @@ export function AppAlert() {
           <X size={16} />
         </Button>
         <strong className="mr-2">Prerelease</strong>
-          This site is online to experiment and discuss further development. Database resets periodically.
+        This site is online to experiment and discuss further development. Database resets periodically.
       </AlertDescription>
     </Alert>
   );

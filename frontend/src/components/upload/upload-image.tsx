@@ -1,14 +1,17 @@
 import { Trash, Upload } from 'lucide-react';
+import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap, AvatarWrapProps } from '~/components/avatar-wrap';
 import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
 
-import { UploadUppy, UploadUppyProps } from '~/components/upload-uppy';
+const UploadUppy = lazy(() => import('~/components/upload/uppy'));
 
-interface UploadImageProps extends AvatarWrapProps, UploadUppyProps {}
+interface UploadImageProps extends AvatarWrapProps {
+  setUrl: (url: string) => void;
+}
 
-const UploadImage = ({ type, id, name, url, setUrl }: UploadImageProps) => {
+export const UploadImage = ({ type, id, name, url, setUrl }: UploadImageProps) => {
   const { t } = useTranslation();
 
   const removeImage = () => {
@@ -28,12 +31,23 @@ const UploadImage = ({ type, id, name, url, setUrl }: UploadImageProps) => {
             size="sm"
             onClick={() => {
               dialog(
-                <UploadUppy
-                  setUrl={(url) => {
-                    setUrl(url);
-                    dialog.remove('upload-image');
-                  }}
-                />,
+                <Suspense>
+                  <UploadUppy
+                    uppyOptions={{
+                      restrictions: {
+                        maxFileSize: 10 * 1024 * 1024,
+                        maxNumberOfFiles: 1,
+                        allowedFileTypes: ['.jpg', '.jpeg', '.png'],
+                      },
+                    }}
+                    plugins={['webcam', 'image-editor']}
+                    avatarMode={true}
+                    setUrl={(url) => {
+                      setUrl(url);
+                      dialog.remove('upload-image');
+                    }}
+                  />
+                </Suspense>,
                 {
                   id: 'upload-image',
                   drawerOnMobile: false,
@@ -63,5 +77,3 @@ const UploadImage = ({ type, id, name, url, setUrl }: UploadImageProps) => {
     </div>
   );
 };
-
-export { UploadImage };

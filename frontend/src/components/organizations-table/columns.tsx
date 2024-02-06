@@ -58,7 +58,7 @@ export const useColumns = (callback: (organization: Organization, action: 'creat
     {
       accessorKey: 'userRole',
       enableSorting: false,
-      accessorFn: (row) => row.userRole ? t(row.userRole) : '',
+      accessorFn: (row) => (row.userRole ? t(row.userRole) : ''),
       size: 100,
       header: ({ column }) => (
         <DataTableColumnHeader

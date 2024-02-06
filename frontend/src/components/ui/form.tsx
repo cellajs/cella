@@ -7,8 +7,8 @@ import { ChevronUp, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Label } from '~/components/ui/label';
 import { cn } from '~/lib/utils';
-import { Button } from './button';
 import { Badge } from './badge';
+import { Button } from './button';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
 const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValues extends FieldValues = TFieldValues>({
@@ -20,7 +20,7 @@ const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValu
 }) => {
   return (
     <FormProvider {...props}>
-      {unsavedChanges && <Badge className='w-fit'>Unsaved changes</Badge>}
+      {unsavedChanges && <Badge className="w-fit">Unsaved changes</Badge>}
       {children}
     </FormProvider>
   );

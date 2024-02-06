@@ -18,13 +18,13 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 
 import { useWatch } from 'react-hook-form';
 import { checkSlug } from '~/api/general';
+import { UploadImage } from '~/components/upload/upload-image';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useUpdateUserMutation } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { dialog } from './dialoger/state';
 import { Textarea } from './ui/textarea';
-import { UploadImage } from './upload-image';
 
 interface Props {
   user: User;

@@ -7,6 +7,7 @@ import * as z from 'zod';
 
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
+import { Suspense, lazy } from 'react';
 import { signUp } from '~/api/authentication';
 import { dialog } from '~/components/dialoger/state';
 import { Button } from '~/components/ui/button';
@@ -15,7 +16,6 @@ import { Input } from '~/components/ui/input';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { PrivacyText } from '../other/privacy';
 import { TermsText } from '../other/terms';
-import { Suspense, lazy } from 'react';
 
 const PasswordStrength = lazy(() => import('~/components/password-strength'));
 
