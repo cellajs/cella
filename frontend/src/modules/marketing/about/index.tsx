@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router';
 
+import { cn } from '~/lib/utils';
 import { PublicFooter } from '~/modules/common/public-footer';
 import { PublicNav } from '~/modules/common/public-nav';
 import { buttonVariants } from '~/modules/ui/button';
-import { cn } from '~/lib/utils';
 
 import { config } from 'config';
 import { ArrowDown } from 'lucide-react';

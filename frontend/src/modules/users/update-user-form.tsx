@@ -8,19 +8,19 @@ import { User } from '~/types';
 
 import { Undo } from 'lucide-react';
 import { toast } from 'sonner';
+import { useBeforeUnload } from '~/hooks/use-before-unload';
 import CountryFlag from '~/modules/common/country-flag';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import { useBeforeUnload } from '~/hooks/use-before-unload';
 
 import { useWatch } from 'react-hook-form';
 import { checkSlug } from '~/api/general';
-import { UploadImage } from '~/modules/common/upload/upload-image';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { UploadImage } from '~/modules/common/upload/upload-image';
 import { useUpdateUserMutation } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';

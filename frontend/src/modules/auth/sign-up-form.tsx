@@ -9,11 +9,11 @@ import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { signUp } from '~/api/authentication';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { PrivacyText } from '../marketing/privacy';
 import { TermsText } from '../marketing/terms';
 

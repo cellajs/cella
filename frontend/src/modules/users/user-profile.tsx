@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { getUserBySlugOrId } from '~/api/users';
 import { User } from '~/types';
 
-import { ContentHeader } from '~/modules/common/content-header';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { ContentHeader } from '~/modules/common/content-header';
 
 const UserProfile = () => {
   const { userIdentifier }: { userIdentifier: string } = useParams({ strict: false });

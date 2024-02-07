@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { removeMemberFromOrganization } from '~/api/organizations';
 import { Member, Organization } from '~/types';
 
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 
 interface Props {
   organization: Organization;

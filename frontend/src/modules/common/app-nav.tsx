@@ -7,9 +7,9 @@ import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user';
 import { AvatarWrap } from './avatar-wrap';
 
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Input } from '~/modules/ui/input';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/store/navigation';
 import { SheetAccount } from './app-sheet/sheet-account';
 import { SheetMenu } from './app-sheet/sheet-menu';

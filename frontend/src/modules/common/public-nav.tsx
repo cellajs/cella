@@ -6,11 +6,11 @@ import { Book, Github } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 
+import { cn } from '~/lib/utils';
 import Logo from '~/modules/common/logo';
 import ThemeDropdown from '~/modules/common/theme-dropdown';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent } from '~/modules/ui/sheet';
-import { cn } from '~/lib/utils';
 import HamburgerButton from './hamburger';
 
 const publicNavConfig = [

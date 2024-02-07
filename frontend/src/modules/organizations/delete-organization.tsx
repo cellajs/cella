@@ -3,9 +3,9 @@ import { deleteOrganization } from '~/api/organizations';
 import { Organization } from '~/types';
 
 import { toast } from 'sonner';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 
 interface Props {
   organization: Organization;

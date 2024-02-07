@@ -1,8 +1,8 @@
 import { Outlet } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AppAlert } from '~/modules/common/app-alert';
 import { AppFooter } from '~/modules/common/app-footer';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/store/navigation';
 
 export const AppContent = () => {

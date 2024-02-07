@@ -2,8 +2,8 @@ import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import * as React from 'react';
 import { twMerge } from 'tailwind-merge';
-import * as React from "react"
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
@@ -25,7 +25,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function generateNumber(id: string) {
   if (!id) return null;
-  
+
   for (let i = id.length - 1; i >= 0; i--) {
     const char = id[i].toLowerCase();
     if (parseInt(char) >= 0 && parseInt(char) <= 9) {
@@ -59,9 +59,7 @@ export const getColorClass = (id?: string) => {
 };
 
 export function getValidChildren(children: React.ReactNode) {
-  return React.Children.toArray(children).filter((child) =>
-    React.isValidElement(child)
-  ) as React.ReactElement[]
+  return React.Children.toArray(children).filter((child) => React.isValidElement(child)) as React.ReactElement[];
 }
 
 // export function getObjectWithArrayForEachKey<T>(keys: string[]): Record<string, T[]> {

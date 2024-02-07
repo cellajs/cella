@@ -1,8 +1,7 @@
 import { ErrorBoundary } from '@appsignal/react';
-import { ScrollRestoration } from '@tanstack/react-router';
 
-import { AppContent } from '~/modules/common/app-content';
 import { appSignal } from '~/lib/appsignal';
+import { AppContent } from '~/modules/common/app-content';
 
 import AppNav from './app-nav';
 import { AppSheet } from './app-sheet';
@@ -14,7 +13,6 @@ const App = () => {
       <AppNav />
       <AppSheet />
       <AppContent />
-      <ScrollRestoration />
     </ErrorBoundary>
   );
 };

@@ -10,12 +10,12 @@ import { OrganizationsSearch, OrganizationsTableRoute } from '~/router/routeTree
 import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
+import { Button } from '../../ui/button';
+import { Input } from '../../ui/input';
 import { DataTable } from '../data-table';
 import CountAndLoading from '../data-table/count-and-loading';
 import { DataTableViewOptions } from '../data-table/options';
 import { dialog } from '../dialoger/state';
-import { Button } from '../../ui/button';
-import { Input } from '../../ui/input';
 import { useColumns } from './columns';
 
 type QueryData = Awaited<ReturnType<typeof getOrganizations>>;

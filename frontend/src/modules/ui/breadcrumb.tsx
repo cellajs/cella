@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { ChevronRight } from 'lucide-react';
+import * as React from 'react';
 
 import { cn, getValidChildren } from '~/lib/utils';
 

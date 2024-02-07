@@ -1,5 +1,6 @@
 import { config } from 'config';
 import { AnyColumn, SQL, and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
+import { countDistinct } from 'drizzle-orm';
 import { getI18n } from 'i18n';
 import slugify from 'slugify';
 import { db } from '../../db/db';
@@ -9,7 +10,6 @@ import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { checkSlugRoute } from '../general/routes';
-import { countDistinct } from 'drizzle-orm';
 import {
   createOrganizationRoute,
   deleteOrganizationRoute,

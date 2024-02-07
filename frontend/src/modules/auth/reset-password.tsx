@@ -10,9 +10,9 @@ import AuthPage from '.';
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { resetPassword } from '~/api/authentication';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 

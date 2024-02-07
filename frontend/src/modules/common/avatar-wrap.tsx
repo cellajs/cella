@@ -1,7 +1,7 @@
 import { AvatarProps } from '@radix-ui/react-avatar';
 import { memo, useMemo } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 import { getColorClass } from '~/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 
 export interface AvatarWrapProps extends AvatarProps {
   id?: string;

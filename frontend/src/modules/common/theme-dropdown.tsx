@@ -4,13 +4,7 @@ import { Mode, Theme, useThemeStore } from '~/store/theme';
 
 import { Ban, Circle, LucideProps, Moon, Sun } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '~/modules/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 interface ThemeDropdownProps {
   size?: number;

@@ -2,9 +2,9 @@ import { DialogTitle } from '@radix-ui/react-dialog';
 import Autoplay from 'embla-carousel-autoplay';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
+import { cn } from '~/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { Dialog, DialogContent, DialogHeader } from '~/modules/ui/dialog';
-import { cn } from '~/lib/utils';
 import { useThemeStore } from '~/store/theme';
 
 type DeviceType = 'mobile' | 'tablet' | 'pc';

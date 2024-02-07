@@ -21,13 +21,14 @@ interface UploadUppyProps {
   plugins?: ('webcam' | 'image-editor' | 'audio' | 'screen-capture')[];
   uppyOptions: UppyOptions;
   avatarMode?: boolean;
+  imageMode?: 'cover' | 'avatar';
 }
 
 // Here we init imadoUppy, an enriched Uppy instance that we use to upload files.
 // For more info in Imado, see: https://imado.eu/
 // For more info on Uppy and its APIs, see: https://uppy.io/docs/
 
-export const UploadUppy = ({ setUrl, uppyOptions, plugins = [], avatarMode = false }: UploadUppyProps) => {
+export const UploadUppy = ({ setUrl, uppyOptions, plugins = [], avatarMode = false, imageMode }: UploadUppyProps) => {
   const [uppy, setUppy] = useState<Uppy | null>(null);
   const { mode } = useThemeStore();
 
@@ -58,6 +59,38 @@ export const UploadUppy = ({ setUrl, uppyOptions, plugins = [], avatarMode = fal
           autoCropArea: 1,
           responsive: true,
           aspectRatio: 1,
+          guides: false,
+          center: false,
+          highlight: false,
+          movable: false,
+          rotatable: false,
+          scalable: false,
+          zoomable: false,
+          zoomOnTouch: false,
+          zoomOnWheel: false,
+        };
+        imageEditorOptions.actions = {
+          revert: false,
+          rotate: false,
+          granularRotate: false,
+          flip: false,
+          zoomIn: false,
+          zoomOut: false,
+          cropSquare: false,
+          cropWidescreen: false,
+          cropWidescreenVertical: false,
+        };
+      }
+
+      // In avatar mode, we want to restrict the image editor
+      if (imageMode === 'cover') {
+        imageEditorOptions.cropperOptions = {
+          croppedCanvasOptions: {},
+          viewMode: 1,
+          background: false,
+          autoCropArea: 1,
+          responsive: true,
+          aspectRatio: 3 / 1,
           guides: false,
           center: false,
           highlight: false,

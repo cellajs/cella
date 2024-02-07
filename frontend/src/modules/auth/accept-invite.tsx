@@ -11,9 +11,9 @@ import OauthOptions from './oauth-options';
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { acceptInvite } from '~/api/general';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { LegalNotice } from './sign-up-form';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));

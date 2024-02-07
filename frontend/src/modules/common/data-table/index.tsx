@@ -4,8 +4,8 @@ import { Loader2, Search, XCircle } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 import { cn } from '~/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
 import { useOnScreen } from '~/hooks/use-on-screen';
 import { Button } from '../../ui/button';

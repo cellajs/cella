@@ -11,15 +11,15 @@ import { useEffect, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { checkSlug } from '~/api/general';
-import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import countries from '~/lib/countries.json';
 import timezones from '~/lib/timezones.json';
+import { Button } from '~/modules/ui/button';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useUpdateOrganizationMutation } from '~/router/routeTree';
 import { dialog } from '../common/dialoger/state';
 import MultipleSelector, { Option } from '../ui/multiple-selector';
@@ -75,7 +75,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             defaultValue: 'Organization updated',
           }),
         );
-      }
+      },
     });
   };
 

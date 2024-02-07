@@ -5,9 +5,9 @@ import * as React from 'react';
 
 import { Command as CommandPrimitive } from 'cmdk';
 import { useEffect } from 'react';
+import { cn } from '~/lib/utils';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
-import { cn } from '~/lib/utils';
 
 export interface Option {
   value: string;

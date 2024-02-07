@@ -35,9 +35,7 @@ const UserSettings = () => {
                   title: t('action.delete_user', {
                     defaultValue: 'Delete user',
                   }),
-                  description: t('question.are_you_sure_to_delete_your_account', {
-                    email: user.email,
-                  }),
+                  description: t('question.are_you_sure_to_delete_your_account', { email: user.email }),
                 });
               }}
             >

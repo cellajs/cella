@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { Member } from '~/types';
 import { AvatarWrap } from '../avatar-wrap';
 
+import { dateShort } from '~/lib/utils';
 import DataTableColumnHeader from '~/modules/common/data-table/column-header';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { dateShort } from '~/lib/utils';
 
 export const useColumns = (): ColumnDef<Member>[] => {
   const { t } = useTranslation();
