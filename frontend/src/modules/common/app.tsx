@@ -4,7 +4,7 @@ import { ScrollRestoration } from '@tanstack/react-router';
 import { AppContent } from '~/modules/common/app-content';
 import { appSignal } from '~/lib/appsignal';
 
-import { AppNav } from './app-nav';
+import AppNav from './app-nav';
 import { AppSheet } from './app-sheet';
 import ErrorPage from './error';
 
