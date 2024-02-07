@@ -18,12 +18,7 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
     organizationId: id,
   };
 
-  const response =
-    type === UploadType.Organization && id
-      ? await client['upload-token'].$get({
-          query: preparedQuery,
-        })
-      : await client['upload-token'].$get({ query: preparedQuery });
+  const response = await client['upload-token'].$get({ query: preparedQuery });
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(response.status, json.error);
