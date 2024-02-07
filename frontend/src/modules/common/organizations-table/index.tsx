@@ -20,7 +20,7 @@ import { useColumns } from './columns';
 
 type QueryData = Awaited<ReturnType<typeof getOrganizations>>;
 
-interface CustomDataTableToolbarProps {
+interface ToolbarProps {
   table: TableType<Organization>;
   filter?: string;
   queryResult: UseInfiniteQueryResult<
@@ -38,14 +38,13 @@ interface CustomDataTableToolbarProps {
   callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void;
 }
 
-export function CustomDataTableToolbar({
+export function Toolbar({
   table,
   queryResult,
   // rowSelection,
   isFiltered,
-  filter = 'name',
   callback,
-}: CustomDataTableToolbarProps) {
+}: ToolbarProps) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   // const [, setOpen] = useState(false);
@@ -102,10 +101,10 @@ export function CustomDataTableToolbar({
           placeholder={t('placeholder.search', {
             defaultValue: 'Search ...',
           })}
-          value={(table.getColumn(filter)?.getFilterValue() as string) ?? ''}
+          value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
           onChange={(event) => {
             table.resetRowSelection();
-            table.getColumn(filter)?.setFilterValue(event.target.value);
+            table.getColumn('name')?.setFilterValue(event.target.value);
           }}
           className="h-10 w-[150px] lg:w-[250px]"
         />
@@ -300,8 +299,8 @@ const OrganizationsTable = () => {
           table.resetColumnFilters();
           table.resetRowSelection();
         },
-        CustomToolbarComponent: (
-          <CustomDataTableToolbar table={table} callback={callback} isFiltered={isFiltered} queryResult={queryResult} rowSelection={rowSelection} />
+        ToolbarComponent: (
+          <Toolbar table={table} callback={callback} isFiltered={isFiltered} queryResult={queryResult} rowSelection={rowSelection} />
         ),
       }}
     />

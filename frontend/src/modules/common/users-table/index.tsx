@@ -49,9 +49,8 @@ const items = [
   },
 ];
 
-interface CustomDataTableToolbarProps {
+interface ToolbarProps {
   table: TableType<User>;
-  filter?: string;
   queryResult: UseInfiniteQueryResult<
     InfiniteData<
       {
@@ -68,15 +67,14 @@ interface CustomDataTableToolbarProps {
   setRole: React.Dispatch<React.SetStateAction<GetUsersParams['role']>>;
 }
 
-export function CustomDataTableToolbar({
+export function Toolbar({
   table,
   queryResult,
   rowSelection,
   isFiltered,
-  filter = 'name',
   role,
   setRole,
-}: CustomDataTableToolbarProps) {
+}: ToolbarProps) {
   const { t } = useTranslation();
   const [, setOpen] = useState(false);
   const user = useUserStore((state) => state.user);
@@ -141,10 +139,10 @@ export function CustomDataTableToolbar({
           placeholder={t('placeholder.search', {
             defaultValue: 'Search ...',
           })}
-          value={(table.getColumn(filter)?.getFilterValue() as string) ?? ''}
+          value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
           onChange={(event) => {
             table.resetRowSelection();
-            table.getColumn(filter)?.setFilterValue(event.target.value);
+            table.getColumn('name')?.setFilterValue(event.target.value);
           }}
           className="h-10 w-[150px] lg:w-[250px]"
         />
@@ -435,11 +433,10 @@ const UsersTable = () => {
           table.resetRowSelection();
           setRole(undefined);
         },
-        CustomToolbarComponent: (
-          <CustomDataTableToolbar
+        ToolbarComponent: (
+          <Toolbar
             table={table}
             role={role}
-            filter="email"
             setRole={setRole}
             isFiltered={isFiltered}
             queryResult={queryResult}

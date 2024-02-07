@@ -9,7 +9,6 @@ import { cn } from '~/lib/utils';
 
 import { useOnScreen } from '~/hooks/use-on-screen';
 import { Button } from '../../ui/button';
-import { DataTableToolbar } from './toolbar';
 
 interface DataTableProps<TData> {
   className?: string;
@@ -35,10 +34,9 @@ interface DataTableProps<TData> {
         >,
         Error
       >;
-  filter?: string;
   isFiltered?: boolean;
   onResetFilters?: () => void;
-  CustomToolbarComponent?: React.ReactNode;
+  ToolbarComponent?: React.ReactNode;
   renderSubComponent?: (props: { row: Row<TData> }) => React.ReactElement;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
@@ -193,9 +191,8 @@ const ErrorMessageRow = ({
 export function DataTable<TData>({
   className,
   table,
-  filter,
   queryResult,
-  CustomToolbarComponent,
+  ToolbarComponent,
   renderSubComponent,
   NoRowsComponent,
   isFiltered,
@@ -214,7 +211,7 @@ export function DataTable<TData>({
 
   return (
     <div className={cn('flex w-full flex-col space-y-4 h-full', className)}>
-      {CustomToolbarComponent ? CustomToolbarComponent : <DataTableToolbar table={table} filter={filter} />}
+      {ToolbarComponent}
       {initial &&
         (error ? (
           <ErrorMessage error={error} />

@@ -26,7 +26,7 @@ import RemoveMembersForm from './remove-member-form';
 
 type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>;
 
-interface CustomDataTableToolbarProps {
+interface ToolbarProps {
   table: TableType<Member>;
   queryResult: UseSuspenseInfiniteQueryResult<
     InfiniteData<
@@ -38,7 +38,6 @@ interface CustomDataTableToolbarProps {
     >,
     Error
   >;
-  filter?: string;
   organization: Organization;
   role: GetMembersParams['role'];
   rowSelection: Record<string, boolean>;
@@ -62,7 +61,7 @@ const items = [
   },
 ];
 
-export function CustomDataTableToolbar({
+export function Toolbar({
   table,
   queryResult,
   role,
@@ -71,8 +70,7 @@ export function CustomDataTableToolbar({
   callback,
   rowSelection,
   isFiltered,
-  filter = 'name',
-}: CustomDataTableToolbarProps) {
+}: ToolbarProps) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const members = useMemo(() => Object.keys(rowSelection).map((id) => table.getRow(id).original), [rowSelection, table]);
@@ -175,10 +173,10 @@ export function CustomDataTableToolbar({
           placeholder={t('placeholder.search', {
             defaultValue: 'Search ...',
           })}
-          value={(table.getColumn(filter)?.getFilterValue() as string) ?? ''}
+          value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
           onChange={(event) => {
             table.resetRowSelection();
-            table.getColumn(filter)?.setFilterValue(event.target.value);
+            table.getColumn('email')?.setFilterValue(event.target.value);
           }}
           className="h-10 w-[150px] lg:w-[250px]"
         />
@@ -396,10 +394,9 @@ const MembersTable = () => {
             <div className="mt-6">No members yet</div>
           </>
         ),
-        CustomToolbarComponent: (
-          <CustomDataTableToolbar
+        ToolbarComponent: (
+          <Toolbar
             table={table}
-            filter={'email'}
             queryResult={queryResult}
             isFiltered={isFiltered}
             callback={callback}
