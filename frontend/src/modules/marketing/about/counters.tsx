@@ -1,17 +1,15 @@
 import { Building2, Users } from 'lucide-react';
-import { ElementType, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
 import { getPublicCounts } from '~/api/general';
 
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
-type IconType = ElementType;
-
 interface CountMapping {
   [key: string]: {
     title: string;
-    icon: IconType;
+    icon: JSX.ElementType;
   };
 }
 

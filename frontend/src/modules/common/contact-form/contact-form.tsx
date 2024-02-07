@@ -21,7 +21,7 @@ interface CustomFormFieldProps<TFieldValues extends FieldValues = FieldValues, T
   name: TName;
   label: string;
   type?: string;
-  icon?: React.ElementType;
+  icon?: JSX.ElementType;
 }
 
 const CustomFormField = <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({

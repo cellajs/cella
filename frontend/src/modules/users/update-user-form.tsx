@@ -41,8 +41,8 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
-  const [apiWrapper, pending] = useApiWrapper();
-  const updateUserMutation = useUpdateUserMutation(user.id);
+  const [apiWrapper, apiPending] = useApiWrapper();
+  const { mutate, isPending } = useUpdateUserMutation(user.id);
 
   const form = useFormWithDraft<FormValues>(`update-user-${user.id}`, {
     resolver: zodResolver(formSchema),
@@ -68,10 +68,9 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   const onSubmit = (values: FormValues) => {
     if (!user) return;
 
-    apiWrapper(
-      () => updateUserMutation.mutateAsync(values),
-      async (result) => {
-        form.reset(result);
+    mutate(values, {
+      onSuccess: (data) => {
+        form.reset(data);
         callback?.(user);
 
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
@@ -80,11 +79,11 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
         }
 
         if (isSelf) {
-          setUser(result);
+          setUser(data);
           toast.success(t('success.you_updated', { defaultValue: 'Your profile has been updated' }));
         } else toast.success(t('success.updated_user', { defaultValue: 'User updated' }));
       },
-    );
+    });
   };
 
   const cancel = () => {
@@ -276,7 +275,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           )}
         />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={pending}>
+          <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending || apiPending}>
             {t('action.save_changes', {
               defaultValue: 'Save changes',
             })}

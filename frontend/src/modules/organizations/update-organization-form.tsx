@@ -36,8 +36,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
-  const [apiWrapper, pending] = useApiWrapper();
-  const updateOrganizationMutation = useUpdateOrganizationMutation(organization.id);
+  const [apiWrapper, apiPending] = useApiWrapper();
+  const { mutate, isPending } = useUpdateOrganizationMutation(organization.id);
 
   const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, {
     resolver: zodResolver(formSchema),
@@ -63,23 +63,20 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
-    apiWrapper(
-      () => updateOrganizationMutation.mutateAsync(values),
-      (result) => {
-        form.reset(values);
-        callback?.(result);
-
+    mutate(values, {
+      onSuccess: (data) => {
+        form.reset(data);
+        callback?.(data);
         if (isDialog) {
           dialog.remove();
         }
-
         toast.success(
           t('success.update_organization', {
             defaultValue: 'Organization updated',
           }),
         );
-      },
-    );
+      }
+    });
   };
 
   const cancel = () => {
@@ -331,7 +328,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           )}
         />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
+          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || apiPending}>
             {t('action.save_changes', {
               defaultValue: 'Save changes',
             })}
