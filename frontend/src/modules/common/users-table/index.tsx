@@ -2,7 +2,6 @@ import { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import {
   ColumnFiltersState,
-  Row,
   SortingState,
   VisibilityState,
   getCoreRowModel,
@@ -11,67 +10,17 @@ import {
 } from '@tanstack/react-table';
 import { useEffect, useState } from 'react';
 
-import { GetUsersParams, getUserBySlugOrId, getUsers } from '~/api/users';
+import { GetUsersParams, getUsers } from '~/api/users';
 import { User } from '~/types';
 
-import { Loader2 } from 'lucide-react';
-
-import { dateShort } from '~/lib/utils';
 import { DataTable } from '~/modules/common/data-table';
 import { queryClient } from '~/router';
 import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import Expand from './expand';
 
 type QueryData = Awaited<ReturnType<typeof getUsers>>;
-
-// id, modified, modifiedBy
-const SubComponent = ({ row }: { row: Row<User> }) => {
-  const [modifier, setModifier] = useState<User | undefined>(undefined);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!row.original.modifiedBy) {
-      return;
-    }
-
-    setLoading(true);
-    getUserBySlugOrId(row.original.modifiedBy)
-      .then((user) => {
-        setModifier(user);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [row.original.modifiedBy]);
-
-  return (
-    <div className="flex space-x-4">
-      <div className="flex flex-col font-light space-y-2">
-        <div className="flex space-x-2">
-          <span className="font-medium">ID</span>
-          <span>{row.original.id}</span>
-        </div>
-        <div className="flex space-x-2">
-          <span className="font-medium">Modified</span>
-          <span>{dateShort(row.original.modifiedAt)}</span>
-        </div>
-        <div className="flex space-x-2">
-          <span className="font-medium">Modified By</span>
-          {loading ? (
-            <Loader2 className="animate-spin" />
-          ) : modifier ? (
-            <span>
-              {modifier.name} ({modifier.email})
-            </span>
-          ) : (
-            <span>Unknown</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const UsersTable = () => {
   const [flatData, setFlatData] = useState<User[]>([]);
@@ -289,7 +238,7 @@ const UsersTable = () => {
             rowSelection={rowSelection}
           />
         ),
-        renderSubComponent: ({ row }) => <SubComponent row={row} />,
+        renderExpandComponent: ({ row }) => <Expand row={row} />,
       }}
     />
   );

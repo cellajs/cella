@@ -37,7 +37,7 @@ interface DataTableProps<TData> {
   isFiltered?: boolean;
   onResetFilters?: () => void;
   ToolbarComponent?: React.ReactNode;
-  renderSubComponent?: (props: { row: Row<TData> }) => React.ReactElement;
+  renderExpandComponent?: (props: { row: Row<TData> }) => React.ReactElement;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
 }
@@ -55,13 +55,13 @@ const Loading = ({ colSpan }: { colSpan: number }) => {
 function RowList<TData>({
   rows,
   colSpan,
-  renderSubComponent,
+  renderExpandComponent,
   queryResult: { fetchNextPage, data, isFetching, error },
 }: {
   rows: Row<TData>[];
   colSpan: number;
   queryResult: DataTableProps<TData>['queryResult'];
-  renderSubComponent?: (props: { row: Row<TData> }) => React.ReactElement;
+  renderExpandComponent?: (props: { row: Row<TData> }) => React.ReactElement;
 }) {
   const { measureRef, isIntersecting, observer } = useOnScreen();
 
@@ -99,9 +99,9 @@ function RowList<TData>({
             </TableCell>
           ))}
         </TableRow>
-        {row.getIsExpanded() && renderSubComponent && (
+        {row.getIsExpanded() && renderExpandComponent && (
           <TableRow>
-            <TableCell colSpan={row.getVisibleCells().length}>{renderSubComponent({ row })}</TableCell>
+            <TableCell colSpan={row.getVisibleCells().length}>{renderExpandComponent({ row })}</TableCell>
           </TableRow>
         )}
       </Fragment>
@@ -193,7 +193,7 @@ export function DataTable<TData>({
   table,
   queryResult,
   ToolbarComponent,
-  renderSubComponent,
+  renderExpandComponent,
   NoRowsComponent,
   isFiltered,
   onResetFilters,
@@ -245,7 +245,7 @@ export function DataTable<TData>({
                 ))}
               </TableHeader>
               <TableBody>
-                <RowList rows={rows} colSpan={table.getAllColumns().length} renderSubComponent={renderSubComponent} queryResult={queryResult} />
+                <RowList rows={rows} colSpan={table.getAllColumns().length} renderExpandComponent={renderExpandComponent} queryResult={queryResult} />
               </TableBody>
             </Table>
           </div>
