@@ -186,9 +186,7 @@ const OrganizationsTable = () => {
           table.resetColumnFilters();
           table.resetRowSelection();
         },
-        ToolbarComponent: (
-          <Toolbar table={table} callback={callback} isFiltered={isFiltered} queryResult={queryResult} rowSelection={rowSelection} />
-        ),
+        ToolbarComponent: <Toolbar table={table} callback={callback} isFiltered={isFiltered} queryResult={queryResult} rowSelection={rowSelection} />,
       }}
     />
   );

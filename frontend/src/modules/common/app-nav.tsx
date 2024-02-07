@@ -8,13 +8,13 @@ import { useUserStore } from '~/store/user';
 import { AvatarWrap } from './avatar-wrap';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Input } from '~/modules/ui/input';
 import { useNavigationStore } from '~/store/navigation';
 import { SheetAccount } from './app-sheet/sheet-account';
 import { SheetMenu } from './app-sheet/sheet-menu';
 import { SheetNotifications } from './app-sheet/sheet-notifications';
-import { cn } from '~/lib/utils';
 
 export type NavItem = {
   id: string;
@@ -36,7 +36,11 @@ export const navItems: NavItem[] = [
 const AppNav = () => {
   const navigate = useNavigate();
   const isSmallScreen = useBreakpoints('max', 'lg');
-  const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore(({ activeSheet, setSheet, keepMenuOpen }) => ({ activeSheet, setSheet, keepMenuOpen }));
+  const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore(({ activeSheet, setSheet, keepMenuOpen }) => ({
+    activeSheet,
+    setSheet,
+    keepMenuOpen,
+  }));
   const { theme } = useThemeStore();
 
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
@@ -64,7 +68,7 @@ const AppNav = () => {
   };
 
   return (
-    <nav className={cn("fixed z-40 w-full overflow-y-auto md:fixed md:left-0 md:top-0 md:h-svh md:w-16", navBackground)}>
+    <nav className={cn('fixed z-40 w-full overflow-y-auto md:fixed md:left-0 md:top-0 md:h-svh md:w-16', navBackground)}>
       <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1">
         {navItems.map((navItem: NavItem, index: number) => {
           const isSecondItem = index === 1;

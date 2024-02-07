@@ -10,18 +10,16 @@ import '@uppy/core/dist/style.min.css';
 const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
 
 interface ImadoUploadParams extends UploadParams {
-  organisationId?: string;
   completionHandler: (urls: URL[], result?: UploadResult) => void;
 }
 
 export async function ImadoUppy(
   type: UploadType,
   uppyOptions: UppyOptions,
-  opts: ImadoUploadParams = { public: false, completionHandler: () => {} },
-  organizationId?: string,
+  opts: ImadoUploadParams = { public: false, completionHandler: () => {}, organizationId: undefined },
 ): Promise<Uppy> {
   // Get upload token and check if public or private files
-  const token = await getUploadToken(type, { public: opts.public, organizationId });
+  const token = await getUploadToken(type, { public: opts.public, organizationId: opts.organizationId });
 
   const { public: isPublic, sub, imado: useImadoAPI } = readJwt(token);
 
@@ -42,7 +40,7 @@ export async function ImadoUppy(
       },
     })
     .on('upload', (data) => {
-      console.log('Upload started:', data);
+      console.info('Upload started:', data);
     })
     .on('error', (error) => {
       console.error('Upload error:', error);

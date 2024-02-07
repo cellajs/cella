@@ -69,9 +69,10 @@ const OrganizationPage = () => {
   return (
     <OrganizationContext.Provider value={{ organization }}>
       <PageHeader
+        id={organization.id}
         title={organization.name}
         type="organization"
-        avatar={organization}
+        thumbnailUrl={organization.thumbnailUrl}
         bannerUrl={organization.bannerUrl}
         panel={
           <div className="flex items-center p-2">

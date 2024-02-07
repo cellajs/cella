@@ -4,26 +4,23 @@ import { PageCover } from './page-cover';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
-  title: string;
+  title?: string;
   type: 'user' | 'organization';
-  avatar?: {
-    id: string;
-    thumbnailUrl?: string | null;
-    name: string;
-  };
+  id: string;
+  thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;
 }
 
 // PageHeader Component
-const PageHeader = ({ title, avatar, bannerUrl, type, panel }: PageHeaderProps) => {
+const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel }: PageHeaderProps) => {
   return (
     <div className="relative">
-      <PageCover type={type} id={avatar?.id} name={avatar?.name} url={bannerUrl} />
+      <PageCover type={type} id={id} url={bannerUrl} />
 
       <div className="absolute flex bottom-0 w-full bg-background/50 backdrop-blur-sm">
         <div className="flex items-stretch">
-          {avatar && <AvatarWrap className="m-2" type={type} id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
+          <AvatarWrap className="m-2" type={type} id={id} name={title} url={thumbnailUrl} />
           <div className="my-auto">
             {/* Page title */}
             <h1 className="text-xl leading-5 font-semibold">{title}</h1>

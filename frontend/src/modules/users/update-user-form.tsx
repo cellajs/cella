@@ -20,7 +20,7 @@ import { useWatch } from 'react-hook-form';
 import { checkSlug } from '~/api/general';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { UploadImage } from '~/modules/common/upload/upload-image';
+import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
 import { useUpdateUserMutation } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
@@ -133,7 +133,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
                 })}
               </FormLabel>
               <FormControl>
-                <UploadImage {...rest} type="user" id={user.id} name={user.name} url={form.getValues('thumbnailUrl')} setUrl={setImageUrl} />
+                <UploadAvatar {...rest} type="user" id={user.id} name={user.name} url={form.getValues('thumbnailUrl')} setUrl={setImageUrl} />
               </FormControl>
             </FormItem>
           )}

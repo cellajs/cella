@@ -5,9 +5,9 @@ import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { WebcamOptions } from '@uppy/webcam';
 import { useEffect, useState } from 'react';
+import { ImadoUppy } from '~/lib/imado';
 import { useThemeStore } from '~/store/theme';
 import { UploadType } from '~/types';
-import { ImadoUppy } from '../../../lib/imado';
 
 import '@uppy/audio/dist/style.css';
 import '@uppy/dashboard/dist/style.min.css';
@@ -17,25 +17,28 @@ import '@uppy/webcam/dist/style.css';
 import './uppy.css';
 
 interface UploadUppyProps {
+  uploadType: UploadType;
+  isPublic: boolean;
   setUrl: (url: string) => void;
   plugins?: ('webcam' | 'image-editor' | 'audio' | 'screen-capture')[];
   uppyOptions: UppyOptions;
-  avatarMode?: boolean;
   imageMode?: 'cover' | 'avatar';
+  organizationId?: string;
 }
 
 // Here we init imadoUppy, an enriched Uppy instance that we use to upload files.
 // For more info in Imado, see: https://imado.eu/
 // For more info on Uppy and its APIs, see: https://uppy.io/docs/
 
-export const UploadUppy = ({ setUrl, uppyOptions, plugins = [], avatarMode = false, imageMode }: UploadUppyProps) => {
+export const UploadUppy = ({ uploadType, isPublic, organizationId, setUrl, uppyOptions, plugins = [], imageMode }: UploadUppyProps) => {
   const [uppy, setUppy] = useState<Uppy | null>(null);
   const { mode } = useThemeStore();
 
   useEffect(() => {
     const initializeUppy = async () => {
-      const imadoUppy = await ImadoUppy(UploadType.Personal, uppyOptions, {
-        public: true,
+      const imadoUppy = await ImadoUppy(uploadType, uppyOptions, {
+        public: isPublic,
+        organizationId: organizationId,
         completionHandler: (urls: URL[]) => {
           if (urls.length > 0) {
             const newImageUrl = urls[0].toString();
@@ -51,7 +54,7 @@ export const UploadUppy = ({ setUrl, uppyOptions, plugins = [], avatarMode = fal
       };
 
       // In avatar mode, we want to restrict the image editor
-      if (avatarMode) {
+      if (imageMode === 'avatar') {
         imageEditorOptions.cropperOptions = {
           croppedCanvasOptions: {},
           viewMode: 1,
@@ -121,7 +124,7 @@ export const UploadUppy = ({ setUrl, uppyOptions, plugins = [], avatarMode = fal
         },
       };
 
-      if (avatarMode) webcamOptions.modes = ['picture'];
+      if (imageMode) webcamOptions.modes = ['picture'];
 
       // Set plugins based on plugins props
       if (plugins.includes('webcam')) imadoUppy.use(Webcam, webcamOptions);
