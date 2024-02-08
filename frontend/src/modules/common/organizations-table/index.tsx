@@ -158,6 +158,7 @@ const OrganizationsTable = () => {
         error: queryResult.error,
         isLoading: queryResult.isLoading,
         isFetching: queryResult.isFetching,
+        enableVirtualization: false,
         isFiltered,
         onResetFilters,
         selectedRows,
