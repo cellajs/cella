@@ -1,5 +1,3 @@
-import { InfiniteData, UseInfiniteQueryResult } from "@tanstack/react-query";
-import { Table } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
 import { useUserStore } from "~/store/user";
 import { Organization } from "~/types";
@@ -7,34 +5,30 @@ import { dialog } from "../dialoger/state";
 import { Button } from "~/modules/ui/button";
 import CountAndLoading from "../data-table/count-and-loading";
 import { Input } from "~/modules/ui/input";
-import { DataTableViewOptions } from "../data-table/options";
 import CreateOrganizationForm from "~/modules/organizations/create-organization-form";
 
 
 interface Props {
-    table: Table<Organization>;
-    filter?: string;
-    queryResult: UseInfiniteQueryResult<
-        InfiniteData<
-            {
-                items: Organization[];
-                total: number;
-            },
-            unknown
-        >,
-        Error
-    >;
-    rowSelection: Record<string, boolean>;
+    total?: number;
+    query?: string;
+    setQuery?: (value: string) => void;
     isFiltered?: boolean;
+    isLoading?: boolean;
+    onResetFilters?: () => void;
     callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void;
+    refetch?: () => void;
+    setSelectedRows: (value: Set<string>) => void;
 }
 
 function Toolbar({
-    table,
-    queryResult,
-    // rowSelection,
+    total,
     isFiltered,
+    query,
+    setQuery,
+    isLoading,
     callback,
+    onResetFilters,
+    setSelectedRows,
 }: Props) {
     const { t } = useTranslation();
     const user = useUserStore((state) => state.user);
@@ -72,8 +66,8 @@ function Toolbar({
                     </Button>
                 )}
                 <CountAndLoading
-                    count={queryResult.data?.pages[0].total}
-                    isLoading={queryResult.isFetching}
+                    count={total}
+                    isLoading={isLoading}
                     singular={t('label.singular_organization', {
                         defaultValue: 'organization',
                     })}
@@ -81,10 +75,7 @@ function Toolbar({
                         defaultValue: 'organizations',
                     })}
                     isFiltered={isFiltered}
-                    onResetFilters={() => {
-                        table.resetColumnFilters();
-                        table.resetRowSelection();
-                    }}
+                    onResetFilters={onResetFilters}
                 />
             </div>
             <div className="mt-2 flex items-center space-x-2 sm:mt-0">
@@ -92,26 +83,13 @@ function Toolbar({
                     placeholder={t('placeholder.search', {
                         defaultValue: 'Search ...',
                     })}
-                    value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+                    value={query ?? ''}
                     onChange={(event) => {
-                        table.resetRowSelection();
-                        table.getColumn('name')?.setFilterValue(event.target.value);
+                        setSelectedRows(new Set());
+                        setQuery?.(event.target.value);
                     }}
                     className="h-10 w-[150px] lg:w-[250px]"
                 />
-                <DataTableViewOptions table={table} />
-                {/* {isFiltered && (
-            <Button
-              variant="ghost"
-              onClick={() => table.resetColumnFilters()}
-              className="h-10 px-2 lg:px-3"
-            >
-              {t('action.reset', {
-                defaultValue: 'Reset',
-              })}
-              <X className="ml-2 h-4 w-4" />
-            </Button>
-          )} */}
             </div>
         </div>
     );

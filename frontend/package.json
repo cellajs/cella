@@ -32,7 +32,6 @@
     "@radix-ui/react-tooltip": "^1.0.7",
     "@tanstack/react-query": "^5.18.1",
     "@tanstack/react-router": "1.15.19",
-    "@tanstack/react-table": "^8.11.8",
     "@tanstack/router-devtools": "^1.15.17",
     "@uppy/audio": "^1.1.4",
     "@uppy/core": "^3.8.0",
@@ -62,6 +61,7 @@
     "next-themes": "^0.2.1",
     "react": "^18.2.0",
     "react-copy-to-clipboard": "^5.1.0",
+    "react-data-grid": "7.0.0-beta.42",
     "react-dom": "^18.2.0",
     "react-error-boundary": "^4.0.12",
     "react-hook-form": "^7.49.3",
@@ -104,6 +104,7 @@
   "postcss": {
     "plugins": {
       "tailwindcss": {},
+      "tailwindcss/nesting": {},
       "autoprefixer": {}
     }
   }

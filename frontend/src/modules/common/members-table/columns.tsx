@@ -1,126 +1,74 @@
 import { Link } from '@tanstack/react-router';
-import { ColumnDef } from '@tanstack/react-table';
 
 import { useTranslation } from 'react-i18next';
 import { Member } from '~/types';
 import { AvatarWrap } from '../avatar-wrap';
 
 import { dateShort } from '~/lib/utils';
-import DataTableColumnHeader from '~/modules/common/data-table/column-header';
-import { Checkbox } from '~/modules/ui/checkbox';
+import { ColumnOrColumnGroup, SelectColumn } from 'react-data-grid';
 
-export const useColumns = (): ColumnDef<Member>[] => {
+export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
   const { t } = useTranslation();
 
   return [
+    SelectColumn,
     {
-      id: 'select',
-      size: 32,
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-          className="translate-y-[2px]"
-        />
+      key: 'name',
+      name: t('label.name', {
+        defaultValue: 'Name',
+      }),
+      minWidth: 200,
+      renderCell: ({ row }) => (
+        <Link
+          to="/user/$userIdentifier"
+          params={{
+            userIdentifier: row.slug,
+          }}
+          className="flex space-x-2 items-center group"
+        >
+          <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+          <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name}</span>
+        </Link>
       ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-          className="translate-y-[2px]"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
     },
     {
-      accessorKey: 'name',
-      minSize: 200,
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('label.name', {
-            defaultValue: 'Name',
-          })}
-        />
-      ),
-      cell: ({ row }) => {
-        const item = row.original;
-
+      key: 'email',
+      name: t('label.email', {
+        defaultValue: 'Email',
+      }),
+      sortable: false,
+      minWidth: 180,
+      renderCell: ({ row }) => {
         return (
-          <Link
-            to="/user/$userIdentifier"
-            params={{
-              userIdentifier: item.slug,
-            }}
-            className="flex space-x-2 items-center group"
-          >
-            <AvatarWrap type="user" className="h-8 w-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
-            <span className="group-hover:underline underline-offset-4 truncate font-medium">{item.name}</span>
-          </Link>
-        );
-      },
-    },
-    {
-      accessorKey: 'email',
-      enableSorting: false,
-      minSize: 180,
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('label.email', {
-            defaultValue: 'Email',
-          })}
-        />
-      ),
-      cell: ({ row }) => {
-        return (
-          <a href={`mailto:${row.getValue('email')}`} className="truncate hover:underline underline-offset-4 font-light">
-            {row.getValue('email') || '-'}
+          <a href={`mailto:${row.email}`} className="truncate hover:underline underline-offset-4 font-light">
+            {row.email || '-'}
           </a>
         );
       },
     },
     {
-      accessorKey: 'organizationRole',
-      enableSorting: false,
-      accessorFn: (row) => t(row.organizationRole),
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('label.role', {
-            defaultValue: 'Role',
-          })}
-        />
-      ),
+      key: 'organizationRole',
+      sortable: false,
+      name: t('label.role', {
+        defaultValue: 'Role',
+      }),
+      renderCell: ({ row }) => t(row.organizationRole),
     },
     {
-      accessorKey: 'createdAt',
-      accessorFn: (row) => dateShort(row.createdAt),
-      minSize: 180,
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('label.createdAt', {
-            defaultValue: 'Created',
-          })}
-        />
-      ),
+      key: 'createdAt',
+      name: t('label.createdAt', {
+        defaultValue: 'Created',
+      }),
+      renderCell: ({ row }) => dateShort(row.createdAt),
+      minWidth: 180,
     },
     {
-      accessorKey: 'lastSeenAt',
-      accessorFn: (row) => dateShort(row.lastSeenAt),
-      minSize: 180,
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('label.lastSeenAt', {
-            defaultValue: 'Last seen',
-          })}
-        />
-      ),
+      key: 'lastSeenAt',
+      name: t('label.lastSeenAt', {
+        defaultValue: 'Last seen',
+      }),
+      renderCell: ({ row }) => dateShort(row.lastSeenAt),
+      minWidth: 180,
     },
   ];
 };

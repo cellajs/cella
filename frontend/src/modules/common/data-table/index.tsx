@@ -1,122 +1,34 @@
-import { InfiniteData, UseInfiniteQueryResult, UseSuspenseInfiniteQueryResult } from '@tanstack/react-query';
-import { Row, Table as TableType, flexRender } from '@tanstack/react-table';
-import { Loader2, Search, XCircle } from 'lucide-react';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import 'react-data-grid/lib/styles.css';
+
+import DataGrid, { ColumnOrColumnGroup, Row, RowsChangeData, SortColumn } from 'react-data-grid';
+import { Search, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { cn } from '~/lib/utils';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
-
-import { useOnScreen } from '~/hooks/use-on-screen';
 import { Button } from '../../ui/button';
+import { useOnScreen } from '~/hooks/use-on-screen';
 
 interface DataTableProps<TData> {
-  className?: string;
-  table: TableType<TData>;
-  queryResult:
-    | UseSuspenseInfiniteQueryResult<
-        InfiniteData<
-          {
-            items: TData[];
-            total: number;
-          },
-          unknown
-        >,
-        Error
-      >
-    | UseInfiniteQueryResult<
-        InfiniteData<
-          {
-            items: TData[];
-            total: number;
-          },
-          unknown
-        >,
-        Error
-      >;
+  columns: ColumnOrColumnGroup<TData>[];
+  rows: TData[];
+  rowKeyGetter: (row: TData) => string;
+  error?: Error | null;
+  isLoading?: boolean;
+  isFetching?: boolean;
   isFiltered?: boolean;
   onResetFilters?: () => void;
   ToolbarComponent?: React.ReactNode;
-  renderExpandComponent?: (props: { row: Row<TData> }) => React.ReactElement;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
-}
 
-const Loading = ({ colSpan }: { colSpan: number }) => {
-  return (
-    <TableRow>
-      <TableCell colSpan={colSpan}>
-        <Loader2 className="text-muted-foreground my-4 mb mx-auto h-6 w-6 animate-spin" />
-      </TableCell>
-    </TableRow>
-  );
-};
-
-function RowList<TData>({
-  rows,
-  colSpan,
-  renderExpandComponent,
-  queryResult: { fetchNextPage, data, isFetching, error },
-}: {
-  rows: Row<TData>[];
-  colSpan: number;
-  queryResult: DataTableProps<TData>['queryResult'];
-  renderExpandComponent?: (props: { row: Row<TData> }) => React.ReactElement;
-}) {
-  const { measureRef, isIntersecting, observer } = useOnScreen();
-
-  const fetchedRowCount = data?.pages?.[0]?.items?.length ?? 0;
-  const totalDBRowCount = data?.pages?.[0]?.total ?? 0;
-  const totalFetched = rows.length;
-
-  useEffect(() => {
-    if (isIntersecting && !isFetching && totalFetched < totalDBRowCount) {
-      fetchNextPage();
-      observer?.disconnect();
-    }
-  }, [isIntersecting, fetchNextPage]);
-
-  const rowList = rows.map((originRow, index) => {
-    const row = rows[originRow.index];
-
-    return (
-      <Fragment key={row.id}>
-        <TableRow
-          // set ref after 80% of the rows are fetched
-          ref={index === Math.floor(rows.length - 1 - fetchedRowCount * 0.2) ? measureRef : undefined}
-          data-state={row.getIsSelected() && 'selected'}
-          className="[&:last-child>*]:border-none"
-        >
-          {row.getVisibleCells().map((cell) => (
-            <TableCell
-              key={cell.id}
-              className="border-b"
-              style={{
-                width: cell.column.getSize(),
-              }}
-            >
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </TableCell>
-          ))}
-        </TableRow>
-        {row.getIsExpanded() && renderExpandComponent && (
-          <TableRow>
-            <TableCell colSpan={row.getVisibleCells().length}>{renderExpandComponent({ row })}</TableCell>
-          </TableRow>
-        )}
-      </Fragment>
-    );
-  });
-
-  if (totalFetched < totalDBRowCount && !error) {
-    rowList.push(<Loading colSpan={colSpan} key="loading" />);
-  }
-
-  if (error) {
-    rowList.push(<ErrorMessageRow colSpan={colSpan} error={new Error('Unable to load more. Reload or try again later')} key="error" />);
-  }
-
-  return rowList;
+  selectedRows?: Set<string>;
+  onSelectedRowsChange?: (selectedRows: Set<string>) => void;
+  sortColumns?: SortColumn[];
+  onSortColumnsChange?: (sortColumns: SortColumn[]) => void;
+  rowHeight?: number | ((row: TData) => number);
+  enableVirtualization?: boolean;
+  onRowsChange?: (rows: TData[], data: RowsChangeData<TData>) => void;
+  fetchMore?: () => Promise<unknown>;
 }
 
 const NoRows = ({
@@ -172,36 +84,39 @@ const ErrorMessage = ({
   );
 };
 
-const ErrorMessageRow = ({
-  colSpan,
-  error,
-}: {
-  colSpan: number;
-  error: Error;
-}) => {
-  return (
-    <TableRow>
-      <TableCell colSpan={colSpan} className="text-center text-red-500">
-        {error.message}
-      </TableCell>
-    </TableRow>
-  );
-};
-
 export function DataTable<TData>({
-  className,
-  table,
-  queryResult,
+  columns,
+  rows,
+  rowKeyGetter,
+  error,
+  isLoading,
+  isFetching,
   ToolbarComponent,
-  renderExpandComponent,
   NoRowsComponent,
   isFiltered,
   onResetFilters,
+  selectedRows,
+  onSelectedRowsChange,
+  sortColumns,
+  onSortColumnsChange,
+  rowHeight,
+  enableVirtualization,
+  onRowsChange,
+  fetchMore,
 }: DataTableProps<TData>) {
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const { error, isLoading, isFetching } = queryResult;
-  const { rows } = table.getRowModel();
+  const { measureRef, isIntersecting, observer } = useOnScreen({
+    firstChild: true,
+  });
+
   const [initial, setInitial] = useState(false);
+
+  useEffect(() => {
+    console.log('fetchMore');
+    if (isIntersecting && !isFetching) {
+      fetchMore?.();
+      observer?.disconnect();
+    }
+  }, [isIntersecting, fetchMore]);
 
   useEffect(() => {
     if (error || !isLoading) {
@@ -210,7 +125,7 @@ export function DataTable<TData>({
   }, [isLoading, error]);
 
   return (
-    <div className={cn('flex w-full flex-col space-y-4 h-full', className)}>
+    <div className='flex w-full flex-col space-y-4 h-full'>
       {ToolbarComponent}
       {initial &&
         (error ? (
@@ -218,36 +133,25 @@ export function DataTable<TData>({
         ) : !rows.length ? (
           <NoRows isFiltered={isFiltered} isFetching={isFetching} onResetFilters={onResetFilters} customComponent={NoRowsComponent} />
         ) : (
-          <div className="grow overflow-hidden rounded-md relative">
-            <Table
-              tableContainerRef={tableContainerRef}
-              // style={{
-              //   width: table.getCenterTotalSize(),
-              // }}
-            >
-              <TableHeader className="bg-background sticky top-0 z-10">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead
-                          key={header.id}
-                          className="border-b"
-                          style={{
-                            width: header.getSize(),
-                          }}
-                        >
-                          {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                        </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                <RowList rows={rows} colSpan={table.getAllColumns().length} renderExpandComponent={renderExpandComponent} queryResult={queryResult} />
-              </TableBody>
-            </Table>
+          <div className="grid">
+            <DataGrid
+              rowHeight={rowHeight}
+              enableVirtualization={enableVirtualization}
+              rowKeyGetter={rowKeyGetter}
+              columns={columns}
+              onRowsChange={onRowsChange}
+              rows={rows}
+              className="fill-grid"
+              selectedRows={selectedRows}
+              onSelectedRowsChange={onSelectedRowsChange}
+              sortColumns={sortColumns}
+              onSortColumnsChange={onSortColumnsChange}
+              renderers={{
+                renderRow: (key, props) => {
+                  return <Row {...props} key={key} ref={props.rowIdx === Math.floor(rows.length - 1 - rows.length * 0.2) ? measureRef : undefined} />;
+                }
+              }}
+            />
           </div>
         ))}
     </div>

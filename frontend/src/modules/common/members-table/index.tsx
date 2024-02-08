@@ -1,8 +1,7 @@
 import { InfiniteData, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ColumnFiltersState, SortingState, VisibilityState, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useContext, useEffect, useState } from 'react';
-import { GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
+import { getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { Member } from '~/types';
 
 import { DataTable } from '~/modules/common/data-table';
@@ -13,6 +12,7 @@ import { queryClient } from '~/router';
 import { MemberSearch, MembersTableRoute, membersQueryOptions } from '~/router/routeTree';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { SortColumn } from 'react-data-grid';
 
 type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>;
 
@@ -20,33 +20,20 @@ const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
   const columns = useColumns();
   const navigate = useNavigate();
-  const [flatData, setFlatData] = useState<Member[]>([]);
-  const [rowSelection, setRowSelection] = useState({});
   const search = useSearch({
     from: MembersTableRoute.id,
   });
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
-    search.q
-      ? [
-        {
-          id: 'email',
-          value: search.q,
-        },
-      ]
-      : [],
-  );
-  const [sorting, setSorting] = useState<SortingState>(
-    search.sort
-      ? [
-        {
-          id: search.sort,
-          desc: search.order === 'desc',
-        },
-      ]
-      : [],
-  );
-  const [role, setRole] = useState<GetMembersParams['role']>(search.role ? (search.role as GetMembersParams['role']) : undefined);
+
+  const [flatData, setFlatData] = useState<Member[]>([]);
+  const [selectedRows, setSelectedRows] = useState(new Set<string>());
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(
+    search.sort && search.order ?
+      [{
+        columnKey: search.sort,
+        direction: search.order === 'asc' ? 'ASC' : 'DESC',
+      }] : []);
+  const [query, setQuery] = useState<MemberSearch['q']>(search.q);
+  const [role, setRole] = useState<MemberSearch['role']>(search.role);
 
   const callback = (member?: Member) => {
     if (member) {
@@ -62,7 +49,7 @@ const MembersTable = () => {
           return page;
         }) ?? [];
 
-      queryClient.setQueryData<InfiniteData<QueryData>>(['members', columnFilters, sorting, role, organization], (data) => {
+      queryClient.setQueryData<InfiniteData<QueryData>>(['members', query, sortColumns, role, organization], (data) => {
         if (!data) {
           return;
         }
@@ -96,33 +83,20 @@ const MembersTable = () => {
   const queryResult = useSuspenseInfiniteQuery(
     membersQueryOptions({
       organizationIdentifier: organization.slug,
-      q: columnFilters[0]?.value as MemberSearch['q'],
-      sort: sorting[0]?.id as MemberSearch['sort'],
-      order: sorting[0]?.desc ? 'desc' : 'asc',
+      q: query,
+      sort: sortColumns[0]?.columnKey as MemberSearch['sort'],
+      order: sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
       role,
     }),
   );
 
-  const table = useReactTable({
-    data: flatData,
-    columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
-    manualFiltering: true,
-    manualSorting: true,
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  const isFiltered = role !== undefined || !!query;
 
-  const isFiltered = role !== undefined || table.getState().columnFilters.length > 0;
+  const onResetFilters = () => {
+    setQuery('');
+    setSelectedRows(new Set<string>());
+    setRole(undefined);
+  };
 
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
@@ -133,10 +107,10 @@ const MembersTable = () => {
   }, [queryResult.data]);
 
   useEffect(() => {
-    if (columnFilters[0]) {
+    if (query) {
       navigate({
         params: {},
-        search: (prev) => ({ ...prev, q: columnFilters[0].value as MemberSearch['q'] }),
+        search: (prev) => ({ ...prev, q: query }),
       });
     } else {
       navigate({
@@ -144,13 +118,13 @@ const MembersTable = () => {
         search: (prev) => ({ ...prev, q: undefined }),
       });
     }
-    if (sorting[0]) {
+    if (sortColumns[0]) {
       navigate({
         params: {},
         search: (prev) => ({
           ...prev,
-          sort: sorting[0].id as MemberSearch['sort'],
-          order: sorting[0].desc ? 'desc' : 'asc',
+          sort: sortColumns[0].columnKey,
+          order: sortColumns[0].direction.toLowerCase(),
         }),
       });
     } else {
@@ -173,21 +147,25 @@ const MembersTable = () => {
         search: (prev) => ({ ...prev, role: undefined }),
       });
     }
-  }, [columnFilters, sorting, role, navigate]);
+  }, [query, sortColumns[0]?.columnKey, role]);
 
   return (
-    <DataTable
+    <DataTable<Member>
       {...{
-        // className: 'h-[500px]',
-        table,
-        queryResult,
+        columns,
+        rows: flatData,
+        rowKeyGetter: (row) => row.id,
+        error: queryResult.error,
+        isLoading: queryResult.isLoading,
+        isFetching: queryResult.isFetching,
+        fetchMore: queryResult.fetchNextPage,
         overflowNoRows: true,
         isFiltered,
-        onResetFilters: () => {
-          table.resetColumnFilters();
-          table.resetRowSelection();
-          setRole(undefined);
-        },
+        onResetFilters,
+        selectedRows,
+        onSelectedRowsChange: setSelectedRows,
+        sortColumns,
+        onSortColumnsChange: setSortColumns,
         NoRowsComponent: (
           <>
             <Bird className="w-32 h-32" />
@@ -196,13 +174,19 @@ const MembersTable = () => {
         ),
         ToolbarComponent: (
           <Toolbar
-            table={table}
-            queryResult={queryResult}
             isFiltered={isFiltered}
+            total={queryResult.data?.pages[0].total}
+            isLoading={queryResult.isFetching}
+            query={query}
+            refetch={queryResult.refetch}
+            setSelectedRows={setSelectedRows}
+            setQuery={setQuery}
             callback={callback}
+            rows={flatData}
+            onResetFilters={onResetFilters}
             organization={organization}
             role={role}
-            rowSelection={rowSelection}
+            selectedRows={selectedRows}
             setRole={setRole}
           />
         ),

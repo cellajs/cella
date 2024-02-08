@@ -218,3 +218,7 @@
   opacity: .3;
   z-index: -1;
 }
+
+.fill-grid {
+  block-size: 100%;
+}

@@ -202,7 +202,7 @@ const SystemPanelRoute = createRoute({
 
 const UsersSearchSchema = z.object({
   q: z.string().catch('').optional(),
-  sort: z.enum(['name', 'id', 'email', 'lastSeenAt', 'createdAt', 'userRole']).catch('name').optional(),
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount']).catch('name').optional(),
   order: z.enum(['asc', 'desc']).catch('asc').optional(),
   role: z.enum(['admin', 'user']).catch('user').optional(),
 });
