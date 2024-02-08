@@ -19,19 +19,6 @@ interface KeyRequest {
 
 export const defaultNS = 'frontend';
 
-export const supportedLngs = [
-  {
-    code: 'en',
-    name: 'English',
-  },
-  {
-    code: 'nl',
-    name: 'Nederlands',
-  },
-];
-
-const fallbackLanguage = 'en';
-
 const projectToken = config.integrations.simpleLocalizeProjectToken;
 const apiKey = process.env.SIMPLELOCALIZE_API_KEY;
 const cdnBaseUrl = 'https://cdn.simplelocalize.io';
@@ -47,7 +34,7 @@ const missingKeyHandler = (_languages: readonly string[], namespace: string, key
   missingKeysRequests.push({
     key,
     namespace: namespace,
-    language: fallbackLanguage,
+    language: config.defaultLanguage,
     text: fallbackValue,
   });
 };
@@ -79,9 +66,9 @@ export const getI18n = (ns: 'frontend' | 'backend' = 'frontend') => {
 
   let initOptions: InitOptions = {
     ns: [ns],
-    supportedLngs: supportedLngs.map((lng) => lng.code),
+    supportedLngs: config.languages.map((lng) => lng.value),
     load: 'languageOnly',
-    fallbackLng: fallbackLanguage,
+    fallbackLng: config.defaultLanguage,
     detection: {
       caches: ['cookie'],
     },

@@ -30,14 +30,12 @@
   "label.create_organization": "Create organization",
   "label.delete_organization": "Delete organization",
   "label.update_member": "Update member",
-
   "question.dont_have_account": "Don't have an account?",
   "question.already_have_account": "Already have an account?",
   "question.are_you_sure_to_delete_user": "Are you sure you want to delete user with {{email}} email?",
   "question.are_you_sure_to_delete_your_account": "Are you sure you want to delete your account with {{email}} email?",
   "question.are_you_sure_to_remove_member": "Are you sure you want to remove {{emails}} from the organization?",
   "question.are_you_sure_to_delete_organization": "Are you sure you want to delete {{name}} organization?",
-
   "action.sign_in": "Sign in",
   "action.sign_up": "Sign up",
   "action.sign_out": "Sign out",
@@ -53,7 +51,8 @@
   "action.delete": "Delete",
   "action.reset": "Reset",
   "action.update": "Update",
-
   "appSheet.home": "Home",
-  "appSheet.search": "Search"
+  "appSheet.search": "Search",
+  "success.delete_organization": "Organization deleted",
+  "success.update_organization": "Organization updated"
 }
