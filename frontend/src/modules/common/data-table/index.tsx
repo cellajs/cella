@@ -31,6 +31,22 @@ interface DataTableProps<TData> {
   fetchMore?: () => Promise<unknown>;
 }
 
+const cssVars = {
+  '--rdg-color': 'hsl(var(--foreground))',
+  '--rdg-border-color': 'hsl(var(--border))',
+  '--rdg-summary-border-color': 'hsl(var(--border))',
+  '--rdg-background-color': 'hsl(var(--background))',
+  '--rdg-header-background-color': 'hsl(var(--background))',
+  '--rdg-header-draggable-background-color': 'hsl(var(--accent))',
+  '--rdg-row-hover-background-color': 'hsl(var(--accent))',
+  '--rdg-row-selected-background-color': 'hsl(var(--accent))',
+  '--rdg-row-selected-hover-background-color': 'hsl(var(--muted))',
+  '--rdg-checkbox-color': 'hsl(var(--muted-foreground))',
+  '--rdg-checkbox-focus-color': 'hsl(var(--ring))',
+  '--rdg-checkbox-disabled-border-color': 'hsl(var(--muted-foreground))',
+  '--rdg-checkbox-disabled-background-color': 'hsl(var(--muted))',
+} as React.CSSProperties;
+
 const NoRows = ({
   isFiltered,
   isFetching,
@@ -141,6 +157,7 @@ export function DataTable<TData>({
               columns={columns}
               onRowsChange={onRowsChange}
               rows={rows}
+              style={cssVars}
               className="fill-grid"
               selectedRows={selectedRows}
               onSelectedRowsChange={onSelectedRowsChange}
