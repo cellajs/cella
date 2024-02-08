@@ -1,6 +1,5 @@
 import { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ColumnFiltersState, SortingState, VisibilityState, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useEffect, useState } from 'react';
 import { getOrganizations } from '~/api/organizations';
 
@@ -10,6 +9,7 @@ import { Organization } from '~/types';
 import { DataTable } from '../data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { SortColumn } from 'react-data-grid';
 
 type QueryData = Awaited<ReturnType<typeof getOrganizations>>;
 
@@ -18,32 +18,19 @@ const OrganizationsTable = () => {
     from: OrganizationsTableRoute.id,
   });
   const navigate = useNavigate();
+
   const [flatData, setFlatData] = useState<Organization[]>([]);
-  const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
-    search.q
-      ? [
-          {
-            id: 'name',
-            value: search.q,
-          },
-        ]
-      : [],
-  );
-  const [sorting, setSorting] = useState<SortingState>(
-    search.sort
-      ? [
-          {
-            id: search.sort,
-            desc: search.order === 'desc',
-          },
-        ]
-      : [],
-  );
+  const [selectedRows, setSelectedRows] = useState(new Set<string>());
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(
+    search.sort && search.order ?
+      [{
+        columnKey: search.sort,
+        direction: search.order === 'asc' ? 'ASC' : 'DESC',
+      }] : []);
+  const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
 
   const callback = (organization: Organization, action: 'create' | 'update' | 'delete') => {
-    queryClient.setQueryData<InfiniteData<QueryData>>(['organizations', columnFilters, sorting], (data) => {
+    queryClient.setQueryData<InfiniteData<QueryData>>(['organizations', query, sortColumns], (data) => {
       if (!data) {
         return;
       }
@@ -95,15 +82,15 @@ const OrganizationsTable = () => {
   };
 
   const queryResult = useInfiniteQuery<QueryData, Error, InfiniteData<QueryData>, QueryKey, number>({
-    queryKey: ['organizations', columnFilters, sorting],
+    queryKey: ['organizations', query, sortColumns],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
       const fetchedData = await getOrganizations(
         {
           page: pageParam,
-          q: columnFilters[0]?.value as string | undefined,
-          sort: sorting[0]?.id as 'name' | 'id' | 'createdAt' | 'userRole' | undefined,
-          order: sorting[0]?.desc ? 'desc' : 'asc',
+          q: query,
+          sort: sortColumns[0]?.columnKey as OrganizationsSearch['sort'],
+          order: sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'],
         },
         signal,
       );
@@ -115,26 +102,12 @@ const OrganizationsTable = () => {
 
   const columns = useColumns(callback);
 
-  const table = useReactTable({
-    data: flatData,
-    columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
-    manualFiltering: true,
-    manualSorting: true,
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  const isFiltered = !!query;
 
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const onResetFilters = () => {
+    setQuery('');
+    setSelectedRows(new Set<string>());
+  };
 
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
@@ -145,12 +118,12 @@ const OrganizationsTable = () => {
   }, [queryResult.data]);
 
   useEffect(() => {
-    if (columnFilters[0]) {
+    if (query) {
       navigate({
         params: {},
         search: (prev) => ({
           ...prev,
-          q: columnFilters[0].value as OrganizationsSearch['q'],
+          q: query,
         }),
       });
     } else {
@@ -159,13 +132,13 @@ const OrganizationsTable = () => {
         search: (prev) => ({ ...prev, q: undefined }),
       });
     }
-    if (sorting[0]) {
+    if (sortColumns[0]) {
       navigate({
         params: {},
         search: (prev) => ({
           ...prev,
-          sort: sorting[0].id as OrganizationsSearch['sort'],
-          order: sorting[0].desc ? 'desc' : 'asc',
+          sort: sortColumns[0].columnKey,
+          order: sortColumns[0].direction.toLowerCase(),
         }),
       });
     } else {
@@ -174,19 +147,32 @@ const OrganizationsTable = () => {
         search: (prev) => ({ ...prev, sort: undefined, order: undefined }),
       });
     }
-  }, [columnFilters, sorting[0]]);
+  }, [query, sortColumns[0]?.columnKey]);
 
   return (
-    <DataTable
+    <DataTable<Organization>
       {...{
-        queryResult,
-        table,
+        columns,
+        rows: flatData,
+        rowKeyGetter: (row) => row.id,
+        error: queryResult.error,
+        isLoading: queryResult.isLoading,
+        isFetching: queryResult.isFetching,
         isFiltered,
-        onResetFilters: () => {
-          table.resetColumnFilters();
-          table.resetRowSelection();
-        },
-        ToolbarComponent: <Toolbar table={table} callback={callback} isFiltered={isFiltered} queryResult={queryResult} rowSelection={rowSelection} />,
+        onResetFilters,
+        selectedRows,
+        fetchMore: queryResult.fetchNextPage,
+        onSelectedRowsChange: setSelectedRows,
+        sortColumns,
+        onSortColumnsChange: setSortColumns,
+        ToolbarComponent: <Toolbar
+          total={queryResult.data?.pages?.[0]?.total}
+          query={query}
+          setQuery={setQuery}
+          callback={callback}
+          isFiltered={isFiltered}
+          onResetFilters={onResetFilters}
+          setSelectedRows={setSelectedRows} />,
       }}
     />
   );

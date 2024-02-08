@@ -5,15 +5,18 @@ export const useOnScreen = (
     root,
     rootMargin,
     threshold,
+    firstChild,
   }: {
     root?: Element | null;
     rootMargin?: string;
     threshold?: number;
+    firstChild?: boolean;
   } = {
-    root: null,
-    rootMargin: '0px',
-    threshold: 0,
-  },
+      root: null,
+      rootMargin: '0px',
+      threshold: 0,
+      firstChild: false,
+    },
 ) => {
   const [observer, setOserver] = useState<IntersectionObserver>();
   const [isIntersecting, setIntersecting] = useState(false);
@@ -21,6 +24,10 @@ export const useOnScreen = (
   const measureRef = useCallback(
     (node: Element | null) => {
       if (node) {
+        let target = node;
+        if (firstChild && node.firstChild) {
+          target = node.firstChild as Element;
+        }
         const observer = new IntersectionObserver(
           ([entry]) => {
             setIntersecting(entry.isIntersecting);
@@ -28,7 +35,7 @@ export const useOnScreen = (
           { root, rootMargin, threshold },
         );
 
-        observer.observe(node);
+        observer.observe(target);
         setOserver(observer);
       }
     },

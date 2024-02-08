@@ -1,35 +1,28 @@
-import { InfiniteData, UseInfiniteQueryResult } from "@tanstack/react-query";
-import { Table } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
 import { useUserStore } from "~/store/user";
 import { dialog } from "../dialoger/state";
 import { Button } from "~/modules/ui/button";
 import CountAndLoading from "../data-table/count-and-loading";
 import { Input } from "~/modules/ui/input";
-import { DataTableViewOptions } from "../data-table/options";
-import { User } from "~/types";
 import { GetUsersParams } from "~/api/users";
 import { useState } from "react";
 import InviteUsersForm from "~/modules/users/invite-users-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/modules/ui/select";
-import { X } from "lucide-react";
+import { User } from "~/types";
 
 interface Props {
-    table: Table<User>;
-    queryResult: UseInfiniteQueryResult<
-        InfiniteData<
-            {
-                items: User[];
-                total: number;
-            },
-            unknown
-        >,
-        Error
-    >;
-    rowSelection: Record<string, boolean>;
+    rows: User[];
+    total?: number;
+    query?: string;
+    setQuery?: (value: string) => void;
     isFiltered?: boolean;
     role: GetUsersParams['role'];
     setRole: React.Dispatch<React.SetStateAction<GetUsersParams['role']>>;
+    selectedRows: Set<string>;
+    onResetFilters?: () => void;
+    isLoading?: boolean;
+    refetch?: () => void;
+    setSelectedRows: (value: Set<string>) => void;
 }
 
 const items = [
@@ -48,12 +41,16 @@ const items = [
 ];
 
 function Toolbar({
-    table,
-    queryResult,
-    rowSelection,
+    selectedRows,
     isFiltered,
+    total,
+    isLoading,
     role,
     setRole,
+    onResetFilters,
+    query,
+    setQuery,
+    setSelectedRows,
 }: Props) {
     const { t } = useTranslation();
     const [, setOpen] = useState(false);
@@ -75,10 +72,10 @@ function Toolbar({
     return (
         <div className="items-center justify-between sm:flex">
             <div className="flex items-center space-x-2">
-                {Object.keys(rowSelection).length > 0 ? (
+                {selectedRows.size > 0 ? (
                     <Button variant="destructive" className="relative" onClick={() => setOpen(true)}>
                         <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
-                            <span className="text-xs font-medium text-white">{Object.keys(rowSelection).length}</span>
+                            <span className="text-xs font-medium text-white">{selectedRows.size}</span>
                         </div>
                         {t('action.remove', {
                             defaultValue: 'Remove',
@@ -98,8 +95,8 @@ function Toolbar({
                     )
                 )}
                 <CountAndLoading
-                    count={queryResult.data?.pages[0].total}
-                    isLoading={queryResult.isFetching}
+                    count={total}
+                    isLoading={isLoading}
                     singular={t('label.singular_user', {
                         defaultValue: 'user',
                     })}
@@ -107,11 +104,7 @@ function Toolbar({
                         defaultValue: 'users',
                     })}
                     isFiltered={isFiltered}
-                    onResetFilters={() => {
-                        table.resetColumnFilters();
-                        table.resetRowSelection();
-                        setRole(undefined);
-                    }}
+                    onResetFilters={onResetFilters}
                 />
             </div>
             <div className="mt-2 flex items-center space-x-2 sm:mt-0">
@@ -119,16 +112,16 @@ function Toolbar({
                     placeholder={t('placeholder.search', {
                         defaultValue: 'Search ...',
                     })}
-                    value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+                    value={query ?? ''}
                     onChange={(event) => {
-                        table.resetRowSelection();
-                        table.getColumn('name')?.setFilterValue(event.target.value);
+                        setSelectedRows(new Set());
+                        setQuery?.(event.target.value);
                     }}
                     className="h-10 w-[150px] lg:w-[250px]"
                 />
                 <Select
                     onValueChange={(role) => {
-                        table.resetRowSelection();
+                        setSelectedRows(new Set());
                         setRole(role === 'all' ? undefined : (role as GetUsersParams['role']));
                     }}
                     value={role === undefined ? 'all' : role}
@@ -144,16 +137,6 @@ function Toolbar({
                         ))}
                     </SelectContent>
                 </Select>
-                <DataTableViewOptions table={table} />
-
-                {isFiltered && (
-                    <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-10 px-2 lg:px-3">
-                        {t('action.reset', {
-                            defaultValue: 'Reset',
-                        })}
-                        <X className="ml-2 h-4 w-4" />
-                    </Button>
-                )}
             </div>
         </div>
     );
