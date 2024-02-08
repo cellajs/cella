@@ -1,16 +1,8 @@
 import { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import {
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  getCoreRowModel,
-  getExpandedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
 import { useEffect, useState } from 'react';
 
-import { GetUsersParams, getUsers } from '~/api/users';
+import { getUsers } from '~/api/users';
 import { User } from '~/types';
 
 import { DataTable } from '~/modules/common/data-table';
@@ -18,40 +10,29 @@ import { queryClient } from '~/router';
 import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import Expand from './expand';
+import { RowsChangeData, SortColumn } from 'react-data-grid';
+
+export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
 
 type QueryData = Awaited<ReturnType<typeof getUsers>>;
 
 const UsersTable = () => {
-  const [flatData, setFlatData] = useState<User[]>([]);
   const navigate = useNavigate();
-  const [rowSelection, setRowSelection] = useState({});
   const search = useSearch({ from: UsersTableRoute.id });
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
-    search.q
-      ? [
-        {
-          id: 'email',
-          value: search.q,
-        },
-      ]
-      : [],
-  );
-  const [sorting, setSorting] = useState<SortingState>(
-    search.sort
-      ? [
-        {
-          id: search.sort,
-          desc: search.order === 'desc',
-        },
-      ]
-      : [],
-  );
-  const [role, setRole] = useState<GetUsersParams['role']>(search.role ? (search.role as GetUsersParams['role']) : undefined);
+
+  const [rows, setRows] = useState<UserRow[]>([]);
+  const [selectedRows, setSelectedRows] = useState(new Set<string>());
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(
+    search.sort && search.order ?
+      [{
+        columnKey: search.sort,
+        direction: search.order === 'asc' ? 'ASC' : 'DESC',
+      }] : []);
+  const [query, setQuery] = useState<UsersSearch['q']>(search.q);
+  const [role, setRole] = useState<UsersSearch['role']>(search.role);
 
   const callback = (user: User, action: 'create' | 'update' | 'delete') => {
-    queryClient.setQueryData<InfiniteData<QueryData>>(['users', columnFilters, sorting, role], (data) => {
+    queryClient.setQueryData<InfiniteData<QueryData>>(['users', query, sortColumns, role], (data) => {
       if (!data) {
         return;
       }
@@ -118,15 +99,15 @@ const UsersTable = () => {
   };
 
   const queryResult = useInfiniteQuery<QueryData, Error, InfiniteData<QueryData>, QueryKey, number>({
-    queryKey: ['users', columnFilters, sorting, role],
+    queryKey: ['users', query, sortColumns, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
       const fetchedData = await getUsers(
         {
           page: pageParam,
-          q: columnFilters[0]?.value as string | undefined,
-          sort: sorting[0]?.id as GetUsersParams['sort'],
-          order: sorting[0]?.desc ? 'desc' : 'asc',
+          q: query,
+          sort: sortColumns[0]?.columnKey as UsersSearch['sort'],
+          order: sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
           role,
         },
         signal,
@@ -139,44 +120,47 @@ const UsersTable = () => {
 
   const columns = useColumns(callback);
 
-  const table = useReactTable({
-    data: flatData,
-    columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
-    getRowCanExpand: () => true,
-    manualFiltering: true,
-    manualSorting: true,
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-  });
+  const isFiltered = role !== undefined || !!query;
 
-  const isFiltered = role !== undefined || table.getState().columnFilters.length > 0;
+  const onResetFilters = () => {
+    setQuery('');
+    setSelectedRows(new Set<string>());
+    setRole(undefined);
+  };
+
+  const onRowsChange = (rows: UserRow[], { indexes }: RowsChangeData<UserRow>) => {
+    const row = rows[indexes[0]];
+
+    if (row.type === 'MASTER') {
+      if (row.expanded) {
+        rows.splice(indexes[0] + 1, 0, {
+          type: 'DETAIL',
+          id: `${row.id}-detail`,
+          parent: row,
+        });
+      } else {
+        rows.splice(indexes[0] + 1, 1);
+      }
+      setRows(rows);
+    }
+  };
 
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
+    const rows = data?.map((item) => ({ ...item, type: 'MASTER' as const, expanded: false }));
 
-    if (data) {
-      setFlatData(data);
+    if (rows) {
+      setRows(rows);
     }
   }, [queryResult.data]);
 
   useEffect(() => {
-    if (columnFilters[0]) {
+    if (query) {
       navigate({
         params: {},
         search: (prev) => ({
           ...prev,
-          q: columnFilters[0].value as UsersSearch['q'],
+          q: query,
         }),
       });
     } else {
@@ -185,13 +169,13 @@ const UsersTable = () => {
         search: (prev) => ({ ...prev, q: undefined }),
       });
     }
-    if (sorting[0]) {
+    if (sortColumns[0]) {
       navigate({
         params: {},
         search: (prev) => ({
           ...prev,
-          sort: sorting[0].id as UsersSearch['sort'],
-          order: sorting[0].desc ? 'desc' : 'asc',
+          sort: sortColumns[0].columnKey,
+          order: sortColumns[0].direction.toLowerCase(),
         }),
       });
     } else {
@@ -214,31 +198,42 @@ const UsersTable = () => {
         search: (prev) => ({ ...prev, role: undefined }),
       });
     }
-  }, [columnFilters, sorting[0], role]);
+  }, [query, sortColumns[0]?.columnKey, role]);
 
   return (
-    <DataTable<User>
+    <DataTable<UserRow>
       {...{
-        // className: 'h-[500px]',
-        table,
-        queryResult,
+        columns,
+        rowHeight: (row) => (row.type === 'DETAIL' ? 100 : 32),
+        onRowsChange,
+        rows,
+        rowKeyGetter: (row) => row.id,
+        error: queryResult.error,
+        isLoading: queryResult.isLoading,
+        isFetching: queryResult.isFetching,
+        fetchMore: queryResult.fetchNextPage,
         isFiltered,
-        onResetFilters: () => {
-          table.resetColumnFilters();
-          table.resetRowSelection();
-          setRole(undefined);
-        },
+        onResetFilters,
+        selectedRows,
+        onSelectedRowsChange: setSelectedRows,
+        sortColumns,
+        onSortColumnsChange: setSortColumns,
         ToolbarComponent: (
           <Toolbar
-            table={table}
-            role={role}
-            setRole={setRole}
             isFiltered={isFiltered}
-            queryResult={queryResult}
-            rowSelection={rowSelection}
+            total={queryResult.data?.pages[0].total}
+            isLoading={queryResult.isFetching}
+            query={query}
+            refetch={queryResult.refetch}
+            setSelectedRows={setSelectedRows}
+            setQuery={setQuery}
+            rows={rows as User[]}
+            onResetFilters={onResetFilters}
+            role={role}
+            selectedRows={selectedRows}
+            setRole={setRole}
           />
         ),
-        renderExpandComponent: ({ row }) => <Expand row={row} />,
       }}
     />
   );
