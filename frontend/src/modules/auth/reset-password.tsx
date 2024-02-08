@@ -60,7 +60,7 @@ const ResetPassword = () => {
                     <Input
                       type="password"
                       autoFocus
-                      placeholder={t('label.new_password', { defaultValue: 'New password' })}
+                      placeholder={t('label.new_password')}
                       autoComplete="new-password"
                       {...field}
                     />
@@ -74,9 +74,7 @@ const ResetPassword = () => {
             )}
           />
           <Button type="submit" loading={pending} className="w-full">
-            {t('action.reset', {
-              defaultValue: 'Reset',
-            })}
+            {t('action.reset')}
             <ArrowRight size={16} className="ml-2" />
           </Button>
         </form>

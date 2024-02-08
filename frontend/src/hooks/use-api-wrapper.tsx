@@ -5,15 +5,9 @@ import { toast } from 'sonner';
 import { ApiError } from '~/api';
 
 const defaultMessages = (t: ReturnType<typeof useTranslation>['t']) => ({
-  '401': t('error.unauthorized_action', {
-    defaultValue: 'You need to sign in to perform this action',
-  }),
-  '403': t('error.forbidden_action', {
-    defaultValue: 'You are not allowed to perform this action',
-  }),
-  '404': t('error.resource_not_found', {
-    defaultValue: 'This resource does not exist',
-  }),
+  '401': t('error.unauthorized_action'),
+  '403': t('error.forbidden_action'),
+  '404': t('error.resource_not_found'),
 });
 
 export const useApiWrapper = () => {

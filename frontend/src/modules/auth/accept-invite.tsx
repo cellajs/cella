@@ -69,7 +69,7 @@ const Accept = () => {
                     <Input
                       type="password"
                       autoFocus
-                      placeholder={t('label.new_password', { defaultValue: 'New password' })}
+                      placeholder={t('label.new_password')}
                       autoComplete="new-password"
                       {...field}
                     />
@@ -83,9 +83,7 @@ const Accept = () => {
             )}
           />
           <Button type="submit" loading={pending} className="w-full">
-            {t('action.accept', {
-              defaultValue: 'Accept',
-            })}
+            {t('action.accept')}
             <ArrowRight size={16} className="ml-2" />
           </Button>
         </form>
