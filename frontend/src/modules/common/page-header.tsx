@@ -1,6 +1,8 @@
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Breadcrumb, BreadcrumbItem } from '~/modules/ui/breadcrumb';
 import { PageCover } from './page-cover';
+import { useRef } from 'react';
+import useScrollTo from '~/hooks/use-scroll-to';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
@@ -14,11 +16,15 @@ interface PageHeaderProps {
 
 // PageHeader Component
 const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel }: PageHeaderProps) => {
+  const scrollToRef = useRef<HTMLDivElement>(null);
+  // Scroll to page header on load
+  useScrollTo(scrollToRef);
+
   return (
     <div className="relative">
       <PageCover type={type} id={id} url={bannerUrl} />
 
-      <div className="absolute flex bottom-0 w-full bg-background/50 backdrop-blur-sm">
+      <div className="absolute flex bottom-0 w-full bg-background/50 backdrop-blur-sm" ref={scrollToRef}>
         <div className="flex items-stretch">
           <AvatarWrap className="m-2" type={type} id={id} name={title} url={thumbnailUrl} />
           <div className="my-auto">

@@ -89,7 +89,7 @@ const OrganizationPage = () => {
         }
       />
       <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
-      <div className="container mt-4 flex-[1_1_0]">
+      <div className="container min-h-screen mt-4 flex-[1_1_0]">
         <Outlet />
       </div>
     </OrganizationContext.Provider>

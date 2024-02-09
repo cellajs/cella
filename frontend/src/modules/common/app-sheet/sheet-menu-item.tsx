@@ -10,6 +10,7 @@ interface SheetMenuItemProps {
 export const SheetMenuItem = ({ item, menutItemClick }: SheetMenuItemProps) => {
   return (
     <Link
+      resetScroll={false}
       className="group mb-2 flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-2 ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground"
       onClick={menutItemClick}
       aria-label={`Select ${item.name}`}

@@ -6,6 +6,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { UploadType } from '~/types';
 
+// Lazy load the upload component
 const UploadUppy = lazy(() => import('~/modules/common/upload/upload-uppy'));
 
 export interface PageCoverProps {
@@ -16,7 +17,7 @@ export interface PageCoverProps {
 
 const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   const { t } = useTranslation();
-  const bannerHeight = url ? 'h-[20vw] min-h-[160px] md:min-h-[210px]' : 'h-28';
+  const bannerHeight = url ? 'h-[20vw] min-h-[160px] md:min-h-[210px]' : 'h-28'; // : 'h-14';
   const bannerClass = url ? 'bg-background' : getColorClass(id);
 
   // TODO store the url in the database

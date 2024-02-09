@@ -18,7 +18,7 @@ export const useOnScreen = (
       firstChild: false,
     },
 ) => {
-  const [observer, setOserver] = useState<IntersectionObserver>();
+  const [observer, setObserver] = useState<IntersectionObserver>();
   const [isIntersecting, setIntersecting] = useState(false);
 
   const measureRef = useCallback(
@@ -36,7 +36,7 @@ export const useOnScreen = (
         );
 
         observer.observe(target);
-        setOserver(observer);
+        setObserver(observer);
       }
     },
     [root, rootMargin, threshold],
