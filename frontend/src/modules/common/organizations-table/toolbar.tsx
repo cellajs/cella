@@ -7,7 +7,8 @@ import CountAndLoading from "../data-table/count-and-loading";
 import { Input } from "~/modules/ui/input";
 import CreateOrganizationForm from "~/modules/organizations/create-organization-form";
 import ColumnsView, { ColumnOrColumnGroup } from "../data-table/columns-view";
-import { Dispatch, SetStateAction } from "react";
+import { ChangeEvent, Dispatch, SetStateAction } from "react";
+import debounce from "lodash.debounce";
 
 
 interface Props {
@@ -18,8 +19,6 @@ interface Props {
     isLoading?: boolean;
     onResetFilters?: () => void;
     callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void;
-    refetch?: () => void;
-    setSelectedRows: (value: Set<string>) => void;
     columns: ColumnOrColumnGroup<Organization>[];
     setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Organization>[]>>;
 }
@@ -32,7 +31,6 @@ function Toolbar({
     isLoading,
     callback,
     onResetFilters,
-    setSelectedRows,
     columns,
     setColumns
 }: Props) {
@@ -89,11 +87,10 @@ function Toolbar({
                     placeholder={t('placeholder.search', {
                         defaultValue: 'Search ...',
                     })}
-                    value={query ?? ''}
-                    onChange={(event) => {
-                        setSelectedRows(new Set());
+                    defaultValue={query ?? ''}
+                    onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
                         setQuery?.(event.target.value);
-                    }}
+                    }, 200)}
                     className="h-10 w-[150px] lg:w-[250px]"
                 />
                 <ColumnsView columns={columns} setColumns={setColumns} />

@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useMemo } from "react";
+import { ChangeEvent, Dispatch, SetStateAction } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { GetMembersParams } from "~/api/organizations";
 import { useUserStore } from "~/store/user";
@@ -12,9 +12,10 @@ import { Input } from "~/modules/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/modules/ui/select";
 import { cn } from "~/lib/utils";
 import ColumnsView, { ColumnOrColumnGroup } from "../data-table/columns-view";
+import debounce from "lodash.debounce";
 
 interface Props {
-    rows: Member[];
+    selectedMembers: Member[];
     total?: number;
     query?: string;
     setQuery?: (value: string) => void;
@@ -23,11 +24,9 @@ interface Props {
     callback: (member?: Member) => void;
     isFiltered?: boolean;
     setRole: React.Dispatch<React.SetStateAction<GetMembersParams['role']>>;
-    selectedRows: Set<string>;
     onResetFilters?: () => void;
     isLoading?: boolean;
     refetch?: () => void;
-    setSelectedRows: (value: Set<string>) => void;
     columns: ColumnOrColumnGroup<Member>[];
     setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Member>[]>>;
 }
@@ -54,20 +53,17 @@ function Toolbar({
     setRole,
     organization,
     callback,
-    selectedRows,
     isFiltered,
-    rows,
+    selectedMembers,
     isLoading,
     onResetFilters,
     refetch,
     total,
-    setSelectedRows,
     columns,
     setColumns
 }: Props) {
     const { t } = useTranslation();
     const user = useUserStore((state) => state.user);
-    const members = useMemo(() => rows.filter((row) => selectedRows.has(row.id)), [rows, selectedRows]);
 
     const openInviteDialog = () => {
         dialog(<InviteUsersForm organization={organization} callback={callback} dialog />, {
@@ -88,10 +84,9 @@ function Toolbar({
                 organization={organization}
                 dialog
                 callback={() => {
-                    setSelectedRows(new Set());
                     refetch?.();
                 }}
-                members={members}
+                members={selectedMembers}
             />,
             {
                 className: 'sm:max-w-xl',
@@ -102,7 +97,7 @@ function Toolbar({
                     <Trans
                         i18nKey="question.are_you_sure_to_remove_member"
                         values={{
-                            emails: members.map((member) => member.email).join(', '),
+                            emails: selectedMembers.map((member) => member.email).join(', '),
                         }}
                         defaults="Are you sure you want to remove <strong>{{emails}}</strong> from the organization?"
                     />
@@ -114,11 +109,11 @@ function Toolbar({
     return (
         <div className="items-center justify-between sm:flex">
             <div className="flex items-center space-x-2">
-                {selectedRows.size > 0 ? (
+                {selectedMembers.length > 0 ? (
                     <>
                         <Button variant="destructive" className="relative" onClick={openRemoveDialog}>
                             <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
-                                <span className="text-xs font-medium text-white">{selectedRows.size}</span>
+                                <span className="text-xs font-medium text-white">{selectedMembers.length}</span>
                             </div>
                             {t('action.remove', {
                                 defaultValue: 'Remove',
@@ -143,7 +138,7 @@ function Toolbar({
                         </>
                     )
                 )}
-                {selectedRows.size === 0 && (
+                {selectedMembers.length === 0 && (
                     <CountAndLoading
                         count={total}
                         isLoading={isLoading}
@@ -163,16 +158,14 @@ function Toolbar({
                     placeholder={t('placeholder.search', {
                         defaultValue: 'Search ...',
                     })}
-                    value={query ?? ''}
-                    onChange={(event) => {
-                        setSelectedRows(new Set());
+                    defaultValue={query ?? ''}
+                    onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
                         setQuery?.(event.target.value);
-                    }}
+                    }, 200)}
                     className="h-10 w-[150px] lg:w-[250px]"
                 />
                 <Select
                     onValueChange={(role) => {
-                        setSelectedRows(new Set());
                         setRole(role === 'all' ? undefined : (role as GetMembersParams['role']));
                     }}
                     value={role === undefined ? 'all' : role}

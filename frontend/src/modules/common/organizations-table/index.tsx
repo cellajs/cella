@@ -118,6 +118,7 @@ const OrganizationsTable = () => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
 
     if (data) {
+      setSelectedRows(new Set<string>());
       setRows(data);
     }
   }, [queryResult.data]);
@@ -155,34 +156,37 @@ const OrganizationsTable = () => {
   }, [query, sortColumns[0]?.columnKey]);
 
   return (
-    <DataTable<Organization>
-      {...{
-        columns: columns.filter((column) => column.visible),
-        rows,
-        rowKeyGetter: (row) => row.id,
-        error: queryResult.error,
-        isLoading: queryResult.isLoading,
-        isFetching: queryResult.isFetching,
-        enableVirtualization: false,
-        isFiltered,
-        onResetFilters,
-        selectedRows,
-        fetchMore: queryResult.fetchNextPage,
-        onSelectedRowsChange: setSelectedRows,
-        sortColumns,
-        onSortColumnsChange: setSortColumns,
-        ToolbarComponent: <Toolbar
-          total={queryResult.data?.pages?.[0]?.total}
-          query={query}
-          setQuery={setQuery}
-          callback={callback}
-          isFiltered={isFiltered}
-          onResetFilters={onResetFilters}
-          columns={columns}
-          setColumns={setColumns}
-          setSelectedRows={setSelectedRows} />,
-      }}
-    />
+    <div className='space-y-4 h-full'>
+      <Toolbar
+        total={queryResult.data?.pages?.[0]?.total}
+        isLoading={queryResult.isFetching}
+        query={query}
+        setQuery={setQuery}
+        callback={callback}
+        isFiltered={isFiltered}
+        onResetFilters={onResetFilters}
+        columns={columns}
+        setColumns={setColumns}
+      />
+      <DataTable<Organization>
+        {...{
+          columns: columns.filter((column) => column.visible),
+          rows,
+          rowKeyGetter: (row) => row.id,
+          error: queryResult.error,
+          isLoading: queryResult.isLoading,
+          isFetching: queryResult.isFetching,
+          enableVirtualization: false,
+          isFiltered,
+          onResetFilters,
+          selectedRows,
+          fetchMore: queryResult.fetchNextPage,
+          onSelectedRowsChange: setSelectedRows,
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
+        }}
+      />
+    </div>
   );
 };
 

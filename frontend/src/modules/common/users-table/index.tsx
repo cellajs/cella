@@ -119,6 +119,7 @@ const UsersTable = () => {
       );
       return fetchedData;
     },
+    
     getNextPageParam: (_lastGroup, groups) => groups.length,
     refetchOnWindowFocus: false,
   });
@@ -172,6 +173,7 @@ const UsersTable = () => {
     const rows = data?.map((item) => ({ ...item, type: 'MASTER' as const, expanded: false }));
 
     if (rows) {
+      setSelectedRows(new Set<string>());
       setRows(rows);
     }
   }, [queryResult.data]);
@@ -223,43 +225,40 @@ const UsersTable = () => {
   }, [query, sortColumns[0]?.columnKey, role]);
 
   return (
-    <DataTable<UserRow>
-      {...{
-        columns: columns.filter((column) => column.visible),
-        rowHeight: (row) => (row.type === 'DETAIL' ? 100 : 32),
-        onRowsChange,
-        rows,
-        rowKeyGetter: (row) => row.id,
-        error: queryResult.error,
-        isLoading: queryResult.isLoading,
-        isFetching: queryResult.isFetching,
-        fetchMore: queryResult.fetchNextPage,
-        isFiltered,
-        onResetFilters,
-        selectedRows,
-        onSelectedRowsChange: setSelectedRows,
-        sortColumns,
-        onSortColumnsChange: setSortColumns,
-        ToolbarComponent: (
-          <Toolbar
-            isFiltered={isFiltered}
-            total={queryResult.data?.pages[0].total}
-            isLoading={queryResult.isFetching}
-            query={query}
-            refetch={queryResult.refetch}
-            setSelectedRows={setSelectedRows}
-            setQuery={setQuery}
-            rows={rows as User[]}
-            onResetFilters={onResetFilters}
-            role={role}
-            selectedRows={selectedRows}
-            setRole={setRole}
-            columns={columns}
-            setColumns={setColumns}
-          />
-        ),
-      }}
-    />
+    <div className='space-y-4 h-full'>
+      <Toolbar
+        isFiltered={isFiltered}
+        total={queryResult.data?.pages[0].total}
+        isLoading={queryResult.isFetching}
+        query={query}
+        setQuery={setQuery}
+        onResetFilters={onResetFilters}
+        role={role}
+        selectedRows={selectedRows}
+        setRole={setRole}
+        columns={columns}
+        setColumns={setColumns}
+      />
+      <DataTable<UserRow>
+        {...{
+          columns: columns.filter((column) => column.visible),
+          rowHeight: (row) => (row.type === 'DETAIL' ? 100 : 32),
+          onRowsChange,
+          rows,
+          rowKeyGetter: (row) => row.id,
+          error: queryResult.error,
+          isLoading: queryResult.isLoading,
+          isFetching: queryResult.isFetching,
+          fetchMore: queryResult.fetchNextPage,
+          isFiltered,
+          onResetFilters,
+          selectedRows,
+          onSelectedRowsChange: setSelectedRows,
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
+        }}
+      />
+    </div>
   );
 };
 

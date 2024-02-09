@@ -5,15 +5,14 @@ import { Button } from "~/modules/ui/button";
 import CountAndLoading from "../data-table/count-and-loading";
 import { Input } from "~/modules/ui/input";
 import { GetUsersParams } from "~/api/users";
-import { Dispatch, SetStateAction, useState } from "react";
+import { ChangeEvent, Dispatch, SetStateAction, useState } from "react";
 import InviteUsersForm from "~/modules/users/invite-users-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/modules/ui/select";
-import { User } from "~/types";
 import ColumnsView, { ColumnOrColumnGroup } from "../data-table/columns-view";
 import { UserRow } from ".";
+import debounce from 'lodash.debounce';
 
 interface Props {
-    rows: User[];
     total?: number;
     query?: string;
     setQuery?: (value: string) => void;
@@ -23,8 +22,6 @@ interface Props {
     selectedRows: Set<string>;
     onResetFilters?: () => void;
     isLoading?: boolean;
-    refetch?: () => void;
-    setSelectedRows: (value: Set<string>) => void;
     columns: ColumnOrColumnGroup<UserRow>[];
     setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<UserRow>[]>>;
 }
@@ -54,7 +51,6 @@ function Toolbar({
     onResetFilters,
     query,
     setQuery,
-    setSelectedRows,
     columns,
     setColumns
 }: Props) {
@@ -118,16 +114,14 @@ function Toolbar({
                     placeholder={t('placeholder.search', {
                         defaultValue: 'Search ...',
                     })}
-                    value={query ?? ''}
-                    onChange={(event) => {
-                        setSelectedRows(new Set());
+                    defaultValue={query ?? ''}
+                    onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
                         setQuery?.(event.target.value);
-                    }}
+                    }, 200)}
                     className="h-10 w-[150px] lg:w-[250px]"
                 />
                 <Select
                     onValueChange={(role) => {
-                        setSelectedRows(new Set());
                         setRole(role === 'all' ? undefined : (role as GetUsersParams['role']));
                     }}
                     value={role === undefined ? 'all' : role}

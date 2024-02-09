@@ -19,7 +19,6 @@ interface DataTableProps<TData> {
   isFetching?: boolean;
   isFiltered?: boolean;
   onResetFilters?: () => void;
-  ToolbarComponent?: React.ReactNode;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
 
@@ -93,7 +92,6 @@ export function DataTable<TData>({
   error,
   isLoading,
   isFetching,
-  ToolbarComponent,
   NoRowsComponent,
   isFiltered,
   onResetFilters,
@@ -127,8 +125,7 @@ export function DataTable<TData>({
   }, [isLoading, error]);
 
   return (
-    <div className='flex w-full flex-col space-y-4 h-full'>
-      {ToolbarComponent}
+    <div className='w-full h-full'>
       {initial &&
         (error ? (
           <ErrorMessage error={error} />

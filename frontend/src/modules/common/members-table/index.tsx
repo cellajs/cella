@@ -1,4 +1,4 @@
-import { InfiniteData, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useState } from 'react';
 import { getMembersByOrganizationIdentifier } from '~/api/organizations';
@@ -85,9 +85,9 @@ const MembersTable = () => {
     }
   };
 
-  const queryResult = useSuspenseInfiniteQuery(
+  const queryResult = useInfiniteQuery(
     {
-      queryKey: ['members', organization.slug, query, sortColumns[0]?.columnKey, sortColumns[0]?.direction, role],
+      queryKey: ['members', organization.slug, query, sortColumns, role],
       initialPageParam: 0,
       queryFn: async ({ pageParam, signal }) => {
         const fetchedData = await getMembersByOrganizationIdentifier(
@@ -121,6 +121,7 @@ const MembersTable = () => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
 
     if (data) {
+      setSelectedRows(new Set<string>());
       setRows(data);
     }
   }, [queryResult.data]);
@@ -169,50 +170,48 @@ const MembersTable = () => {
   }, [query, sortColumns[0]?.columnKey, role]);
 
   return (
-    <DataTable<Member>
-      {...{
-        columns: columns.filter((column) => column.visible),
-        rows,
-        rowKeyGetter: (row) => row.id,
-        error: queryResult.error,
-        isLoading: queryResult.isLoading,
-        isFetching: queryResult.isFetching,
-        fetchMore: queryResult.fetchNextPage,
-        overflowNoRows: true,
-        isFiltered,
-        onResetFilters,
-        selectedRows,
-        onSelectedRowsChange: setSelectedRows,
-        sortColumns,
-        onSortColumnsChange: setSortColumns,
-        NoRowsComponent: (
-          <>
-            <Bird className="w-32 h-32" />
-            <div className="mt-6">No members yet</div>
-          </>
-        ),
-        ToolbarComponent: (
-          <Toolbar
-            isFiltered={isFiltered}
-            total={queryResult.data?.pages[0].total}
-            isLoading={queryResult.isFetching}
-            query={query}
-            columns={columns}
-            setColumns={setColumns}
-            refetch={queryResult.refetch}
-            setSelectedRows={setSelectedRows}
-            setQuery={setQuery}
-            callback={callback}
-            rows={rows}
-            onResetFilters={onResetFilters}
-            organization={organization}
-            role={role}
-            selectedRows={selectedRows}
-            setRole={setRole}
-          />
-        ),
-      }}
-    />
+    <div className='space-y-4 h-full'>
+      <Toolbar
+        isFiltered={isFiltered}
+        total={queryResult.data?.pages[0].total}
+        isLoading={queryResult.isFetching}
+        query={query}
+        columns={columns}
+        setColumns={setColumns}
+        refetch={queryResult.refetch}
+        setQuery={setQuery}
+        callback={callback}
+        onResetFilters={onResetFilters}
+        organization={organization}
+        role={role}
+        selectedMembers={rows.filter((row) => selectedRows.has(row.id))}
+        setRole={setRole}
+      />
+      <DataTable<Member>
+        {...{
+          columns: columns.filter((column) => column.visible),
+          rows,
+          rowKeyGetter: (row) => row.id,
+          error: queryResult.error,
+          isLoading: queryResult.isLoading,
+          isFetching: queryResult.isFetching,
+          fetchMore: queryResult.fetchNextPage,
+          overflowNoRows: true,
+          isFiltered,
+          onResetFilters,
+          selectedRows,
+          onSelectedRowsChange: setSelectedRows,
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
+          NoRowsComponent: (
+            <>
+              <Bird className="w-32 h-32" />
+              <div className="mt-6">No members yet</div>
+            </>
+          ),
+        }}
+      />
+    </div>
   );
 };
 
