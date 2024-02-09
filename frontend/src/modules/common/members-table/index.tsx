@@ -9,7 +9,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { Bird } from 'lucide-react';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { queryClient } from '~/router';
-import { MemberSearch, MembersTableRoute, membersQueryOptions } from '~/router/routeTree';
+import { MemberSearch, MembersTableRoute } from '~/router/routeTree';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { SortColumn } from 'react-data-grid';
@@ -81,13 +81,27 @@ const MembersTable = () => {
   };
 
   const queryResult = useSuspenseInfiniteQuery(
-    membersQueryOptions({
-      organizationIdentifier: organization.slug,
-      q: query,
-      sort: sortColumns[0]?.columnKey as MemberSearch['sort'],
-      order: sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
-      role,
-    }),
+    {
+      queryKey: ['members', organization.slug, query, sortColumns[0]?.columnKey, sortColumns[0]?.direction, role],
+      initialPageParam: 0,
+      queryFn: async ({ pageParam, signal }) => {
+        const fetchedData = await getMembersByOrganizationIdentifier(
+          organization.slug,
+          {
+            page: pageParam,
+            q: query,
+            sort: sortColumns[0]?.columnKey as MemberSearch['sort'],
+            order: sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
+            role,
+          },
+          signal,
+        );
+
+        return fetchedData;
+      },
+      getNextPageParam: (_lastGroup, groups) => groups.length,
+      refetchOnWindowFocus: false,
+    }
   );
 
   const isFiltered = role !== undefined || !!query;

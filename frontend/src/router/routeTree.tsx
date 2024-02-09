@@ -1,8 +1,8 @@
-import { DefaultError, QueryClient, infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
+import { DefaultError, QueryClient, queryOptions, useMutation } from '@tanstack/react-query';
 import { Outlet, createRoute, createRouteMask, redirect, rootRouteWithContext } from '@tanstack/react-router';
 import { z } from 'zod';
 import { acceptInvite, checkInvite } from '~/api/general';
-import { UpdateOrganizationParams, getMembersByOrganizationIdentifier, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
+import { UpdateOrganizationParams, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
 import { UpdateUserParams, updateUser } from '~/api/users';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { Root } from '~/modules/common/root';
@@ -282,49 +282,11 @@ const memberSearchSchema = z.object({
 
 export type MemberSearch = z.infer<typeof memberSearchSchema>;
 
-export const membersQueryOptions = ({
-  organizationIdentifier,
-  q,
-  sort,
-  order,
-  role,
-}: {
-  organizationIdentifier: string;
-  q?: string;
-  sort?: MemberSearch['sort'];
-  order?: MemberSearch['order'];
-  role?: MemberSearch['role'];
-}) =>
-  infiniteQueryOptions({
-    queryKey: ['members', organizationIdentifier, q, sort, order, role],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getMembersByOrganizationIdentifier(
-        organizationIdentifier,
-        {
-          page: pageParam,
-          q,
-          sort,
-          order,
-          role,
-        },
-        signal,
-      );
-
-      return fetchedData;
-    },
-    getNextPageParam: (_lastGroup, groups) => groups.length,
-    refetchOnWindowFocus: false,
-  });
-
 export const MembersTableRoute = createRoute({
   path: '/members',
   getParentRoute: () => OrganizationRoute,
   component: () => <MembersTable />,
   validateSearch: memberSearchSchema,
-  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) =>
-    queryClient.ensureQueryData(membersQueryOptions({ organizationIdentifier, q, sort, order, role })),
   pendingComponent: () => null,
 });
 

@@ -11,6 +11,7 @@ import { UserRow } from '.';
 import { Button } from '~/modules/ui/button';
 import { ChevronRight } from 'lucide-react';
 import Expand from './expand';
+import HeaderCell from '../data-table/header-cell';
 
 export const useColumns = (callback: (user: User, action: 'create' | 'update' | 'delete') => void): ColumnOrColumnGroup<UserRow>[] => {
   const { t } = useTranslation();
@@ -53,6 +54,8 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
         defaultValue: 'Name',
       }),
       minWidth: 200,
+      sortable: true,
+      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => row.type === 'MASTER' && (
         <Link
           to="/user/$userIdentifier"
@@ -79,8 +82,9 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
       name: t('label.email', {
         defaultValue: 'Email',
       }),
-      sortable: false,
       minWidth: 180,
+      sortable: true,
+      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => row.type === 'MASTER' && (
         <a href={`mailto:${row.email}`} className="truncate hover:underline underline-offset-4 font-light">
           {row.email || '-'}
@@ -92,7 +96,8 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
       name: t('label.role', {
         defaultValue: 'Role',
       }),
-      sortable: false,
+      sortable: true,
+      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => row.type === 'MASTER' && t(row.role),
       width: 100,
     },
@@ -101,15 +106,19 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
       name: t('label.createdAt', {
         defaultValue: 'Created',
       }),
+      sortable: true,
+      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => row.type === 'MASTER' && dateShort(row.createdAt),
       minWidth: 180,
     },
     {
-      key: 'counts.memberships',
+      key: 'membershipCount',
       name: t('label.memberships', {
         defaultValue: 'Memberships',
       }),
-      sortable: false,
+      sortable: true,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => row.type === 'MASTER' && row.counts?.memberships,
       width: 100,
     },
   ];

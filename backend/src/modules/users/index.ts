@@ -213,7 +213,7 @@ const usersRoutes = app
     const usersQuery = db
       .select({
         user: usersTable,
-        memberships: countDistinct(membershipsTable.userId),
+        memberships: countDistinct(membershipsTable.organizationId),
       })
       .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)

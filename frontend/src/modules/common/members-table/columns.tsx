@@ -6,6 +6,7 @@ import { AvatarWrap } from '../avatar-wrap';
 
 import { dateShort } from '~/lib/utils';
 import { ColumnOrColumnGroup, SelectColumn } from 'react-data-grid';
+import HeaderCell from '../data-table/header-cell';
 
 export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
   const { t } = useTranslation();
@@ -18,6 +19,8 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
         defaultValue: 'Name',
       }),
       minWidth: 200,
+      sortable: true,
+      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <Link
           to="/user/$userIdentifier"
@@ -36,7 +39,8 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
       name: t('label.email', {
         defaultValue: 'Email',
       }),
-      sortable: false,
+      sortable: true,
+      renderHeaderCell: HeaderCell,
       minWidth: 180,
       renderCell: ({ row }) => {
         return (
@@ -48,7 +52,8 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
     },
     {
       key: 'organizationRole',
-      sortable: false,
+      sortable: true,
+      renderHeaderCell: HeaderCell,
       name: t('label.role', {
         defaultValue: 'Role',
       }),
@@ -59,6 +64,8 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
       name: t('label.createdAt', {
         defaultValue: 'Created',
       }),
+      sortable: true,
+      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.createdAt),
       minWidth: 180,
     },
@@ -67,6 +74,8 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
       name: t('label.lastSeenAt', {
         defaultValue: 'Last seen',
       }),
+      sortable: true,
+      renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.lastSeenAt),
       minWidth: 180,
     },
