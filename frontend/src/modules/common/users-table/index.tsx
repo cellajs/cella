@@ -1,6 +1,6 @@
 import { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
 
 import { getUsers } from '~/api/users';
 import { User } from '~/types';
@@ -11,13 +11,13 @@ import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { RowsChangeData, SortColumn } from 'react-data-grid';
+import useSaveInSearchParams from '../data-table/use-save-in-search-params';
 
 export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
 
 type QueryData = Awaited<ReturnType<typeof getUsers>>;
 
 const UsersTable = () => {
-  const navigate = useNavigate();
   const search = useSearch({ from: UsersTableRoute.id });
 
   const [rows, setRows] = useState<UserRow[]>([]);
@@ -35,6 +35,15 @@ const UsersTable = () => {
       ]);
   const [query, setQuery] = useState<UsersSearch['q']>(search.q);
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
+
+  // Save filters in search params
+  const filters = useMemo(() => [
+    { key: 'q', value: query },
+    { key: 'sort', value: sortColumns[0]?.columnKey },
+    { key: 'order', value: sortColumns[0]?.direction.toLowerCase() },
+    { key: 'role', value: role },
+  ], [query, role, sortColumns]);
+  useSaveInSearchParams(filters);
 
   const callback = (user: User, action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<InfiniteData<QueryData>>(['users', query, sortColumns, role], (data) => {
@@ -119,7 +128,7 @@ const UsersTable = () => {
       );
       return fetchedData;
     },
-    
+
     getNextPageParam: (_lastGroup, groups) => groups.length,
     refetchOnWindowFocus: false,
   });
@@ -177,52 +186,6 @@ const UsersTable = () => {
       setRows(rows);
     }
   }, [queryResult.data]);
-
-  useEffect(() => {
-    if (query) {
-      navigate({
-        params: {},
-        search: (prev) => ({
-          ...prev,
-          q: query,
-        }),
-      });
-    } else {
-      navigate({
-        params: {},
-        search: (prev) => ({ ...prev, q: undefined }),
-      });
-    }
-    if (sortColumns[0]) {
-      navigate({
-        params: {},
-        search: (prev) => ({
-          ...prev,
-          sort: sortColumns[0].columnKey,
-          order: sortColumns[0].direction.toLowerCase(),
-        }),
-      });
-    } else {
-      navigate({
-        params: {},
-        search: (prev) => ({ ...prev, sort: undefined, order: undefined }),
-      });
-    }
-    if (role) {
-      navigate({
-        params: {},
-        search: (prev) => ({
-          ...prev,
-          role,
-        }),
-      });
-    } else {
-      navigate({
-        params: {},
-        search: (prev) => ({ ...prev, role: undefined }),
-      });
-    }
-  }, [query, sortColumns[0]?.columnKey, role]);
 
   return (
     <div className='space-y-4 h-full'>

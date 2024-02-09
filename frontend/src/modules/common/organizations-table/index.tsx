@@ -1,6 +1,6 @@
 import { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
 import { getOrganizations } from '~/api/organizations';
 
 import { queryClient } from '~/router';
@@ -10,6 +10,7 @@ import { DataTable } from '../data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { SortColumn } from 'react-data-grid';
+import useSaveInSearchParams from '../data-table/use-save-in-search-params';
 
 type QueryData = Awaited<ReturnType<typeof getOrganizations>>;
 
@@ -17,7 +18,6 @@ const OrganizationsTable = () => {
   const search = useSearch({
     from: OrganizationsTableRoute.id,
   });
-  const navigate = useNavigate();
 
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
@@ -33,6 +33,14 @@ const OrganizationsTable = () => {
         },
       ]);
   const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
+
+  // Save filters in search params
+  const filters = useMemo(() => [
+    { key: 'q', value: query },
+    { key: 'sort', value: sortColumns[0]?.columnKey },
+    { key: 'order', value: sortColumns[0]?.direction.toLowerCase() },
+  ], [query, sortColumns]);
+  useSaveInSearchParams(filters);
 
   const callback = (organization: Organization, action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<InfiniteData<QueryData>>(['organizations', query, sortColumns], (data) => {
@@ -122,38 +130,6 @@ const OrganizationsTable = () => {
       setRows(data);
     }
   }, [queryResult.data]);
-
-  useEffect(() => {
-    if (query) {
-      navigate({
-        params: {},
-        search: (prev) => ({
-          ...prev,
-          q: query,
-        }),
-      });
-    } else {
-      navigate({
-        params: {},
-        search: (prev) => ({ ...prev, q: undefined }),
-      });
-    }
-    if (sortColumns[0]) {
-      navigate({
-        params: {},
-        search: (prev) => ({
-          ...prev,
-          sort: sortColumns[0].columnKey,
-          order: sortColumns[0].direction.toLowerCase(),
-        }),
-      });
-    } else {
-      navigate({
-        params: {},
-        search: (prev) => ({ ...prev, sort: undefined, order: undefined }),
-      });
-    }
-  }, [query, sortColumns[0]?.columnKey]);
 
   return (
     <div className='space-y-4 h-full'>

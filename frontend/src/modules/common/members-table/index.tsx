@@ -1,6 +1,6 @@
 import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useContext, useEffect, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { Member } from '~/types';
 
@@ -13,13 +13,13 @@ import { MemberSearch, MembersTableRoute } from '~/router/routeTree';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { SortColumn } from 'react-data-grid';
+import useSaveInSearchParams from '../data-table/use-save-in-search-params';
 
 type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>;
 
 const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
   const [columns, setColumns] = useColumns();
-  const navigate = useNavigate();
   const search = useSearch({
     from: MembersTableRoute.id,
   });
@@ -39,6 +39,15 @@ const MembersTable = () => {
       ]);
   const [query, setQuery] = useState<MemberSearch['q']>(search.q);
   const [role, setRole] = useState<MemberSearch['role']>(search.role);
+
+  // Save filters in search params
+  const filters = useMemo(() => [
+    { key: 'q', value: query },
+    { key: 'sort', value: sortColumns[0]?.columnKey },
+    { key: 'order', value: sortColumns[0]?.direction.toLowerCase() },
+    { key: 'role', value: role },
+  ], [query, role, sortColumns]);
+  useSaveInSearchParams(filters);
 
   const callback = (member?: Member) => {
     if (member) {
@@ -125,49 +134,6 @@ const MembersTable = () => {
       setRows(data);
     }
   }, [queryResult.data]);
-
-  useEffect(() => {
-    if (query) {
-      navigate({
-        params: {},
-        search: (prev) => ({ ...prev, q: query }),
-      });
-    } else {
-      navigate({
-        params: {},
-        search: (prev) => ({ ...prev, q: undefined }),
-      });
-    }
-    if (sortColumns[0]) {
-      navigate({
-        params: {},
-        search: (prev) => ({
-          ...prev,
-          sort: sortColumns[0].columnKey,
-          order: sortColumns[0].direction.toLowerCase(),
-        }),
-      });
-    } else {
-      navigate({
-        params: {},
-        search: (prev) => ({ ...prev, sort: undefined, order: undefined }),
-      });
-    }
-    if (role) {
-      navigate({
-        params: {},
-        search: (prev) => ({
-          ...prev,
-          role,
-        }),
-      });
-    } else {
-      navigate({
-        params: {},
-        search: (prev) => ({ ...prev, role: undefined }),
-      });
-    }
-  }, [query, sortColumns[0]?.columnKey, role]);
 
   return (
     <div className='space-y-4 h-full'>
