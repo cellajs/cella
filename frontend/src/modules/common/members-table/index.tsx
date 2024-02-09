@@ -31,7 +31,12 @@ const MembersTable = () => {
       [{
         columnKey: search.sort,
         direction: search.order === 'asc' ? 'ASC' : 'DESC',
-      }] : []);
+      }] : [
+        {
+          columnKey: 'createdAt',
+          direction: 'DESC',
+        },
+      ]);
   const [query, setQuery] = useState<MemberSearch['q']>(search.q);
   const [role, setRole] = useState<MemberSearch['role']>(search.role);
 

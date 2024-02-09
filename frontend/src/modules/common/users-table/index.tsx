@@ -27,7 +27,12 @@ const UsersTable = () => {
       [{
         columnKey: search.sort,
         direction: search.order === 'asc' ? 'ASC' : 'DESC',
-      }] : []);
+      }] : [
+        {
+          columnKey: 'createdAt',
+          direction: 'DESC',
+        },
+      ]);
   const [query, setQuery] = useState<UsersSearch['q']>(search.q);
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
 

@@ -26,7 +26,12 @@ const OrganizationsTable = () => {
       [{
         columnKey: search.sort,
         direction: search.order === 'asc' ? 'ASC' : 'DESC',
-      }] : []);
+      }] : [
+        {
+          columnKey: 'createdAt',
+          direction: 'DESC',
+        },
+      ]);
   const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
 
   const callback = (organization: Organization, action: 'create' | 'update' | 'delete') => {
