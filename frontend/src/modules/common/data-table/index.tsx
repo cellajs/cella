@@ -149,8 +149,13 @@ export function DataTable<TData>({
               sortColumns={sortColumns}
               onSortColumnsChange={onSortColumnsChange}
               renderers={{
-                renderRow: (key, props) => {
-                  return <Row {...props} key={key} ref={props.rowIdx === Math.floor(rows.length - 1 - rows.length * 0.2) ? measureRef : undefined} />;
+                renderRow: (key, props) => <Row {...props} key={key} ref={props.rowIdx === Math.floor(rows.length - 1 - rows.length * 0.2) ? measureRef : undefined} />,
+                renderCheckbox: ({ onChange, ...props }) => {
+                  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+                    onChange(e.target.checked, (e.nativeEvent as MouseEvent).shiftKey);
+                  }
+
+                  return <input type="checkbox" {...props} onChange={handleChange} />;
                 }
               }}
             />

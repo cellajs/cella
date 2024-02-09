@@ -5,16 +5,16 @@ import { Member } from '~/types';
 import { AvatarWrap } from '../avatar-wrap';
 
 import { dateShort } from '~/lib/utils';
-import { SelectColumn } from 'react-data-grid';
-import HeaderCell from '../data-table/header-cell';
 import { useState } from 'react';
 import { ColumnOrColumnGroup } from '../data-table/columns-view';
+import CheckboxColumn from '../data-table/checkbox-column';
+import HeaderCell from '../data-table/header-cell';
 
 export const useColumns = () => {
   const { t } = useTranslation();
 
   return useState<ColumnOrColumnGroup<Member>[]>([
-    SelectColumn,
+    CheckboxColumn,
     {
       key: 'name',
       name: t('label.name', {

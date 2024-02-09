@@ -3,7 +3,6 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { User } from '~/types';
 
-import { SelectColumn } from 'react-data-grid';
 import { dateShort } from "~/lib/utils";
 import RowActions from './row-actions';
 import { AvatarWrap } from '../avatar-wrap';
@@ -14,6 +13,7 @@ import Expand from './expand';
 import HeaderCell from '../data-table/header-cell';
 import { useState } from 'react';
 import { ColumnOrColumnGroup } from '../data-table/columns-view';
+import CheckboxColumn from '../data-table/checkbox-column';
 
 export const useColumns = (callback: (user: User, action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
@@ -48,8 +48,8 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
       },
     },
     {
-      ...SelectColumn,
-      renderCell: (props) => props.row.type === 'MASTER' && SelectColumn.renderCell?.(props),
+      ...CheckboxColumn,
+      renderCell: (props) => props.row.type === 'MASTER' && CheckboxColumn.renderCell?.(props),
     },
     {
       key: 'name',
