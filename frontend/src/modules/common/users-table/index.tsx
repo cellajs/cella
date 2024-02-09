@@ -123,7 +123,7 @@ const UsersTable = () => {
     refetchOnWindowFocus: false,
   });
 
-  const columns = useColumns(callback);
+  const [columns, setColumns] = useColumns(callback);
 
   const isFiltered = role !== undefined || !!query;
 
@@ -208,7 +208,7 @@ const UsersTable = () => {
   return (
     <DataTable<UserRow>
       {...{
-        columns,
+        columns: columns.filter((column) => column.visible),
         rowHeight: (row) => (row.type === 'DETAIL' ? 100 : 32),
         onRowsChange,
         rows,
@@ -237,6 +237,8 @@ const UsersTable = () => {
             role={role}
             selectedRows={selectedRows}
             setRole={setRole}
+            columns={columns}
+            setColumns={setColumns}
           />
         ),
       }}

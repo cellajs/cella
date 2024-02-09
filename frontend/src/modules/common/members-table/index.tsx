@@ -18,13 +18,13 @@ type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>;
 
 const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
-  const columns = useColumns();
+  const [columns, setColumns] = useColumns();
   const navigate = useNavigate();
   const search = useSearch({
     from: MembersTableRoute.id,
   });
 
-  const [flatData, setFlatData] = useState<Member[]>([]);
+  const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order ?
@@ -121,7 +121,7 @@ const MembersTable = () => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
 
     if (data) {
-      setFlatData(data);
+      setRows(data);
     }
   }, [queryResult.data]);
 
@@ -171,8 +171,8 @@ const MembersTable = () => {
   return (
     <DataTable<Member>
       {...{
-        columns,
-        rows: flatData,
+        columns: columns.filter((column) => column.visible),
+        rows,
         rowKeyGetter: (row) => row.id,
         error: queryResult.error,
         isLoading: queryResult.isLoading,
@@ -197,11 +197,13 @@ const MembersTable = () => {
             total={queryResult.data?.pages[0].total}
             isLoading={queryResult.isFetching}
             query={query}
+            columns={columns}
+            setColumns={setColumns}
             refetch={queryResult.refetch}
             setSelectedRows={setSelectedRows}
             setQuery={setQuery}
             callback={callback}
-            rows={flatData}
+            rows={rows}
             onResetFilters={onResetFilters}
             organization={organization}
             role={role}

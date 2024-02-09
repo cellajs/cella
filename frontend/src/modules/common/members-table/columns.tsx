@@ -5,13 +5,15 @@ import { Member } from '~/types';
 import { AvatarWrap } from '../avatar-wrap';
 
 import { dateShort } from '~/lib/utils';
-import { ColumnOrColumnGroup, SelectColumn } from 'react-data-grid';
+import { SelectColumn } from 'react-data-grid';
 import HeaderCell from '../data-table/header-cell';
+import { useState } from 'react';
+import { ColumnOrColumnGroup } from '../data-table/columns-view';
 
-export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
+export const useColumns = () => {
   const { t } = useTranslation();
 
-  return [
+  return useState<ColumnOrColumnGroup<Member>[]>([
     SelectColumn,
     {
       key: 'name',
@@ -20,6 +22,7 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
       }),
       minWidth: 200,
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <Link
@@ -40,6 +43,7 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
         defaultValue: 'Email',
       }),
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       minWidth: 180,
       renderCell: ({ row }) => {
@@ -53,6 +57,7 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
     {
       key: 'organizationRole',
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       name: t('label.role', {
         defaultValue: 'Role',
@@ -65,6 +70,7 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
         defaultValue: 'Created',
       }),
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.createdAt),
       minWidth: 180,
@@ -75,9 +81,10 @@ export const useColumns = (): ColumnOrColumnGroup<Member>[] => {
         defaultValue: 'Last seen',
       }),
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.lastSeenAt),
       minWidth: 180,
     },
-  ];
+  ]);
 };

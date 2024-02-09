@@ -5,10 +5,12 @@ import { Button } from "~/modules/ui/button";
 import CountAndLoading from "../data-table/count-and-loading";
 import { Input } from "~/modules/ui/input";
 import { GetUsersParams } from "~/api/users";
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import InviteUsersForm from "~/modules/users/invite-users-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/modules/ui/select";
 import { User } from "~/types";
+import ColumnsView, { ColumnOrColumnGroup } from "../data-table/columns-view";
+import { UserRow } from ".";
 
 interface Props {
     rows: User[];
@@ -23,6 +25,8 @@ interface Props {
     isLoading?: boolean;
     refetch?: () => void;
     setSelectedRows: (value: Set<string>) => void;
+    columns: ColumnOrColumnGroup<UserRow>[];
+    setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<UserRow>[]>>;
 }
 
 const items = [
@@ -51,6 +55,8 @@ function Toolbar({
     query,
     setQuery,
     setSelectedRows,
+    columns,
+    setColumns
 }: Props) {
     const { t } = useTranslation();
     const [, setOpen] = useState(false);
@@ -137,6 +143,7 @@ function Toolbar({
                         ))}
                     </SelectContent>
                 </Select>
+                <ColumnsView columns={columns} setColumns={setColumns} />
             </div>
         </div>
     );

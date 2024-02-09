@@ -1,6 +1,6 @@
 import 'react-data-grid/lib/styles.css';
 
-import DataGrid, { ColumnOrColumnGroup, Row, RowsChangeData, SortColumn } from 'react-data-grid';
+import DataGrid, { Row, RowsChangeData, SortColumn } from 'react-data-grid';
 import { Search, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/button';
 import { useOnScreen } from '~/hooks/use-on-screen';
 import './style.css';
+import { ColumnOrColumnGroup } from './columns-view';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];

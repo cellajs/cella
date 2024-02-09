@@ -6,6 +6,8 @@ import { Button } from "~/modules/ui/button";
 import CountAndLoading from "../data-table/count-and-loading";
 import { Input } from "~/modules/ui/input";
 import CreateOrganizationForm from "~/modules/organizations/create-organization-form";
+import ColumnsView, { ColumnOrColumnGroup } from "../data-table/columns-view";
+import { Dispatch, SetStateAction } from "react";
 
 
 interface Props {
@@ -18,6 +20,8 @@ interface Props {
     callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void;
     refetch?: () => void;
     setSelectedRows: (value: Set<string>) => void;
+    columns: ColumnOrColumnGroup<Organization>[];
+    setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Organization>[]>>;
 }
 
 function Toolbar({
@@ -29,6 +33,8 @@ function Toolbar({
     callback,
     onResetFilters,
     setSelectedRows,
+    columns,
+    setColumns
 }: Props) {
     const { t } = useTranslation();
     const user = useUserStore((state) => state.user);
@@ -90,6 +96,7 @@ function Toolbar({
                     }}
                     className="h-10 w-[150px] lg:w-[250px]"
                 />
+                <ColumnsView columns={columns} setColumns={setColumns} />
             </div>
         </div>
     );

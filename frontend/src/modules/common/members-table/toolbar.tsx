@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Dispatch, SetStateAction, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { GetMembersParams } from "~/api/organizations";
 import { useUserStore } from "~/store/user";
@@ -11,6 +11,7 @@ import CountAndLoading from "../data-table/count-and-loading";
 import { Input } from "~/modules/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/modules/ui/select";
 import { cn } from "~/lib/utils";
+import ColumnsView, { ColumnOrColumnGroup } from "../data-table/columns-view";
 
 interface Props {
     rows: Member[];
@@ -27,6 +28,8 @@ interface Props {
     isLoading?: boolean;
     refetch?: () => void;
     setSelectedRows: (value: Set<string>) => void;
+    columns: ColumnOrColumnGroup<Member>[];
+    setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Member>[]>>;
 }
 
 const items = [
@@ -59,6 +62,8 @@ function Toolbar({
     refetch,
     total,
     setSelectedRows,
+    columns,
+    setColumns
 }: Props) {
     const { t } = useTranslation();
     const user = useUserStore((state) => state.user);
@@ -183,6 +188,7 @@ function Toolbar({
                         ))}
                     </SelectContent>
                 </Select>
+                <ColumnsView columns={columns} setColumns={setColumns} />
             </div>
         </div>
     );

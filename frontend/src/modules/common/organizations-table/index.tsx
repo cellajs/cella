@@ -19,7 +19,7 @@ const OrganizationsTable = () => {
   });
   const navigate = useNavigate();
 
-  const [flatData, setFlatData] = useState<Organization[]>([]);
+  const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order ?
@@ -105,7 +105,7 @@ const OrganizationsTable = () => {
     refetchOnWindowFocus: false,
   });
 
-  const columns = useColumns(callback);
+  const [columns, setColumns] = useColumns(callback);
 
   const isFiltered = !!query;
 
@@ -118,7 +118,7 @@ const OrganizationsTable = () => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
 
     if (data) {
-      setFlatData(data);
+      setRows(data);
     }
   }, [queryResult.data]);
 
@@ -157,8 +157,8 @@ const OrganizationsTable = () => {
   return (
     <DataTable<Organization>
       {...{
-        columns,
-        rows: flatData,
+        columns: columns.filter((column) => column.visible),
+        rows,
         rowKeyGetter: (row) => row.id,
         error: queryResult.error,
         isLoading: queryResult.isLoading,
@@ -178,6 +178,8 @@ const OrganizationsTable = () => {
           callback={callback}
           isFiltered={isFiltered}
           onResetFilters={onResetFilters}
+          columns={columns}
+          setColumns={setColumns}
           setSelectedRows={setSelectedRows} />,
       }}
     />

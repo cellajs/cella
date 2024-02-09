@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { User } from '~/types';
 
-import { ColumnOrColumnGroup, SelectColumn } from 'react-data-grid';
+import { SelectColumn } from 'react-data-grid';
 import { dateShort } from "~/lib/utils";
 import RowActions from './row-actions';
 import { AvatarWrap } from '../avatar-wrap';
@@ -12,15 +12,18 @@ import { Button } from '~/modules/ui/button';
 import { ChevronRight } from 'lucide-react';
 import Expand from './expand';
 import HeaderCell from '../data-table/header-cell';
+import { useState } from 'react';
+import { ColumnOrColumnGroup } from '../data-table/columns-view';
 
-export const useColumns = (callback: (user: User, action: 'create' | 'update' | 'delete') => void): ColumnOrColumnGroup<UserRow>[] => {
+export const useColumns = (callback: (user: User, action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
 
-  return [
+  return useState<ColumnOrColumnGroup<UserRow>[]>([
     {
       key: 'expand',
       name: '',
       width: 32,
+      visible: true,
       colSpan(args) {
         return args.type === 'ROW' && args.row.type === 'DETAIL' ? 8 : undefined;
       },
@@ -53,6 +56,7 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
       name: t('label.name', {
         defaultValue: 'Name',
       }),
+      visible: true,
       minWidth: 200,
       sortable: true,
       renderHeaderCell: HeaderCell,
@@ -74,6 +78,7 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
       name: t('label.actions', {
         defaultValue: 'Actions',
       }),
+      visible: true,
       width: 32,
       renderCell: ({ row }) => row.type === 'MASTER' && <RowActions user={row} callback={callback} />,
     },
@@ -84,6 +89,7 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
       }),
       minWidth: 180,
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => row.type === 'MASTER' && (
         <a href={`mailto:${row.email}`} className="truncate hover:underline underline-offset-4 font-light">
@@ -97,6 +103,7 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
         defaultValue: 'Role',
       }),
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => row.type === 'MASTER' && t(row.role),
       width: 100,
@@ -107,6 +114,7 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
         defaultValue: 'Created',
       }),
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => row.type === 'MASTER' && dateShort(row.createdAt),
       minWidth: 180,
@@ -117,9 +125,10 @@ export const useColumns = (callback: (user: User, action: 'create' | 'update' | 
         defaultValue: 'Memberships',
       }),
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => row.type === 'MASTER' && row.counts?.memberships,
       width: 100,
     },
-  ];
+  ]);
 };

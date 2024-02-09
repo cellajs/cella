@@ -5,13 +5,14 @@ import { Link } from '@tanstack/react-router';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '../avatar-wrap';
 import RowActions from './row-actions';
-import { ColumnOrColumnGroup } from 'react-data-grid';
 import HeaderCell from '../data-table/header-cell';
+import { useState } from 'react';
+import { ColumnOrColumnGroup } from '../data-table/columns-view';
 
-export const useColumns = (callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void): ColumnOrColumnGroup<Organization>[] => {
+export const useColumns = (callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
 
-  return [
+  return useState<ColumnOrColumnGroup<Organization>[]>([
     {
       key: 'name',
       name: t('label.name', {
@@ -19,6 +20,7 @@ export const useColumns = (callback: (organization: Organization, action: 'creat
       }),
       minWidth: 200,
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <Link to="/$organizationIdentifier" params={{ organizationIdentifier: row.slug }} className="flex space-x-2 items-center group">
@@ -33,6 +35,7 @@ export const useColumns = (callback: (organization: Organization, action: 'creat
         defaultValue: 'Your role',
       }),
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (row.userRole ? t(row.userRole) : ''),
       width: 100,
@@ -43,16 +46,18 @@ export const useColumns = (callback: (organization: Organization, action: 'creat
         defaultValue: 'Created',
       }),
       sortable: true,
+      visible: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.createdAt),
       minWidth: 180,
     },
     {
       key: 'actions',
+      visible: true,
       name: t('label.actions', {
         defaultValue: 'Actions',
       }),
       renderCell: ({ row }) => row.userRole === 'ADMIN' && <RowActions organization={row} callback={callback} />,
     },
-  ];
+  ]);
 };
