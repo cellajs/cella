@@ -9,20 +9,21 @@ import { useState } from 'react';
 import { ColumnOrColumnGroup } from '../data-table/columns-view';
 import CheckboxColumn from '../data-table/checkbox-column';
 import HeaderCell from '../data-table/header-cell';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 
 export const useColumns = () => {
   const { t } = useTranslation();
+  const isMobile = useBreakpoints('max', 'sm');
 
-  return useState<ColumnOrColumnGroup<Member>[]>([
+  const mobileColumns: ColumnOrColumnGroup<Member>[] = [
     CheckboxColumn,
     {
       key: 'name',
       name: t('label.name', {
         defaultValue: 'Name',
       }),
-      minWidth: 200,
-      sortable: true,
       visible: true,
+      sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <Link
@@ -38,23 +39,6 @@ export const useColumns = () => {
       ),
     },
     {
-      key: 'email',
-      name: t('label.email', {
-        defaultValue: 'Email',
-      }),
-      sortable: true,
-      visible: true,
-      renderHeaderCell: HeaderCell,
-      minWidth: 180,
-      renderCell: ({ row }) => {
-        return (
-          <a href={`mailto:${row.email}`} className="truncate hover:underline underline-offset-4 font-light">
-            {row.email || '-'}
-          </a>
-        );
-      },
-    },
-    {
       key: 'organizationRole',
       sortable: true,
       visible: true,
@@ -64,27 +48,50 @@ export const useColumns = () => {
       }),
       renderCell: ({ row }) => t(row.organizationRole),
     },
-    {
-      key: 'createdAt',
-      name: t('label.createdAt', {
-        defaultValue: 'Created',
-      }),
-      sortable: true,
-      visible: true,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => dateShort(row.createdAt),
-      minWidth: 180,
-    },
-    {
-      key: 'lastSeenAt',
-      name: t('label.lastSeenAt', {
-        defaultValue: 'Last seen',
-      }),
-      sortable: true,
-      visible: true,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => dateShort(row.lastSeenAt),
-      minWidth: 180,
-    },
-  ]);
+  ];
+
+  return useState<ColumnOrColumnGroup<Member>[]>(
+    isMobile ? mobileColumns :
+      [
+        ...mobileColumns,
+        {
+          key: 'email',
+          name: t('label.email', {
+            defaultValue: 'Email',
+          }),
+          sortable: true,
+          visible: true,
+          renderHeaderCell: HeaderCell,
+          minWidth: 180,
+          renderCell: ({ row }) => {
+            return (
+              <a href={`mailto:${row.email}`} className="truncate hover:underline underline-offset-4 font-light">
+                {row.email || '-'}
+              </a>
+            );
+          },
+        },
+        {
+          key: 'createdAt',
+          name: t('label.createdAt', {
+            defaultValue: 'Created',
+          }),
+          sortable: true,
+          visible: true,
+          renderHeaderCell: HeaderCell,
+          renderCell: ({ row }) => dateShort(row.createdAt),
+          minWidth: 180,
+        },
+        {
+          key: 'lastSeenAt',
+          name: t('label.lastSeenAt', {
+            defaultValue: 'Last seen',
+          }),
+          sortable: true,
+          visible: true,
+          renderHeaderCell: HeaderCell,
+          renderCell: ({ row }) => dateShort(row.lastSeenAt),
+          minWidth: 180,
+        },
+      ]);
 };
