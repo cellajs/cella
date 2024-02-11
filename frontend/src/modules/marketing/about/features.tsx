@@ -15,7 +15,7 @@ const features = [
   },
   {
     title: 'React',
-    description: 'React + i18Next. Zustand to manage state.',
+    description: 'React,i18Next, React Data Grid. Zustand to manage state.',
     icon: 'react',
   },
   {
@@ -24,13 +24,13 @@ const features = [
     icon: 'drizzle',
   },
   {
-    title: 'Components',
+    title: 'Tailwind',
     description: 'Shadcn UI components built with Radix UI and Tailwind CSS.',
     icon: 'tailwind',
   },
   {
-    title: 'Authentication',
-    description: 'Authentication with Lucia Auth. CASL for authorization flows.',
+    title: 'Lucia Auth',
+    description: 'Multiple auth strategies + our configurable authorization system.',
     icon: 'authentication',
   },
   {
@@ -45,7 +45,7 @@ const features = [
   },
   {
     title: 'Tanstack',
-    description: 'Tanstack Router, Query and its popular Table for data-rich solutions.',
+    description: 'Tanstack Router for type-safe routing, Tanstack Query for caching.',
     icon: 'tanstack',
   },
   {
