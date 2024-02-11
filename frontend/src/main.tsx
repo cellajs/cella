@@ -9,7 +9,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import router, { queryClient } from './router';
 
-getI18n('frontend');
+getI18n('frontend').init;
 
 const root = document.getElementById('root');
 
