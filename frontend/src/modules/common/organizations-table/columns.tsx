@@ -2,13 +2,13 @@ import { useTranslation } from 'react-i18next';
 import { Organization } from '~/types';
 
 import { Link } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '../avatar-wrap';
-import RowActions from './row-actions';
-import HeaderCell from '../data-table/header-cell';
-import { useState } from 'react';
 import { ColumnOrColumnGroup } from '../data-table/columns-view';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import HeaderCell from '../data-table/header-cell';
+import RowEdit from './row-edit';
 
 export const useColumns = (callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
@@ -17,19 +17,16 @@ export const useColumns = (callback: (organization: Organization, action: 'creat
   const mobileColumns: ColumnOrColumnGroup<Organization>[] = [
     {
       key: 'name',
-      name: t('label.name', {
-        defaultValue: 'Name',
-      }),
+      name: t('label.name'),
       visible: true,
       sortable: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
+      renderCell: ({ row, tabIndex }) => (
         <Link
           to="/$organizationIdentifier"
-          params={{
-            organizationIdentifier: row.slug,
-          }}
-          className="flex space-x-2 items-center group"
+          tabIndex={tabIndex}
+          params={{ organizationIdentifier: row.slug }}
+          className="flex space-x-2 items-center outline-0 ring-0 group"
         >
           <AvatarWrap type="organization" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name}</span>
@@ -37,41 +34,37 @@ export const useColumns = (callback: (organization: Organization, action: 'creat
       ),
     },
     {
-      key: 'actions',
-      name: t('label.actions', {
-        defaultValue: 'Actions',
-      }),
+      key: 'edit',
+      name: '',
       visible: true,
-      width: 100,
-      renderCell: ({ row }) => <RowActions organization={row} callback={callback} />,
+      width: 32,
+      renderCell: ({ row, tabIndex }) => <RowEdit organization={row} tabIndex={tabIndex} callback={callback} />,
     },
   ];
 
   return useState<ColumnOrColumnGroup<Organization>[]>(
-    isMobile ? mobileColumns :
-      [
-        ...mobileColumns,
-        {
-          key: 'userRole',
-          name: t('label.your_role', {
-            defaultValue: 'Your role',
-          }),
-          sortable: true,
-          visible: true,
-          renderHeaderCell: HeaderCell,
-          renderCell: ({ row }) => (row.userRole ? t(row.userRole) : ''),
-          width: 100,
-        },
-        {
-          key: 'createdAt',
-          name: t('label.createdAt', {
-            defaultValue: 'Created',
-          }),
-          sortable: true,
-          visible: true,
-          renderHeaderCell: HeaderCell,
-          renderCell: ({ row }) => dateShort(row.createdAt),
-          minWidth: 180,
-        },
-      ]);
+    isMobile
+      ? mobileColumns
+      : [
+          ...mobileColumns,
+          {
+            key: 'userRole',
+            name: t('label.your_role'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => (row.userRole ? t(row.userRole) : ''),
+            width: 120,
+          },
+          {
+            key: 'createdAt',
+            name: t('label.createdAt'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => dateShort(row.createdAt),
+            minWidth: 180,
+          },
+        ],
+  );
 };

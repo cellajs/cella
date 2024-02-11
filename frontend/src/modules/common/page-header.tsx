@@ -1,8 +1,8 @@
+import { useRef } from 'react';
+import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Breadcrumb, BreadcrumbItem } from '~/modules/ui/breadcrumb';
 import { PageCover } from './page-cover';
-import { useRef } from 'react';
-import useScrollTo from '~/hooks/use-scroll-to';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {

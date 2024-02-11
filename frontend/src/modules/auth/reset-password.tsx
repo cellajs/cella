@@ -57,13 +57,7 @@ const ResetPassword = () => {
               <FormItem>
                 <FormControl>
                   <div className="relative">
-                    <Input
-                      type="password"
-                      autoFocus
-                      placeholder={t('label.new_password')}
-                      autoComplete="new-password"
-                      {...field}
-                    />
+                    <Input type="password" autoFocus placeholder={t('label.new_password')} autoComplete="new-password" {...field} />
                     <Suspense>
                       <PasswordStrength password={form.getValues('password')} minLength={8} />
                     </Suspense>

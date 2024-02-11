@@ -110,5 +110,6 @@
   "label.last_name": "Surname",
   "label.bio": "Bio",
   "label.language": "Language",
-  "label.newsletter": "Newsletter"
+  "label.newsletter": "Newsletter",
+  "action.edit_organization": "Edit organization"
 }

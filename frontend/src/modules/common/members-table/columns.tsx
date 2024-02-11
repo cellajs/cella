@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { Member } from '~/types';
 import { AvatarWrap } from '../avatar-wrap';
 
-import { dateShort } from '~/lib/utils';
 import { useState } from 'react';
-import { ColumnOrColumnGroup } from '../data-table/columns-view';
-import CheckboxColumn from '../data-table/checkbox-column';
-import HeaderCell from '../data-table/header-cell';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { dateShort } from '~/lib/utils';
+import CheckboxColumn from '../data-table/checkbox-column';
+import { ColumnOrColumnGroup } from '../data-table/columns-view';
+import HeaderCell from '../data-table/header-cell';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -19,19 +19,16 @@ export const useColumns = () => {
     CheckboxColumn,
     {
       key: 'name',
-      name: t('label.name', {
-        defaultValue: 'Name',
-      }),
+      name: t('label.name'),
       visible: true,
       sortable: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
+      renderCell: ({ row, tabIndex }) => (
         <Link
           to="/user/$userIdentifier"
-          params={{
-            userIdentifier: row.slug,
-          }}
-          className="flex space-x-2 items-center group"
+          params={{ userIdentifier: row.slug }}
+          tabIndex={tabIndex}
+          className="flex space-x-2 items-center outline-0 ring-0 group"
         >
           <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name}</span>
@@ -43,55 +40,53 @@ export const useColumns = () => {
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      name: t('label.role', {
-        defaultValue: 'Role',
-      }),
+      name: t('label.role'),
       renderCell: ({ row }) => t(row.organizationRole),
     },
   ];
 
   return useState<ColumnOrColumnGroup<Member>[]>(
-    isMobile ? mobileColumns :
-      [
-        ...mobileColumns,
-        {
-          key: 'email',
-          name: t('label.email', {
-            defaultValue: 'Email',
-          }),
-          sortable: true,
-          visible: true,
-          renderHeaderCell: HeaderCell,
-          minWidth: 180,
-          renderCell: ({ row }) => {
-            return (
-              <a href={`mailto:${row.email}`} className="truncate hover:underline underline-offset-4 font-light">
-                {row.email || '-'}
-              </a>
-            );
+    isMobile
+      ? mobileColumns
+      : [
+          ...mobileColumns,
+          {
+            key: 'email',
+            name: t('label.email'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            minWidth: 180,
+            renderCell: ({ row, tabIndex }) => {
+              return (
+                <a
+                  href={`mailto:${row.email}`}
+                  tabIndex={tabIndex}
+                  className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+                >
+                  {row.email || '-'}
+                </a>
+              );
+            },
           },
-        },
-        {
-          key: 'createdAt',
-          name: t('label.createdAt', {
-            defaultValue: 'Created',
-          }),
-          sortable: true,
-          visible: true,
-          renderHeaderCell: HeaderCell,
-          renderCell: ({ row }) => dateShort(row.createdAt),
-          minWidth: 180,
-        },
-        {
-          key: 'lastSeenAt',
-          name: t('label.lastSeenAt', {
-            defaultValue: 'Last seen',
-          }),
-          sortable: true,
-          visible: true,
-          renderHeaderCell: HeaderCell,
-          renderCell: ({ row }) => dateShort(row.lastSeenAt),
-          minWidth: 180,
-        },
-      ]);
+          {
+            key: 'createdAt',
+            name: t('label.createdAt'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => dateShort(row.createdAt),
+            minWidth: 180,
+          },
+          {
+            key: 'lastSeenAt',
+            name: t('label.lastSeenAt'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => dateShort(row.lastSeenAt),
+            minWidth: 180,
+          },
+        ],
+  );
 };

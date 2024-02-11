@@ -5,13 +5,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { getUsers } from '~/api/users';
 import { User } from '~/types';
 
+import { RowsChangeData, SortColumn } from 'react-data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { queryClient } from '~/router';
 import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
+import useSaveInSearchParams from '../data-table/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { RowsChangeData, SortColumn } from 'react-data-grid';
-import useSaveInSearchParams from '../data-table/use-save-in-search-params';
 
 export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
 
@@ -23,26 +23,33 @@ const UsersTable = () => {
   const [rows, setRows] = useState<UserRow[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
-    search.sort && search.order ?
-      [{
-        columnKey: search.sort,
-        direction: search.order === 'asc' ? 'ASC' : 'DESC',
-      }] : [
-        {
-          columnKey: 'createdAt',
-          direction: 'DESC',
-        },
-      ]);
+    search.sort && search.order
+      ? [
+          {
+            columnKey: search.sort,
+            direction: search.order === 'asc' ? 'ASC' : 'DESC',
+          },
+        ]
+      : [
+          {
+            columnKey: 'createdAt',
+            direction: 'DESC',
+          },
+        ],
+  );
   const [query, setQuery] = useState<UsersSearch['q']>(search.q);
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
 
   // Save filters in search params
-  const filters = useMemo(() => [
-    { key: 'q', value: query },
-    { key: 'sort', value: sortColumns[0]?.columnKey },
-    { key: 'order', value: sortColumns[0]?.direction.toLowerCase() },
-    { key: 'role', value: role },
-  ], [query, role, sortColumns]);
+  const filters = useMemo(
+    () => [
+      { key: 'q', value: query },
+      { key: 'sort', value: sortColumns[0]?.columnKey },
+      { key: 'order', value: sortColumns[0]?.direction.toLowerCase() },
+      { key: 'role', value: role },
+    ],
+    [query, role, sortColumns],
+  );
   useSaveInSearchParams(filters);
 
   const callback = (user: User, action: 'create' | 'update' | 'delete') => {
@@ -188,7 +195,7 @@ const UsersTable = () => {
   }, [queryResult.data]);
 
   return (
-    <div className='space-y-4 h-full'>
+    <div className="space-y-4 h-full">
       <Toolbar
         isFiltered={isFiltered}
         total={queryResult.data?.pages[0].total}
@@ -205,7 +212,8 @@ const UsersTable = () => {
       <DataTable<UserRow>
         {...{
           columns: columns.filter((column) => column.visible),
-          rowHeight: (row) => (row.type === 'DETAIL' ? 100 : 32),
+          rowHeight: 42,
+          enableVirtualization: false,
           onRowsChange,
           rows,
           rowKeyGetter: (row) => row.id,

@@ -12,11 +12,11 @@ export const useOnScreen = (
     threshold?: number;
     firstChild?: boolean;
   } = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0,
-      firstChild: false,
-    },
+    root: null,
+    rootMargin: '0px',
+    threshold: 0,
+    firstChild: false,
+  },
 ) => {
   const [observer, setObserver] = useState<IntersectionObserver>();
   const [isIntersecting, setIntersecting] = useState(false);

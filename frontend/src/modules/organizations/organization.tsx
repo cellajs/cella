@@ -18,14 +18,8 @@ interface OrganizationContextValue {
 }
 
 const organizationTabs = [
-  {
-    name: 'Members',
-    path: '/$organizationIdentifier/members',
-  },
-  {
-    name: 'Settings',
-    path: '/$organizationIdentifier/settings',
-  },
+  { name: 'Members', path: '/$organizationIdentifier/members' },
+  { name: 'Settings', path: '/$organizationIdentifier/settings' },
 ];
 
 export const OrganizationContext = createContext({} as OrganizationContextValue);
@@ -43,11 +37,7 @@ const OrganizationPage = () => {
       () => invite([user.email], organization.id),
       () => {
         organizationQuery.refetch();
-        toast.success(
-          t('success.you_joined_organization', {
-            defaultValue: 'You have joined the organization',
-          }),
-        );
+        toast.success(t('success.you_joined_organization'));
       },
     );
   };
@@ -57,11 +47,7 @@ const OrganizationPage = () => {
       () => removeMemberFromOrganization(organizationIdentifier, user.id),
       () => {
         organizationQuery.refetch();
-        toast.success(
-          t('success.you_left_organization', {
-            defaultValue: 'You have left the organization',
-          }),
-        );
+        toast.success(t('success.you_left_organization'));
       },
     );
   };
@@ -89,7 +75,7 @@ const OrganizationPage = () => {
         }
       />
       <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
-      <div className="container min-h-screen mt-4 flex-[1_1_0]">
+      <div className="container min-h-screen mt-4">
         <Outlet />
       </div>
     </OrganizationContext.Provider>

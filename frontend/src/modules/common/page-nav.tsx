@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useInView } from 'react-intersection-observer';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 
 interface Props {
   title?: string;

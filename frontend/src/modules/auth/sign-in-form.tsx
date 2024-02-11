@@ -86,13 +86,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input
-                  type="password"
-                  autoFocus
-                  {...field}
-                  autoComplete="current-password"
-                  placeholder={t('label.password')}
-                />
+                <Input type="password" autoFocus {...field} autoComplete="current-password" placeholder={t('label.password')} />
               </FormControl>
               <FormMessage />
             </FormItem>

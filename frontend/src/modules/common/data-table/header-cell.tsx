@@ -7,17 +7,17 @@ const HeaderCell = <TData,>({ column, sortDirection }: RenderHeaderCellProps<TDa
   }
 
   return (
-    <div className='flex items-center cursor-pointer justify-between'>
+    <div className="flex items-center group cursor-pointer gap-2">
       <span>{column.name}</span>
       {sortDirection === 'DESC' ? (
-        <ArrowDown className="h-4 w-4" />
+        <ArrowDown className="h-4 w-4 opacity-50 group-hover:opacity-75" />
       ) : sortDirection === 'ASC' ? (
-        <ArrowUp className="h-4 w-4" />
+        <ArrowUp className="h-4 w-4 opacity-50 group-hover:opacity-75" />
       ) : (
-        <ChevronsUpDown className="h-4 w-4" />
+        <ChevronsUpDown className="h-4 w-4 opacity-50 group-hover:opacity-75" />
       )}
     </div>
-  )
+  );
 };
 
 export default HeaderCell;

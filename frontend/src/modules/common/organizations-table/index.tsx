@@ -3,14 +3,14 @@ import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { getOrganizations } from '~/api/organizations';
 
+import { SortColumn } from 'react-data-grid';
 import { queryClient } from '~/router';
 import { OrganizationsSearch, OrganizationsTableRoute } from '~/router/routeTree';
 import { Organization } from '~/types';
 import { DataTable } from '../data-table';
+import useSaveInSearchParams from '../data-table/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { SortColumn } from 'react-data-grid';
-import useSaveInSearchParams from '../data-table/use-save-in-search-params';
 
 type QueryData = Awaited<ReturnType<typeof getOrganizations>>;
 
@@ -22,24 +22,31 @@ const OrganizationsTable = () => {
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
-    search.sort && search.order ?
-      [{
-        columnKey: search.sort,
-        direction: search.order === 'asc' ? 'ASC' : 'DESC',
-      }] : [
-        {
-          columnKey: 'createdAt',
-          direction: 'DESC',
-        },
-      ]);
+    search.sort && search.order
+      ? [
+          {
+            columnKey: search.sort,
+            direction: search.order === 'asc' ? 'ASC' : 'DESC',
+          },
+        ]
+      : [
+          {
+            columnKey: 'createdAt',
+            direction: 'DESC',
+          },
+        ],
+  );
   const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
 
   // Save filters in search params
-  const filters = useMemo(() => [
-    { key: 'q', value: query },
-    { key: 'sort', value: sortColumns[0]?.columnKey },
-    { key: 'order', value: sortColumns[0]?.direction.toLowerCase() },
-  ], [query, sortColumns]);
+  const filters = useMemo(
+    () => [
+      { key: 'q', value: query },
+      { key: 'sort', value: sortColumns[0]?.columnKey },
+      { key: 'order', value: sortColumns[0]?.direction.toLowerCase() },
+    ],
+    [query, sortColumns],
+  );
   useSaveInSearchParams(filters);
 
   const callback = (organization: Organization, action: 'create' | 'update' | 'delete') => {
@@ -132,7 +139,7 @@ const OrganizationsTable = () => {
   }, [queryResult.data]);
 
   return (
-    <div className='space-y-4 h-full'>
+    <div className="space-y-4 h-full">
       <Toolbar
         total={queryResult.data?.pages?.[0]?.total}
         isLoading={queryResult.isFetching}
@@ -148,6 +155,7 @@ const OrganizationsTable = () => {
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
+          rowHeight: 42,
           rowKeyGetter: (row) => row.id,
           error: queryResult.error,
           isLoading: queryResult.isLoading,

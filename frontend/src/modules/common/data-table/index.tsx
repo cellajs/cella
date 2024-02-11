@@ -1,14 +1,14 @@
 import 'react-data-grid/lib/styles.css';
 
-import DataGrid, { Row, RowsChangeData, SortColumn } from 'react-data-grid';
 import { Search, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import DataGrid, { Row, RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '../../ui/button';
 import { useOnScreen } from '~/hooks/use-on-screen';
-import './style.css';
+import { Button } from '../../ui/button';
 import { ColumnOrColumnGroup } from './columns-view';
+import './style.css';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -51,11 +51,7 @@ const NoRows = ({
         <>
           <Search className="w-24 h-24" />
           <div className="flex items-center justify-center mt-6">
-            <div>
-              {t('label.no_results_found', {
-                defaultValue: 'No results found.',
-              })}
-            </div>
+            <div>{t('label.no_results_found')}</div>
             <Button variant="link" onClick={onResetFilters}>
               <XCircle size={16} className="mr-1" />
               Clear
@@ -63,12 +59,7 @@ const NoRows = ({
           </div>
         </>
       )}
-      {!isFiltered &&
-        !isFetching &&
-        (customComponent ??
-          t('label.no_results', {
-            defaultValue: 'No results',
-          }))}
+      {!isFiltered && !isFetching && (customComponent ?? t('label.no_results'))}
     </div>
   );
 };
@@ -125,7 +116,7 @@ export function DataTable<TData>({
   }, [isLoading, error]);
 
   return (
-    <div className='w-full h-full'>
+    <div className="w-full h-full">
       {initial &&
         (error ? (
           <ErrorMessage error={error} />
@@ -146,14 +137,16 @@ export function DataTable<TData>({
               sortColumns={sortColumns}
               onSortColumnsChange={onSortColumnsChange}
               renderers={{
-                renderRow: (key, props) => <Row {...props} key={key} ref={props.rowIdx === Math.floor(rows.length - 1 - rows.length * 0.2) ? measureRef : undefined} />,
+                renderRow: (key, props) => (
+                  <Row {...props} key={key} ref={props.rowIdx === Math.floor(rows.length - 1 - rows.length * 0.2) ? measureRef : undefined} />
+                ),
                 renderCheckbox: ({ onChange, ...props }) => {
                   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
                     onChange(e.target.checked, (e.nativeEvent as MouseEvent).shiftKey);
                   }
 
                   return <input type="checkbox" {...props} onChange={handleChange} />;
-                }
+                },
               }}
             />
           </div>

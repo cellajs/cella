@@ -12,4 +12,16 @@
   --rdg-checkbox-focus-color: hsl(var(--ring));
   --rdg-checkbox-disabled-border-color: hsl(var(--muted-foreground));
   --rdg-checkbox-disabled-background-color: hsl(var(--muted));
+
+  --rdg-selection-color: hsl(var(--ring));
+
+  grid-template-rows: none !important;
+}
+
+.rdg-cell:not([role="columnheader"]) {
+  border-top: 1px solid var(--rdg-border-color);
+}
+
+.rdg-cell.rdg-expand-cell {
+  border-top-color: transparent;
 }

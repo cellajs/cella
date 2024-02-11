@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
 import debounce from 'lodash.debounce';
+import { useCallback, useEffect, useState } from 'react';
 
 export const useScroll = () => {
   const [state, setState] = useState({
@@ -9,12 +9,12 @@ export const useScroll = () => {
     scrollY: document.body.getBoundingClientRect().top,
     scrollX: document.body.getBoundingClientRect().left,
     scrollDirection: '', // down, up
-  })
+  });
 
   const handleScrollEvent = useCallback(() => {
     setState((prevState) => {
-      const prevLastScrollTop = prevState.lastScrollTop
-      const bodyOffset = document.body.getBoundingClientRect()
+      const prevLastScrollTop = prevState.lastScrollTop;
+      const bodyOffset = document.body.getBoundingClientRect();
 
       return {
         bodyOffset: bodyOffset,
@@ -23,27 +23,27 @@ export const useScroll = () => {
         scrollDirection: prevLastScrollTop > -bodyOffset.top ? 'down' : 'up',
         lastScrollTop: -bodyOffset.top,
         hasScrolled: true,
-      }
-    })
-  }, [])
+      };
+    });
+  }, []);
 
   useEffect(() => {
     const scrollListener = () => {
-      handleScrollEvent()
-    }
-    window.addEventListener('scroll', debounce(scrollListener, 200))
+      handleScrollEvent();
+    };
+    window.addEventListener('scroll', debounce(scrollListener, 200));
 
     return () => {
-      window.removeEventListener('scroll', scrollListener)
-    }
-  }, [handleScrollEvent])
+      window.removeEventListener('scroll', scrollListener);
+    };
+  }, [handleScrollEvent]);
 
   return {
     hasScrolled: state.hasScrolled,
     scrollY: state.scrollY,
     scrollX: state.scrollX,
     scrollDirection: state.scrollDirection,
-  }
-}
+  };
+};
 
-export default useScroll
+export default useScroll;
