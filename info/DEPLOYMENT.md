@@ -22,18 +22,6 @@ Now run `pnpm run proxy:deploy` and follow the steps from there.
 
 Deploying the frontend on Netlify can be done by adapting the `netlify.toml` file in the /frontend folder.
 
-## Manage translations
-
-When your app is growing and has multiple languages, you can optionally upload and manage your messages to translate at <https://simplelocalize.io>.
-
-Fill `simpleLocalizeProjectToken` in /config/default.ts and `SIMPLELOCALIZE_API_KEY` to your  .env file.
-
-```bash
-pnpm run i18n:upload
-```
-
-After upload messages to translate, you need to publish them (in 'Hosting' tab on SimpleLocalize)
-
 ## Logging and error tracking
 
 We use [AppSignal](https://appsignal.com) for logging and error tracking. To use it on backend, you need to create an account and set `APPSIGNAL_BACKEND_KEY` env variable in your .env file (and Render env variables). For frontend error logging, created another key and add it to /config/default.ts under `appsignalFrontendKey`.

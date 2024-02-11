@@ -94,15 +94,6 @@ const integrations: Integrations[] = [
     url: 'tiptap.dev',
     logo: 'tiptap.svg',
   },
-  {
-    name: 'SimpleLocalize',
-    purpose: 'Translation',
-    planned: false,
-    text: 'Translation management. Import translations, auto-translate them to other languages. Download translation files or host translations in the cloud.',
-    country: 'PL',
-    url: 'simplelocalize.io',
-    logo: 'simplelocalize.svg',
-  },
 ];
 
 const Integrations = () => {

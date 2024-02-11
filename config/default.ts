@@ -44,7 +44,6 @@ export const config = {
   },
 
   integrations: {
-    simpleLocalizeProjectToken: undefined,
     appsignalFrontendKey: undefined,
   },
 

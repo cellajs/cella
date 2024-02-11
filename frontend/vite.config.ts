@@ -87,20 +87,6 @@ export default defineConfig(() => {
         },
         workbox: {
           navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/],
-          runtimeCaching: [
-            {
-              urlPattern: ({ url }) => {
-                return url.hostname === 'cdn.simplelocalize.io';
-              },
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'localization-cache',
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-          ],
         },
       }),
     );

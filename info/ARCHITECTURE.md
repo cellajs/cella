@@ -19,7 +19,7 @@ This document describes the high-level architecture of Cella.
 - [React](https://reactjs.org)
 - [Tanstack Router](https://github.com/tanstack/router)
 - [Tanstack Query](https://github.com/tanstack/query)
-- [Tanstack Table](https://github.com/tanstack/table)
+- [React Data Grid](https://github.com/adazzle/react-data-grid)
 - [Zustand](https://github.com/pmndrs/zustand)
 - [Shadcn UI](https://ui.shadcn.com)
 - [I18next](https://www.i18next.com)
@@ -32,7 +32,6 @@ This document describes the high-level architecture of Cella.
 - [Lefthook](https://github.com/evilmartians/lefthook)
 
 ### 3rd party integrations
-- SimpleLocalize
 - AppSignal
 - ... more to come
 
