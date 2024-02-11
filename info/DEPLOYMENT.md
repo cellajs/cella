@@ -1,6 +1,6 @@
 # Deployment
 
-Cella will make it easy to deploy on [Render](https://www.render.com) (server & db, optionally frontend) and [Netlify](https://www.netlify.com) (frontend only). Probably more options will become available over time.
+Cella makes it easy to deploy on [Render](https://www.render.com) (server & db, frontend) and with Cloudflare for a proxy. Probably more options will become available over time.
 
 ## Deploy backend and frontend to render.com
 
@@ -18,13 +18,9 @@ Update `BACKEND_RENDER_URL` and `FRONTEND_RENDER_URL` in `proxy/wrangler.toml` t
 
 Now run `pnpm run proxy:deploy` and follow the steps from there.
 
-## Alternative: Deploy frontend on [Netlify](https://app.netlify.com)
-
-Deploying the frontend on Netlify can be done by adapting the `netlify.toml` file in the /frontend folder.
-
 ## Logging and error tracking
 
-We use [AppSignal](https://appsignal.com) for logging and error tracking. To use it on backend, you need to create an account and set `APPSIGNAL_BACKEND_KEY` env variable in your .env file (and Render env variables). For frontend error logging, created another key and add it to /config/default.ts under `appsignalFrontendKey`.
+We use [AppSignal](https://appsignal.com) for logging and error tracking. You need to create an account and set `APPSIGNAL_BACKEND_KEY` env variable in your .env file (and Render env variables) for backend tracking. For frontend error logging, created another key and add it to /config/default.ts under `appsignalFrontendKey`.
 
 For testing backend on development, you need to change `active` in /backend/src/lib/appsignal.ts\
 For testing frontend on development, you need to change `key` in /frontend/src/lib/appsignal.ts
