@@ -1,4 +1,4 @@
-# Cella Architecture
+# Architecture
 This document describes the high-level architecture of Cella.
 
  1. Only build what you are going to use yourself.

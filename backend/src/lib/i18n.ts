@@ -13,11 +13,11 @@ import nlCommon from '../../../locales/nl/common.json';
 // Set up i18n with lazy loading strategy
 const initOptions: InitOptions = {
   resources: {
-    en: { backend: enBackend, enCommon },
-    nl: { backend: nlBackend, nlCommon },
+    en: { backend: enBackend, common: enCommon },
+    nl: { backend: nlBackend, common: nlCommon },
   },
   debug: config.debug,
-  ns: ['backend', 'common'],
+  ns: ['backend'],
   supportedLngs: config.languages.map((lng) => lng.value),
   load: 'languageOnly',
   fallbackLng: config.defaultLanguage,

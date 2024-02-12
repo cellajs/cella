@@ -76,7 +76,6 @@ const authRoutes = app
       return ctx.json({
         success: true,
       });
-      
     } catch (error) {
       if (error instanceof postgres.PostgresError && error.message.startsWith('duplicate key')) {
         customLogger('User already exists', { email }, 'warn');

@@ -15,11 +15,7 @@ export const VerificationEmail = ({ verificationLink = 'https://cellajs.com' }: 
     <React.Fragment>
       <Html>
         <Head />
-        <Preview>
-          {i18n.t('email.verification__preview_text', {
-            defaultValue: 'Please verify your email for Cella',
-          })}
-        </Preview>
+        <Preview>{i18n.t('backend:email.verification_preview_text')}</Preview>
         <Tailwind>
           <Body className="bg-white py-2.5 font-sans">
             <Container className="border-[#f0f0f0] p-[45px] font-light text-[#404040] leading-[26px]">
