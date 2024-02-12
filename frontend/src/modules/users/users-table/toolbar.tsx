@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import InviteUsersForm from '~/modules/users/invite-users-form';
 import { useUserStore } from '~/store/user';
 import { UserRow } from '.';
-import ColumnsView, { ColumnOrColumnGroup } from '../data-table/columns-view';
-import CountAndLoading from '../data-table/count-and-loading';
-import { dialog } from '../dialoger/state';
+import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import CountAndLoading from '../../common/data-table/count-and-loading';
+import { dialog } from '../../common/dialoger/state';
 
 interface Props {
   total?: number;

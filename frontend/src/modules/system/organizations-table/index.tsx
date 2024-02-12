@@ -7,8 +7,8 @@ import { SortColumn } from 'react-data-grid';
 import { queryClient } from '~/router';
 import { OrganizationsSearch, OrganizationsTableRoute } from '~/router/routeTree';
 import { Organization } from '~/types';
-import { DataTable } from '../data-table';
-import useSaveInSearchParams from '../data-table/use-save-in-search-params';
+import { DataTable } from '../../common/data-table';
+import useSaveInSearchParams from '../../common/data-table/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 

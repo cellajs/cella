@@ -9,10 +9,10 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { UserRow } from '.';
-import { AvatarWrap } from '../avatar-wrap';
-import CheckboxColumn from '../data-table/checkbox-column';
-import { ColumnOrColumnGroup } from '../data-table/columns-view';
-import HeaderCell from '../data-table/header-cell';
+import { AvatarWrap } from '../../common/avatar-wrap';
+import CheckboxColumn from '../../common/data-table/checkbox-column';
+import { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import HeaderCell from '../../common/data-table/header-cell';
 import Expand from './expand';
 import RowEdit from './row-edit';
 

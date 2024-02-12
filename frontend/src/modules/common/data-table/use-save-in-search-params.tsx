@@ -19,8 +19,6 @@ const useSaveInSearchParams = (
       {} as Record<string, string | undefined>,
     );
 
-    console.log('searchParams', searchParams);
-
     navigate({
       params: {},
       search: (prev) => ({
