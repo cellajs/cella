@@ -32,9 +32,11 @@ export const useApiWrapper = () => {
         setError(e as Error);
 
         if (e instanceof ApiError) {
-          toast.error(preparedMessages[e.status] || e.message);
-
-          onError?.(e);
+          if (onError) {
+            onError(e);
+          } else {
+            toast.error(preparedMessages[e.status] || e.message);
+          }
 
           if (e.status === '401') {
             navigate({

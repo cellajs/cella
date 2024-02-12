@@ -8,15 +8,15 @@ import { dialog } from '../../common/dialoger/state';
 
 interface Props {
   user: User;
-  callback: (user: User, action: 'create' | 'update' | 'delete') => void;
+  callback: (users: User[], action: 'create' | 'update' | 'delete') => void;
   tabIndex: number;
 }
 
-const DataTableRowEdit = ({ user, callback, tabIndex }: Props) => {
+const RowEdit = ({ user, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
   const openUpdateDialog = () => {
-    dialog(<UpdateUserForm user={user} dialog callback={(user) => callback(user, 'update')} />, {
+    dialog(<UpdateUserForm user={user} dialog callback={(user) => callback([user], 'update')} />, {
       drawerOnMobile: false,
       className: 'sm:max-w-2xl my-4 sm:my-8',
       title: t('action.edit_user'),
@@ -32,4 +32,4 @@ const DataTableRowEdit = ({ user, callback, tabIndex }: Props) => {
   );
 };
 
-export default DataTableRowEdit;
+export default RowEdit;

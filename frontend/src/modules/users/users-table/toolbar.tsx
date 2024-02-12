@@ -1,5 +1,5 @@
 import debounce from 'lodash.debounce';
-import { ChangeEvent, Dispatch, SetStateAction, useState } from 'react';
+import { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GetUsersParams } from '~/api/users';
 import { Button } from '~/modules/ui/button';
@@ -11,15 +11,18 @@ import { UserRow } from '.';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
+import DeleteUser from '../delete-user';
+import { User } from '~/types';
 
 interface Props {
   total?: number;
   query?: string;
   setQuery?: (value: string) => void;
+  callback: (users: User[], action: 'create' | 'update' | 'delete') => void;
   isFiltered?: boolean;
   role: GetUsersParams['role'];
   setRole: React.Dispatch<React.SetStateAction<GetUsersParams['role']>>;
-  selectedRows: Set<string>;
+  selectedUsers: User[];
   onResetFilters?: () => void;
   isLoading?: boolean;
   columns: ColumnOrColumnGroup<UserRow>[];
@@ -41,9 +44,8 @@ const items = [
   },
 ];
 
-function Toolbar({ selectedRows, isFiltered, total, isLoading, role, setRole, onResetFilters, query, setQuery, columns, setColumns }: Props) {
+function Toolbar({ selectedUsers, isFiltered, total, isLoading, role, setRole, onResetFilters, query, setQuery, columns, setColumns, callback }: Props) {
   const { t } = useTranslation();
-  const [, setOpen] = useState(false);
   const user = useUserStore((state) => state.user);
 
   const openInviteDialog = () => {
@@ -59,13 +61,26 @@ function Toolbar({ selectedRows, isFiltered, total, isLoading, role, setRole, on
     });
   };
 
+  const openDeleteUsersDialog = () => {
+    dialog(<DeleteUser users={selectedUsers} callback={(users) => callback(users, 'delete')} dialog />, {
+      drawerOnMobile: false,
+      className: 'max-w-xl',
+      title: t('label.delete', {
+        defaultValue: 'Delete',
+      }),
+      description: t('description.delete_users', {
+        defaultValue: 'Are you sure you want to delete the selected users?',
+      }),
+    });
+  };
+
   return (
     <div className="items-center justify-between sm:flex">
       <div className="flex items-center space-x-2">
-        {selectedRows.size > 0 ? (
-          <Button variant="destructive" className="relative" onClick={() => setOpen(true)}>
+        {selectedUsers.length > 0 ? (
+          <Button variant="destructive" className="relative" onClick={openDeleteUsersDialog}>
             <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
-              <span className="text-xs font-medium text-white">{selectedRows.size}</span>
+              <span className="text-xs font-medium text-white">{selectedUsers.length}</span>
             </div>
             {t('action.remove', {
               defaultValue: 'Remove',

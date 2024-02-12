@@ -1,12 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
 import { paginationQuerySchema } from '../../schemas/common';
-import {
-  errorResponses,
-  successResponseWithDataSchema,
-  successResponseWithPaginationSchema,
-  successResponseWithoutDataSchema,
-} from '../../schemas/responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../schemas/responses';
 import { userMenuSchema } from '../organizations/schema';
 import { apiUserSchema, getUserParamSchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
 
@@ -153,25 +148,33 @@ export const getUserMenuRoute = createRoute({
   },
 });
 
-export const deleteUserRoute = createRoute({
+export const deleteUsersRoute = createRoute({
   method: 'delete',
-  path: '/users/{userId}',
+  path: '/users',
   tags: ['users'],
-  summary: 'Delete a user',
+  summary: 'Delete users',
+  request: {
+    query: z.object({
+      userIds: z.union([z.string(), z.array(z.string())]),
+    }),
+  },
   description: `
     Permissions:
       - Users with role 'ADMIN'
       - Users, who are the user
   `,
-  request: {
-    params: updateUserParamSchema,
-  },
   responses: {
     200: {
-      description: 'User',
+      description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithoutDataSchema,
+          schema: successResponseWithDataSchema(
+            z
+              .object({
+                error: z.string().optional(),
+              })
+              .optional(),
+          ),
         },
       },
     },

@@ -16,7 +16,7 @@ import HeaderCell from '../../common/data-table/header-cell';
 import Expand from './expand';
 import RowEdit from './row-edit';
 
-export const useColumns = (callback: (user: User, action: 'create' | 'update' | 'delete') => void) => {
+export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 

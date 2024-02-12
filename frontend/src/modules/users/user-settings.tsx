@@ -30,7 +30,7 @@ const UserSettings = () => {
             <Button
               variant="destructive"
               onClick={() => {
-                dialog(<DeleteUser user={user} dialog />, {
+                dialog(<DeleteUser users={[user]} dialog />, {
                   className: 'sm:max-w-[64rem]',
                   title: t('action.delete_user', {
                     defaultValue: 'Delete user',
