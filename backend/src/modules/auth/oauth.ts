@@ -4,7 +4,6 @@ import { deleteCookie, getCookie } from 'hono/cookie';
 import { isWithinExpirationDate } from 'oslo';
 
 import { config } from 'config';
-import { getI18n } from 'i18n';
 import { db } from '../../db/db';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';
@@ -22,8 +21,6 @@ import {
   microsoftSignInRoute,
   sendVerificationEmailRoute,
 } from './routes';
-
-const i18n = getI18n('backend');
 
 const app = new CustomHono();
 
@@ -54,7 +51,7 @@ const oauthRoutes = app
 
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
-      return ctx.json(createError(i18n, 'error.invalid_state', 'Invalid state'), 400);
+      return ctx.json(createError('error.invalid_state', 'Invalid state'), 400);
     }
 
     const redirectCookie = getCookie(ctx, 'oauth_redirect');
@@ -111,9 +108,7 @@ const oauthRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId);
 
-        customLogger('User signed in with GitHub', {
-          user: existingOauthAccount.userId,
-        });
+        customLogger('User signed in with GitHub', { user: existingOauthAccount.userId });
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -135,7 +130,7 @@ const oauthRoutes = app
       const primaryEmail = githubUserEmails.find((email) => email.primary);
 
       if (!primaryEmail) {
-        return ctx.json(createError(i18n, 'error.no_email_found', 'No email found'), 400);
+        return ctx.json(createError('error.no_email_found', 'No email found'), 400);
       }
 
       const [slug] = primaryEmail.email.split('@');
@@ -152,7 +147,7 @@ const oauthRoutes = app
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-          return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
+          return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
         }
 
         userEmail = token.email;
@@ -196,9 +191,7 @@ const oauthRoutes = app
 
         await setSessionCookie(ctx, existingUser.id);
 
-        customLogger('User signed in with GitHub', {
-          user: existingUser.id,
-        });
+        customLogger('User signed in with GitHub', { user: existingUser.id });
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -241,9 +234,7 @@ const oauthRoutes = app
 
       await setSessionCookie(ctx, userId);
 
-      customLogger('User signed in with GitHub', {
-        user: userId,
-      });
+      customLogger('User signed in with GitHub', { user: userId });
 
       return ctx.json({}, 302, {
         Location: config.frontendUrl + config.defaultRedirectPath,
@@ -251,16 +242,10 @@ const oauthRoutes = app
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
         // bad verification code, invalid credentials, etc
-        return ctx.json(createError(i18n, 'error.invalid_credentials', 'Invalid credentials'), 400);
+        return ctx.json(createError('error.invalid_credentials', 'Invalid credentials'), 400);
       }
 
-      customLogger(
-        'Error signing in with GitHub',
-        {
-          errorMessage: (error as Error).message,
-        },
-        'error',
-      );
+      customLogger('Error signing in with GitHub', { errorMessage: (error as Error).message }, 'error');
 
       throw error;
     }
@@ -296,7 +281,7 @@ const oauthRoutes = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return ctx.json(createError(i18n, 'error.invalid_state', 'Invalid state'), 400);
+      return ctx.json(createError('error.invalid_state', 'Invalid state'), 400);
     }
 
     const redirectCookie = getCookie(ctx, 'oauth_redirect');
@@ -329,9 +314,7 @@ const oauthRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId);
 
-        customLogger('User signed in with Google', {
-          user: existingOauthAccount.userId,
-        });
+        customLogger('User signed in with Google', { user: existingOauthAccount.userId });
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -349,9 +332,7 @@ const oauthRoutes = app
 
         await setSessionCookie(ctx, existingUser.id);
 
-        customLogger('User signed in with Google', {
-          user: existingUser.id,
-        });
+        customLogger('User signed in with Google', { user: existingUser.id });
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -377,9 +358,7 @@ const oauthRoutes = app
 
       await setSessionCookie(ctx, userId);
 
-      customLogger('User signed in with Google', {
-        user: userId,
-      });
+      customLogger('User signed in with Google', { user: userId });
 
       return ctx.json({}, 302, {
         Location: config.frontendUrl + config.defaultRedirectPath,
@@ -387,16 +366,11 @@ const oauthRoutes = app
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
         // bad verification code, invalid credentials, etc
-        return ctx.json(createError(i18n, 'error.invalid_credentials', 'Invalid credentials'), 400);
+        return ctx.json(createError('error.invalid_credentials', 'Invalid credentials'), 400);
       }
 
-      customLogger(
-        'Error signing in with Google',
-        {
-          errorMessage: (error as Error).message,
-        },
-        'error',
-      );
+      const errorMessage = (error as Error).message;
+      customLogger('Error signing in with Google', { errorMessage }, 'error');
 
       throw error;
     }
@@ -432,7 +406,7 @@ const oauthRoutes = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return ctx.json(createError(i18n, 'error.invalid_state', 'Invalid state'), 400);
+      return ctx.json(createError('error.invalid_state', 'Invalid state'), 400);
     }
 
     const redirectCookie = getCookie(ctx, 'oauth_redirect');
@@ -463,9 +437,7 @@ const oauthRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId);
 
-        customLogger('User signed in with Microsoft', {
-          user: existingOauthAccount.userId,
-        });
+        customLogger('User signed in with Microsoft', { user: existingOauthAccount.userId });
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -473,7 +445,7 @@ const oauthRoutes = app
       }
 
       if (!user.email) {
-        return ctx.json(createError(i18n, 'error.no_email_found', 'No email found'), 400);
+        return ctx.json(createError('error.no_email_found', 'No email found'), 400);
       }
 
       const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, user.email.toLowerCase()));
@@ -487,9 +459,7 @@ const oauthRoutes = app
 
         await setSessionCookie(ctx, existingUser.id);
 
-        customLogger('User signed in with Microsoft', {
-          user: existingUser.id,
-        });
+        customLogger('User signed in with Microsoft', { user: existingUser.id });
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -515,9 +485,7 @@ const oauthRoutes = app
 
       await setSessionCookie(ctx, userId);
 
-      customLogger('User signed in with Microsoft', {
-        user: userId,
-      });
+      customLogger('User signed in with Microsoft', { user: userId });
 
       return ctx.json({}, 302, {
         Location: config.frontendUrl + config.defaultRedirectPath,
@@ -525,16 +493,11 @@ const oauthRoutes = app
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
         // bad verification code, invalid credentials, etc
-        return ctx.json(createError(i18n, 'error.invalid_credentials', 'Invalid credentials'), 400);
+        return ctx.json(createError('error.invalid_credentials', 'Invalid credentials'), 400);
       }
 
-      customLogger(
-        'Error signing in with Microsoft',
-        {
-          errorMessage: (error as Error).message,
-        },
-        'error',
-      );
+      const errorMessage = (error as Error).message;
+      customLogger('Error signing in with Microsoft', { errorMessage }, 'error');
 
       throw error;
     }

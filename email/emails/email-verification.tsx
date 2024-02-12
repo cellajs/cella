@@ -2,16 +2,15 @@ import { Body, Button, Container, Head, Html, Img, Preview, Section, Tailwind, T
 import * as React from 'react';
 
 import { config } from 'config';
-import { getI18n } from 'i18n';
+import { i18n } from '../../backend/src/lib/i18n';
 
 interface Props {
   verificationLink: string;
-  i18n?: ReturnType<typeof getI18n>;
 }
 
 const baseUrl = config.frontendUrl;
 
-export const VerificationEmail = ({ verificationLink = 'https://cellajs.com', i18n = getI18n('backend') }: Props) => {
+export const VerificationEmail = ({ verificationLink = 'https://cellajs.com' }: Props) => {
   return (
     <React.Fragment>
       <Html>

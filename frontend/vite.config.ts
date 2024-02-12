@@ -25,6 +25,10 @@ export default defineConfig(() => {
             src: '../emails/static/**/*',
             dest: 'static',
           },
+          {
+            src: '../locales/**/*',
+            dest: 'locales',
+          },
         ],
       }),
       createHtmlPlugin({

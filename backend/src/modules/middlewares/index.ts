@@ -1,16 +1,12 @@
 import { config } from 'config';
 import { compress } from 'hono/compress';
-import { getCookie } from 'hono/cookie';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
-import { getI18n } from 'i18n';
 import { customLogger } from '../../lib/custom-logger';
 import { CustomHono } from '../../types/common';
 import { rateLimiter } from './rate-limiter';
-
-const i18n = getI18n('backend');
 
 const app = new CustomHono();
 
@@ -67,14 +63,5 @@ app.use(
     origin: config.frontendUrl,
   }),
 );
-
-// i18next middleware checks if the user has a language cookie and sets the language accordingly
-app.use('*', async (ctx, next) => {
-  const { i18next } = getCookie(ctx);
-
-  i18n.changeLanguage(i18next || 'en');
-
-  await next();
-});
 
 export default app;

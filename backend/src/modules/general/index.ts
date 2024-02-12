@@ -1,11 +1,10 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { emailSender } from 'emails';
-import { InviteEmail } from 'emails/invite';
+import { emailSender } from '../../../../email';
+import { InviteEmail } from '../../../../email/emails/invite';
 
 import { render } from '@react-email/render';
 import { config } from 'config';
 import { env } from 'env';
-import { getI18n } from 'i18n';
 import jwt from 'jsonwebtoken';
 import { User, generateId } from 'lucia';
 import { nanoid } from 'nanoid';
@@ -18,11 +17,10 @@ import { OrganizationModel, membershipsTable, organizationsTable, tokensTable, u
 import { setCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError, forbiddenError } from '../../lib/errors';
+import { i18n } from '../../lib/i18n';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { githubSignInRoute } from '../auth/routes';
 import { acceptInviteRoute, checkInviteRoute, checkSlugRoute, getPublicCountsRoute, getUploadTokenRoute, inviteRoute } from './routes';
-
-const i18n = getI18n('backend');
 
 const app = new CustomHono();
 
@@ -80,10 +78,7 @@ const generalRoutes = app
 
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.slug, slug));
 
-    customLogger('Slug checked', {
-      slug,
-      available: !!user || !!organization,
-    });
+    customLogger('Slug checked', { slug, available: !!user || !!organization });
 
     return ctx.json({
       success: true,
@@ -96,7 +91,7 @@ const generalRoutes = app
     const organization = ctx.get('organization') as OrganizationModel | undefined;
 
     if (!organization && user.role !== 'ADMIN') {
-      return ctx.json<ErrorResponse>(forbiddenError(i18n), 403);
+      return ctx.json<ErrorResponse>(forbiddenError(), 403);
     }
 
     for (const email of emails) {
@@ -109,11 +104,7 @@ const generalRoutes = app
           .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
 
         if (existingMembership) {
-          customLogger('User already member of organization', {
-            user: targetUser.id,
-            organization: organization.id,
-          });
-
+          customLogger('User already member of organization', { user: targetUser.id, organization: organization.id });
           continue;
         }
 
@@ -128,11 +119,7 @@ const generalRoutes = app
             })
             .returning();
 
-          customLogger('User added to organization', {
-            user: user.id,
-            organization: organization.id,
-          });
-
+          customLogger('User added to organization', { user: user.id, organization: organization.id });
           continue;
         }
       }
@@ -159,18 +146,12 @@ const generalRoutes = app
               username: email.toLowerCase(),
               inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
               invitedBy: user.name,
-              i18n,
               type: 'system',
             }),
           );
-          customLogger('User invited to system', {
-            email: email.toLowerCase(),
-          });
+          customLogger('User invited to system', { email: email.toLowerCase() });
         } else {
-          customLogger('User already exists', {
-            user: targetUser.id,
-          });
-
+          customLogger('User already exists', { user: targetUser.id });
           continue;
         }
       } else {
@@ -182,28 +163,19 @@ const generalRoutes = app
             username: targetUser?.name || email.toLowerCase() || '',
             invitedBy: user.name,
             inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
-            i18n,
           }),
         );
-        customLogger('User invited to organization', {
-          user: email.toLowerCase(),
-          organization: organization?.id,
-        });
+        customLogger('User invited to organization', { user: email.toLowerCase(), organization: organization?.id });
       }
       try {
         emailSender.send(
-          env.SEND_ALL_TO_EMAIL || (config.senderIsReceiver ? user.email : email.toLowerCase()),
+          config.senderIsReceiver ? user.email : email.toLowerCase(),
           organization ? `Invitation to ${organization.name} on Cella` : 'Invitation to Cella',
           emailHtml,
         );
       } catch (error) {
-        customLogger(
-          'Error sending email',
-          {
-            errorMessage: (error as Error).message,
-          },
-          'error',
-        );
+        const errorMessage = (error as Error).message;
+        customLogger('Error sending email', { errorMessage }, 'error');
       }
     }
 
@@ -244,7 +216,7 @@ const generalRoutes = app
       .where(and(eq(tokensTable.id, verificationToken)));
 
     if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
+      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
     }
 
     let organization: OrganizationModel | undefined;
@@ -253,7 +225,7 @@ const generalRoutes = app
       [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, token.organizationId));
 
       if (!organization) {
-        return ctx.json(createError(i18n, 'error.organization_not_found', 'Organization not found'), 404);
+        return ctx.json(createError('error.organization_not_found', 'Organization not found'), 404);
       }
     }
 
@@ -266,7 +238,7 @@ const generalRoutes = app
         .where(and(eq(usersTable.id, token.userId)));
 
       if (!user || user.email !== token.email) {
-        return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
+        return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
       }
     } else if (password || oauth) {
       const hashedPassword = password ? await new Argon2id().hash(password) : undefined;
@@ -301,7 +273,7 @@ const generalRoutes = app
         ctx.header('Set-Cookie', sessionCookie.serialize());
       }
     } else {
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
+      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
     }
 
     if (organization) {
@@ -341,7 +313,7 @@ const generalRoutes = app
         // return ctx.redirect(url, 302);
       }
 
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
+      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
     }
 
     return ctx.json({

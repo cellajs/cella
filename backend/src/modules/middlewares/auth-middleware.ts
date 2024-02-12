@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm';
 import { MiddlewareHandler } from 'hono';
-import { getI18n } from 'i18n';
 import { User } from 'lucia';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
@@ -8,8 +7,6 @@ import { usersTable } from '../../db/schema';
 import { customLogger } from '../../lib/custom-logger';
 import { forbiddenError, unauthorizedError } from '../../lib/errors';
 import { ErrorResponse } from '../../types/common';
-
-const i18n = getI18n('backend');
 
 // authMiddleware() is checking if the user is authenticated and if the user has the required role
 const authMiddleware =
@@ -24,7 +21,7 @@ const authMiddleware =
       const sessionCookie = auth.createBlankSessionCookie();
       ctx.header('Set-Cookie', sessionCookie.serialize());
 
-      return ctx.json<ErrorResponse>(unauthorizedError(i18n), 401);
+      return ctx.json<ErrorResponse>(unauthorizedError(), 401);
     }
 
     const { session, user } = await auth.validateSession(sessionId);
@@ -35,15 +32,13 @@ const authMiddleware =
       const sessionCookie = auth.createBlankSessionCookie();
       ctx.header('Set-Cookie', sessionCookie.serialize());
 
-      return ctx.json<ErrorResponse>(unauthorizedError(i18n), 401);
+      return ctx.json<ErrorResponse>(unauthorizedError(), 401);
     }
 
     if (accessibleFor && !accessibleFor.includes(user.role)) {
-      customLogger('User forbidden', {
-        user: user.id,
-      });
+      customLogger('User forbidden', { user: user.id });
 
-      return ctx.json<ErrorResponse>(forbiddenError(i18n), 403);
+      return ctx.json<ErrorResponse>(forbiddenError(), 403);
     }
 
     if (session?.fresh) {
@@ -64,9 +59,7 @@ const authMiddleware =
 
     ctx.set('user', user);
 
-    customLogger('User authenticated', {
-      user: user.id,
-    });
+    customLogger('User authenticated', { user: user.id });
 
     await next();
   };

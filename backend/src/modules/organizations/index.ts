@@ -1,7 +1,6 @@
 import { config } from 'config';
 import { AnyColumn, SQL, and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
 import { countDistinct } from 'drizzle-orm';
-import { getI18n } from 'i18n';
 import slugify from 'slugify';
 import { db } from '../../db/db';
 import { MembershipModel, membershipsTable, organizationsTable, usersTable } from '../../db/schema';
@@ -21,8 +20,6 @@ import {
   updateUserInOrganizationRoute,
 } from './routes';
 
-const i18n = getI18n('backend');
-
 const app = new CustomHono();
 
 // routes
@@ -36,10 +33,7 @@ const organizationsRoutes = app
     if (organization) {
       customLogger('Organization with this name exists', { name });
 
-      return ctx.json<ErrorResponse>(
-        createError(i18n, 'error.organization_with_this_name_exists', 'Organization with this name already exists'),
-        400,
-      );
+      return ctx.json<ErrorResponse>(createError('error.organization_with_this_name_exists', 'Organization with this name already exists'), 400);
     }
 
     const [createdOrganization] = await db
@@ -53,9 +47,7 @@ const organizationsRoutes = app
       })
       .returning();
 
-    customLogger('Organization created', {
-      organization: createdOrganization.id,
-    });
+    customLogger('Organization created', { organization: createdOrganization.id });
 
     return ctx.json({
       success: true,
@@ -187,7 +179,7 @@ const organizationsRoutes = app
       if (slugExists && slug !== organization.slug) {
         customLogger('Slug already exists', { slug });
 
-        return ctx.json(createError(i18n, 'error.slug_already_exists', 'Slug already exists'), 400);
+        return ctx.json(createError('error.slug_already_exists', 'Slug already exists'), 400);
       }
     }
 
@@ -236,9 +228,7 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
 
-    customLogger('Organization updated', {
-      organization: updatedOrganization.id,
-    });
+    customLogger('Organization updated', { organization: updatedOrganization.id });
 
     return ctx.json({
       success: true,
@@ -262,8 +252,7 @@ const organizationsRoutes = app
 
     if (!targetUser) {
       customLogger('User not found', { user: userId });
-
-      return ctx.json(createError(i18n, 'error.user_not_found', 'User not found'), 404);
+      return ctx.json(createError('error.user_not_found', 'User not found'), 404);
     }
 
     const [membership] = await db
@@ -273,12 +262,8 @@ const organizationsRoutes = app
       .returning();
 
     if (!membership) {
-      customLogger('Membership not found', {
-        user: targetUser.id,
-        organization: organization.id,
-      });
-
-      return ctx.json(createError(i18n, 'error.user_not_found', 'User not found'), 404);
+      customLogger('Membership not found', { user: targetUser.id, organization: organization.id });
+      return ctx.json(createError('error.user_not_found', 'User not found'), 404);
     }
 
     const [{ memberships }] = await db
@@ -288,10 +273,7 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
 
-    customLogger('User updated in organization', {
-      user: targetUser.id,
-      organization: organization.id,
-    });
+    customLogger('User updated in organization', { user: targetUser.id, organization: organization.id });
 
     return ctx.json({
       success: true,
@@ -309,9 +291,7 @@ const organizationsRoutes = app
 
     await db.delete(organizationsTable).where(eq(organizationsTable.id, organization.id));
 
-    customLogger('Organization deleted', {
-      organization: organization.id,
-    });
+    customLogger('Organization deleted', { organization: organization.id });
 
     return ctx.json({
       success: true,
@@ -341,9 +321,7 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
 
-    customLogger('Organization returned', {
-      organization: organization.id,
-    });
+    customLogger('Organization returned', { organization: organization.id });
 
     return ctx.json({
       success: true,
@@ -448,7 +426,7 @@ const organizationsRoutes = app
     if (!user) {
       customLogger('User not found', { user: userId });
 
-      return ctx.json(createError(i18n, 'error.user_not_found', 'User not found'), 404);
+      return ctx.json(createError('error.user_not_found', 'User not found'), 404);
     }
 
     const [membership] = await db
@@ -463,10 +441,7 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
 
-    customLogger('User deleted from organization', {
-      user: user.id,
-      organization: organization.id,
-    });
+    customLogger('User deleted from organization', { user: user.id, organization: organization.id });
 
     return ctx.json({
       success: true,

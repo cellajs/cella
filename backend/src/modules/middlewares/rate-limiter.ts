@@ -3,12 +3,8 @@ import { MiddlewareHandler } from 'hono';
 import { IRateLimiterOptions, RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 import { tooManyRequestsError } from '../../lib/errors';
 
-import { getI18n } from 'i18n';
-
 import { customLogger } from '../../lib/custom-logger';
 import { Env } from '../../types/common';
-
-const i18n = getI18n('backend');
 
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
 
@@ -41,12 +37,10 @@ class RateLimiter extends RateLimiterMemory {
       }
 
       if (retrySecs > 0) {
-        customLogger('Too many requests', {
-          usernameIPkey,
-        });
+        customLogger('Too many requests', { usernameIPkey });
 
         ctx.header('Retry-After', String(retrySecs));
-        return ctx.json(tooManyRequestsError(i18n), 429);
+        return ctx.json(tooManyRequestsError(), 429);
       }
 
       if (mode === 'limit') {
@@ -54,12 +48,10 @@ class RateLimiter extends RateLimiterMemory {
           await this.consume(usernameIPkey);
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) {
-            customLogger('Too many requests (Limit)', {
-              usernameIPkey,
-            });
+            customLogger('Too many requests (Limit)', { usernameIPkey });
 
             ctx.header('Retry-After', String(Math.round(rlRejected.msBeforeNext / 1000) || 1));
-            return ctx.json(tooManyRequestsError(i18n), 429);
+            return ctx.json(tooManyRequestsError(), 429);
           }
 
           throw rlRejected;
@@ -130,12 +122,10 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
   }
 
   if (retrySecs > 0) {
-    customLogger('Too many requests (Login)', {
-      usernameIPkey,
-    });
+    customLogger('Too many requests (Login)', { usernameIPkey });
 
     ctx.header('Retry-After', String(retrySecs));
-    return ctx.json(tooManyRequestsError(i18n), 429);
+    return ctx.json(tooManyRequestsError(), 429);
   }
 
   await limiterSlowBruteByIP.consume(ipAddr);
@@ -146,11 +136,9 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
     try {
       await limiterConsecutiveFailsByUsernameAndIP.consume(usernameIPkey);
     } catch (error) {
-      customLogger('Too many requests (Limit)', {
-        usernameIPkey,
-      });
+      customLogger('Too many requests (Limit)', { usernameIPkey });
 
-      return ctx.json(tooManyRequestsError(i18n), 429);
+      return ctx.json(tooManyRequestsError(), 429);
     }
   } else {
     await limiterConsecutiveFailsByUsernameAndIP.delete(usernameIPkey);

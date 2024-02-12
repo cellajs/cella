@@ -7,17 +7,17 @@ import { resetDb } from './cron/reset-db';
 import { db } from './db/db';
 import { app } from './server';
 
+// Set i18n instance with all translations on startup
+import './lib/i18n';
+
 const main = async () => {
   // Reset db every Sunday at midnight
-  cron
-    .schedule('0 0 * * 0', resetDb, {
-      scheduled: true,
-      timezone: 'UTC',
-    })
-    .start();
+  cron.schedule('0 0 * * 0', resetDb, { scheduled: true, timezone: 'UTC' }).start();
 
+  // Migrate db
   await migrate(db, { migrationsFolder: 'drizzle' });
 
+  // Start server
   serve(
     {
       fetch: app.fetch,
