@@ -18,6 +18,11 @@
   grid-template-rows: none !important;
 }
 
+.rdg-cell {
+  display: flex;
+  align-items: center;
+}
+
 .rdg-cell:not([role="columnheader"]) {
   border-top: 1px solid var(--rdg-border-color);
 }
