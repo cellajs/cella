@@ -8,8 +8,9 @@ import { Card, CardContent } from '~/modules/ui/card';
 import { useContext } from 'react';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { dialog } from '../common/dialoger/state';
-import DeleteOrganization from './delete-organization';
+import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
+import { toast } from 'sonner';
 
 const OrganizationSettings = () => {
   const { t } = useTranslation();
@@ -47,10 +48,15 @@ const OrganizationSettings = () => {
           variant="destructive"
           onClick={() => {
             dialog(
-              <DeleteOrganization
+              <DeleteOrganizations
                 dialog
-                organization={organization}
+                organizations={[organization]}
                 callback={() => {
+                  toast.success(
+                    t('success.delete_organization', {
+                      defaultValue: 'Organization has been deleted',
+                    }),
+                  );
                   navigate({
                     to: '/',
                     replace: true,

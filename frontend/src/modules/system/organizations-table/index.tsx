@@ -49,7 +49,7 @@ const OrganizationsTable = () => {
   );
   useSaveInSearchParams(filters);
 
-  const callback = (organization: Organization, action: 'create' | 'update' | 'delete') => {
+  const callback = (organizations: Organization[], action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<InfiniteData<QueryData>>(['organizations', query, sortColumns], (data) => {
       if (!data) {
         return;
@@ -58,8 +58,8 @@ const OrganizationsTable = () => {
         return {
           pages: [
             {
-              items: [organization, ...data.pages[0].items],
-              total: data.pages[0].total + 1,
+              items: [...organizations, ...data.pages[0].items],
+              total: data.pages[0].total + organizations.length,
             },
             ...data.pages.slice(1),
           ],
@@ -72,7 +72,8 @@ const OrganizationsTable = () => {
           pages: [
             {
               items: data.pages[0].items.map((item) => {
-                if (item.id === organization.id) {
+                const organization = organizations.find((organization) => organization.id === item.id);
+                if (item.id === organization?.id) {
                   return organization;
                 }
 
@@ -90,7 +91,7 @@ const OrganizationsTable = () => {
         return {
           pages: [
             {
-              items: data.pages[0].items.filter((item) => item.id !== organization.id),
+              items: data.pages[0].items.filter((item) => !organizations.some((organization) => organization.id === item.id)),
               total: data.pages[0].total - 1,
             },
             ...data.pages.slice(1),
@@ -147,6 +148,7 @@ const OrganizationsTable = () => {
         setQuery={setQuery}
         callback={callback}
         isFiltered={isFiltered}
+        selectedOrganizations={rows.filter((row) => selectedRows.has(row.id))}
         onResetFilters={onResetFilters}
         columns={columns}
         setColumns={setColumns}

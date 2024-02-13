@@ -9,12 +9,14 @@ import { AvatarWrap } from '../../common/avatar-wrap';
 import { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import RowEdit from './row-edit';
+import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 
-export const useColumns = (callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void) => {
+export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
   const mobileColumns: ColumnOrColumnGroup<Organization>[] = [
+    CheckboxColumn,
     {
       key: 'name',
       name: t('label.name'),

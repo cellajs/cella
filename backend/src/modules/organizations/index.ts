@@ -11,7 +11,7 @@ import { CustomHono, ErrorResponse } from '../../types/common';
 import { checkSlugRoute } from '../general/routes';
 import {
   createOrganizationRoute,
-  deleteOrganizationRoute,
+  deleteOrganizationsRoute,
   deleteUserFromOrganizationRoute,
   getOrganizationByIdOrSlugRoute,
   getOrganizationsRoute,
@@ -286,16 +286,44 @@ const organizationsRoutes = app
       },
     });
   })
-  .openapi(deleteOrganizationRoute, async (ctx) => {
-    const organization = ctx.get('organization');
+  .openapi(deleteOrganizationsRoute, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
+    // const user = ctx.get('user');
 
-    await db.delete(organizationsTable).where(eq(organizationsTable.id, organization.id));
+    const organizationIds = Array.isArray(ids) ? ids : [ids];
 
-    customLogger('Organization deleted', { organization: organization.id });
+    const errors: ReturnType<typeof createError>[] = [];
+
+    await Promise.all(
+      organizationIds.map(async (id) => {
+        const [targetOrganization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, id));
+
+        if (!targetOrganization) {
+          customLogger('Organization not found', { organization: id });
+          errors.push(createError('error.organization_not_found', 'Organization not found'));
+          return;
+        }
+
+        // if (user.role !== 'ADMIN') {
+        //   customLogger('User forbidden', { user: user.id });
+        //   errors.push(forbiddenError());
+        //   return;
+        // }
+
+        await db.delete(organizationsTable).where(eq(organizationsTable.id, id));
+
+        customLogger('Organization deleted', { organization: id });
+      }),
+    );
 
     return ctx.json({
       success: true,
-      data: undefined,
+      data:
+        errors.length > 0
+          ? {
+              error: errors[0].error,
+            }
+          : undefined,
     });
   })
   .openapi(getOrganizationByIdOrSlugRoute, async (ctx) => {

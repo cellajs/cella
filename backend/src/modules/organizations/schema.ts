@@ -86,10 +86,6 @@ export const getUsersByOrganizationIdParamSchema = z.object({
   organizationIdentifier: slugSchema.or(idSchema),
 });
 
-export const deleteOrganizationParamSchema = z.object({
-  organizationIdentifier: slugSchema.or(idSchema),
-});
-
 export const updateUserInOrganizationParamSchema = z.object({
   organizationIdentifier: slugSchema.or(idSchema),
   userId: idSchema,

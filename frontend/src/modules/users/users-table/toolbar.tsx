@@ -7,12 +7,13 @@ import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import InviteUsersForm from '~/modules/users/invite-users-form';
 import { useUserStore } from '~/store/user';
+import { User } from '~/types';
 import { UserRow } from '.';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
-import DeleteUser from '../delete-user';
-import { User } from '~/types';
+import DeleteUsers from '../delete-users';
+import { toast } from 'sonner';
 
 interface Props {
   total?: number;
@@ -44,7 +45,20 @@ const items = [
   },
 ];
 
-function Toolbar({ selectedUsers, isFiltered, total, isLoading, role, setRole, onResetFilters, query, setQuery, columns, setColumns, callback }: Props) {
+function Toolbar({
+  selectedUsers,
+  isFiltered,
+  total,
+  isLoading,
+  role,
+  setRole,
+  onResetFilters,
+  query,
+  setQuery,
+  columns,
+  setColumns,
+  callback,
+}: Props) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
 
@@ -61,24 +75,38 @@ function Toolbar({ selectedUsers, isFiltered, total, isLoading, role, setRole, o
     });
   };
 
-  const openDeleteUsersDialog = () => {
-    dialog(<DeleteUser users={selectedUsers} callback={(users) => callback(users, 'delete')} dialog />, {
-      drawerOnMobile: false,
-      className: 'max-w-xl',
-      title: t('label.delete', {
-        defaultValue: 'Delete',
-      }),
-      description: t('description.delete_users', {
-        defaultValue: 'Are you sure you want to delete the selected users?',
-      }),
-    });
+  const openDeleteDialog = () => {
+    dialog(
+      <DeleteUsers
+        users={selectedUsers}
+        callback={(users) => {
+          callback(users, 'delete');
+          toast.success(
+            t('success.delete_users', {
+              defaultValue: 'Users deleted',
+            }),
+          );
+        }}
+        dialog
+      />,
+      {
+        drawerOnMobile: false,
+        className: 'max-w-xl',
+        title: t('label.delete', {
+          defaultValue: 'Delete',
+        }),
+        description: t('description.delete_users', {
+          defaultValue: 'Are you sure you want to delete the selected users?',
+        }),
+      },
+    );
   };
 
   return (
     <div className="items-center justify-between sm:flex">
       <div className="flex items-center space-x-2">
         {selectedUsers.length > 0 ? (
-          <Button variant="destructive" className="relative" onClick={openDeleteUsersDialog}>
+          <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
             <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
               <span className="text-xs font-medium text-white">{selectedUsers.length}</span>
             </div>

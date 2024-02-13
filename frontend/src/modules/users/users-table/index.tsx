@@ -53,14 +53,12 @@ const UsersTable = () => {
   useSaveInSearchParams(filters);
 
   const callback = (users: User[], action: 'create' | 'update' | 'delete') => {
-    const preparedUsers = Array.isArray(users) ? users : [users];
-
     queryClient.setQueryData<InfiniteData<QueryData>>(['users', query, sortColumns, role], (data) => {
       if (!data) {
         return;
       }
       if (action === 'create') {
-        const createdUsers = preparedUsers.map((user) => ({
+        const createdUsers = users.map((user) => ({
           ...user,
           counts: {
             ...user.counts,
@@ -71,10 +69,7 @@ const UsersTable = () => {
         return {
           pages: [
             {
-              items: [
-                ...createdUsers,
-                ...data.pages[0].items,
-              ],
+              items: [...createdUsers, ...data.pages[0].items],
               total: data.pages[0].total + createdUsers.length,
             },
             ...data.pages.slice(1),
@@ -88,15 +83,9 @@ const UsersTable = () => {
           pages: [
             {
               items: data.pages[0].items.map((item) => {
-                const user = preparedUsers.find((user) => user.id === item.id);
+                const user = users.find((user) => user.id === item.id);
                 if (item.id === user?.id) {
-                  return {
-                    ...user,
-                    counts: {
-                      ...user.counts,
-                      ...item.counts,
-                    },
-                  };
+                  return user;
                 }
 
                 return item;
@@ -113,7 +102,7 @@ const UsersTable = () => {
         return {
           pages: [
             {
-              items: data.pages[0].items.filter((item) => !preparedUsers.some((user) => user.id === item.id)),
+              items: data.pages[0].items.filter((item) => !users.some((user) => user.id === item.id)),
               total: data.pages[0].total - 1,
             },
             ...data.pages.slice(1),

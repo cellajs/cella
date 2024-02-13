@@ -22,6 +22,10 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
 
   const mobileColumns: ColumnOrColumnGroup<UserRow>[] = [
     {
+      ...CheckboxColumn,
+      renderCell: (props) => props.row.type === 'MASTER' && CheckboxColumn.renderCell?.(props),
+    },
+    {
       key: 'name',
       name: t('label.name'),
       visible: true,
@@ -86,10 +90,6 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
                 </Button>
               );
             },
-          },
-          {
-            ...CheckboxColumn,
-            renderCell: (props) => props.row.type === 'MASTER' && CheckboxColumn.renderCell?.(props),
           },
           ...mobileColumns,
           {

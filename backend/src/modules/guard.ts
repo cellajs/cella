@@ -16,7 +16,7 @@ import organizationAuthMiddleware from './middlewares/organization-auth-middlewa
 import { rateLimiter, signInRateLimiter } from './middlewares/rate-limiter';
 import {
   createOrganizationRoute,
-  deleteOrganizationRoute,
+  deleteOrganizationsRoute,
   deleteUserFromOrganizationRoute,
   getOrganizationByIdOrSlugRoute,
   getOrganizationsRoute,
@@ -105,8 +105,8 @@ const routesMiddlewares: {
     middlewares: [authMiddleware(), organizationAuthMiddleware(['ADMIN'])],
   },
   {
-    route: deleteOrganizationRoute,
-    middlewares: [authMiddleware(['ADMIN']), organizationAuthMiddleware(['ADMIN'])],
+    route: deleteOrganizationsRoute,
+    middlewares: [authMiddleware(['ADMIN'])],
   },
   {
     route: updateUserInOrganizationRoute,

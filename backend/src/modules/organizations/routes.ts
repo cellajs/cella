@@ -5,13 +5,11 @@ import {
   errorResponses,
   successResponseWithDataSchema,
   successResponseWithPaginationSchema,
-  successResponseWithoutDataSchema,
 } from '../../schemas/responses';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
   createOrganizationJsonSchema,
-  deleteOrganizationParamSchema,
   deleteUserFromOrganizationParamSchema,
   getOrganizationParamSchema,
   getUsersByOrganizationIdParamSchema,
@@ -85,24 +83,32 @@ export const updateOrganizationRoute = createRoute({
   },
 });
 
-export const deleteOrganizationRoute = createRoute({
+export const deleteOrganizationsRoute = createRoute({
   method: 'delete',
-  path: '/organizations/{organizationIdentifier}',
+  path: '/organizations',
   tags: ['organizations'],
-  summary: 'Delete organization',
+  summary: 'Delete organizations',
   description: `
     Permissions:
       - Users with role 'ADMIN'
   `,
   request: {
-    params: deleteOrganizationParamSchema,
+    query: z.object({
+      ids: z.union([z.string(), z.array(z.string())]),
+    }),
   },
   responses: {
     200: {
-      description: 'Organization was deleted',
+      description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithoutDataSchema,
+          schema: successResponseWithDataSchema(
+            z
+              .object({
+                error: z.string().optional(),
+              })
+              .optional(),
+          ),
         },
       },
     },

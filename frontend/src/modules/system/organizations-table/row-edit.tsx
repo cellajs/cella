@@ -8,7 +8,7 @@ import { dialog } from '../../common/dialoger/state';
 
 interface Props {
   organization: Organization;
-  callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void;
+  callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void;
   tabIndex: number;
 }
 
@@ -16,7 +16,7 @@ const DataTableRowEdit = ({ organization, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
   const openUpdateDialog = () => {
-    dialog(<UpdateOrganizationForm organization={organization} dialog callback={(organization) => callback(organization, 'update')} />, {
+    dialog(<UpdateOrganizationForm organization={organization} dialog callback={(organization) => callback([organization], 'update')} />, {
       drawerOnMobile: false,
       className: 'sm:max-w-2xl my-4 sm:my-8',
       title: t('action.edit_organization'),

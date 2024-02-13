@@ -4,13 +4,16 @@ import { Card, CardContent } from '~/modules/ui/card';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
-import DeleteUser from './delete-user';
+import DeleteUsers from './delete-users';
 
 import { useTranslation } from 'react-i18next';
 import UpdateUserForm from '~/modules/users/update-user-form';
+import { toast } from 'sonner';
+import { useNavigate } from '@tanstack/react-router';
 
 const UserSettings = () => {
   const user = useUserStore((state) => state.user);
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
   return (
@@ -30,13 +33,27 @@ const UserSettings = () => {
             <Button
               variant="destructive"
               onClick={() => {
-                dialog(<DeleteUser users={[user]} dialog />, {
-                  className: 'sm:max-w-[64rem]',
-                  title: t('action.delete_user', {
-                    defaultValue: 'Delete user',
-                  }),
-                  description: t('question.are_you_sure_to_delete_your_account', { email: user.email }),
-                });
+                dialog(
+                  <DeleteUsers
+                    users={[user]}
+                    callback={() => {
+                      toast.success(
+                        t('success.your_account_has_been_deleted', {
+                          defaultValue: 'Your account has been deleted',
+                        }),
+                      );
+                      navigate({ to: '/auth/sign-in' });
+                    }}
+                    dialog
+                  />,
+                  {
+                    className: 'sm:max-w-[64rem]',
+                    title: t('action.delete_user', {
+                      defaultValue: 'Delete user',
+                    }),
+                    description: t('question.are_you_sure_to_delete_your_account', { email: user.email }),
+                  },
+                );
               }}
             >
               Delete account

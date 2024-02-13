@@ -155,7 +155,7 @@ export const deleteUsersRoute = createRoute({
   summary: 'Delete users',
   request: {
     query: z.object({
-      userIds: z.union([z.string(), z.array(z.string())]),
+      ids: z.union([z.string(), z.array(z.string())]),
     }),
   },
   description: `

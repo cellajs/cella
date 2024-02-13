@@ -232,16 +232,16 @@ const usersRoutes = app
     });
   })
   .openapi(deleteUsersRoute, async (ctx) => {
-    const { userIds } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    const ids = Array.isArray(userIds) ? userIds : [userIds];
+    const userIds = Array.isArray(ids) ? ids : [ids];
 
 
     const errors: ReturnType<typeof createError>[] = [];
 
     await Promise.all(
-      ids.map(async (id) => {
+      userIds.map(async (id) => {
         const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
 
         if (!targetUser) {

@@ -87,10 +87,10 @@ export const updateUserInOrganization = async (organizationIdentifier: string, u
   return json.data;
 };
 
-// Delete an organization
-export const deleteOrganization = async (organizationIdentifier: string) => {
-  const response = await client.organizations[':organizationIdentifier'].$delete({
-    param: { organizationIdentifier },
+// Delete an organizations
+export const deleteOrganizations = async (organizationIds: string[]) => {
+  const response = await client.organizations.$delete({
+    query: { ids: organizationIds },
   });
 
   const json = await response.json();

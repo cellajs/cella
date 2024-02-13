@@ -2,6 +2,7 @@ import debounce from 'lodash.debounce';
 import { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/store/user';
@@ -9,54 +10,82 @@ import { Organization } from '~/types';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
+import { toast } from 'sonner';
 
 interface Props {
   total?: number;
   query?: string;
+  selectedOrganizations: Organization[];
   setQuery?: (value: string) => void;
   isFiltered?: boolean;
   isLoading?: boolean;
   onResetFilters?: () => void;
-  callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void;
+  callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void;
   columns: ColumnOrColumnGroup<Organization>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Organization>[]>>;
 }
 
-function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onResetFilters, columns, setColumns }: Props) {
+function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onResetFilters, columns, setColumns, selectedOrganizations }: Props) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  // const [, setOpen] = useState(false);
+
+  const onOpenDeleteDialog = () => {
+    dialog(
+      <DeleteOrganizations
+        organizations={selectedOrganizations}
+        callback={(organizations) => {
+          callback(organizations, 'delete');
+          toast.success(
+            t('success.delete_organizations', {
+              defaultValue: 'Organizations deleted',
+            }),
+          );
+        }}
+        dialog
+      />,
+      {
+        drawerOnMobile: false,
+        className: 'max-w-xl',
+        title: t('label.delete', {
+          defaultValue: 'Delete',
+        }),
+        description: t('description.delete_organizations', {
+          defaultValue: 'Are you sure you want to delete the selected organizations?',
+        }),
+      },
+    );
+  };
 
   return (
     <div className="items-center justify-between sm:flex">
       <div className="flex items-center space-x-2">
-        {/* {Object.keys(rowSelection).length > 0 ? (
-            <Button variant="destructive" className="relative" onClick={() => setOpen(true)}>
-              <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
-                <span className="text-xs font-medium text-white">{Object.keys(rowSelection).length}</span>
-              </div>
-              {t('action.remove', {
-                defaultValue: 'Remove',
-              })}
-            </Button>
-          ) : (
-            user.role === 'ADMIN' && <SheetMenuCreate show entityType="organizations" text="Create" />
-          )} */}
-        {user.role === 'ADMIN' && (
-          <Button
-            onClick={() => {
-              dialog(<CreateOrganizationForm callback={(organization) => callback(organization, 'create')} dialog />, {
-                className: 'sm:max-w-xl',
-                title: t('label.create_organization', {
-                  defaultValue: 'Create organization',
-                }),
-              });
-            }}
-          >
-            {t('action.create', {
-              defaultValue: 'Create',
+        {selectedOrganizations.length > 0 ? (
+          <Button variant="destructive" className="relative" onClick={onOpenDeleteDialog}>
+            <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
+              <span className="text-xs font-medium text-white">{selectedOrganizations.length}</span>
+            </div>
+            {t('action.remove', {
+              defaultValue: 'Remove',
             })}
           </Button>
+        ) : (
+          !isFiltered &&
+          user.role === 'ADMIN' && (
+            <Button
+              onClick={() => {
+                dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
+                  className: 'sm:max-w-xl',
+                  title: t('label.create_organization', {
+                    defaultValue: 'Create organization',
+                  }),
+                });
+              }}
+            >
+              {t('action.create', {
+                defaultValue: 'Create',
+              })}
+            </Button>
+          )
         )}
         <CountAndLoading
           count={total}

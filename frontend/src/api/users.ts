@@ -54,10 +54,10 @@ export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit 
   return json.data;
 };
 
-// Delete a user from the system
+// Delete a users from the system
 export const deleteUsers = async (userIds: string[]) => {
   const response = await client.users.$delete({
-    query: { userIds },
+    query: { ids: userIds },
   });
 
   const json = await response.json();
