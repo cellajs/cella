@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { deleteUserById } from '~/api/users';
+import { deleteUsers } from '~/api/users';
 import { User } from '~/types';
 
 import { useNavigate } from '@tanstack/react-router';
@@ -10,33 +10,32 @@ import { DeleteForm } from '../common/delete-form';
 import { dialog } from '../common/dialoger/state';
 
 interface Props {
-  user: User;
-  callback?: (user: User) => void;
+  users: User[];
+  callback?: (users: User[]) => void;
   dialog?: boolean;
 }
 
-const DeleteUser = ({ user, callback, dialog: isDialog }: Props) => {
+const DeleteUser = ({ users, callback, dialog: isDialog }: Props) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [apiWrapper, pending] = useApiWrapper();
   const { user: currentUser } = useUserStore();
-  const isSelf = currentUser.id === user.id;
 
   const onDelete = () => {
     apiWrapper(
-      () => deleteUserById(user.id),
+      () => deleteUsers(users.map((user) => user.id)),
       () => {
-        callback?.(user);
+        callback?.(users);
 
-        if (isSelf) return navigate({ to: '/auth/sign-in' });
+        if (users.find((user) => user.id === currentUser.id)) return navigate({ to: '/auth/sign-in' });
 
         if (isDialog) {
           dialog.remove();
         }
 
         toast.success(
-          t('success.delete_organization', {
-            defaultValue: 'User deleted',
+          t('success.delete_users', {
+            defaultValue: 'Users deleted',
           }),
         );
       },

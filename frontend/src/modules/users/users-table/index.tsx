@@ -9,7 +9,7 @@ import { RowsChangeData, SortColumn } from 'react-data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { queryClient } from '~/router';
 import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
-import useSaveInSearchParams from '../data-table/use-save-in-search-params';
+import useSaveInSearchParams from '../../common/data-table/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 
@@ -52,26 +52,30 @@ const UsersTable = () => {
   );
   useSaveInSearchParams(filters);
 
-  const callback = (user: User, action: 'create' | 'update' | 'delete') => {
+  const callback = (users: User[], action: 'create' | 'update' | 'delete') => {
+    const preparedUsers = Array.isArray(users) ? users : [users];
+
     queryClient.setQueryData<InfiniteData<QueryData>>(['users', query, sortColumns, role], (data) => {
       if (!data) {
         return;
       }
       if (action === 'create') {
+        const createdUsers = preparedUsers.map((user) => ({
+          ...user,
+          counts: {
+            ...user.counts,
+            memberships: 0,
+          },
+        }));
+
         return {
           pages: [
             {
               items: [
-                {
-                  ...user,
-                  counts: {
-                    ...user.counts,
-                    memberships: 0,
-                  },
-                },
+                ...createdUsers,
                 ...data.pages[0].items,
               ],
-              total: data.pages[0].total + 1,
+              total: data.pages[0].total + createdUsers.length,
             },
             ...data.pages.slice(1),
           ],
@@ -84,7 +88,8 @@ const UsersTable = () => {
           pages: [
             {
               items: data.pages[0].items.map((item) => {
-                if (item.id === user.id) {
+                const user = preparedUsers.find((user) => user.id === item.id);
+                if (item.id === user?.id) {
                   return {
                     ...user,
                     counts: {
@@ -108,7 +113,7 @@ const UsersTable = () => {
         return {
           pages: [
             {
-              items: data.pages[0].items.filter((item) => item.id !== user.id),
+              items: data.pages[0].items.filter((item) => !preparedUsers.some((user) => user.id === item.id)),
               total: data.pages[0].total - 1,
             },
             ...data.pages.slice(1),
@@ -201,10 +206,11 @@ const UsersTable = () => {
         total={queryResult.data?.pages[0].total}
         isLoading={queryResult.isFetching}
         query={query}
+        callback={callback}
         setQuery={setQuery}
         onResetFilters={onResetFilters}
         role={role}
-        selectedRows={selectedRows}
+        selectedUsers={rows.filter((row) => selectedRows.has(row.id)) as User[]}
         setRole={setRole}
         columns={columns}
         setColumns={setColumns}

@@ -6,9 +6,9 @@ import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
-import ColumnsView, { ColumnOrColumnGroup } from '../data-table/columns-view';
-import CountAndLoading from '../data-table/count-and-loading';
-import { dialog } from '../dialoger/state';
+import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import CountAndLoading from '../../common/data-table/count-and-loading';
+import { dialog } from '../../common/dialoger/state';
 
 interface Props {
   total?: number;

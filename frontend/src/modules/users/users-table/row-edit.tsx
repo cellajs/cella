@@ -1,25 +1,25 @@
 import { useTranslation } from 'react-i18next';
-import { Organization } from '~/types';
-import UpdateOrganizationForm from '../../organizations/update-organization-form';
+import { User } from '~/types';
 
 import { Pencil } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
-import { dialog } from '../dialoger/state';
+import UpdateUserForm from '~/modules/users/update-user-form';
+import { dialog } from '../../common/dialoger/state';
 
 interface Props {
-  organization: Organization;
-  callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void;
+  user: User;
+  callback: (users: User[], action: 'create' | 'update' | 'delete') => void;
   tabIndex: number;
 }
 
-const DataTableRowEdit = ({ organization, callback, tabIndex }: Props) => {
+const RowEdit = ({ user, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
   const openUpdateDialog = () => {
-    dialog(<UpdateOrganizationForm organization={organization} dialog callback={(organization) => callback(organization, 'update')} />, {
+    dialog(<UpdateUserForm user={user} dialog callback={(user) => callback([user], 'update')} />, {
       drawerOnMobile: false,
       className: 'sm:max-w-2xl my-4 sm:my-8',
-      title: t('action.edit_organization'),
+      title: t('action.edit_user'),
     });
   };
 
@@ -32,4 +32,4 @@ const DataTableRowEdit = ({ organization, callback, tabIndex }: Props) => {
   );
 };
 
-export default DataTableRowEdit;
+export default RowEdit;

@@ -24,7 +24,7 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './organizations/routes';
-import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/routes';
+import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './users/routes';
 
 // authMiddleware() is used for all routes that require authentication
 // organizationAuthMiddleware() is used for all routes that require organization membership; it also requires authMiddleware() to be used before and organizationId to be in the path
@@ -81,7 +81,7 @@ const routesMiddlewares: {
     middlewares: [authMiddleware()],
   },
   {
-    route: deleteUserRoute,
+    route: deleteUsersRoute,
     middlewares: [authMiddleware()],
   },
   {

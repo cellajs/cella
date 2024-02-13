@@ -1,6 +1,6 @@
 import 'react-data-grid/lib/styles.css';
 
-import { Search, XCircle } from 'lucide-react';
+import { Loader2, Search, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DataGrid, { Row, RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -102,7 +102,6 @@ export function DataTable<TData>({
   const [initial, setInitial] = useState(false);
 
   useEffect(() => {
-    console.log('fetchMore');
     if (isIntersecting && !isFetching) {
       fetchMore?.();
       observer?.disconnect();
@@ -118,7 +117,7 @@ export function DataTable<TData>({
   return (
     <div className="w-full h-full">
       {initial &&
-        (error ? (
+        (error && rows.length === 0 ? (
           <ErrorMessage error={error} />
         ) : !rows.length ? (
           <NoRows isFiltered={isFiltered} isFetching={isFetching} onResetFilters={onResetFilters} customComponent={NoRowsComponent} />
@@ -137,9 +136,11 @@ export function DataTable<TData>({
               sortColumns={sortColumns}
               onSortColumnsChange={onSortColumnsChange}
               renderers={{
-                renderRow: (key, props) => (
-                  <Row {...props} key={key} ref={props.rowIdx === Math.floor(rows.length - 1 - rows.length * 0.2) ? measureRef : undefined} />
-                ),
+                renderRow: (key, props) => {
+                  // 50 because loading 50 records
+                  const isTargetRow = props.rowIdx === Math.floor(rows.length - 1 - 50 * 0.2);
+                  return <Row {...props} key={key} ref={isTargetRow ? measureRef : undefined} />;
+                },
                 renderCheckbox: ({ onChange, ...props }) => {
                   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
                     onChange(e.target.checked, (e.nativeEvent as MouseEvent).shiftKey);
@@ -149,6 +150,12 @@ export function DataTable<TData>({
                 },
               }}
             />
+            {isFetching && !error && (
+              <div className="flex justify-center items-center">
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+              </div>
+            )}
+            {error && <div className=" text-center text-red-500">Could not load more data. Something went wrong.</div>}
           </div>
         ))}
     </div>

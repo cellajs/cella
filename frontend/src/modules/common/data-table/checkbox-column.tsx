@@ -5,6 +5,7 @@ const CheckboxColumn: Column<any> & {
   visible: boolean;
 } = {
   ...SelectColumn,
+  key: 'checkbox-column',
   frozen: false,
   headerCellClass: 'flex items-center justify-center',
   cellClass: 'flex items-center justify-center',

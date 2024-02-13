@@ -14,20 +14,20 @@ import SignIn from '../modules/auth/sign-in';
 import SignOut from '../modules/auth/sign-out';
 import App from '../modules/common/app';
 import ErrorPage from '../modules/common/error';
-import MembersTable from '../modules/common/members-table';
-import OrganizationsTable from '../modules/common/organizations-table';
-import UsersTable from '../modules/common/users-table';
 import Home from '../modules/home';
 import About from '../modules/marketing/about';
 import Accessibility from '../modules/marketing/accessibility';
 import Contact from '../modules/marketing/contact';
 import { Privacy } from '../modules/marketing/privacy';
 import { Terms } from '../modules/marketing/terms';
+import MembersTable from '../modules/organizations/members-table';
 import Organization from '../modules/organizations/organization';
 import OrganizationSettings from '../modules/organizations/organization-settings';
-import SystemPanel from '../modules/system-panel';
+import OrganizationsTable from '../modules/system/organizations-table';
+import SystemPanel from '../modules/system/system-panel';
 import UserProfile from '../modules/users/user-profile';
 import UserSettings from '../modules/users/user-settings';
+import UsersTable from '../modules/users/users-table';
 import { Organization as OrganizationType, User } from '../types';
 
 const rootRoute = rootRouteWithContext<{

@@ -11,7 +11,7 @@ import { SortColumn } from 'react-data-grid';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { queryClient } from '~/router';
 import { MemberSearch, MembersTableRoute } from '~/router/routeTree';
-import useSaveInSearchParams from '../data-table/use-save-in-search-params';
+import useSaveInSearchParams from '../../common/data-table/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 

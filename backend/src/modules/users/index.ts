@@ -10,7 +10,7 @@ import { createError, forbiddenError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono } from '../../types/common';
 import { checkSlugRoute } from '../general/routes';
-import { deleteUserRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './routes';
+import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './routes';
 
 const app = new CustomHono();
 
@@ -231,39 +231,52 @@ const usersRoutes = app
       },
     });
   })
-  .openapi(deleteUserRoute, async (ctx) => {
-    const { userId } = ctx.req.valid('param');
-
+  .openapi(deleteUsersRoute, async (ctx) => {
+    const { userIds } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    const ids = Array.isArray(userIds) ? userIds : [userIds];
 
-    if (!targetUser) {
-      customLogger('User not found', { user: userId });
 
-      return ctx.json(createError('error.user_not_found', 'User not found'), 404);
-    }
+    const errors: ReturnType<typeof createError>[] = [];
 
-    if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      customLogger('User forbidden', { user: user.id });
+    await Promise.all(
+      ids.map(async (id) => {
+        const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
 
-      return ctx.json(forbiddenError(), 403);
-    }
+        if (!targetUser) {
+          customLogger('User not found', { user: id });
+          errors.push(createError(i18n, 'error.user_not_found', 'User not found'));
+          return;
+        }
 
-    await db.delete(usersTable).where(eq(usersTable.id, userId));
+        if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
+          customLogger('User forbidden', { user: user.id });
+          errors.push(forbiddenError(i18n));
+          return;
+        }
 
-    if (user.id === targetUser.id) {
-      await auth.invalidateUserSessions(user.id);
+        await db.delete(usersTable).where(eq(usersTable.id, id));
 
-      const sessionCookie = auth.createBlankSessionCookie();
-      ctx.header('Set-Cookie', sessionCookie.serialize());
-    }
+        if (user.id === targetUser.id) {
+          await auth.invalidateUserSessions(user.id);
 
-    customLogger('User deleted', { user: targetUser.id });
+          const sessionCookie = auth.createBlankSessionCookie();
+          ctx.header('Set-Cookie', sessionCookie.serialize());
+        }
+
+        customLogger('User deleted', { user: targetUser.id });
+      }),
+    );
 
     return ctx.json({
       success: true,
-      data: undefined,
+      data:
+        errors.length > 0
+          ? {
+              error: errors[0].error,
+            }
+          : undefined,
     });
   })
   .openapi(getUserByIdOrSlugRoute, async (ctx) => {

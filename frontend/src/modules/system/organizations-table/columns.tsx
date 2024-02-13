@@ -5,9 +5,9 @@ import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
-import { AvatarWrap } from '../avatar-wrap';
-import { ColumnOrColumnGroup } from '../data-table/columns-view';
-import HeaderCell from '../data-table/header-cell';
+import { AvatarWrap } from '../../common/avatar-wrap';
+import { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import HeaderCell from '../../common/data-table/header-cell';
 import RowEdit from './row-edit';
 
 export const useColumns = (callback: (organization: Organization, action: 'create' | 'update' | 'delete') => void) => {

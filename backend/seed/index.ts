@@ -15,7 +15,8 @@ export const usersSeed = async () => {
     console.log('Users table is not empty, skipping seed');
     return;
   }
-  const hashedPassword = await new Argon2id().hash('12345678');
+  const password = '12345678';
+  const hashedPassword = await new Argon2id().hash(password);
   const email = 'admin-test@cellajs.com';
 
   await db
@@ -31,7 +32,7 @@ export const usersSeed = async () => {
     })
     .onConflictDoNothing();
 
-  console.log(`Created admin user with verified email ${email} and password ${hashedPassword}.`);
+  console.log(`Created admin user with verified email ${email} and password ${password}.`);
 };
 
 // Seed 100 organizations with 100 members each
