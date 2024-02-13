@@ -1,4 +1,4 @@
-import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { getMembersByOrganizationIdentifier } from '~/api/organizations';
@@ -9,13 +9,11 @@ import { DataTable } from '~/modules/common/data-table';
 import { Bird } from 'lucide-react';
 import { SortColumn } from 'react-data-grid';
 import { OrganizationContext } from '~/modules/organizations/organization';
-import { queryClient } from '~/router';
 import { MemberSearch, MembersTableRoute } from '~/router/routeTree';
-import useSaveInSearchParams from '../../common/data-table/use-save-in-search-params';
+import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-
-type QueryData = Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>;
+import useMutateQueryData from '~/hooks/use-mutate-query-data';
 
 const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
@@ -56,46 +54,7 @@ const MembersTable = () => {
   );
   useSaveInSearchParams(filters);
 
-  const callback = (members: Member[], action: 'update' | 'delete') => {
-    queryClient.setQueryData<InfiniteData<QueryData>>(['members', organization.slug, query, sortColumns, role], (data) => {
-      if (!data) {
-        return;
-      }
-
-      if (action === 'update') {
-        return {
-          pages: [
-            {
-              items: data.pages[0].items.map((item) => {
-                const member = members.find((member) => member.id === item.id);
-                if (item.id === member?.id) {
-                  return member;
-                }
-
-                return item;
-              }),
-              total: data.pages[0].total,
-            },
-            ...data.pages.slice(1),
-          ],
-          pageParams: data.pageParams,
-        };
-      }
-
-      if (action === 'delete') {
-        return {
-          pages: [
-            {
-              items: data.pages[0].items.filter((item) => !members.some((member) => member.id === item.id)),
-              total: data.pages[0].total - 1,
-            },
-            ...data.pages.slice(1),
-          ],
-          pageParams: data.pageParams,
-        };
-      }
-    });
-  };
+  const callback = useMutateQueryData(['members', organization.slug, query, sortColumns, role]);
 
   const queryResult = useInfiniteQuery({
     queryKey: ['members', organization.slug, query, sortColumns, role],

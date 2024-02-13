@@ -1,4 +1,4 @@
-import { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -7,15 +7,13 @@ import { User } from '~/types';
 
 import { RowsChangeData, SortColumn } from 'react-data-grid';
 import { DataTable } from '~/modules/common/data-table';
-import { queryClient } from '~/router';
 import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
-import useSaveInSearchParams from '../../common/data-table/use-save-in-search-params';
+import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import useMutateQueryData from '~/hooks/use-mutate-query-data';
 
 export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
-
-type QueryData = Awaited<ReturnType<typeof getUsers>>;
 
 const UsersTable = () => {
   const search = useSearch({ from: UsersTableRoute.id });
@@ -52,68 +50,9 @@ const UsersTable = () => {
   );
   useSaveInSearchParams(filters);
 
-  const callback = (users: User[], action: 'create' | 'update' | 'delete') => {
-    queryClient.setQueryData<InfiniteData<QueryData>>(['users', query, sortColumns, role], (data) => {
-      if (!data) {
-        return;
-      }
-      if (action === 'create') {
-        const createdUsers = users.map((user) => ({
-          ...user,
-          counts: {
-            ...user.counts,
-            memberships: 0,
-          },
-        }));
+  const callback = useMutateQueryData(['users', query, sortColumns, role]);
 
-        return {
-          pages: [
-            {
-              items: [...createdUsers, ...data.pages[0].items],
-              total: data.pages[0].total + createdUsers.length,
-            },
-            ...data.pages.slice(1),
-          ],
-          pageParams: data.pageParams,
-        };
-      }
-
-      if (action === 'update') {
-        return {
-          pages: [
-            {
-              items: data.pages[0].items.map((item) => {
-                const user = users.find((user) => user.id === item.id);
-                if (item.id === user?.id) {
-                  return user;
-                }
-
-                return item;
-              }),
-              total: data.pages[0].total,
-            },
-            ...data.pages.slice(1),
-          ],
-          pageParams: data.pageParams,
-        };
-      }
-
-      if (action === 'delete') {
-        return {
-          pages: [
-            {
-              items: data.pages[0].items.filter((item) => !users.some((user) => user.id === item.id)),
-              total: data.pages[0].total - 1,
-            },
-            ...data.pages.slice(1),
-          ],
-          pageParams: data.pageParams,
-        };
-      }
-    });
-  };
-
-  const queryResult = useInfiniteQuery<QueryData, Error, InfiniteData<QueryData>, QueryKey, number>({
+  const queryResult = useInfiniteQuery({
     queryKey: ['users', query, sortColumns, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
