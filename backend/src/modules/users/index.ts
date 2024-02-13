@@ -246,13 +246,13 @@ const usersRoutes = app
 
         if (!targetUser) {
           customLogger('User not found', { user: id });
-          errors.push(createError(i18n, 'error.user_not_found', 'User not found'));
+          errors.push(createError('error.user_not_found', 'User not found'));
           return;
         }
 
         if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
           customLogger('User forbidden', { user: user.id });
-          errors.push(forbiddenError(i18n));
+          errors.push(forbiddenError());
           return;
         }
 
