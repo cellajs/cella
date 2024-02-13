@@ -2,18 +2,17 @@ import { Body, Button, Container, Head, Html, Img, Link, Preview, Section, Tailw
 import * as React from 'react';
 
 import { config } from 'config';
-import { getI18n } from 'i18n';
+import { i18n } from '../../backend/src/lib/i18n';
 
 interface Props {
   username?: string;
   resetPasswordLink: string;
-  i18n?: ReturnType<typeof getI18n>;
 }
 
 const baseUrl = config.frontendUrl;
 const resetPasswordUrl = `${baseUrl}/auth/reset-password`;
 
-export const ResetPasswordEmail = ({ username = 'Unknown name', resetPasswordLink = 'https://cellajs.com', i18n = getI18n('backend') }: Props) => {
+export const ResetPasswordEmail = ({ username = 'Unknown name', resetPasswordLink = 'https://cellajs.com' }: Props) => {
   return (
     <React.Fragment>
       <Html>

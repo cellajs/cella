@@ -2,7 +2,7 @@ import { Body, Button, Column, Container, Head, Heading, Html, Img, Preview, Row
 import * as React from 'react';
 
 import { config } from 'config';
-import { getI18n } from 'i18n';
+import { i18n } from '../../backend/src/lib/i18n';
 
 interface Props {
   username?: string;
@@ -11,7 +11,6 @@ interface Props {
   orgImage?: string;
   inviteUrl?: string;
   invitedBy?: string | null;
-  i18n?: ReturnType<typeof getI18n>;
   type?: 'system' | 'organization';
 }
 
@@ -24,7 +23,6 @@ export const InviteEmail = ({
   orgImage = '../static/org.png',
   inviteUrl = '',
   invitedBy,
-  i18n = getI18n('backend'),
   type = 'organization',
 }: Props) => {
   return (

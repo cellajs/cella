@@ -2,7 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "vite-plugin-pwa/client", "../i18n/i18next.d.ts"],
+    "types": ["vite/client", "vite-plugin-pwa/client"],
 
     /* Bundler mode */
     "jsx": "react-jsx",

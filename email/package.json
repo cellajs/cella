@@ -1,5 +1,5 @@
 {
-  "name": "emails",
+  "name": "email",
   "version": "0.0.18",
   "type": "module",
   "private": true,
@@ -11,14 +11,12 @@
     "export": "email export"
   },
   "dependencies": {
-    "config": "workspace:*",
-    "env": "workspace:*",
-    "i18n": "workspace:*",
     "@react-email/components": "0.0.14",
     "@sendgrid/mail": "^8.1.0",
+    "config": "workspace:*",
+    "env": "workspace:*",
     "react": "^18.2.0",
-    "react-email": "2.0.0",
-    "react-i18next": "^14.0.1"
+    "react-email": "2.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.2",
@@ -26,6 +24,6 @@
   },
   "exports": {
     ".": "./index.ts",
-    "./*": "./emails/*.tsx"
+    "./*": "./email/*.tsx"
   }
 }

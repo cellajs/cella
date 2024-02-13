@@ -74,9 +74,9 @@ importers:
       drizzle-zod:
         specifier: ^0.5.1
         version: 0.5.1(drizzle-orm@0.29.3)(zod@3.22.4)
-      emails:
+      email:
         specifier: workspace:*
-        version: link:../emails
+        version: link:../email
       enforce-unique:
         specifier: ^1.2.0
         version: 1.2.0
@@ -86,12 +86,15 @@ importers:
       hono:
         specifier: 3.12.7
         version: 3.12.7
-      i18n:
-        specifier: workspace:*
-        version: link:../i18n
+      i18next:
+        specifier: ^23.8.2
+        version: 23.8.2
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
+      locales:
+        specifier: workspace:*
+        version: link:../locales
       lucia:
         specifier: ^3.0.0
         version: 3.0.0
@@ -110,6 +113,9 @@ importers:
       rate-limiter-flexible:
         specifier: ^4.0.1
         version: 4.0.1
+      react-i18next:
+        specifier: ^14.0.5
+        version: 14.0.5(i18next@23.8.2)(react-dom@18.2.0)(react@18.2.0)
       slugify:
         specifier: ^1.6.6
         version: 1.6.6
@@ -144,7 +150,7 @@ importers:
 
   config: {}
 
-  emails:
+  email:
     dependencies:
       '@react-email/components':
         specifier: 0.0.14
@@ -158,18 +164,12 @@ importers:
       env:
         specifier: workspace:*
         version: link:../env
-      i18n:
-        specifier: workspace:*
-        version: link:../i18n
       react:
         specifier: ^18.2.0
         version: 18.2.0
       react-email:
         specifier: 2.0.0
         version: 2.0.0(eslint@8.36.0)
-      react-i18next:
-        specifier: ^14.0.1
-        version: 14.0.1(i18next@23.8.2)(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@types/node':
         specifier: ^20.11.2
@@ -302,15 +302,24 @@ importers:
       hono:
         specifier: ^3.12.7
         version: 3.12.7
-      i18n:
-        specifier: workspace:*
-        version: link:../i18n
+      i18next:
+        specifier: ^23.8.2
+        version: 23.8.2
+      i18next-browser-languagedetector:
+        specifier: ^7.2.0
+        version: 7.2.0
+      i18next-http-backend:
+        specifier: ^2.4.3
+        version: 2.4.3
       immer:
         specifier: ^10.0.3
         version: 10.0.3
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
+      locales:
+        specifier: workspace:*
+        version: link:../locales
       lodash.debounce:
         specifier: ^4.0.8
         version: 4.0.8
@@ -339,8 +348,8 @@ importers:
         specifier: ^7.49.3
         version: 7.49.3(react@18.2.0)
       react-i18next:
-        specifier: ^14.0.0
-        version: 14.0.1(i18next@23.8.2)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.0.5
+        version: 14.0.5(i18next@23.8.2)(react-dom@18.2.0)(react@18.2.0)
       react-intersection-observer:
         specifier: ^9.5.3
         version: 9.5.3(react@18.2.0)
@@ -427,33 +436,7 @@ importers:
         specifier: ^1.0.0
         version: 1.0.1(vite@5.0.12)
 
-  i18n:
-    dependencies:
-      config:
-        specifier: workspace:*
-        version: link:../config
-      dotenv:
-        specifier: ^16.3.1
-        version: 16.4.1
-      i18next:
-        specifier: ^23.8.2
-        version: 23.8.2
-      i18next-browser-languagedetector:
-        specifier: ^7.2.0
-        version: 7.2.0
-      i18next-http-backend:
-        specifier: ^2.4.3
-        version: 2.4.3
-      react-i18next:
-        specifier: ^14.0.5
-        version: 14.0.5(i18next@23.8.2)(react@18.2.0)
-    devDependencies:
-      axios:
-        specifier: ^1.6.0
-        version: 1.6.7
-      tsx:
-        specifier: ^3.14.0
-        version: 3.14.0
+  locales: {}
 
   proxy:
     devDependencies:
@@ -8220,6 +8203,7 @@ packages:
 
   /asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
+    dev: false
 
   /at-least-node@1.0.0:
     resolution: {integrity: sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==}
@@ -8271,6 +8255,7 @@ packages:
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
+    dev: false
 
   /babel-plugin-polyfill-corejs2@0.4.8(@babel/core@7.23.9):
     resolution: {integrity: sha512-OtIuQfafSzpo/LhnJaykc0R/MMnuLSSVjVYy9mHArIZ9qTCSZ6TpWCuEKZYVoN//t8HqBNScHrOtCrIK5IaGLg==}
@@ -8708,6 +8693,7 @@ packages:
     engines: {node: '>= 0.8'}
     dependencies:
       delayed-stream: 1.0.0
+    dev: false
 
   /command-score@0.1.2:
     resolution: {integrity: sha512-VtDvQpIJBvBatnONUsPzXYFVKQQAhuf3XTNOAsdBxCNO/QCtUUd8LSgjn0GVarBkCad6aJCZfXgrjYbl/KRr7w==}
@@ -8942,6 +8928,7 @@ packages:
   /delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
+    dev: false
 
   /detect-node-es@1.1.0:
     resolution: {integrity: sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ==}
@@ -9868,6 +9855,7 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
 
   /for-each@0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -9889,6 +9877,7 @@ packages:
       asynckit: 0.4.0
       combined-stream: 1.0.8
       mime-types: 2.1.35
+    dev: false
 
   /fraction.js@4.3.7:
     resolution: {integrity: sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==}
@@ -11096,6 +11085,7 @@ packages:
   /mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
     engines: {node: '>= 0.6'}
+    dev: false
 
   /mime-match@1.0.2:
     resolution: {integrity: sha512-VXp/ugGDVh3eCLOBCiHZMYWQaTNUHv2IJrut+yXA6+JbLPXHglHwfS/5A5L0ll+jkCY7fIzRJcH6OIunF+c6Cg==}
@@ -11108,6 +11098,7 @@ packages:
     engines: {node: '>= 0.6'}
     dependencies:
       mime-db: 1.52.0
+    dev: false
 
   /mime@3.0.0:
     resolution: {integrity: sha512-jSCU7/VB1loIWBZe14aEYHU/+1UMEHoaO7qxCOVJOw9GgH72VAWppxNcjU+x9a2k3GSIBXNKxXQFqRvvZ7vr3A==}
@@ -12023,6 +12014,7 @@ packages:
 
   /proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+    dev: false
 
   /punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
@@ -12160,27 +12152,7 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-i18next@14.0.1(i18next@23.8.2)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-TMV8hFismBmpMdIehoFHin/okfvgjFhp723RYgIqB4XyhDobVMyukyM3Z8wtTRmajyFMZrBl/OaaXF2P6WjUAw==}
-    peerDependencies:
-      i18next: '>= 23.2.3'
-      react: '>= 16.8.0'
-      react-dom: '*'
-      react-native: '*'
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
-      react-native:
-        optional: true
-    dependencies:
-      '@babel/runtime': 7.23.9
-      html-parse-stringify: 3.0.1
-      i18next: 23.8.2
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-    dev: false
-
-  /react-i18next@14.0.5(i18next@23.8.2)(react@18.2.0):
+  /react-i18next@14.0.5(i18next@23.8.2)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-5+bQSeEtgJrMBABBL5lO7jPdSNAbeAZ+MlFWDw//7FnVacuVu3l9EeWFzBQvZsKy+cihkbThWOAThEdH8YjGEw==}
     peerDependencies:
       i18next: '>= 23.2.3'
@@ -12197,6 +12169,7 @@ packages:
       html-parse-stringify: 3.0.1
       i18next: 23.8.2
       react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
     dev: false
 
   /react-intersection-observer@9.5.3(react@18.2.0):
@@ -13374,17 +13347,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
       - ts-node
-
-  /tsx@3.14.0:
-    resolution: {integrity: sha512-xHtFaKtHxM9LOklMmJdI3BEnQq/D5F73Of2E1GDrITi9sgoVkvIsrQUTY1G8FlmGtA+awCI4EBlTRRYxkL2sRg==}
-    hasBin: true
-    dependencies:
-      esbuild: 0.18.20
-      get-tsconfig: 4.7.2
-      source-map-support: 0.5.21
-    optionalDependencies:
-      fsevents: 2.3.3
-    dev: true
 
   /tsx@4.7.0:
     resolution: {integrity: sha512-I+t79RYPlEYlHn9a+KzwrvEwhJg35h/1zHsLC2JXvhC2mdynMv6Zxzvhv5EMV6VF5qJlLlkSnMVvdZV3PSIGcg==}

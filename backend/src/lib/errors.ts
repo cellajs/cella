@@ -1,17 +1,14 @@
-import { ParseKeys, getI18n } from 'i18n';
+import { ParseKeys, i18n } from './i18n';
 
-type i18n = ReturnType<typeof getI18n>;
-
-export const createError = (i18n: i18n, code: ParseKeys<'backend'>, defaultValue?: string) => ({
+export const createError = (code: ParseKeys<'backend'>, defaultValue?: string) => ({
   success: false,
   error: i18n.t(code, {
-    ns: 'backend',
     defaultValue,
   }) as string,
 });
 
-export const unauthorizedError = (i18n: i18n) => createError(i18n, 'error.unauthorized', 'Unauthorized');
+export const unauthorizedError = () => createError('error.unauthorized', 'Unauthorized');
 
-export const forbiddenError = (i18n: i18n) => createError(i18n, 'error.forbidden', 'Forbidden');
+export const forbiddenError = () => createError('error.forbidden', 'Forbidden');
 
-export const tooManyRequestsError = (i18n: i18n) => createError(i18n, 'error.too_many_requests', 'Too many requests');
+export const tooManyRequestsError = () => createError('error.too_many_requests', 'Too many requests');

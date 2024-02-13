@@ -85,7 +85,6 @@
   "label.singular_user": "user",
   "label.plural_users": "users",
   "success.create_organization": "Organization created",
-  "frontend.description.delete_organization": "Are you sure you want to delete this organization?",
   "action.delete_organization": "Delete organization",
   "success.you_joined_organization": "You have joined the organization",
   "success.you_left_organization": "You have left the organization",

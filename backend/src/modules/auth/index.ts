@@ -1,15 +1,14 @@
 import { render } from '@react-email/render';
 import { eq } from 'drizzle-orm';
-import { VerificationEmail } from 'emails/email-verification';
-import { ResetPasswordEmail } from 'emails/reset-password';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { Argon2id } from 'oslo/password';
 import postgres from 'postgres';
+import { VerificationEmail } from '../../../../email/emails/email-verification';
+import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
 
 import { config } from 'config';
-import { emailSender } from 'emails';
-import { getI18n } from 'i18n';
+import { emailSender } from '../../../../email';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { tokensTable, usersTable } from '../../db/schema';
@@ -31,8 +30,6 @@ import {
   signUpRoute,
   verifyEmailRoute,
 } from './routes';
-
-const i18n = getI18n('backend');
 
 const app = new CustomHono();
 
@@ -76,13 +73,6 @@ const authRoutes = app
         }),
       });
 
-      // await setSessionCookie(ctx, user.id);
-
-      // customLogger('User signed up', {
-      //   userId: user.id,
-      //   userSlug: user.slug,
-      // });
-
       return ctx.json({
         success: true,
       });
@@ -90,16 +80,10 @@ const authRoutes = app
       if (error instanceof postgres.PostgresError && error.message.startsWith('duplicate key')) {
         customLogger('User already exists', { email }, 'warn');
 
-        return ctx.json(createError(i18n, 'error.email_already_exists', 'Email already exists'), 400);
+        return ctx.json(createError('error.email_already_exists', 'Email already exists'), 400);
       }
 
-      customLogger(
-        'Error signing up',
-        {
-          errorMessage: (error as Error).message,
-        },
-        'error',
-      );
+      customLogger('Error signing up', { errorMessage: (error as Error).message }, 'error');
 
       throw error;
     }
@@ -129,7 +113,7 @@ const authRoutes = app
         });
       }
 
-      return ctx.json(createError(i18n, 'error.invalid_token_or_expired', 'Invalid token or expired'), 400);
+      return ctx.json(createError('error.invalid_token_or_expired', 'Invalid token or expired'), 400);
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
@@ -152,7 +136,7 @@ const authRoutes = app
         });
       }
 
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
+      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
     }
 
     await db
@@ -164,9 +148,7 @@ const authRoutes = app
 
     await setSessionCookie(ctx, user.id);
 
-    customLogger('Email verified and user signed in', {
-      user: user.id,
-    });
+    customLogger('Email verified and user signed in', { user: user.id });
 
     return ctx.json({
       success: true,
@@ -178,7 +160,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user) {
-      return ctx.json(createError(i18n, 'error.no_email_found', 'No email found'), 400);
+      return ctx.json(createError('error.no_email_found', 'No email found'), 400);
     }
 
     // creating email verification token
@@ -195,15 +177,12 @@ const authRoutes = app
     const emailHtml = render(
       VerificationEmail({
         verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
-        i18n,
       }),
     );
 
     emailSender.send(email, 'Verify email for Cella', emailHtml);
 
-    customLogger('Verification email sent', {
-      user: user.id,
-    });
+    customLogger('Verification email sent', { user: user.id });
 
     return ctx.json({
       success: true,
@@ -227,7 +206,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user || !user.emailVerified) {
-      return ctx.json(createError(i18n, 'error.invalid_email', 'Invalid email'), 400);
+      return ctx.json(createError('error.invalid_email', 'Invalid email'), 400);
     }
 
     // creating password reset token
@@ -244,15 +223,12 @@ const authRoutes = app
     const emailHtml = render(
       ResetPasswordEmail({
         resetPasswordLink: `${config.frontendUrl}/auth/reset-password/${token}`,
-        i18n,
       }),
     );
 
     emailSender.send(email, 'Reset Cella password', emailHtml);
 
-    customLogger('Reset pasword link sent', {
-      user: user.id,
-    });
+    customLogger('Reset pasword link sent', { user: user.id });
 
     return ctx.json({
       success: true,
@@ -267,13 +243,13 @@ const authRoutes = app
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
+      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     if (!user || user.email !== token.email) {
-      return ctx.json(createError(i18n, 'error.invalid_token', 'Invalid token'), 400);
+      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
     }
 
     await auth.invalidateUserSessions(user.id);
@@ -282,9 +258,7 @@ const authRoutes = app
 
     await setSessionCookie(ctx, user.id);
 
-    customLogger('Password reset and user signed in', {
-      user: user.id,
-    });
+    customLogger('Password reset and user signed in', { user: user.id });
 
     return ctx.json({
       success: true,
@@ -297,13 +271,13 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user || !user.hashedPassword) {
-      return ctx.json(createError(i18n, 'error.invalid_email_or_password', 'Invalid email or password'), 400);
+      return ctx.json(createError('error.invalid_email_or_password', 'Invalid email or password'), 400);
     }
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
 
     if (!validPassword) {
-      return ctx.json(createError(i18n, 'error.invalid_email_or_password', 'Invalid email or password'), 400);
+      return ctx.json(createError('error.invalid_email_or_password', 'Invalid email or password'), 400);
     }
 
     if (!user.emailVerified) {
@@ -326,9 +300,7 @@ const authRoutes = app
 
     await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
 
-    customLogger('User signed in', {
-      user: user.id,
-    });
+    customLogger('User signed in', { user: user.id });
 
     return ctx.json({
       success: true,
@@ -344,7 +316,7 @@ const authRoutes = app
 
       removeSessionCookie(ctx);
 
-      return ctx.json<ErrorResponse>(unauthorizedError(i18n), 401);
+      return ctx.json<ErrorResponse>(unauthorizedError(), 401);
     }
 
     const { session } = await auth.validateSession(sessionId);
@@ -354,15 +326,13 @@ const authRoutes = app
 
       removeSessionCookie(ctx);
 
-      return ctx.json(unauthorizedError(i18n), 401);
+      return ctx.json(unauthorizedError(), 401);
     }
 
     await auth.invalidateSession(session.id);
     ctx.header('Set-Cookie', auth.createBlankSessionCookie().serialize());
 
-    customLogger('User signed out', {
-      user: session.userId,
-    });
+    customLogger('User signed out', { user: session.userId });
 
     return ctx.json({ success: true, data: undefined });
   });

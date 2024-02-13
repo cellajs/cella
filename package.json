@@ -49,10 +49,9 @@
     "studio": "dotenv -e env/.env -- turbo studio --filter backend",
     "seed:users": "dotenv -e env/.env -- turbo seed:users --filter backend --force",
     "seed:organizations": "dotenv -e env/.env -- turbo seed:organizations --filter backend --force",
-    "i18n:upload": "cd i18n && pnpm run upload",
     "docs:generate": "cd backend && pnpm run docs:generate",
     "proxy:deploy": "cd proxy && node_modules/.bin/wrangler deploy",
-    "emails:dev": "dotenv -e env/.env -- turbo dev --filter emails"
+    "email:dev": "dotenv -e env/.env -- turbo dev --filter email"
   },
   "devDependencies": {
     "@biomejs/biome": "1.5.3",
