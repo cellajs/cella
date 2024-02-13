@@ -66,4 +66,4 @@ const ContactFormMap = () => {
     );
 };
 
-export { ContactFormMap };
+export default ContactFormMap;

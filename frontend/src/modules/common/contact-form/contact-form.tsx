@@ -14,7 +14,9 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
-import { ContactFormMap } from './contact-form-map';
+import { Suspense, lazy } from 'react';
+
+const ContactFormMap = lazy(() => import('./contact-form-map'));
 
 interface CustomFormFieldProps<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>> {
   control: Control<TFieldValues>;
@@ -128,9 +130,11 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
         </div>
       </div>
       {isMediumScreen && (
-        <div className="w-full">
-          <ContactFormMap />
-        </div>
+        <Suspense>
+          <div className="w-full">
+            <ContactFormMap />
+          </div>
+        </Suspense>
       )}
     </div>
   );
