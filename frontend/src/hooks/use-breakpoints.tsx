@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import resolveConfig from 'tailwindcss/resolveConfig';
-import tailwindConfig from '../../tailwind.config';
+import { config } from 'config'
 
-const fullConfig = resolveConfig(tailwindConfig);
-type ValidBreakpoints = keyof typeof fullConfig.theme.screens;
+type ValidBreakpoints = keyof typeof config.theme.screenSizes;
 
 export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: ValidBreakpoints): boolean => {
-  const breakpoints: { [key: string]: string } = fullConfig.theme.screens;
+  const breakpoints: { [key: string]: string } = config.theme.screenSizes;
   const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => parseInt(breakpoints[a], 10) - parseInt(breakpoints[b], 10));
   const smallestBreakpoint = sortedBreakpoints[0];
 

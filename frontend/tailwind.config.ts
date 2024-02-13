@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { Config } from 'tailwindcss';
 import animatePlugin from 'tailwindcss-animate';
 
@@ -7,14 +8,7 @@ export default {
   darkMode: 'media',
   content: ['./pages/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
   theme: {
-    screens: {
-      xs: '420px',
-      sm: '640px',
-      md: '768px',
-      lg: '1024px',
-      xl: '1280px',
-      '2xl': '1400px',
-    },
+    screens: config.theme.screenSizes,
     container: {
       center: true,
       padding: '1rem',

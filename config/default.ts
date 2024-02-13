@@ -31,6 +31,14 @@ export const config = {
     rose: { primary: '#e11d48' },
     colorDarkBackground: 'hsl(240 10% 9%)',
     strokeWidth: 1.5,
+    screenSizes: {
+      xs: '420px',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1400px',
+    },
   },
 
   oauthOptions: ['Github'],
