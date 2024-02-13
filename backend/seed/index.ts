@@ -85,12 +85,13 @@ export const organizationsAndMembersSeed = async () => {
 
       const name = faker.person.fullName(firstAndLastName);
       const email = usersEmailUniqueEnforcer.enforce(() => faker.internet.email(firstAndLastName).toLocaleLowerCase());
-      const slug = usersSlugUniqueEnforcer.enforce(() => faker.internet.userName(firstAndLastName).toLowerCase());
+      const slug = usersSlugUniqueEnforcer.enforce(() => faker.internet.userName(firstAndLastName).toLowerCase().replace(/[^a-z0-9]/g, '-'));
 
       return {
         id: nanoid(),
         firstName,
         lastName,
+        thumbnailUrl: faker.image.avatar(),
         language: config.defaultLanguage,
         name,
         email,

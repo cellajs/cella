@@ -71,7 +71,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
     mutate(values, {
       onSuccess: (data) => {
         form.reset(data);
-        callback?.(user);
+        callback?.(data);
 
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
         if (isDialog) {
