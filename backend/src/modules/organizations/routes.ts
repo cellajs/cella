@@ -1,16 +1,11 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
 import { paginationQuerySchema } from '../../schemas/common';
-import {
-  errorResponses,
-  successResponseWithDataSchema,
-  successResponseWithPaginationSchema,
-} from '../../schemas/responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../schemas/responses';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
   createOrganizationJsonSchema,
-  deleteUserFromOrganizationParamSchema,
   getOrganizationParamSchema,
   getUsersByOrganizationIdParamSchema,
   updateOrganizationJsonSchema,
@@ -257,25 +252,33 @@ export const updateUserInOrganizationRoute = createRoute({
   },
 });
 
-export const deleteUserFromOrganizationRoute = createRoute({
+export const deleteUsersFromOrganizationRoute = createRoute({
   method: 'delete',
-  path: '/organizations/{organizationIdentifier}/members/{userId}',
+  path: '/organizations/{organizationIdentifier}/members',
   tags: ['organizations'],
-  summary: 'Delete member(user) from organization',
+  summary: 'Delete members(users) from organization',
   description: `
     Permissions:
       - Users with role 'ADMIN'
       - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
-    params: deleteUserFromOrganizationParamSchema,
+    query: z.object({
+      ids: z.union([z.string(), z.array(z.string())]),
+    }),
   },
   responses: {
     200: {
-      description: 'Member was deleted from organization',
+      description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiOrganizationUserSchema),
+          schema: successResponseWithDataSchema(
+            z
+              .object({
+                error: z.string().optional(),
+              })
+              .optional(),
+          ),
         },
       },
     },

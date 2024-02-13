@@ -1,11 +1,12 @@
 import debounce from 'lodash.debounce';
 import { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { GetUsersParams } from '~/api/users';
+import InviteUsersForm from '~/modules/organizations/invite-users-form';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import InviteUsersForm from '~/modules/users/invite-users-form';
 import { useUserStore } from '~/store/user';
 import { User } from '~/types';
 import { UserRow } from '.';
@@ -13,7 +14,6 @@ import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/column
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
-import { toast } from 'sonner';
 
 interface Props {
   total?: number;

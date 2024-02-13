@@ -56,49 +56,45 @@ const MembersTable = () => {
   );
   useSaveInSearchParams(filters);
 
-  const callback = (member?: Member) => {
-    if (member) {
-      const newPagesArray =
-        queryResult.data?.pages.map((page, index) => {
-          if (index === 0) {
-            return {
-              items: [member, ...page.items],
-              total: page.total + 1,
-            };
-          }
+  const callback = (members: Member[], action: 'update' | 'delete') => {
+    queryClient.setQueryData<InfiniteData<QueryData>>(['members', organization.slug, query, sortColumns, role], (data) => {
+      if (!data) {
+        return;
+      }
 
-          return page;
-        }) ?? [];
-
-      queryClient.setQueryData<InfiniteData<QueryData>>(['members', query, sortColumns, role, organization], (data) => {
-        if (!data) {
-          return;
-        }
-
+      if (action === 'update') {
         return {
-          pages: newPagesArray,
+          pages: [
+            {
+              items: data.pages[0].items.map((item) => {
+                const member = members.find((member) => member.id === item.id);
+                if (item.id === member?.id) {
+                  return member;
+                }
+
+                return item;
+              }),
+              total: data.pages[0].total,
+            },
+            ...data.pages.slice(1),
+          ],
           pageParams: data.pageParams,
         };
-      });
+      }
 
-      queryClient.setQueryDefaults(['members'], {
-        select: (data) => {
-          const pages: InfiniteData<QueryData>['pages'] = data.pages;
-          return {
-            pages: pages.map((page, index) => {
-              if (index === 0) {
-                return page;
-              }
-              return {
-                ...page,
-                items: page.items.filter((item) => item.id !== member.id),
-              };
-            }),
-            pageParams: data.pageParams,
-          };
-        },
-      });
-    }
+      if (action === 'delete') {
+        return {
+          pages: [
+            {
+              items: data.pages[0].items.filter((item) => !members.some((member) => member.id === item.id)),
+              total: data.pages[0].total - 1,
+            },
+            ...data.pages.slice(1),
+          ],
+          pageParams: data.pageParams,
+        };
+      }
+    });
   };
 
   const queryResult = useInfiniteQuery({

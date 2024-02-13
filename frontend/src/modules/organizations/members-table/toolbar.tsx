@@ -3,16 +3,17 @@ import { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { GetMembersParams } from '~/api/organizations';
 import { cn } from '~/lib/utils';
+import InviteUsersForm from '~/modules/organizations/invite-users-form';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import InviteUsersForm from '~/modules/users/invite-users-form';
 import { useUserStore } from '~/store/user';
 import { Member, Organization } from '~/types';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
 import RemoveMembersForm from './remove-member-form';
+import { toast } from 'sonner';
 
 interface Props {
   selectedMembers: Member[];
@@ -21,7 +22,7 @@ interface Props {
   setQuery?: (value: string) => void;
   organization: Organization;
   role: GetMembersParams['role'];
-  callback: (member?: Member) => void;
+  callback: (members: Member[], action: 'update' | 'delete') => void;
   isFiltered?: boolean;
   setRole: React.Dispatch<React.SetStateAction<GetMembersParams['role']>>;
   onResetFilters?: () => void;
@@ -57,7 +58,6 @@ function Toolbar({
   selectedMembers,
   isLoading,
   onResetFilters,
-  refetch,
   total,
   columns,
   setColumns,
@@ -66,7 +66,7 @@ function Toolbar({
   const user = useUserStore((state) => state.user);
 
   const openInviteDialog = () => {
-    dialog(<InviteUsersForm organization={organization} callback={callback} dialog />, {
+    dialog(<InviteUsersForm organization={organization} dialog />, {
       drawerOnMobile: false,
       className: 'max-w-xl',
       title: t('label.invite', {
@@ -83,8 +83,13 @@ function Toolbar({
       <RemoveMembersForm
         organization={organization}
         dialog
-        callback={() => {
-          refetch?.();
+        callback={(members) => {
+          callback(members, 'delete');
+          toast.success(
+            t('success.delete_members', {
+              defaultValue: 'Members deleted',
+            }),
+          );
         }}
         members={selectedMembers}
       />,

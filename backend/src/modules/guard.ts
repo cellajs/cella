@@ -17,7 +17,7 @@ import { rateLimiter, signInRateLimiter } from './middlewares/rate-limiter';
 import {
   createOrganizationRoute,
   deleteOrganizationsRoute,
-  deleteUserFromOrganizationRoute,
+  deleteUsersFromOrganizationRoute,
   getOrganizationByIdOrSlugRoute,
   getOrganizationsRoute,
   getUsersByOrganizationIdRoute,
@@ -121,7 +121,7 @@ const routesMiddlewares: {
     ],
   },
   {
-    route: deleteUserFromOrganizationRoute,
+    route: deleteUsersFromOrganizationRoute,
     middlewares: [authMiddleware(), organizationAuthMiddleware(['ADMIN'])],
   },
   {

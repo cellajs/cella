@@ -4,7 +4,7 @@ import { createContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { invite } from '~/api/general';
-import { removeMemberFromOrganization } from '~/api/organizations';
+import { removeMembersFromOrganization } from '~/api/organizations';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { PageHeader } from '~/modules/common/page-header';
 import PageNav from '~/modules/common/page-nav';
@@ -44,7 +44,7 @@ const OrganizationPage = () => {
 
   const onLeave = () => {
     apiWrapper(
-      () => removeMemberFromOrganization(organizationIdentifier, user.id),
+      () => removeMembersFromOrganization(organizationIdentifier, [user.id]),
       () => {
         organizationQuery.refetch();
         toast.success(t('success.you_left_organization'));

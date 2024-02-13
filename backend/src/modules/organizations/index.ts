@@ -12,7 +12,7 @@ import { checkSlugRoute } from '../general/routes';
 import {
   createOrganizationRoute,
   deleteOrganizationsRoute,
-  deleteUserFromOrganizationRoute,
+  deleteUsersFromOrganizationRoute,
   getOrganizationByIdOrSlugRoute,
   getOrganizationsRoute,
   getUsersByOrganizationIdRoute,
@@ -445,41 +445,39 @@ const organizationsRoutes = app
       },
     });
   })
-  .openapi(deleteUserFromOrganizationRoute, async (ctx) => {
-    const { userId } = ctx.req.valid('param');
+  .openapi(deleteUsersFromOrganizationRoute, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    const usersIds = Array.isArray(ids) ? ids : [ids];
 
-    if (!user) {
-      customLogger('User not found', { user: userId });
+    const errors: ReturnType<typeof createError>[] = [];
 
-      return ctx.json(createError('error.user_not_found', 'User not found'), 404);
-    }
+    await Promise.all(
+      usersIds.map(async (id) => {
+        const [targetMembership] = await db
+          .delete(membershipsTable)
+          .where(and(eq(membershipsTable.userId, id), eq(membershipsTable.organizationId, organization.id)))
+          .returning();
 
-    const [membership] = await db
-      .delete(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)))
-      .returning();
+        if (!targetMembership) {
+          customLogger('Membership not found', { user: id, organization: organization.id });
+          errors.push(createError('error.membership_not_found', 'Membership not found'));
+          return;
+        }
 
-    const [{ memberships }] = await db
-      .select({
-        memberships: countDistinct(membershipsTable.userId),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.organizationId, organization.id));
-
-    customLogger('User deleted from organization', { user: user.id, organization: organization.id });
+        customLogger('Membership deleted', { user: id, organization: organization.id });
+      }),
+    );
 
     return ctx.json({
       success: true,
-      data: {
-        ...transformDatabaseUser(user),
-        organizationRole: membership.role,
-        counts: {
-          memberships,
-        },
-      },
+      data:
+        errors.length > 0
+          ? {
+              error: errors[0].error,
+            }
+          : undefined,
     });
   });
 

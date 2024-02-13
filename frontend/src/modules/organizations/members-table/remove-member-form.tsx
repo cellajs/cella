@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { removeMemberFromOrganization } from '~/api/organizations';
+import { removeMembersFromOrganization } from '~/api/organizations';
 import { Member, Organization } from '~/types';
 
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
@@ -9,7 +9,7 @@ import { Button } from '~/modules/ui/button';
 interface Props {
   organization: Organization;
   members: Member[];
-  callback?: () => void;
+  callback?: (members: Member[]) => void;
   dialog?: boolean;
 }
 
@@ -19,9 +19,13 @@ const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }
 
   const onRemoveMember = () => {
     apiWrapper(
-      () => Promise.all(members.map((member) => removeMemberFromOrganization(organization.id, member.id))),
+      () =>
+        removeMembersFromOrganization(
+          organization.id,
+          members.map((member) => member.id),
+        ),
       () => {
-        callback?.();
+        callback?.(members);
 
         if (isDialog) {
           dialog.remove();

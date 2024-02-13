@@ -141,10 +141,11 @@ export const getMembersByOrganizationIdentifier = async (
   return json.data;
 };
 
-// Remove a member from an organization
-export const removeMemberFromOrganization = async (organizationIdentifier: string, userId: string) => {
-  const response = await client.organizations[':organizationIdentifier'].members[':userId'].$delete({
-    param: { organizationIdentifier, userId },
+// Remove members from an organization
+export const removeMembersFromOrganization = async (organizationIdentifier: string, userIds: string[]) => {
+  const response = await client.organizations[':organizationIdentifier'].members.$delete({
+    param: { organizationIdentifier },
+    query: { ids: userIds },
   });
 
   const json = await response.json();
