@@ -48,9 +48,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         callback?.(result);
 
         toast.success(
-          t('success.create_organization', {
-            defaultValue: 'Organization created',
-          }),
+          t('success.create_organization',),
         );
 
         if (!callback) {
@@ -84,9 +82,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t('label.name', {
-                  defaultValue: 'Name',
-                })}
+                {t('label.name')}
               </FormLabel>
               <FormControl>
                 <Input {...field} />
@@ -97,14 +93,10 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
-            {t('action.create', {
-              defaultValue: 'Create',
-            })}
+            {t('action.create')}
           </Button>
           <Button variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
-            {t('action.cancel', {
-              defaultValue: 'Cancel',
-            })}
+            {t('action.cancel')}
           </Button>
         </div>
       </form>

@@ -53,9 +53,7 @@ const OrganizationSettings = () => {
                 organizations={[organization]}
                 callback={() => {
                   toast.success(
-                    t('success.delete_organization', {
-                      defaultValue: 'Organization has been deleted',
-                    }),
+                    t('success.delete_organization'),
                   );
                   navigate({
                     to: '/',
@@ -65,21 +63,15 @@ const OrganizationSettings = () => {
               />,
               {
                 className: 'sm:max-w-xl',
-                title: t('label.delete_organization', {
-                  defaultValue: 'Delete organization',
-                }),
-                description: t('description.delete_organization', {
-                  defaultValue: 'Are you sure you want to delete this organization?',
-                }),
+                title: t('label.delete_organization'),
+                description: t('description.delete_organization'),
               },
             );
           }}
         >
           <Trash2 className="mr-2 h-4 w-4" />
           <span>
-            {t('action.delete_organization', {
-              defaultValue: 'Delete organization',
-            })}
+            {t('action.delete_organization')}
           </span>
         </Button>
       </CardContent>

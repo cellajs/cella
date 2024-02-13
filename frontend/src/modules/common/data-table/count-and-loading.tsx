@@ -25,9 +25,7 @@ const CountAndLoading = ({ count, singular, plural, isFiltered, onResetFilters, 
               {count} {count === 1 ? singular : plural}
               {isFiltered && ' '}
               {isFiltered &&
-                t('label.found', {
-                  defaultValue: 'found.',
-                })}
+                t('label.found')}
             </div>
             {isFiltered && (
               <Button variant="link" onClick={onResetFilters}>

@@ -57,9 +57,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
         }
 
         toast.success(
-          t('success.user_invited', {
-            defaultValue: 'Users invited',
-          }),
+          t('success.user_invited'),
         );
       },
     );
@@ -79,9 +77,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t('label.emails', {
-                  defaultValue: 'Emails',
-                })}
+                {t('label.emails')}
               </FormLabel>
               <FormControl>
                 <MultipleSelector
@@ -101,15 +97,11 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" loading={pending}>
             <Send size={16} className="mr-2" />
-            {t('action.invite', {
-              defaultValue: 'Invite',
-            })}
+            {t('action.invite')}
           </Button>
           {form.formState.isDirty && (
             <Button variant="secondary" onClick={cancel}>
-              {t('action.cancel', {
-                defaultValue: 'Cancel',
-              })}
+              {t('action.cancel')}
             </Button>
           )}
         </div>

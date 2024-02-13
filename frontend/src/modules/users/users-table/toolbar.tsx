@@ -66,12 +66,8 @@ function Toolbar({
     dialog(<InviteUsersForm dialog />, {
       drawerOnMobile: false,
       className: 'max-w-xl',
-      title: t('label.invite', {
-        defaultValue: 'Invite',
-      }),
-      description: t('description.invite_users', {
-        defaultValue: 'Invited users will receive an email with an invitation link.',
-      }),
+      title: t('label.invite'),
+      description: t('description.invite_users'),
     });
   };
 
@@ -82,9 +78,7 @@ function Toolbar({
         callback={(users) => {
           callback(users, 'delete');
           toast.success(
-            t('success.delete_users', {
-              defaultValue: 'Users deleted',
-            }),
+            t('success.delete_users'),
           );
         }}
         dialog
@@ -92,12 +86,8 @@ function Toolbar({
       {
         drawerOnMobile: false,
         className: 'max-w-xl',
-        title: t('label.delete', {
-          defaultValue: 'Delete',
-        }),
-        description: t('description.delete_users', {
-          defaultValue: 'Are you sure you want to delete the selected users?',
-        }),
+        title: t('label.delete'),
+        description: t('description.delete_users'),
       },
     );
   };
@@ -110,18 +100,14 @@ function Toolbar({
             <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
               <span className="text-xs font-medium text-white">{selectedUsers.length}</span>
             </div>
-            {t('action.remove', {
-              defaultValue: 'Remove',
-            })}
+            {t('action.remove')}
           </Button>
         ) : (
           !isFiltered && (
             <>
               {user.role === 'ADMIN' && (
                 <Button onClick={openInviteDialog}>
-                  {t('action.invite', {
-                    defaultValue: 'Invite',
-                  })}
+                  {t('action.invite')}
                 </Button>
               )}
             </>
@@ -130,21 +116,15 @@ function Toolbar({
         <CountAndLoading
           count={total}
           isLoading={isLoading}
-          singular={t('label.singular_user', {
-            defaultValue: 'user',
-          })}
-          plural={t('label.plural_users', {
-            defaultValue: 'users',
-          })}
+          singular={t('label.singular_user')}
+          plural={t('label.plural_users')}
           isFiltered={isFiltered}
           onResetFilters={onResetFilters}
         />
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input
-          placeholder={t('placeholder.search', {
-            defaultValue: 'Search ...',
-          })}
+          placeholder={t('placeholder.search')}
           defaultValue={query ?? ''}
           onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
             setQuery?.(event.target.value);

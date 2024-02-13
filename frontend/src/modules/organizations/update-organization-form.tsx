@@ -71,9 +71,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           dialog.remove();
         }
         toast.success(
-          t('success.update_organization', {
-            defaultValue: 'Organization updated',
-          }),
+          t('success.update_organization'),
         );
       },
     });
@@ -106,9 +104,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           if (isExists) {
             form.setError('slug', {
               type: 'manual',
-              message: t('error.slug_already_exists', {
-                defaultValue: 'Slug already exists',
-              }),
+              message: t('error.slug_already_exists'),
             });
           } else {
             form.clearErrors('slug');
@@ -127,9 +123,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t('label.organization_handle', {
-                  defaultValue: 'Organization handle',
-                })}
+                {t('label.organization_handle')}
               </FormLabel>
               <FormDescription>A unique handle for organization URL.</FormDescription>
               <FormControl>
@@ -155,9 +149,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t('label.name', {
-                  defaultValue: 'Name',
-                })}
+                {t('label.name')}
               </FormLabel>
               <FormControl>
                 <Input {...field} />
@@ -172,9 +164,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.short_name', {
-                  defaultValue: 'Short name',
-                })}
+                {t('label.short_name')}
               </FormLabel>
               <FormControl>
                 <Input value={value ?? ''} {...rest} />
@@ -189,9 +179,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.notification_email', {
-                  defaultValue: 'Notification email',
-                })}
+                {t('label.notification_email')}
               </FormLabel>
               <FormDescription>Receive announcements and product updates through this email address.</FormDescription>
               <FormControl>
@@ -207,9 +195,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.website_url', {
-                  defaultValue: 'Website url',
-                })}
+                {t('label.website_url')}
               </FormLabel>
               <FormControl>
                 <Input placeholder="https://" type="url" value={value ?? ''} {...rest} />
@@ -224,9 +210,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={() => (
             <FormItem>
               <FormLabel>
-                {t('label.languages', {
-                  defaultValue: 'Languages',
-                })}
+                {t('label.languages')}
               </FormLabel>
               <FormControl>
                 <MultipleSelector
@@ -246,9 +230,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.default_language', {
-                  defaultValue: 'Default language',
-                })}
+                {t('label.default_language')}
               </FormLabel>
               <FormDescription>The language that will be given to new members.</FormDescription>
               <FormControl>
@@ -276,9 +258,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.timezone', {
-                  defaultValue: 'Timezone',
-                })}
+                {t('label.timezone')}
               </FormLabel>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
@@ -304,9 +284,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.country', {
-                  defaultValue: 'Country',
-                })}
+                {t('label.country')}
               </FormLabel>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
@@ -329,14 +307,10 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || apiPending}>
-            {t('action.save_changes', {
-              defaultValue: 'Save changes',
-            })}
+            {t('action.save_changes')}
           </Button>
           <Button variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
-            {t('action.cancel', {
-              defaultValue: 'Cancel',
-            })}
+            {t('action.cancel')}
           </Button>
         </div>
       </form>

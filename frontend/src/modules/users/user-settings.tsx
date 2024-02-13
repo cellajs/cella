@@ -38,9 +38,7 @@ const UserSettings = () => {
                     users={[user]}
                     callback={() => {
                       toast.success(
-                        t('success.your_account_has_been_deleted', {
-                          defaultValue: 'Your account has been deleted',
-                        }),
+                        t('success.your_account_has_been_deleted'),
                       );
                       navigate({ to: '/auth/sign-in' });
                     }}
@@ -48,9 +46,7 @@ const UserSettings = () => {
                   />,
                   {
                     className: 'sm:max-w-[64rem]',
-                    title: t('action.delete_user', {
-                      defaultValue: 'Delete user',
-                    }),
+                    title: t('action.delete_user'),
                     description: t('question.are_you_sure_to_delete_your_account', { email: user.email }),
                   },
                 );

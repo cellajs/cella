@@ -87,9 +87,7 @@ export const SheetMenu = memo(() => {
             searchResultsListItems()
           ) : (
             <div className="text-muted-foreground text-sm text-center">
-              {t('label.no_results_found', {
-                defaultValue: 'No results found',
-              })}
+              {t('label.no_results_found')}
             </div>
           )}
         </div>

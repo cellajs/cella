@@ -36,9 +36,7 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
         callback={(organizations) => {
           callback(organizations, 'delete');
           toast.success(
-            t('success.delete_organizations', {
-              defaultValue: 'Organizations deleted',
-            }),
+            t('success.delete_organizations'),
           );
         }}
         dialog
@@ -46,12 +44,8 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
       {
         drawerOnMobile: false,
         className: 'max-w-xl',
-        title: t('label.delete', {
-          defaultValue: 'Delete',
-        }),
-        description: t('description.delete_organizations', {
-          defaultValue: 'Are you sure you want to delete the selected organizations?',
-        }),
+        title: t('label.delete'),
+        description: t('description.delete_organizations'),
       },
     );
   };
@@ -64,9 +58,7 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
             <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
               <span className="text-xs font-medium text-white">{selectedOrganizations.length}</span>
             </div>
-            {t('action.remove', {
-              defaultValue: 'Remove',
-            })}
+            {t('action.remove')}
           </Button>
         ) : (
           !isFiltered &&
@@ -75,36 +67,26 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
               onClick={() => {
                 dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
                   className: 'sm:max-w-xl',
-                  title: t('label.create_organization', {
-                    defaultValue: 'Create organization',
-                  }),
+                  title: t('label.create_organization'),
                 });
               }}
             >
-              {t('action.create', {
-                defaultValue: 'Create',
-              })}
+              {t('action.create')}
             </Button>
           )
         )}
         <CountAndLoading
           count={total}
           isLoading={isLoading}
-          singular={t('label.singular_organization', {
-            defaultValue: 'organization',
-          })}
-          plural={t('label.plural_organization', {
-            defaultValue: 'organizations',
-          })}
+          singular={t('label.singular_organization')}
+          plural={t('label.plural_organization')}
           isFiltered={isFiltered}
           onResetFilters={onResetFilters}
         />
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input
-          placeholder={t('placeholder.search', {
-            defaultValue: 'Search ...',
-          })}
+          placeholder={t('placeholder.search')}
           defaultValue={query ?? ''}
           onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
             setQuery?.(event.target.value);

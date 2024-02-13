@@ -80,8 +80,8 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
 
         if (isSelf) {
           setUser(data);
-          toast.success(t('success.you_updated', { defaultValue: 'Your profile has been updated' }));
-        } else toast.success(t('success.updated_user', { defaultValue: 'User updated' }));
+          toast.success(t('success.you_updated'));
+        } else toast.success(t('success.updated_user'));
       },
     });
   };
@@ -107,9 +107,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           if (isExists) {
             form.setError('slug', {
               type: 'manual',
-              message: t('error.slug_already_exists', {
-                defaultValue: 'This user handle is already taken',
-              }),
+              message: t('error.slug_already_exists'),
             });
           } else {
             form.clearErrors('slug');
@@ -128,9 +126,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           render={({ field: { ref, ...rest } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.profile_picture', {
-                  defaultValue: 'Profile picture',
-                })}
+                {t('label.profile_picture')}
               </FormLabel>
               <FormControl>
                 <UploadAvatar {...rest} type="user" id={user.id} name={user.name} url={form.getValues('thumbnailUrl')} setUrl={setImageUrl} />
@@ -144,9 +140,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t('label.user_handle', {
-                  defaultValue: 'User handle',
-                })}
+                {t('label.user_handle')}
               </FormLabel>
               <FormDescription>A unique handle for your profile URL.</FormDescription>
               <FormControl>
@@ -168,9 +162,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
         />
         <FormItem>
           <FormLabel>
-            {t('label.email', {
-              defaultValue: 'Email',
-            })}
+            {t('label.email')}
           </FormLabel>
           <FormControl>
             <Input value={user.email} disabled />
@@ -183,9 +175,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.first_name', {
-                  defaultValue: 'First name',
-                })}
+                {t('label.first_name')}
               </FormLabel>
               <FormControl>
                 <Input value={value ?? ''} {...rest} />
@@ -200,9 +190,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.last_name', {
-                  defaultValue: 'Last name',
-                })}
+                {t('label.last_name')}
               </FormLabel>
               <FormControl>
                 <Input value={value ?? ''} {...rest} />
@@ -217,9 +205,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.bio', {
-                  defaultValue: 'Bio',
-                })}
+                {t('label.bio')}
               </FormLabel>
               <FormControl>
                 <Textarea value={value ?? ''} {...rest} />
@@ -234,9 +220,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormLabel>
-                {t('label.language', {
-                  defaultValue: 'Language',
-                })}
+                {t('label.language')}
               </FormLabel>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
@@ -266,9 +250,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <FormLabel>
-                {t('label.newsletter', {
-                  defaultValue: 'Newsletter',
-                })}
+                {t('label.newsletter')}
               </FormLabel>
               <FormMessage />
             </FormItem>
@@ -276,14 +258,10 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending || apiPending}>
-            {t('action.save_changes', {
-              defaultValue: 'Save changes',
-            })}
+            {t('action.save_changes')}
           </Button>
           <Button variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
-            {t('action.cancel', {
-              defaultValue: 'Cancel',
-            })}
+            {t('action.cancel')}
           </Button>
         </div>
       </form>

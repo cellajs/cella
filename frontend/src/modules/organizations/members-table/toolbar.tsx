@@ -69,12 +69,8 @@ function Toolbar({
     dialog(<InviteUsersForm organization={organization} dialog />, {
       drawerOnMobile: false,
       className: 'max-w-xl',
-      title: t('label.invite', {
-        defaultValue: 'Invite',
-      }),
-      description: t('description.invite_members', {
-        defaultValue: 'Invited members will receive an email with invitation link.',
-      }),
+      title: t('label.invite'),
+      description: t('description.invite_members'),
     });
   };
 
@@ -86,18 +82,14 @@ function Toolbar({
         callback={(members) => {
           callback(members, 'delete');
           toast.success(
-            t('success.delete_members', {
-              defaultValue: 'Members deleted',
-            }),
+            t('success.delete_members'),
           );
         }}
         members={selectedMembers}
       />,
       {
         className: 'sm:max-w-xl',
-        title: t('label.remove_member', {
-          defaultValue: 'Remove member',
-        }),
+        title: t('label.remove_member'),
         description: (
           <Trans
             i18nKey="question.are_you_sure_to_remove_member"
@@ -120,14 +112,10 @@ function Toolbar({
               <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
                 <span className="text-xs font-medium text-white">{selectedMembers.length}</span>
               </div>
-              {t('action.remove', {
-                defaultValue: 'Remove',
-              })}
+              {t('action.remove')}
             </Button>
             <Button variant="secondary" onClick={openRemoveDialog}>
-              {t('action.clear', {
-                defaultValue: 'Clear',
-              })}
+              {t('action.clear')}
             </Button>
           </>
         ) : (
@@ -135,9 +123,7 @@ function Toolbar({
             <>
               {(user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
                 <Button onClick={openInviteDialog}>
-                  {t('action.invite', {
-                    defaultValue: 'Invite',
-                  })}
+                  {t('action.invite')}
                 </Button>
               )}
             </>
@@ -147,12 +133,8 @@ function Toolbar({
           <CountAndLoading
             count={total}
             isLoading={isLoading}
-            singular={t('label.singular_member', {
-              defaultValue: 'member',
-            })}
-            plural={t('label.plural_member', {
-              defaultValue: 'members',
-            })}
+            singular={t('label.singular_member')}
+            plural={t('label.plural_member')}
             isFiltered={isFiltered}
             onResetFilters={onResetFilters}
           />
@@ -160,9 +142,7 @@ function Toolbar({
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input
-          placeholder={t('placeholder.search', {
-            defaultValue: 'Search ...',
-          })}
+          placeholder={t('placeholder.search')}
           defaultValue={query ?? ''}
           onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
             setQuery?.(event.target.value);

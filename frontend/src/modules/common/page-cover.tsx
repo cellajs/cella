@@ -51,9 +51,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
       {
         id: 'page-cover',
         drawerOnMobile: false,
-        title: t('label.upload_image', {
-          defaultValue: 'Upload image',
-        }),
+        title: t('label.upload_image'),
         className: 'sm:max-w-xl',
       },
     );
