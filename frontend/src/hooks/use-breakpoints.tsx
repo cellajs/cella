@@ -1,5 +1,5 @@
+import { config } from 'config';
 import { useEffect, useState } from 'react';
-import { config } from 'config'
 
 type ValidBreakpoints = keyof typeof config.theme.screenSizes;
 

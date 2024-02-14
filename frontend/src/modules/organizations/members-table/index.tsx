@@ -8,12 +8,12 @@ import { DataTable } from '~/modules/common/data-table';
 
 import { Bird } from 'lucide-react';
 import { SortColumn } from 'react-data-grid';
+import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { MemberSearch, MembersTableRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import useMutateQueryData from '~/hooks/use-mutate-query-data';
 
 const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);

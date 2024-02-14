@@ -32,3 +32,4 @@ dist-ssr
 .react-email
 .wrangler
 backend/files
+frontend/stats.html

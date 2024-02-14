@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { dialog } from '~/modules/common/dialoger/state';
 
+import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -14,7 +15,6 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
-import { Suspense, lazy } from 'react';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 

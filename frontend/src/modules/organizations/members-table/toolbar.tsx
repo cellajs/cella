@@ -1,6 +1,7 @@
 import debounce from 'lodash.debounce';
 import { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { GetMembersParams } from '~/api/organizations';
 import { cn } from '~/lib/utils';
 import InviteUsersForm from '~/modules/organizations/invite-users-form';
@@ -13,7 +14,6 @@ import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/column
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
 import RemoveMembersForm from './remove-member-form';
-import { toast } from 'sonner';
 
 interface Props {
   selectedMembers: Member[];

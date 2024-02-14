@@ -12,7 +12,7 @@ interface Props {
   tabIndex: number;
 }
 
-const DataTableRowEdit = ({ organization, callback, tabIndex }: Props) => {
+const RowEdit = ({ organization, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
   const openUpdateDialog = () => {
@@ -24,12 +24,10 @@ const DataTableRowEdit = ({ organization, callback, tabIndex }: Props) => {
   };
 
   return (
-    <div className="flex h-full justify-center items-center">
-      <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={openUpdateDialog}>
-        <Pencil size={16} />
-      </Button>
-    </div>
+    <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={openUpdateDialog}>
+      <Pencil size={16} />
+    </Button>
   );
 };
 
-export default DataTableRowEdit;
+export default RowEdit;

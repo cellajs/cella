@@ -6,10 +6,10 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUsers from './delete-users';
 
-import { useTranslation } from 'react-i18next';
-import UpdateUserForm from '~/modules/users/update-user-form';
-import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import UpdateUserForm from '~/modules/users/update-user-form';
 
 const UserSettings = () => {
   const user = useUserStore((state) => state.user);

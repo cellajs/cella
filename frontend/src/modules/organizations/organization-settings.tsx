@@ -6,11 +6,11 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 
 import { useContext } from 'react';
+import { toast } from 'sonner';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { dialog } from '../common/dialoger/state';
 import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
-import { toast } from 'sonner';
 
 const OrganizationSettings = () => {
   const { t } = useTranslation();

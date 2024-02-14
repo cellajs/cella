@@ -152,3 +152,10 @@ export const removeMembersFromOrganization = async (organizationIdentifier: stri
   if ('error' in json) throw new ApiError(response.status, json.error);
   return json.data;
 };
+
+// Send newsletter to organizations
+export const sendNewsletter = async (organizationIds: string[], subject: string, content: string) => {
+  console.log('Sending newsletter to organizations', organizationIds, subject, content);
+
+  return { success: true };
+};

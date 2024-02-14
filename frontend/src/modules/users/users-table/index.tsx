@@ -6,12 +6,12 @@ import { getUsers } from '~/api/users';
 import { User } from '~/types';
 
 import { RowsChangeData, SortColumn } from 'react-data-grid';
+import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { DataTable } from '~/modules/common/data-table';
 import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import useMutateQueryData from '~/hooks/use-mutate-query-data';
 
 export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
 

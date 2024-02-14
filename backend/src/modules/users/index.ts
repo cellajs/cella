@@ -237,7 +237,6 @@ const usersRoutes = app
 
     const userIds = Array.isArray(ids) ? ids : [ids];
 
-
     const errors: ReturnType<typeof createError>[] = [];
 
     await Promise.all(

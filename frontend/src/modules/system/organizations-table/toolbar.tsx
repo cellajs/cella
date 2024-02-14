@@ -1,8 +1,10 @@
 import debounce from 'lodash.debounce';
 import { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
+import NewsletterForm from '~/modules/system/newsletter-form';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/store/user';
@@ -10,7 +12,6 @@ import { Organization } from '~/types';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
-import { toast } from 'sonner';
 
 interface Props {
   total?: number;
@@ -54,12 +55,25 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
     <div className="items-center justify-between sm:flex">
       <div className="flex items-center space-x-2">
         {selectedOrganizations.length > 0 ? (
-          <Button variant="destructive" className="relative" onClick={onOpenDeleteDialog}>
-            <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
-              <span className="text-xs font-medium text-white">{selectedOrganizations.length}</span>
-            </div>
-            {t('action.remove')}
-          </Button>
+          <>
+            <Button
+              onClick={() => {
+                dialog(<NewsletterForm dialog />, {
+                  drawerOnMobile: false,
+                  className: 'sm:max-w-[48rem]',
+                  title: t('label.newsletter'),
+                });
+              }}
+            >
+              {t('label.newsletter')}
+            </Button>
+            <Button variant="destructive" className="relative" onClick={onOpenDeleteDialog}>
+              <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
+                <span className="text-xs font-medium text-white">{selectedOrganizations.length}</span>
+              </div>
+              {t('action.remove')}
+            </Button>
+          </>
         ) : (
           !isFiltered &&
           user.role === 'ADMIN' && (

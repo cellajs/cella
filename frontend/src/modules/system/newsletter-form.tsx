@@ -1,0 +1,107 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import React, { Suspense, lazy } from 'react';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+
+// Change this in the future on current schema
+// import { sendNewsletterJsonSchema } from 'backend/modules/organizations/schema';
+import { sendNewsletter } from '~/api/organizations';
+
+import { Send } from 'lucide-react';
+import { toast } from 'sonner';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { Button } from '~/modules/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
+import { dialog } from '../common/dialoger/state';
+
+const BlockNote = lazy(() => import('~/modules/common/block-note'));
+
+interface NewsletterFormProps {
+  dialog?: boolean;
+}
+
+// TODO: Remove this schema once the backend is ready
+const formSchema = z.object({
+  organizationIds: z.array(z.string()),
+  subject: z.string(),
+  content: z.string(),
+});
+
+// const formSchema = newsletterJsonSchema;
+
+type FormValues = z.infer<typeof formSchema>;
+
+const NewsletterForm: React.FC<NewsletterFormProps> = ({ dialog: isDialog }) => {
+  const { t } = useTranslation();
+  const [apiWrapper, pending] = useApiWrapper();
+
+  const form = useFormWithDraft<FormValues>('send-newsletter', {
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      organizationIds: [],
+      subject: '',
+      content: '',
+    },
+  });
+
+  const onSubmit = (values: FormValues) => {
+    // TODO
+    const organizationIds = ['1', '2', '3'];
+    apiWrapper(
+      () => sendNewsletter(organizationIds, values.subject, values.content),
+      (result) => {
+        form.reset();
+        console.log(result);
+
+        toast.success(t('success.create_newsletter'));
+
+        if (isDialog) {
+          dialog.remove();
+        }
+      },
+    );
+  };
+
+  const cancel = () => {
+    form.reset();
+    if (isDialog) dialog.remove();
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="subject"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('label.subject')}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Suspense fallback={null}>
+          <BlockNote />
+        </Suspense>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
+            <Send size={16} className="mr-2" />
+            {t('action.send')}
+          </Button>
+          <Button variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
+            {t('action.cancel')}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+};
+
+export default NewsletterForm;

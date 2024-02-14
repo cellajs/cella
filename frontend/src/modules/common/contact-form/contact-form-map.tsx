@@ -55,7 +55,7 @@ const ContactFormMap = () => {
   if (positionArray)
     return (
       <div className={mapContainerClass}>
-        <MapContainer center={positionArray} zoom={5} scrollWheelZoom={false} className="h-full w-full" ref={mapRef}>
+        <MapContainer center={positionArray} zoom={config.company.mapZoom} scrollWheelZoom={false} className="h-full w-full" ref={mapRef}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution={'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}

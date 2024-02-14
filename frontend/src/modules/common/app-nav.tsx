@@ -49,7 +49,7 @@ const AppNav = () => {
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
       dialog(<Input placeholder={'Search ...'} />, {
-        className: 'sm:max-w-2xl -mt-[calc(70vh-140px)]',
+        className: 'sm:max-w-2xl sm:-mt-[calc(70vh-140px)]',
         title: 'Search',
         description: 'Search through organizations & users within CellaJS.',
         drawerOnMobile: false,
