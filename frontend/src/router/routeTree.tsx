@@ -29,6 +29,7 @@ import UserProfile from '../modules/users/user-profile';
 import UserSettings from '../modules/users/user-settings';
 import UsersTable from '../modules/users/users-table';
 import { Organization as OrganizationType, User } from '../types';
+import { useNavigationStore } from '~/store/navigation';
 
 const rootRoute = rootRouteWithContext<{
   queryClient: QueryClient;
@@ -39,14 +40,14 @@ const rootRoute = rootRouteWithContext<{
 const AuthRoute = createRoute({
   id: 'auth-layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: async () => {
+  beforeLoad: () => {
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (storedUser) throw redirect({ to: '/', replace: true });
 
     try {
       const getMe = useUserStore.getState().getMe;
-      await getMe();
+      getMe();
     } catch (error) {
       return console.error('Not authenticated');
     }
@@ -162,20 +163,18 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
 const IndexRoute = createRoute({
   id: 'layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ location }) => {
-    const storedUser = useUserStore.getState().user;
+  beforeLoad: ({ location }) => {
+    // If no desired path, redirect to about
+    if (location.pathname === '/') throw redirect({ to: '/about', replace: true });
 
-    if (!storedUser) {
-      // If no stored user and no desired path, redirect to about
-      if (location.pathname === '/') throw redirect({ to: '/about', replace: true });
-
-      try {
-        const getMe = useUserStore.getState().getMe;
-        await getMe();
-      } catch {
-        console.log('Not authenticated, redirect to sign in');
-        throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
-      }
+    try {
+      const getMe = useUserStore.getState().getMe;
+      const getMenu = useNavigationStore.getState().getMenu;
+      getMe();
+      getMenu();
+    } catch {
+      console.log('Not authenticated, redirect to sign in');
+      throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
     }
   },
   component: () => <App />,

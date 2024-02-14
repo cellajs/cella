@@ -40,15 +40,13 @@ const UsersTable = () => {
 
   // Save filters in search params
   const filters = useMemo(
-    () => [
-      { key: 'q', value: query },
-      { key: 'sort', value: sortColumns[0]?.columnKey },
-      { key: 'order', value: sortColumns[0]?.direction.toLowerCase() },
-      { key: 'role', value: role },
-    ],
+    () => ({ q: query, sort: sortColumns[0]?.columnKey, order: sortColumns[0]?.direction.toLowerCase(), role }),
     [query, role, sortColumns],
   );
-  useSaveInSearchParams(filters);
+  useSaveInSearchParams(filters, {
+    sort: 'createdAt',
+    order: 'desc',
+  });
 
   const callback = useMutateQueryData(['users', query, sortColumns, role]);
 

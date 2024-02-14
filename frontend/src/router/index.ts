@@ -9,7 +9,7 @@ const router = new Router({
   routeTree,
   routeMasks,
   // notFoundRoute,
-  defaultPreload: 'intent',
+  defaultPreload: false,
   defaultStaleTime: 5000,
   context: {
     queryClient,

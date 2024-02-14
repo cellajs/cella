@@ -38,14 +38,17 @@ const OrganizationsTable = () => {
 
   // Save filters in search params
   const filters = useMemo(
-    () => [
-      { key: 'q', value: query },
-      { key: 'sort', value: sortColumns[0]?.columnKey },
-      { key: 'order', value: sortColumns[0]?.direction.toLowerCase() },
-    ],
+    () => ({
+      q: query,
+      sort: sortColumns[0]?.columnKey,
+      order: sortColumns[0]?.direction.toLowerCase(),
+    }),
     [query, sortColumns],
   );
-  useSaveInSearchParams(filters);
+  useSaveInSearchParams(filters, {
+    sort: 'createdAt',
+    order: 'desc',
+  });
 
   const callback = useMutateQueryData(['organizations', query, sortColumns]);
 
