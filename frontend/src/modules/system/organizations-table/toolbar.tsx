@@ -12,6 +12,7 @@ import { Organization } from '~/types';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
+import { sheet } from '../../common/sheeter/state';
 
 interface Props {
   total?: number;
@@ -56,10 +57,10 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
           <>
             <Button
               onClick={() => {
-                dialog(<NewsletterForm dialog />, {
-                  drawerOnMobile: false,
-                  className: 'sm:max-w-[48rem]',
-                  title: t('label.newsletter'),
+                console.log('sheet', sheet);
+                sheet(<NewsletterForm sheet />, {
+                  className: 'sm:max-w-[48rem] z-50',
+                  id: 'newsletter-form',
                 });
               }}
             >

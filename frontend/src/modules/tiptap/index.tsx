@@ -14,7 +14,7 @@ export default function Tiptap() {
   const [collabToken] = useState<string | null>('testToken');
   // const [aiToken, setAiToken] = useState<string | null>(null)
 
-  const hasCollab = true;
+  const hasCollab = false;
 
   const room = 'testRoom';
 

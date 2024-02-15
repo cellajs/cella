@@ -2,17 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { TiptapCollabProvider, WebSocketStatus } from '@hocuspocus/provider';
 // import Ai from '@tiptap-pro/extension-ai'
-import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+// import Collaboration from '@tiptap/extension-collaboration';
+// import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { Editor, useEditor } from '@tiptap/react';
 import * as Y from 'yjs';
 
 import { EditorUser } from '../components/BlockEditor/types';
 // import { EditorContext } from '../context/EditorContext';
 import { ExtensionKit } from '../extensions/extension-kit';
-import { userColors, userNames } from '../lib/constants';
+// import { userColors, userNames } from '../lib/constants';
 import { initialContent } from '../lib/data/initialContent';
-import { randomElement } from '../lib/utils';
+// import { randomElement } from '../lib/utils';
 import { useSidebar } from './useSidebar';
 
 // const TIPTAP_AI_APP_ID = process.env.NEXT_PUBLIC_TIPTAP_AI_APP_ID
@@ -51,16 +51,16 @@ export const useBlockEditor = ({
         ...ExtensionKit({
           provider,
         }),
-        Collaboration.configure({
-          document: ydoc,
-        }),
-        CollaborationCursor.configure({
-          provider,
-          user: {
-            name: randomElement(userNames),
-            color: randomElement(userColors),
-          },
-        }),
+        // Collaboration.configure({
+        //   document: ydoc,
+        // }),
+        // CollaborationCursor.configure({
+        //   provider,
+        //   user: {
+        //     name: randomElement(userNames),
+        //     color: randomElement(userColors),
+        //   },
+        // }),
         // Ai.configure({
         //   appId: TIPTAP_AI_APP_ID,
         //   token: aiToken,

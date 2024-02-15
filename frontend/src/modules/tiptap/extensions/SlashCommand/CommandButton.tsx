@@ -19,8 +19,7 @@ export const CommandButton = forwardRef<HTMLButtonElement, CommandButtonProps>((
   );
 
   return (
-    // biome-ignore lint/a11y/useButtonType: <explanation>
-    <button ref={ref} onClick={onClick} className={wrapperClass}>
+    <button type="button" ref={ref} onClick={onClick} className={wrapperClass}>
       <Icon name={icon} className="w-3 h-3" />
       <div className="flex flex-col items-start justify-start">
         <div className="text-sm font-medium">{title}</div>

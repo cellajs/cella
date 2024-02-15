@@ -55,8 +55,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     );
 
     return (
-      // biome-ignore lint/a11y/useButtonType: <explanation>
-      <button ref={ref} disabled={disabled} className={buttonClassName} {...rest}>
+      <button type="button" ref={ref} disabled={disabled} className={buttonClassName} {...rest}>
         {children}
       </button>
     );

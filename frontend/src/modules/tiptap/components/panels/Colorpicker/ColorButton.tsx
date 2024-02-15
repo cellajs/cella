@@ -22,8 +22,7 @@ export const ColorButton = memo(({ color, active, onColorChange }: ColorButtonPr
   }, [onColorChange, color]);
 
   return (
-    // biome-ignore lint/a11y/useButtonType: <explanation>
-    <button onClick={handleClick} className={wrapperClassName}>
+    <button type="button" onClick={handleClick} className={wrapperClassName}>
       <div style={{ backgroundColor: color, color: color }} className={bubbleClassName} />
     </button>
   );

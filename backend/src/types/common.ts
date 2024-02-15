@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { z } from 'zod';
 import { User } from 'lucia';
+import { z } from 'zod';
 
 import { OrganizationModel } from '../db/schema';
 import { errorResponseSchema } from '../schemas/common';

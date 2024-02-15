@@ -14,12 +14,12 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { dialog } from '../common/dialoger/state';
+import { sheet } from '../common/sheeter/state';
 
 const TiptapEditor = lazy(() => import('~/modules/tiptap'));
 
 interface NewsletterFormProps {
-  dialog?: boolean;
+  sheet?: boolean;
 }
 
 // TODO: Remove this schema once the backend is ready
@@ -33,7 +33,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const NewsletterForm: React.FC<NewsletterFormProps> = ({ dialog: isDialog }) => {
+const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
   const { t } = useTranslation();
   const [apiWrapper, pending] = useApiWrapper();
 
@@ -57,8 +57,8 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ dialog: isDialog }) => 
 
         toast.success(t('success.create_newsletter'));
 
-        if (isDialog) {
-          dialog.remove();
+        if (isSheet) {
+          sheet.remove();
         }
       },
     );
@@ -66,12 +66,12 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ dialog: isDialog }) => 
 
   const cancel = () => {
     form.reset();
-    if (isDialog) dialog.remove();
+    if (isSheet) sheet.remove();
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 h-max">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="tiptap-container" className="space-y-6 h-max">
         <FormField
           control={form.control}
           name="subject"

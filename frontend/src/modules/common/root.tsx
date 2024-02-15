@@ -4,6 +4,7 @@ import { Suspense, lazy } from 'react';
 
 import { Dialoger } from '~/modules/common/dialoger';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
+import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 
 // Lazy load Tanstack dev tools in development
@@ -23,6 +24,7 @@ function Root() {
       <ScrollRestoration />
       <Toaster richColors />
       <Dialoger />
+      <Sheeter />
       <ReloadPrompt />
       <Suspense fallback={null}>
         <TanStackRouterDevtools />
