@@ -125,9 +125,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           name="thumbnailUrl"
           render={({ field: { ref, ...rest } }) => (
             <FormItem>
-              <FormLabel>
-                {t('label.profile_picture')}
-              </FormLabel>
+              <FormLabel>{t('label.profile_picture')}</FormLabel>
               <FormControl>
                 <UploadAvatar {...rest} type="user" id={user.id} name={user.name} url={form.getValues('thumbnailUrl')} setUrl={setImageUrl} />
               </FormControl>
@@ -139,9 +137,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           name="slug"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                {t('label.user_handle')}
-              </FormLabel>
+              <FormLabel>{t('label.user_handle')}</FormLabel>
               <FormDescription>A unique handle for your profile URL.</FormDescription>
               <FormControl>
                 {/* TODO: This breaks accessibility of the form label? */}
@@ -161,9 +157,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           )}
         />
         <FormItem>
-          <FormLabel>
-            {t('label.email')}
-          </FormLabel>
+          <FormLabel>{t('label.email')}</FormLabel>
           <FormControl>
             <Input value={user.email} disabled />
           </FormControl>
@@ -174,9 +168,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           name="firstName"
           render={({ field: { value, ...rest } }) => (
             <FormItem>
-              <FormLabel>
-                {t('label.first_name')}
-              </FormLabel>
+              <FormLabel>{t('label.first_name')}</FormLabel>
               <FormControl>
                 <Input value={value ?? ''} {...rest} />
               </FormControl>
@@ -189,9 +181,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           name="lastName"
           render={({ field: { value, ...rest } }) => (
             <FormItem>
-              <FormLabel>
-                {t('label.last_name')}
-              </FormLabel>
+              <FormLabel>{t('label.last_name')}</FormLabel>
               <FormControl>
                 <Input value={value ?? ''} {...rest} />
               </FormControl>
@@ -204,9 +194,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           name="bio"
           render={({ field: { value, ...rest } }) => (
             <FormItem>
-              <FormLabel>
-                {t('label.bio')}
-              </FormLabel>
+              <FormLabel>{t('label.bio')}</FormLabel>
               <FormControl>
                 <Textarea value={value ?? ''} {...rest} />
               </FormControl>
@@ -219,9 +207,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           name="language"
           render={({ field: { value, onChange } }) => (
             <FormItem>
-              <FormLabel>
-                {t('label.language')}
-              </FormLabel>
+              <FormLabel>{t('label.language')}</FormLabel>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
                   <SelectTrigger className="w-full">
@@ -249,9 +235,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
               <FormControl>
                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
-              <FormLabel>
-                {t('label.newsletter')}
-              </FormLabel>
+              <FormLabel>{t('label.newsletter')}</FormLabel>
               <FormMessage />
             </FormItem>
           )}

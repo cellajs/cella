@@ -77,9 +77,7 @@ function Toolbar({
         users={selectedUsers}
         callback={(users) => {
           callback(users, 'delete');
-          toast.success(
-            t('success.delete_users'),
-          );
+          toast.success(t('success.delete_users'));
         }}
         dialog
       />,
@@ -103,15 +101,7 @@ function Toolbar({
             {t('action.remove')}
           </Button>
         ) : (
-          !isFiltered && (
-            <>
-              {user.role === 'ADMIN' && (
-                <Button onClick={openInviteDialog}>
-                  {t('action.invite')}
-                </Button>
-              )}
-            </>
-          )
+          !isFiltered && <>{user.role === 'ADMIN' && <Button onClick={openInviteDialog}>{t('action.invite')}</Button>}</>
         )}
         <CountAndLoading
           count={total}

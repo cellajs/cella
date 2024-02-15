@@ -59,9 +59,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
         <div className="flex gap-2 items-center">
           <Button variant="secondary" type="button" size="sm" onClick={openUploadDialog}>
             <Upload size={20} className="mr-2" />
-            <span>
-              {t('action.upload')}
-            </span>
+            <span>{t('action.upload')}</span>
           </Button>
 
           {url && (

@@ -36,9 +36,7 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
         organizations={selectedOrganizations}
         callback={(organizations) => {
           callback(organizations, 'delete');
-          toast.success(
-            t('success.delete_organizations'),
-          );
+          toast.success(t('success.delete_organizations'));
         }}
         dialog
       />,

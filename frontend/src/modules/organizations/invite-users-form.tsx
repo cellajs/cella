@@ -56,9 +56,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
           dialog.remove();
         }
 
-        toast.success(
-          t('success.user_invited'),
-        );
+        toast.success(t('success.user_invited'));
       },
     );
   };
@@ -76,9 +74,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
           name="emails"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                {t('label.emails')}
-              </FormLabel>
+              <FormLabel>{t('label.emails')}</FormLabel>
               <FormControl>
                 <MultipleSelector
                   value={field.value}

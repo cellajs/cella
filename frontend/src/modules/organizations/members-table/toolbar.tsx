@@ -81,9 +81,7 @@ function Toolbar({
         dialog
         callback={(members) => {
           callback(members, 'delete');
-          toast.success(
-            t('success.delete_members'),
-          );
+          toast.success(t('success.delete_members'));
         }}
         members={selectedMembers}
       />,
@@ -120,13 +118,7 @@ function Toolbar({
           </>
         ) : (
           !isFiltered && (
-            <>
-              {(user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
-                <Button onClick={openInviteDialog}>
-                  {t('action.invite')}
-                </Button>
-              )}
-            </>
+            <>{(user.role === 'ADMIN' || organization.userRole === 'ADMIN') && <Button onClick={openInviteDialog}>{t('action.invite')}</Button>}</>
           )
         )}
         {selectedMembers.length === 0 && (
