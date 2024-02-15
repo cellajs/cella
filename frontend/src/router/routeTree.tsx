@@ -1,5 +1,5 @@
 import { DefaultError, QueryClient, queryOptions, useMutation } from '@tanstack/react-query';
-import { Outlet, createRoute, createRouteMask, redirect, rootRouteWithContext } from '@tanstack/react-router';
+import { Outlet, createRoute, createRouteMask, notFound, redirect, rootRouteWithContext } from '@tanstack/react-router';
 import { z } from 'zod';
 import { acceptInvite, checkInvite } from '~/api/general';
 import { UpdateOrganizationParams, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
@@ -20,9 +20,7 @@ import Accessibility from '../modules/marketing/accessibility';
 import Contact from '../modules/marketing/contact';
 import { Privacy } from '../modules/marketing/privacy';
 import { Terms } from '../modules/marketing/terms';
-import MembersTable from '../modules/organizations/members-table';
 import Organization from '../modules/organizations/organization';
-import OrganizationSettings from '../modules/organizations/organization-settings';
 import OrganizationsTable from '../modules/system/organizations-table';
 import SystemPanel from '../modules/system/system-panel';
 import UserProfile from '../modules/users/user-profile';
@@ -40,14 +38,14 @@ const rootRoute = rootRouteWithContext<{
 const AuthRoute = createRoute({
   id: 'auth-layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: () => {
+  beforeLoad: async () => {
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (storedUser) throw redirect({ to: '/', replace: true });
 
     try {
       const getMe = useUserStore.getState().getMe;
-      getMe();
+      await getMe();
     } catch (error) {
       return console.error('Not authenticated');
     }
@@ -80,8 +78,8 @@ export const AcceptRoute = createRoute({
       });
 
       throw redirect({
-        to: '/$organizationIdentifier',
-        params: { organizationIdentifier },
+        to: '/$organizationIdentifier/$tab',
+        params: { organizationIdentifier, tab: 'members' },
       });
     }
   },
@@ -163,15 +161,17 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
 const IndexRoute = createRoute({
   id: 'layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: ({ location }) => {
-    // If no desired path, redirect to about
-    if (location.pathname === '/') throw redirect({ to: '/about', replace: true });
+  beforeLoad: async ({ location }) => {
+    const storedUser = useUserStore.getState().user;
+
+    // If no stored user and no desired path, redirect to about
+    if (location.pathname === '/' && !storedUser) throw redirect({ to: '/about', replace: true });
 
     try {
       const getMe = useUserStore.getState().getMe;
       const getMenu = useNavigationStore.getState().getMenu;
-      getMe();
-      getMenu();
+      await getMe();
+      await getMenu();
     } catch {
       console.log('Not authenticated, redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
@@ -257,42 +257,43 @@ export const useUpdateOrganizationMutation = (organizationIdentifier: string) =>
   });
 };
 
-const OrganizationRoute = createRoute({
-  path: '$organizationIdentifier',
+const OrganizationRedirectRoute = createRoute({
+  path: '/$organizationIdentifier',
   getParentRoute: () => IndexRoute,
-  beforeLoad: ({ location, params }) => {
-    // refirect to members table
-    if (!location.pathname.split('/')[2]) {
-      throw redirect({ to: '/$organizationIdentifier/members', replace: true, params });
-    }
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/$organizationIdentifier/$tab',
+      replace: true,
+      params: {
+        ...params,
+        tab: 'members',
+      },
+    });
   },
-  loader: ({ context: { queryClient }, params: { organizationIdentifier } }) =>
-    queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier)),
-  errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
-  component: () => <Organization />,
 });
 
-const memberSearchSchema = z.object({
+const membersSearchSchema = z.object({
   q: z.string().catch('').optional(),
   role: z.enum(['admin', 'member']).catch('member').optional(),
   sort: z.enum(['name', 'id', 'email', 'lastSeenAt', 'createdAt', 'organizationRole']).catch('name').optional(),
   order: z.enum(['asc', 'desc']).catch('asc').optional(),
 });
 
-export type MemberSearch = z.infer<typeof memberSearchSchema>;
+export type MembersSearch = z.infer<typeof membersSearchSchema>;
 
-export const MembersTableRoute = createRoute({
-  path: '/members',
-  getParentRoute: () => OrganizationRoute,
-  component: () => <MembersTable />,
-  validateSearch: memberSearchSchema,
-  pendingComponent: () => null,
-});
-
-const OrganizationSettingsRoute = createRoute({
-  path: '/settings',
-  getParentRoute: () => OrganizationRoute,
-  component: () => <OrganizationSettings />,
+export const OrganizationRoute = createRoute({
+  path: '$organizationIdentifier/$tab',
+  getParentRoute: () => IndexRoute,
+  beforeLoad: ({ params }) => {
+    if (![undefined, 'members', 'settings'].includes(params.tab)) {
+      throw notFound();
+    }
+  },
+  validateSearch: membersSearchSchema,
+  loader: ({ context: { queryClient }, params: { organizationIdentifier } }) =>
+    queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier)),
+  errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
+  component: () => <Organization />,
 });
 
 export const routeTree = rootRoute.addChildren([
@@ -310,7 +311,8 @@ export const routeTree = rootRoute.addChildren([
     SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute]),
     UserProfileRoute,
     UserSettingsRoute,
-    OrganizationRoute.addChildren([MembersTableRoute, OrganizationSettingsRoute]),
+    OrganizationRedirectRoute,
+    OrganizationRoute,
   ]),
 ]);
 

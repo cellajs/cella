@@ -47,16 +47,15 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         form.reset();
         callback?.(result);
 
-        toast.success(
-          t('success.create_organization',),
-        );
+        toast.success(t('success.create_organization'));
 
         if (!callback) {
           setSheet(null);
           navigate({
-            to: '/$organizationIdentifier/members',
+            to: '/$organizationIdentifier/$tab',
             params: {
               organizationIdentifier: result.slug,
+              tab: 'members',
             },
           });
         }
@@ -81,9 +80,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                {t('label.name')}
-              </FormLabel>
+              <FormLabel>{t('label.name')}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>

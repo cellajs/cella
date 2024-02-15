@@ -26,9 +26,10 @@ const OrganizationSettings = () => {
           callback={(organization) => {
             if (organizationIdentifier !== organization.slug) {
               navigate({
-                to: '/$organizationIdentifier/settings',
+                to: '/$organizationIdentifier/$tab',
                 params: {
                   organizationIdentifier: organization.slug,
+                  tab: 'settings',
                 },
                 replace: true,
               });
@@ -52,9 +53,7 @@ const OrganizationSettings = () => {
                 dialog
                 organizations={[organization]}
                 callback={() => {
-                  toast.success(
-                    t('success.delete_organization'),
-                  );
+                  toast.success(t('success.delete_organization'));
                   navigate({
                     to: '/',
                     replace: true,
@@ -70,9 +69,7 @@ const OrganizationSettings = () => {
           }}
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          <span>
-            {t('action.delete_organization')}
-          </span>
+          <span>{t('action.delete_organization')}</span>
         </Button>
       </CardContent>
     </Card>
