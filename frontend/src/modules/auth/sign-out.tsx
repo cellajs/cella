@@ -9,7 +9,7 @@ const SignOut = () => {
     navigate({ to: '/', replace: true });
   });
 
-  return <></>;
+  return null;
 };
 
 export default SignOut;

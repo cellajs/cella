@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
@@ -8,6 +8,7 @@ export function Dialoger() {
   const [open] = useState(true);
   const [dialogs, setDialogs] = useState<DialogT[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
+  const prevFocusedElement = useRef<HTMLElement | null>(null);
 
   const onOpenChange = (dialog: DialogT) => (open: boolean) => {
     if (!open) {
@@ -15,14 +16,24 @@ export function Dialoger() {
     }
   };
 
-  const removeDialog = useCallback((dialog: DialogT) => setDialogs((dialogs) => dialogs.filter(({ id }) => id !== dialog.id)), []);
+  const removeDialog = useCallback((dialog: DialogT | DialogToRemove) => {
+    setDialogs((dialogs) => dialogs.filter(({ id }) => id !== dialog.id));
+    if (prevFocusedElement.current) {
+      // Timeout is needed to prevent focus from being stolen by the dialog that was just removed
+      setTimeout(() => {
+        prevFocusedElement.current?.focus();
+        prevFocusedElement.current = null;
+      }, 1);
+    }
+  }, []);
 
   useEffect(() => {
     return DialogState.subscribe((dialog) => {
       if ((dialog as DialogToRemove).remove) {
-        setDialogs((dialogs) => dialogs.filter((d) => d.id !== dialog.id));
+        removeDialog(dialog as DialogT);
         return;
       }
+      prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
       setDialogs((dialogs) => [...dialogs, dialog]);
     });
   }, []);
