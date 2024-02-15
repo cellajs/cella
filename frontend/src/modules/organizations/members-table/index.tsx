@@ -10,16 +10,16 @@ import { Bird } from 'lucide-react';
 import { SortColumn } from 'react-data-grid';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationContext } from '~/modules/organizations/organization';
-import { MemberSearch, MembersTableRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { MembersSearch, OrganizationRoute } from '~/router/routeTree';
 
 const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
   const [columns, setColumns] = useColumns();
   const search = useSearch({
-    from: MembersTableRoute.id,
+    from: OrganizationRoute.id,
   });
 
   const [rows, setRows] = useState<Member[]>([]);
@@ -39,8 +39,8 @@ const MembersTable = () => {
           },
         ],
   );
-  const [query, setQuery] = useState<MemberSearch['q']>(search.q);
-  const [role, setRole] = useState<MemberSearch['role']>(search.role);
+  const [query, setQuery] = useState<MembersSearch['q']>(search.q);
+  const [role, setRole] = useState<MembersSearch['role']>(search.role);
 
   // Save filters in search params
   const filters = useMemo(
@@ -68,8 +68,8 @@ const MembersTable = () => {
         {
           page: pageParam,
           q: query,
-          sort: sortColumns[0]?.columnKey as MemberSearch['sort'],
-          order: sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
+          sort: sortColumns[0]?.columnKey as MembersSearch['sort'],
+          order: sortColumns[0]?.direction.toLowerCase() as MembersSearch['order'],
           role,
         },
         signal,

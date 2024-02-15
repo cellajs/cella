@@ -26,9 +26,10 @@ const OrganizationSettings = () => {
           callback={(organization) => {
             if (organizationIdentifier !== organization.slug) {
               navigate({
-                to: '/$organizationIdentifier/settings',
+                to: '/$organizationIdentifier/$tab',
                 params: {
                   organizationIdentifier: organization.slug,
+                  tab: 'settings',
                 },
                 replace: true,
               });

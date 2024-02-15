@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Outlet, useParams } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import { createContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -9,9 +9,11 @@ import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { PageHeader } from '~/modules/common/page-header';
 import PageNav from '~/modules/common/page-nav';
 import { Button } from '~/modules/ui/button';
-import { organizationQueryOptions } from '~/router/routeTree';
+import { OrganizationRoute, organizationQueryOptions } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
+import MembersTable from './members-table';
+import OrganizationSettings from './organization-settings';
 
 interface OrganizationContextValue {
   organization: Organization;
@@ -28,7 +30,7 @@ const OrganizationPage = () => {
   const user = useUserStore((state) => state.user);
   const { t } = useTranslation();
   const [apiWrapper] = useApiWrapper();
-  const { organizationIdentifier }: { organizationIdentifier: string } = useParams({ strict: false });
+  const { organizationIdentifier, tab } = useParams({ from: OrganizationRoute.id });
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(organizationIdentifier));
   const organization = organizationQuery.data;
 
@@ -75,9 +77,7 @@ const OrganizationPage = () => {
         }
       />
       <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
-      <div className="container min-h-screen mt-4">
-        <Outlet />
-      </div>
+      <div className="container min-h-screen mt-4">{tab === 'members' ? <MembersTable /> : <OrganizationSettings />}</div>
     </OrganizationContext.Provider>
   );
 };
