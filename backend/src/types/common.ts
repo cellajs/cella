@@ -1,4 +1,5 @@
-import { OpenAPIHono, z } from '@hono/zod-openapi';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { z } from 'zod';
 import { User } from 'lucia';
 
 import { OrganizationModel } from '../db/schema';

@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { z } from 'zod';
 import { passwordSchema } from '../../schemas/common';
 import { apiUserSchema } from '../users/schema';
 
