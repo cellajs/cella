@@ -1,9 +1,11 @@
 import { Camera } from 'lucide-react';
 import { Suspense, lazy, memo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { getColorClass } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
+import { useUpdateOrganizationMutation } from '~/router/routeTree';
 import { UploadType } from '~/types';
 
 // Lazy load the upload component
@@ -19,10 +21,24 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   const { t } = useTranslation();
   const bannerHeight = url ? 'h-[20vw] min-h-[160px] md:min-h-[210px]' : 'h-28'; // : 'h-14';
   const bannerClass = url ? 'bg-background' : getColorClass(id);
+  const { mutate } = useUpdateOrganizationMutation(id);
 
-  // TODO store the url in the database
   const setUrl = (url: string) => {
-    console.log(url, type);
+    if (type === 'organization') {
+      mutate(
+        {
+          bannerUrl: url,
+        },
+        {
+          onSuccess: () => {
+            toast.success(t('label.image_uploaded'));
+          },
+          onError: () => {
+            toast.error(t('label.error_uploading_image'));
+          },
+        },
+      );
+    }
   };
 
   // Open the upload dialog
