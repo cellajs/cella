@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 import { membershipsTable, organizationsTable } from '../../db/schema';
@@ -9,9 +9,7 @@ export const membershipSchema = createSelectSchema(membershipsTable);
 
 export const apiOrganizationUserSchema = z.object({
   ...apiUserSchema.shape,
-  organizationRole: membershipSchema.shape.role.openapi({
-    description: 'The role of the user in the organization',
-  }),
+  organizationRole: membershipSchema.shape.role,
 });
 
 export type ApiOrganizationUser = z.infer<typeof apiOrganizationUserSchema>;
@@ -23,9 +21,7 @@ export const apiOrganizationSchema = z.object({
   languages: z.array(z.string()).nullable(),
   emailDomains: z.array(z.string()).nullable(),
   authStrategies: z.array(z.string()).nullable(),
-  userRole: membershipSchema.shape.role.nullable().openapi({
-    description: 'The role of the current user in the organization',
-  }),
+  userRole: membershipSchema.shape.role.nullable(),
   counts: z.object({
     admins: z.number(),
     members: z.number(),
@@ -37,9 +33,7 @@ export const apiOrganizationSchema = z.object({
 //   languages: z.array(z.string()).nullable(),
 //   emailDomains: z.array(z.string()).nullable(),
 //   authStrategies: z.array(z.string()).nullable(),
-//   userRole: membershipSchema.shape.role.openapi({
-//     description: 'The role of the current user in the organization',
-//   }),
+//   userRole: membershipSchema.shape.role,
 // });
 
 export type ApiOrganization = z.infer<typeof apiOrganizationSchema>;
@@ -97,9 +91,7 @@ export const deleteUserFromOrganizationParamSchema = z.object({
 });
 
 export const updateUserInOrganizationJsonSchema = z.object({
-  role: membershipSchema.shape.role.openapi({
-    description: 'The role of the user in the organization',
-  }),
+  role: membershipSchema.shape.role,
 });
 
 export const userMenuSchema = z.object({
