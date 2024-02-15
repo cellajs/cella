@@ -6,7 +6,7 @@ import { LinkMenu } from '../../components/menus';
 
 import { useBlockEditor } from '../../hooks/useBlockEditor';
 
-// import '../../styles/index.css';
+import '../../styles/index.css';
 
 // import { createPortal } from 'react-dom';
 // import { Sidebar } from '../../components/Sidebar';
