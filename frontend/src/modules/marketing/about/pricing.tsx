@@ -1,5 +1,6 @@
 import { config } from 'config';
 import { Check, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Badge } from '~/modules/ui/badge';
@@ -7,34 +8,39 @@ import { Button } from '~/modules/ui/button';
 
 const pricingPlans = [
   {
-    title: 'Donate',
+    title: 'common:about.pricing.title_1',
     price: '€1k',
-    description: '50% to sponsor OS libraries and 50% to a Cella bounty program.',
+    description: 'about.pricing.description_1',
     features: [
-      'Member of CellaJS community',
-      'Apply for €100k+ Cella Fund',
-      'Access to private repos',
-      'Collective buying power',
-      'Create bounty projects',
-      'Vote on bounty projects',
-      'Contribute to Cella roadmap',
+      'common:about.pricing.plan_1.feature_1',
+      'common:about.pricing.plan_1.feature_2',
+      'common:about.pricing.plan_1.feature_3',
+      'common:about.pricing.plan_1.feature_4',
+      'common:about.pricing.plan_1.feature_5',
+      'common:about.pricing.plan_1.feature_6',
+      'common:about.pricing.plan_1.feature_7',
     ],
     borderColor: '',
     popular: false,
   },
   {
-    title: 'Build',
+    title: 'common:about.pricing.title_2',
     price: '-€2k',
-    description: "Earn while building your own product. Open source or 'community source' parts of your code.",
-    features: ['... Everything from Donate', 'Realize bounty projects', 'Bigger voice in roadmap', 'Showcase your work'],
+    description: 'about.pricing.description_2',
+    features: [
+      'common:about.pricing.plan_2.feature_1',
+      'common:about.pricing.plan_2.feature_2',
+      'common:about.pricing.plan_2.feature_3',
+      'common:about.pricing.plan_2.feature_4',
+    ],
     borderColor: 'ring-4 ring-primary/5',
     popular: true,
   },
   {
-    title: 'Partner',
-    description: 'Do you have a product that integrates well with CellaJS? Become a partner.',
+    title: 'common:about.pricing.title_3',
+    description: 'about.pricing.description_3',
     price: 'TBD',
-    features: ['Partner showcase page', 'Improve the TypeScript ecoystem', 'Scale with other European partners'],
+    features: ['common:about.pricing.plan_3.feature_1', 'common:about.pricing.plan_3.feature_2', 'common:about.pricing.plan_3.feature_3'],
     borderColor: '',
     popular: false,
   },
@@ -42,6 +48,7 @@ const pricingPlans = [
 
 const Pricing = () => {
   const isFlexLayout = pricingPlans.length < 3;
+  const { t } = useTranslation();
 
   return (
     <div
@@ -59,23 +66,23 @@ const Pricing = () => {
           )}
           <div className="mt-4">
             <h3 className="text-center text-2xl flex w-full justify-center font-bold">
-              {plan.title}
+              {t(plan.title)}
               {plan.popular && <Sparkles className="ml-1 w-5 text-primary" strokeWidth={config.theme.strokeWidth} />}
             </h3>
             <div className="text-center mt-4 text-gray-600 dark:text-gray-400">
               <span className="mr-1 text-3xl font-bold">{plan.price}</span>
-              <span className="font-light">/ year</span>
+              <span className="font-light">/ {t('common:label.year')}</span>
             </div>
 
             <div className="mt-4 text-center font-light text-muted-foreground">
-              <span className="">{plan.description}</span>
+              <span className="">{t(plan.description)}</span>
             </div>
 
             <ul className="mt-4 space-y-2">
               {plan.features.map((feature, index) => (
                 <li key={`${plan.title}-${index}`} className="flex text-sm font-light items-center">
                   <Check className="mr-2 p-1 text-sm text-success" />
-                  {feature}
+                  {t(feature)}
                 </li>
               ))}
             </ul>

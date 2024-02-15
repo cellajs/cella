@@ -53,7 +53,7 @@ const Accept = () => {
     <AuthPage>
       <Form {...form}>
         <h1 className="text-2xl text-center">
-          Accept invitation <br /> <span className="font-light text-xl">for {'"email here"'}</span>
+          {t('common:action.accept_invitation')} <br /> <span className="font-light text-xl">for {'"email here"'}</span>
         </h1>
 
         <LegalNotice />
@@ -77,7 +77,7 @@ const Accept = () => {
             )}
           />
           <Button type="submit" loading={pending} className="w-full">
-            {t('action.accept')}
+            {t('common:action.accept')}
             <ArrowRight size={16} className="ml-2" />
           </Button>
         </form>

@@ -8,6 +8,7 @@ import { buttonVariants } from '~/modules/ui/button';
 import { config } from 'config';
 import { ArrowDown } from 'lucide-react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 // import Counters from './counters';
 // import FAQ from './faq';
 import Features from './features';
@@ -25,13 +26,14 @@ interface AboutSectionProps {
 }
 
 const AboutSection = ({ title, description, sectionId, children, alternateBackground = false }: AboutSectionProps) => {
+  const { t } = useTranslation();
   const backgroundClass = alternateBackground ? 'bg-accent/40 dark:bg-transparent' : '';
 
   return (
     <section id={sectionId} className={`container overflow-hidden max-w-none py-8 md:py-12 lg:py-24 ${backgroundClass}`}>
       <div className="mx-auto mb-12 flex max-w-[48rem] flex-col justify-center gap-4">
-        <h2 className="font-heading text-3xl font-semibold leading-[1.1] sm:text-center md:text-4xl">{title}</h2>
-        <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">{description}</p>
+        <h2 className="font-heading text-3xl font-semibold leading-[1.1] sm:text-center md:text-4xl">{t(title)}</h2>
+        <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">{t(description)}</p>
       </div>
       {children}
     </section>
@@ -39,6 +41,7 @@ const AboutSection = ({ title, description, sectionId, children, alternateBackgr
 };
 
 const About = () => {
+  const { t } = useTranslation();
   useEffect(() => {
     document.documentElement.classList.add('scroll-smooth');
 
@@ -53,31 +56,21 @@ const About = () => {
 
       <div className="container max-w-none px-0">
         {/* Hero landing */}
-        <Hero
-          key={'hero'}
-          title="A no-nonsense & intuitive"
-          subtitle="TypeScript template"
-          description="Cella is open source and puts libraries first. Build your new web app as part of a single stack community."
-        >
+        <Hero key={'hero'} title="common:about.index.title_1" subtitle="TypeScript template" description="common:about.index.description_1">
           <div className="mb-8">
             <a href={config.company.githubUrl} className={cn(buttonVariants({ variant: 'glow', size: 'xl' }))} aria-label="Get started">
-              Get started on Github
+              {t('common:start.github.message')}
             </a>
           </div>
           <Link to="/about" hash="why" className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))} aria-label="Read more">
-            <span className="font-light">Read why we built Cella</span>
+            <span className="font-light">{t('common:about.index.why')}</span>
             <ArrowDown size={16} className="ml-2 animate-bounce" />
           </Link>
         </Hero>
 
         <div className="my-12">
           {/* Why this product */}
-          <AboutSection
-            key={'why'}
-            sectionId="why"
-            title="Raison d'être"
-            description="We didn't want another framework. Why not just a comprehensive template?"
-          >
+          <AboutSection key={'why'} sectionId="why" title="common:about.index.title_2" description="common:about.index.description_2">
             <Why />
           </AboutSection>
 
@@ -85,8 +78,8 @@ const About = () => {
           <AboutSection
             key={'features'}
             sectionId="features"
-            title="Vollgepackt mit Funktionen"
-            description="Best-in-class libraries that fit well together. Each with proper documentation."
+            title="common:about.index.title_3"
+            description="common:about.index.description_3"
             alternateBackground={true}
           >
             <Features />
@@ -96,8 +89,8 @@ const About = () => {
           <AboutSection
             key={'integrations'}
             sectionId="integrations"
-            title="Integrations"
-            description="Powerful yet flexible integrations so you can focus on building your product."
+            title="common:about.index.title_4"
+            description="common:about.index.description_4"
           >
             <Integrations />
           </AboutSection>
@@ -106,20 +99,15 @@ const About = () => {
           {/* <AboutSection
             key={'counters'}
             sectionId="counters"
-            title="Faster together"
-            description="Cella is open source and wants to work together with other OS projects & teams."
+            title="common:about.index.title_5"
+            description="common:about.index.description_5"
             alternateBackground={true}
           >
             <Counters />
           </AboutSection> */}
 
           {/* Pricing */}
-          <AboutSection
-            key={'pricing'}
-            sectionId="pricing"
-            title="Pricing (conceptual)"
-            description="How to build a dedicated & sustainable community around CellaJS? Membership perhaps."
-          >
+          <AboutSection key={'pricing'} sectionId="pricing" title="common:about.index.title_6" description="common:about.index.description_6">
             <Pricing />
           </AboutSection>
 
@@ -127,8 +115,8 @@ const About = () => {
           {/* <AboutSection
             key={'faqs'}
             sectionId="faqs"
-            title="FAQs"
-            description="Frequently asked questions. Is your question not included? Please reach out to us."
+            title="common:about.index.title_7"
+            description="common:about.index.description_7"
             alternateBackground={true}
           >
             <FAQ />

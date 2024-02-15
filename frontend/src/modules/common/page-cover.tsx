@@ -67,7 +67,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
       {
         id: 'page-cover',
         drawerOnMobile: false,
-        title: t('label.upload_image'),
+        title: t('common:label.upload_image'),
         className: 'sm:max-w-xl',
       },
     );
@@ -77,7 +77,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
     <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={url ? { backgroundImage: `url(${url})` } : {}}>
       <Button variant="secondary" className="absolute top-2 right-2" onClick={openUploadDialog}>
         <Camera size={16} />
-        <span className="ml-1">Upload image</span>
+        <span className="ml-1">t('common:label.upload_image')</span>
       </Button>
     </div>
   );

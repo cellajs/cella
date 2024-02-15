@@ -1,4 +1,5 @@
 import { ArrowUpRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 
@@ -15,81 +16,81 @@ interface Integrations {
 const integrations: Integrations[] = [
   {
     name: 'Hanko',
-    purpose: 'Authentication',
+    purpose: 'common:integrations.purpose_1',
     planned: true,
-    text: 'Hanko is an open source passwordless authentication solution that allows you to integrate passkeys into your application.',
+    text: 'common:integrations.text_1',
     country: 'DE',
     url: 'hanko.io',
     logo: 'hanko.svg',
   },
   {
     name: 'AppSignal',
-    purpose: 'App monitoring',
+    purpose: 'common:integrations.purpose_2',
     planned: false,
-    text: 'AppSignal gives you error tracking, performance monitoring, host metrics and anomaly detection in one interface.',
+    text: 'common:integrations.text_2',
     country: 'NL',
     url: 'appsignal.com',
     logo: 'appsignal.svg',
   },
   {
     name: 'n8n',
-    purpose: 'Workflow automation',
+    purpose: 'common:integrations.purpose_3',
     planned: false,
-    text: 'n8n is an extendable workflow automation tool which enables you to connect anything to everything via its open, fair-code model.',
+    text: 'common:integrations.text_3',
     country: 'DE',
     url: 'n8n.io',
     logo: 'n8n.svg',
   },
   {
     name: 'Gleap',
-    purpose: 'Customer support',
+    purpose: 'common:integrations.purpose_4',
     planned: true,
-    text: 'Gleap is an all-in-one customer feedback tool. Live chat, customer satisfaction, public roadmap and more.',
+    text: 'common:integrations.text_4',
     country: 'AT',
     url: 'gleap.io',
     logo: 'gleap.svg',
   },
   {
     name: 'Adyen',
-    purpose: 'Payments',
+    purpose: 'common:integrations.purpose_5',
     planned: true,
-    text: 'Accept payments from all over the world, with 250+ payment methods and 187 currencies.',
+    text: 'common:integrations.text_5',
     country: 'NL',
     url: 'adyen.com',
     logo: 'adyen.svg',
   },
   {
     name: 'Imado',
-    purpose: 'File handling',
+    purpose: 'common:integrations.purpose_6',
     planned: false,
-    text: 'A simple image, video & file handling solution. Stored in your own S3 bucket. Secure or public access, image transformations and more.',
+    text: 'common:integrations.text_6',
     country: 'NL',
     url: 'imado.eu',
     logo: 'imado.svg',
   },
   {
     name: 'SimpleAnalytics',
-    purpose: 'Analytics',
+    purpose: 'common:integrations.purpose_7',
     planned: true,
-    text: 'Simple, clean, and privacy-friendly analytics. No cookies, no sessions, no tracking.',
+    text: 'common:integrations.text_7',
     country: 'NL',
     url: 'simpleanalytics.com',
     logo: 'simpleanalytics.svg',
   },
   {
     name: 'Oh Dear',
-    purpose: 'Status monitor',
+    purpose: 'common:integrations.purpose_8',
     planned: true,
-    text: 'Oh dear offers status and uptime pages and many ways to be informed about problems. It also scans the whole site for broken links or mixed content.',
+    text: 'common:integrations.text_8',
     country: 'BE',
     url: 'ohdear.app',
     logo: 'ohdear.svg',
   },
   {
     name: 'TipTap',
-    purpose: 'Text editor',
+    purpose: 'common:integrations.purpose_9',
     planned: true,
-    text: 'A rich text editor with real-time collaboration support and many more features.',
+    text: 'common:integrations.text_9',
     country: 'DE',
     url: 'tiptap.dev',
     logo: 'tiptap.svg',
@@ -97,6 +98,7 @@ const integrations: Integrations[] = [
 ];
 
 const Integrations = () => {
+  const { t } = useTranslation();
   return (
     <ScrollArea className="w-full">
       <div className="flex w-max space-x-4 py-8 px-2">
@@ -116,10 +118,10 @@ const Integrations = () => {
               <span className="ml-4 font-medium">{integration.name}</span>
             </div>
             <div className="grow overflow-hidden text-sm pt-4">
-              <span className="font-light">{integration.text}</span>
+              <span className="font-light">{t(integration.text)}</span>
             </div>
             <div className="pt-2 text-xs">
-              <div className="italic text-muted-foreground mb-2">{integration.purpose}</div>
+              <div className="italic text-muted-foreground mb-2">{t(integration.purpose)}</div>
               <div className="text-muted-foreground font-semibold group-hover:underline underline-offset-4">
                 <CountryFlag countryCode={integration.country} className="mr-2" />
                 {integration.url}
