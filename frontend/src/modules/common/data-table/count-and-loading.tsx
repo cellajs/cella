@@ -24,8 +24,7 @@ const CountAndLoading = ({ count, singular, plural, isFiltered, onResetFilters, 
             <div className="w-max">
               {count} {count === 1 ? singular : plural}
               {isFiltered && ' '}
-              {isFiltered &&
-                t('label.found')}
+              {isFiltered && t('label.found')}
             </div>
             {isFiltered && (
               <Button variant="link" onClick={onResetFilters}>

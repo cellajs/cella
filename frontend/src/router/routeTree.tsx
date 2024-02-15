@@ -6,6 +6,7 @@ import { UpdateOrganizationParams, getOrganizationBySlugOrId, updateOrganization
 import { UpdateUserParams, updateUser } from '~/api/users';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { Root } from '~/modules/common/root';
+import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { queryClient } from '.';
 import AcceptInvite from '../modules/auth/accept-invite';
@@ -29,7 +30,6 @@ import UserProfile from '../modules/users/user-profile';
 import UserSettings from '../modules/users/user-settings';
 import UsersTable from '../modules/users/users-table';
 import { Organization as OrganizationType, User } from '../types';
-import { useNavigationStore } from '~/store/navigation';
 
 const rootRoute = rootRouteWithContext<{
   queryClient: QueryClient;

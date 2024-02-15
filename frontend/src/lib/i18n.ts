@@ -9,7 +9,7 @@ export type { ParseKeys } from 'i18next';
 
 // Set up i18n with lazy loading strategy
 const initOptions: InitOptions = {
-  debug: true, //config.debug,
+  debug: config.debug,
   ns: ['common'],
   supportedLngs: config.languages.map((lng) => lng.value),
   load: 'languageOnly',

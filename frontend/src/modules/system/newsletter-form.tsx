@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '~/modules/ui/input';
 import { dialog } from '../common/dialoger/state';
 
-const BlockNote = lazy(() => import('~/modules/common/block-note'));
+const TiptapEditor = lazy(() => import('~/modules/tiptap'));
 
 interface NewsletterFormProps {
   dialog?: boolean;
@@ -87,7 +87,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ dialog: isDialog }) => 
         />
 
         <Suspense fallback={null}>
-          <BlockNote />
+          <TiptapEditor />
         </Suspense>
 
         <div className="flex flex-col sm:flex-row gap-2">
