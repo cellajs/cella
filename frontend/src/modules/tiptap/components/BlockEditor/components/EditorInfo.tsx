@@ -15,12 +15,9 @@ export type EditorInfoProps = {
 export const EditorInfo = memo(({ characters, collabState, users, words }: EditorInfoProps) => {
   return (
     <div className="flex items-center">
-      <div className="flex flex-col justify-center pr-4 mr-4 text-right border-r border-neutral-200 dark:border-neutral-800">
-        <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-          {words} {words === 1 ? 'word' : 'words'}
-        </div>
-        <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-          {characters} {characters === 1 ? 'character' : 'characters'}
+      <div className="flex flex-col justify-center pr-4 mr-4 text-right">
+        <div className="text-xs font-semibold opacity-50">
+          {words} / {characters}
         </div>
       </div>
       <div className="flex items-center gap-2 mr-2">
@@ -31,7 +28,7 @@ export const EditorInfo = memo(({ characters, collabState, users, words }: Edito
             'bg-red-500 dark:bg-red-400': collabState === 'disconnected',
           })}
         />
-        <span className="max-w-[4rem] text-xs text-neutral-500 dark:text-neutral-400 font-semibold">{getConnectionText(collabState)}</span>
+        <span className="max-w-[4rem] text-xs font-semibold">{getConnectionText(collabState)}</span>
       </div>
       {collabState === 'connected' && (
         <div className="flex flex-row items-center">

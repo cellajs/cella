@@ -2,6 +2,8 @@ let sheetsCounter = 1;
 
 export type SheetT = {
   id: number | string;
+  title?: string | React.ReactNode;
+  description?: React.ReactNode;
   className?: string;
   content?: React.ReactNode;
 };

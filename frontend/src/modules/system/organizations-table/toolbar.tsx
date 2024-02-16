@@ -59,7 +59,9 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
               onClick={() => {
                 console.log('sheet', sheet);
                 sheet(<NewsletterForm sheet />, {
-                  className: 'sm:max-w-[48rem] z-50',
+                  className: 'sm:max-w-[64rem] z-50',
+                  title: t('label.newsletter'),
+                  description: t('description.newsletter'),
                   id: 'newsletter-form',
                 });
               }}
