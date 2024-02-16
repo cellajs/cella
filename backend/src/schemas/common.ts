@@ -10,17 +10,9 @@ export const errorResponseSchema = z.object({
 });
 
 export const paginationQuerySchema = z.object({
-  q: z
-    .string()
-    .optional(),
-  sort: z
-    .enum(['id'])
-    .optional()
-    .default('id'),
-  order: z
-    .enum(['asc', 'desc'])
-    .optional()
-    .default('asc'),
+  q: z.string().optional(),
+  sort: z.enum(['id']).optional().default('id'),
+  order: z.enum(['asc', 'desc']).optional().default('asc'),
   offset: z
     .string()
     .optional()

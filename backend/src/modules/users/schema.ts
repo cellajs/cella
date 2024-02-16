@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 import { usersTable } from '../../db/schema';
 import { idSchema, slugSchema } from '../../schemas/common';

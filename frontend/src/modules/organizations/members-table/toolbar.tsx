@@ -117,9 +117,8 @@ function Toolbar({
             </Button>
           </>
         ) : (
-          !isFiltered && (
-            <>{(user.role === 'ADMIN' || organization.userRole === 'ADMIN') && <Button onClick={openInviteDialog}>{t('action.invite')}</Button>}</>
-          )
+          !isFiltered &&
+          (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && <Button onClick={openInviteDialog}>{t('action.invite')}</Button>
         )}
         {selectedMembers.length === 0 && (
           <CountAndLoading

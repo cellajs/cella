@@ -101,7 +101,7 @@ function Toolbar({
             {t('action.remove')}
           </Button>
         ) : (
-          !isFiltered && <>{user.role === 'ADMIN' && <Button onClick={openInviteDialog}>{t('action.invite')}</Button>}</>
+          !isFiltered && user.role === 'ADMIN' && <Button onClick={openInviteDialog}>{t('action.invite')}</Button>
         )}
         <CountAndLoading
           count={total}

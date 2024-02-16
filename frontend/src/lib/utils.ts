@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -18,6 +19,8 @@ export function dateShort(date?: string | null) {
     sameElse: 'DD/MM/YYYY',
   });
 }
+
+export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789');
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
