@@ -148,6 +148,7 @@ const UsersTable = () => {
           enableVirtualization: false,
           onRowsChange,
           rows,
+          totalCount: queryResult.data?.pages[0].total,
           rowKeyGetter: (row) => row.id,
           error: queryResult.error,
           isLoading: queryResult.isLoading,

@@ -1,8 +1,8 @@
-import { DefaultError, QueryClient, queryOptions, useMutation } from '@tanstack/react-query';
+import { DefaultError, InfiniteData, QueryClient, infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { Outlet, createRoute, createRouteMask, notFound, redirect, rootRouteWithContext } from '@tanstack/react-router';
 import { z } from 'zod';
 import { acceptInvite, checkInvite } from '~/api/general';
-import { UpdateOrganizationParams, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
+import { UpdateOrganizationParams, getMembersByOrganizationIdentifier, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
 import { UpdateUserParams, updateUser } from '~/api/users';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { Root } from '~/modules/common/root';
@@ -161,7 +161,7 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
 const IndexRoute = createRoute({
   id: 'layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ location }) => {
+  beforeLoad: ({ location }) => {
     const storedUser = useUserStore.getState().user;
 
     // If no stored user and no desired path, redirect to about
@@ -170,8 +170,8 @@ const IndexRoute = createRoute({
     try {
       const getMe = useUserStore.getState().getMe;
       const getMenu = useNavigationStore.getState().getMenu;
-      await getMe();
-      await getMenu();
+      getMe();
+      getMenu();
     } catch {
       console.log('Not authenticated, redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
@@ -281,6 +281,45 @@ const membersSearchSchema = z.object({
 
 export type MembersSearch = z.infer<typeof membersSearchSchema>;
 
+export const membersQueryOptions = ({
+  organizationIdentifier,
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  role,
+}: {
+  organizationIdentifier: string;
+  q?: string;
+  sort?: MembersSearch['sort'];
+  order?: MembersSearch['order'];
+  role?: MembersSearch['role'];
+}) => {
+  const sort = initialSort || 'createdAt';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['members', organizationIdentifier, q, sort, order, role],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam, signal }) => {
+      const fetchedData = await getMembersByOrganizationIdentifier(
+        organizationIdentifier,
+        {
+          page: pageParam,
+          q,
+          sort,
+          order,
+          role,
+        },
+        signal,
+      );
+
+      return fetchedData;
+    },
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+    refetchOnWindowFocus: false,
+  });
+};
+
 export const OrganizationRoute = createRoute({
   path: '$organizationIdentifier/$tab',
   getParentRoute: () => IndexRoute,
@@ -290,8 +329,21 @@ export const OrganizationRoute = createRoute({
     }
   },
   validateSearch: membersSearchSchema,
-  loader: ({ context: { queryClient }, params: { organizationIdentifier } }) =>
-    queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier)),
+  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
+  loader: async ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
+    queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
+
+    // Ensure members query
+    const membersInfiniteQueryOptions = membersQueryOptions({ organizationIdentifier, q, sort, order, role });
+    const initialMembers =
+      queryClient.getQueryData<InfiniteData<Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>, number>>(
+        membersInfiniteQueryOptions.queryKey,
+      ) ?? (await queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions));
+
+    return {
+      initialMembers,
+    };
+  },
   errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
   component: () => <Organization />,
 });

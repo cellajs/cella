@@ -1,7 +1,6 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
-import { getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { Member } from '~/types';
 
 import { DataTable } from '~/modules/common/data-table';
@@ -13,10 +12,11 @@ import { OrganizationContext } from '~/modules/organizations/organization';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { MembersSearch, OrganizationRoute } from '~/router/routeTree';
+import { MembersSearch, OrganizationRoute, membersQueryOptions } from '~/router/routeTree';
 
 const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
+  const loaderData = OrganizationRoute.useLoaderData();
   const [columns, setColumns] = useColumns();
   const search = useSearch({
     from: OrganizationRoute.id,
@@ -57,28 +57,24 @@ const MembersTable = () => {
     order: 'desc',
   });
 
-  const callback = useMutateQueryData(['members', organization.slug, query, sortColumns, role]);
+  const callback = useMutateQueryData([
+    'members',
+    organization.slug,
+    query,
+    sortColumns[0]?.columnKey,
+    sortColumns[0]?.direction.toLowerCase(),
+    role,
+  ]);
 
-  const queryResult = useInfiniteQuery({
-    queryKey: ['members', organization.slug, query, sortColumns, role],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getMembersByOrganizationIdentifier(
-        organization.slug,
-        {
-          page: pageParam,
-          q: query,
-          sort: sortColumns[0]?.columnKey as MembersSearch['sort'],
-          order: sortColumns[0]?.direction.toLowerCase() as MembersSearch['order'],
-          role,
-        },
-        signal,
-      );
-
-      return fetchedData;
-    },
-    getNextPageParam: (_lastGroup, groups) => groups.length,
-    refetchOnWindowFocus: false,
+  const queryResult = useSuspenseInfiniteQuery({
+    ...membersQueryOptions({
+      organizationIdentifier: organization.slug,
+      q: query,
+      sort: sortColumns[0]?.columnKey as MembersSearch['sort'],
+      order: sortColumns[0]?.direction.toLowerCase() as MembersSearch['order'],
+      role,
+    }),
+    initialData: loaderData.initialMembers,
   });
 
   const isFiltered = role !== undefined || !!query;
@@ -120,6 +116,7 @@ const MembersTable = () => {
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
+          totalCount: queryResult.data?.pages[0].total,
           rowHeight: 42,
           rowKeyGetter: (row) => row.id,
           enableVirtualization: false,

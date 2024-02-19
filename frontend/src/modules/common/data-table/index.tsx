@@ -13,6 +13,7 @@ import './style.css';
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   rows: TData[];
+  totalCount?: number;
   rowKeyGetter: (row: TData) => string;
   error?: Error | null;
   isLoading?: boolean;
@@ -79,6 +80,7 @@ const ErrorMessage = ({
 export function DataTable<TData>({
   columns,
   rows,
+  totalCount,
   rowKeyGetter,
   error,
   isLoading,
@@ -103,6 +105,9 @@ export function DataTable<TData>({
 
   useEffect(() => {
     if (isIntersecting && !isFetching) {
+      if (typeof totalCount === 'number' && rows.length >= totalCount) {
+        return;
+      }
       fetchMore?.();
       observer?.disconnect();
     }

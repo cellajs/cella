@@ -107,6 +107,7 @@ const OrganizationsTable = () => {
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
+          totalCount: queryResult.data?.pages[0].total,
           rowHeight: 42,
           rowKeyGetter: (row) => row.id,
           error: queryResult.error,
