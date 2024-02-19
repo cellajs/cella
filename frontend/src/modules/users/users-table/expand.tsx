@@ -34,10 +34,10 @@ const Expand = ({ row }: { row: User }) => {
         <span className="font-medium">Modified</span>
         <span>{dateShort(row.modifiedAt)}</span>
       </div>
-      <div className="space-x-2">
+      <div className="space-x-2 flex items-center">
         <span className="font-medium">Modified By</span>
         {loading ? (
-          <Loader2 className="animate-spin" />
+          <Loader2 className="animate-spin" size={16} />
         ) : modifier ? (
           <span>
             {modifier.name} ({modifier.email})
