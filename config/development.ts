@@ -3,7 +3,7 @@ import { Config } from './default';
 export default {
   mode: 'development',
   name: 'Cella DEVELOPMENT',
-  debug: true,
+  debug: false,
 
   senderIsReceiver: true,
 
