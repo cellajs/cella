@@ -96,7 +96,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
             {t('action.invite')}
           </Button>
           {form.formState.isDirty && (
-            <Button variant="secondary" onClick={cancel}>
+            <Button type="reset" variant="secondary" onClick={cancel}>
               {t('action.cancel')}
             </Button>
           )}

@@ -92,7 +92,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
           <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
             {t('action.create')}
           </Button>
-          <Button variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
+          <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
             {t('action.cancel')}
           </Button>
         </div>

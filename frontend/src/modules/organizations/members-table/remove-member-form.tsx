@@ -39,7 +39,7 @@ const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }
       <Button type="submit" variant="destructive" onClick={onRemoveMember} loading={pending}>
         {t('action.remove')}
       </Button>
-      <Button variant="secondary" onClick={() => dialog.remove()}>
+      <Button type="reset" variant="secondary" onClick={() => dialog.remove()}>
         {t('action.cancel')}
       </Button>
     </div>

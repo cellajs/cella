@@ -244,7 +244,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending || apiPending}>
             {t('action.save_changes')}
           </Button>
-          <Button variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
+          <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
             {t('action.cancel')}
           </Button>
         </div>

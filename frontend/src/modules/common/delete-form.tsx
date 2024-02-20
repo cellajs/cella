@@ -15,7 +15,7 @@ export const DeleteForm = ({ onDelete, onCancel, pending }: DeleteFormProps) => 
       <Button type="submit" variant="destructive" onClick={onDelete} loading={pending}>
         {t('action.delete')}
       </Button>
-      <Button variant="secondary" aria-label="Cancel" onClick={onCancel}>
+      <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>
         {t('action.cancel')}
       </Button>
     </div>
