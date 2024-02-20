@@ -127,7 +127,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
             <FormItem>
               <FormLabel>{t('label.profile_picture')}</FormLabel>
               <FormControl>
-                <UploadAvatar {...rest} type="user" id={user.id} name={user.name} url={form.getValues('thumbnailUrl')} setUrl={setImageUrl} />
+                <UploadAvatar {...rest} type="user" id={user.id} name={user.name} url={`${form.getValues('thumbnailUrl')}?width=100&format=avif`} setUrl={setImageUrl} />
               </FormControl>
             </FormItem>
           )}

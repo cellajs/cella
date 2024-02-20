@@ -159,7 +159,7 @@ const generalRoutes = app
           InviteEmail({
             orgName: organization.name || '',
             orgImage: organization.logoUrl || '',
-            userImage: targetUser?.thumbnailUrl || '',
+            userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
             username: targetUser?.name || email.toLowerCase() || '',
             invitedBy: user.name,
             inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,

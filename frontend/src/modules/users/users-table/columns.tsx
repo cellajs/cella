@@ -42,7 +42,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             params={{ userIdentifier: row.slug }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
-            <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+            <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={`${row.thumbnailUrl}?width=100&format=avif`} />
             <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name}</span>
           </Link>
         );

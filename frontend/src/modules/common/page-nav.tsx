@@ -55,7 +55,7 @@ const PageNav = ({ title, avatar, tabs }: Props) => {
       <div className="flex justify-center border-b sticky top-0 bg-background/75 backdrop-blur-sm z-20" ref={tabsRef}>
         <div className="hidden" ref={nameRef}>
           <div className="absolute left-0 h-full flex items-center">
-            {avatar && <AvatarWrap className="m-2 h-8 w-8" type="organization" id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
+            {avatar && <AvatarWrap className="m-2 h-8 w-8" type="organization" id={avatar.id} name={avatar.name} url={`${avatar.thumbnailUrl}?width=100&format=avif`} />}
             <div className="truncate hidden leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>
           </div>
         </div>

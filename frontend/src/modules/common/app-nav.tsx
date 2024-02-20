@@ -120,7 +120,7 @@ const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
           className="border-[1.5px] border-current text-primary-foreground"
           id={user.id}
           name={user.name}
-          url={user.thumbnailUrl}
+          url={`${user.thumbnailUrl}?width=100&format=avif`}
         />
       ) : (
         <navItem.icon strokeWidth={config.theme.strokeWidth} />
