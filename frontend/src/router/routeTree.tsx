@@ -161,17 +161,20 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
 const IndexRoute = createRoute({
   id: 'layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: ({ location }) => {
+  beforeLoad: ({ location, cause }) => {
     const storedUser = useUserStore.getState().user;
 
     // If no stored user and no desired path, redirect to about
     if (location.pathname === '/' && !storedUser) throw redirect({ to: '/about', replace: true });
 
     try {
-      const getMe = useUserStore.getState().getMe;
-      const getMenu = useNavigationStore.getState().getMenu;
-      getMe();
-      getMenu();
+      const { getMe } = useUserStore.getState();
+      const { getMenu } = useNavigationStore.getState();
+
+      if (cause === 'enter') {
+        getMe();
+        getMenu();
+      }
     } catch {
       console.log('Not authenticated, redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
