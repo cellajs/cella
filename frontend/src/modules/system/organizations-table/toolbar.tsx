@@ -1,5 +1,4 @@
-import debounce from 'lodash.debounce';
-import { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
@@ -18,7 +17,7 @@ interface Props {
   total?: number;
   query?: string;
   selectedOrganizations: Organization[];
-  setQuery?: (value: string) => void;
+  setQuery: (value?: string) => void;
   isFiltered?: boolean;
   isLoading?: boolean;
   onResetFilters?: () => void;
@@ -30,6 +29,7 @@ interface Props {
 function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onResetFilters, columns, setColumns, selectedOrganizations }: Props) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
+  const [queryValue, setQueryValue] = useState(query ?? '');
 
   const onOpenDeleteDialog = () => {
     dialog(
@@ -49,6 +49,17 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
       },
     );
   };
+
+  useEffect(() => {
+    const delayQueryTimeoutId = setTimeout(() => {
+      setQuery(queryValue || undefined);
+    }, 200);
+    return () => clearTimeout(delayQueryTimeoutId);
+  }, [queryValue]);
+
+  useEffect(() => {
+    setQueryValue(query ?? '');
+  }, [query]);
 
   return (
     <div className="items-center justify-between sm:flex">
@@ -102,10 +113,10 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input
           placeholder={t('placeholder.search')}
-          defaultValue={query ?? ''}
-          onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
-            setQuery?.(event.target.value);
-          }, 200)}
+          value={queryValue}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+            setQueryValue(event.target.value);
+          }}
           className="h-10 w-[150px] lg:w-[250px]"
         />
         <ColumnsView columns={columns} setColumns={setColumns} />

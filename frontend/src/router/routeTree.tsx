@@ -1,4 +1,4 @@
-import { DefaultError, InfiniteData, QueryClient, infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
+import { DefaultError, QueryClient, infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { Outlet, createRoute, createRouteMask, notFound, redirect, rootRouteWithContext } from '@tanstack/react-router';
 import { z } from 'zod';
 import { acceptInvite, checkInvite } from '~/api/general';
@@ -335,14 +335,10 @@ export const OrganizationRoute = createRoute({
 
     // Ensure members query
     const membersInfiniteQueryOptions = membersQueryOptions({ organizationIdentifier, q, sort, order, role });
-    const initialMembers =
-      queryClient.getQueryData<InfiniteData<Awaited<ReturnType<typeof getMembersByOrganizationIdentifier>>, number>>(
-        membersInfiniteQueryOptions.queryKey,
-      ) ?? (await queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions));
-
-    return {
-      initialMembers,
-    };
+    const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
+    if (!cachedMembers) {
+      queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
+    }
   },
   errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
   component: () => <Organization />,

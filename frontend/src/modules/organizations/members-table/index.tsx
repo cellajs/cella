@@ -16,7 +16,6 @@ import { MembersSearch, OrganizationRoute, membersQueryOptions } from '~/router/
 
 const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
-  const loaderData = OrganizationRoute.useLoaderData();
   const [columns, setColumns] = useColumns();
   const search = useSearch({
     from: OrganizationRoute.id,
@@ -66,16 +65,15 @@ const MembersTable = () => {
     role,
   ]);
 
-  const queryResult = useSuspenseInfiniteQuery({
-    ...membersQueryOptions({
+  const queryResult = useSuspenseInfiniteQuery(
+    membersQueryOptions({
       organizationIdentifier: organization.slug,
       q: query,
       sort: sortColumns[0]?.columnKey as MembersSearch['sort'],
       order: sortColumns[0]?.direction.toLowerCase() as MembersSearch['order'],
       role,
     }),
-    initialData: loaderData.initialMembers,
-  });
+  );
 
   const isFiltered = role !== undefined || !!query;
 

@@ -5,7 +5,6 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } f
 import { DialogState, DialogT, DialogToRemove } from './state';
 
 export function Dialoger() {
-  const [open] = useState(true);
   const [dialogs, setDialogs] = useState<DialogT[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
   const prevFocusedElement = useRef<HTMLElement | null>(null);
@@ -45,7 +44,7 @@ export function Dialoger() {
   return dialogs.map((dialog) => {
     if (!isMobile || !dialog.drawerOnMobile) {
       return (
-        <Dialog key={dialog.id} open={open} onOpenChange={onOpenChange(dialog)}>
+        <Dialog key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)}>
           <DialogContent className={dialog.className}>
             {dialog.title || dialog.description ? (
               <DialogHeader>
@@ -60,7 +59,7 @@ export function Dialoger() {
     }
 
     return (
-      <Drawer key={dialog.id} open={open} onOpenChange={onOpenChange(dialog)}>
+      <Drawer key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)}>
         <DrawerContent className={dialog.className}>
           {dialog.title || dialog.description ? (
             <DrawerHeader className="text-left">
