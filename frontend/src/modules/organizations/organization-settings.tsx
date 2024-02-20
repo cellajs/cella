@@ -61,7 +61,7 @@ const OrganizationSettings = () => {
                 }}
               />,
               {
-                className: 'sm:max-w-xl',
+                className: 'md:max-w-xl',
                 title: t('label.delete_organization'),
                 description: t('description.delete_organization'),
               },

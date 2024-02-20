@@ -81,7 +81,7 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
             <Button
               onClick={() => {
                 dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
-                  className: 'sm:max-w-xl',
+                  className: 'md:max-w-xl',
                   title: t('label.create_organization'),
                 });
               }}

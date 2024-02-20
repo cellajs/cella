@@ -68,7 +68,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
         id: 'page-cover',
         drawerOnMobile: false,
         title: t('common:label.upload_image'),
-        className: 'sm:max-w-xl',
+        className: 'md:max-w-xl',
       },
     );
   };

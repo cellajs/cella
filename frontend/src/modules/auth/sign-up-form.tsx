@@ -103,7 +103,7 @@ export const LegalNotice = () => {
     const dialogTitle = mode;
 
     dialog(dialogComponent, {
-      className: 'sm:max-w-xl',
+      className: 'md:max-w-xl',
       title: dialogTitle,
     });
   };

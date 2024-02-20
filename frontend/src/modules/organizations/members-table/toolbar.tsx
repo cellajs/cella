@@ -86,7 +86,7 @@ function Toolbar({
         members={selectedMembers}
       />,
       {
-        className: 'sm:max-w-xl',
+        className: 'md:max-w-xl',
         title: t('label.remove_member'),
         description: (
           <Trans

@@ -138,7 +138,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
         </Button>
       </div>,
       {
-        className: 'sm:max-w-xl',
+        className: 'md:max-w-xl',
         title: 'Reset password',
         description: 'Enter your email address to receive a link to reset your password.',
       },
