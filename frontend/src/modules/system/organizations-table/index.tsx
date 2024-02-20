@@ -100,6 +100,7 @@ const OrganizationsTable = () => {
         isFiltered={isFiltered}
         selectedOrganizations={rows.filter((row) => selectedRows.has(row.id))}
         onResetFilters={onResetFilters}
+        onResetSelectedRows={() => setSelectedRows(new Set<string>())}
         columns={columns}
         setColumns={setColumns}
       />

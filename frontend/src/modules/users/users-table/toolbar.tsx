@@ -24,6 +24,7 @@ interface Props {
   setRole: React.Dispatch<React.SetStateAction<GetUsersParams['role']>>;
   selectedUsers: User[];
   onResetFilters?: () => void;
+  onResetSelectedRows?: () => void;
   isLoading?: boolean;
   columns: ColumnOrColumnGroup<UserRow>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<UserRow>[]>>;
@@ -52,6 +53,7 @@ function Toolbar({
   role,
   setRole,
   onResetFilters,
+  onResetSelectedRows,
   query,
   setQuery,
   columns,
@@ -105,12 +107,17 @@ function Toolbar({
     <div className="items-center justify-between sm:flex">
       <div className="flex items-center space-x-2">
         {selectedUsers.length > 0 ? (
-          <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
-            <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
-              <span className="text-xs font-medium text-white">{selectedUsers.length}</span>
-            </div>
-            {t('action.remove')}
-          </Button>
+          <>
+            <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
+              <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
+                <span className="text-xs font-medium text-white">{selectedUsers.length}</span>
+              </div>
+              {t('action.remove')}
+            </Button>
+            <Button variant="secondary" onClick={onResetSelectedRows}>
+              {t('action.clear')}
+            </Button>
+          </>
         ) : (
           !isFiltered && user.role === 'ADMIN' && <Button onClick={openInviteDialog}>{t('action.invite')}</Button>
         )}

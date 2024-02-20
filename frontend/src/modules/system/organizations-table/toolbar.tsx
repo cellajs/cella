@@ -21,12 +21,13 @@ interface Props {
   isFiltered?: boolean;
   isLoading?: boolean;
   onResetFilters?: () => void;
+  onResetSelectedRows?: () => void;
   callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void;
   columns: ColumnOrColumnGroup<Organization>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Organization>[]>>;
 }
 
-function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onResetFilters, columns, setColumns, selectedOrganizations }: Props) {
+function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onResetFilters, onResetSelectedRows, columns, setColumns, selectedOrganizations }: Props) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const [queryValue, setQueryValue] = useState(query ?? '');
@@ -84,6 +85,9 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
                 <span className="text-xs font-medium text-white">{selectedOrganizations.length}</span>
               </div>
               {t('action.remove')}
+            </Button>
+            <Button variant="secondary" onClick={onResetSelectedRows}>
+              {t('action.clear')}
             </Button>
           </>
         ) : (

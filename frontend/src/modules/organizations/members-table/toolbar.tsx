@@ -25,6 +25,7 @@ interface Props {
   isFiltered?: boolean;
   setRole: React.Dispatch<React.SetStateAction<GetMembersParams['role']>>;
   onResetFilters?: () => void;
+  onResetSelectedRows?: () => void;
   isLoading?: boolean;
   refetch?: () => void;
   columns: ColumnOrColumnGroup<Member>[];
@@ -57,6 +58,7 @@ function Toolbar({
   selectedMembers,
   isLoading,
   onResetFilters,
+  onResetSelectedRows,
   total,
   columns,
   setColumns,
@@ -123,7 +125,7 @@ function Toolbar({
               </div>
               {t('action.remove')}
             </Button>
-            <Button variant="secondary" onClick={openRemoveDialog}>
+            <Button variant="secondary" onClick={onResetSelectedRows}>
               {t('action.clear')}
             </Button>
           </>

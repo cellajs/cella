@@ -105,6 +105,7 @@ const MembersTable = () => {
         setQuery={setQuery}
         callback={callback}
         onResetFilters={onResetFilters}
+        onResetSelectedRows={() => setSelectedRows(new Set<string>())}
         organization={organization}
         role={role}
         selectedMembers={rows.filter((row) => selectedRows.has(row.id))}

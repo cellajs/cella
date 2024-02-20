@@ -135,6 +135,7 @@ const UsersTable = () => {
         callback={callback}
         setQuery={setQuery}
         onResetFilters={onResetFilters}
+        onResetSelectedRows={() => setSelectedRows(new Set<string>())}
         role={role}
         selectedUsers={rows.filter((row) => selectedRows.has(row.id)) as User[]}
         setRole={setRole}
