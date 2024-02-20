@@ -28,11 +28,11 @@ const Why = () => {
     <div className="mx-auto mb-12 mt-20 flex max-w-[86rem] flex-wrap items-center lg:mb-[60px] relative">
       <div className="w-full lg:w-6/12">
         <div className="flex flex-wrap">
-          {whyItems.map((item) => (
+          {whyItems.map((item, index) => (
             <div className="w-full" key={item.id}>
               <div className="group mb-12 flex">
                 <div className="border-primary text-l md:text-1xl mr-6 flex h-[32px] w-full max-w-[32px] items-center justify-center rounded-full border-2 font-semibold group-hover:bg-transparent md:h-[48px] md:max-w-[48px]">
-                  {item.id.split('-').pop()}
+                  {index + 1}
                 </div>
                 <div className="w-full">
                   <h3 className="mb-2 text-xl font-medium 2xl:text-[22px]">{t(item.title)}</h3>
