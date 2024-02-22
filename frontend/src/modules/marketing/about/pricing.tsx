@@ -12,7 +12,7 @@ const pricingPlans = [
   {
     title: 'common:about.pricing.title_1',
     price: '€1k',
-    priceId: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
+    priceId: config.paddlePriceIds.donate,
     description: 'about.pricing.description_1',
     features: [
       'common:about.pricing.plan_1.feature_1',
@@ -29,7 +29,7 @@ const pricingPlans = [
   {
     title: 'common:about.pricing.title_2',
     price: '-€2k',
-    priceId: 'pri_01hq8dbanw3wqjw2sfk4x661kw',
+    priceId: null,
     description: 'about.pricing.description_2',
     features: [
       'common:about.pricing.plan_2.feature_1',
