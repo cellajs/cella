@@ -68,11 +68,11 @@ services:
         name: Content-Security-Policy
         value: |
           default-src 'self';
-          script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com *.paddle.com;
+          script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com;
           connect-src 'self' blob: *.cellajs.com *.appsignal.com https://cella.app.n8n.cloud;
           img-src 'self' blob: https: data:;
           media-src 'self' blob: data: https://i.ytimg.com;
-          frame-src 'self' *.youtube.com *.vimeo.com;
+          frame-src 'self' *.youtube.com *.vimeo.com *.paddle.com;
           style-src 'self' https://fonts.googleapis.com;
           font-src 'self' data: https://fonts.gstatic.com;
       - path: /*

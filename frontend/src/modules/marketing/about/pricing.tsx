@@ -5,14 +5,12 @@ import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { initializePaddle, Paddle } from '@paddle/paddle-js';
-import { useEffect, useState } from 'react';
 
 const pricingPlans = [
   {
     title: 'common:about.pricing.title_1',
     price: '€1k',
-    priceId: config.paddlePriceIds.donate,
+    priceId: null,
     description: 'about.pricing.description_1',
     features: [
       'common:about.pricing.plan_1.feature_1',
@@ -55,27 +53,6 @@ const Pricing = () => {
   const isFlexLayout = pricingPlans.length < 3;
   const { t } = useTranslation();
 
-  // Create a local state to store Paddle instance
-  const [paddle, setPaddle] = useState<Paddle>();
-
-  // Callback to open a checkout
-  const openCheckout = (priceId: string) => {
-    paddle?.Checkout.open({
-      items: [{ priceId, quantity: 1 }],
-    });
-  };
-
-  // Download and initialize Paddle instance from CDN
-  useEffect(() => {
-    initializePaddle({ environment: config.mode === 'development' ? 'sandbox' : 'production', token: config.paddleToken }).then(
-      (paddleInstance: Paddle | undefined) => {
-        if (paddleInstance) {
-          setPaddle(paddleInstance);
-        }
-      },
-    );
-  }, []);
-
   return (
     <div
       className={`mx-auto mt-8 max-w-[86rem] ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}
@@ -114,32 +91,21 @@ const Pricing = () => {
             </ul>
           </div>
 
-          {plan.priceId ? (
-            <Button
-              variant={plan.popular ? 'gradient' : 'plain'}
-              className="w-full mt-6"
-              aria-label="Checkout"
-              onClick={() => openCheckout(plan.priceId)}
-            >
-              Checkout
-            </Button>
-          ) : (
-            <Button
-              variant={plan.popular ? 'gradient' : 'plain'}
-              className="w-full mt-6"
-              aria-label="Open contact form"
-              onClick={() => {
-                dialog(<ContactForm dialog />, {
-                  drawerOnMobile: false,
-                  className: 'sm:max-w-[64rem]',
-                  title: 'Contact us',
-                  description: 'We will get back to you as soon as possible!',
-                });
-              }}
-            >
-              Contact us
-            </Button>
-          )}
+          <Button
+            variant={plan.popular ? 'gradient' : 'plain'}
+            className="w-full mt-6"
+            aria-label="Open contact form"
+            onClick={() => {
+              dialog(<ContactForm dialog />, {
+                drawerOnMobile: false,
+                className: 'sm:max-w-[64rem]',
+                title: 'Contact us',
+                description: 'We will get back to you as soon as possible!',
+              });
+            }}
+          >
+            Contact us
+          </Button>
         </div>
       ))}
     </div>
