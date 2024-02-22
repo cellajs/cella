@@ -5,11 +5,14 @@ import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import { initializePaddle, Paddle } from '@paddle/paddle-js';
+import { useEffect, useState } from 'react';
 
 const pricingPlans = [
   {
     title: 'common:about.pricing.title_1',
     price: '€1k',
+    priceId: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
     description: 'about.pricing.description_1',
     features: [
       'common:about.pricing.plan_1.feature_1',
@@ -26,6 +29,7 @@ const pricingPlans = [
   {
     title: 'common:about.pricing.title_2',
     price: '-€2k',
+    priceId: 'pri_01hq8dbanw3wqjw2sfk4x661kw',
     description: 'about.pricing.description_2',
     features: [
       'common:about.pricing.plan_2.feature_1',
@@ -40,6 +44,7 @@ const pricingPlans = [
     title: 'common:about.pricing.title_3',
     description: 'about.pricing.description_3',
     price: 'TBD',
+    priceId: null,
     features: ['common:about.pricing.plan_3.feature_1', 'common:about.pricing.plan_3.feature_2', 'common:about.pricing.plan_3.feature_3'],
     borderColor: '',
     popular: false,
@@ -49,6 +54,27 @@ const pricingPlans = [
 const Pricing = () => {
   const isFlexLayout = pricingPlans.length < 3;
   const { t } = useTranslation();
+
+  // Create a local state to store Paddle instance
+  const [paddle, setPaddle] = useState<Paddle>();
+
+  // Callback to open a checkout
+  const openCheckout = (priceId: string) => {
+    paddle?.Checkout.open({
+      items: [{ priceId, quantity: 1 }],
+    });
+  };
+
+  // Download and initialize Paddle instance from CDN
+  useEffect(() => {
+    initializePaddle({ environment: config.mode === 'development' ? 'sandbox' : 'production', token: config.paddleToken }).then(
+      (paddleInstance: Paddle | undefined) => {
+        if (paddleInstance) {
+          setPaddle(paddleInstance);
+        }
+      },
+    );
+  }, []);
 
   return (
     <div
@@ -88,21 +114,32 @@ const Pricing = () => {
             </ul>
           </div>
 
-          <Button
-            variant={plan.popular ? 'gradient' : 'plain'}
-            className="w-full mt-6"
-            aria-label="Open contact form"
-            onClick={() => {
-              dialog(<ContactForm dialog />, {
-                drawerOnMobile: false,
-                className: 'sm:max-w-[64rem]',
-                title: 'Contact us',
-                description: 'We will get back to you as soon as possible!',
-              });
-            }}
-          >
-            Contact us
-          </Button>
+          {plan.priceId ? (
+            <Button
+              variant={plan.popular ? 'gradient' : 'plain'}
+              className="w-full mt-6"
+              aria-label="Checkout"
+              onClick={() => openCheckout(plan.priceId)}
+            >
+              Checkout
+            </Button>
+          ) : (
+            <Button
+              variant={plan.popular ? 'gradient' : 'plain'}
+              className="w-full mt-6"
+              aria-label="Open contact form"
+              onClick={() => {
+                dialog(<ContactForm dialog />, {
+                  drawerOnMobile: false,
+                  className: 'sm:max-w-[64rem]',
+                  title: 'Contact us',
+                  description: 'We will get back to you as soon as possible!',
+                });
+              }}
+            >
+              Contact us
+            </Button>
+          )}
         </div>
       ))}
     </div>

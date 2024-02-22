@@ -5,6 +5,8 @@ export default {
   name: 'Cella DEVELOPMENT',
   debug: false,
 
+  paddleToken: 'test_85052d6574ab68d36b341e0afc8',
+
   senderIsReceiver: true,
 
   frontendUrl: 'http://localhost:3000',

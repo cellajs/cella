@@ -194,6 +194,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.3.4
         version: 3.3.4(react-hook-form@7.49.3)
+      '@paddle/paddle-js':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@radix-ui/react-accordion':
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@18.2.18)(@types/react@18.2.48)(react-dom@18.2.0)(react@18.2.0)
@@ -415,7 +418,7 @@ importers:
         version: 1.11.10
       embla-carousel-autoplay:
         specifier: 8.0.0-rc22
-        version: 8.0.0-rc22(embla-carousel@8.0.0-rc23)
+        version: 8.0.0-rc22(embla-carousel@8.0.0-rc22)
       embla-carousel-react:
         specifier: 8.0.0-rc22
         version: 8.0.0-rc22(react@18.2.0)
@@ -5374,6 +5377,10 @@ packages:
       '@opentelemetry/core': 1.21.0(@opentelemetry/api@1.6.0)
     dev: false
 
+  /@paddle/paddle-js@1.0.1:
+    resolution: {integrity: sha512-0kT4/fUISoZif7V8Y7nQEU3Ol+rhUg7+d2XwMQpLPExVtEu6cq75Z4tuVYjBVVJBsg0uU39QuHYo7sCPoY+orQ==}
+    dev: false
+
   /@pkgjs/parseargs@0.11.0:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
@@ -8407,7 +8414,7 @@ packages:
   /@types/accepts@1.3.7:
     resolution: {integrity: sha512-Pay9fq2lM2wXPWbteBsRAGiWH2hig4ZE2asK+mm7kUzlxRTfL961rj89I6zV/E3PcIkDqyuBEcMxFT7rccugeQ==}
     dependencies:
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
     dev: false
 
   /@types/babel__core@7.20.5:
@@ -8466,13 +8473,13 @@ packages:
       '@types/connect': 3.4.38
       '@types/express': 4.17.21
       '@types/keygrip': 1.0.6
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
     dev: false
 
   /@types/cors@2.8.17:
     resolution: {integrity: sha512-8CGDvrBj1zgo2qE+oS3pOCyYNqCPryMWY2bGfwA0dcfopWGgxs+78df0Rs3rc9THP4JkOhLsAa+15VdpAqkcUA==}
     dependencies:
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
     dev: false
 
   /@types/eslint-scope@3.7.7:
@@ -8577,7 +8584,7 @@ packages:
       '@types/http-errors': 2.0.4
       '@types/keygrip': 1.0.6
       '@types/koa-compose': 3.2.8
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
     dev: false
 
   /@types/koa__router@12.0.3:
@@ -8617,7 +8624,7 @@ packages:
   /@types/mysql@2.15.22:
     resolution: {integrity: sha512-wK1pzsJVVAjYCSZWQoWHziQZbNggXFDUEIGf54g4ZM/ERuP86uGdWeKZWMYlqTPMZfHJJvLPyogXGvCOg87yLQ==}
     dependencies:
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
     dev: false
 
   /@types/node-cron@3.0.11:
@@ -8627,7 +8634,7 @@ packages:
   /@types/node-forge@1.3.11:
     resolution: {integrity: sha512-FQx220y22OKNTqaByeBGqHWYz4cl94tpcxeFdvBo3wjG6XPBuZ0BNgNZRV5J5TFmmcsJ4IzsLkmGRiQbnYsBEQ==}
     dependencies:
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
     dev: true
 
   /@types/node@20.11.19:
@@ -8661,7 +8668,7 @@ packages:
   /@types/pg@8.6.1:
     resolution: {integrity: sha512-1Kc4oAGzAl7uqUStZCDvaLFqZrW9qWSjXOmBfdgyBP5La7Us6Mg4GBvRlSoaZMhQF/zSj1C8CtKMBkoiT8eL8w==}
     dependencies:
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
       pg-protocol: 1.6.0
       pg-types: 2.2.0
     dev: false
@@ -8749,7 +8756,7 @@ packages:
   /@types/webpack@5.28.5(@swc/core@1.3.101)(esbuild@0.19.11):
     resolution: {integrity: sha512-wR87cgvxj3p6D0Crt1r5avwqffqPXUkNlnQ1mjU93G7gCuFjufZR4I6j8cz5g1F1tTYpfOOFvly+cmIQwL9wvw==}
     dependencies:
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
       tapable: 2.2.1
       webpack: 5.90.0(@swc/core@1.3.101)(esbuild@0.19.11)
     transitivePeerDependencies:
@@ -10436,12 +10443,12 @@ packages:
     resolution: {integrity: sha512-NhQMsz5k0d6m9z3qAxnsOR/ebal4NAGsrNVRwcDo4Kc/zQ7KdsTKZUxZoygHcVRb0QDW3waEDIcE3isZ79RP6g==}
     dev: true
 
-  /embla-carousel-autoplay@8.0.0-rc22(embla-carousel@8.0.0-rc23):
+  /embla-carousel-autoplay@8.0.0-rc22(embla-carousel@8.0.0-rc22):
     resolution: {integrity: sha512-UFR9ocKapxuYwcAOv8mb6Rmy7TENpzzHTymKADzB1L5dAJJxjUtOci/OpE3KrZedQaniLMz3HIO9hHqgj1h/3w==}
     peerDependencies:
       embla-carousel: 8.0.0-rc22
     dependencies:
-      embla-carousel: 8.0.0-rc23
+      embla-carousel: 8.0.0-rc22
     dev: false
 
   /embla-carousel-react@8.0.0-rc22(react@18.2.0):
@@ -10464,10 +10471,6 @@ packages:
 
   /embla-carousel@8.0.0-rc22:
     resolution: {integrity: sha512-MeXnPT1LShfgAu8qXj3CskayV0R6OkHx7w3cPTx+Q5ZWKyShKpIuu7qVQJ5BoFegalE4n6yxqoQaRuGFbK9pYw==}
-    dev: false
-
-  /embla-carousel@8.0.0-rc23:
-    resolution: {integrity: sha512-ybuDHm+udElyH+XpuemS/W+x8ZhB3a/4UzeTBvsoZUxDSty12ch1f2T0CZxGqIs2FfdaofEOmpLMSvuEPVTMCg==}
     dev: false
 
   /emoji-regex@8.0.0:
@@ -10517,7 +10520,7 @@ packages:
     dependencies:
       '@types/cookie': 0.4.1
       '@types/cors': 2.8.17
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
       accepts: 1.3.8
       base64id: 2.0.0
       cookie: 0.4.2
@@ -11968,7 +11971,7 @@ packages:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
     dependencies:
-      '@types/node': 20.11.7
+      '@types/node': 20.11.19
       merge-stream: 2.0.0
       supports-color: 8.1.1
     dev: false

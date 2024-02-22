@@ -1,11 +1,13 @@
 export const config = {
-  mode: 'development',
+  mode: 'development' as 'production' | 'development' | 'tunnel',
   name: 'Cella',
   slug: 'cella',
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:4000',
 
   defaultRedirectPath: '/home',
+
+  paddleToken: 'test_85052d6574ab68d36b341e0afc8',
 
   aboutUrl: 'https://about.example.com',
   statusUrl: 'https://status.example.com',
