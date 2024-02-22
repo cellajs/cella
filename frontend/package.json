@@ -93,7 +93,7 @@
     "dayjs": "^1.11.10",
     "embla-carousel-autoplay": "8.0.0-rc22",
     "embla-carousel-react": "8.0.0-rc22",
-    "hono": "^3.12.7",
+    "hono": "^4.0.5",
     "i18next": "^23.8.2",
     "i18next-browser-languagedetector": "^7.2.0",
     "i18next-http-backend": "^2.4.3",
