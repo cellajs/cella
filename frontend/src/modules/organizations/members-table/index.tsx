@@ -108,6 +108,8 @@ const MembersTable = () => {
         onResetSelectedRows={() => setSelectedRows(new Set<string>())}
         organization={organization}
         role={role}
+        sort={sortColumns[0]?.columnKey as MembersSearch['sort']}
+        order={sortColumns[0]?.direction.toLowerCase() as MembersSearch['order']}
         selectedMembers={rows.filter((row) => selectedRows.has(row.id))}
         setRole={setRole}
       />

@@ -6,6 +6,7 @@ import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 export type ColumnOrColumnGroup<TData> = BaseColumnOrColumnGroup<TData> & {
+  key: string;
   visible?: boolean;
 };
 

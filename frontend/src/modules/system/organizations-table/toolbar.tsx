@@ -12,6 +12,9 @@ import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/column
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
 import { sheet } from '../../common/sheeter/state';
+import { getOrganizations } from '~/api/organizations';
+import { OrganizationsSearch } from '~/router/routeTree';
+import Export from '~/modules/common/data-table/export';
 
 interface Props {
   total?: number;
@@ -25,9 +28,25 @@ interface Props {
   callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void;
   columns: ColumnOrColumnGroup<Organization>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Organization>[]>>;
+  sort: OrganizationsSearch['sort'];
+  order: OrganizationsSearch['order'];
 }
 
-function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onResetFilters, onResetSelectedRows, columns, setColumns, selectedOrganizations }: Props) {
+function Toolbar({
+  total,
+  isFiltered,
+  query,
+  setQuery,
+  isLoading,
+  callback,
+  onResetFilters,
+  onResetSelectedRows,
+  columns,
+  setColumns,
+  selectedOrganizations,
+  sort,
+  order,
+}: Props) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const [queryValue, setQueryValue] = useState(query ?? '');
@@ -124,6 +143,20 @@ function Toolbar({ total, isFiltered, query, setQuery, isLoading, callback, onRe
           className="h-10 w-[150px] lg:w-[250px]"
         />
         <ColumnsView columns={columns} setColumns={setColumns} />
+        <Export
+          filename="organizations"
+          columns={columns}
+          selectedRows={selectedOrganizations}
+          fetchRows={async (limit) => {
+            const { items } = await getOrganizations({
+              limit,
+              q: query,
+              sort,
+              order,
+            });
+            return items;
+          }}
+        />
       </div>
     </div>
   );

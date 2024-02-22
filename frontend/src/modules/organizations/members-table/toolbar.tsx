@@ -1,7 +1,7 @@
 import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { GetMembersParams } from '~/api/organizations';
+import { GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { cn } from '~/lib/utils';
 import InviteUsersForm from '~/modules/organizations/invite-users-form';
 import { Button } from '~/modules/ui/button';
@@ -13,6 +13,8 @@ import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/column
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
 import RemoveMembersForm from './remove-member-form';
+import { MembersSearch } from '~/router/routeTree';
+import Export from '~/modules/common/data-table/export';
 
 interface Props {
   selectedMembers: Member[];
@@ -30,6 +32,8 @@ interface Props {
   refetch?: () => void;
   columns: ColumnOrColumnGroup<Member>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Member>[]>>;
+  sort: MembersSearch['sort'];
+  order: MembersSearch['order'];
 }
 
 const items = [
@@ -62,6 +66,8 @@ function Toolbar({
   total,
   columns,
   setColumns,
+  sort,
+  order,
 }: Props) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
@@ -171,6 +177,21 @@ function Toolbar({
           </SelectContent>
         </Select>
         <ColumnsView columns={columns} setColumns={setColumns} />
+        <Export
+          filename="members"
+          columns={columns}
+          selectedRows={selectedMembers}
+          fetchRows={async (limit) => {
+            const { items } = await getMembersByOrganizationIdentifier(organization.id, {
+              limit,
+              role,
+              q: query,
+              sort,
+              order,
+            });
+            return items;
+          }}
+        />
       </div>
     </div>
   );

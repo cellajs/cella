@@ -103,6 +103,8 @@ const OrganizationsTable = () => {
         onResetSelectedRows={() => setSelectedRows(new Set<string>())}
         columns={columns}
         setColumns={setColumns}
+        sort={sortColumns[0]?.columnKey as OrganizationsSearch['sort']}
+        order={sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order']}
       />
       <DataTable<Organization>
         {...{

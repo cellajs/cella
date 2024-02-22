@@ -77,7 +77,7 @@ const ErrorMessage = ({
   );
 };
 
-export function DataTable<TData>({
+export const DataTable = <TData,>({
   columns,
   rows,
   totalCount,
@@ -96,7 +96,7 @@ export function DataTable<TData>({
   enableVirtualization,
   onRowsChange,
   fetchMore,
-}: DataTableProps<TData>) {
+}: DataTableProps<TData>) => {
   const { measureRef, isIntersecting, observer } = useOnScreen({
     firstChild: true,
   });
@@ -165,4 +165,4 @@ export function DataTable<TData>({
         ))}
     </div>
   );
-}
+};
