@@ -61,7 +61,7 @@ const PageNav = ({ title, avatar, tabs }: Props) => {
                 type="organization"
                 id={avatar.id}
                 name={avatar.name}
-                url={`${avatar.thumbnailUrl}?width=100&format=avif`}
+                url={avatar.thumbnailUrl}
               />
             )}
             <div className="truncate hidden leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>

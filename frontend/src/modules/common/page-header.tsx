@@ -26,7 +26,7 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel }: PageHea
 
       <div className="absolute flex bottom-0 w-full bg-background/50 backdrop-blur-sm" ref={scrollToRef}>
         <div className="flex items-stretch">
-          <AvatarWrap className="m-2" type={type} id={id} name={title} url={`${thumbnailUrl}?width=100&format=avif`} />
+          <AvatarWrap className="m-2" type={type} id={id} name={title} url={thumbnailUrl} />
           <div className="my-auto">
             {/* Page title */}
             <h1 className="text-xl leading-5 font-semibold">{title}</h1>

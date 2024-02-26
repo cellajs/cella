@@ -125,14 +125,14 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           name="thumbnailUrl"
           render={({ field: { ref, ...rest } }) => (
             <FormItem>
-              <FormLabel>{t('label.profile_picture')}</FormLabel>
+              <FormLabel>{t('common:label.profile_picture')}</FormLabel>
               <FormControl>
                 <UploadAvatar
                   {...rest}
                   type="user"
                   id={user.id}
                   name={user.name}
-                  url={`${form.getValues('thumbnailUrl')}?width=100&format=avif`}
+                  url={form.getValues('thumbnailUrl')}
                   setUrl={setImageUrl}
                 />
               </FormControl>
@@ -144,7 +144,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           name="slug"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('label.user_handle')}</FormLabel>
+              <FormLabel>{t('common:label.user_handle')}</FormLabel>
               <FormDescription>A unique handle for your profile URL.</FormDescription>
               <FormControl>
                 {/* TODO: This breaks accessibility of the form label? */}
