@@ -31,7 +31,7 @@ const features = [
   {
     title: 'common:about.feature.title_5',
     description: 'common:about.feature.description_5',
-    icon: 'authentication',
+    icon: 'lucia',
   },
   {
     title: 'common:about.feature.title_6',

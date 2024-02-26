@@ -9,6 +9,7 @@ interface Integrations {
   planned: boolean;
   text: string;
   url: string;
+  invert?: boolean,
   logo: string;
   country: string;
 }
@@ -26,6 +27,7 @@ const integrations: Integrations[] = [
   {
     name: 'AppSignal',
     purpose: 'common:integrations.purpose_2',
+    invert: true,
     planned: false,
     text: 'common:integrations.text_2',
     country: 'NL',
@@ -42,6 +44,15 @@ const integrations: Integrations[] = [
     logo: 'n8n.svg',
   },
   {
+    name: 'Paddle',
+    purpose: 'common:integrations.purpose_5',
+    planned: false,
+    text: 'common:integrations.text_5',
+    country: 'GB',
+    url: 'paddle.com',
+    logo: 'paddle.svg',
+  },
+  {
     name: 'Gleap',
     purpose: 'common:integrations.purpose_4',
     planned: true,
@@ -49,15 +60,6 @@ const integrations: Integrations[] = [
     country: 'AT',
     url: 'gleap.io',
     logo: 'gleap.svg',
-  },
-  {
-    name: 'Adyen',
-    purpose: 'common:integrations.purpose_5',
-    planned: true,
-    text: 'common:integrations.text_5',
-    country: 'NL',
-    url: 'adyen.com',
-    logo: 'adyen.svg',
   },
   {
     name: 'Imado',
@@ -71,7 +73,7 @@ const integrations: Integrations[] = [
   {
     name: 'SimpleAnalytics',
     purpose: 'common:integrations.purpose_7',
-    planned: true,
+    planned: false,
     text: 'common:integrations.text_7',
     country: 'NL',
     url: 'simpleanalytics.com',
@@ -89,7 +91,8 @@ const integrations: Integrations[] = [
   {
     name: 'TipTap',
     purpose: 'common:integrations.purpose_9',
-    planned: true,
+    planned: false,
+    invert: true,
     text: 'common:integrations.text_9',
     country: 'DE',
     url: 'tiptap.dev',
@@ -99,6 +102,7 @@ const integrations: Integrations[] = [
 
 const Integrations = () => {
   const { t } = useTranslation();
+  
   return (
     <ScrollArea className="w-full">
       <div className="flex w-max space-x-4 py-8 px-2">
@@ -114,7 +118,7 @@ const Integrations = () => {
               <div className="absolute top-0 right-0 bg-foreground/25 text-white text-xs px-2 py-1 rounded-tr-md rounded-bl-md">TBD</div>
             )}
             <div className="flex items-center space-x-2">
-              <img src={`/integrations/${integration.logo}`} alt={integration.name} className="h-10 w-10 object-contain" loading="lazy" />
+              <img src={`/integrations/${integration.logo}`} alt={integration.name} className={`h-10 w-10 object-contain ${integration.invert && 'invert'}`} loading="lazy" />
               <span className="ml-4 font-medium">{integration.name}</span>
             </div>
             <div className="grow overflow-hidden text-sm pt-4">

@@ -9,7 +9,7 @@ import { Button } from '~/modules/ui/button';
 const pricingPlans = [
   {
     title: 'common:about.pricing.title_1',
-    price: '€1k',
+    price: 'pay €1k',
     priceId: null,
     description: 'about.pricing.description_1',
     features: [
@@ -26,7 +26,7 @@ const pricingPlans = [
   },
   {
     title: 'common:about.pricing.title_2',
-    price: '-€2k',
+    price: 'receive €1-12k',
     priceId: null,
     description: 'about.pricing.description_2',
     features: [
@@ -41,7 +41,7 @@ const pricingPlans = [
   {
     title: 'common:about.pricing.title_3',
     description: 'about.pricing.description_3',
-    price: 'TBD',
+    price: 'To be decided',
     priceId: null,
     features: ['common:about.pricing.plan_3.feature_1', 'common:about.pricing.plan_3.feature_2', 'common:about.pricing.plan_3.feature_3'],
     borderColor: '',
