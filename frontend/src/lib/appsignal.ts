@@ -5,5 +5,5 @@ import { config } from 'config';
 const activeMonitoring = config.debug || config.mode !== 'development';
 
 export const appSignal = new Appsignal({
-  key: activeMonitoring ? config.integrations.appsignalFrontendKey : undefined,
+  key: activeMonitoring ? config.appsignalFrontendKey : undefined,
 });

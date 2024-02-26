@@ -2,18 +2,17 @@ export const config = {
   mode: 'development' as 'production' | 'development' | 'tunnel',
   name: 'Cella',
   slug: 'cella',
+
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:4000',
 
   defaultRedirectPath: '/home',
 
-  paddleToken: 'test_85052d6574ab68d36b341e0afc8',
-  paddlePriceIds: {
-    donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
-  },
-
   aboutUrl: 'https://about.example.com',
   statusUrl: 'https://status.example.com',
+
+  description: 'A no-nonsense TypeScript template to build modern web apps. Open source.',
+  keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
 
   notificationsEmail: 'notifications@cellajs.com',
   senderIsReceiver: false,
@@ -21,8 +20,15 @@ export const config = {
   debug: false,
   maintenance: false,
 
+  // Webhooks with n8n
   newsletterWebhookUrl: 'https://cella.app.n8n.cloud/webhook/subscription?',
   contactWebhookUrl: 'https://cella.app.n8n.cloud/webhook/contact?',
+
+  // Payment with Paddle
+  paddleToken: 'live_ba8bb57b62089459e4f4fd1da8c',
+  paddlePriceIds: {
+    donate: 'pri_01hq8hech7se5y1dw9tnscfzpc',
+  },
 
   // File handling with imado
   tusUrl: 'http://localhost:1080',
@@ -32,6 +38,10 @@ export const config = {
   privateCDNUrl: 'https://cdn-priv.cellajs.com',
   publicCDNUrl: 'https://cdn.cellajs.com',
 
+  // Monitoring with AppSignal
+  appsignalFrontendKey: undefined,
+
+  // Theme settings
   theme: {
     rose: { primary: '#e11d48' },
     colorDarkBackground: 'hsl(240 10% 9%)',
@@ -46,6 +56,7 @@ export const config = {
     },
   },
 
+  // Enabled OAuth providers
   oauthOptions: ['Github'],
 
   // Feature flags
@@ -56,25 +67,14 @@ export const config = {
     waitlist: true, // TODO: implement
   },
 
-  integrations: {
-    appsignalFrontendKey: undefined,
-  },
-
-  description: 'A no-nonsense TypeScript template to build modern web apps. Open source.',
-  keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
-
+  // Languages
   languages: [
-    {
-      value: 'en',
-      label: 'English',
-    },
-    {
-      value: 'nl',
-      label: 'Nederlands',
-    },
+    { value: 'en', label: 'English' },
+    { value: 'nl', label: 'Nederlands' },
   ],
   defaultLanguage: 'en',
 
+  // Company details
   company: {
     name: 'CellaJS',
     shortName: 'Cella',
