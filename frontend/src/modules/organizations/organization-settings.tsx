@@ -63,7 +63,7 @@ const OrganizationSettings = () => {
               {
                 className: 'md:max-w-xl',
                 title: t('label.delete_organization'),
-                description: t('description.delete_organization'),
+                text: t('text.delete_organization'),
               },
             );
           }}

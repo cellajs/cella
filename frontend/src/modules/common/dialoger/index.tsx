@@ -46,10 +46,10 @@ export function Dialoger() {
       return (
         <Dialog key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)}>
           <DialogContent className={dialog.className}>
-            {dialog.title || dialog.description ? (
+            {dialog.title || dialog.text ? (
               <DialogHeader>
                 {dialog.title && <DialogTitle>{dialog.title}</DialogTitle>}
-                {dialog.description && <DialogDescription>{dialog.description}</DialogDescription>}
+                {dialog.text && <DialogDescription>{dialog.text}</DialogDescription>}
               </DialogHeader>
             ) : null}
             {dialog.content}
@@ -61,10 +61,10 @@ export function Dialoger() {
     return (
       <Drawer key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)}>
         <DrawerContent className={dialog.className}>
-          {dialog.title || dialog.description ? (
+          {dialog.title || dialog.text ? (
             <DrawerHeader className="text-left">
               {dialog.title && <DrawerTitle>{dialog.title}</DrawerTitle>}
-              {dialog.description && <DrawerDescription>{dialog.description}</DrawerDescription>}
+              {dialog.text && <DrawerDescription>{dialog.text}</DrawerDescription>}
             </DrawerHeader>
           ) : null}
           <div className="flex flex-col px-4 pb-8 gap-4">{dialog.content}</div>

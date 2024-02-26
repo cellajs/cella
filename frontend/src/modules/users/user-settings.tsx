@@ -45,7 +45,7 @@ const UserSettings = () => {
                   {
                     className: 'sm:max-w-[64rem]',
                     title: t('action.delete_user'),
-                    description: t('question.are_you_sure_to_delete_your_account', { email: user.email }),
+                    text: t('question.are_you_sure_to_delete_your_account', { email: user.email }),
                   },
                 );
               }}

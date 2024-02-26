@@ -47,7 +47,7 @@ function AppFooter() {
                 drawerOnMobile: false,
                 className: 'sm:max-w-[64rem]',
                 title: 'Contact us',
-                description: 'We will get back to you as soon as possible!',
+                text: 'We will get back to you as soon as possible!',
               });
             }}
           >

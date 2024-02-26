@@ -1,20 +1,20 @@
 import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { getOrganizations } from '~/api/organizations';
+import Export from '~/modules/common/data-table/export';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import NewsletterForm from '~/modules/system/newsletter-form';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
+import { OrganizationsSearch } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
 import { sheet } from '../../common/sheeter/state';
-import { getOrganizations } from '~/api/organizations';
-import { OrganizationsSearch } from '~/router/routeTree';
-import Export from '~/modules/common/data-table/export';
 
 interface Props {
   total?: number;
@@ -65,7 +65,7 @@ function Toolbar({
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('label.delete'),
-        description: t('description.delete_organizations'),
+        text: t('text.delete_organizations'),
       },
     );
   };
@@ -92,7 +92,7 @@ function Toolbar({
                 sheet(<NewsletterForm sheet />, {
                   className: 'sm:max-w-[64rem] z-50',
                   title: t('label.newsletter'),
-                  description: t('description.newsletter'),
+                  text: t('text.newsletter'),
                   id: 'newsletter-form',
                 });
               }}

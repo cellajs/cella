@@ -53,12 +53,18 @@ export const updateUserJsonSchema = createInsertSchema(usersTable, {
       (s) => /^[a-z0-9]+(-[a-z0-9]+)*$/i.test(s),
       'Slug may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.',
     ),
-  thumbnailUrl: z.string().url().refine((url) => new URL(url).search === '', {
-    message: 'Search params are not allowed',
-  }),
-  bannerUrl: z.string().url().refine((url) => new URL(url).search === '', {
-    message: 'Search params are not allowed',
-  }),
+  thumbnailUrl: z
+    .string()
+    .url()
+    .refine((url) => new URL(url).search === '', {
+      message: 'Search params are not allowed',
+    }),
+  bannerUrl: z
+    .string()
+    .url()
+    .refine((url) => new URL(url).search === '', {
+      message: 'Search params are not allowed',
+    }),
 })
   .pick({
     email: true,

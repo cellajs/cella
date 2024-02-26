@@ -1,6 +1,6 @@
 import './index.css';
 
-import { Suspense, StrictMode } from 'react';
+import { StrictMode, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Theming } from '~/hooks/use-theme';
 

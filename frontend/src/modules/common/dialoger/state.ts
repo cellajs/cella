@@ -3,7 +3,7 @@ let dialogsCounter = 1;
 export type DialogT = {
   id: number | string;
   title?: string | React.ReactNode;
-  description?: React.ReactNode;
+  text?: React.ReactNode;
   drawerOnMobile?: boolean;
   className?: string;
   content?: React.ReactNode;

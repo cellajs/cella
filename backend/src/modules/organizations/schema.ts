@@ -46,15 +46,24 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
   languages: z.array(z.string()).optional(),
   emailDomains: z.array(z.string()).optional(),
   authStrategies: z.array(z.string()).optional(),
-  thumbnailUrl: z.string().url().refine((url) => new URL(url).search === '', {
-    message: 'Search params are not allowed',
-  }),
-  bannerUrl: z.string().url().refine((url) => new URL(url).search === '', {
-    message: 'Search params are not allowed',
-  }),
-  logoUrl: z.string().url().refine((url) => new URL(url).search === '', {
-    message: 'Search params are not allowed',
-  }),
+  thumbnailUrl: z
+    .string()
+    .url()
+    .refine((url) => new URL(url).search === '', {
+      message: 'Search params are not allowed',
+    }),
+  bannerUrl: z
+    .string()
+    .url()
+    .refine((url) => new URL(url).search === '', {
+      message: 'Search params are not allowed',
+    }),
+  logoUrl: z
+    .string()
+    .url()
+    .refine((url) => new URL(url).search === '', {
+      message: 'Search params are not allowed',
+    }),
 })
   .pick({
     slug: true,

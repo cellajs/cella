@@ -1,9 +1,9 @@
+import { Paddle, initializePaddle } from '@paddle/paddle-js';
 import { Outlet } from '@tanstack/react-router';
+import { config } from 'config';
 import { useEffect, useState } from 'react';
 import PageNav from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import { Paddle, initializePaddle } from '@paddle/paddle-js';
-import { config } from 'config';
 import { Button } from '../ui/button';
 
 const systemTabs = [

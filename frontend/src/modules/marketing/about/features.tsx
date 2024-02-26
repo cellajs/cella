@@ -2,61 +2,26 @@ import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '~/store/theme';
 
 type FeatureProps = {
-  title: string;
-  description: string;
   icon: string;
   invertClass: string;
+  index: number;
 };
 const features = [
-  {
-    title: 'common:about.feature.title_1',
-    description: 'common:about.feature.description_1',
-    icon: 'hono',
-  },
-  {
-    title: 'common:about.feature.title_2',
-    description: 'common:about.feature.description_2',
-    icon: 'react',
-  },
-  {
-    title: 'common:about.feature.title_3',
-    description: 'common:about.feature.description_3',
-    icon: 'drizzle',
-  },
-  {
-    title: 'common:about.feature.title_4',
-    description: 'common:about.feature.description_4',
-    icon: 'tailwind',
-  },
-  {
-    title: 'common:about.feature.title_5',
-    description: 'common:about.feature.description_5',
-    icon: 'lucia',
-  },
-  {
-    title: 'common:about.feature.title_6',
-    description: 'common:about.feature.description_6',
-    icon: 'openapi',
-  },
-  {
-    title: 'common:about.feature.title_7',
-    description: 'common:about.feature.description_7',
-    icon: 'vite',
-  },
-  {
-    title: 'common:about.feature.title_8',
-    description: 'common:about.feature.description_8',
-    icon: 'tanstack',
-  },
-  {
-    title: 'common:about.feature.title_9',
-    description: 'common:about.feature.description_9',
-    icon: 'plus',
-  },
+  { icon: 'hono' },
+  { icon: 'react' },
+  { icon: 'drizzle' },
+  { icon: 'tailwind' },
+  { icon: 'lucia' },
+  { icon: 'openapi' },
+  { icon: 'vite' },
+  { icon: 'tanstack' },
+  { icon: 'plus' },
 ];
 
-const Feature = ({ title, description, icon, invertClass }: FeatureProps) => {
+const Feature = ({ icon, invertClass, index }: FeatureProps) => {
   const { t } = useTranslation();
+  const title = `common:about.feature.title_${index + 1}`;
+  const text = `common:about.feature.text_${index + 1}`;
 
   return (
     <div className="bg-card relative overflow-hidden rounded-lg p-2">
@@ -64,7 +29,7 @@ const Feature = ({ title, description, icon, invertClass }: FeatureProps) => {
         <img src={`/features/${icon}.svg`} alt={title} className={`h-12 w-12 object-contain ${invertClass}`} loading="lazy" />
         <div className="space-y-2">
           <h3 className="font-medium">{t(title)}</h3>
-          <p className="text-muted-foreground text-sm">{t(description)}</p>
+          <p className="text-muted-foreground text-sm">{t(text)}</p>
         </div>
       </div>
     </div>
@@ -94,8 +59,8 @@ const Features = () => {
   return (
     <>
       <div className="mx-auto grid max-w-[64rem] justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">
-        {visibleFeatures.map((feature) => (
-          <Feature key={feature.title} {...feature} invertClass={invertClass} />
+        {visibleFeatures.map((feature, index) => (
+          <Feature key={feature.icon} {...feature} index={index} invertClass={invertClass} />
         ))}
       </div>
 

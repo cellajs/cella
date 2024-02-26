@@ -55,10 +55,10 @@ export function Sheeter() {
             e.preventDefault();
           }}
         >
-          {sheet.title || sheet.description ? (
+          {sheet.title || sheet.text ? (
             <SheetHeader className="text-left">
               {sheet.title && <SheetTitle>{sheet.title}</SheetTitle>}
-              {sheet.description && <SheetDescription>{sheet.description}</SheetDescription>}
+              {sheet.text && <SheetDescription>{sheet.text}</SheetDescription>}
             </SheetHeader>
           ) : null}
           {sheet.content}

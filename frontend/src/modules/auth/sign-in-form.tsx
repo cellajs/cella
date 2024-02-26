@@ -140,7 +140,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
       {
         className: 'md:max-w-xl',
         title: 'Reset password',
-        description: 'Enter your email address to receive a link to reset your password.',
+        text: 'Enter your email address to receive a link to reset your password.',
       },
     );
   };

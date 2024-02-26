@@ -9,7 +9,7 @@ export const config = {
 
   paddleToken: 'test_85052d6574ab68d36b341e0afc8',
   paddlePriceIds: {
-    donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9'
+    donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
   },
 
   aboutUrl: 'https://about.example.com',
@@ -101,8 +101,8 @@ export default config;
 
 export type DeepPartial<T> = T extends object
   ? {
-    [P in keyof T]?: DeepPartial<T[P]>;
-  }
+      [P in keyof T]?: DeepPartial<T[P]>;
+    }
   : T;
 
 export type Config = DeepPartial<typeof config>;

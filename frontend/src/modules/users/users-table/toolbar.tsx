@@ -69,7 +69,7 @@ function Toolbar({
       drawerOnMobile: false,
       className: 'max-w-xl',
       title: t('label.invite'),
-      description: t('description.invite_users'),
+      text: t('text.invite_users'),
     });
   };
 
@@ -87,7 +87,7 @@ function Toolbar({
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('label.delete'),
-        description: t('description.delete_users'),
+        text: t('text.delete_users'),
       },
     );
   };

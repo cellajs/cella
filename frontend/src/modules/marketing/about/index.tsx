@@ -19,21 +19,21 @@ import Why from './why';
 
 interface AboutSectionProps {
   title: string;
-  description: string;
-  sectionId: string;
+  text: string;
+  section: string;
   children?: React.ReactNode;
-  alternateBackground?: boolean; // Optional prop for background styling
+  alternate?: boolean; // Optional prop for background styling
 }
 
-const AboutSection = ({ title, description, sectionId, children, alternateBackground = false }: AboutSectionProps) => {
+const AboutSection = ({ title, text, section, children, alternate = false }: AboutSectionProps) => {
   const { t } = useTranslation();
-  const backgroundClass = alternateBackground ? 'bg-accent/40 dark:bg-transparent' : '';
+  const backgroundClass = alternate ? 'bg-accent/40 dark:bg-transparent' : '';
 
   return (
-    <section id={sectionId} className={`container overflow-hidden max-w-none py-8 md:py-12 lg:py-24 ${backgroundClass}`}>
+    <section id={section} className={`container overflow-hidden max-w-none py-8 md:py-12 lg:py-24 ${backgroundClass}`}>
       <div className="mx-auto mb-12 flex max-w-[48rem] flex-col justify-center gap-4">
         <h2 className="font-heading text-3xl font-semibold leading-[1.1] sm:text-center md:text-4xl">{t(title)}</h2>
-        <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">{t(description)}</p>
+        <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">{t(text)}</p>
       </div>
       {children}
     </section>
@@ -56,69 +56,46 @@ const About = () => {
 
       <div className="container max-w-none px-0">
         {/* Hero landing */}
-        <Hero key={'hero'} title="common:about.index.title_1" subtitle="TypeScript template" description="common:about.index.description_1">
+        <Hero key={'hero'} title="common:about.title_1" subtitle="TypeScript template" text="common:about.text_1">
           <div className="mb-8">
             <a href={config.company.githubUrl} className={cn(buttonVariants({ variant: 'glow', size: 'xl' }))} aria-label="Get started">
               {t('common:start.github.message')}
             </a>
           </div>
           <Link to="/about" hash="why" className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))} aria-label="Read more">
-            <span className="font-light">{t('common:about.index.why')}</span>
+            <span className="font-light">{t('common:about.why')}</span>
             <ArrowDown size={16} className="ml-2 animate-bounce" />
           </Link>
         </Hero>
 
         <div className="my-12">
           {/* Why this product */}
-          <AboutSection key={'why'} sectionId="why" title="common:about.index.title_2" description="common:about.index.description_2">
+          <AboutSection key={'why'} section="why" title="common:about.title_2" text="common:about.text_2">
             <Why />
           </AboutSection>
 
           {/* Features */}
-          <AboutSection
-            key={'features'}
-            sectionId="features"
-            title="common:about.index.title_3"
-            description="common:about.index.description_3"
-            alternateBackground={true}
-          >
+          <AboutSection key={'features'} section="features" title="common:about.title_3" text="common:about.text_3" alternate={true}>
             <Features />
           </AboutSection>
 
           {/* Integrations */}
-          <AboutSection
-            key={'integrations'}
-            sectionId="integrations"
-            title="common:about.index.title_4"
-            description="common:about.index.description_4"
-          >
+          <AboutSection key={'integrations'} section="integrations" title="common:about.title_4" text="common:about.text_4">
             <Integrations />
           </AboutSection>
 
           {/* Public counters */}
-          {/* <AboutSection
-            key={'counters'}
-            sectionId="counters"
-            title="common:about.index.title_5"
-            description="common:about.index.description_5"
-            alternateBackground={true}
-          >
+          {/* <AboutSection key={'counters'} section="counters" title="common:about.title_5" text="common:about.text_5" alternate={true}>
             <Counters />
           </AboutSection> */}
 
           {/* Pricing */}
-          <AboutSection key={'pricing'} sectionId="pricing" title="common:about.index.title_6" description="common:about.index.description_6">
+          <AboutSection key={'pricing'} section="pricing" title="common:about.title_6" text="common:about.text_6">
             <Pricing />
           </AboutSection>
 
           {/* FAQs */}
-          {/* <AboutSection
-            key={'faqs'}
-            sectionId="faqs"
-            title="common:about.index.title_7"
-            description="common:about.index.description_7"
-            alternateBackground={true}
-          >
+          {/* <AboutSection key={'faqs'} section="faqs" title="common:about.title_7" text="common:about.text_7" alternate={true}>
             <FAQ />
           </AboutSection> */}
         </div>

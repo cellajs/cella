@@ -3,48 +3,30 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/
 
 interface FaqItem {
   id: string;
-  question: string;
-  answer: string;
 }
 
-const faqsData: FaqItem[] = [
-  {
-    id: 'production-ready',
-    question: 'common:faq.question_1',
-    answer: 'common:faq.answer_1',
-  },
-  {
-    id: 'cella-vs-next',
-    question: 'common:faq.question_2',
-    answer: 'common:faq.answer_2',
-  },
-  {
-    id: 'alternative-to-nextjs',
-    question: 'common:faq.question_3',
-    answer: 'common:faq.answer_3',
-  },
-  {
-    id: 'cella-made-in-europe',
-    question: 'common:faq.question_4',
-    answer: 'common:faq.answer_4',
-  },
-];
+const faqsData: FaqItem[] = [{ id: 'production-ready' }, { id: 'cella-vs-next' }, { id: 'alternative-to-nextjs' }, { id: 'cella-made-in-europe' }];
 
 const FAQ = () => {
   const { t } = useTranslation();
   return (
     <div className="mx-auto max-w-[48rem]">
       <Accordion type="single" className="w-full" collapsible>
-        {faqsData.map((faq) => (
-          <AccordionItem key={faq.id} value={faq.id}>
-            <AccordionTrigger>
-              <span className="text-lg">{t(faq.question)}</span>
-            </AccordionTrigger>
-            <AccordionContent>
-              <span className="text-lg font-light">{t(faq.answer)}</span>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
+        {faqsData.map((faq, index) => {
+          const question = `common:faq.question_${index + 1}`;
+          const answer = `common:faq.answer_${index + 1}`;
+
+          return (
+            <AccordionItem key={faq.id} value={faq.id}>
+              <AccordionTrigger>
+                <span className="text-lg">{t(question)}</span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <span className="text-lg font-light">{t(answer)}</span>
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
       </Accordion>
     </div>
   );

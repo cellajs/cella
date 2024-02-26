@@ -7,11 +7,11 @@ import { useThemeStore } from '~/store/theme';
 interface HeroProps {
   title: string;
   subtitle: string;
-  description?: string;
+  text?: string;
   children: React.ReactNode;
 }
 
-export const Hero = ({ title, subtitle, description, children }: HeroProps) => {
+export const Hero = ({ title, subtitle, text, children }: HeroProps) => {
   const { t } = useTranslation();
   const { theme } = useThemeStore();
   const { ref, inView } = useInView({
@@ -35,7 +35,7 @@ export const Hero = ({ title, subtitle, description, children }: HeroProps) => {
               <br />
               <span className={`bg-gradient-to-br ${gradientClass} bg-clip-text font-bold`}>{t(subtitle)}</span>
             </h1>
-            {description && <h2 className="text-foreground/80 mx-auto mb-8 max-w-[48rem] text-xl md:text-2xl">{t(description)}</h2>}
+            {text && <h2 className="text-foreground/80 mx-auto mb-8 max-w-[48rem] text-xl md:text-2xl">{t(text)}</h2>}
             <div className="space-x-4">{children}</div>
           </div>
         </header>

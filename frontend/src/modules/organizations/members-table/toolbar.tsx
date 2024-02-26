@@ -3,18 +3,18 @@ import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { cn } from '~/lib/utils';
+import Export from '~/modules/common/data-table/export';
 import InviteUsersForm from '~/modules/organizations/invite-users-form';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import { MembersSearch } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { Member, Organization } from '~/types';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import CountAndLoading from '../../common/data-table/count-and-loading';
 import { dialog } from '../../common/dialoger/state';
 import RemoveMembersForm from './remove-member-form';
-import { MembersSearch } from '~/router/routeTree';
-import Export from '~/modules/common/data-table/export';
 
 interface Props {
   selectedMembers: Member[];
@@ -78,7 +78,7 @@ function Toolbar({
       drawerOnMobile: false,
       className: 'max-w-xl',
       title: t('label.invite'),
-      description: t('description.invite_members'),
+      text: t('text.invite_members'),
     });
   };
 
@@ -96,7 +96,7 @@ function Toolbar({
       {
         className: 'md:max-w-xl',
         title: t('label.remove_member'),
-        description: (
+        text: (
           <Trans
             i18nKey="question.are_you_sure_to_remove_member"
             values={{

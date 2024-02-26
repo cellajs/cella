@@ -51,7 +51,7 @@ const AppNav = () => {
       dialog(<Input placeholder={'Search ...'} />, {
         className: 'sm:max-w-2xl sm:-mt-[calc(70vh-140px)]',
         title: 'Search',
-        description: 'Search through organizations & users within CellaJS.',
+        text: 'Search through organizations & users within CellaJS.',
         drawerOnMobile: false,
       });
       return;
