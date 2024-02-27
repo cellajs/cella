@@ -6,10 +6,14 @@ import { immer } from 'zustand/middleware/immer';
 import { client } from '~/api';
 import { getMe } from '~/api/users';
 import { User } from '~/types';
+import { i18n } from '~/lib/i18n';
 
 type PartialUser = Partial<User>;
 
 interface UserState {
+  language: string;
+  setLanguage: (language: string) => void;
+
   user: User;
   lastUser: PartialUser;
   clearLastUser: () => void;
@@ -22,6 +26,12 @@ export const useUserStore = create<UserState>()(
   devtools(
     persist(
       immer((set) => ({
+        language: config.defaultLanguage,
+        setLanguage: (language) => {
+          i18n.changeLanguage(language);
+          set({ language });
+        },
+
         user: null as unknown as User,
         lastUser: null as unknown as PartialUser,
         clearLastUser: () => {
@@ -53,6 +63,7 @@ export const useUserStore = create<UserState>()(
       {
         name: `${config.slug}-user`,
         partialize: (state) => ({
+          language: state.language,
           user: state.user,
           lastUser: state.lastUser,
         }),

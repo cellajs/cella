@@ -3,6 +3,7 @@ import ContactForm from '~/modules/common/contact-form/contact-form';
 import Logo from '~/modules/common/logo';
 import ThemeDropdown from '~/modules/common/theme-dropdown';
 import { dialog } from './dialoger/state';
+import LanguageDropdown from './language-dropdown';
 
 export interface FooterLinkProps {
   title: string;
@@ -27,6 +28,8 @@ function AppFooter() {
   return (
     <footer className="container flex flex-col mt-12 items-center gap-4">
       <div className="flex items-center gap-4">
+        <LanguageDropdown size={18} align='start' />
+        <div className="mr-1 font-light text-muted text-sm">|</div>
         <Link to="/" className="hover:scale-105 transition-transform active:translate-y-[1px]">
           <Logo height={25} />
         </Link>

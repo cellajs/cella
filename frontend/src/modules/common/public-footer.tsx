@@ -6,6 +6,7 @@ import { Github, Twitter } from 'lucide-react';
 import Logo from '~/modules/common/logo';
 import NewsletterForm from '~/modules/common/newsletter';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
+import LanguageDropdown from './language-dropdown';
 
 export const socials = [
   { title: 'Twitter', href: config.company.twitterUrl, icon: Twitter },
@@ -107,6 +108,10 @@ export function PublicFooter() {
               </div>
               <NewsletterForm />
             </div>
+          </div>
+
+          <div className="text-white/90">
+            <LanguageDropdown size={18}  />
           </div>
 
           <Link to="/about" hash="" className="mt-12 hover:opacity-90 active:scale-95">
