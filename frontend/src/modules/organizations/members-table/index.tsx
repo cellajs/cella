@@ -1,8 +1,8 @@
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
-import { Member } from '~/types';
 import { useTranslation } from 'react-i18next';
+import { Member } from '~/types';
 
 import { DataTable } from '~/modules/common/data-table';
 

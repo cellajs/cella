@@ -65,6 +65,15 @@ export function getValidChildren(children: React.ReactNode) {
   return React.Children.toArray(children).filter((child) => React.isValidElement(child)) as React.ReactElement[];
 }
 
+export function cleanUrl(url?: string | null) {
+  if (!url) return '';
+
+  const newUrl = new URL(url);
+  newUrl.search = '';
+  newUrl.hash = '';
+  return newUrl.toString();
+}
+
 // export function getObjectWithArrayForEachKey<T>(keys: string[]): Record<string, T[]> {
 //   return keys.reduce((acc, key) => {
 //     acc[key] = [];

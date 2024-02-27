@@ -18,9 +18,28 @@ const OrganizationSettings = () => {
   const { organization } = useContext(OrganizationContext);
   const { organizationIdentifier }: { organizationIdentifier: string } = useParams({ strict: false });
 
+  const openDeleteDialog = () => {
+    dialog(
+      <DeleteOrganizations
+        dialog
+        organizations={[organization]}
+        callback={() => {
+          toast.success(t('common:success.delete_organization'));
+          navigate({ to: '/', replace: true });
+        }}
+      />,
+      {
+        className: 'md:max-w-xl',
+        title: t('common:delete_organization'),
+        text: t('common:confirm.delete_organization'),
+      },
+    );
+  };
+
   return (
     <Card className="sm:w-[600px] mx-auto">
       <CardContent className="pt-6">
+        <h1 className="font-semibold text-lg mb-4">General</h1>
         <UpdateOrganizationForm
           organization={organization}
           callback={(organization) => {
@@ -44,30 +63,7 @@ const OrganizationSettings = () => {
           organization and its data. Please note that this action is irreversible.
         </p>
 
-        <Button
-          aria-label="Delete"
-          variant="destructive"
-          onClick={() => {
-            dialog(
-              <DeleteOrganizations
-                dialog
-                organizations={[organization]}
-                callback={() => {
-                  toast.success(t('common:success.delete_organization'));
-                  navigate({
-                    to: '/',
-                    replace: true,
-                  });
-                }}
-              />,
-              {
-                className: 'md:max-w-xl',
-                title: t('common:delete_organization'),
-                text: t('common:confirm.delete_organization'),
-              },
-            );
-          }}
-        >
+        <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
           <Trash2 className="mr-2 h-4 w-4" />
           <span>{t('common:delete_organization')}</span>
         </Button>

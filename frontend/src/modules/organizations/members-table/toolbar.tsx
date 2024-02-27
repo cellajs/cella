@@ -102,7 +102,6 @@ function Toolbar({
             values={{
               emails: selectedMembers.map((member) => member.email).join(', '),
             }}
-            
           />
         ),
       },

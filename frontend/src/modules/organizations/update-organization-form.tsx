@@ -16,12 +16,14 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import countries from '~/lib/countries.json';
 import timezones from '~/lib/timezones.json';
+import { cleanUrl } from '~/lib/utils';
+import { dialog } from '~/modules/common/dialoger/state';
+import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useUpdateOrganizationMutation } from '~/router/routeTree';
-import { dialog } from '../common/dialoger/state';
 import MultipleSelector, { Option } from '../ui/multiple-selector';
 
 interface Props {
@@ -46,6 +48,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       name: organization.name,
       shortName: organization.shortName,
       websiteUrl: organization.websiteUrl,
+      thumbnailUrl: cleanUrl(organization.thumbnailUrl),
       notificationEmail: organization.shortName,
       timezone: organization.timezone,
       country: organization.country,
@@ -70,7 +73,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         if (isDialog) {
           dialog.remove();
         }
-        toast.success(t('success.update_organization'));
+        toast.success(t('common:success.update_organization'));
       },
     });
   };
@@ -78,6 +81,10 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   const cancel = () => {
     form.reset();
     isDialog && dialog.remove();
+  };
+
+  const setImageUrl = (url: string) => {
+    form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
   const initLanguages = config.languages.filter((language) => organization.languages?.includes(language.value)) || [];
@@ -102,7 +109,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           if (isExists) {
             form.setError('slug', {
               type: 'manual',
-              message: t('error.slug_already_exists'),
+              message: t('common:error.slug_already_exists'),
             });
           } else {
             form.clearErrors('slug');
@@ -115,6 +122,25 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="thumbnailUrl"
+          render={({ field: { ref, ...rest } }) => (
+            <FormItem>
+              <FormLabel>{t('common:organization_logo')}</FormLabel>
+              <FormControl>
+                <UploadAvatar
+                  {...rest}
+                  type="organization"
+                  id={organization.id}
+                  name={organization.name}
+                  url={form.getValues('thumbnailUrl')}
+                  setUrl={setImageUrl}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="slug"

@@ -20,6 +20,7 @@ import { useWatch } from 'react-hook-form';
 import { checkSlug } from '~/api/general';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { cleanUrl } from '~/lib/utils';
 import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
 import { useUpdateUserMutation } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
@@ -48,7 +49,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       slug: user.slug,
-      thumbnailUrl: user.thumbnailUrl,
+      thumbnailUrl: cleanUrl(user.thumbnailUrl),
       firstName: user.firstName,
       lastName: user.lastName,
       bio: user.bio,

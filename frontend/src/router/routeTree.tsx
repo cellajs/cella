@@ -3,7 +3,7 @@ import { Outlet, createRoute, createRouteMask, notFound, redirect, rootRouteWith
 import { z } from 'zod';
 import { acceptInvite, checkInvite } from '~/api/general';
 import { UpdateOrganizationParams, getMembersByOrganizationIdentifier, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
-import { UpdateUserParams, updateUser, getUserBySlugOrId } from '~/api/users';
+import { UpdateUserParams, getUserBySlugOrId, updateUser } from '~/api/users';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
