@@ -3,7 +3,7 @@ import { Outlet, createRoute, createRouteMask, notFound, redirect, rootRouteWith
 import { z } from 'zod';
 import { acceptInvite, checkInvite } from '~/api/general';
 import { UpdateOrganizationParams, getMembersByOrganizationIdentifier, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
-import { UpdateUserParams, getUserBySlugOrId, updateUser } from '~/api/users';
+import { UpdateUserParams, updateUser, getUserBySlugOrId } from '~/api/users';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
@@ -161,7 +161,7 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
 const IndexRoute = createRoute({
   id: 'layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: ({ location, cause }) => {
+  beforeLoad: async ({ location, cause }) => {
     const storedUser = useUserStore.getState().user;
 
     // If no stored user and no desired path, redirect to about
@@ -172,8 +172,7 @@ const IndexRoute = createRoute({
       const { getMenu } = useNavigationStore.getState();
 
       if (cause === 'enter') {
-        getMe();
-        getMenu();
+        await Promise.all([getMe(), getMenu()]);
       }
     } catch {
       console.log('Not authenticated, redirect to sign in');

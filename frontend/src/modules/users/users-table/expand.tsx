@@ -25,27 +25,21 @@ const Expand = ({ row }: { row: User }) => {
   }, [row.modifiedBy]);
 
   return (
-    <div className="leading-normal relative font-light space-y-2">
-      <div className="space-x-2">
-        <span className="font-medium">ID</span>
-        <span>{row.id}</span>
-      </div>
-      <div className="space-x-2">
-        <span className="font-medium">Modified</span>
-        <span>{dateShort(row.modifiedAt)}</span>
-      </div>
-      <div className="space-x-2 flex items-center">
-        <span className="font-medium">Modified By</span>
+    <div className="leading-normal relative font-light grid gap-1 grid-cols-[auto_auto] p-2">
+        <div className="font-medium pr-2">ID</div>
+        <div>{row.id}</div>
+        <div className="font-medium pr-2">Modified</div>
+        <div>{dateShort(row.modifiedAt)}</div>
+        <div className="font-medium pr-2">Modified By</div>
         {loading ? (
           <Loader2 className="animate-spin" size={16} />
         ) : modifier ? (
-          <span>
+          <div>
             {modifier.name} ({modifier.email})
-          </span>
+          </div>
         ) : (
-          <span>Unknown</span>
+          <div>Unknown</div>
         )}
-      </div>
     </div>
   );
 };
