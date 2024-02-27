@@ -66,7 +66,7 @@ export function getValidChildren(children: React.ReactNode) {
 }
 
 export function cleanUrl(url?: string | null) {
-  if (!url) return '';
+  if (!url) return null;
 
   const newUrl = new URL(url);
   newUrl.search = '';
