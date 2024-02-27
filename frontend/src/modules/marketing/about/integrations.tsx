@@ -2,6 +2,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { useThemeStore } from '~/store/theme';
 
 interface Integrations {
   name: string;
@@ -26,6 +27,7 @@ const integrations: Integrations[] = [
 
 const Integrations = () => {
   const { t } = useTranslation();
+  const { mode } = useThemeStore();
 
   return (
     <ScrollArea className="w-full">
@@ -44,7 +46,7 @@ const Integrations = () => {
             >
               {planned && <div className="absolute top-0 right-0 bg-foreground/25 text-white text-xs px-2 py-1 rounded-tr-md rounded-bl-md">TBD</div>}
               <div className="flex items-center space-x-2">
-                <img src={`/integrations/${logo}`} alt={name} className={`h-10 w-10 object-contain ${invert && 'invert'}`} loading="lazy" />
+                <img src={`/integrations/${logo}`} alt={name} className={`h-10 w-10 object-contain ${invert && mode === 'dark' && 'invert'}`} loading="lazy" />
                 <span className="ml-4 font-medium">{name}</span>
               </div>
               <div className="grow overflow-hidden text-sm pt-4">
