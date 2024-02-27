@@ -37,10 +37,10 @@ const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }
   return (
     <div className="flex flex-col-reverse sm:flex-row gap-2">
       <Button type="submit" variant="destructive" onClick={onRemoveMember} loading={pending}>
-        {t('action.remove')}
+        {t('common:remove')}
       </Button>
       <Button type="reset" variant="secondary" onClick={() => dialog.remove()}>
-        {t('action.cancel')}
+        {t('common:cancel')}
       </Button>
     </div>
   );

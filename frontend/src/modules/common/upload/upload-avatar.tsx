@@ -44,7 +44,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
       {
         id: 'upload-image',
         drawerOnMobile: false,
-        title: t('label.upload_image'),
+        title: t('common:upload_image'),
         className: 'md:max-w-xl',
       },
     );
@@ -59,7 +59,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
         <div className="flex gap-2 items-center">
           <Button variant="secondary" type="button" size="sm" onClick={openUploadDialog}>
             <Upload size={20} className="mr-2" />
-            <span>{t('action.upload')}</span>
+            <span>{t('common:upload')}</span>
           </Button>
 
           {url && (

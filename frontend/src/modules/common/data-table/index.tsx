@@ -52,7 +52,7 @@ const NoRows = ({
         <>
           <Search className="w-24 h-24" />
           <div className="flex items-center justify-center mt-6">
-            <div>{t('label.no_results_found')}</div>
+            <div>{t('common:no_results_found')}</div>
             <Button variant="link" onClick={onResetFilters}>
               <XCircle size={16} className="mr-1" />
               Clear
@@ -60,7 +60,7 @@ const NoRows = ({
           </div>
         </>
       )}
-      {!isFiltered && !isFetching && (customComponent ?? t('label.no_results'))}
+      {!isFiltered && !isFetching && (customComponent ?? t('common:no_results'))}
     </div>
   );
 };

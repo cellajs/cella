@@ -68,8 +68,8 @@ function Toolbar({
     dialog(<InviteUsersForm dialog />, {
       drawerOnMobile: false,
       className: 'max-w-xl',
-      title: t('label.invite'),
-      text: t('text.invite_users'),
+      title: t('common:invite'),
+      text: t('common:text.invite_users'),
     });
   };
 
@@ -79,15 +79,15 @@ function Toolbar({
         users={selectedUsers}
         callback={(users) => {
           callback(users, 'delete');
-          toast.success(t('success.delete_users'));
+          toast.success(t('common:success.delete_users'));
         }}
         dialog
       />,
       {
         drawerOnMobile: false,
         className: 'max-w-xl',
-        title: t('label.delete'),
-        text: t('text.delete_users'),
+        title: t('common:delete'),
+        text: t('common:confirm.delete_users'),
       },
     );
   };
@@ -112,27 +112,27 @@ function Toolbar({
               <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
                 <span className="text-xs font-medium text-white">{selectedUsers.length}</span>
               </div>
-              {t('action.remove')}
+              {t('common:remove')}
             </Button>
             <Button variant="secondary" onClick={onResetSelectedRows}>
-              {t('action.clear')}
+              {t('common:clear')}
             </Button>
           </>
         ) : (
-          !isFiltered && user.role === 'ADMIN' && <Button onClick={openInviteDialog}>{t('action.invite')}</Button>
+          !isFiltered && user.role === 'ADMIN' && <Button onClick={openInviteDialog}>{t('common:invite')}</Button>
         )}
         <CountAndLoading
           count={total}
           isLoading={isLoading}
-          singular={t('label.singular_user')}
-          plural={t('label.plural_users')}
+          singular={t('common:singular_user')}
+          plural={t('common:plural_users')}
           isFiltered={isFiltered}
           onResetFilters={onResetFilters}
         />
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input
-          placeholder={t('placeholder.search')}
+          placeholder={t('common:placeholder.search')}
           value={queryValue}
           onChange={(event: ChangeEvent<HTMLInputElement>) => {
             setQueryValue(event.target.value);

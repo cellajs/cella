@@ -37,15 +37,15 @@ const UserSettings = () => {
                   <DeleteUsers
                     users={[user]}
                     callback={() => {
-                      toast.success(t('success.your_account_has_been_deleted'));
+                      toast.success(t('common:success.delete_account'));
                       navigate({ to: '/auth/sign-in' });
                     }}
                     dialog
                   />,
                   {
                     className: 'sm:max-w-[64rem]',
-                    title: t('action.delete_user'),
-                    text: t('question.are_you_sure_to_delete_your_account', { email: user.email }),
+                    title: t('common:delete_account'),
+                    text: t('common:confirm.delete_account', { email: user.email }),
                   },
                 );
               }}

@@ -74,7 +74,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
           name="emails"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('label.emails')}</FormLabel>
+              <FormLabel>{t('common:emails')}</FormLabel>
               <FormControl>
                 <MultipleSelector
                   value={field.value}
@@ -93,11 +93,11 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" loading={pending}>
             <Send size={16} className="mr-2" />
-            {t('action.invite')}
+            {t('common:invite')}
           </Button>
           {form.formState.isDirty && (
             <Button type="reset" variant="secondary" onClick={cancel}>
-              {t('action.cancel')}
+              {t('common:cancel')}
             </Button>
           )}
         </div>

@@ -12,7 +12,7 @@ export interface AvatarWrapProps extends AvatarProps {
 }
 
 const AvatarWrap = memo(({ type, id, name, url, className, ...props }: AvatarWrapProps) => {
-  const avatarBackground = useMemo(() => (getColorClass(id)), [id]);
+  const avatarBackground = useMemo(() => getColorClass(id), [id]);
 
   return (
     <Avatar {...props} className={`${type === 'user' ? 'rounded-full' : 'rounded-md'} ${className} ${avatarBackground}`}>

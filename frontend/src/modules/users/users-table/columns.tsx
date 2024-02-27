@@ -27,7 +27,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
     },
     {
       key: 'name',
-      name: t('label.name'),
+      name: t('common:name'),
       visible: true,
       minWidth: 180,
       sortable: true,
@@ -94,7 +94,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
           ...mobileColumns,
           {
             key: 'email',
-            name: t('label.email'),
+            name: t('common:email'),
             minWidth: 120,
             sortable: true,
             visible: true,
@@ -115,7 +115,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
           },
           {
             key: 'role',
-            name: t('label.role'),
+            name: t('common:role'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
@@ -124,7 +124,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
           },
           {
             key: 'createdAt',
-            name: t('label.createdAt'),
+            name: t('common:created_at'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
@@ -133,7 +133,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
           },
           {
             key: 'membershipCount',
-            name: t('label.memberships'),
+            name: t('common:memberships'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,

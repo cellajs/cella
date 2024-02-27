@@ -13,8 +13,8 @@ interface Count {
 }
 
 const counts: Count[] = [
-  { id: 'users', title: 'common:label.users', icon: Users },
-  { id: 'organizations', title: 'common:label.organizations', icon: Building2 },
+  { id: 'users', title: 'common:users', icon: Users },
+  { id: 'organizations', title: 'common:organizations', icon: Building2 },
 ];
 
 const Counters = () => {

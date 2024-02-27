@@ -23,7 +23,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
   const createDialog = () => {
     dialog(section.createForm, {
       className: 'md:max-w-xl',
-      title: t('label.create_organization'),
+      title: t('common:create_organization'),
     });
   };
 

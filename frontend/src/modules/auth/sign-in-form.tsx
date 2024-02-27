@@ -74,7 +74,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
           render={({ field }) => (
             <FormItem className="hidden">
               <FormControl>
-                <Input {...field} disabled type="email" autoComplete="off" placeholder={t('label.email')} />
+                <Input {...field} disabled type="email" autoComplete="off" placeholder={t('common:email')} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -86,7 +86,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input type="password" autoFocus {...field} autoComplete="current-password" placeholder={t('label.password')} />
+                <Input type="password" autoFocus {...field} autoComplete="current-password" placeholder={t('common:password')} />
               </FormControl>
               <FormMessage />
             </FormItem>

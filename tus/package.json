@@ -1,7 +1,7 @@
 {
   "name": "tus",
   "version": "1.0.0",
-  "description": "TUS server for imado",
+  "description": "TUS server to handle file uploading with imado",
   "type": "module",
   "scripts": {
     "build": "NODE_ENV=production tsup",
@@ -13,7 +13,7 @@
     "tus",
     "imado"
   ],
-  "author": "",
+  "author": "CellaJS <info@cellajs.com>",
   "license": "UNLICENSED",
   "dependencies": {
     "@cellajs/imado": "^0.1.2",

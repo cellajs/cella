@@ -20,8 +20,8 @@ const features = [
 
 const Feature = ({ icon, invertClass, index }: FeatureProps) => {
   const { t } = useTranslation();
-  const title = `common:about.feature.title_${index + 1}`;
-  const text = `common:about.feature.text_${index + 1}`;
+  const title = `about:feature.title_${index + 1}`;
+  const text = `about:feature.text_${index + 1}`;
 
   return (
     <div className="bg-card relative overflow-hidden rounded-lg p-2">

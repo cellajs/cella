@@ -19,7 +19,7 @@ export const useColumns = () => {
     CheckboxColumn,
     {
       key: 'name',
-      name: t('label.name'),
+      name: t('common:name'),
       visible: true,
       sortable: true,
       renderHeaderCell: HeaderCell,
@@ -40,7 +40,7 @@ export const useColumns = () => {
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      name: t('label.role'),
+      name: t('common:role'),
       renderCell: ({ row }) => t(row.organizationRole),
     },
   ];
@@ -52,7 +52,7 @@ export const useColumns = () => {
           ...mobileColumns,
           {
             key: 'email',
-            name: t('label.email'),
+            name: t('common:email'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
@@ -71,7 +71,7 @@ export const useColumns = () => {
           },
           {
             key: 'createdAt',
-            name: t('label.createdAt'),
+            name: t('common:created_at'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
@@ -80,7 +80,7 @@ export const useColumns = () => {
           },
           {
             key: 'lastSeenAt',
-            name: t('label.lastSeenAt'),
+            name: t('common:last_seen_at'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,

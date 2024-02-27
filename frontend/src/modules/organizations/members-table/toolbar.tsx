@@ -77,8 +77,8 @@ function Toolbar({
     dialog(<InviteUsersForm organization={organization} dialog />, {
       drawerOnMobile: false,
       className: 'max-w-xl',
-      title: t('label.invite'),
-      text: t('text.invite_members'),
+      title: t('common:invite'),
+      text: t('common:text.invite_members'),
     });
   };
 
@@ -89,16 +89,16 @@ function Toolbar({
         dialog
         callback={(members) => {
           callback(members, 'delete');
-          toast.success(t('success.delete_members'));
+          toast.success(t('common:success.delete_members'));
         }}
         members={selectedMembers}
       />,
       {
         className: 'md:max-w-xl',
-        title: t('label.remove_member'),
+        title: t('common:remove_member'),
         text: (
           <Trans
-            i18nKey="question.are_you_sure_to_remove_member"
+            i18nKey="common:confirm.remove_members"
             values={{
               emails: selectedMembers.map((member) => member.email).join(', '),
             }}
@@ -129,22 +129,22 @@ function Toolbar({
               <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
                 <span className="text-xs font-medium text-white">{selectedMembers.length}</span>
               </div>
-              {t('action.remove')}
+              {t('common:remove')}
             </Button>
             <Button variant="secondary" onClick={onResetSelectedRows}>
-              {t('action.clear')}
+              {t('common:clear')}
             </Button>
           </>
         ) : (
           !isFiltered &&
-          (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && <Button onClick={openInviteDialog}>{t('action.invite')}</Button>
+          (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && <Button onClick={openInviteDialog}>{t('common:invite')}</Button>
         )}
         {selectedMembers.length === 0 && (
           <CountAndLoading
             count={total}
             isLoading={isLoading}
-            singular={t('label.singular_member')}
-            plural={t('label.plural_member')}
+            singular={t('common:singular_member')}
+            plural={t('common:plural_member')}
             isFiltered={isFiltered}
             onResetFilters={onResetFilters}
           />

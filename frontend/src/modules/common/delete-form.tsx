@@ -13,10 +13,10 @@ export const DeleteForm = ({ onDelete, onCancel, pending }: DeleteFormProps) => 
   return (
     <div className="flex flex-col-reverse sm:flex-row gap-2">
       <Button type="submit" variant="destructive" onClick={onDelete} loading={pending}>
-        {t('action.delete')}
+        {t('common:delete')}
       </Button>
       <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>
-        {t('action.cancel')}
+        {t('common:cancel')}
       </Button>
     </div>
   );

@@ -19,7 +19,7 @@ const RowEdit = ({ organization, callback, tabIndex }: Props) => {
     dialog(<UpdateOrganizationForm organization={organization} dialog callback={(organization) => callback([organization], 'update')} />, {
       drawerOnMobile: false,
       className: 'sm:max-w-2xl my-4 sm:my-8',
-      title: t('action.edit_organization'),
+      title: t('common:edit_organization'),
     });
   };
 

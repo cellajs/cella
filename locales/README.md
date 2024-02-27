@@ -22,7 +22,14 @@ The recommended settings to put in your `.vscode/settings.json` or to edit in th
   "i18n-ally.enabledFrameworks": ["react-i18next"],
   "i18n-ally.extract.autoDetect": true,
   "i18n-ally.namespace": true,
-  "i18n-ally.pathMatcher": "{locale}/{namespace}.json",
+  "i18n-ally.pathMatcher": "{locale}/{namespace}.json"
 }
 ```
 
+### Tips for consistency
+* Keep texts short
+* One-word translations have a one-word key
+* Two-word translations have a two-word key
+* Sentences (>2 words) have a prefix such as `text.`, `question.`, `confirm.` or `success.`
+* Sort JSON translation keys by alphabetical order
+* Modules or pages with a big amount of unique texts should get their own translation namespace and json: `about:` keys are provided by `about.json`.

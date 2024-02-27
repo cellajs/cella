@@ -39,8 +39,8 @@ const Pricing = () => {
       className={`mx-auto mt-8 max-w-[86rem] ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}
     >
       {pricingPlans.map(({ id, borderColor, featureCount, popular, price }, planIndex) => {
-        const title = `common:about.pricing.title_${planIndex + 1}`;
-        const text = `common:about.pricing.text_${planIndex + 1}`;
+        const title = `about:pricing.title_${planIndex + 1}`;
+        const text = `about:pricing.text_${planIndex + 1}`;
 
         return (
           <div
@@ -61,7 +61,7 @@ const Pricing = () => {
               </h3>
               <div className="text-center mt-4 text-gray-600 dark:text-gray-400">
                 <span className="mr-1 text-3xl font-bold">{price}</span>
-                <span className="font-light">/ {t('common:label.year')}</span>
+                <span className="font-light">/ {t('common:year')}</span>
               </div>
 
               <div className="mt-4 text-center font-light text-muted-foreground">
@@ -73,7 +73,7 @@ const Pricing = () => {
                   // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                   <li key={`${id}-${featureIndex}`} className="flex text-sm font-light items-center">
                     <Check className="mr-2 p-1 text-sm text-success" />
-                    {t(`common:about.pricing.plan_${planIndex + 1}.${featureIndex + 1}`)}
+                    {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}`)}
                   </li>
                 ))}
               </ul>

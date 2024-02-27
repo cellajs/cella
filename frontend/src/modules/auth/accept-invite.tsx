@@ -53,7 +53,7 @@ const Accept = () => {
     <AuthPage>
       <Form {...form}>
         <h1 className="text-2xl text-center">
-          {t('common:action.accept_invitation')} <br /> <span className="font-light text-xl">for {'"email here"'}</span>
+          {t('common:accept_invitation')} <br /> <span className="font-light text-xl">for {'"email here"'}</span>
         </h1>
 
         <LegalNotice />
@@ -66,7 +66,7 @@ const Accept = () => {
               <FormItem>
                 <FormControl>
                   <div className="relative">
-                    <Input type="password" autoFocus placeholder={t('label.new_password')} autoComplete="new-password" {...field} />
+                    <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
                     <Suspense>
                       <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
                     </Suspense>
@@ -77,7 +77,7 @@ const Accept = () => {
             )}
           />
           <Button type="submit" loading={pending} className="w-full">
-            {t('common:action.accept')}
+            {t('common:accept')}
             <ArrowRight size={16} className="ml-2" />
           </Button>
         </form>

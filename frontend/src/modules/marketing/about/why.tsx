@@ -15,8 +15,8 @@ const Why = () => {
       <div className="w-full lg:w-6/12">
         <div className="flex flex-wrap">
           {whyItems.map((item, index) => {
-            const title = `common:about.why.title_${index + 1}`;
-            const text = `common:about.why.text_${index + 1}`;
+            const title = `about:why.title_${index + 1}`;
+            const text = `about:why.text_${index + 1}`;
 
             return (
               <div className="w-full" key={item.id}>

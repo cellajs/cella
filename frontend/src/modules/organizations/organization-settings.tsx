@@ -53,7 +53,7 @@ const OrganizationSettings = () => {
                 dialog
                 organizations={[organization]}
                 callback={() => {
-                  toast.success(t('success.delete_organization'));
+                  toast.success(t('common:success.delete_organization'));
                   navigate({
                     to: '/',
                     replace: true,
@@ -62,14 +62,14 @@ const OrganizationSettings = () => {
               />,
               {
                 className: 'md:max-w-xl',
-                title: t('label.delete_organization'),
-                text: t('text.delete_organization'),
+                title: t('common:delete_organization'),
+                text: t('common:confirm.delete_organization'),
               },
             );
           }}
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          <span>{t('action.delete_organization')}</span>
+          <span>{t('common:delete_organization')}</span>
         </Button>
       </CardContent>
     </Card>

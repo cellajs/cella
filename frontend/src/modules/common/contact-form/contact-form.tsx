@@ -115,10 +115,10 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="submit">
                   <Send size={16} className="mr-2" />
-                  {t('action.send')}
+                  {t('common:send')}
                 </Button>
                 <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
-                  {t('action.cancel')}
+                  {t('common:cancel')}
                 </Button>
               </div>
             </form>

@@ -47,7 +47,7 @@ export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: str
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input {...field} type="email" autoFocus placeholder={t('common:label.email')} />
+                <Input {...field} type="email" autoFocus placeholder={t('common:email')} />
               </FormControl>
               <FormMessage />
             </FormItem>

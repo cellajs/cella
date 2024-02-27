@@ -19,7 +19,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
     CheckboxColumn,
     {
       key: 'name',
-      name: t('label.name'),
+      name: t('common:name'),
       visible: true,
       sortable: true,
       renderHeaderCell: HeaderCell,
@@ -51,7 +51,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
           ...mobileColumns,
           {
             key: 'userRole',
-            name: t('label.your_role'),
+            name: t('common:your_role'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
@@ -60,7 +60,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
           },
           {
             key: 'createdAt',
-            name: t('label.createdAt'),
+            name: t('common:created_at'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,

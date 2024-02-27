@@ -57,15 +57,15 @@ function Toolbar({
         organizations={selectedOrganizations}
         callback={(organizations) => {
           callback(organizations, 'delete');
-          toast.success(t('success.delete_organizations'));
+          toast.success(t('common:success.delete_organizations'));
         }}
         dialog
       />,
       {
         drawerOnMobile: false,
         className: 'max-w-xl',
-        title: t('label.delete'),
-        text: t('text.delete_organizations'),
+        title: t('common:delete'),
+        text: t('common:confirm.delete_organizations'),
       },
     );
   };
@@ -88,25 +88,24 @@ function Toolbar({
           <>
             <Button
               onClick={() => {
-                console.log('sheet', sheet);
                 sheet(<NewsletterForm sheet />, {
                   className: 'sm:max-w-[64rem] z-50',
-                  title: t('label.newsletter'),
-                  text: t('text.newsletter'),
+                  title: t('common:newsletter'),
+                  text: t('common:text.newsletter'),
                   id: 'newsletter-form',
                 });
               }}
             >
-              {t('label.newsletter')}
+              {t('common:newsletter')}
             </Button>
             <Button variant="destructive" className="relative" onClick={onOpenDeleteDialog}>
               <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
                 <span className="text-xs font-medium text-white">{selectedOrganizations.length}</span>
               </div>
-              {t('action.remove')}
+              {t('common:remove')}
             </Button>
             <Button variant="secondary" onClick={onResetSelectedRows}>
-              {t('action.clear')}
+              {t('common:clear')}
             </Button>
           </>
         ) : (
@@ -116,26 +115,26 @@ function Toolbar({
               onClick={() => {
                 dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
                   className: 'md:max-w-xl',
-                  title: t('label.create_organization'),
+                  title: t('common:create_organization'),
                 });
               }}
             >
-              {t('action.create')}
+              {t('common:create')}
             </Button>
           )
         )}
         <CountAndLoading
           count={total}
           isLoading={isLoading}
-          singular={t('label.singular_organization')}
-          plural={t('label.plural_organization')}
+          singular={t('common:singular_organization')}
+          plural={t('common:plural_organization')}
           isFiltered={isFiltered}
           onResetFilters={onResetFilters}
         />
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input
-          placeholder={t('placeholder.search')}
+          placeholder={t('common:placeholder.search')}
           value={queryValue}
           onChange={(event: ChangeEvent<HTMLInputElement>) => {
             setQueryValue(event.target.value);

@@ -65,7 +65,7 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
           render={({ field }) => (
             <FormItem className="hidden">
               <FormControl>
-                <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('label.email')} />
+                <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -78,7 +78,7 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
             <FormItem>
               <FormControl>
                 <div className="relative">
-                  <Input type="password" autoFocus placeholder={t('label.new_password')} autoComplete="new-password" {...field} />
+                  <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
                   <Suspense>
                     <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
                   </Suspense>
@@ -89,7 +89,7 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
           )}
         />
         <Button type="submit" loading={pending} className="w-full">
-          {t('action.sign_up')}
+          {t('common:sign_up')}
           <ArrowRight size={16} className="ml-2" />
         </Button>
       </form>

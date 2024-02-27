@@ -77,7 +77,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
           name="subject"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('label.subject')}</FormLabel>
+              <FormLabel>{t('common:subject')}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -93,10 +93,10 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
             <Send size={16} className="mr-2" />
-            {t('action.send')}
+            {t('common:send')}
           </Button>
           <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
-            {t('action.cancel')}
+            {t('common:cancel')}
           </Button>
         </div>
       </form>

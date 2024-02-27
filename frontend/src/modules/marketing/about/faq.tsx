@@ -13,8 +13,8 @@ const FAQ = () => {
     <div className="mx-auto max-w-[48rem]">
       <Accordion type="single" className="w-full" collapsible>
         {faqsData.map((faq, index) => {
-          const question = `common:faq.question_${index + 1}`;
-          const answer = `common:faq.answer_${index + 1}`;
+          const question = `about:faq.question_${index + 1}`;
+          const answer = `about:faq.answer_${index + 1}`;
 
           return (
             <AccordionItem key={faq.id} value={faq.id}>

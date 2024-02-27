@@ -120,7 +120,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="slug"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('label.organization_handle')}</FormLabel>
+              <FormLabel>{t('common:organization_handle')}</FormLabel>
               <FormDescription>A unique handle for organization URL.</FormDescription>
               <FormControl>
                 {/* TODO: This breaks accessibility of the form label? */}
@@ -144,7 +144,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('label.name')}</FormLabel>
+              <FormLabel>{t('common:name')}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -157,7 +157,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="shortName"
           render={({ field: { value, ...rest } }) => (
             <FormItem>
-              <FormLabel>{t('label.short_name')}</FormLabel>
+              <FormLabel>{t('common:short_name')}</FormLabel>
               <FormControl>
                 <Input value={value ?? ''} {...rest} />
               </FormControl>
@@ -170,7 +170,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="notificationEmail"
           render={({ field: { value, ...rest } }) => (
             <FormItem>
-              <FormLabel>{t('label.notification_email')}</FormLabel>
+              <FormLabel>{t('common:notification_email')}</FormLabel>
               <FormDescription>Receive announcements and product updates through this email address.</FormDescription>
               <FormControl>
                 <Input type="email" value={value ?? ''} {...rest} />
@@ -184,7 +184,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="websiteUrl"
           render={({ field: { value, ...rest } }) => (
             <FormItem>
-              <FormLabel>{t('label.website_url')}</FormLabel>
+              <FormLabel>{t('common:website_url')}</FormLabel>
               <FormControl>
                 <Input placeholder="https://" type="url" value={value ?? ''} {...rest} />
               </FormControl>
@@ -197,7 +197,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="languages"
           render={() => (
             <FormItem>
-              <FormLabel>{t('label.languages')}</FormLabel>
+              <FormLabel>{t('common:languages')}</FormLabel>
               <FormControl>
                 <MultipleSelector
                   value={selectedLanguages}
@@ -215,7 +215,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="defaultLanguage"
           render={({ field: { value, onChange } }) => (
             <FormItem>
-              <FormLabel>{t('label.default_language')}</FormLabel>
+              <FormLabel>{t('common:default_language')}</FormLabel>
               <FormDescription>The language that will be given to new members.</FormDescription>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
@@ -241,7 +241,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="timezone"
           render={({ field: { value, onChange } }) => (
             <FormItem>
-              <FormLabel>{t('label.timezone')}</FormLabel>
+              <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
                   <SelectTrigger className="w-full">
@@ -265,7 +265,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="country"
           render={({ field: { value, onChange } }) => (
             <FormItem>
-              <FormLabel>{t('label.country')}</FormLabel>
+              <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
                   <SelectTrigger className="w-full">
@@ -287,10 +287,10 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || apiPending}>
-            {t('action.save_changes')}
+            {t('common:save_changes')}
           </Button>
           <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
-            {t('action.cancel')}
+            {t('common:cancel')}
           </Button>
         </div>
       </form>

@@ -31,8 +31,8 @@ const Integrations = () => {
     <ScrollArea className="w-full">
       <div className="flex w-max space-x-4 py-8 px-2">
         {integrations.map(({ planned, url, logo, name, invert, country }, index) => {
-          const text = `common:integrations.text_${index + 1}`;
-          const purpose = `common:integrations.purpose_${index + 1}`;
+          const text = `about:integrations.text_${index + 1}`;
+          const purpose = `about:integrations.purpose_${index + 1}`;
 
           return (
             <a

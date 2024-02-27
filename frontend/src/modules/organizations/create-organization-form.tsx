@@ -80,7 +80,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('label.name')}</FormLabel>
+              <FormLabel>{t('common:name')}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -90,10 +90,10 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
-            {t('action.create')}
+            {t('common:create')}
           </Button>
           <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
-            {t('action.cancel')}
+            {t('common:cancel')}
           </Button>
         </div>
       </form>

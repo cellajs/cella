@@ -19,7 +19,7 @@ const RowEdit = ({ user, callback, tabIndex }: Props) => {
     dialog(<UpdateUserForm user={user} dialog callback={(user) => callback([user], 'update')} />, {
       drawerOnMobile: false,
       className: 'sm:max-w-2xl my-4 sm:my-8',
-      title: t('action.edit_user'),
+      title: t('common:edit_user'),
     });
   };
 
