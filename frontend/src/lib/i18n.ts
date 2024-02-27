@@ -2,6 +2,8 @@ import i18n, { InitOptions } from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
+import common from '../../../locales/en/common.json';
+import about from '../../../locales/en/about.json';
 
 import { config } from 'config';
 
@@ -9,6 +11,7 @@ export type { ParseKeys } from 'i18next';
 
 // Set up i18n with lazy loading strategy
 const initOptions: InitOptions = {
+  resources: { en: { common, about } },
   debug: config.debug,
   ns: ['common', 'about'],
   supportedLngs: config.languages.map((lng) => lng.value),
