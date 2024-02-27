@@ -121,15 +121,15 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t('common:organization_handle')}</FormLabel>
-              <FormDescription>A unique handle for organization URL.</FormDescription>
+              <FormDescription>{t('common:organization.handle_Description')}</FormDescription>
               <FormControl>
                 {/* TODO: This breaks accessibility of the form label? */}
                 <div className="relative">
                   <Input {...field} />
                   {organization.slug !== slug && (
                     <div className="absolute inset-y-1 right-1 flex justify-end">
-                      <Button variant="ghost" size="sm" aria-label="Revert to current organization handle" onClick={revertSlug} className="h-full">
-                        <Undo size={16} className="mr-2" /> Revert to <strong className="ml-1">{organization.slug}</strong>
+                      <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
+                        <Undo size={16} className="mr-2" /> {t('common:revert_to')} <strong className="ml-1">{organization.slug}</strong>
                       </Button>
                     </div>
                   )}
@@ -171,7 +171,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>{t('common:notification_email')}</FormLabel>
-              <FormDescription>Receive announcements and product updates through this email address.</FormDescription>
+              <FormDescription>{t('common:notification.email_Description')}</FormDescription>
               <FormControl>
                 <Input type="email" value={value ?? ''} {...rest} />
               </FormControl>
@@ -203,8 +203,8 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
                   value={selectedLanguages}
                   onChange={selectedLanguagesChange}
                   defaultOptions={config.languages}
-                  placeholder="Select ..."
-                  emptyIndicator="No more languages"
+                  placeholder={t('common:select')}
+                  emptyIndicator={t('common:empty_languages')}
                 />
               </FormControl>
             </FormItem>
@@ -216,11 +216,11 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormLabel>{t('common:default_language')}</FormLabel>
-              <FormDescription>The language that will be given to new members.</FormDescription>
+              <FormDescription>{t('common:default.language_Description')}</FormDescription>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a language" />
+                    <SelectValue placeholder={t('common:select_language')} />
                   </SelectTrigger>
                   <SelectContent>
                     {config.languages.map((language: { value: string; label: string }) => (

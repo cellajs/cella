@@ -102,7 +102,7 @@ function Toolbar({
             values={{
               emails: selectedMembers.map((member) => member.email).join(', '),
             }}
-            defaults="Are you sure you want to remove <strong>{{emails}}</strong> from the organization?"
+            
           />
         ),
       },
