@@ -55,7 +55,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
           dialog.remove();
         }
 
-        toast.success(t('success.user_invited'));
+        toast.success(t('common:success.user_invited'));
       },
     );
   };

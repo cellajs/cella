@@ -1,3 +1,4 @@
+import { Download } from 'lucide-react';
 import { ReactElement } from 'react';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import { Button } from '~/modules/ui/button';
@@ -33,6 +34,7 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows }
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="flex">
+          <Download size={16} className="mr-2" />
           <span className="max-xs:hidden">Export</span>
         </Button>
       </DropdownMenuTrigger>

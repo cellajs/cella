@@ -47,7 +47,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         form.reset();
         callback?.(result);
 
-        toast.success(t('success.create_organization'));
+        toast.success(t('common:success.create_organization'));
 
         if (!callback) {
           setSheet(null);

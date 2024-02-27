@@ -39,7 +39,7 @@ const OrganizationPage = () => {
       () => invite([user.email], organization.id),
       () => {
         organizationQuery.refetch();
-        toast.success(t('success.you_joined_organization'));
+        toast.success(t('common:success.you_joined_organization'));
       },
     );
   };
@@ -49,7 +49,7 @@ const OrganizationPage = () => {
       () => removeMembersFromOrganization(organizationIdentifier, [user.id]),
       () => {
         organizationQuery.refetch();
-        toast.success(t('success.you_left_organization'));
+        toast.success(t('common:success.you_left_organization'));
       },
     );
   };

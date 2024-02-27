@@ -55,7 +55,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
         form.reset();
         console.log(result);
 
-        toast.success(t('success.create_newsletter'));
+        toast.success(t('common:success.create_newsletter'));
 
         if (isSheet) {
           sheet.remove();

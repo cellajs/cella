@@ -147,7 +147,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t('common:organization_handle')}</FormLabel>
-              <FormDescription>{t('common:organization.handle_Description')}</FormDescription>
+              <FormDescription>{t('common:text.organization_handle')}</FormDescription>
               <FormControl>
                 {/* TODO: This breaks accessibility of the form label? */}
                 <div className="relative">
@@ -197,7 +197,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, ...rest } }) => (
             <FormItem>
               <FormLabel>{t('common:notification_email')}</FormLabel>
-              <FormDescription>{t('common:notification.email_Description')}</FormDescription>
+              <FormDescription>{t('common:text.notification_email')}</FormDescription>
               <FormControl>
                 <Input type="email" value={value ?? ''} {...rest} />
               </FormControl>
@@ -242,7 +242,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormLabel>{t('common:default_language')}</FormLabel>
-              <FormDescription>{t('common:default.language_Description')}</FormDescription>
+              <FormDescription>{t('common:text.default_language')}</FormDescription>
               <FormControl>
                 <Select onValueChange={onChange} defaultValue={value ?? undefined}>
                   <SelectTrigger className="w-full">

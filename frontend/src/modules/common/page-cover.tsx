@@ -30,7 +30,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
       toast.success(t('common:success.upload_cover'));
     },
     onError: () => {
-      toast.error(t('common:error.uploading_image'));
+      toast.error(t('common:error.image_upload_failed'));
     },
   };
 
