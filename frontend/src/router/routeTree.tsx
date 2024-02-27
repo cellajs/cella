@@ -3,7 +3,7 @@ import { Outlet, createRoute, createRouteMask, notFound, redirect, rootRouteWith
 import { z } from 'zod';
 import { acceptInvite, checkInvite } from '~/api/general';
 import { UpdateOrganizationParams, getMembersByOrganizationIdentifier, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
-import { UpdateUserParams, updateUser } from '~/api/users';
+import { UpdateUserParams, getUserBySlugOrId, updateUser } from '~/api/users';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
@@ -233,9 +233,19 @@ export const OrganizationsTableRoute = createRoute({
   validateSearch: organizationsSearchSchema,
 });
 
-const UserProfileRoute = createRoute({
+export const userQueryOptions = (userIdentifier: string) =>
+  queryOptions({
+    queryKey: ['users', userIdentifier],
+    queryFn: () => getUserBySlugOrId(userIdentifier),
+  });
+
+export const UserProfileRoute = createRoute({
   path: '/user/$userIdentifier',
   getParentRoute: () => IndexRoute,
+  loader: async ({ context: { queryClient }, params: { userIdentifier } }) => {
+    queryClient.ensureQueryData(userQueryOptions(userIdentifier));
+  },
+  errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
   component: () => <UserProfile />,
 });
 

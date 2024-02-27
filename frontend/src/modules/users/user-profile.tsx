@@ -1,36 +1,30 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { getUserBySlugOrId } from '~/api/users';
+import { createContext } from 'react';
+
+import { UserProfileRoute, userQueryOptions } from '~/router/routeTree';
 import { User } from '~/types';
 
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
-import { ContentHeader } from '~/modules/common/content-header';
+import { PageHeader } from '~/modules/common/page-header';
+
+interface UserContextValue {
+  user: User;
+}
+
+export const UserContext = createContext({} as UserContextValue);
 
 const UserProfile = () => {
-  const { userIdentifier }: { userIdentifier: string } = useParams({ strict: false });
-  const [user, setUser] = useState<User | null>(null);
-  const [apiWrapper] = useApiWrapper();
-
-  useEffect(() => {
-    apiWrapper(
-      () => getUserBySlugOrId(userIdentifier),
-      (result) => {
-        setUser(result);
-      },
-    );
-  }, [userIdentifier]);
+  const { userIdentifier } = useParams({ from: UserProfileRoute.id });
+  const userQuery = useSuspenseQuery(userQueryOptions(userIdentifier));
+  const user = userQuery.data;
 
   return (
-    <>
-      <ContentHeader heading="Profile" text="user profile page with banner" />
-
-      <div className="container py-4">
-        <div className="flex flex-wrap justify-center">
-          <h1>User Profile</h1>
-        </div>
+    <UserContext.Provider value={{ user }}>
+      <PageHeader id={user.id} title={user.name} type="user" thumbnailUrl={user.thumbnailUrl} bannerUrl={user.bannerUrl} />
+      <div className="container min-h-screen mt-4">
         <code>{JSON.stringify(user, null, 2)}</code>
       </div>
-    </>
+    </UserContext.Provider>
   );
 };
 

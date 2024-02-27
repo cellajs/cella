@@ -28,7 +28,7 @@ function AppFooter() {
   return (
     <footer className="container flex flex-col mt-12 items-center gap-4">
       <div className="flex items-center gap-4">
-        <LanguageDropdown size={18} align='start' />
+        <LanguageDropdown size={18} align="start" />
         <div className="mr-1 font-light text-muted text-sm">|</div>
         <Link to="/" className="hover:scale-105 transition-transform active:translate-y-[1px]">
           <Logo height={25} />

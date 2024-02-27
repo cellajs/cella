@@ -1,5 +1,6 @@
 {
   "ADMIN": "Admin",
+  "admins": "Admins",
   "MEMBER": "Member",
   "USER": "User",
   "accept": "Accept",
@@ -104,5 +105,8 @@
   "view": "View",
   "website_url": "Website url",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "plan": "Plan",
+  "pricing_plan": "Pricing plan",
+  "subscription": "Subscription"
 }

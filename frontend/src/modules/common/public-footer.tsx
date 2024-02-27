@@ -111,7 +111,7 @@ export function PublicFooter() {
           </div>
 
           <div className="text-white/90">
-            <LanguageDropdown size={18}  />
+            <LanguageDropdown size={18} />
           </div>
 
           <Link to="/about" hash="" className="mt-12 hover:opacity-90 active:scale-95">

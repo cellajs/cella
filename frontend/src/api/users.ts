@@ -63,7 +63,7 @@ export const getUserSuggestions = async (query: string) => {
   const json = await response.json();
   if ('error' in json) throw new ApiError(response.status, json.error);
   return json.data;
-}
+};
 
 // Delete a users from the system
 export const deleteUsers = async (userIds: string[]) => {

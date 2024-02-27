@@ -6,7 +6,7 @@ import { PageCover } from './page-cover';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
-  title?: string;
+  title?: string | null;
   type: 'user' | 'organization';
   id: string;
   thumbnailUrl?: string | null;
