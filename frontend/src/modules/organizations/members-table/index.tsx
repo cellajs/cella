@@ -2,6 +2,7 @@ import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { Member } from '~/types';
+import { useTranslation } from 'react-i18next';
 
 import { DataTable } from '~/modules/common/data-table';
 
@@ -91,7 +92,7 @@ const MembersTable = () => {
       setRows(data);
     }
   }, [queryResult.data]);
-
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 h-full">
       <Toolbar
@@ -135,7 +136,7 @@ const MembersTable = () => {
           NoRowsComponent: (
             <>
               <Bird className="w-32 h-32" />
-              <div className="mt-6">No members yet</div>
+              <div className="mt-6">{t('common:no_members')}</div>
             </>
           ),
         }}

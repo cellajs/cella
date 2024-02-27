@@ -88,9 +88,9 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
                   }}
                   creatable
                   // loadingIndicator={<p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">loading...</p>}
-                  creatablePlaceholder="Invite"
+                  creatablePlaceholder={t('common:invite')}
                   defaultOptions={[]}
-                  placeholder="Type emails ..."
+                  placeholder={t('common:type_emails')}
                   // emptyIndicator={<p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">no results found.</p>}
                 />
               </FormControl>
