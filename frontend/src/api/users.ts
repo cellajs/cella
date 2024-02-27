@@ -54,6 +54,17 @@ export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit 
   return json.data;
 };
 
+// Get user suggestions
+export const getUserSuggestions = async (query: string) => {
+  const response = await client.users.suggestions.$get({
+    query: { q: query },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(response.status, json.error);
+  return json.data;
+}
+
 // Delete a users from the system
 export const deleteUsers = async (userIds: string[]) => {
   const response = await client.users.$delete({

@@ -11,15 +11,14 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import MultipleSelector, { Option } from '../ui/multiple-selector';
+import MultipleSelector from '../ui/multiple-selector';
+import { getUserSuggestions } from '~/api/users';
 
 interface Props {
   organization?: Organization;
   callback?: () => void;
   dialog?: boolean;
 }
-
-const OPTIONS: Option[] = [];
 
 const optionSchema = z.object({
   label: z.string(),
@@ -79,9 +78,18 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
                 <MultipleSelector
                   value={field.value}
                   onChange={field.onChange}
+                  onSearch={async (query) => {
+                    const users = await getUserSuggestions(query);
+
+                    return users.map((u) => ({
+                      label: u.name || u.email,
+                      value: u.email,
+                    }));
+                  }}
                   creatable
+                  // loadingIndicator={<p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">loading...</p>}
                   creatablePlaceholder="Invite"
-                  defaultOptions={OPTIONS}
+                  defaultOptions={[]}
                   placeholder="Type emails ..."
                   // emptyIndicator={<p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">no results found.</p>}
                 />

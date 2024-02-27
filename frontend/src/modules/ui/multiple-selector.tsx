@@ -233,6 +233,16 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     const CreatableItem = () => {
       if (!creatable) return undefined;
 
+      const split = inputValue
+        .split(',')
+        .map((i) => i.trim())
+        .filter((i) => i.length > 0)
+        .filter((value, index, self) => self.indexOf(value) === index)
+        .filter((value) => !selected.find((s) => s.value === value));
+      const text = split.map((i) => `"${i}"`).join(', ');
+
+      if (split.length === 0) return undefined;
+
       const Item = (
         <CommandItem
           value={inputValue}
@@ -241,17 +251,17 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
             e.preventDefault();
             e.stopPropagation();
           }}
-          onSelect={(value: string) => {
+          onSelect={() => {
             if (selected.length >= maxSelected) {
               onMaxSelected?.(selected.length);
               return;
             }
             setInputValue('');
-            const newOptions = [...selected, { value, label: value }];
+            const newOptions = [...selected, ...split.map((value) => ({ value, label: value }))];
             setSelected(newOptions);
             onChange?.(newOptions);
           }}
-        >{`${creatablePlaceholder} "${inputValue}"`}</CommandItem>
+        >{`${creatablePlaceholder} ${text}`}</CommandItem>
       );
 
       // For normal creatable

@@ -68,6 +68,37 @@ export const getUsersRoute = createRoute({
   },
 });
 
+export const userSuggestionsRoute = createRoute({
+  method: 'get',
+  path: '/users/suggestions',
+  tags: ['users'],
+  summary: 'Get user suggestions',
+  request: {
+    query: z.object({
+      q: z.string().optional().openapi({ description: 'Search by name or email' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'User suggestions',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(
+            z.array(
+              apiUserSchema.pick({
+                name: true,
+                email: true,
+                thumbnailUrl: true,
+              }),
+            ),
+          ),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
 export const updateUserRoute = createRoute({
   method: 'put',
   path: '/users/{userId}',

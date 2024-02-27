@@ -10,7 +10,7 @@ import { createError, forbiddenError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono } from '../../types/common';
 import { checkSlugRoute } from '../general/routes';
-import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './routes';
+import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute, userSuggestionsRoute } from './routes';
 
 const app = new CustomHono();
 
@@ -229,6 +229,26 @@ const usersRoutes = app
         items: users,
         total,
       },
+    });
+  })
+  .openapi(userSuggestionsRoute, async (ctx) => {
+    const { q } = ctx.req.valid('query');
+
+    const users = await db
+      .select({
+        name: usersTable.name,
+        email: usersTable.email,
+        thumbnailUrl: usersTable.thumbnailUrl,
+      })
+      .from(usersTable)
+      .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
+      .limit(10);
+
+    customLogger('User suggestions returned');
+
+    return ctx.json({
+      success: true,
+      data: users,
     });
   })
   .openapi(deleteUsersRoute, async (ctx) => {
