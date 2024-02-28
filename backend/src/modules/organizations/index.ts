@@ -1,6 +1,5 @@
 import { config } from 'config';
-import { AnyColumn, SQL, and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
-import { countDistinct } from 'drizzle-orm';
+import { AnyColumn, SQL, and, asc, count, desc, eq, ilike } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '../../db/db';
 import { MembershipModel, membershipsTable, organizationsTable, usersTable } from '../../db/schema';
@@ -86,7 +85,7 @@ const organizationsRoutes = app
 
     const [{ total }] = await db
       .select({
-        total: sql<number>`count(*)`.mapWith(Number),
+        total: count(),
       })
       .from(organizationsQuery.as('organizations'));
 
@@ -112,14 +111,14 @@ const organizationsRoutes = app
       organizationsWithMemberships.concat(filteredOrganizations).map(async ({ organization, membership }) => {
         const [{ admins }] = await db
           .select({
-            admins: countDistinct(membershipsTable.userId),
+            admins: count(),
           })
           .from(membershipsTable)
           .where(and(eq(membershipsTable.role, 'ADMIN'), eq(membershipsTable.organizationId, organization.id)));
 
         const [{ members }] = await db
           .select({
-            members: countDistinct(membershipsTable.userId),
+            members: count(),
           })
           .from(membershipsTable)
           .where(eq(membershipsTable.organizationId, organization.id));
@@ -216,14 +215,14 @@ const organizationsRoutes = app
 
     const [{ admins }] = await db
       .select({
-        admins: countDistinct(membershipsTable.userId),
+        admins: count(),
       })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.role, 'ADMIN')));
 
     const [{ members }] = await db
       .select({
-        members: countDistinct(membershipsTable.userId),
+        members: count(),
       })
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
@@ -268,7 +267,7 @@ const organizationsRoutes = app
 
     const [{ memberships }] = await db
       .select({
-        memberships: countDistinct(membershipsTable.userId),
+        memberships: count(),
       })
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
@@ -337,14 +336,14 @@ const organizationsRoutes = app
 
     const [{ admins }] = await db
       .select({
-        admins: countDistinct(membershipsTable.userId),
+        admins: count(),
       })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.role, 'ADMIN')));
 
     const [{ members }] = await db
       .select({
-        members: countDistinct(membershipsTable.userId),
+        members: count(),
       })
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
@@ -410,7 +409,7 @@ const organizationsRoutes = app
 
     const [{ total }] = await db
       .select({
-        total: sql<number>`count(*)`.mapWith(Number),
+        total: count(),
       })
       .from(membersQuery.as('memberships'));
 
@@ -422,7 +421,7 @@ const organizationsRoutes = app
       result.map(async ({ user, membership }) => {
         const [{ memberships }] = await db
           .select({
-            memberships: countDistinct(membershipsTable.userId),
+            memberships: count(),
           })
           .from(membershipsTable)
           .where(eq(membershipsTable.userId, user.id));
