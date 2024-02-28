@@ -1,4 +1,4 @@
-import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 
 import { config } from 'config';
 import { User } from 'lucia';
@@ -165,7 +165,23 @@ const usersRoutes = app
 
     const orderFunc = order === 'asc' ? asc : desc;
 
-    let orderColumn: AnyColumn | SQL;
+    const memberships = db
+    .select({
+      userId: membershipsTable.userId,
+    })
+    .from(membershipsTable)
+    .as('user_memberships');
+
+  const membershipCounts = db
+    .select({
+      userId: memberships.userId,
+      count: count().as('count'),
+    })
+    .from(memberships)
+    .groupBy(memberships.userId)
+    .as('membership_counts');
+
+    let orderColumn: AnyColumn | SQL.Aliased;
     switch (sort) {
       case 'name':
         orderColumn = usersTable.name;
@@ -177,7 +193,7 @@ const usersRoutes = app
         orderColumn = usersTable.createdAt;
         break;
       case 'membershipCount':
-        orderColumn = sql`count(${membershipsTable.userId})`;
+        orderColumn = membershipCounts.count;
         break;
       case 'role':
         orderColumn = usersTable.role;
@@ -194,22 +210,6 @@ const usersRoutes = app
     if (role) {
       filters.push(eq(usersTable.role, role.toUpperCase() as User['role']));
     }
-
-    const memberships = db
-      .select({
-        userId: membershipsTable.userId,
-      })
-      .from(membershipsTable)
-      .as('user_memberships');
-
-    const membershipCounts = db
-      .select({
-        userId: memberships.userId,
-        count: count().as('count'),
-      })
-      .from(memberships)
-      .groupBy(memberships.userId)
-      .as('membership_counts');
 
     const usersQuery = db
       .select({
