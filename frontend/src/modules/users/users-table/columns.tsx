@@ -134,7 +134,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
           {
             key: 'membershipCount',
             name: t('common:memberships'),
-            sortable: true,
+            sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => row.type === 'MASTER' && (
