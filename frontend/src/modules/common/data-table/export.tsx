@@ -1,5 +1,7 @@
 import { Download } from 'lucide-react';
 import { ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -12,41 +14,48 @@ interface Props<R> {
 }
 
 const Export = <R extends object>({ filename, columns, selectedRows, fetchRows }: Props<R>) => {
-  const onExport = async (type: 'csv' | 'pdf', selected: boolean) => {
-    if (selected) {
-      if (type === 'csv') {
-        exportToCsv(columns, selectedRows, `${filename}.csv`);
-      } else {
-        exportToPdf(columns, selectedRows, `${filename}.pdf`);
-      }
-    } else {
-      const rows = await fetchRows(1000);
+  const { t } = useTranslation();
 
-      if (type === 'csv') {
-        exportToCsv(columns, rows, `${filename}.csv`);
-      } else {
-        exportToPdf(columns, rows, `${filename}.pdf`);
-      }
-    }
+  const onExport = async (type: 'csv' | 'pdf', selected: boolean) => {
+    const rows = selected ? selectedRows : await fetchRows(1000);
+    const filenameWithExtension = `${filename}.${type}`;
+
+    if (type === 'csv') return exportToCsv(columns, rows, filenameWithExtension);
+
+    return exportToPdf(columns, rows, filenameWithExtension);
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="flex">
-          <Download size={16} className="mr-2" />
-          <span className="max-xs:hidden">Export</span>
+        <Button
+          variant="outline"
+          className="flex max-xs:hidden"
+          onClick={() => {
+            toast.error(t('common:error.image_upload_failed'));
+          }}
+        >
+          <Download size={16} />
+          <span className="ml-1">Export</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
+        <DropdownMenuItem onClick={() => onExport('csv', false)}>
+          <span>CSV</span>
+          <span className="ml-2 font-light text-xs opacity-75">max 1k rows</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onExport('pdf', false)}>
+          <span>PDF</span>
+          <span className="ml-2 font-light text-xs opacity-75">max 1k rows</span>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onExport('csv', true)} disabled={selectedRows.length === 0}>
-          Export selected to CSV
+          <span>CSV</span>
+          <span className="ml-2 font-light text-xs opacity-75">{selectedRows.length ? `${selectedRows.length} selected` : 'only selected'}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onExport('csv', false)}>Export 1000 to CSV</DropdownMenuItem>
         <DropdownMenuItem onClick={() => onExport('pdf', true)} disabled={selectedRows.length === 0}>
-          Export selected to PDF
+          <span>PDF</span>
+          <span className="ml-2 font-light text-xs opacity-75">{selectedRows.length ? `${selectedRows.length} selected` : 'only selected'}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onExport('pdf', false)}>Export 1000 to PDF</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

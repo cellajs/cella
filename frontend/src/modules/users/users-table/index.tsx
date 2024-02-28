@@ -130,7 +130,6 @@ const UsersTable = () => {
       <Toolbar
         isFiltered={isFiltered}
         total={queryResult.data?.pages[0].total}
-        isLoading={queryResult.isFetching}
         query={query}
         callback={callback}
         setQuery={setQuery}

@@ -1,20 +1,22 @@
+import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getOrganizations } from '~/api/organizations';
+import ColumnsView, { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import TableCount from '~/modules/common/data-table/table-count';
+import { dialog } from '~/modules/common/dialoger/state';
+import { sheet } from '~/modules/common/sheeter/state';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import NewsletterForm from '~/modules/system/newsletter-form';
+import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { OrganizationsSearch } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
-import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
-import CountAndLoading from '../../common/data-table/count-and-loading';
-import { dialog } from '../../common/dialoger/state';
-import { sheet } from '../../common/sheeter/state';
 
 interface Props {
   total?: number;
@@ -22,7 +24,6 @@ interface Props {
   selectedOrganizations: Organization[];
   setQuery: (value?: string) => void;
   isFiltered?: boolean;
-  isLoading?: boolean;
   onResetFilters?: () => void;
   onResetSelectedRows?: () => void;
   callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void;
@@ -37,7 +38,6 @@ function Toolbar({
   isFiltered,
   query,
   setQuery,
-  isLoading,
   callback,
   onResetFilters,
   onResetSelectedRows,
@@ -51,7 +51,7 @@ function Toolbar({
   const user = useUserStore((state) => state.user);
   const [queryValue, setQueryValue] = useState(query ?? '');
 
-  const onOpenDeleteDialog = () => {
+  const openDeleteDialog = () => {
     dialog(
       <DeleteOrganizations
         organizations={selectedOrganizations}
@@ -70,6 +70,15 @@ function Toolbar({
     );
   };
 
+  const openNewsletterSheet = () => {
+    sheet(<NewsletterForm sheet />, {
+      className: 'sm:max-w-[64rem] z-50',
+      title: t('common:newsletter'),
+      text: t('common:text.newsletter'),
+      id: 'newsletter-form',
+    });
+  };
+
   useEffect(() => {
     const delayQueryTimeoutId = setTimeout(() => {
       setQuery(queryValue || undefined);
@@ -86,26 +95,19 @@ function Toolbar({
       <div className="flex items-center space-x-2">
         {selectedOrganizations.length > 0 ? (
           <>
-            <Button
-              onClick={() => {
-                sheet(<NewsletterForm sheet />, {
-                  className: 'sm:max-w-[64rem] z-50',
-                  title: t('common:newsletter'),
-                  text: t('common:text.newsletter'),
-                  id: 'newsletter-form',
-                });
-              }}
-            >
-              {t('common:newsletter')}
+            <Button onClick={openNewsletterSheet} className="relative">
+              <Badge className="p-0 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
+              <Mailbox size={16} />
+              <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
             </Button>
-            <Button variant="destructive" className="relative" onClick={onOpenDeleteDialog}>
-              <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
-                <span className="text-xs font-medium text-white">{selectedOrganizations.length}</span>
-              </div>
-              {t('common:remove')}
+            <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
+              <Badge className="p-0 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
+              <Trash size={16} />
+              <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
             </Button>
-            <Button variant="secondary" onClick={onResetSelectedRows}>
-              {t('common:clear')}
+            <Button variant="ghost" onClick={onResetSelectedRows}>
+              <XSquare size={16} />
+              <span className="ml-1">{t('common:clear')}</span>
             </Button>
           </>
         ) : (
@@ -119,18 +121,20 @@ function Toolbar({
                 });
               }}
             >
-              {t('common:create')}
+              <Plus size={16} />
+              <span className="ml-1">{t('common:create')}</span>
             </Button>
           )
         )}
-        <CountAndLoading
-          count={total}
-          isLoading={isLoading}
-          singular={t('common:singular_organization')}
-          plural={t('common:plural_organization')}
-          isFiltered={isFiltered}
-          onResetFilters={onResetFilters}
-        />
+        {selectedOrganizations.length === 0 && (
+          <TableCount
+            count={total}
+            singular={t('common:singular_organization')}
+            plural={t('common:plural_organization')}
+            isFiltered={isFiltered}
+            onResetFilters={onResetFilters}
+          />
+        )}
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input

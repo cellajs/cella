@@ -1,3 +1,4 @@
+import { Mail, Trash, XSquare } from 'lucide-react';
 import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -5,6 +6,7 @@ import { GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/orga
 import { cn } from '~/lib/utils';
 import Export from '~/modules/common/data-table/export';
 import InviteUsersForm from '~/modules/organizations/invite-users-form';
+import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
@@ -12,7 +14,7 @@ import { MembersSearch } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { Member, Organization } from '~/types';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
-import CountAndLoading from '../../common/data-table/count-and-loading';
+import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import RemoveMembersForm from './remove-member-form';
 
@@ -28,7 +30,6 @@ interface Props {
   setRole: React.Dispatch<React.SetStateAction<GetMembersParams['role']>>;
   onResetFilters?: () => void;
   onResetSelectedRows?: () => void;
-  isLoading?: boolean;
   refetch?: () => void;
   columns: ColumnOrColumnGroup<Member>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Member>[]>>;
@@ -37,18 +38,9 @@ interface Props {
 }
 
 const items = [
-  {
-    key: 'all',
-    value: 'All',
-  },
-  {
-    key: 'admin',
-    value: 'Admin',
-  },
-  {
-    key: 'member',
-    value: 'Member',
-  },
+  { key: 'all', value: 'All' },
+  { key: 'admin', value: 'Admin' },
+  { key: 'member', value: 'Member' },
 ];
 
 function Toolbar({
@@ -60,7 +52,6 @@ function Toolbar({
   callback,
   isFiltered,
   selectedMembers,
-  isLoading,
   onResetFilters,
   onResetSelectedRows,
   total,
@@ -124,24 +115,28 @@ function Toolbar({
       <div className="flex items-center space-x-2">
         {selectedMembers.length > 0 ? (
           <>
-            <Button variant="destructive" className="relative" onClick={openRemoveDialog}>
-              <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
-                <span className="text-xs font-medium text-white">{selectedMembers.length}</span>
-              </div>
-              {t('common:remove')}
+            <Button variant="destructive" onClick={openRemoveDialog} className="relative">
+              <Badge className="p-0 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedMembers.length}</Badge>
+              <Trash size={16} />
+              <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
             </Button>
-            <Button variant="secondary" onClick={onResetSelectedRows}>
-              {t('common:clear')}
+            <Button variant="ghost" onClick={onResetSelectedRows}>
+              <XSquare size={16} />
+              <span className="ml-1">{t('common:clear')}</span>
             </Button>
           </>
         ) : (
           !isFiltered &&
-          (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && <Button onClick={openInviteDialog}>{t('common:invite')}</Button>
+          (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
+            <Button onClick={openInviteDialog}>
+              <Mail size={16} />
+              <span className="ml-1">{t('common:invite')}</span>
+            </Button>
+          )
         )}
         {selectedMembers.length === 0 && (
-          <CountAndLoading
+          <TableCount
             count={total}
-            isLoading={isLoading}
             singular={t('common:singular_member')}
             plural={t('common:plural_member')}
             isFiltered={isFiltered}
@@ -151,7 +146,7 @@ function Toolbar({
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input
-          placeholder={t('placeholder.search')}
+          placeholder={t('common:placeholder.search')}
           value={queryValue}
           onChange={(event: ChangeEvent<HTMLInputElement>) => {
             setQueryValue(event.target.value);

@@ -1,6 +1,5 @@
 import { config } from 'config';
 
-import { Languages } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useUserStore } from '~/store/user';
@@ -11,14 +10,14 @@ interface Props {
   align?: 'start' | 'end';
 }
 
-const LanguageDropdown = ({ size = 24, align }: Props) => {
+const LanguageDropdown = ({ align }: Props) => {
   const { language, setLanguage } = useUserStore();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Change site language">
-          <Languages size={size} strokeWidth={1.5} />
+          <span className="font-light">{language.toUpperCase()}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-48">

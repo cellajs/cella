@@ -9,16 +9,16 @@ import { config } from 'config';
 
 export type { ParseKeys } from 'i18next';
 
-// Set up i18n with lazy loading strategy
+// Set up i18n with hybrid preload and lazy loading strategy
 const initOptions: InitOptions = {
-  resources: { en: { common, about } },
+  resources: { en: { common, about } }, // Preload default ('en') translations
   debug: config.debug,
   ns: ['common', 'about'],
   supportedLngs: config.languages.map((lng) => lng.value),
   load: 'languageOnly',
   fallbackLng: config.defaultLanguage,
   interpolation: {
-    escapeValue: false, // Not needed for React as it escapes by default
+    escapeValue: false, // React escapes by default
   },
   react: {},
   detection: {

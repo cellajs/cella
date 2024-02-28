@@ -93,7 +93,6 @@ const OrganizationsTable = () => {
     <div className="space-y-4 h-full">
       <Toolbar
         total={queryResult.data?.pages?.[0]?.total}
-        isLoading={queryResult.isFetching}
         query={query}
         setQuery={setQuery}
         callback={callback}

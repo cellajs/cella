@@ -15,7 +15,7 @@
   "confirm.delete_account": "Are you sure you want to delete your account with {{email}} email?",
   "confirm.delete_organization": "Are you sure you want to delete {{name}} organization?",
   "confirm.delete_organizations": "Are you sure you want to delete these organizations?",
-  "confirm.delete_users": "Are you sure you want to delete user with {{email}} email?",
+  "confirm.delete_users": "Are you sure you want to delete these users?",
   "confirm.remove_members": "Are you sure you want to remove {{emails}} from the organization?",
   "contact_us": "Contact us",
   "country": "Country",
@@ -56,7 +56,7 @@
   "no_members": "No members",
   "no_organizations": "No organizations",
   "no_results": "No results",
-  "no_results_found": "No results found",
+  "no_results_found": "No results found.",
   "notification_email": "Notification email",
   "organization_handle": "Organization handle",
   "organization_logo": "Organization logo",
@@ -97,7 +97,9 @@
   "success.create_organization": "Organization has been created",
   "success.delete_account": "Account deleted",
   "success.delete_organization": "Organization has been deleted",
-  "success.delete_users": "Users deleted",
+  "success.delete_organizations": "Organizations have been deleted",
+  "success.delete_members": "Members have been removed",
+  "success.delete_users": "Users have been deleted",
   "success.leave_message": "We will get back to you as soon as possible!",
   "success.update_organization": "Organization has been updated",
   "success.updated_user": "User updated",
@@ -129,5 +131,6 @@
   "visit": "Visit",
   "website_url": "Website url",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "clear_filter": "Clear filter"
 }

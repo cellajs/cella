@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
+import { UserRoundCheck, UserRoundX } from 'lucide-react';
 import { createContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -66,11 +67,13 @@ const OrganizationPage = () => {
           <div className="flex items-center p-2">
             {organization.userRole ? (
               <Button size="sm" onClick={onLeave}>
-                Leave
+                <UserRoundX size={16} />
+                <span className="ml-1">Leave</span>
               </Button>
             ) : (
               <Button size="sm" onClick={onJoin}>
-                Join
+                <UserRoundCheck size={16} />
+                <span className="ml-1">Join</span>
               </Button>
             )}
           </div>

@@ -73,10 +73,3 @@ export function cleanUrl(url?: string | null) {
   newUrl.hash = '';
   return newUrl.toString();
 }
-
-// export function getObjectWithArrayForEachKey<T>(keys: string[]): Record<string, T[]> {
-//   return keys.reduce((acc, key) => {
-//     acc[key] = [];
-//     return acc;
-//   }, {} as Record<string, T[]>);
-// }

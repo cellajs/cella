@@ -1,8 +1,10 @@
+import { Trash, XSquare } from 'lucide-react';
 import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { GetUsersParams } from '~/api/users';
 import InviteUsersForm from '~/modules/organizations/invite-users-form';
+import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
@@ -10,7 +12,7 @@ import { useUserStore } from '~/store/user';
 import { User } from '~/types';
 import { UserRow } from '.';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
-import CountAndLoading from '../../common/data-table/count-and-loading';
+import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
 
@@ -25,31 +27,20 @@ interface Props {
   selectedUsers: User[];
   onResetFilters?: () => void;
   onResetSelectedRows?: () => void;
-  isLoading?: boolean;
   columns: ColumnOrColumnGroup<UserRow>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<UserRow>[]>>;
 }
 
 const items = [
-  {
-    key: 'all',
-    value: 'All',
-  },
-  {
-    key: 'admin',
-    value: 'Admin',
-  },
-  {
-    key: 'user',
-    value: 'User',
-  },
+  { key: 'all', value: 'All' },
+  { key: 'admin', value: 'Admin' },
+  { key: 'user', value: 'User' },
 ];
 
 function Toolbar({
   selectedUsers,
   isFiltered,
   total,
-  isLoading,
   role,
   setRole,
   onResetFilters,
@@ -76,12 +67,12 @@ function Toolbar({
   const openDeleteDialog = () => {
     dialog(
       <DeleteUsers
+        dialog
         users={selectedUsers}
         callback={(users) => {
           callback(users, 'delete');
           toast.success(t('common:success.delete_users'));
         }}
-        dialog
       />,
       {
         drawerOnMobile: false,
@@ -108,42 +99,43 @@ function Toolbar({
       <div className="flex items-center space-x-2">
         {selectedUsers.length > 0 ? (
           <>
-            <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
-              <div className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-black px-1">
-                <span className="text-xs font-medium text-white">{selectedUsers.length}</span>
-              </div>
-              {t('common:remove')}
+            <Button variant="destructive" onClick={openDeleteDialog} className="relative">
+              <Badge className="p-0 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedUsers.length}</Badge>
+              <Trash size={16} />
+              <span className="ml-1">{t('common:delete')}</span>
             </Button>
-            <Button variant="secondary" onClick={onResetSelectedRows}>
-              {t('common:clear')}
+            <Button variant="ghost" onClick={onResetSelectedRows}>
+              <XSquare size={16} />
+              <span className="ml-1">{t('common:clear')}</span>
             </Button>
           </>
         ) : (
           !isFiltered && user.role === 'ADMIN' && <Button onClick={openInviteDialog}>{t('common:invite')}</Button>
         )}
-        <CountAndLoading
-          count={total}
-          isLoading={isLoading}
-          singular={t('common:singular_user')}
-          plural={t('common:plural_users')}
-          isFiltered={isFiltered}
-          onResetFilters={onResetFilters}
-        />
+        {selectedUsers.length === 0 && (
+          <TableCount
+            count={total}
+            singular={t('common:singular_user')}
+            plural={t('common:plural_users')}
+            isFiltered={isFiltered}
+            onResetFilters={onResetFilters}
+          />
+        )}
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input
+          className="h-10 w-[150px] lg:w-[250px]"
           placeholder={t('common:placeholder.search')}
           value={queryValue}
           onChange={(event: ChangeEvent<HTMLInputElement>) => {
             setQueryValue(event.target.value);
           }}
-          className="h-10 w-[150px] lg:w-[250px]"
         />
         <Select
+          value={role === undefined ? 'all' : role}
           onValueChange={(role) => {
             setRole(role === 'all' ? undefined : (role as GetUsersParams['role']));
           }}
-          value={role === undefined ? 'all' : role}
         >
           <SelectTrigger className="h-10 w-[150px]">
             <SelectValue placeholder="Select a role" className="capitalize" />

@@ -98,7 +98,6 @@ const MembersTable = () => {
       <Toolbar
         isFiltered={isFiltered}
         total={queryResult.data?.pages[0].total}
-        isLoading={queryResult.isFetching}
         query={query}
         columns={columns}
         setColumns={setColumns}

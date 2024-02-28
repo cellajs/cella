@@ -1,12 +1,11 @@
 import 'react-data-grid/lib/styles.css';
 
-import { Loader2, Search, XCircle } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DataGrid, { Row, RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 
 import { useOnScreen } from '~/hooks/use-on-screen';
-import { Button } from '../../ui/button';
 import { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
 
@@ -19,7 +18,6 @@ interface DataTableProps<TData> {
   isLoading?: boolean;
   isFetching?: boolean;
   isFiltered?: boolean;
-  onResetFilters?: () => void;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
 
@@ -36,28 +34,20 @@ interface DataTableProps<TData> {
 const NoRows = ({
   isFiltered,
   isFetching,
-  onResetFilters,
   customComponent,
 }: {
   isFiltered?: boolean;
   isFetching?: boolean;
-  onResetFilters?: () => void;
   customComponent?: React.ReactNode;
 }) => {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
+    <div className="flex flex-col items-center justify-center w-full p-8">
       {isFiltered && !isFetching && (
         <>
-          <Search className="w-24 h-24" />
-          <div className="flex items-center justify-center mt-6">
-            <div>{t('common:no_results_found')}</div>
-            <Button variant="link" onClick={onResetFilters}>
-              <XCircle size={16} className="mr-1" />
-              Clear
-            </Button>
-          </div>
+          <Search className="w-20 h-20" />
+          <div className="text-sm mt-6">{t('common:no_results_found')}</div>
         </>
       )}
       {!isFiltered && !isFetching && (customComponent ?? t('common:no_results'))}
@@ -72,7 +62,7 @@ const ErrorMessage = ({
 }) => {
   return (
     <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
-      <div className="text-center text-red-500">{error.message}</div>
+      <div className="text-center my-8 text-sm text-red-500">{error.message}</div>
     </div>
   );
 };
@@ -87,7 +77,6 @@ export const DataTable = <TData,>({
   isFetching,
   NoRowsComponent,
   isFiltered,
-  onResetFilters,
   selectedRows,
   onSelectedRowsChange,
   sortColumns,
@@ -125,7 +114,7 @@ export const DataTable = <TData,>({
         (error && rows.length === 0 ? (
           <ErrorMessage error={error} />
         ) : !rows.length ? (
-          <NoRows isFiltered={isFiltered} isFetching={isFetching} onResetFilters={onResetFilters} customComponent={NoRowsComponent} />
+          <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
         ) : (
           <div className="grid rdg-wrapper">
             <DataGrid
@@ -160,7 +149,7 @@ export const DataTable = <TData,>({
                 <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             )}
-            {error && <div className=" text-center text-red-500">Could not load more data. Something went wrong.</div>}
+            {error && <div className=" text-center my-8 text-sm text-red-500">Could not load more data. Try reloading or come back later.</div>}
           </div>
         ))}
     </div>

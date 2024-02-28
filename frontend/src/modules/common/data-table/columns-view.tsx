@@ -36,9 +36,7 @@ const ColumnsView = <TData,>({ columns, setColumns }: Props<TData>) => {
     >
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="relative flex">
-          {filteredColumns.some((column) => !column.visible) && (
-            <Badge className="absolute -right-1.5 -top-1.5 flex h-4 w-4 justify-center rounded-full p-0">!</Badge>
-          )}
+          {filteredColumns.some((column) => !column.visible) && <Badge className="absolute -right-2 -top-2 flex h-4 w-4 justify-center p-0">!</Badge>}
           <SlidersHorizontal className="h-4 w-4" />
           <span className="ml-1 max-xs:hidden">View</span>
         </Button>
