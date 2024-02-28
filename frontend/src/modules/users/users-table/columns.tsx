@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { User } from '~/types';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
@@ -137,7 +137,12 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row.type === 'MASTER' && row.counts?.memberships,
+            renderCell: ({ row }) => row.type === 'MASTER' && (
+              <>
+                <UserRoundCheck className="mr-2 opacity-50" size={16} />
+                {row.counts?.memberships}
+              </>
+            ),
             width: 140,
           },
         ],

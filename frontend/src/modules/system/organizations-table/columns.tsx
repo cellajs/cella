@@ -10,6 +10,7 @@ import { AvatarWrap } from '../../common/avatar-wrap';
 import { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import RowEdit from './row-edit';
+import { Shield, UserRound } from 'lucide-react';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
@@ -79,19 +80,29 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
           {
             key: 'memberCount',
             name: t('common:members'),
-            sortable: true,
+            sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row.counts?.members,
+            renderCell: ({ row }) => (
+              <>
+                <UserRound className="mr-2 opacity-50" size={16} />
+                {row.counts?.members}
+              </>
+            ),
             width: 140,
           },
           {
             key: 'adminCount',
             name: t('common:admins'),
-            sortable: true,
+            sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row.counts?.admins,
+            renderCell: ({ row }) => (
+              <>
+                <Shield className="mr-2 opacity-50" size={16} />
+                {row.counts?.admins}
+              </>
+            ),
             width: 140,
           },
         ],

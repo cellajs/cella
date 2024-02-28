@@ -134,8 +134,8 @@ const MembersTable = () => {
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: (
             <>
-              <Bird className="w-32 h-32" />
-              <div className="mt-6">{t('common:no_members')}</div>
+              <Bird className="w-20 h-20" />
+              <div className="mt-6 text-sm font-light">{t('common:no_members')}</div>
             </>
           ),
         }}

@@ -116,7 +116,7 @@ function Toolbar({
         {selectedMembers.length > 0 ? (
           <>
             <Button variant="destructive" onClick={openRemoveDialog} className="relative">
-              <Badge className="p-0 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedMembers.length}</Badge>
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedMembers.length}</Badge>
               <Trash size={16} />
               <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
             </Button>

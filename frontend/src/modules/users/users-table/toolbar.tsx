@@ -1,4 +1,4 @@
-import { Trash, XSquare } from 'lucide-react';
+import { Mail, Trash, XSquare } from 'lucide-react';
 import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -100,7 +100,7 @@ function Toolbar({
         {selectedUsers.length > 0 ? (
           <>
             <Button variant="destructive" onClick={openDeleteDialog} className="relative">
-              <Badge className="p-0 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedUsers.length}</Badge>
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedUsers.length}</Badge>
               <Trash size={16} />
               <span className="ml-1">{t('common:delete')}</span>
             </Button>
@@ -110,7 +110,10 @@ function Toolbar({
             </Button>
           </>
         ) : (
-          !isFiltered && user.role === 'ADMIN' && <Button onClick={openInviteDialog}>{t('common:invite')}</Button>
+          !isFiltered && user.role === 'ADMIN' && <Button onClick={openInviteDialog}>
+            <Mail size={16} />
+            <span className="ml-1">{t('common:invite')}</span>
+            </Button>
         )}
         {selectedUsers.length === 0 && (
           <TableCount

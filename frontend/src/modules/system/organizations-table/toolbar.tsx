@@ -96,12 +96,12 @@ function Toolbar({
         {selectedOrganizations.length > 0 ? (
           <>
             <Button onClick={openNewsletterSheet} className="relative">
-              <Badge className="p-0 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
               <Mailbox size={16} />
               <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
             </Button>
             <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
-              <Badge className="p-0 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
               <Trash size={16} />
               <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
             </Button>
