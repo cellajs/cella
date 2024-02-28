@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { AnyColumn, SQL, and, asc, count, desc, eq, ilike } from 'drizzle-orm';
+import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '../../db/db';
 import { MembershipModel, membershipsTable, organizationsTable, usersTable } from '../../db/schema';
@@ -81,7 +81,7 @@ const organizationsRoutes = app
 
     const filter: SQL | undefined = q ? ilike(organizationsTable.name, `%${q}%`) : undefined;
 
-    const organizationsQuery = db.select().from(organizationsTable).where(filter).orderBy(orderFunc(orderColumn)).limit(+limit).offset(+offset);
+    const organizationsQuery = db.select().from(organizationsTable).where(filter).orderBy(orderFunc(orderColumn));
 
     const [{ total }] = await db
       .select({
@@ -89,57 +89,50 @@ const organizationsRoutes = app
       })
       .from(organizationsQuery.as('organizations'));
 
-    // TODO: Review and refactor this logic
-
-    const organizationsWithMemberships = await db
+    const counts = db
       .select({
-        membership: membershipsTable,
-        organization: organizationsTable,
+        organizationId: membershipsTable.organizationId,
+        admins: count(sql`CASE WHEN ${membershipsTable.role} = 'ADMIN' THEN 1 ELSE NULL END`).as('admins'),
+        members: count().as('members'),
       })
-      .from(organizationsQuery.as('organizations'))
-      .leftJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id))
+      .from(membershipsTable)
+      .groupBy(membershipsTable.organizationId)
+      .as('counts');
+
+    const membershipRoles = db
+      .select({
+        organizationId: membershipsTable.organizationId,
+        role: membershipsTable.role,
+      })
+      .from(membershipsTable)
       .where(eq(membershipsTable.userId, user.id))
-      .orderBy(sort === 'userRole' ? orderFunc(membershipsTable.role) : asc(organizationsTable.id));
+      .as('membership_roles');
 
-    const organizations = await organizationsQuery;
-
-    const filteredOrganizations = organizations
-      .filter((organization) => !organizationsWithMemberships.find((m) => m.organization?.id === organization.id))
-      .map((organization) => ({ organization, membership: null }));
-
-    const result = await Promise.all(
-      organizationsWithMemberships.concat(filteredOrganizations).map(async ({ organization, membership }) => {
-        const [{ admins }] = await db
-          .select({
-            admins: count(),
-          })
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.role, 'ADMIN'), eq(membershipsTable.organizationId, organization.id)));
-
-        const [{ members }] = await db
-          .select({
-            members: count(),
-          })
-          .from(membershipsTable)
-          .where(eq(membershipsTable.organizationId, organization.id));
-
-        return {
-          ...organization,
-          userRole: membership?.role || null,
-          counts: {
-            members,
-            admins,
-          },
-        };
-      }),
-    );
+    const organizations = await db
+      .select({
+        organization: organizationsTable,
+        userRole: membershipRoles.role,
+        admins: counts.admins,
+        members: counts.members,
+      })
+      .from(organizationsTable)
+      .leftJoin(membershipRoles, eq(organizationsTable.id, membershipRoles.organizationId))
+      .leftJoin(counts, eq(organizationsTable.id, counts.organizationId))
+      .limit(+limit).offset(+offset);
 
     customLogger('Organizations returned');
 
     return ctx.json({
       success: true,
       data: {
-        items: result,
+        items: organizations.map(({ organization, userRole, admins, members }) => ({
+          ...organization,
+          userRole,
+          counts: {
+            admins,
+            members,
+          },
+        })),
         total,
       },
     });
