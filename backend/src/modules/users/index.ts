@@ -1,4 +1,4 @@
-import { AnyColumn, SQL, and, asc, count, countDistinct, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 
 import { config } from 'config';
 import { User } from 'lucia';
@@ -21,7 +21,7 @@ const usersRoutes = app
 
     const [{ memberships }] = await db
       .select({
-        memberships: countDistinct(membershipsTable.userId),
+        memberships: count(),
       })
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, user.id));
@@ -55,14 +55,14 @@ const usersRoutes = app
       organizationsWithMemberships.map(async ({ organization, membership }) => {
         const [{ admins }] = await db
           .select({
-            admins: countDistinct(membershipsTable.userId),
+            admins: count(),
           })
           .from(membershipsTable)
           .where(and(eq(membershipsTable.role, 'ADMIN'), eq(membershipsTable.organizationId, organization.id)));
 
         const [{ members }] = await db
           .select({
-            members: countDistinct(membershipsTable.userId),
+            members: count(),
           })
           .from(membershipsTable)
           .where(eq(membershipsTable.organizationId, organization.id));
@@ -143,7 +143,7 @@ const usersRoutes = app
 
     const [{ memberships }] = await db
       .select({
-        memberships: countDistinct(membershipsTable.userId),
+        memberships: count(),
       })
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, updatedUser.id));
@@ -334,7 +334,7 @@ const usersRoutes = app
 
     const [{ memberships }] = await db
       .select({
-        memberships: countDistinct(membershipsTable.userId),
+        memberships: count(),
       })
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, targetUser.id));
