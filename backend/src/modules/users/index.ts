@@ -1,8 +1,8 @@
-import { AnyColumn, SQL, and, asc, countDistinct, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { AnyColumn, SQL, and, asc, count, countDistinct, desc, eq, ilike, or, sql } from 'drizzle-orm';
 
 import { config } from 'config';
 import { User } from 'lucia';
-import { db } from '../../db/db';
+import { coalesce, db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { membershipsTable, organizationsTable, usersTable } from '../../db/schema';
 import { customLogger } from '../../lib/custom-logger';
@@ -195,30 +195,45 @@ const usersRoutes = app
       filters.push(eq(usersTable.role, role.toUpperCase() as User['role']));
     }
 
+    const memberships = db
+      .select({
+        userId: membershipsTable.userId,
+      })
+      .from(membershipsTable)
+      .as('user_memberships');
+
+    const membershipCounts = db
+      .select({
+        userId: memberships.userId,
+        count: count().as('count'),
+      })
+      .from(memberships)
+      .groupBy(memberships.userId)
+      .as('membership_counts');
+
     const usersQuery = db
       .select({
         user: usersTable,
-        memberships: countDistinct(membershipsTable.organizationId),
+        counts: {
+          memberships: coalesce(membershipCounts.count, 0),
+        },
       })
       .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(orderFunc(orderColumn))
-      .leftJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
-      .groupBy(usersTable.id);
+      .leftJoin(membershipCounts, eq(membershipCounts.userId, usersTable.id))
 
     const [{ total }] = await db
       .select({
-        total: sql<number>`count(*)`.mapWith(Number),
+        total: count(),
       })
       .from(usersQuery.as('users'));
 
     const result = await usersQuery.limit(+limit).offset(+offset);
 
-    const users = result.map(({ user, memberships }) => ({
+    const users = result.map(({ user, counts }) => ({
       ...transformDatabaseUser(user),
-      counts: {
-        memberships,
-      },
+      counts,
     }));
 
     customLogger('Users returned');
