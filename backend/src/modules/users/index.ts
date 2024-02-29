@@ -11,6 +11,7 @@ import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono } from '../../types/common';
 import { checkSlugRoute } from '../general/routes';
 import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute, userSuggestionsRoute } from './routes';
+import { removeSessionCookie } from '../../lib/cookies';
 
 const app = new CustomHono();
 
@@ -295,8 +296,7 @@ const usersRoutes = app
         if (user.id === targetUser.id) {
           await auth.invalidateUserSessions(user.id);
 
-          const sessionCookie = auth.createBlankSessionCookie();
-          ctx.header('Set-Cookie', sessionCookie.serialize());
+          removeSessionCookie(ctx);
         }
 
         customLogger('User deleted', { user: targetUser.id });

@@ -23,8 +23,6 @@ export const setSessionCookie = async (ctx: Context, userId: User['id'], strateg
 };
 
 export const removeSessionCookie = (ctx: Context) => {
-  customLogger('User not authenticated');
-
   const sessionCookie = auth.createBlankSessionCookie();
   ctx.header('Set-Cookie', sessionCookie.serialize());
 };

@@ -296,8 +296,6 @@ const authRoutes = app
 
     await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
 
-    customLogger('User signed in', { user: user.id });
-
     return ctx.json({
       success: true,
       data: transformDatabaseUser(user),
@@ -309,7 +307,6 @@ const authRoutes = app
 
     if (!sessionId) {
       removeSessionCookie(ctx);
-
       return ctx.json<ErrorResponse>(unauthorizedError(), 401);
     }
 
@@ -317,13 +314,12 @@ const authRoutes = app
 
     if (!session) {
       removeSessionCookie(ctx);
-
       return ctx.json(unauthorizedError(), 401);
     }
 
     await auth.invalidateSession(session.id);
-    ctx.header('Set-Cookie', auth.createBlankSessionCookie().serialize());
-
+    
+    removeSessionCookie(ctx);
     customLogger('User signed out', { user: session.userId });
 
     return ctx.json({ success: true, data: undefined });

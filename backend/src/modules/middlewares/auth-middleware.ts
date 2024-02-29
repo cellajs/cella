@@ -18,7 +18,6 @@ const authMiddleware =
 
     if (!sessionId) {
       removeSessionCookie(ctx);
-
       return ctx.json<ErrorResponse>(unauthorizedError(), 401);
     }
 
@@ -26,13 +25,11 @@ const authMiddleware =
 
     if (!session) {
       removeSessionCookie(ctx);
-
       return ctx.json<ErrorResponse>(unauthorizedError(), 401);
     }
 
     if (accessibleFor && !accessibleFor.includes(user.role)) {
       customLogger('User forbidden', { user: user.id });
-
       return ctx.json<ErrorResponse>(forbiddenError(), 403);
     }
 
@@ -53,9 +50,6 @@ const authMiddleware =
       .where(eq(usersTable.id, user.id));
 
     ctx.set('user', user);
-
-    customLogger('User authenticated', { user: user.id });
-
     await next();
   };
 
