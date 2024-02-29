@@ -7,7 +7,7 @@ import { Organization } from '~/types';
 
 import { config } from 'config';
 import { Undo } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { checkSlug } from '~/api/general';
@@ -24,7 +24,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useUpdateOrganizationMutation } from '~/router/routeTree';
-import MultipleSelector, { Option } from '../ui/multiple-selector';
+import MultipleSelector from '../ui/multiple-selector';
 
 interface Props {
   organization: Organization;
@@ -79,6 +79,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   };
 
   const cancel = () => {
+    console.log(form.getValues(), form.formState.defaultValues);
     form.reset();
     isDialog && dialog.remove();
   };
@@ -87,19 +88,11 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
-  const initLanguages = config.languages.filter((language) => organization.languages?.includes(language.value)) || [];
-  const [selectedLanguages, setSelectedLanguages] = useState(initLanguages);
-
-  // TODO: the multiple selector should be able to an array of values too, not just an array of objects
-  const selectedLanguagesChange = (value: Option[]) => {
-    setSelectedLanguages(value);
-    const updatedLanguages = value.map((language) => language.value);
-    form.setValue('languages', updatedLanguages, { shouldDirty: true, shouldValidate: true });
-  };
-
   const revertSlug = () => {
     form.resetField('slug');
   };
+
+  console.log('form', form.getValues());
 
   useEffect(() => {
     if (slug && slug !== organization.slug) {
@@ -221,13 +214,16 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <FormField
           control={form.control}
           name="languages"
-          render={() => (
+          render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormLabel>{t('common:languages')}</FormLabel>
               <FormControl>
                 <MultipleSelector
-                  value={selectedLanguages}
-                  onChange={selectedLanguagesChange}
+                  value={config.languages.filter((language) => value?.includes(language.value))}
+                  onChange={(value) => {
+                    console.log('value', value);
+                    onChange(value.map((language) => language.value));
+                  }}
                   defaultOptions={config.languages}
                   placeholder={t('common:select')}
                   emptyIndicator={t('common:empty_languages')}
@@ -244,7 +240,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
               <FormLabel>{t('common:default_language')}</FormLabel>
               <FormDescription>{t('common:text.default_language')}</FormDescription>
               <FormControl>
-                <Select onValueChange={onChange} defaultValue={value ?? undefined}>
+                <Select onValueChange={onChange} value={value || ''}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t('common:select_language')} />
                   </SelectTrigger>
@@ -269,7 +265,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             <FormItem>
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
-                <Select onValueChange={onChange} defaultValue={value ?? undefined}>
+                <Select onValueChange={onChange} value={value || ''}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a timezone" />
                   </SelectTrigger>
@@ -293,7 +289,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             <FormItem>
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
-                <Select onValueChange={onChange} defaultValue={value ?? undefined}>
+                <Select onValueChange={onChange} value={value || ''}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a country" />
                   </SelectTrigger>

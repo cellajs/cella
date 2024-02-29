@@ -210,7 +210,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
             <FormItem>
               <FormLabel>{t('common:language')}</FormLabel>
               <FormControl>
-                <Select onValueChange={onChange} defaultValue={value ?? undefined}>
+                <Select onValueChange={onChange} value={value || ''}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a language" />
                   </SelectTrigger>
