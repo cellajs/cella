@@ -30,9 +30,10 @@
     "postinstall": "lefthook install",
     "docker": "docker-compose --env-file env/.env up",
     "start": "dotenv -e env/.env -- turbo start --filter backend --filter frontend --filter tus",
-    "dev": "dotenv -e env/.env -- turbo dev --filter backend --filter frontend --filter tus",
-    "build": "dotenv -e env/.env -- turbo build --filter backend --filter frontend --filter tus",
+    "dev": "pnpm run clean && dotenv -e env/.env -- turbo dev --filter backend --filter frontend --filter tus",
+    "build": "pnpm run clean && dotenv -e env/.env -- turbo build --filter backend --filter frontend --filter tus",
     "build:dev": "dotenv -e env/.env -- turbo build:dev --filter backend --filter frontend --filter tus",
+    "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "check": "pnpm dlx @biomejs/biome check .",
     "check:types": "turbo check:types",
     "check:fix": "pnpm dlx @biomejs/biome check --apply .",
@@ -59,6 +60,7 @@
     "@t3-oss/env-core": "^0.8.0",
     "dotenv": "^16.3.2",
     "dotenv-cli": "^7.3.0",
+    "rimraf": "^5.0.5",
     "turbo": "^1.11.3",
     "zod": "^3.22.4"
   }
