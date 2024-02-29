@@ -30,6 +30,9 @@ export const config = {
     donate: 'pri_01hq8hech7se5y1dw9tnscfzpc',
   },
 
+  // Customer support with Gleap
+  gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
+
   // File handling with imado
   tusUrl: 'http://localhost:1080',
   tusPort: 1080,
@@ -61,7 +64,7 @@ export const config = {
 
   // Feature flags
   has: {
-    chatSupport: true, // TODO: implement
+    chatSupport: true,
     pwaSupport: true,
     signUp: true, // TODO: implement
     waitlist: true, // TODO: implement

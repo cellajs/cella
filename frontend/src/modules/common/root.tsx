@@ -17,6 +17,9 @@ const TanStackRouterDevtools =
         })),
       );
 
+// Lazy load chat support
+ const GleapSupport = config.has.chatSupport ? lazy(() => import('~/modules/common/gleap')) : () => null;
+
 function Root() {
   return (
     <>
@@ -27,6 +30,7 @@ function Root() {
       <Sheeter />
       <ReloadPrompt />
       <Suspense fallback={null}>
+        <GleapSupport />
         <TanStackRouterDevtools />
       </Suspense>
     </>

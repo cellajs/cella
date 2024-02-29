@@ -422,6 +422,9 @@ importers:
       embla-carousel-react:
         specifier: 8.0.0-rc22
         version: 8.0.0-rc22(react@18.2.0)
+      gleap:
+        specifier: ^13.2.8
+        version: 13.2.8
       hono:
         specifier: ^4.0.8
         version: 4.0.8
@@ -11987,6 +11990,10 @@ packages:
     resolution: {integrity: sha512-wuMsz4leaj5hbGgg4IvDU0bqJagpftG5l5cXIAvo8uZrqn0NJqwtfupTN00VnkQJPcIRrxYrm1Ue24btpCha2A==}
     dependencies:
       resolve-pkg-maps: 1.0.0
+
+  /gleap@13.2.8:
+    resolution: {integrity: sha512-BRKqMQ7Egaecha49o2UCDY0WZ7eDBgdZipxbwO6vB6LfNeCLeTBbPb7bMiGXek+7UOr2XpF+JmKb8WGRPkr0PQ==}
+    dev: false
 
   /glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}

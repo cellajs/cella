@@ -68,12 +68,12 @@ services:
         name: Content-Security-Policy
         value: |
           default-src 'self';
-          script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com;
-          connect-src 'self' blob: *.cellajs.com *.appsignal.com https://cella.app.n8n.cloud;
+          script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com *.gleap.io;
+          connect-src 'self' blob: *.cellajs.com *.appsignal.com https://cella.app.n8n.cloud *.gleap.io wss://ws.gleap.io;
           img-src 'self' blob: https: data:;
-          media-src 'self' blob: data: https://i.ytimg.com;
-          frame-src 'self' *.youtube.com *.vimeo.com *.paddle.com;
-          style-src 'self' https://fonts.googleapis.com;
+          media-src 'self' blob: data: https://i.ytimg.com *.gleap.io;
+          frame-src 'self' *.youtube.com *.vimeo.com *.paddle.com *.gleap.io;
+          style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
           font-src 'self' data: https://fonts.gstatic.com;
       - path: /*
         name: Referrer-Policy
