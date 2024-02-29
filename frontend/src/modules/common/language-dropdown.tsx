@@ -8,15 +8,16 @@ import CountryFlag from './country-flag';
 interface Props {
   size?: number;
   align?: 'start' | 'end';
+  className?: string;
 }
 
-const LanguageDropdown = ({ align }: Props) => {
+const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
   const { language, setLanguage } = useUserStore();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Change site language">
+        <Button variant="ghost" size="icon" className={className} aria-label="Change site language">
           <span className="font-light">{language.toUpperCase()}</span>
         </Button>
       </DropdownMenuTrigger>

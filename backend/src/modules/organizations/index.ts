@@ -118,7 +118,8 @@ const organizationsRoutes = app
       .from(organizationsTable)
       .leftJoin(membershipRoles, eq(organizationsTable.id, membershipRoles.organizationId))
       .leftJoin(counts, eq(organizationsTable.id, counts.organizationId))
-      .limit(+limit).offset(+offset);
+      .limit(+limit)
+      .offset(+offset);
 
     customLogger('Organizations returned');
 

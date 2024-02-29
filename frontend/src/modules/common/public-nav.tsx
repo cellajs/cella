@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { config } from 'config';
-import { Book, Github } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 
@@ -10,20 +10,12 @@ import ThemeDropdown from '~/modules/common/theme-dropdown';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent } from '~/modules/ui/sheet';
 import HamburgerButton from './hamburger';
+import LanguageDropdown from './language-dropdown';
 
 const publicNavConfig = [
-  {
-    title: 'Features',
-    hash: 'features',
-  },
-  {
-    title: 'Integrations',
-    hash: 'integrations',
-  },
-  {
-    title: 'Pricing',
-    hash: 'pricing',
-  },
+  { title: 'Features', url: '/about', hash: 'features' },
+  { title: 'Pricing', url: '/about', hash: 'pricing' },
+  { title: 'Docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 
 export function PublicNav() {
@@ -38,7 +30,7 @@ export function PublicNav() {
   const renderNavItems = () => {
     return publicNavConfig.map((item) => (
       <Link
-        to="/about"
+        to={item.url}
         hash={item.hash}
         key={item.title}
         onClick={() => toggleSheet(false)}
@@ -55,8 +47,8 @@ export function PublicNav() {
 
   return (
     <>
-      <header className="absolute top-4 px-2 lg:top-8 lg:px-4 z-40 h-16 w-full">
-        <div className="flex h-full items-center gap-2 px-2 max-w-[84rem] mx-auto justify-between transition-colors duration-300">
+      <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-40 h-16 w-full">
+        <div className="flex h-full items-center gap-2 max-w-[84rem] mx-auto justify-between transition-colors duration-300">
           <div className="flex h-full items-center gap-2 md:gap-6">
             <div className="md:hidden">
               <HamburgerButton isOpen={showSheet} toggle={setShowSheet} />
@@ -84,29 +76,22 @@ export function PublicNav() {
           </div>
 
           <div className={`gap-2 px-2 flex transition-all duration-300 ease-in-out ${showSheet ? 'translate-x-2 opacity-0' : 'delay-700'}`}>
-            <div className="hidden sm:flex">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  openInNewTab(`${config.backendUrl}/docs`);
-                }}
-              >
-                Docs
-              </Button>
-            </div>
-            <div className="hidden sm:flex">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  openInNewTab(config.company.githubUrl);
-                }}
-              >
-                <Github strokeWidth={config.theme.strokeWidth} />
-              </Button>
-            </div>
-            <ThemeDropdown />
-            <Link to="/auth/sign-in" preload={false} className={cn('ml-2', buttonVariants())}>
+            <LanguageDropdown />
+
+            <ThemeDropdown className="max-xs:hidden" />
+
+            <Button
+              variant="ghost"
+              className="max-sm:hidden"
+              size="icon"
+              onClick={() => {
+                openInNewTab(config.company.githubUrl);
+              }}
+            >
+              <Github strokeWidth={config.theme.strokeWidth} />
+            </Button>
+
+            <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
               Sign in
             </Link>
           </div>
@@ -121,19 +106,9 @@ export function PublicNav() {
               inView && showSheet ? 'opacity-1 delay-300' : 'opacity-0'
             }`}
           >
-            <HamburgerButton className="items-start w-42 ml-3" isOpen={showSheet} toggle={setShowSheet} />
+            <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
             {renderNavItems()}
-            <Button
-              variant="secondary"
-              size="lg"
-              className="sm:hidden"
-              onClick={() => {
-                openInNewTab(`${config.backendUrl}/docs`);
-              }}
-            >
-              <Book className="mr-2" strokeWidth={config.theme.strokeWidth} />
-              Docs
-            </Button>
+
             <Button
               size="lg"
               className="sm:hidden"

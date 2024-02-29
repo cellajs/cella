@@ -8,9 +8,10 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 
 interface ThemeDropdownProps {
   size?: number;
+  className?: string;
 }
 
-const ThemeDropdown = ({ size = 24 }: ThemeDropdownProps) => {
+const ThemeDropdown = ({ size = 24, className = '' }: ThemeDropdownProps) => {
   const { mode, theme, setMode, setTheme } = useThemeStore();
 
   const modes = [
@@ -30,7 +31,7 @@ const ThemeDropdown = ({ size = 24 }: ThemeDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Change site theme">
+        <Button variant="ghost" size="icon" className={className} aria-label="Change site theme">
           {mode === 'light' ? (
             <Sun size={size} strokeWidth={config.theme.strokeWidth} />
           ) : (

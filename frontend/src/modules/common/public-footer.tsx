@@ -6,7 +6,6 @@ import { Github, Twitter } from 'lucide-react';
 import Logo from '~/modules/common/logo';
 import NewsletterForm from '~/modules/common/newsletter';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
-import LanguageDropdown from './language-dropdown';
 
 export const socials = [
   { title: 'Twitter', href: config.company.twitterUrl, icon: Twitter },
@@ -56,19 +55,12 @@ function FooterLinks() {
 
             <ul className="mt-4 text-sm text-white/90">
               {section.links.map((link) => {
-                const target = link.href.startsWith('http') ? 'blank' : 'self';
+                const target = link.href.startsWith('http') ? '_blank' : '_self';
                 return (
                   <li key={link.title} className="mt-4">
-                    {target === 'self' && (
-                      <Link to={link.href} className="underline-offset-4 transition hover:underline">
-                        {link.title}
-                      </Link>
-                    )}
-                    {target === 'blank' && (
-                      <a href={link.href} target="_blank" className="underline-offset-4 transition hover:underline" rel="noreferrer">
-                        {link.title}
-                      </a>
-                    )}
+                    <Link to={link.href} target={target} className="underline-offset-4 transition hover:underline">
+                      {link.title}
+                    </Link>
                   </li>
                 );
               })}
@@ -108,10 +100,6 @@ export function PublicFooter() {
               </div>
               <NewsletterForm />
             </div>
-          </div>
-
-          <div className="text-white/90">
-            <LanguageDropdown />
           </div>
 
           <Link to="/about" hash="" className="mt-12 hover:opacity-90 active:scale-95">

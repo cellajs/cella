@@ -166,20 +166,20 @@ const usersRoutes = app
     const orderFunc = order === 'asc' ? asc : desc;
 
     const memberships = db
-    .select({
-      userId: membershipsTable.userId,
-    })
-    .from(membershipsTable)
-    .as('user_memberships');
+      .select({
+        userId: membershipsTable.userId,
+      })
+      .from(membershipsTable)
+      .as('user_memberships');
 
-  const membershipCounts = db
-    .select({
-      userId: memberships.userId,
-      count: count().as('count'),
-    })
-    .from(memberships)
-    .groupBy(memberships.userId)
-    .as('membership_counts');
+    const membershipCounts = db
+      .select({
+        userId: memberships.userId,
+        count: count().as('count'),
+      })
+      .from(memberships)
+      .groupBy(memberships.userId)
+      .as('membership_counts');
 
     let orderColumn: AnyColumn | SQL.Aliased;
     switch (sort) {
@@ -221,7 +221,7 @@ const usersRoutes = app
       .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(orderFunc(orderColumn))
-      .leftJoin(membershipCounts, eq(membershipCounts.userId, usersTable.id))
+      .leftJoin(membershipCounts, eq(membershipCounts.userId, usersTable.id));
 
     const [{ total }] = await db
       .select({

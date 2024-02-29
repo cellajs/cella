@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Organization } from '~/types';
 
 import { Link } from '@tanstack/react-router';
+import { Shield, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
@@ -10,7 +11,6 @@ import { AvatarWrap } from '../../common/avatar-wrap';
 import { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import RowEdit from './row-edit';
-import { Shield, UserRound } from 'lucide-react';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();

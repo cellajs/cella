@@ -2,9 +2,9 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { env } from 'env';
 import postgres from 'postgres';
 
-import * as schema from './schema';
 import { config } from 'config';
 import { sql } from 'drizzle-orm';
+import * as schema from './schema';
 
 export const queryClient = postgres(env.DATABASE_URL ?? '', {
   onnotice: () => {},

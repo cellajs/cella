@@ -137,12 +137,13 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row.type === 'MASTER' && (
-              <>
-                <UserRoundCheck className="mr-2 opacity-50" size={16} />
-                {row.counts?.memberships}
-              </>
-            ),
+            renderCell: ({ row }) =>
+              row.type === 'MASTER' && (
+                <>
+                  <UserRoundCheck className="mr-2 opacity-50" size={16} />
+                  {row.counts?.memberships}
+                </>
+              ),
             width: 140,
           },
         ],

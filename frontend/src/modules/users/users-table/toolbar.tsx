@@ -110,10 +110,13 @@ function Toolbar({
             </Button>
           </>
         ) : (
-          !isFiltered && user.role === 'ADMIN' && <Button onClick={openInviteDialog}>
-            <Mail size={16} />
-            <span className="ml-1">{t('common:invite')}</span>
+          !isFiltered &&
+          user.role === 'ADMIN' && (
+            <Button onClick={openInviteDialog}>
+              <Mail size={16} />
+              <span className="ml-1">{t('common:invite')}</span>
             </Button>
+          )
         )}
         {selectedUsers.length === 0 && (
           <TableCount
