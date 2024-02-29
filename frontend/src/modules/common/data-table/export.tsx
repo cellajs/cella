@@ -39,7 +39,7 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows }
           <span className="ml-1">Export</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => onExport('csv', false)}>
           <span>CSV</span>
           <span className="ml-2 font-light text-xs opacity-75">max 1k rows</span>

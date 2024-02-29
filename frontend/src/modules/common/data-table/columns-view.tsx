@@ -41,7 +41,7 @@ const ColumnsView = <TData,>({ columns, setColumns }: Props<TData>) => {
           <span className="ml-1 max-xs:hidden">View</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[220px] pt-2" collisionPadding={16}>
+      <DropdownMenuContent align="end" className="min-w-[220px] pt-2" collisionPadding={16}>
         <div className="overflow-y-auto relative" style={{ height }}>
           {filteredColumns.map((column) => (
             <DropdownMenuCheckboxItem
