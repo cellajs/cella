@@ -4,6 +4,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AppAlert } from '~/modules/common/app-alert';
 import { AppFooter } from '~/modules/common/app-footer';
 import { useNavigationStore } from '~/store/navigation';
+import { Suspense } from 'react';
 
 export const AppContent = () => {
   const { activeSheet, keepMenuOpen, setSheet } = useNavigationStore();
@@ -32,7 +33,9 @@ export const AppContent = () => {
       <div className="flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-svh mt-16 transition duration-300 ease-in-out md:ml-16 md:mt-0">
         <main className="flex-1 flex flex-col" aria-label="Main Content">
           <AppAlert />
-          <Outlet />
+          <Suspense>
+            <Outlet />
+          </Suspense>
         </main>
         <AppFooter />
       </div>
