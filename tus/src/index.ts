@@ -22,4 +22,4 @@ tus.listen({
   port: Number(config.tusPort),
 });
 
-console.log(`TUS upload server running on ${tusUrl}`);
+console.info(`TUS upload server running on ${tusUrl}`);

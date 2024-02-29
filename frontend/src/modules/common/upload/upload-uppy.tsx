@@ -42,7 +42,7 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, setUrl, uppyO
         completionHandler: (urls: URL[]) => {
           if (urls.length > 0) {
             const newImageUrl = urls[0].toString();
-            console.log('Upload completed:', newImageUrl);
+            console.info('Upload completed:', newImageUrl);
             setUrl(newImageUrl);
           }
         },

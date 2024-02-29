@@ -155,7 +155,7 @@ export const removeMembersFromOrganization = async (organizationIdentifier: stri
 
 // Send newsletter to organizations
 export const sendNewsletter = async (organizationIds: string[], subject: string, content: string) => {
-  console.log('Sending newsletter to organizations', organizationIds, subject, content);
+  console.info('Sending newsletter to organizations', organizationIds, subject, content);
 
   return { success: true };
 };

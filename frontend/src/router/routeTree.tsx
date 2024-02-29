@@ -51,7 +51,7 @@ const AuthRoute = createRoute({
     }
 
     // If authenticated, redirect to home
-    console.log('Authenticated, go to home');
+    console.info('Authenticated, go to home');
     throw redirect({ to: '/', replace: true });
   },
   component: () => <Outlet />,
@@ -175,7 +175,7 @@ const IndexRoute = createRoute({
         await Promise.all([getMe(), getMenu()]);
       }
     } catch {
-      console.log('Not authenticated, redirect to sign in');
+      console.info('Not authenticated, redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
     }
   },

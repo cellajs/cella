@@ -7,10 +7,10 @@ export const resetDb = async () => {
   await db.delete(organizationsTable);
   await db.delete(usersTable);
 
-  console.log('Deleted all organizations and users.');
+  console.info('Deleted all organizations and users.');
 
   await usersSeed();
   await organizationsAndMembersSeed();
 
-  console.log('Database reset complete.');
+  console.info('Database reset complete.');
 };

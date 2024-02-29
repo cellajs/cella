@@ -12,7 +12,7 @@ export const usersSeed = async () => {
   const usersInTable = await db.select().from(usersTable).limit(1);
 
   if (usersInTable.length > 0) {
-    console.log('Users table is not empty, skipping seed');
+    console.info('Users table is not empty, skipping seed');
     return;
   }
   const password = '12345678';
@@ -32,7 +32,7 @@ export const usersSeed = async () => {
     })
     .onConflictDoNothing();
 
-  console.log(`Created admin user with verified email ${email} and password ${password}.`);
+  console.info(`Created admin user with verified email ${email} and password ${password}.`);
 };
 
 // Seed 100 organizations with 100 members each
@@ -40,7 +40,7 @@ export const organizationsAndMembersSeed = async () => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
   if (organizationsInTable.length > 0) {
-    console.log('Organizations table is not empty, skipping seed');
+    console.info('Organizations table is not empty, skipping seed');
     return;
   }
 
@@ -69,7 +69,7 @@ export const organizationsAndMembersSeed = async () => {
 
   await db.insert(organizationsTable).values(organizations).onConflictDoNothing();
 
-  console.log('Create 100 organizations successfully.');
+  console.info('Create 100 organizations successfully.');
 
   const hashedPassword = await new Argon2id().hash('12345678');
 
@@ -122,5 +122,5 @@ export const organizationsAndMembersSeed = async () => {
     await db.insert(membershipsTable).values(memberships).onConflictDoNothing();
   }
 
-  console.log('Seed with organizations, members and memberships completed!');
+  console.info('Seed with organizations, members and memberships completed!');
 };

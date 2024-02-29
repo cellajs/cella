@@ -4,7 +4,7 @@ import { config } from 'config';
 Gleap.initialize(config.gleapToken);
 
 const GleapSupport = () => {
-  console.log('Gleap initialized');
+  console.info('Gleap initialized');
   return (<></>);
 };
 
