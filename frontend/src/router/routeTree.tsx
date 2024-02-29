@@ -342,14 +342,16 @@ export const OrganizationRoute = createRoute({
   },
   validateSearch: membersSearchSchema,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
+  loader: async ({ context: { queryClient }, params: { organizationIdentifier, tab }, deps: { q, sort, order, role } }) => {
     queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
 
     // Ensure members query
-    const membersInfiniteQueryOptions = membersQueryOptions({ organizationIdentifier, q, sort, order, role });
-    const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
-    if (!cachedMembers) {
-      queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
+    if (tab === 'members') {
+      const membersInfiniteQueryOptions = membersQueryOptions({ organizationIdentifier, q, sort, order, role });
+      const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
+      if (!cachedMembers) {
+        queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
+      }
     }
   },
   errorComponent: ({ error }) => <ErrorPage error={error as Error} />,

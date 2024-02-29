@@ -1,6 +1,6 @@
 import './index.css';
 
-import { StrictMode, Suspense } from 'react';
+import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Theming } from '~/hooks/use-theme';
 
@@ -17,11 +17,9 @@ if (!root) {
 
 ReactDOM.createRoot(root).render(
   <StrictMode>
-    <Suspense>
-      <Theming />
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </Suspense>
+    <Theming />
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
   </StrictMode>,
 );
