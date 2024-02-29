@@ -115,7 +115,7 @@ const organizationsRoutes = app
         admins: counts.admins,
         members: counts.members,
       })
-      .from(organizationsTable)
+      .from(organizationsQuery.as('organizations'))
       .leftJoin(membershipRoles, eq(organizationsTable.id, membershipRoles.organizationId))
       .leftJoin(counts, eq(organizationsTable.id, counts.organizationId))
       .limit(+limit)
