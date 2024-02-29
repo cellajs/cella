@@ -15,6 +15,20 @@
       "when": 1706693509859,
       "tag": "0001_deep_bug",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1709199345430,
+      "tag": "0002_crazy_marvel_apes",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1709199385269,
+      "tag": "0003_certain_epoch",
+      "breakpoints": true
     }
   ]
 }

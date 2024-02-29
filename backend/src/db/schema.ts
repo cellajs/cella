@@ -32,8 +32,9 @@ export const usersTable = pgTable(
   },
   (table) => {
     return {
-      nameIndex: index('users_name_index').on(table.name),
-      emailIndex: index('users_email_index').on(table.email),
+      nameIndex: index('users_name_index').on(table.name).desc(),
+      emailIndex: index('users_email_index').on(table.email).desc(),
+      createdAtIndex: index('users_created_at_index').on(table.createdAt).desc(),
       modifiedByReference: foreignKey({
         columns: [table.modifiedBy],
         foreignColumns: [table.id],
@@ -120,7 +121,8 @@ export const organizationsTable = pgTable(
   },
   (table) => {
     return {
-      nameIndex: index('organizations_name_index').on(table.name),
+      nameIndex: index('organizations_name_index').on(table.name).desc(),
+      createdAtIndex: index('organizations_created_at_index').on(table.createdAt).desc(),
     };
   },
 );

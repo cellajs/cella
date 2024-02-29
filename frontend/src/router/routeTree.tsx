@@ -162,10 +162,10 @@ const IndexRoute = createRoute({
   id: 'layout',
   getParentRoute: () => rootRoute,
   beforeLoad: async ({ location, cause }) => {
-    const storedUser = useUserStore.getState().user;
+    const lastUser = useUserStore.getState().lastUser;
 
     // If no stored user and no desired path, redirect to about
-    if (location.pathname === '/' && !storedUser) throw redirect({ to: '/about', replace: true });
+    if (location.pathname === '/' && !lastUser) throw redirect({ to: '/about', replace: true });
 
     try {
       const { getMe } = useUserStore.getState();

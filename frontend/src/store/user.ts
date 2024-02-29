@@ -25,7 +25,7 @@ interface UserState {
 export const useUserStore = create<UserState>()(
   devtools(
     persist(
-      immer((set) => ({
+      immer((set, get) => ({
         language: config.defaultLanguage,
         setLanguage: (language) => {
           i18n.changeLanguage(language);
@@ -46,18 +46,18 @@ export const useUserStore = create<UserState>()(
           });
         },
         async getMe() {
-          const user = await getMe();
-          if (!user) {
-            set({ user: null as unknown as User });
-            await client['sign-out'].$get();
-            return null;
+          try {
+            const user = await getMe();
+            set({ user: user, lastUser: { email: user.email, name: user.name, id: user.id, slug: user.slug } });
+            return user;
+          } catch (error) {
+            await get().signOut();
+            throw error;
           }
-          set({ user: user, lastUser: { email: user.email, name: user.name, id: user.id, slug: user.slug } });
-          return user;
         },
         async signOut() {
-          await client['sign-out'].$get();
           set({ user: null as unknown as User });
+          await client['sign-out'].$get();
         },
       })),
       {
