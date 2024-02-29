@@ -12,7 +12,7 @@ export const queryClient = postgres(env.DATABASE_URL ?? '', {
 
 export const db = drizzle(queryClient, {
   schema,
-  logger: config.mode === 'development',
+  logger: config.debug,
 });
 
 export const coalesce = <T>(column: T, value: number) => sql`COALESCE(${column}, ${value})`.mapWith(Number);

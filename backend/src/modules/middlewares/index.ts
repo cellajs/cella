@@ -2,33 +2,13 @@ import { config } from 'config';
 import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
-import { logger } from 'hono/logger';
+import { logger } from './logger';
 import { secureHeaders } from 'hono/secure-headers';
 import { customLogger } from '../../lib/custom-logger';
 import { CustomHono } from '../../types/common';
 import { rateLimiter } from './rate-limiter';
 
 const app = new CustomHono();
-
-// const tus = ImadoTus({
-//   secret: env.TUS_UPLOAD_API_SECRET,
-//   credentials: {
-//     bucket: config.s3UploadBucket,
-//     region: config.s3UploadRegion,
-//     accessKeyId: env.AWS_S3_UPLOAD_ACCESS_KEY_ID,
-//     secretAccessKey: env.AWS_S3_UPLOAD_SECRET_ACCESS_KEY,
-//   },
-// });
-
-// app.all('/files', async (ctx) => {
-//   // Hono does not provide raw request, but wrapped as Request (without Node's eventemitters)
-//   tus.handle(ctx.req.raw, ctx.res);
-// });
-
-// app.all('/files/*', async (ctx) => {
-//   // Hono does not provide raw request, but wrapped as Request (without Node's eventemitters)
-//   tus.handle(ctx.req.raw, ctx.res);
-// });
 
 // Secure headers
 app.use('*', secureHeaders());
