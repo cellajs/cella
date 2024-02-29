@@ -199,13 +199,7 @@ export const deleteUsersRoute = createRoute({
       description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(
-            z
-              .object({
-                error: z.string().optional(),
-              })
-              .optional(),
-          ),
+          schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
         },
       },
     },

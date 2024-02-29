@@ -7,6 +7,7 @@ import { usersTable } from '../../db/schema';
 import { customLogger } from '../../lib/custom-logger';
 import { forbiddenError, unauthorizedError } from '../../lib/errors';
 import { ErrorResponse } from '../../types/common';
+import { removeSessionCookie } from '../../lib/cookies';
 
 // authMiddleware() is checking if the user is authenticated and if the user has the required role
 const authMiddleware =
@@ -16,10 +17,7 @@ const authMiddleware =
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
 
     if (!sessionId) {
-      customLogger('User not authenticated');
-
-      const sessionCookie = auth.createBlankSessionCookie();
-      ctx.header('Set-Cookie', sessionCookie.serialize());
+      removeSessionCookie(ctx);
 
       return ctx.json<ErrorResponse>(unauthorizedError(), 401);
     }
@@ -27,10 +25,7 @@ const authMiddleware =
     const { session, user } = await auth.validateSession(sessionId);
 
     if (!session) {
-      customLogger('User not authenticated');
-
-      const sessionCookie = auth.createBlankSessionCookie();
-      ctx.header('Set-Cookie', sessionCookie.serialize());
+      removeSessionCookie(ctx);
 
       return ctx.json<ErrorResponse>(unauthorizedError(), 401);
     }

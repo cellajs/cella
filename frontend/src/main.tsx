@@ -17,7 +17,7 @@ if (!root) {
 }
 
 // Lazy load gleap chat support
-const GleapSupport = config.has.chatSupport ? lazy(() => import('~/modules/common/gleap')) : () => null;
+const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gleap')) : () => null;
 
 ReactDOM.createRoot(root).render(
   <StrictMode>

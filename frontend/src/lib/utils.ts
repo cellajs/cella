@@ -9,6 +9,7 @@ import { twMerge } from 'tailwind-merge';
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
 
+// Format a date to a relative time
 export function dateShort(date?: string | null) {
   if (!date) return '-';
 
@@ -22,23 +23,9 @@ export function dateShort(date?: string | null) {
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789');
 
+// Merge tailwind classes
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-export function generateNumber(id: string) {
-  if (!id) return null;
-
-  for (let i = id.length - 1; i >= 0; i--) {
-    const char = id[i].toLowerCase();
-    if (parseInt(char) >= 0 && parseInt(char) <= 9) {
-      return parseInt(char) % 10;
-    }
-    if (char >= 'a' && char <= 'z') {
-      return (char.charCodeAt(0) - 'a'.charCodeAt(0)) % 10;
-    }
-  }
-  return null;
 }
 
 const colors = [
@@ -54,6 +41,7 @@ const colors = [
   'bg-red-300',
 ];
 
+// Get a color class based on an id
 export const getColorClass = (id?: string) => {
   if (!id) return 'bg-gray-300';
 
@@ -61,10 +49,27 @@ export const getColorClass = (id?: string) => {
   return colors[index];
 };
 
+// Generate a number from a string (ie. to choose a color)
+export function generateNumber(id: string) {
+  if (!id) return null;
+
+  for (let i = id.length - 1; i >= 0; i--) {
+    const char = id[i].toLowerCase();
+    if (parseInt(char) >= 0 && parseInt(char) <= 9) {
+      return parseInt(char) % 10;
+    }
+    if (char >= 'a' && char <= 'z') {
+      return (char.charCodeAt(0) - 'a'.charCodeAt(0)) % 10;
+    }
+  }
+  return null;
+}
+
 export function getValidChildren(children: React.ReactNode) {
   return React.Children.toArray(children).filter((child) => React.isValidElement(child)) as React.ReactElement[];
 }
 
+// Clean a URL by removing search and hash
 export function cleanUrl(url?: string | null) {
   if (!url) return null;
 

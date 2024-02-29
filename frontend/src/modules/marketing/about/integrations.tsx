@@ -14,15 +14,15 @@ interface Integrations {
 }
 
 const integrations: Integrations[] = [
-  { name: 'Hanko', planned: true, country: 'DE', url: 'hanko.io', logo: 'hanko.svg' },
-  { name: 'AppSignal', invert: true, planned: false, country: 'NL', url: 'appsignal.com', logo: 'appsignal.svg' },
+  { name: 'TipTap', planned: false, invert: true, country: 'DE', url: 'tiptap.dev', logo: 'tiptap.svg' },
+  { name: 'AppSignal', invert: false, planned: false, country: 'NL', url: 'appsignal.com', logo: 'appsignal.svg' },
   { name: 'n8n', planned: false, country: 'DE', url: 'n8n.io', logo: 'n8n.svg' },
   { name: 'Paddle', planned: false, country: 'GB', url: 'paddle.com', logo: 'paddle.svg' },
-  { name: 'Gleap', planned: true, country: 'AT', url: 'gleap.io', logo: 'gleap.svg' },
+  { name: 'Gleap', planned: false, country: 'AT', url: 'gleap.io', logo: 'gleap.svg' },
   { name: 'Imado', planned: false, country: 'NL', url: 'imado.eu', logo: 'imado.svg' },
   { name: 'SimpleAnalytics', planned: false, country: 'NL', url: 'simpleanalytics.com', logo: 'simpleanalytics.svg' },
-  { name: 'Oh Dear', planned: true, country: 'BE', url: 'ohdear.app', logo: 'ohdear.svg' },
-  { name: 'TipTap', planned: false, invert: true, country: 'DE', url: 'tiptap.dev', logo: 'tiptap.svg' },
+  { name: 'Oh Dear', planned: false, country: 'BE', url: 'ohdear.app', logo: 'ohdear.svg' },
+  { name: 'Hanko', planned: true, country: 'DE', url: 'hanko.io', logo: 'hanko.svg' },
 ];
 
 const Integrations = () => {
@@ -44,7 +44,7 @@ const Integrations = () => {
               key={name}
               className="flex h-96 w-72 group relative shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10"
             >
-              {planned && <div className="absolute top-0 right-0 bg-foreground/25 text-white text-xs px-2 py-1 rounded-tr-md rounded-bl-md">TBD</div>}
+              {planned && <div className="absolute top-0 right-0 bg-foreground/25 text-white text-xs px-2 py-1 rounded-tr-md rounded-bl-md">Planned</div>}
               <div className="flex items-center space-x-2">
                 <img
                   src={`/integrations/${logo}`}

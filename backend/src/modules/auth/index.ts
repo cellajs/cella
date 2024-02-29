@@ -146,9 +146,7 @@ const authRoutes = app
       })
       .where(eq(usersTable.id, user.id));
 
-    await setSessionCookie(ctx, user.id);
-
-    customLogger('Email verified and user signed in', { user: user.id });
+    await setSessionCookie(ctx, user.id, 'email_verification');
 
     return ctx.json({
       success: true,
@@ -256,9 +254,7 @@ const authRoutes = app
     const hashedPassword = await new Argon2id().hash(password);
     await db.update(usersTable).set({ hashedPassword }).where(eq(usersTable.id, user.id));
 
-    await setSessionCookie(ctx, user.id);
-
-    customLogger('Password reset and user signed in', { user: user.id });
+    await setSessionCookie(ctx, user.id, 'password_reset');
 
     return ctx.json({
       success: true,
@@ -294,7 +290,7 @@ const authRoutes = app
       return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
     }
 
-    await setSessionCookie(ctx, user.id);
+    await setSessionCookie(ctx, user.id, 'password');
 
     const lastSignInAt = new Date();
 
@@ -312,8 +308,6 @@ const authRoutes = app
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
 
     if (!sessionId) {
-      customLogger('User not authenticated');
-
       removeSessionCookie(ctx);
 
       return ctx.json<ErrorResponse>(unauthorizedError(), 401);
@@ -322,8 +316,6 @@ const authRoutes = app
     const { session } = await auth.validateSession(sessionId);
 
     if (!session) {
-      customLogger('User not authenticated');
-
       removeSessionCookie(ctx);
 
       return ctx.json(unauthorizedError(), 401);

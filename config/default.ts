@@ -62,9 +62,8 @@ export const config = {
   // Enabled OAuth providers
   oauthOptions: ['Github'],
 
-  // Feature flags
+  // Optional settings
   has: {
-    chatSupport: true,
     pwaSupport: true,
     signUp: true, // TODO: implement
     waitlist: true, // TODO: implement

@@ -12,7 +12,7 @@ const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
 interface ImadoUploadParams extends UploadParams {
   completionHandler: (urls: URL[], result?: UploadResult) => void;
 }
-
+// ImadoUppy helps to create an Uppy instance that works with the Imado API
 export async function ImadoUppy(
   type: UploadType,
   uppyOptions: UppyOptions,

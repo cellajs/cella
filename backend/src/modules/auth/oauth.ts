@@ -106,9 +106,7 @@ const oauthRoutes = app
         .where(and(eq(oauthAccountsTable.providerId, 'GITHUB'), eq(oauthAccountsTable.providerUserId, String(githubUser.id))));
 
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId);
-
-        customLogger('User signed in with GitHub', { user: existingOauthAccount.userId });
+        await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -189,9 +187,7 @@ const oauthRoutes = app
           return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
         }
 
-        await setSessionCookie(ctx, existingUser.id);
-
-        customLogger('User signed in with GitHub', { user: existingUser.id });
+        await setSessionCookie(ctx, existingUser.id, 'github');
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -232,9 +228,7 @@ const oauthRoutes = app
         return ctx.redirect(`${config.frontendUrl}/auth/verify-email`, 302);
       }
 
-      await setSessionCookie(ctx, userId);
-
-      customLogger('User signed in with GitHub', { user: userId });
+      await setSessionCookie(ctx, userId, 'github');
 
       return ctx.json({}, 302, {
         Location: config.frontendUrl + config.defaultRedirectPath,
@@ -312,9 +306,7 @@ const oauthRoutes = app
         .where(and(eq(oauthAccountsTable.providerId, 'GOOGLE'), eq(oauthAccountsTable.providerUserId, user.sub)));
 
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId);
-
-        customLogger('User signed in with Google', { user: existingOauthAccount.userId });
+        await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -330,9 +322,7 @@ const oauthRoutes = app
           userId: existingUser.id,
         });
 
-        await setSessionCookie(ctx, existingUser.id);
-
-        customLogger('User signed in with Google', { user: existingUser.id });
+        await setSessionCookie(ctx, existingUser.id, 'google');
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -356,9 +346,7 @@ const oauthRoutes = app
         userId,
       });
 
-      await setSessionCookie(ctx, userId);
-
-      customLogger('User signed in with Google', { user: userId });
+      await setSessionCookie(ctx, userId, 'google');
 
       return ctx.json({}, 302, {
         Location: config.frontendUrl + config.defaultRedirectPath,
@@ -435,9 +423,7 @@ const oauthRoutes = app
         .where(and(eq(oauthAccountsTable.providerId, 'MICROSOFT'), eq(oauthAccountsTable.providerUserId, user.sub)));
 
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId);
-
-        customLogger('User signed in with Microsoft', { user: existingOauthAccount.userId });
+        await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -457,9 +443,7 @@ const oauthRoutes = app
           userId: existingUser.id,
         });
 
-        await setSessionCookie(ctx, existingUser.id);
-
-        customLogger('User signed in with Microsoft', { user: existingUser.id });
+        await setSessionCookie(ctx, existingUser.id, 'microsoft');
 
         return ctx.json({}, 302, {
           Location: redirectUrl,
@@ -483,9 +467,7 @@ const oauthRoutes = app
         userId,
       });
 
-      await setSessionCookie(ctx, userId);
-
-      customLogger('User signed in with Microsoft', { user: userId });
+      await setSessionCookie(ctx, userId, 'microsoft');
 
       return ctx.json({}, 302, {
         Location: config.frontendUrl + config.defaultRedirectPath,

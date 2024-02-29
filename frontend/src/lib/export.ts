@@ -1,5 +1,6 @@
 import { ReactElement } from 'react';
 
+// Export table data to CSV
 export async function exportToCsv<R>(columns: { key: string; name: ReactElement | string }[], rows: R[], fileName: string) {
   if (!rows.length) return;
 
@@ -11,6 +12,7 @@ export async function exportToCsv<R>(columns: { key: string; name: ReactElement 
   downloadFile(fileName, new Blob([content], { type: 'text/csv;charset=utf-8;' }));
 }
 
+// Export table data to PDF
 export async function exportToPdf<R>(columns: { key: string; name: ReactElement | string }[], rows: R[], fileName: string) {
   const preparedColumns = columns.filter((column) => column.name);
   const head = [preparedColumns.map((column) => String(column.name))];

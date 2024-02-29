@@ -26,7 +26,7 @@ export const successResponseWithPaginationSchema = <T extends z.ZodTypeAny>(sche
 
 export const errorResponses = {
   400: {
-    description: 'Bad Request - a problem reading or understanding the request.',
+    description: 'Bad Request - problem processing request.',
     content: {
       'application/json': {
         schema: errorResponseSchema,
@@ -42,7 +42,7 @@ export const errorResponses = {
     },
   },
   403: {
-    description: 'Forbidden - insuffucient permissions to proccess the request.',
+    description: 'Forbidden - insufficient permissions.',
     content: {
       'application/json': {
         schema: errorResponseSchema,
@@ -50,7 +50,7 @@ export const errorResponses = {
     },
   },
   404: {
-    description: 'Not Found - the requested resource does not exist.',
+    description: 'Not Found - resource does not exist.',
     content: {
       'application/json': {
         schema: errorResponseSchema,
@@ -58,7 +58,7 @@ export const errorResponses = {
     },
   },
   500: {
-    description: 'Internal Server Error - something went wrong.',
+    description: 'Server Error - something went wrong.',
     content: {
       'application/json': {
         schema: errorResponseSchema,

@@ -10,7 +10,7 @@ import enCommon from '../../../locales/en/common.json';
 import nlBackend from '../../../locales/nl/backend.json';
 import nlCommon from '../../../locales/nl/common.json';
 
-// Set up i18n with lazy loading strategy
+// Set up i18n
 const initOptions: InitOptions = {
   resources: {
     en: { backend: enBackend, common: enCommon },
