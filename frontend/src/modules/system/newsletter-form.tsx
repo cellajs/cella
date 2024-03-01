@@ -51,10 +51,8 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
     const organizationIds = ['1', '2', '3'];
     apiWrapper(
       () => sendNewsletter(organizationIds, values.subject, values.content),
-      (result) => {
+      () => {
         form.reset();
-        console.log(result);
-
         toast.success(t('common:success.create_newsletter'));
 
         if (isSheet) {

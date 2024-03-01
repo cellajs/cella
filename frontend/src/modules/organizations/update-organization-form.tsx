@@ -79,7 +79,6 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   };
 
   const cancel = () => {
-    console.log(form.getValues(), form.formState.defaultValues);
     form.reset();
     isDialog && dialog.remove();
   };
@@ -91,8 +90,6 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   const revertSlug = () => {
     form.resetField('slug');
   };
-
-  console.log('form', form.getValues());
 
   useEffect(() => {
     if (slug && slug !== organization.slug) {
@@ -221,7 +218,6 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
                 <MultipleSelector
                   value={config.languages.filter((language) => value?.includes(language.value))}
                   onChange={(value) => {
-                    console.log('value', value);
                     onChange(value.map((language) => language.value));
                   }}
                   defaultOptions={config.languages}

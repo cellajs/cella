@@ -22,7 +22,7 @@ export function useFormWithDraft<
 
   useEffect(() => {
     const values = getForm<TFieldValues>(formId);
-    console.log('values', values);
+
     if (values) {
       setUnsavedChanges(true);
       for (const key in values) {

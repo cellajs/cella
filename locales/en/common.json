@@ -132,5 +132,6 @@
   "website_url": "Website url",
   "year": "year",
   "your_role": "Your role",
-  "clear_filter": "Clear filter"
+  "clear_filter": "Clear filter",
+  "success.create_newsletter": "Newsletter has been sent."
 }
