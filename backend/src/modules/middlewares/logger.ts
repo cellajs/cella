@@ -1,9 +1,10 @@
 import type { MiddlewareHandler } from 'hono/types';
+import { nanoid } from 'nanoid';
 
 enum LogPrefix {
-  Outgoing = '->',
-  Incoming = '<-',
-  Error = 'xx',
+  Outgoing = 'res',
+  Incoming = 'req',
+  Error = 'err',
 }
 
 const humanize = (times: string[]) => {
@@ -21,22 +22,27 @@ const time = (start: number) => {
 
 type PrintFunc = (str: string, ...rest: string[]) => void;
 
-function log(fn: PrintFunc, prefix: string, method: string, path: string, status = 0, elapsed?: string, user?: string, org?: string) {
-  const out = prefix === LogPrefix.Incoming ? `${prefix} ${method} ${path}` : `${prefix} ${method} ${path} ${status} ${elapsed} ${user}@${org}`;
+function log(fn: PrintFunc, prefix: string, logId: string, method: string, path: string, status = 0, elapsed?: string, user?: string, org?: string) {
+  const out =
+    prefix === LogPrefix.Incoming
+      ? `${prefix} ${logId} ${method} ${path}`
+      : `${prefix} ${logId} ${method} ${path} ${status} ${elapsed} ${user}@${org}`;
   fn(out);
 }
-
 
 export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
   return async function logger(c, next) {
     const { method } = c.req;
 
-    // Show path with query on incoming logs and without on outgoing logs
-    const stripUrl = c.req.raw.url.match(/^https?:\/\/[^/]+(\/[^?]*)(\?.*)?/) || [];
-    const path = stripUrl[1]
-    const fullPath = stripUrl[1] + stripUrl[2]
+    // Generate logId and set it so we can use it to match error reports
+    const logId = nanoid();
+    c.set('logId', logId);
 
-    log(fn, LogPrefix.Incoming, method, fullPath);
+    // Show path with search params
+    const stripUrl = c.req.raw.url.replace(/(https?:\/\/)?([^\/]+)/, '').slice(0, 200);
+
+    // Log incoming
+    log(fn, LogPrefix.Incoming, logId, method, stripUrl);
 
     const start = Date.now();
 
@@ -45,7 +51,8 @@ export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
     // Add logging for user and organization ids
     const user = c.get('user')?.id || 'na';
     const org = c.get('organization')?.id || 'na';
-    
-    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start), user, org);
+
+    // Log outgoing
+    log(fn, LogPrefix.Outgoing, logId, method, stripUrl, c.res.status, time(start), user, org);
   };
 };
