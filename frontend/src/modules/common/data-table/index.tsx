@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { useOnScreen } from '~/hooks/use-on-screen';
 import { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
+import { Checkbox } from '~/modules/ui/checkbox';
+import { useRef } from 'react';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -136,11 +138,23 @@ export const DataTable = <TData,>({
                   return <Row {...props} key={key} ref={isTargetRow ? measureRef : undefined} />;
                 },
                 renderCheckbox: ({ onChange, ...props }) => {
-                  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-                    onChange(e.target.checked, (e.nativeEvent as MouseEvent).shiftKey);
-                  }
+                  const withShift = useRef(false);
 
-                  return <input type="checkbox" {...props} onChange={handleChange} />;
+                  const handleChange = (checked: boolean) => {
+                    onChange(checked, withShift.current);
+                  };
+
+                  return (
+                    <Checkbox
+                      {...props}
+                      onClick={(e) => {
+                        withShift.current = e.nativeEvent.shiftKey;
+                      }}
+                      onCheckedChange={(checked) => {
+                        handleChange(!!checked);
+                      }}
+                    />
+                  );
                 },
               }}
             />
