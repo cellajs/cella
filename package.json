@@ -35,7 +35,7 @@
     "build:dev": "dotenv -e env/.env -- turbo build:dev --filter backend --filter frontend --filter tus",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "check": "pnpm dlx @biomejs/biome check .",
-    "check:types": "turbo check:types",
+    "check:types": "turbo check:types --force",
     "check:fix": "pnpm dlx @biomejs/biome check --apply .",
     "build:be": "dotenv -e env/.env -- turbo build --filter backend",
     "build:be:dev": "dotenv -e env/.env -- turbo build:dev --filter backend",

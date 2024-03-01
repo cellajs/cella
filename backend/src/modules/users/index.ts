@@ -27,8 +27,6 @@ const usersRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, user.id));
 
-    customLogger('User returned', { user: user.id });
-
     return ctx.json({
       success: true,
       data: {
@@ -79,8 +77,6 @@ const usersRoutes = app
       }),
     );
 
-    customLogger('User menu returned');
-
     return ctx.json({
       success: true,
       data: {
@@ -99,12 +95,12 @@ const usersRoutes = app
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
-      customLogger('User not found', { user: userId });
+      customLogger('User not found', { user: userId }, 'warn');
       return ctx.json(createError('error.user_not_found', 'User not found'), 404);
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      customLogger('User forbidden', { user: user.id });
+      customLogger('User forbidden', { user: user.id }, 'warn');
       return ctx.json(forbiddenError(), 403);
     }
 
@@ -118,7 +114,7 @@ const usersRoutes = app
       const { data: slugExists } = (await response.json()) as { data: boolean };
 
       if (slugExists && slug !== targetUser.slug) {
-        customLogger('Slug already exists', { slug });
+        customLogger('Slug already exists', { slug }, 'warn');
         return ctx.json(createError('error.slug_already_exists', 'Slug already exists'), 400);
       }
     }
@@ -237,8 +233,6 @@ const usersRoutes = app
       counts,
     }));
 
-    customLogger('Users returned');
-
     return ctx.json({
       success: true,
       data: {
@@ -260,8 +254,6 @@ const usersRoutes = app
       .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
       .limit(10);
 
-    customLogger('User suggestions returned');
-
     return ctx.json({
       success: true,
       data: users,
@@ -280,13 +272,13 @@ const usersRoutes = app
         const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
 
         if (!targetUser) {
-          customLogger('User not found', { user: id });
+          customLogger('User not found', { user: id }, 'warn');
           errors.push(createError('error.user_not_found', 'User not found'));
           return;
         }
 
         if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-          customLogger('User forbidden', { user: user.id });
+          customLogger('User forbidden', { user: user.id }, 'warn');
           errors.push(forbiddenError());
           return;
         }
@@ -295,7 +287,6 @@ const usersRoutes = app
 
         if (user.id === targetUser.id) {
           await auth.invalidateUserSessions(user.id);
-
           removeSessionCookie(ctx);
         }
 
@@ -305,12 +296,7 @@ const usersRoutes = app
 
     return ctx.json({
       success: true,
-      data:
-        errors.length > 0
-          ? {
-              error: errors[0].error,
-            }
-          : undefined,
+      data: errors.length > 0 ? { error: errors[0].error } : undefined,
     });
   })
   .openapi(getUserByIdOrSlugRoute, async (ctx) => {
@@ -323,12 +309,12 @@ const usersRoutes = app
       .where(or(eq(usersTable.id, userIdentifier), eq(usersTable.slug, userIdentifier)));
 
     if (!targetUser) {
-      customLogger('User not found', { user: userIdentifier });
+      customLogger('User not found', { user: userIdentifier }, 'warn');
       return ctx.json(createError('error.user_not_found', 'User not found'), 404);
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      customLogger('User forbidden', { user: user.id });
+      customLogger('User forbidden', { user: user.id }, 'warn');
       return ctx.json(forbiddenError(), 403);
     }
 
@@ -338,8 +324,6 @@ const usersRoutes = app
       })
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, targetUser.id));
-
-    customLogger('User returned', { user: targetUser.id });
 
     return ctx.json({
       success: true,

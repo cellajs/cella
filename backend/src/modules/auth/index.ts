@@ -226,7 +226,7 @@ const authRoutes = app
 
     emailSender.send(email, 'Reset Cella password', emailHtml);
 
-    customLogger('Reset pasword link sent', { user: user.id });
+    customLogger('Reset password link sent', { user: user.id });
 
     return ctx.json({
       success: true,

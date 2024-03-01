@@ -29,7 +29,7 @@ const authMiddleware =
     }
 
     if (accessibleFor && !accessibleFor.includes(user.role)) {
-      customLogger('User forbidden', { user: user.id });
+      customLogger('User forbidden', { user: user.id }, 'warn');
       return ctx.json<ErrorResponse>(forbiddenError(), 403);
     }
 

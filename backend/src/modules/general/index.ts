@@ -43,8 +43,6 @@ const generalRoutes = app
       env.TUS_UPLOAD_API_SECRET,
     );
 
-    customLogger('Upload token returned');
-
     return ctx.json({
       success: true,
       data: token,
@@ -77,8 +75,6 @@ const generalRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.slug, slug));
 
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.slug, slug));
-
-    customLogger('Slug checked', { slug, available: !!user || !!organization });
 
     return ctx.json({
       success: true,
@@ -149,9 +145,9 @@ const generalRoutes = app
               type: 'system',
             }),
           );
-          customLogger('User invited to system', { email: email.toLowerCase() });
+          customLogger('User invited on system level');
         } else {
-          customLogger('User already exists', { user: targetUser.id });
+          customLogger('User already exists', { user: targetUser.id }, 'warn');
           continue;
         }
       } else {
@@ -165,7 +161,7 @@ const generalRoutes = app
             inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
           }),
         );
-        customLogger('User invited to organization', { user: email.toLowerCase(), organization: organization?.id });
+        customLogger('User invited to organization', { organization: organization?.id });
       }
       try {
         emailSender.send(

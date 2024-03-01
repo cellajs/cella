@@ -31,7 +31,7 @@ app.notFound((ctx) => {
   };
 
   customLogger('Error', data, 'warn');
-  
+
   return ctx.json({ success: false, error: 'Not found' }, 404);
 });
 
@@ -44,5 +44,5 @@ guard(app);
 // Add routes for each module
 const route = app.route('/', authRoutes).route('/', usersRoutes).route('/', organizationsRoutes).route('/', generalRoutes);
 
-// Export type to share API with Client (RPC)
+// Export type to share API with Client (RP)
 export type AppRoute = typeof route;

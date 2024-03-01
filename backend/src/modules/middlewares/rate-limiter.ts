@@ -37,7 +37,7 @@ class RateLimiter extends RateLimiterMemory {
       }
 
       if (retrySecs > 0) {
-        customLogger('Too many requests', { usernameIPkey });
+        customLogger('Too many requests', { usernameIPkey }, 'warn');
 
         ctx.header('Retry-After', String(retrySecs));
         return ctx.json(tooManyRequestsError(), 429);
@@ -48,7 +48,7 @@ class RateLimiter extends RateLimiterMemory {
           await this.consume(usernameIPkey);
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) {
-            customLogger('Too many requests (Limit)', { usernameIPkey });
+            customLogger('Too many requests (Limit)', { usernameIPkey }, 'warn');
 
             ctx.header('Retry-After', String(Math.round(rlRejected.msBeforeNext / 1000) || 1));
             return ctx.json(tooManyRequestsError(), 429);
@@ -122,7 +122,7 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
   }
 
   if (retrySecs > 0) {
-    customLogger('Too many requests (Login)', { usernameIPkey });
+    customLogger('Too many requests (Login)', { usernameIPkey }, 'warn');
 
     ctx.header('Retry-After', String(retrySecs));
     return ctx.json(tooManyRequestsError(), 429);
@@ -136,7 +136,7 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
     try {
       await limiterConsecutiveFailsByUsernameAndIP.consume(usernameIPkey);
     } catch (error) {
-      customLogger('Too many requests (Limit)', { usernameIPkey });
+      customLogger('Too many requests (Limit)', { usernameIPkey }, 'warn');
 
       return ctx.json(tooManyRequestsError(), 429);
     }

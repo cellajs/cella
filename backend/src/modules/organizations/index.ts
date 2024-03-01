@@ -30,7 +30,7 @@ const organizationsRoutes = app
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.name, name));
 
     if (organization) {
-      customLogger('Organization with this name exists', { name });
+      customLogger('Organization with this name exists', { name }, 'warn');
 
       return ctx.json<ErrorResponse>(createError('error.organization_with_this_name_exists', 'Organization with this name already exists'), 400);
     }
@@ -121,8 +121,6 @@ const organizationsRoutes = app
       .limit(+limit)
       .offset(+offset);
 
-    customLogger('Organizations returned');
-
     return ctx.json({
       success: true,
       data: {
@@ -170,7 +168,7 @@ const organizationsRoutes = app
       const { data: slugExists } = (await response.json()) as { data: boolean };
 
       if (slugExists && slug !== organization.slug) {
-        customLogger('Slug already exists', { slug });
+        customLogger('Slug already exists', { slug }, 'warn');
 
         return ctx.json(createError('error.slug_already_exists', 'Slug already exists'), 400);
       }
@@ -244,7 +242,7 @@ const organizationsRoutes = app
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
-      customLogger('User not found', { user: userId });
+      customLogger('User not found', { user: userId }, 'warn');
       return ctx.json(createError('error.user_not_found', 'User not found'), 404);
     }
 
@@ -255,7 +253,7 @@ const organizationsRoutes = app
       .returning();
 
     if (!membership) {
-      customLogger('Membership not found', { user: targetUser.id, organization: organization.id });
+      customLogger('Membership not found', { user: targetUser.id, organization: organization.id }, 'warn');
       return ctx.json(createError('error.user_not_found', 'User not found'), 404);
     }
 
@@ -292,13 +290,13 @@ const organizationsRoutes = app
         const [targetOrganization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, id));
 
         if (!targetOrganization) {
-          customLogger('Organization not found', { organization: id });
+          customLogger('Organization not found', { organization: id }, 'warn');
           errors.push(createError('error.organization_not_found', 'Organization not found'));
           return;
         }
 
         // if (user.role !== 'ADMIN') {
-        //   customLogger('User forbidden', { user: user.id });
+        //   customLogger('User forbidden', { user: user.id }, 'warn);
         //   errors.push(forbiddenError());
         //   return;
         // }
@@ -341,8 +339,6 @@ const organizationsRoutes = app
       })
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
-
-    customLogger('Organization returned', { organization: organization.id });
 
     return ctx.json({
       success: true,
@@ -407,8 +403,6 @@ const organizationsRoutes = app
       })
       .from(membersQuery.as('memberships'));
 
-    customLogger('Members returned');
-
     const result = await membersQuery.limit(+limit).offset(+offset);
 
     const members = await Promise.all(
@@ -454,7 +448,7 @@ const organizationsRoutes = app
           .returning();
 
         if (!targetMembership) {
-          customLogger('Membership not found', { user: id, organization: organization.id });
+          customLogger('Membership not found', { user: id, organization: organization.id }, 'warn');
           errors.push(createError('error.membership_not_found', 'Membership not found'));
           return;
         }

@@ -24,7 +24,7 @@ const organizationAuthMiddleware =
       .where(or(eq(organizationsTable.id, organizationIdentifier), eq(organizationsTable.slug, organizationIdentifier)));
 
     if (!organization) {
-      customLogger('Organization not found', { organization: organizationIdentifier });
+      customLogger('Organization not found', { organization: organizationIdentifier }, 'warn');
       return ctx.json<ErrorResponse>(createError('error.organization_not_found', 'Organization not found'), 404);
     }
 
@@ -34,7 +34,7 @@ const organizationAuthMiddleware =
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
 
     if ((!membership || (accessibleFor && !accessibleFor.includes(membership.role))) && user.role !== 'ADMIN') {
-      customLogger('User forbidden in organization', { user: user.id, organization: organization.id });
+      customLogger('User forbidden in organization', { user: user.id, organization: organization.id }, 'warn');
       return ctx.json<ErrorResponse>(forbiddenError(), 403);
     }
 
