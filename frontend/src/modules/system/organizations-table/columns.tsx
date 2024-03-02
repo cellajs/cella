@@ -56,7 +56,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (row.userRole ? t(row.userRole) : ''),
+            renderCell: ({ row }) => (row.userRole ? t(row.userRole) : '-'),
             width: 120,
           },
           {
@@ -65,7 +65,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
-            // renderCell: ({ row }) => row.subscription,
+            renderCell: () => ('-'),
             minWidth: 140,
           },
           {
@@ -86,7 +86,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             renderCell: ({ row }) => (
               <>
                 <UserRound className="mr-2 opacity-50" size={16} />
-                {row.counts?.members}
+                {row.counts?.members || 0}
               </>
             ),
             width: 140,
@@ -100,7 +100,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             renderCell: ({ row }) => (
               <>
                 <Shield className="mr-2 opacity-50" size={16} />
-                {row.counts?.admins}
+                {row.counts?.admins || 0}
               </>
             ),
             width: 140,

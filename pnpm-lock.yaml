@@ -428,6 +428,9 @@ importers:
       gleap:
         specifier: ^13.2.8
         version: 13.2.8
+      holy-loader:
+        specifier: ^2.2.10
+        version: 2.2.10(react@18.2.0)
       hono:
         specifier: ^4.0.8
         version: 4.0.8
@@ -12178,6 +12181,14 @@ packages:
   /highlight.js@11.9.0:
     resolution: {integrity: sha512-fJ7cW7fQGCYAkgv4CPfwFHrfd/cLS4Hau96JuJ+ZTOWhjnhoeN1ub1tFmALm/+lW5z4WCAuAV9bm05AP0mS6Gw==}
     engines: {node: '>=12.0.0'}
+    dev: false
+
+  /holy-loader@2.2.10(react@18.2.0):
+    resolution: {integrity: sha512-swykIEP14z+eYajeAzyQAIzIOXdxnbnMBqLvCODfmnS+cAITUtw6TpWiKhNX+wbQkHvCzmk2ve4jyotPYlN6rg==}
+    peerDependencies:
+      react: '>= 16.0.0'
+    dependencies:
+      react: 18.2.0
     dev: false
 
   /hono@4.0.8:

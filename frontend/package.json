@@ -95,6 +95,7 @@
     "embla-carousel-autoplay": "8.0.0-rc22",
     "embla-carousel-react": "8.0.0-rc22",
     "gleap": "^13.2.8",
+    "holy-loader": "^2.2.10",
     "hono": "^4.0.8",
     "i18next": "^23.10.0",
     "i18next-browser-languagedetector": "^7.2.0",

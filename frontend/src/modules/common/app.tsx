@@ -6,6 +6,7 @@ import { AppContent } from '~/modules/common/app-content';
 import AppNav from './app-nav';
 import { AppSheet } from './app-sheet';
 import ErrorPage from './error';
+import HolyLoader from "holy-loader";
 
 const App = () => {
   return (
@@ -13,6 +14,7 @@ const App = () => {
       <AppNav />
       <AppSheet />
       <AppContent />
+      <HolyLoader />
     </ErrorBoundary>
   );
 };

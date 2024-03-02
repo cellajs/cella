@@ -141,7 +141,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
               row.type === 'MASTER' && (
                 <>
                   <UserRoundCheck className="mr-2 opacity-50" size={16} />
-                  {row.counts?.memberships}
+                  {row.counts?.memberships | 0}
                 </>
               ),
             width: 140,
