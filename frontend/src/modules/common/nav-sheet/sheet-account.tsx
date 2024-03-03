@@ -2,11 +2,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { CircleUserRound, LogOut, LucideProps, UserCog, Wrench } from 'lucide-react';
 import React from 'react';
 
+import { getColorClass } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { SheetTitle } from '~/modules/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import { getColorClass } from '~/lib/utils';
 
 type AccountButtonProps = {
   lucideButton: React.ElementType<LucideProps>;

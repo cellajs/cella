@@ -1,83 +1,12 @@
 import { MiddlewareHandler } from 'hono';
 
-import { IRateLimiterOptions, RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { tooManyRequestsError } from '../../lib/errors';
 
 import { customLogger } from '../../lib/custom-logger';
 import { Env } from '../../types/common';
 
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
-
-// TODO: Currently uses memory store, eventually we need redis
-class RateLimiter extends RateLimiterMemory {
-  public middleware(mode: 'success' | 'fail' | 'limit' = 'limit'): MiddlewareHandler<Env> {
-    if (mode === 'success' || mode === 'fail') {
-      this.points = this.points - 1;
-    }
-
-    return async (ctx, next) => {
-      const ipAddr = ctx.req.header('x-forwarded-for');
-      const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.raw.clone().json() : undefined;
-      const user = ctx.get('user');
-      const username = body?.email || user?.id;
-
-      if (!ipAddr && !username) {
-        return next();
-      }
-
-      const usernameIPkey = getUsernameIPkey(username, ipAddr);
-
-      const res = await this.get(usernameIPkey);
-
-      let retrySecs = 0;
-
-      // Check if IP or Username + IP is already blocked
-      if (res !== null && res.consumedPoints > this.points) {
-        retrySecs = Math.round(res.msBeforeNext / 1000) || 1;
-      }
-
-      if (retrySecs > 0) {
-        customLogger('Too many requests', { usernameIPkey }, 'warn');
-
-        ctx.header('Retry-After', String(retrySecs));
-        return ctx.json(tooManyRequestsError(), 429);
-      }
-
-      if (mode === 'limit') {
-        try {
-          await this.consume(usernameIPkey);
-        } catch (rlRejected) {
-          if (rlRejected instanceof RateLimiterRes) {
-            customLogger('Too many requests (Limit)', { usernameIPkey }, 'warn');
-
-            ctx.header('Retry-After', String(Math.round(rlRejected.msBeforeNext / 1000) || 1));
-            return ctx.json(tooManyRequestsError(), 429);
-          }
-
-          throw rlRejected;
-        }
-      }
-
-      await next();
-
-      if (ctx.res.status === 200) {
-        if (mode === 'success') {
-          try {
-            await this.consume(usernameIPkey);
-          } catch {}
-        } else if (mode === 'fail') {
-          await this.delete(usernameIPkey);
-        }
-      } else if (mode === 'fail') {
-        try {
-          await this.consume(usernameIPkey);
-        } catch {}
-      }
-    };
-  }
-}
-
-export const rateLimiter = (options: IRateLimiterOptions, mode: 'success' | 'fail' | 'limit' = 'limit') => new RateLimiter(options).middleware(mode);
 
 // Sign in rate limiter
 const maxWrongAttemptsByIPperDay = 100;

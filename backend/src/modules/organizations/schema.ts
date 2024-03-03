@@ -1,8 +1,8 @@
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipsTable, organizationsTable } from '../../db/schema';
-import { idSchema, slugSchema } from '../../schemas/common';
+import { idSchema, imageUrlSchema, slugSchema } from '../../lib/common-schemas';
 import { apiUserSchema } from '../users/schema';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
@@ -46,24 +46,9 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
   languages: z.array(z.string()).optional(),
   emailDomains: z.array(z.string()).optional(),
   authStrategies: z.array(z.string()).optional(),
-  thumbnailUrl: z
-    .string()
-    .url()
-    .refine((url) => new URL(url).search === '', {
-      message: 'Search params are not allowed',
-    }),
-  bannerUrl: z
-    .string()
-    .url()
-    .refine((url) => new URL(url).search === '', {
-      message: 'Search params are not allowed',
-    }),
-  logoUrl: z
-    .string()
-    .url()
-    .refine((url) => new URL(url).search === '', {
-      message: 'Search params are not allowed',
-    }),
+  thumbnailUrl: imageUrlSchema,
+  bannerUrl: imageUrlSchema,
+  logoUrl: imageUrlSchema,
 })
   .pick({
     slug: true,

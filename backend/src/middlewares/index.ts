@@ -2,10 +2,10 @@ import { config } from 'config';
 import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
-import { logger } from './logger';
 import { secureHeaders } from 'hono/secure-headers';
-import { customLogger } from '../../lib/custom-logger';
-import { CustomHono } from '../../types/common';
+import { customLogger } from '../lib/custom-logger';
+import { CustomHono } from '../types/common';
+import { logger } from './logger';
 import { rateLimiter } from './rate-limiter';
 
 const app = new CustomHono();

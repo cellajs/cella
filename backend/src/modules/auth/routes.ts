@@ -1,9 +1,16 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { cookieSchema } from '../../schemas/common';
-import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../schemas/responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
+import { cookieSchema } from '../../lib/common-schemas';
 import { apiUserSchema } from '../users/schema';
-import { checkEmailJsonSchema, emailExistsJsonSchema, resetPasswordJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
+import {
+  acceptInviteJsonSchema,
+  checkEmailJsonSchema,
+  emailExistsJsonSchema,
+  resetPasswordJsonSchema,
+  signInJsonSchema,
+  signUpJsonSchema,
+} from './schema';
 
 export const signUpRoute = createRoute({
   method: 'post',
@@ -362,6 +369,65 @@ export const signOutRoute = createRoute({
   responses: {
     200: {
       description: 'User signed out',
+      content: {
+        'application/json': {
+          schema: successResponseWithoutDataSchema,
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const acceptInviteRoute = createRoute({
+  method: 'post',
+  path: '/accept-invite/{token}',
+  tags: ['general'],
+  summary: 'Accept invitation',
+  request: {
+    params: z.object({
+      token: z.string(),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: acceptInviteJsonSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Invitation was accepted',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(z.string()),
+        },
+      },
+    },
+    302: {
+      description: 'Redirect to github',
+      headers: z.object({
+        Location: z.string(),
+      }),
+    },
+    ...errorResponses,
+  },
+});
+
+export const checkInviteRoute = createRoute({
+  method: 'get',
+  path: '/check-invite/{token}',
+  tags: ['general'],
+  summary: 'Check invite by invite token',
+  request: {
+    params: z.object({
+      token: z.string(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Emails of invited users',
       content: {
         'application/json': {
           schema: successResponseWithoutDataSchema,

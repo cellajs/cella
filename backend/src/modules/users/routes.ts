@@ -1,7 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { paginationQuerySchema } from '../../schemas/common';
-import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../schemas/responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../lib/common-responses';
+import { paginationQuerySchema } from '../../lib/common-schemas';
 import { userMenuSchema } from '../organizations/schema';
 import { apiUserSchema, getUserParamSchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
 

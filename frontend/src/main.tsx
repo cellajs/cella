@@ -1,5 +1,5 @@
-import './index.css';
 import { config } from 'config';
+import './index.css';
 
 import { StrictMode, Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';

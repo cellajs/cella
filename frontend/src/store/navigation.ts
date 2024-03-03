@@ -4,7 +4,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { getUserMenu } from '~/api/users';
 import { NavItem } from '~/modules/common/app-nav';
-import { menuSections } from '~/modules/common/app-sheet/sheet-menu';
+import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
 import { UserMenu } from '~/types';
 
 interface NavigationState {

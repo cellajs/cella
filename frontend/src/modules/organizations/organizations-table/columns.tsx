@@ -65,7 +65,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: () => ('-'),
+            renderCell: () => '-',
             minWidth: 140,
           },
           {

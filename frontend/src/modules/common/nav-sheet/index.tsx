@@ -1,7 +1,7 @@
 import { Sheet, SheetContent } from '~/modules/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
 
-const AppSheet = () => {
+const NavSheet = () => {
   const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore();
 
   const isMirrorSide = activeSheet?.mirrorOnMobile;
@@ -19,4 +19,4 @@ const AppSheet = () => {
   );
 };
 
-export { AppSheet };
+export { NavSheet };

@@ -1,6 +1,6 @@
 import type { createRoute } from '@hono/zod-openapi';
 import { z } from 'zod';
-import { errorResponseSchema } from './common';
+import { errorResponseSchema } from './common-schemas';
 
 type Responses = Parameters<typeof createRoute>[0]['responses'];
 
@@ -26,7 +26,7 @@ export const successResponseWithPaginationSchema = <T extends z.ZodTypeAny>(sche
 
 export const errorResponses = {
   400: {
-    description: 'Bad Request - problem processing request.',
+    description: 'Bad request: problem processing request.',
     content: {
       'application/json': {
         schema: errorResponseSchema,
@@ -34,7 +34,7 @@ export const errorResponses = {
     },
   },
   401: {
-    description: 'Unauthorized - authentication required.',
+    description: 'Unauthorized: authentication required.',
     content: {
       'application/json': {
         schema: errorResponseSchema,
@@ -42,7 +42,7 @@ export const errorResponses = {
     },
   },
   403: {
-    description: 'Forbidden - insufficient permissions.',
+    description: 'Forbidden: insufficient permissions.',
     content: {
       'application/json': {
         schema: errorResponseSchema,
@@ -50,7 +50,7 @@ export const errorResponses = {
     },
   },
   404: {
-    description: 'Not Found - resource does not exist.',
+    description: 'Not found: resource does not exist.',
     content: {
       'application/json': {
         schema: errorResponseSchema,
@@ -58,7 +58,7 @@ export const errorResponses = {
     },
   },
   500: {
-    description: 'Server Error - something went wrong.',
+    description: 'Server error: something went wrong.',
     content: {
       'application/json': {
         schema: errorResponseSchema,

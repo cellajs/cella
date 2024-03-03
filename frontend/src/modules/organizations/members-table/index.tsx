@@ -1,19 +1,59 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Member } from '~/types';
 
+import { getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { DataTable } from '~/modules/common/data-table';
 
 import { Bird } from 'lucide-react';
 import { SortColumn } from 'react-data-grid';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationContext } from '~/modules/organizations/organization';
-import { MembersSearch, OrganizationRoute, membersQueryOptions } from '~/router/routeTree';
+import { MembersSearch, OrganizationRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+
+export const membersQueryOptions = ({
+  organizationIdentifier,
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  role,
+}: {
+  organizationIdentifier: string;
+  q?: string;
+  sort?: MembersSearch['sort'];
+  order?: MembersSearch['order'];
+  role?: MembersSearch['role'];
+}) => {
+  const sort = initialSort || 'createdAt';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['members', organizationIdentifier, q, sort, order, role],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam, signal }) => {
+      const fetchedData = await getMembersByOrganizationIdentifier(
+        organizationIdentifier,
+        {
+          page: pageParam,
+          q,
+          sort,
+          order,
+          role,
+        },
+        signal,
+      );
+
+      return fetchedData;
+    },
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+    refetchOnWindowFocus: false,
+  });
+};
 
 const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);

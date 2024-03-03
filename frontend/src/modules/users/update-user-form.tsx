@@ -1,10 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { DefaultError, useMutation } from '@tanstack/react-query';
 import { updateUserJsonSchema } from 'backend/modules/users/schema';
 import { config } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { queryClient } from '~/router';
 import { User } from '~/types';
+
+import { UpdateUserParams, updateUser } from '~/api/users';
 
 import { Undo } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,7 +26,6 @@ import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
 import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
-import { useUpdateUserMutation } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import { Textarea } from '../ui/textarea';
@@ -36,6 +39,15 @@ interface Props {
 const formSchema = updateUserJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
+
+export const useUpdateUserMutation = (userIdentifier: string) => {
+  return useMutation<User, DefaultError, UpdateUserParams>({
+    mutationKey: ['me', 'update', userIdentifier],
+    mutationFn: (params) => updateUser(userIdentifier, params),
+    onSuccess: () => queryClient.invalidateQueries(),
+    gcTime: 1000 * 10,
+  });
+};
 
 const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();

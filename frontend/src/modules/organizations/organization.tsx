@@ -1,16 +1,16 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import { UserRoundCheck, UserRoundX } from 'lucide-react';
 import { createContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { invite } from '~/api/general';
-import { removeMembersFromOrganization } from '~/api/organizations';
+import { getOrganizationBySlugOrId, removeMembersFromOrganization } from '~/api/organizations';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { PageHeader } from '~/modules/common/page-header';
 import PageNav from '~/modules/common/page-nav';
 import { Button } from '~/modules/ui/button';
-import { OrganizationRoute, organizationQueryOptions } from '~/router/routeTree';
+import { OrganizationRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
 import MembersTable from './members-table';
@@ -26,6 +26,12 @@ const organizationTabs = [
 ];
 
 export const OrganizationContext = createContext({} as OrganizationContextValue);
+
+export const organizationQueryOptions = (organizationIdentifier: string) =>
+  queryOptions({
+    queryKey: ['organizations', organizationIdentifier],
+    queryFn: () => getOrganizationBySlugOrId(organizationIdentifier),
+  });
 
 const OrganizationPage = () => {
   const user = useUserStore((state) => state.user);

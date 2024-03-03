@@ -4,13 +4,12 @@ import { User } from 'lucia';
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { usersTable } from '../../db/schema';
+import { removeSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { forbiddenError, unauthorizedError } from '../../lib/errors';
 import { ErrorResponse } from '../../types/common';
-import { removeSessionCookie } from '../../lib/cookies';
 
-// authMiddleware() is checking if the user is authenticated and if the user has the required role
-const authMiddleware =
+const authGuard =
   (accessibleFor?: User['role'][]): MiddlewareHandler =>
   async (ctx, next) => {
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
@@ -53,4 +52,4 @@ const authMiddleware =
     await next();
   };
 
-export default authMiddleware;
+export default authGuard;

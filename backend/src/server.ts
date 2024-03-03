@@ -1,12 +1,13 @@
+import configureRoutes from './configure';
 import { customLogger } from './lib/custom-logger';
 import defaultHook from './lib/default-hook';
+import docs from './lib/docs';
 import errorHandler from './lib/error-handler';
+import middlewares from './middlewares';
 import authRoutes from './modules/auth';
-import docs from './modules/docs';
 import generalRoutes from './modules/general';
-import guard from './modules/guard';
-import middlewares from './modules/middlewares';
 import organizationsRoutes from './modules/organizations';
+import publicRoutes from './modules/public';
 import usersRoutes from './modules/users';
 import { CustomHono } from './types/common';
 
@@ -15,10 +16,10 @@ export const app = new CustomHono({
   defaultHook,
 });
 
-// Add middleware
+// Add global middleware
 app.route('', middlewares);
 
-// Generate OpenAPI Docs
+// Init OpenAPI docs
 docs(app);
 
 // Not found handler
@@ -38,11 +39,11 @@ app.notFound((ctx) => {
 // Error handler
 app.onError(errorHandler);
 
-// Set guard middleware
-guard(app);
+// Configure routes with their specific middleware
+configureRoutes(app);
 
 // Add routes for each module
-const route = app.route('/', authRoutes).route('/', usersRoutes).route('/', organizationsRoutes).route('/', generalRoutes);
+const route = app.route('/', authRoutes).route('/', usersRoutes).route('/', organizationsRoutes).route('/', generalRoutes).route('/', publicRoutes);
 
 // Export type to share API with Client (RP)
 export type AppRoute = typeof route;

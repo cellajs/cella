@@ -1,8 +1,9 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import { createContext } from 'react';
 
-import { UserProfileRoute, userQueryOptions } from '~/router/routeTree';
+import { getUserBySlugOrId } from '~/api/users';
+import { UserProfileRoute } from '~/router/routeTree';
 import { User } from '~/types';
 
 import { PageHeader } from '~/modules/common/page-header';
@@ -11,9 +12,15 @@ interface UserContextValue {
   user: User;
 }
 
+export const userQueryOptions = (userIdentifier: string) =>
+  queryOptions({
+    queryKey: ['users', userIdentifier],
+    queryFn: () => getUserBySlugOrId(userIdentifier),
+  });
+
 export const UserContext = createContext({} as UserContextValue);
 
-const UserProfile = () => {
+export const UserProfile = () => {
   const { userIdentifier } = useParams({ from: UserProfileRoute.id });
   const userQuery = useSuspenseQuery(userQueryOptions(userIdentifier));
   const user = userQuery.data;
@@ -27,5 +34,3 @@ const UserProfile = () => {
     </UserContext.Provider>
   );
 };
-
-export default UserProfile;

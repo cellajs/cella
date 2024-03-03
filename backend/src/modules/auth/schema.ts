@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { passwordSchema } from '../../schemas/common';
+import { passwordSchema } from '../../lib/common-schemas';
 import { apiUserSchema } from '../users/schema';
 
 export const signInJsonSchema = z.object({
@@ -22,4 +22,9 @@ export const checkEmailJsonSchema = z.object({
 
 export const emailExistsJsonSchema = z.object({
   exists: z.boolean(),
+});
+
+export const acceptInviteJsonSchema = z.object({
+  password: passwordSchema.optional(),
+  oauth: z.enum(['google', 'microsoft', 'github']).optional(),
 });

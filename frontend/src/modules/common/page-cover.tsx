@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getColorClass } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
+import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
-import { useUpdateOrganizationMutation } from '~/router/routeTree';
-import { useUpdateUserMutation } from '~/router/routeTree';
+import { useUpdateUserMutation } from '~/modules/users/update-user-form';
 import { UploadType } from '~/types';
 
 // Lazy load the upload component

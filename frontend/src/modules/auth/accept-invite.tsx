@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { acceptInviteJsonSchema } from 'backend/modules/general/schema';
+import { acceptInviteJsonSchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
@@ -10,7 +10,7 @@ import OauthOptions from './oauth-options';
 
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
-import { acceptInvite } from '~/api/general';
+import { acceptInvite } from '~/api/authentication';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';

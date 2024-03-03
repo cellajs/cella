@@ -7,6 +7,7 @@ const openAPITags = [
   { name: 'users', description: 'Users' },
   { name: 'organizations', description: 'Organizations' },
   { name: 'general', description: 'General' },
+  { name: 'public', description: 'Public' },
 ];
 
 const docs = (app: CustomHono) => {

@@ -5,11 +5,11 @@ import { useEffect, useState } from 'react';
 import DataGrid, { Row, RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 
+import { useRef } from 'react';
 import { useOnScreen } from '~/hooks/use-on-screen';
+import { Checkbox } from '~/modules/ui/checkbox';
 import { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
-import { Checkbox } from '~/modules/ui/checkbox';
-import { useRef } from 'react';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];

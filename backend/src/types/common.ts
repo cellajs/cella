@@ -3,7 +3,7 @@ import { User } from 'lucia';
 import { z } from 'zod';
 
 import { OrganizationModel } from '../db/schema';
-import { errorResponseSchema } from '../schemas/common';
+import { errorResponseSchema } from '../lib/common-schemas';
 
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 

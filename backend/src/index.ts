@@ -11,7 +11,6 @@ import { app } from './server';
 import './lib/i18n';
 
 const main = async () => {
-
   // Reset db every Sunday at midnight
   cron.schedule('0 0 * * 0', resetDb, { scheduled: true, timezone: 'UTC' }).start();
 

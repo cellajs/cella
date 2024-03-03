@@ -1,37 +1,59 @@
-import { DefaultError, QueryClient, infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
-import { Outlet, createRoute, createRouteMask, notFound, redirect, rootRouteWithContext } from '@tanstack/react-router';
+import { QueryClient } from '@tanstack/react-query';
+import { Outlet, createRootRouteWithContext, createRoute, createRouteMask, notFound, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
-import { acceptInvite, checkInvite } from '~/api/general';
-import { UpdateOrganizationParams, getMembersByOrganizationIdentifier, getOrganizationBySlugOrId, updateOrganization } from '~/api/organizations';
-import { UpdateUserParams, getUserBySlugOrId, updateUser } from '~/api/users';
+import { acceptInvite, checkInvite } from '~/api/authentication';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import { queryClient } from '.';
-import AcceptInvite from '../modules/auth/accept-invite';
-import ResetPassword from '../modules/auth/reset-password';
-import SignIn from '../modules/auth/sign-in';
-import SignOut from '../modules/auth/sign-out';
-import App from '../modules/common/app';
-import ErrorPage from '../modules/common/error';
-import Home from '../modules/home';
-import About from '../modules/marketing/about';
-import Accessibility from '../modules/marketing/accessibility';
-import Contact from '../modules/marketing/contact';
-import { Privacy } from '../modules/marketing/privacy';
-import { Terms } from '../modules/marketing/terms';
-import Organization from '../modules/organizations/organization';
-import OrganizationsTable from '../modules/system/organizations-table';
-import SystemPanel from '../modules/system/system-panel';
-import UserProfile from '../modules/users/user-profile';
-import UserSettings from '../modules/users/user-settings';
-import UsersTable from '../modules/users/users-table';
-import { Organization as OrganizationType, User } from '../types';
 
-const rootRoute = rootRouteWithContext<{
-  queryClient: QueryClient;
-}>()({
+import AcceptInvite from '~/modules/auth/accept-invite';
+import ResetPassword from '~/modules/auth/reset-password';
+import SignIn from '~/modules/auth/sign-in';
+import SignOut from '~/modules/auth/sign-out';
+import App from '~/modules/common/app';
+import ErrorPage from '~/modules/common/error';
+import Home from '~/modules/home';
+import About from '~/modules/marketing/about';
+import Accessibility from '~/modules/marketing/accessibility';
+import Contact from '~/modules/marketing/contact';
+import { Privacy } from '~/modules/marketing/privacy';
+import { Terms } from '~/modules/marketing/terms';
+import { membersQueryOptions } from '~/modules/organizations/members-table';
+import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
+import OrganizationsTable from '~/modules/organizations/organizations-table';
+import SystemPanel from '~/modules/system/system-panel';
+import { UserProfile, userQueryOptions } from '~/modules/users/user-profile';
+import UserSettings from '~/modules/users/user-settings';
+import UsersTable from '~/modules/users/users-table';
+
+const UsersSearchSchema = z.object({
+  q: z.string().catch('').optional(),
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount']).catch('name').optional(),
+  order: z.enum(['asc', 'desc']).catch('asc').optional(),
+  role: z.enum(['admin', 'user']).catch('user').optional(),
+});
+
+export type UsersSearch = z.infer<typeof UsersSearchSchema>;
+
+const organizationsSearchSchema = z.object({
+  q: z.string().catch('').optional(),
+  sort: z.enum(['name', 'id', 'createdAt', 'userRole']).catch('name').optional(),
+  order: z.enum(['asc', 'desc']).catch('asc').optional(),
+});
+
+export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
+
+const membersSearchSchema = z.object({
+  q: z.string().catch('').optional(),
+  role: z.enum(['admin', 'member']).catch('member').optional(),
+  sort: z.enum(['name', 'id', 'email', 'lastSeenAt', 'createdAt', 'organizationRole']).catch('name').optional(),
+  order: z.enum(['asc', 'desc']).catch('asc').optional(),
+});
+
+export type MembersSearch = z.infer<typeof membersSearchSchema>;
+
+const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   component: () => <Root />,
 });
 
@@ -61,9 +83,7 @@ export const SignInRoute = createRoute({
   path: '/auth/sign-in',
   getParentRoute: () => AuthRoute,
   component: () => <SignIn />,
-  validateSearch: z.object({
-    redirect: z.string().optional(),
-  }),
+  validateSearch: z.object({ redirect: z.string().optional() }),
 });
 
 export const AcceptRoute = createRoute({
@@ -84,9 +104,7 @@ export const AcceptRoute = createRoute({
     }
   },
   component: () => <AcceptInvite />,
-  validateSearch: z.object({
-    redirect: z.string().optional(),
-  }),
+  validateSearch: z.object({ redirect: z.string().optional() }),
 });
 
 export const ResetPasswordRoute = createRoute({
@@ -149,15 +167,6 @@ const ErrorPageRoute = createRoute({
   component: () => <ErrorPage />,
 });
 
-export const useUpdateUserMutation = (userIdentifier: string) => {
-  return useMutation<User, DefaultError, UpdateUserParams>({
-    mutationKey: ['me', 'update', userIdentifier],
-    mutationFn: (params) => updateUser(userIdentifier, params),
-    onSuccess: () => queryClient.invalidateQueries(),
-    gcTime: 1000 * 10,
-  });
-};
-
 const IndexRoute = createRoute({
   id: 'layout',
   getParentRoute: () => rootRoute,
@@ -188,7 +197,7 @@ const HomeRoute = createRoute({
   component: () => <Home />,
 });
 
-// We need an alias to forward users better if coming from the backend
+// We need an alias for '/' to forward users better if coming from backend
 const HomeAliasRoute = createRoute({
   path: '/home',
   getParentRoute: () => IndexRoute,
@@ -201,15 +210,6 @@ const SystemPanelRoute = createRoute({
   component: () => <SystemPanel />,
 });
 
-const UsersSearchSchema = z.object({
-  q: z.string().catch('').optional(),
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount']).catch('name').optional(),
-  order: z.enum(['asc', 'desc']).catch('asc').optional(),
-  role: z.enum(['admin', 'user']).catch('user').optional(),
-});
-
-export type UsersSearch = z.infer<typeof UsersSearchSchema>;
-
 export const UsersTableRoute = createRoute({
   path: '/',
   getParentRoute: () => SystemPanelRoute,
@@ -217,26 +217,12 @@ export const UsersTableRoute = createRoute({
   validateSearch: UsersSearchSchema,
 });
 
-const organizationsSearchSchema = z.object({
-  q: z.string().catch('').optional(),
-  sort: z.enum(['name', 'id', 'createdAt', 'userRole']).catch('name').optional(),
-  order: z.enum(['asc', 'desc']).catch('asc').optional(),
-});
-
-export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
-
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
   getParentRoute: () => SystemPanelRoute,
   component: () => <OrganizationsTable />,
   validateSearch: organizationsSearchSchema,
 });
-
-export const userQueryOptions = (userIdentifier: string) =>
-  queryOptions({
-    queryKey: ['users', userIdentifier],
-    queryFn: () => getUserBySlugOrId(userIdentifier),
-  });
 
 export const UserProfileRoute = createRoute({
   path: '/user/$userIdentifier',
@@ -254,21 +240,6 @@ const UserSettingsRoute = createRoute({
   component: () => <UserSettings />,
 });
 
-export const organizationQueryOptions = (organizationIdentifier: string) =>
-  queryOptions({
-    queryKey: ['organizations', organizationIdentifier],
-    queryFn: () => getOrganizationBySlugOrId(organizationIdentifier),
-  });
-
-export const useUpdateOrganizationMutation = (organizationIdentifier: string) => {
-  return useMutation<OrganizationType, DefaultError, UpdateOrganizationParams>({
-    mutationKey: ['organizations', 'update', organizationIdentifier],
-    mutationFn: (params) => updateOrganization(organizationIdentifier, params),
-    onSuccess: () => queryClient.invalidateQueries(),
-    gcTime: 1000 * 10,
-  });
-};
-
 const OrganizationRedirectRoute = createRoute({
   path: '/$organizationIdentifier',
   getParentRoute: () => IndexRoute,
@@ -283,54 +254,6 @@ const OrganizationRedirectRoute = createRoute({
     });
   },
 });
-
-const membersSearchSchema = z.object({
-  q: z.string().catch('').optional(),
-  role: z.enum(['admin', 'member']).catch('member').optional(),
-  sort: z.enum(['name', 'id', 'email', 'lastSeenAt', 'createdAt', 'organizationRole']).catch('name').optional(),
-  order: z.enum(['asc', 'desc']).catch('asc').optional(),
-});
-
-export type MembersSearch = z.infer<typeof membersSearchSchema>;
-
-export const membersQueryOptions = ({
-  organizationIdentifier,
-  q,
-  sort: initialSort,
-  order: initialOrder,
-  role,
-}: {
-  organizationIdentifier: string;
-  q?: string;
-  sort?: MembersSearch['sort'];
-  order?: MembersSearch['order'];
-  role?: MembersSearch['role'];
-}) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
-
-  return infiniteQueryOptions({
-    queryKey: ['members', organizationIdentifier, q, sort, order, role],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getMembersByOrganizationIdentifier(
-        organizationIdentifier,
-        {
-          page: pageParam,
-          q,
-          sort,
-          order,
-          role,
-        },
-        signal,
-      );
-
-      return fetchedData;
-    },
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
-    refetchOnWindowFocus: false,
-  });
-};
 
 export const OrganizationRoute = createRoute({
   path: '$organizationIdentifier/$tab',
@@ -365,8 +288,8 @@ export const routeTree = rootRoute.addChildren([
   PrivacyRoute,
   AccessibilityRoute,
   ErrorPageRoute,
-  AuthRoute.addChildren([SignInRoute, AcceptRoute, ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken])]),
   SignOutRoute,
+  AuthRoute.addChildren([SignInRoute, AcceptRoute, ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken])]),
   IndexRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,

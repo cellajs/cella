@@ -1,8 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { DefaultError, useMutation } from '@tanstack/react-query';
 import { updateOrganizationJsonSchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
 import CountryFlag from '~/modules/common/country-flag';
+import { queryClient } from '~/router';
 import { Organization } from '~/types';
 
 import { config } from 'config';
@@ -23,7 +26,6 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import { useUpdateOrganizationMutation } from '~/router/routeTree';
 import MultipleSelector from '../ui/multiple-selector';
 
 interface Props {
@@ -35,6 +37,15 @@ interface Props {
 const formSchema = updateOrganizationJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
+
+export const useUpdateOrganizationMutation = (organizationIdentifier: string) => {
+  return useMutation<Organization, DefaultError, UpdateOrganizationParams>({
+    mutationKey: ['organizations', 'update', organizationIdentifier],
+    mutationFn: (params) => updateOrganization(organizationIdentifier, params),
+    onSuccess: () => queryClient.invalidateQueries(),
+    gcTime: 1000 * 10,
+  });
+};
 
 const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();

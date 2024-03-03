@@ -1,10 +1,10 @@
 import { Outlet } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
+import { Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AppAlert } from '~/modules/common/app-alert';
 import { AppFooter } from '~/modules/common/app-footer';
 import { useNavigationStore } from '~/store/navigation';
-import { Suspense } from 'react';
 
 export const AppContent = () => {
   const { activeSheet, keepMenuOpen, setSheet } = useNavigationStore();

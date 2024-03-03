@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Organization } from '~/types';
-import UpdateOrganizationForm from '../../organizations/update-organization-form';
+import UpdateOrganizationForm from '../update-organization-form';
 
 import { Pencil } from 'lucide-react';
 import { Button } from '~/modules/ui/button';

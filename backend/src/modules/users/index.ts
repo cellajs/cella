@@ -5,13 +5,13 @@ import { User } from 'lucia';
 import { coalesce, db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { membershipsTable, organizationsTable, usersTable } from '../../db/schema';
+import { removeSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError, forbiddenError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono } from '../../types/common';
 import { checkSlugRoute } from '../general/routes';
 import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute, userSuggestionsRoute } from './routes';
-import { removeSessionCookie } from '../../lib/cookies';
 
 const app = new CustomHono();
 

@@ -1,7 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { paginationQuerySchema } from '../../schemas/common';
-import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../schemas/responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../lib/common-responses';
+import { paginationQuerySchema } from '../../lib/common-schemas';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
@@ -25,6 +25,7 @@ export const createOrganizationRoute = createRoute({
   `,
   request: {
     body: {
+      required: true,
       content: {
         'application/json': {
           schema: createOrganizationJsonSchema,
@@ -97,13 +98,7 @@ export const deleteOrganizationsRoute = createRoute({
       description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(
-            z
-              .object({
-                error: z.string().optional(),
-              })
-              .optional(),
-          ),
+          schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
         },
       },
     },
@@ -123,15 +118,7 @@ export const getOrganizationsRoute = createRoute({
   request: {
     query: paginationQuerySchema.merge(
       z.object({
-        sort: z
-          .enum(['id', 'name', 'userRole', 'createdAt'])
-          .optional()
-          .default('id')
-          .openapi({
-            param: {
-              description: 'Sort by',
-            },
-          }),
+        sort: z.enum(['id', 'name', 'userRole', 'createdAt']).optional().default('id'),
       }),
     ),
   },
@@ -187,23 +174,8 @@ export const getUsersByOrganizationIdRoute = createRoute({
   request: {
     params: getUsersByOrganizationIdParamSchema,
     query: paginationQuerySchema.extend({
-      sort: z
-        .enum(['id', 'name', 'email', 'organizationRole', 'createdAt', 'lastSeenAt'])
-        .optional()
-        .default('id')
-        .openapi({
-          param: {
-            description: 'Sort by',
-          },
-        }),
-      role: z
-        .enum(['admin', 'member'])
-        .optional()
-        .openapi({
-          param: {
-            description: 'Filter by role in organization (if not set, then all users are returned)',
-          },
-        }),
+      sort: z.enum(['id', 'name', 'email', 'organizationRole', 'createdAt', 'lastSeenAt']).optional().default('id'),
+      role: z.enum(['admin', 'member']).optional(),
     }),
   },
   responses: {
@@ -272,13 +244,7 @@ export const deleteUsersFromOrganizationRoute = createRoute({
       description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(
-            z
-              .object({
-                error: z.string().optional(),
-              })
-              .optional(),
-          ),
+          schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
         },
       },
     },

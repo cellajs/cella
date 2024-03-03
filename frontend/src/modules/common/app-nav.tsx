@@ -12,9 +12,9 @@ import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Input } from '~/modules/ui/input';
 import { useNavigationStore } from '~/store/navigation';
-import { SheetAccount } from './app-sheet/sheet-account';
-import { SheetMenu } from './app-sheet/sheet-menu';
-import { SheetNotifications } from './app-sheet/sheet-notifications';
+import { SheetAccount } from './nav-sheet/sheet-account';
+import { SheetMenu } from './nav-sheet/sheet-menu';
+import { SheetNotifications } from './nav-sheet/sheet-notifications';
 
 export type NavItem = {
   id: string;

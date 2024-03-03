@@ -2,7 +2,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { usersTable } from '../../db/schema';
-import { idSchema, slugSchema } from '../../schemas/common';
+import { idSchema, imageUrlSchema, nameSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
@@ -24,15 +24,6 @@ export const apiUserSchema = createSelectSchema(usersTable, {
     }),
   );
 
-// export const apiUserWithMembershipCountSchema = apiUserSchema.setKey(
-//   'counts',
-//   z.object({
-//     memberships: z.number(),
-//   }),
-// );
-
-// export type ApiUserWithMembershipCount = z.infer<typeof apiUserWithMembershipCountSchema>;
-
 export type ApiUser = z.infer<typeof apiUserSchema>;
 
 export const updateUserParamSchema = z.object({
@@ -45,26 +36,11 @@ export const getUserParamSchema = z.object({
 
 export const updateUserJsonSchema = createInsertSchema(usersTable, {
   email: z.string().email(),
-  firstName: z.string().refine((s) => /^[a-z ,.'-]+$/i.test(s), "First name may only contain letters, spaces, and the following characters: ,.'-"),
-  lastName: z.string().refine((s) => /^[a-z ,.'-]+$/i.test(s), "Last name may only contain letters, spaces, and the following characters: ,.'-"),
-  slug: z
-    .string()
-    .refine(
-      (s) => /^[a-z0-9]+(-[a-z0-9]+)*$/i.test(s),
-      'Slug may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.',
-    ),
-  thumbnailUrl: z
-    .string()
-    .url()
-    .refine((url) => new URL(url).search === '', {
-      message: 'Search params are not allowed',
-    }),
-  bannerUrl: z
-    .string()
-    .url()
-    .refine((url) => new URL(url).search === '', {
-      message: 'Search params are not allowed',
-    }),
+  firstName: nameSchema,
+  lastName: nameSchema,
+  slug: validSlugSchema,
+  thumbnailUrl: imageUrlSchema,
+  bannerUrl: imageUrlSchema,
 })
   .pick({
     email: true,
