@@ -19,8 +19,8 @@ interface OrganizationContextValue {
 }
 
 const organizationTabs = [
-  { name: 'Members', path: '/$organizationIdentifier/members' },
-  { name: 'Settings', path: '/$organizationIdentifier/settings' },
+  { id: 'members', path: '/$organizationIdentifier/members' },
+  { id: 'settings', path: '/$organizationIdentifier/settings' },
 ];
 
 export const OrganizationContext = createContext({} as OrganizationContextValue);

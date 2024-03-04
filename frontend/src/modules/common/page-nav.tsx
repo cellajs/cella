@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 
@@ -11,12 +12,13 @@ interface Props {
     name: string;
   };
   tabs: {
-    name: string;
+    id: string;
     path: string;
   }[];
 }
 
 const PageNav = ({ title, avatar, tabs }: Props) => {
+  const { t } = useTranslation();
   const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -60,7 +62,7 @@ const PageNav = ({ title, avatar, tabs }: Props) => {
           </div>
         </div>
 
-        {tabs.map(({ name, path }) => (
+        {tabs.map(({ id, path }) => (
           <Link
             key={path}
             resetScroll={false}
@@ -70,7 +72,7 @@ const PageNav = ({ title, avatar, tabs }: Props) => {
             onClick={updateScrollPosition}
             activeProps={{ className: '!border-primary' }}
           >
-            {name}
+            {t(id)}
           </Link>
         ))}
       </div>

@@ -8,11 +8,11 @@ import { Button } from '../ui/button';
 
 const systemTabs = [
   {
-    name: 'Users',
+    id: 'users',
     path: '/system',
   },
   {
-    name: 'Organizations',
+    id: 'organizations',
     path: '/system/organizations',
   },
 ];
