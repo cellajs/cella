@@ -1,6 +1,5 @@
 import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 
-import { config } from 'config';
 import { User } from 'lucia';
 import { coalesce, db } from '../../db/db';
 import { auth } from '../../db/lucia';
@@ -10,8 +9,8 @@ import { customLogger } from '../../lib/custom-logger';
 import { createError, forbiddenError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono } from '../../types/common';
-import { checkSlugRoute } from '../general/routes';
 import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute, userSuggestionsRoute } from './routes';
+import { checkSlugExists } from '../../lib/checkSlug';
 
 const app = new CustomHono();
 
@@ -107,11 +106,7 @@ const usersRoutes = app
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     if (slug) {
-      const response = await fetch(`${config.backendUrl + checkSlugRoute.path.replace('{slug}', slug)}`, {
-        method: checkSlugRoute.method,
-      });
-
-      const { data: slugExists } = (await response.json()) as { data: boolean };
+      const slugExists = await checkSlugExists(slug);
 
       if (slugExists && slug !== targetUser.slug) {
         customLogger('Slug already exists', { slug }, 'warn');

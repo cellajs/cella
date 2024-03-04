@@ -1,4 +1,3 @@
-import { config } from 'config';
 import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '../../db/db';
@@ -7,7 +6,6 @@ import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
-import { checkSlugRoute } from '../general/routes';
 import {
   createOrganizationRoute,
   deleteOrganizationsRoute,
@@ -18,6 +16,7 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './routes';
+import { checkSlugExists } from '../../lib/checkSlug';
 
 const app = new CustomHono();
 
@@ -161,11 +160,7 @@ const organizationsRoutes = app
     } = ctx.req.valid('json');
 
     if (slug) {
-      const response = await fetch(`${config.backendUrl + checkSlugRoute.path.replace('{slug}', slug)}`, {
-        method: checkSlugRoute.method,
-      });
-
-      const { data: slugExists } = (await response.json()) as { data: boolean };
+      const slugExists = await checkSlugExists(slug);
 
       if (slugExists && slug !== organization.slug) {
         customLogger('Slug already exists', { slug }, 'warn');

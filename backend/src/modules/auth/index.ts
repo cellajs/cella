@@ -21,7 +21,6 @@ import { createError, unauthorizedError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono, ErrorResponse } from '../../types/common';
-import { checkSlugRoute } from '../general/routes';
 import oauthRoutes from './oauth';
 import {
   checkEmailRoute,
@@ -33,6 +32,7 @@ import {
   signUpRoute,
   verifyEmailRoute,
 } from './routes';
+import { checkSlugExists } from '../../lib/checkSlug';
 
 const app = new CustomHono();
 
@@ -47,11 +47,7 @@ const authRoutes = app
 
     const [slug] = email.split('@');
 
-    const response = await fetch(`${config.backendUrl + checkSlugRoute.path.replace('{slug}', slug)}`, {
-      method: checkSlugRoute.method,
-    });
-
-    const { data: slugExists } = (await response.json()) as { data: boolean };
+    const slugExists = await checkSlugExists(slug);
 
     try {
       await db
@@ -389,11 +385,7 @@ const authRoutes = app
 
       const [slug] = token.email.split('@');
 
-      const response = await fetch(`${config.backendUrl + checkSlugRoute.path.replace('{slug}', slug)}`, {
-        method: checkSlugRoute.method,
-      });
-
-      const { data: slugExists } = (await response.json()) as { data: boolean };
+      const slugExists = await checkSlugExists(slug);
 
       [user] = await db
         .insert(usersTable)
