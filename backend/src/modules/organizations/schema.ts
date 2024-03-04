@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { membershipsTable } from '../../db/schema/memberships';
+import { organizationsTable } from '../../db/schema/organizations';
 import { idSchema, imageUrlSchema, paginationQuerySchema, slugSchema } from '../../lib/common-schemas';
 import { apiUserSchema } from '../users/schema';
-import { organizationsTable } from '../../db/schema/organizations';
-import { membershipsTable } from '../../db/schema/memberships';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
 

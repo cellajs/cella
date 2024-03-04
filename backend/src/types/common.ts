@@ -2,8 +2,8 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { User } from 'lucia';
 import { z } from 'zod';
 
-import { errorResponseSchema } from '../lib/common-schemas';
 import { OrganizationModel } from '../db/schema/organizations';
+import { errorResponseSchema } from '../lib/common-schemas';
 
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 

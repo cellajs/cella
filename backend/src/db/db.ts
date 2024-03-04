@@ -6,7 +6,7 @@ import { config } from 'config';
 import { sql } from 'drizzle-orm';
 
 export const queryClient = postgres(env.DATABASE_URL ?? '', {
-  onnotice: () => { },
+  onnotice: () => {},
 });
 
 export const db = drizzle(queryClient, {

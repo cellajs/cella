@@ -1,6 +1,9 @@
 import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '../../db/db';
+import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { organizationsTable } from '../../db/schema/organizations';
+import { usersTable } from '../../db/schema/users';
 import { checkSlugExists } from '../../lib/checkSlug';
 import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
@@ -16,9 +19,6 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './routes';
-import { organizationsTable } from '../../db/schema/organizations';
-import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
-import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 
@@ -309,8 +309,8 @@ const organizationsRoutes = app
       data:
         errors.length > 0
           ? {
-            error: errors[0].error,
-          }
+              error: errors[0].error,
+            }
           : undefined,
     });
   })
@@ -408,7 +408,7 @@ const organizationsRoutes = app
         organizationRole: roles.role,
         counts: {
           memberships: membershipCount.memberships,
-        }
+        },
       })
       .from(usersQuery)
       .innerJoin(roles, eq(usersTable.id, roles.userId))
@@ -469,8 +469,8 @@ const organizationsRoutes = app
       data:
         errors.length > 0
           ? {
-            error: errors[0].error,
-          }
+              error: errors[0].error,
+            }
           : undefined,
     });
   });

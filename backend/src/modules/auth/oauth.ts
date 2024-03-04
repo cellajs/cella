@@ -1,50 +1,79 @@
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { deleteCookie, getCookie } from 'hono/cookie';
 import { isWithinExpirationDate } from 'oslo';
 
 import { config } from 'config';
 import { db } from '../../db/db';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
-import { setCookie, setSessionCookie } from '../../lib/cookies';
+import { tokensTable } from '../../db/schema/tokens';
+import { usersTable } from '../../db/schema/users';
+import { setSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { CustomHono } from '../../types/common';
+import { createSession, findOauthAccount, getRedirectUrl, insertOauthAccount } from './oauth-helpers';
 import {
-    githubSignInCallbackRoute,
-    githubSignInRoute,
-    googleSignInCallbackRoute,
-    googleSignInRoute,
-    microsoftSignInCallbackRoute,
-    microsoftSignInRoute,
-    sendVerificationEmailRoute,
+  githubSignInCallbackRoute,
+  githubSignInRoute,
+  googleSignInCallbackRoute,
+  googleSignInRoute,
+  microsoftSignInCallbackRoute,
+  microsoftSignInRoute,
+  sendVerificationEmailRoute,
 } from './routes';
-import { oauthAccountsTable } from '../../db/schema/oauthAccounts';
-import { tokensTable } from '../../db/schema/tokens';
-import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 
-// routes
+const githubScopes = { scopes: ['user:email'] };
+const googleScopes = { scopes: ['profile', 'email'] };
+const microsoftScopes = { scopes: ['profile', 'email'] };
+
+// Find user by email
+const findUserByEmail = async (email: string) => {
+  return db.select().from(usersTable).where(eq(usersTable.email, email));
+};
+
+// All oauth sign in and callback routes
 const oauthRoutes = app
   .openapi(githubSignInRoute, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
-    const url = await githubAuth.createAuthorizationURL(state, {
-      scopes: ['user:email'],
-    });
+    const url = await githubAuth.createAuthorizationURL(state, githubScopes);
 
-    setCookie(ctx, 'oauth_state', state);
-
-    if (redirect) {
-      setCookie(ctx, 'oauth_redirect', redirect);
-    }
-
-    customLogger('User redirected to GitHub');
+    createSession(ctx, 'github', state, '', redirect);
 
     return ctx.redirect(url.toString());
+  })
+  .openapi(googleSignInRoute, async (ctx) => {
+    const { redirect } = ctx.req.valid('query');
+
+    const state = generateState();
+    const codeVerifier = generateCodeVerifier();
+    const url = await googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
+
+    createSession(ctx, 'google', state, codeVerifier, redirect);
+
+    return ctx.json({}, 302, {
+      Location: url.toString(),
+    });
+    // return ctx.redirect(url.toString(), 302);
+  })
+  .openapi(microsoftSignInRoute, async (ctx) => {
+    const { redirect } = ctx.req.valid('query');
+
+    const state = generateState();
+    const codeVerifier = generateCodeVerifier();
+    const url = await microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
+
+    createSession(ctx, 'microsoft', state, codeVerifier, redirect);
+
+    return ctx.json({}, 302, {
+      Location: url.toString(),
+    });
+    // return ctx.redirect(url.toString(), 302);
   })
   .openapi(githubSignInCallbackRoute, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
@@ -56,16 +85,12 @@ const oauthRoutes = app
       return ctx.json(createError('error.invalid_state', 'Invalid state'), 400);
     }
 
-    const redirectCookie = getCookie(ctx, 'oauth_redirect');
-    let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
-    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie);
+    const redirectUrl = getRedirectUrl(ctx);
 
     try {
       const { accessToken } = await githubAuth.validateAuthorizationCode(code);
       const githubUserResponse = await fetch('https://api.github.com/user', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: {  Authorization: `Bearer ${accessToken}` },
       });
       const githubUser: {
         avatar_url: string;
@@ -102,11 +127,7 @@ const oauthRoutes = app
         twitter_username?: string | null;
       } = await githubUserResponse.json();
 
-      const [existingOauthAccount] = await db
-        .select()
-        .from(oauthAccountsTable)
-        .where(and(eq(oauthAccountsTable.providerId, 'GITHUB'), eq(oauthAccountsTable.providerUserId, String(githubUser.id))));
-
+      const [existingOauthAccount] = await findOauthAccount('GITHUB', String(githubUser.id));
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
 
@@ -116,10 +137,9 @@ const oauthRoutes = app
       }
 
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
+
       const githubUserEmails: {
         email: string;
         primary: boolean;
@@ -134,7 +154,6 @@ const oauthRoutes = app
       }
 
       const [slug] = primaryEmail.email.split('@');
-
       const [firstName, lastName] = githubUser.name ? githubUser.name.split(' ') : [slug, undefined];
 
       const inviteToken = getCookie(ctx, 'oauth_invite_token');
@@ -153,14 +172,10 @@ const oauthRoutes = app
         userEmail = token.email;
       }
 
-      const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, userEmail));
+      const [existingUser] = await findUserByEmail(userEmail);
 
       if (existingUser) {
-        await db.insert(oauthAccountsTable).values({
-          providerId: 'GITHUB',
-          providerUserId: String(githubUser.id),
-          userId: existingUser.id,
-        });
+        await insertOauthAccount(existingUser.id, 'GITHUB', String(githubUser.id));
 
         const emailVerified = existingUser.emailVerified || !!inviteToken || primaryEmail.verified;
 
@@ -178,9 +193,7 @@ const oauthRoutes = app
         if (!emailVerified) {
           await fetch(config.backendUrl + sendVerificationEmailRoute.path, {
             method: sendVerificationEmailRoute.method,
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: primaryEmail.email,
             }),
@@ -210,11 +223,7 @@ const oauthRoutes = app
         firstName,
         lastName,
       });
-      await db.insert(oauthAccountsTable).values({
-        providerId: 'GITHUB',
-        providerUserId: String(githubUser.id),
-        userId,
-      });
+      await insertOauthAccount(userId, 'GITHUB', String(githubUser.id));
 
       if (!primaryEmail.verified) {
         await fetch(config.backendUrl + sendVerificationEmailRoute.path, {
@@ -241,33 +250,10 @@ const oauthRoutes = app
         return ctx.json(createError('error.invalid_credentials', 'Invalid credentials'), 400);
       }
 
-      customLogger('Error signing in with GitHub', { errorMessage: (error as Error).message }, 'error');
+      customLogger('Error signing in with GitHub', { strategy: 'github', errorMessage: (error as Error).message }, 'error');
 
       throw error;
     }
-  })
-  .openapi(googleSignInRoute, async (ctx) => {
-    const { redirect } = ctx.req.valid('query');
-
-    const state = generateState();
-    const codeVerifier = generateCodeVerifier();
-    const url = await googleAuth.createAuthorizationURL(state, codeVerifier, {
-      scopes: ['profile', 'email'],
-    });
-
-    setCookie(ctx, 'oauth_state', state);
-    setCookie(ctx, 'oauth_code_verifier', codeVerifier);
-
-    if (redirect) {
-      setCookie(ctx, 'oauth_redirect', redirect);
-    }
-
-    customLogger('User redirected to Google');
-
-    return ctx.json({}, 302, {
-      Location: url.toString(),
-    });
-    // return ctx.redirect(url.toString(), 302);
   })
   .openapi(googleSignInCallbackRoute, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
@@ -280,16 +266,12 @@ const oauthRoutes = app
       return ctx.json(createError('error.invalid_state', 'Invalid state'), 400);
     }
 
-    const redirectCookie = getCookie(ctx, 'oauth_redirect');
-    let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
-    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie);
+    const redirectUrl = getRedirectUrl(ctx);
 
     try {
       const { accessToken } = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const user: {
         sub: string;
@@ -302,10 +284,7 @@ const oauthRoutes = app
         locale: string;
       } = await response.json();
 
-      const [existingOauthAccount] = await db
-        .select()
-        .from(oauthAccountsTable)
-        .where(and(eq(oauthAccountsTable.providerId, 'GOOGLE'), eq(oauthAccountsTable.providerUserId, user.sub)));
+      const [existingOauthAccount] = await findOauthAccount('GOOGLE', user.sub);
 
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
@@ -315,15 +294,10 @@ const oauthRoutes = app
         });
       }
 
-      const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, user.email.toLowerCase()));
+      const [existingUser] = await findUserByEmail(user.email.toLowerCase());
 
       if (existingUser) {
-        await db.insert(oauthAccountsTable).values({
-          providerId: 'GOOGLE',
-          providerUserId: user.sub,
-          userId: existingUser.id,
-        });
-
+        await insertOauthAccount(existingUser.id, 'GOOGLE', user.sub);
         await setSessionCookie(ctx, existingUser.id, 'google');
 
         return ctx.json({}, 302, {
@@ -334,7 +308,7 @@ const oauthRoutes = app
       const userId = nanoid();
       await db.insert(usersTable).values({
         id: userId,
-        slug: userId,
+        slug: user.email.split('@')[0],
         email: user.email.toLowerCase(),
         name: user.given_name,
         language: config.defaultLanguage,
@@ -342,11 +316,7 @@ const oauthRoutes = app
         firstName: user.given_name,
         lastName: user.family_name,
       });
-      await db.insert(oauthAccountsTable).values({
-        providerId: 'GOOGLE',
-        providerUserId: user.sub,
-        userId,
-      });
+      await insertOauthAccount(userId, 'GOOGLE', user.sub);
 
       await setSessionCookie(ctx, userId, 'google');
 
@@ -360,34 +330,12 @@ const oauthRoutes = app
       }
 
       const errorMessage = (error as Error).message;
-      customLogger('Error signing in with Google', { errorMessage }, 'error');
+      customLogger('Error signing in with Google', { strategy: 'google', errorMessage }, 'error');
 
       throw error;
     }
   })
-  .openapi(microsoftSignInRoute, async (ctx) => {
-    const { redirect } = ctx.req.valid('query');
 
-    const state = generateState();
-    const codeVerifier = generateCodeVerifier();
-    const url = await microsoftAuth.createAuthorizationURL(state, codeVerifier, {
-      scopes: ['profile', 'email'],
-    });
-
-    setCookie(ctx, 'oauth_state', state);
-    setCookie(ctx, 'oauth_code_verifier', codeVerifier);
-
-    if (redirect) {
-      setCookie(ctx, 'oauth_redirect', redirect);
-    }
-
-    customLogger('User redirected to Microsoft');
-
-    return ctx.json({}, 302, {
-      Location: url.toString(),
-    });
-    // return ctx.redirect(url.toString(), 302);
-  })
   .openapi(microsoftSignInCallbackRoute, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
@@ -399,16 +347,12 @@ const oauthRoutes = app
       return ctx.json(createError('error.invalid_state', 'Invalid state'), 400);
     }
 
-    const redirectCookie = getCookie(ctx, 'oauth_redirect');
-    let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
-    if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie);
+    const redirectUrl = getRedirectUrl(ctx);
 
     try {
       const { accessToken } = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const user: {
         sub: string;
@@ -419,10 +363,7 @@ const oauthRoutes = app
         email: string | undefined;
       } = await response.json();
 
-      const [existingOauthAccount] = await db
-        .select()
-        .from(oauthAccountsTable)
-        .where(and(eq(oauthAccountsTable.providerId, 'MICROSOFT'), eq(oauthAccountsTable.providerUserId, user.sub)));
+      const [existingOauthAccount] = await findOauthAccount('MICROSOFT', user.sub);
 
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
@@ -436,15 +377,10 @@ const oauthRoutes = app
         return ctx.json(createError('error.no_email_found', 'No email found'), 400);
       }
 
-      const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, user.email.toLowerCase()));
+      const [existingUser] = await findUserByEmail(user.email.toLowerCase());
 
       if (existingUser) {
-        await db.insert(oauthAccountsTable).values({
-          providerId: 'MICROSOFT',
-          providerUserId: user.sub,
-          userId: existingUser.id,
-        });
-
+        await insertOauthAccount(existingUser.id, 'MICROSOFT', user.sub);
         await setSessionCookie(ctx, existingUser.id, 'microsoft');
 
         return ctx.json({}, 302, {
@@ -455,7 +391,7 @@ const oauthRoutes = app
       const userId = nanoid();
       await db.insert(usersTable).values({
         id: userId,
-        slug: userId,
+        slug: user.email.split('@')[0],
         language: config.defaultLanguage,
         email: user.email.toLowerCase(),
         name: user.given_name,
@@ -463,12 +399,7 @@ const oauthRoutes = app
         firstName: user.given_name,
         lastName: user.family_name,
       });
-      await db.insert(oauthAccountsTable).values({
-        providerId: 'MICROSOFT',
-        providerUserId: user.sub,
-        userId,
-      });
-
+      await insertOauthAccount(userId, 'MICROSOFT', user.sub);
       await setSessionCookie(ctx, userId, 'microsoft');
 
       return ctx.json({}, 302, {
@@ -481,7 +412,7 @@ const oauthRoutes = app
       }
 
       const errorMessage = (error as Error).message;
-      customLogger('Error signing in with Microsoft', { errorMessage }, 'error');
+      customLogger('Error signing in with Microsoft', { strategy: 'microsoft', errorMessage }, 'error');
 
       throw error;
     }

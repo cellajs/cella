@@ -1,5 +1,5 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { useParams, Outlet } from '@tanstack/react-router';
+import { Outlet, useParams } from '@tanstack/react-router';
 import { UserRoundCheck, UserRoundX } from 'lucide-react';
 import { createContext } from 'react';
 import { useTranslation } from 'react-i18next';
