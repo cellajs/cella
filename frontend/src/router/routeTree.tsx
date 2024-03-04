@@ -30,6 +30,7 @@ import { getUsersQuerySchema } from 'backend/modules/users/schema';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
+import { Suspense } from 'react';
 
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
@@ -221,7 +222,11 @@ export const UserProfileRoute = createRoute({
     queryClient.ensureQueryData(userQueryOptions(userIdentifier));
   },
   errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
-  component: () => <UserProfile />,
+  component: () => (
+    <Suspense>
+      <UserProfile />
+    </Suspense>
+  ),
 });
 
 const UserSettingsRoute = createRoute({
@@ -244,7 +249,11 @@ export const OrganizationRoute = createRoute({
     queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
   },
   errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
-  component: () => <Organization />,
+  component: () => (
+    <Suspense>
+      <Organization />
+    </Suspense>
+  ),
 });
 
 export const organizationMembersRoute = createRoute({
@@ -259,7 +268,11 @@ export const organizationMembersRoute = createRoute({
       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
     }
   },
-  component: () => <MembersTable />,
+  component: () => (
+    <Suspense>
+      <MembersTable />
+    </Suspense>
+  ),
 });
 
 export const organizationSettingsRoute = createRoute({

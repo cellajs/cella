@@ -56,6 +56,7 @@ export const membersQueryOptions = ({
 };
 
 const MembersTable = () => {
+  const { t } = useTranslation();
   const { organization } = useContext(OrganizationContext);
   const [columns, setColumns] = useColumns();
   const search = useSearch({
@@ -132,7 +133,7 @@ const MembersTable = () => {
       setRows(data);
     }
   }, [queryResult.data]);
-  const { t } = useTranslation();
+
   return (
     <div className="space-y-4 h-full">
       <Toolbar

@@ -1,6 +1,5 @@
 import { Outlet } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
-import { Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AppAlert } from '~/modules/common/app-alert';
 import { AppFooter } from '~/modules/common/app-footer';
@@ -33,9 +32,7 @@ export const AppContent = () => {
       <div className="flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-svh mt-16 transition duration-300 ease-in-out md:ml-16 md:mt-0">
         <main className="flex-1 flex flex-col" aria-label="Main Content">
           <AppAlert />
-          <Suspense>
-            <Outlet />
-          </Suspense>
+          <Outlet />
         </main>
         <AppFooter />
       </div>
