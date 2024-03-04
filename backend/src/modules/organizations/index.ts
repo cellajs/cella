@@ -1,7 +1,7 @@
 import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '../../db/db';
-import { MembershipModel, membershipsTable, organizationsTable, usersTable } from '../../db/schema';
+import { checkSlugExists } from '../../lib/checkSlug';
 import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
@@ -16,7 +16,9 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './routes';
-import { checkSlugExists } from '../../lib/checkSlug';
+import { organizationsTable } from '../../db/schema/organizations';
+import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 

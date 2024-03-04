@@ -4,8 +4,10 @@ import { Argon2id } from 'oslo/password';
 
 import { config } from 'config';
 import { db } from '../src/db/db';
-import { InsertMembershipModel, InsertOrganizationModel, InsertUserModel, membershipsTable, organizationsTable, usersTable } from '../src/db/schema';
 import { nanoid } from '../src/lib/nanoid';
+import { InsertUserModel, usersTable } from '../src/db/schema/users';
+import { InsertOrganizationModel, organizationsTable } from '../src/db/schema/organizations';
+import { InsertMembershipModel, membershipsTable } from '../src/db/schema/memberships';
 
 // Seed an admin user to access app first time
 export const usersSeed = async () => {

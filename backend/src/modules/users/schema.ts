@@ -1,8 +1,8 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { usersTable } from '../../db/schema';
-import { idSchema, imageUrlSchema, nameSchema, slugSchema, validSlugSchema, paginationQuerySchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
+import { usersTable } from '../../db/schema/users';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),

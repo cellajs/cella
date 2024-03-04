@@ -4,14 +4,12 @@ import postgres from 'postgres';
 
 import { config } from 'config';
 import { sql } from 'drizzle-orm';
-import * as schema from './schema';
 
 export const queryClient = postgres(env.DATABASE_URL ?? '', {
-  onnotice: () => {},
+  onnotice: () => { },
 });
 
 export const db = drizzle(queryClient, {
-  schema,
   logger: config.debug,
 });
 

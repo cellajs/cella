@@ -6,7 +6,8 @@ import { Lucia, SessionCookieOptions, TimeSpan } from 'lucia';
 import { env } from 'env';
 import { githubSignInCallbackRoute, googleSignInCallbackRoute, microsoftSignInCallbackRoute } from '../modules/auth/routes';
 import { db } from './db';
-import { UserModel, sessionsTable, usersTable } from './schema';
+import { sessionsTable } from './schema/sessions';
+import { UserModel, usersTable } from './schema/users';
 
 export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', {
   redirectURI: `${config.backendUrl}${githubSignInCallbackRoute.path}`,

@@ -6,21 +6,23 @@ import { isWithinExpirationDate } from 'oslo';
 import { config } from 'config';
 import { db } from '../../db/db';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
-import { oauthAccountsTable, tokensTable, usersTable } from '../../db/schema';
 import { setCookie, setSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { CustomHono } from '../../types/common';
 import {
-  githubSignInCallbackRoute,
-  githubSignInRoute,
-  googleSignInCallbackRoute,
-  googleSignInRoute,
-  microsoftSignInCallbackRoute,
-  microsoftSignInRoute,
-  sendVerificationEmailRoute,
+    githubSignInCallbackRoute,
+    githubSignInRoute,
+    googleSignInCallbackRoute,
+    googleSignInRoute,
+    microsoftSignInCallbackRoute,
+    microsoftSignInRoute,
+    sendVerificationEmailRoute,
 } from './routes';
+import { oauthAccountsTable } from '../../db/schema/oauthAccounts';
+import { tokensTable } from '../../db/schema/tokens';
+import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 

@@ -3,14 +3,16 @@ import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-or
 import { User } from 'lucia';
 import { coalesce, db } from '../../db/db';
 import { auth } from '../../db/lucia';
-import { membershipsTable, organizationsTable, usersTable } from '../../db/schema';
+import { checkSlugExists } from '../../lib/checkSlug';
 import { removeSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError, forbiddenError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono } from '../../types/common';
 import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute, userSuggestionsRoute } from './routes';
-import { checkSlugExists } from '../../lib/checkSlug';
+import { membershipsTable } from '../../db/schema/memberships';
+import { organizationsTable } from '../../db/schema/organizations';
+import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 

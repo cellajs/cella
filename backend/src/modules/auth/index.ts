@@ -14,7 +14,7 @@ import { acceptInviteRoute, checkInviteRoute, githubSignInRoute } from './routes
 import { config } from 'config';
 import { emailSender } from '../../../../email';
 import { db } from '../../db/db';
-import { OrganizationModel, membershipsTable, organizationsTable, tokensTable, usersTable } from '../../db/schema';
+import { checkSlugExists } from '../../lib/checkSlug';
 import { removeSessionCookie, setSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError, unauthorizedError } from '../../lib/errors';
@@ -32,7 +32,10 @@ import {
   signUpRoute,
   verifyEmailRoute,
 } from './routes';
-import { checkSlugExists } from '../../lib/checkSlug';
+import { usersTable } from '../../db/schema/users';
+import { tokensTable } from '../../db/schema/tokens';
+import { OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { membershipsTable } from '../../db/schema/memberships';
 
 const app = new CustomHono();
 

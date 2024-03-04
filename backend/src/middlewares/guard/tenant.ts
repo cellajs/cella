@@ -1,10 +1,11 @@
 import { and, eq, or } from 'drizzle-orm';
 import { MiddlewareHandler } from 'hono';
 import { db } from '../../db/db';
-import { MembershipModel, membershipsTable, organizationsTable } from '../../db/schema';
 import { customLogger } from '../../lib/custom-logger';
 import { createError, forbiddenError } from '../../lib/errors';
 import { Env, ErrorResponse } from '../../types/common';
+import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { organizationsTable } from '../../db/schema/organizations';
 
 // organizationAuthMiddleware() is checking if the user has membership in the organization and if the user has the required role
 const organizationAuthMiddleware =

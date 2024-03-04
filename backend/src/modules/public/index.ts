@@ -1,9 +1,10 @@
 import { sql } from 'drizzle-orm';
 
 import { db } from '../../db/db';
-import { organizationsTable, usersTable } from '../../db/schema';
 import { CustomHono } from '../../types/common';
 import { getPublicCountsRoute } from './routes';
+import { organizationsTable } from '../../db/schema/organizations';
+import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 

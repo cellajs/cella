@@ -11,12 +11,15 @@ import { TimeSpan, createDate } from 'oslo';
 
 import { db } from '../../db/db';
 
-import { OrganizationModel, membershipsTable, organizationsTable, tokensTable, usersTable } from '../../db/schema';
 import { customLogger } from '../../lib/custom-logger';
 import { forbiddenError } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { CustomHono, ErrorResponse } from '../../types/common';
 import { checkSlugRoute, getUploadTokenRoute, inviteRoute } from './routes';
+import { OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { usersTable } from '../../db/schema/users';
+import { membershipsTable } from '../../db/schema/memberships';
+import { tokensTable } from '../../db/schema/tokens';
 
 const app = new CustomHono();
 
