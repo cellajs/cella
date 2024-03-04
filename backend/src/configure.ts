@@ -2,7 +2,7 @@ import { CustomHono } from './types/common';
 
 import { createRoute } from '@hono/zod-openapi';
 import { MiddlewareHandler } from 'hono';
-import authGuard from './middlewares/guard/authenticated';
+import authGuard from './middlewares/guard/auth';
 import tenantGuard from './middlewares/guard/tenant';
 import { rateLimiter } from './middlewares/rate-limiter';
 import { signInRateLimiter } from './middlewares/rate-limiter/sign-in';
