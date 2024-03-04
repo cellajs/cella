@@ -8,6 +8,7 @@ import { User } from '~/types';
 import { RowsChangeData, SortColumn } from 'react-data-grid';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { DataTable } from '~/modules/common/data-table';
+import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
 import { UsersSearch, UsersTableRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
@@ -22,31 +23,24 @@ const UsersTable = () => {
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order
-      ? [
-          {
-            columnKey: search.sort,
-            direction: search.order === 'asc' ? 'ASC' : 'DESC',
-          },
-        ]
-      : [
-          {
-            columnKey: 'createdAt',
-            direction: 'DESC',
-          },
-        ],
+      ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
+      : [{ columnKey: 'createdAt', direction: 'DESC' }],
   );
   const [query, setQuery] = useState<UsersSearch['q']>(search.q);
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
 
   // Save filters in search params
   const filters = useMemo(
-    () => ({ q: query, sort: sortColumns[0]?.columnKey, order: sortColumns[0]?.direction.toLowerCase(), role }),
+    () => ({
+      q: query,
+      sort: sortColumns[0]?.columnKey,
+      order: sortColumns[0]?.direction.toLowerCase(),
+      role,
+    }),
     [query, role, sortColumns],
   );
-  useSaveInSearchParams(filters, {
-    sort: 'createdAt',
-    order: 'desc',
-  });
+
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   const callback = useMutateQueryData(['users', query, sortColumns, role]);
 
@@ -82,37 +76,8 @@ const UsersTable = () => {
   };
 
   const onRowsChange = (changedRows: UserRow[], { indexes }: RowsChangeData<UserRow>) => {
-    let rows = [...changedRows];
-    const row = rows[indexes[0]];
-
-    if (row.type === 'MASTER') {
-      if (row.expanded) {
-        const detailId = `${row.id}-detail`;
-        rows.splice(indexes[0] + 1, 0, {
-          type: 'DETAIL',
-          id: detailId,
-          parent: row,
-        });
-
-        // Close other masters
-        rows = rows.map((r) => {
-          if (r.type === 'MASTER' && r.id === row.id) {
-            return r;
-          }
-          return {
-            ...r,
-            expanded: false,
-          };
-        });
-
-        // Remove other details
-        rows = rows.filter((r) => r.type === 'MASTER' || r.id === detailId);
-      } else {
-        rows.splice(indexes[0] + 1, 1);
-      }
-
-      setRows(rows);
-    }
+    const rows = toggleExpand(changedRows, indexes);
+    setRows(rows);
   };
 
   useEffect(() => {

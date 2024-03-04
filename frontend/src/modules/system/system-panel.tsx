@@ -7,14 +7,8 @@ import { SimpleHeader } from '~/modules/common/simple-header';
 import { Button } from '../ui/button';
 
 const systemTabs = [
-  {
-    id: 'users',
-    path: '/system',
-  },
-  {
-    id: 'organizations',
-    path: '/system/organizations',
-  },
+  { id: 'users', path: '/system' },
+  { id: 'organizations', path: '/system/organizations' },
 ];
 
 const SystemPanel = () => {

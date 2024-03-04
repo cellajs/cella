@@ -21,18 +21,8 @@ const OrganizationsTable = () => {
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order
-      ? [
-          {
-            columnKey: search.sort,
-            direction: search.order === 'asc' ? 'ASC' : 'DESC',
-          },
-        ]
-      : [
-          {
-            columnKey: 'createdAt',
-            direction: 'DESC',
-          },
-        ],
+      ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
+      : [{ columnKey: 'createdAt', direction: 'DESC' }],
   );
   const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
 
@@ -45,10 +35,8 @@ const OrganizationsTable = () => {
     }),
     [query, sortColumns],
   );
-  useSaveInSearchParams(filters, {
-    sort: 'createdAt',
-    order: 'desc',
-  });
+  
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   const callback = useMutateQueryData(['organizations', query, sortColumns]);
 
