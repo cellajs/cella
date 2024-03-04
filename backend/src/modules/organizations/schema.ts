@@ -106,12 +106,12 @@ export const userMenuSchema = z.object({
 });
 
 export const getUsersByOrganizationQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'email', 'organizationRole', 'createdAt', 'lastSeenAt']).optional().catch('createdAt'),
-  role: z.enum(['admin', 'member']).optional().catch('member'),
+  sort: z.enum(['id', 'name', 'email', 'organizationRole', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
+  role: z.enum(['admin', 'member']).default('member').optional(),
 });
 
 export const getOrganizationsQuerySchema = paginationQuerySchema.merge(
   z.object({
-    sort: z.enum(['id', 'name', 'userRole', 'createdAt']).optional().catch('createdAt'),
+    sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
   }),
 );

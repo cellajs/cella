@@ -36,8 +36,8 @@ export const getUserParamSchema = z.object({
 
 export const getUsersQuerySchema = paginationQuerySchema.merge(
   z.object({
-    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount']).optional().catch('createdAt'),
-    role: z.enum(['admin', 'user']).optional().catch('user'),
+    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount']).default('createdAt').optional(),
+    role: z.enum(['admin', 'user']).default('user').optional(),
   }),
 );
 
