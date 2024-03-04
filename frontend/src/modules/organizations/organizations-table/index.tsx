@@ -84,7 +84,7 @@ const OrganizationsTable = () => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
 
     if (data) {
-      setSelectedRows(new Set<string>());
+      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
       setRows(data);
     }
   }, [queryResult.data]);
@@ -117,7 +117,6 @@ const OrganizationsTable = () => {
           isFetching: queryResult.isFetching,
           enableVirtualization: false,
           isFiltered,
-          onResetFilters,
           selectedRows,
           fetchMore: queryResult.fetchNextPage,
           onSelectedRowsChange: setSelectedRows,

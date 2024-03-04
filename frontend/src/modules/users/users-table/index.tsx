@@ -120,7 +120,7 @@ const UsersTable = () => {
     const rows = data?.map((item) => ({ ...item, type: 'MASTER' as const, expanded: false }));
 
     if (rows) {
-      setSelectedRows(new Set<string>());
+      setSelectedRows(new Set<string>([...selectedRows].filter((id) => rows.some((row) => row.id === id))));
       setRows(rows);
     }
   }, [queryResult.data]);
@@ -155,7 +155,6 @@ const UsersTable = () => {
           isFetching: queryResult.isFetching,
           fetchMore: queryResult.fetchNextPage,
           isFiltered,
-          onResetFilters,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,
           sortColumns,

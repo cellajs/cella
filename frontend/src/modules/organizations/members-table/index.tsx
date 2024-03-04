@@ -129,7 +129,7 @@ const MembersTable = () => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
 
     if (data) {
-      setSelectedRows(new Set<string>());
+      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
       setRows(data);
     }
   }, [queryResult.data]);
@@ -168,7 +168,6 @@ const MembersTable = () => {
           fetchMore: queryResult.fetchNextPage,
           overflowNoRows: true,
           isFiltered,
-          onResetFilters,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
