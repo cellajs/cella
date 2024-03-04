@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -107,7 +107,7 @@ const MembersTable = () => {
     role,
   ]);
 
-  const queryResult = useSuspenseInfiniteQuery(
+  const queryResult = useInfiniteQuery(
     membersQueryOptions({
       organizationIdentifier: organization.slug,
       q: query,

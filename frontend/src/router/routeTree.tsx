@@ -268,11 +268,7 @@ export const organizationMembersRoute = createRoute({
       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
     }
   },
-  component: () => (
-    <Suspense>
-      <MembersTable />
-    </Suspense>
-  ),
+  component: () => <MembersTable />,
 });
 
 export const organizationSettingsRoute = createRoute({
