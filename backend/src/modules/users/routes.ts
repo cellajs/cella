@@ -1,9 +1,8 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
 import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../lib/common-responses';
-import { paginationQuerySchema } from '../../lib/common-schemas';
 import { userMenuSchema } from '../organizations/schema';
-import { apiUserSchema, getUserParamSchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
+import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
 
 export const meRoute = createRoute({
   method: 'get',
@@ -33,27 +32,7 @@ export const getUsersRoute = createRoute({
       - Users with role 'ADMIN'
   `,
   request: {
-    query: paginationQuerySchema.merge(
-      z.object({
-        sort: z
-          .enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount'])
-          .optional()
-          .default('id')
-          .openapi({
-            param: {
-              description: 'Sort by',
-            },
-          }),
-        role: z
-          .enum(['admin', 'user'])
-          .optional()
-          .openapi({
-            param: {
-              description: 'Filter by role (if not set, then all users are returned)',
-            },
-          }),
-      }),
-    ),
+    query: getUsersQuerySchema,
   },
   responses: {
     200: {

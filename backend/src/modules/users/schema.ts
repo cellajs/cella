@@ -2,7 +2,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { usersTable } from '../../db/schema';
-import { idSchema, imageUrlSchema, nameSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, slugSchema, validSlugSchema, paginationQuerySchema } from '../../lib/common-schemas';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
@@ -33,6 +33,13 @@ export const updateUserParamSchema = z.object({
 export const getUserParamSchema = z.object({
   userId: idSchema.or(slugSchema),
 });
+
+export const getUsersQuerySchema = paginationQuerySchema.merge(
+  z.object({
+    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount']).optional().catch('createdAt'),
+    role: z.enum(['admin', 'user']).optional().catch('user'),
+  }),
+);
 
 export const updateUserJsonSchema = createInsertSchema(usersTable, {
   email: z.string().email(),

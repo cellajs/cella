@@ -26,32 +26,22 @@ import SystemPanel from '~/modules/system/system-panel';
 import { UserProfile, userQueryOptions } from '~/modules/users/user-profile';
 import UserSettings from '~/modules/users/user-settings';
 import UsersTable from '~/modules/users/users-table';
+import { getUsersQuerySchema } from 'backend/modules/users/schema';
+import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
+import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
 
-const UsersSearchSchema = z.object({
-  q: z.string().catch('').optional(),
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount']).catch('name').optional(),
-  order: z.enum(['asc', 'desc']).catch('asc').optional(),
-  role: z.enum(['admin', 'user']).catch('user').optional(),
-});
 
-export type UsersSearch = z.infer<typeof UsersSearchSchema>;
+const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true, });
 
-const organizationsSearchSchema = z.object({
-  q: z.string().catch('').optional(),
-  sort: z.enum(['name', 'id', 'createdAt', 'userRole']).catch('name').optional(),
-  order: z.enum(['asc', 'desc']).catch('asc').optional(),
-});
+export type UsersSearch = z.infer<typeof getUsersQuerySchema>;
 
-export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
+const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
 
-const membersSearchSchema = z.object({
-  q: z.string().catch('').optional(),
-  role: z.enum(['admin', 'member']).catch('member').optional(),
-  sort: z.enum(['name', 'id', 'email', 'lastSeenAt', 'createdAt', 'organizationRole']).catch('name').optional(),
-  order: z.enum(['asc', 'desc']).catch('asc').optional(),
-});
+export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
-export type MembersSearch = z.infer<typeof membersSearchSchema>;
+const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true, });
+
+export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   component: () => <Root />,
@@ -214,7 +204,7 @@ export const UsersTableRoute = createRoute({
   path: '/',
   getParentRoute: () => SystemPanelRoute,
   component: () => <UsersTable />,
-  validateSearch: UsersSearchSchema,
+  validateSearch: usersSearchSchema,
 });
 
 export const OrganizationsTableRoute = createRoute({

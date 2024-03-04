@@ -1,13 +1,14 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
 import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../lib/common-responses';
-import { paginationQuerySchema } from '../../lib/common-schemas';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
   createOrganizationJsonSchema,
   getOrganizationParamSchema,
+  getOrganizationsQuerySchema,
   getUsersByOrganizationIdParamSchema,
+  getUsersByOrganizationQuerySchema,
   updateOrganizationJsonSchema,
   updateOrganizationParamSchema,
   updateUserInOrganizationJsonSchema,
@@ -116,11 +117,7 @@ export const getOrganizationsRoute = createRoute({
     If user has role 'USER', then he receives only organizations, where he is a member.
   `,
   request: {
-    query: paginationQuerySchema.merge(
-      z.object({
-        sort: z.enum(['id', 'name', 'userRole', 'createdAt']).optional().default('id'),
-      }),
-    ),
+    query: getOrganizationsQuerySchema,
   },
   responses: {
     200: {
@@ -173,10 +170,7 @@ export const getUsersByOrganizationIdRoute = createRoute({
   `,
   request: {
     params: getUsersByOrganizationIdParamSchema,
-    query: paginationQuerySchema.extend({
-      sort: z.enum(['id', 'name', 'email', 'organizationRole', 'createdAt', 'lastSeenAt']).optional().default('id'),
-      role: z.enum(['admin', 'member']).optional(),
-    }),
+    query: getUsersByOrganizationQuerySchema,
   },
   responses: {
     200: {

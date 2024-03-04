@@ -13,9 +13,9 @@ const offsetRefine = (value: string) => Number(value) >= 0;
 const limitRefine = (value: string) => Number(value) > 0;
 
 export const paginationQuerySchema = z.object({
-  q: z.string().optional(),
-  sort: z.enum(['createdAt']).optional().default('createdAt'),
-  order: z.enum(['asc', 'desc']).optional().default('asc'),
+  q: z.string().optional().catch(''),
+  sort: z.enum(['createdAt']).optional().catch('createdAt'),
+  order: z.enum(['asc', 'desc']).optional().catch('asc'),
   offset: z.string().optional().default('0').refine(offsetRefine, 'Must be number greater or equal to 0'),
   limit: z.string().optional().default('50').refine(limitRefine, 'Must be number greater than 0'),
 });
