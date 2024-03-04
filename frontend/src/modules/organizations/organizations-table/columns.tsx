@@ -26,9 +26,9 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
-          to="/$organizationIdentifier/$tab"
+          to="/$organizationIdentifier/members"
           tabIndex={tabIndex}
-          params={{ organizationIdentifier: row.slug, tab: 'members' }}
+          params={{ organizationIdentifier: row.slug }}
           className="flex space-x-2 items-center outline-0 ring-0 group"
         >
           <AvatarWrap type="organization" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />

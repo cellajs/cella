@@ -1,5 +1,5 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { useParams } from '@tanstack/react-router';
+import { useParams, Outlet } from '@tanstack/react-router';
 import { UserRoundCheck, UserRoundX } from 'lucide-react';
 import { createContext } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,8 +13,6 @@ import { Button } from '~/modules/ui/button';
 import { OrganizationRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
-import MembersTable from './members-table';
-import OrganizationSettings from './organization-settings';
 
 interface OrganizationContextValue {
   organization: Organization;
@@ -37,7 +35,7 @@ const OrganizationPage = () => {
   const user = useUserStore((state) => state.user);
   const { t } = useTranslation();
   const [apiWrapper] = useApiWrapper();
-  const { organizationIdentifier, tab } = useParams({ from: OrganizationRoute.id });
+  const { organizationIdentifier } = useParams({ from: OrganizationRoute.id });
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(organizationIdentifier));
   const organization = organizationQuery.data;
 
@@ -86,7 +84,9 @@ const OrganizationPage = () => {
         }
       />
       <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
-      <div className="container min-h-screen mt-4">{tab === 'members' ? <MembersTable /> : <OrganizationSettings />}</div>
+      <div className="container min-h-screen mt-4">
+        <Outlet />
+      </div>
     </OrganizationContext.Provider>
   );
 };

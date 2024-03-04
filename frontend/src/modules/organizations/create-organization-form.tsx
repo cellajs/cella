@@ -52,10 +52,9 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         if (!callback) {
           setSheet(null);
           navigate({
-            to: '/$organizationIdentifier/$tab',
+            to: '/$organizationIdentifier/members',
             params: {
               organizationIdentifier: result.slug,
-              tab: 'members',
             },
           });
         }

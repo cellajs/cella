@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { Outlet, createRootRouteWithContext, createRoute, createRouteMask, notFound, redirect } from '@tanstack/react-router';
+import { Outlet, createRootRouteWithContext, createRoute, createRouteMask, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 import { acceptInvite, checkInvite } from '~/api/authentication';
 import VerifyEmail from '~/modules/auth/verify-email';
@@ -19,7 +19,7 @@ import Accessibility from '~/modules/marketing/accessibility';
 import Contact from '~/modules/marketing/contact';
 import { Privacy } from '~/modules/marketing/privacy';
 import { Terms } from '~/modules/marketing/terms';
-import { membersQueryOptions } from '~/modules/organizations/members-table';
+import MembersTable, { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationsTable from '~/modules/organizations/organizations-table';
 import SystemPanel from '~/modules/system/system-panel';
@@ -29,9 +29,9 @@ import UsersTable from '~/modules/users/users-table';
 import { getUsersQuerySchema } from 'backend/modules/users/schema';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
+import OrganizationSettings from '~/modules/organizations/organization-settings';
 
-
-const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true, });
+const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export type UsersSearch = z.infer<typeof getUsersQuerySchema>;
 
@@ -39,7 +39,7 @@ const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, so
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
-const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true, });
+const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
@@ -88,8 +88,8 @@ export const AcceptRoute = createRoute({
       });
 
       throw redirect({
-        to: '/$organizationIdentifier/$tab',
-        params: { organizationIdentifier, tab: 'members' },
+        to: '/$organizationIdentifier/members',
+        params: { organizationIdentifier },
       });
     }
   },
@@ -230,45 +230,42 @@ const UserSettingsRoute = createRoute({
   component: () => <UserSettings />,
 });
 
-const OrganizationRedirectRoute = createRoute({
-  path: '/$organizationIdentifier',
-  getParentRoute: () => IndexRoute,
-  beforeLoad: ({ params }) => {
-    throw redirect({
-      to: '/$organizationIdentifier/$tab',
-      replace: true,
-      params: {
-        ...params,
-        tab: 'members',
-      },
-    });
-  },
-});
-
 export const OrganizationRoute = createRoute({
-  path: '$organizationIdentifier/$tab',
+  path: '$organizationIdentifier',
   getParentRoute: () => IndexRoute,
-  beforeLoad: ({ params }) => {
-    if (![undefined, 'members', 'settings'].includes(params.tab)) {
-      throw notFound();
+  validateSearch: membersSearchSchema,
+  beforeLoad: ({ location, params }) => {
+    // redirect to members table
+    if (!location.pathname.split('/')[2]) {
+      throw redirect({ to: '/$organizationIdentifier/members', replace: true, params });
     }
   },
-  validateSearch: membersSearchSchema,
-  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ context: { queryClient }, params: { organizationIdentifier, tab }, deps: { q, sort, order, role } }) => {
+  loader: async ({ context: { queryClient }, params: { organizationIdentifier } }) => {
     queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
-
-    // Ensure members query
-    if (tab === 'members') {
-      const membersInfiniteQueryOptions = membersQueryOptions({ organizationIdentifier, q, sort, order, role });
-      const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
-      if (!cachedMembers) {
-        queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
-      }
-    }
   },
   errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
   component: () => <Organization />,
+});
+
+export const organizationMembersRoute = createRoute({
+  path: '/members',
+  getParentRoute: () => OrganizationRoute,
+  validateSearch: membersSearchSchema,
+  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
+  loader: async ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
+    const membersInfiniteQueryOptions = membersQueryOptions({ organizationIdentifier, q, sort, order, role });
+    const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
+    if (!cachedMembers) {
+      queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
+    }
+  },
+  component: () => <MembersTable />,
+});
+
+export const organizationSettingsRoute = createRoute({
+  path: '/settings',
+  getParentRoute: () => OrganizationRoute,
+  component: () => <OrganizationSettings />,
 });
 
 export const routeTree = rootRoute.addChildren([
@@ -286,8 +283,7 @@ export const routeTree = rootRoute.addChildren([
     SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute]),
     UserProfileRoute,
     UserSettingsRoute,
-    OrganizationRedirectRoute,
-    OrganizationRoute,
+    OrganizationRoute.addChildren([organizationMembersRoute, organizationSettingsRoute]),
   ]),
 ]);
 
