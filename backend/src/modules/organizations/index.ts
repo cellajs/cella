@@ -312,8 +312,8 @@ const organizationsRoutes = app
       data:
         errors.length > 0
           ? {
-              error: errors[0].error,
-            }
+            error: errors[0].error,
+          }
           : undefined,
     });
   })
@@ -387,15 +387,36 @@ const organizationsRoutes = app
       membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
     }
 
-    const membersQuery = db
+    const roles = db
       .select({
-        user: usersTable,
-        membership: membershipsTable,
+        userId: membershipsTable.userId,
+        role: membershipsTable.role,
       })
       .from(membershipsTable)
       .where(and(...membersFilters))
-      .orderBy(sort === 'organizationRole' ? orderFunc(membershipsTable.role) : orderFunc(orderColumn))
-      .innerJoin(usersQuery, eq(membershipsTable.userId, usersTable.id));
+      .as('roles');
+
+    const membershipCount = db
+      .select({
+        userId: membershipsTable.userId,
+        memberships: count().as('memberships'),
+      })
+      .from(membershipsTable)
+      .groupBy(membershipsTable.userId)
+      .as('membership_count');
+
+    const membersQuery = db
+      .select({
+        user: usersTable,
+        organizationRole: roles.role,
+        counts: {
+          memberships: membershipCount.memberships,
+        }
+      })
+      .from(usersQuery)
+      .innerJoin(roles, eq(usersTable.id, roles.userId))
+      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
+      .orderBy(sort === 'organizationRole' ? orderFunc(roles.role) : orderFunc(orderColumn));
 
     const [{ total }] = await db
       .select({
@@ -406,22 +427,11 @@ const organizationsRoutes = app
     const result = await membersQuery.limit(+limit).offset(+offset);
 
     const members = await Promise.all(
-      result.map(async ({ user, membership }) => {
-        const [{ memberships }] = await db
-          .select({
-            memberships: count(),
-          })
-          .from(membershipsTable)
-          .where(eq(membershipsTable.userId, user.id));
-
-        return {
-          ...user,
-          organizationRole: membership?.role || null,
-          counts: {
-            memberships,
-          },
-        };
-      }),
+      result.map(async ({ user, organizationRole, counts }) => ({
+        ...user,
+        organizationRole,
+        counts,
+      })),
     );
 
     return ctx.json({
@@ -462,8 +472,8 @@ const organizationsRoutes = app
       data:
         errors.length > 0
           ? {
-              error: errors[0].error,
-            }
+            error: errors[0].error,
+          }
           : undefined,
     });
   });
