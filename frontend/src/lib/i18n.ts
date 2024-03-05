@@ -21,7 +21,9 @@ const initOptions: InitOptions = {
   interpolation: {
     escapeValue: false, // React escapes by default
   },
-  react: {},
+  react: {
+    useSuspense: false,
+  },
   detection: {
     caches: ['cookie'],
   },
