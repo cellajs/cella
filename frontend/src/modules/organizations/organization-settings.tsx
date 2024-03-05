@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
@@ -39,16 +39,14 @@ const OrganizationSettings = () => {
   return (
     <Card className="sm:w-[600px] mx-auto">
       <CardContent className="pt-6">
-        <h1 className="font-semibold text-lg mb-4">General</h1>
+        <h1 className="font-semibold text-lg mb-4">{t('common:general')}</h1>
         <UpdateOrganizationForm
           organization={organization}
           callback={(organization) => {
             if (organizationIdentifier !== organization.slug) {
               navigate({
                 to: '/$organizationIdentifier/settings',
-                params: {
-                  organizationIdentifier: organization.slug,
-                },
+                params: { organizationIdentifier: organization.slug },
                 replace: true,
               });
             }
@@ -58,8 +56,7 @@ const OrganizationSettings = () => {
         <hr className="my-6" />
 
         <p className="font-light mb-4 text-sm">
-          As an admin you can permanently delete the organization <strong>{organization.name}</strong>. All members will loose access to this
-          organization and its data. Please note that this action is irreversible.
+          <Trans i18nKey="common:text.delete_organization_notice" values={{ name: organization.name }} />
         </p>
 
         <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>

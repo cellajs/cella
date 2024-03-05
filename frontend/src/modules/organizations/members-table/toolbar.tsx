@@ -38,9 +38,9 @@ interface Props {
 }
 
 const items = [
-  { key: 'all', value: 'All' },
-  { key: 'admin', value: 'Admin' },
-  { key: 'member', value: 'Member' },
+  { key: 'all', value: 'all' },
+  { key: 'admin', value: 'admin' },
+  { key: 'member', value: 'member' },
 ];
 
 function Toolbar({
@@ -157,10 +157,10 @@ function Toolbar({
           onValueChange={(role) => {
             setRole(role === 'all' ? undefined : (role as GetMembersParams['role']));
           }}
-          value={role === undefined ? 'all' : role}
+          value={role === undefined ? t('common:all') : t(role)}
         >
           <SelectTrigger className={cn('h-10 w-[125px]', role !== undefined && 'text-primary')}>
-            <SelectValue placeholder="Select a role" />
+            <SelectValue placeholder={t('common:placeholder.select_role')} />
           </SelectTrigger>
           <SelectContent>
             {items.map(({ key, value }) => (

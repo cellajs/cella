@@ -9,24 +9,25 @@ import { queryClient } from '~/router';
 import { Organization } from '~/types';
 
 import { config } from 'config';
-import { Undo } from 'lucide-react';
-import { Suspense, useEffect } from 'react';
+import { Loader2, Undo } from 'lucide-react';
+import { Suspense, useEffect, lazy } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { checkSlug } from '~/api/general';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import timezones from '~/lib/timezones.json';
 import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
-import SelectCountry from '~/modules/common/select-country';
 import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import MultipleSelector from '../ui/multiple-selector';
+
+const SelectCountry = lazy(() => import('~/modules/common/select-country'));
+const SelectTimezone = lazy(() => import('~/modules/common/select-timezone'));
 
 interface Props {
   organization: Organization;
@@ -272,18 +273,9 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             <FormItem>
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
-                <Select onValueChange={onChange} value={value || ''}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('common:placeholder.select_timezone')} />
-                  </SelectTrigger>
-                  <SelectContent className="h-[300px]">
-                    {timezones.map((timezone) => (
-                      <SelectItem key={timezone.text} value={timezone.text}>
-                        {timezone.text}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
+                  <SelectTimezone onChange={onChange} value={value || ''} />
+                </Suspense>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -297,7 +289,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             <FormItem>
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
-                <Suspense fallback={<div>Loading countries...</div>}>
+                <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
                   <SelectCountry onChange={onChange} value={value || ''} />
                 </Suspense>
               </FormControl>

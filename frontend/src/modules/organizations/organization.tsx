@@ -70,14 +70,14 @@ const OrganizationPage = () => {
         panel={
           <div className="flex items-center p-2">
             {organization.userRole ? (
-              <Button size="sm" onClick={onLeave}>
+              <Button size="sm" onClick={onLeave} aria-label="Leave">
                 <UserRoundX size={16} />
-                <span className="ml-1">Leave</span>
+                <span className="ml-1">{t('common:leave')}</span>
               </Button>
             ) : (
-              <Button size="sm" onClick={onJoin}>
+              <Button size="sm" onClick={onJoin} aria-label="Join">
                 <UserRoundCheck size={16} />
-                <span className="ml-1">Join</span>
+                <span className="ml-1">{t('common:join')}</span>
               </Button>
             )}
           </div>

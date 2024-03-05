@@ -9,6 +9,7 @@ import { cn } from '~/lib/utils';
 import { Label } from '~/modules/ui/label';
 import { Badge } from './badge';
 import { Button } from './button';
+import { useTranslation } from 'react-i18next';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
 const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValues extends FieldValues = TFieldValues>({
@@ -18,9 +19,10 @@ const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValu
 }: FormProviderProps<TFieldValues, TContext, TTransformedValues> & {
   unsavedChanges?: boolean;
 }) => {
+  const { t } = useTranslation();
   return (
     <FormProvider {...props}>
-      {unsavedChanges && <Badge className="w-fit">Unsaved changes</Badge>}
+      {unsavedChanges && <Badge className="w-fit">{t('common:unsaved_changes')}</Badge>}
       {children}
     </FormProvider>
   );
