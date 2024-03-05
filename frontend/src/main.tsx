@@ -3,7 +3,7 @@ import './index.css';
 
 import { StrictMode, Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Theming } from '~/hooks/use-theme';
+import { ThemeManager } from '~/modules/common/theme-manager';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
@@ -21,7 +21,7 @@ const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gle
 
 ReactDOM.createRoot(root).render(
   <StrictMode>
-    <Theming />
+    <ThemeManager />
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>

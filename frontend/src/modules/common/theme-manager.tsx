@@ -18,7 +18,8 @@ const setThemeClass = (theme: string) => {
   root.classList.add(`theme-${theme}`);
 };
 
-export const Theming = () => {
+// This component is used to set the theme and mode classes on the root element
+export const ThemeManager = () => {
   useEffect(() => {
     useThemeStore.subscribe(({ mode }) => {
       setModeClass(mode);

@@ -18,7 +18,7 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
-import { checkSlugExists } from '../../lib/checkSlug';
+import { checkSlugExists } from '../../lib/check-slug';
 import { removeSessionCookie, setSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError, unauthorizedError } from '../../lib/errors';
@@ -82,7 +82,7 @@ const authRoutes = app
       if (error instanceof postgres.PostgresError && error.message.startsWith('duplicate key')) {
         customLogger('User already exists', { email }, 'warn');
 
-        return ctx.json(createError('error.email_already_exists', 'Email already exists'), 400);
+        return ctx.json(createError('error.email_exists', 'Email already exists'), 400);
       }
 
       customLogger('Error signing up', { errorMessage: (error as Error).message }, 'error');

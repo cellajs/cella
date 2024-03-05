@@ -1,11 +1,13 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { verifyEmail } from '~/api/authentication';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { Button } from '~/modules/ui/button';
 import AuthPage from '.';
 
 const VerifyEmail = () => {
+  const { t } = useTranslation();
   const { token }: { token: string } = useParams({ strict: false });
   const [apiWrapper, , error] = useApiWrapper();
   const navigate = useNavigate();
@@ -34,10 +36,10 @@ const VerifyEmail = () => {
       return (
         <AuthPage>
           <div className="text-center">
-            <h1 className="text-2xl">Something went wrong</h1>
-            <p className="font-light mt-4">Token is invalid or expired. Please request a new one.</p>
+            <h1 className="text-2xl">{t('common:error.unable_to_verify')}</h1>
+            <p className="font-light mt-4">{t('common:error.token_invalid_request_new')}</p>
             <Button className="mt-8" onClick={resendEmail}>
-              Resend email
+              {t('common:resend_email')}
             </Button>
           </div>
         </AuthPage>
@@ -50,8 +52,8 @@ const VerifyEmail = () => {
   return (
     <AuthPage>
       <div className="text-center">
-        <h1 className="text-2xl">Almost there!</h1>
-        <p className="font-light mt-4">We sent you an email. Please check your inbox and click on the link to verify your email address.</p>
+        <h1 className="text-2xl">{t('common:almost_there')}</h1>
+        <p className="font-light mt-4">{t('common:text.verify_email_notice')}</p>
       </div>
     </AuthPage>
   );

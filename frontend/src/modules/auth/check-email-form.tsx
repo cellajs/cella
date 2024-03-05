@@ -38,7 +38,7 @@ export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: str
 
   return (
     <Form {...form}>
-      <h1 className="text-2xl text-center pb-2 mt-4">Sign in or sign up</h1>
+      <h1 className="text-2xl text-center pb-2 mt-4">{t('common:sign_in_or_up')}</h1>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
@@ -54,7 +54,7 @@ export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: str
           )}
         />
         <Button type="submit" loading={pending} className="w-full">
-          Continue
+          {t('common:continue')}
           <ArrowRight size={16} className="ml-2" />
         </Button>
       </form>

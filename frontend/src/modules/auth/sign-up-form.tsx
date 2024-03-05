@@ -49,7 +49,7 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        Create account? <br />
+        {t('common:create_account')}? <br />
         <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-2 text-xl">
           {email}
           <ChevronDown size={16} className="ml-2" />
@@ -98,6 +98,8 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
 };
 
 export const LegalNotice = () => {
+  const { t } = useTranslation();
+
   const openDialog = (mode: string) => () => {
     const dialogComponent = mode === 'terms' ? <TermsText /> : <PrivacyText />;
     const dialogTitle = mode;
@@ -110,13 +112,13 @@ export const LegalNotice = () => {
 
   return (
     <p className="font-light text-sm space-x-1">
-      <span>By signing up with a new account, you agree to the</span>
+      <span>{t('common:text.legal_notice')}</span>
       <Button variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
-        terms
+        {t('common:terms').toLocaleLowerCase()}
       </Button>
       <span>&</span>
       <Button variant="link" className="p-0 h-auto" onClick={openDialog('privacy')}>
-        privacy policy
+        {t('common:privacy_policy').toLocaleLowerCase()}
       </Button>
       <span>of {config.company.name}.</span>
     </p>

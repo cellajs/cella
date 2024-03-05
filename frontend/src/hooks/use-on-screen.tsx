@@ -1,23 +1,14 @@
 import { useCallback, useState } from 'react';
 
-export const useOnScreen = (
-  {
-    root,
-    rootMargin,
-    threshold,
-    firstChild,
-  }: {
-    root?: Element | null;
-    rootMargin?: string;
-    threshold?: number;
-    firstChild?: boolean;
-  } = {
-    root: null,
-    rootMargin: '0px',
-    threshold: 0,
-    firstChild: false,
-  },
-) => {
+interface UseOnScreenProps {
+  root?: Element | null;
+  rootMargin?: string;
+  threshold?: number;
+  firstChild?: boolean;
+}
+
+// This hook is used to detect if an element is in the viewport
+export const useOnScreen = ({ root = null, rootMargin = '0px', threshold = 0, firstChild = false }: UseOnScreenProps) => {
   const [observer, setObserver] = useState<IntersectionObserver>();
   const [isIntersecting, setIntersecting] = useState(false);
 

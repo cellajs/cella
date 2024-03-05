@@ -10,17 +10,17 @@ import { Organization } from '~/types';
 
 import { config } from 'config';
 import { Undo } from 'lucide-react';
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { checkSlug } from '~/api/general';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import countries from '~/lib/countries.json';
 import timezones from '~/lib/timezones.json';
 import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
+import SelectCountry from '~/modules/common/select-country';
 import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
@@ -110,7 +110,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           if (isExists) {
             form.setError('slug', {
               type: 'manual',
-              message: t('common:error.slug_already_exists'),
+              message: t('common:error.slug_exists'),
             });
           } else {
             form.clearErrors('slug');
@@ -274,7 +274,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
               <FormControl>
                 <Select onValueChange={onChange} value={value || ''}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a timezone" />
+                    <SelectValue placeholder={t('common:placeholder.select_timezone')} />
                   </SelectTrigger>
                   <SelectContent className="h-[300px]">
                     {timezones.map((timezone) => (
@@ -289,6 +289,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="country"
@@ -296,19 +297,9 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             <FormItem>
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
-                <Select onValueChange={onChange} value={value || ''}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a country" />
-                  </SelectTrigger>
-                  <SelectContent className="h-[300px]">
-                    {countries.map((country) => (
-                      <SelectItem key={country.code} value={country.name}>
-                        <CountryFlag countryCode={country.code} imgType="png" className="mr-2" />
-                        {country.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Suspense fallback={<div>Loading countries...</div>}>
+                  <SelectCountry onChange={onChange} value={value || ''} />
+                </Suspense>
               </FormControl>
               <FormMessage />
             </FormItem>

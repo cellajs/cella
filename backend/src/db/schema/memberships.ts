@@ -3,6 +3,8 @@ import { pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 
+const roleEnum = ['MEMBER', 'ADMIN'] as const;
+
 export const membershipsTable = pgTable(
   'memberships',
   {
@@ -12,9 +14,7 @@ export const membershipsTable = pgTable(
     userId: varchar('user_id')
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    role: varchar('role', { enum: ['ADMIN', 'MEMBER'] })
-      .notNull()
-      .default('MEMBER'),
+    role: varchar('role', { enum: roleEnum }).notNull().default('MEMBER'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     createdBy: varchar('created_by').references(() => usersTable.id),
     modifiedAt: timestamp('modified_at'),

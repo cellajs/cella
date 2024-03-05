@@ -9,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { t } from 'i18next';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useRef } from 'react';
 import { toast } from 'sonner';
@@ -61,7 +62,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {lastUser ? 'Welcome back' : 'Sign in as'} <br />
+        {lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
         <Button variant="ghost" onClick={cancel} className="font-light mt-2 text-xl">
           {email}
           <ChevronDown size={16} className="ml-2" />
@@ -94,7 +95,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
         />
 
         <Button type="submit" loading={pending} className="w-full">
-          Sign in
+          t('common:sign_in')
           <ArrowRight size={16} className="ml-2" />
         </Button>
 
@@ -112,7 +113,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
     apiWrapper(
       () => sendResetPasswordEmail(resetEmailRef.current),
       () => {
-        toast.success('Reset link sent');
+        toast.success(t('common:success.reset_link_sent'));
         dialog.remove();
       },
     );
@@ -125,7 +126,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
           type="email"
           autoFocus
           className="mb-4"
-          placeholder="Email address"
+          placeholder={t('common:email')}
           defaultValue={email} // Set the default value instead of value
           onChange={(e) => {
             resetEmailRef.current = e.target.value;
@@ -134,13 +135,13 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
         />
         <Button className="w-full" disabled={!resetEmailRef.current} loading={pending} onClick={handleResetRequestSubmit}>
           <Send size={16} className="mr-2" />
-          Send reset link
+          {t('common:send_reset_link')}
         </Button>
       </div>,
       {
         className: 'md:max-w-xl',
-        title: 'Reset password',
-        text: 'Enter your email address to receive a link to reset your password.',
+        title: t('common:reset_password'),
+        text: t('common:text.reset_password'),
       },
     );
   };

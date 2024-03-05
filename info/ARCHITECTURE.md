@@ -31,10 +31,6 @@ This document describes the high-level architecture of Cella.
 - [Biome](https://biomejs.dev)
 - [Lefthook](https://github.com/evilmartians/lefthook)
 
-### 3rd party integrations
-- AppSignal
-- ... more to come
-
 ## File structure
 coming soon, will still change into a more modular structure.
 

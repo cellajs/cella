@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+// This hook is used to check if the user has scrolled
 export const hasScrolled = () => {
   const [scrolled, setScrolled] = useState(false);
 

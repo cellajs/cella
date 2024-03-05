@@ -1,5 +1,6 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
+import { useTranslation } from 'react-i18next';
 import { acceptInvite, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/router/routeTree';
@@ -40,6 +41,7 @@ interface OauthOptionsProps {
 }
 
 const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
+  const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { token }: { token: string } = useParams({ strict: false });
   const invertClass = mode === 'dark' ? 'invert' : '';
@@ -56,7 +58,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   return (
     <>
       <div className="relative flex justify-center text-xs uppercase">
-        <span className="text-muted-foreground px-2">Or</span>
+        <span className="text-muted-foreground px-2">{t('common:or')}</span>
       </div>
 
       <div className="flex flex-col space-y-2">
@@ -85,7 +87,8 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
                 className={`w-4 h-4 mr-2 ${option.name === 'Github' ? invertClass : ''}`}
                 loading="lazy"
               />
-              {actionType === 'acceptInvite' ? 'Accept' : actionType === 'signUp' ? 'Sign up' : 'Sign in'} with {option.name}
+              {actionType === 'acceptInvite' ? t('common:accept') : actionType === 'signUp' ? t('common.sign_up') : t('common.sign_in')} with{' '}
+              {option.name}
             </Button>
           );
         })}

@@ -120,7 +120,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           if (isExists) {
             form.setError('slug', {
               type: 'manual',
-              message: t('common:error.slug_already_exists'),
+              message: t('common:error.slug_exists'),
             });
           } else {
             form.clearErrors('slug');

@@ -8,8 +8,10 @@ const defaultMessages = (t: ReturnType<typeof useTranslation>['t']) => ({
   '401': t('common:error.unauthorized_action'),
   '403': t('common:error.forbidden_action'),
   '404': t('common:error.resource_not_found'),
+  '429': t('common:error.too_many_requests'),
 });
 
+// This hook is used to wrap API calls and handle errors and pending state
 export const useApiWrapper = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();

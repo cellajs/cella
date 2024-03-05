@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
-import { oauthAccountsTable } from '../../db/schema/oauthAccounts';
+import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
 import { setCookie } from '../../lib/cookies';
 
 import { config } from 'config';

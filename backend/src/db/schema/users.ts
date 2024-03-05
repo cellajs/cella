@@ -1,6 +1,9 @@
+import { config } from 'config';
 import { relations } from 'drizzle-orm';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { membershipsTable } from './memberships';
+
+const roleEnum = ['USER', 'ADMIN'] as const;
 
 export const usersTable = pgTable(
   'users',
@@ -14,7 +17,7 @@ export const usersTable = pgTable(
     email: varchar('email').notNull().unique(),
     emailVerified: boolean('email_verified').notNull().default(false),
     bio: varchar('bio'),
-    language: varchar('language').notNull(),
+    language: varchar('language').notNull().default(config.defaultLanguage),
     bannerUrl: varchar('banner_url'),
     thumbnailUrl: varchar('thumbnail_url'),
     newsletter: boolean('newsletter').notNull().default(false),
@@ -26,9 +29,7 @@ export const usersTable = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     modifiedAt: timestamp('modified_at'),
     modifiedBy: varchar('modified_by'),
-    role: varchar('role', { enum: ['USER', 'ADMIN'] })
-      .notNull()
-      .default('USER'),
+    role: varchar('role', { enum: roleEnum }).notNull().default('USER'),
   },
   (table) => {
     return {

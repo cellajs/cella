@@ -4,7 +4,7 @@ import { db } from '../../db/db';
 import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
-import { checkSlugExists } from '../../lib/checkSlug';
+import { checkSlugExists } from '../../lib/check-slug';
 import { customLogger } from '../../lib/custom-logger';
 import { createError } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
@@ -33,7 +33,7 @@ const organizationsRoutes = app
     if (organization) {
       customLogger('Organization with this name exists', { name }, 'warn');
 
-      return ctx.json<ErrorResponse>(createError('error.organization_with_this_name_exists', 'Organization with this name already exists'), 400);
+      return ctx.json<ErrorResponse>(createError('error.organization_name_exists', 'Organization with this name already exists'), 400);
     }
 
     const [createdOrganization] = await db
@@ -167,7 +167,7 @@ const organizationsRoutes = app
       if (slugExists && slug !== organization.slug) {
         customLogger('Slug already exists', { slug }, 'warn');
 
-        return ctx.json(createError('error.slug_already_exists', 'Slug already exists'), 400);
+        return ctx.json(createError('error.slug_exists', 'Slug already exists'), 400);
       }
     }
 

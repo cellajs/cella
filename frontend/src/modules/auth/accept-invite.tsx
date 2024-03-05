@@ -53,7 +53,10 @@ const Accept = () => {
     <AuthPage>
       <Form {...form}>
         <h1 className="text-2xl text-center">
-          {t('common:accept_invitation')} <br /> <span className="font-light text-xl">for {'"email here"'}</span>
+          {t('common:accept_invitation')} <br />{' '}
+          <span className="font-light text-xl">
+            {t('common:for')} {'"email here"'}
+          </span>
         </h1>
 
         <LegalNotice />

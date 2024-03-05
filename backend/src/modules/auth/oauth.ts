@@ -90,7 +90,7 @@ const oauthRoutes = app
     try {
       const { accessToken } = await githubAuth.validateAuthorizationCode(code);
       const githubUserResponse = await fetch('https://api.github.com/user', {
-        headers: {  Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const githubUser: {
         avatar_url: string;

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FieldValues, Path, UseFormProps, UseFormReturn, useForm } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
+// This hook is used to create a form with unsaved draft support
 export function useFormWithDraft<
   TFieldValues extends FieldValues = FieldValues,
   // biome-ignore lint/suspicious/noExplicitAny: any is required here

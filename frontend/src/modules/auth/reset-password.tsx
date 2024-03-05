@@ -47,7 +47,10 @@ const ResetPassword = () => {
     <AuthPage>
       <Form {...form}>
         <h1 className="text-2xl text-center">
-          Reset password <br /> <span className="font-light text-xl">for {'"email here"'}</span>
+          {t('common.reset_password')} <br />{' '}
+          <span className="font-light text-xl">
+            {t('common:for')} {'"email here"'}
+          </span>
         </h1>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField

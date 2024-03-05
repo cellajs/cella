@@ -21,6 +21,7 @@ export function dateShort(date?: string | null) {
   });
 }
 
+// nanoid with only lowercase letters and numbers
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789');
 
 // Merge tailwind classes

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 type ValidBreakpoints = keyof typeof config.theme.screenSizes;
 
+// This hook is used to conditionally render components based on the current screen width
 export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: ValidBreakpoints): boolean => {
   const breakpoints: { [key: string]: string } = config.theme.screenSizes;
   const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => parseInt(breakpoints[a], 10) - parseInt(breakpoints[b], 10));

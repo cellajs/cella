@@ -5,6 +5,7 @@ interface Item {
   id: string;
 }
 
+// This hook is used to mutate the data of a query
 const useMutateQueryData = (queryKey: QueryKey) => {
   return (items: Item[], action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<

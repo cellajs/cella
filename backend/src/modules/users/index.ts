@@ -6,7 +6,7 @@ import { auth } from '../../db/lucia';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
-import { checkSlugExists } from '../../lib/checkSlug';
+import { checkSlugExists } from '../../lib/check-slug';
 import { removeSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
 import { createError, forbiddenError } from '../../lib/errors';
@@ -112,7 +112,7 @@ const usersRoutes = app
 
       if (slugExists && slug !== targetUser.slug) {
         customLogger('Slug already exists', { slug }, 'warn');
-        return ctx.json(createError('error.slug_already_exists', 'Slug already exists'), 400);
+        return ctx.json(createError('error.slug_exists', 'Slug already exists'), 400);
       }
     }
 
