@@ -63,6 +63,7 @@
   "pricing.title_1": "Donate",
   "pricing.title_2": "Build",
   "pricing.title_3": "Partner",
+  "subtitle": "TypeScript template",
   "text_1": "Cella is open source and puts libraries first. Build your new web app as part of a single stack community.",
   "text_2": "We didn't want another framework. Why not just a comprehensive template?",
   "text_3": "Best-in-class libraries that fit well together. Each with proper documentation.",
@@ -83,5 +84,9 @@
   "why.text_3": "Our aim is to build a small community, dedicated to the same stack. A bounty program and fund will help all members and Cella itself.",
   "why.title_1": "Implementation ready",
   "why.title_2": "Prebuilt endpoints",
-  "why.title_3": "Dedicated community"
+  "why.title_3": "Dedicated community",
+  "pricing.popular": "Build & get paid!",
+  "pricing.plan_1.title": "pay €1k",
+  "pricing.plan_2.title": "receive €1-12k",
+  "pricing.plan_3.title": "To be decided"
 }

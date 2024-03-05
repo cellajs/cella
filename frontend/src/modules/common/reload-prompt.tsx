@@ -1,14 +1,16 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 function ReloadPrompt() {
+  const { t } = useTranslation();
+  
   // replaced dynamically
   const buildDate = '__DATE__';
   // replaced dynamically
   const reloadSW = '__RELOAD_SW__';
 
   const {
-    offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
@@ -31,21 +33,20 @@ function ReloadPrompt() {
   });
 
   const close = () => {
-    setOfflineReady(false);
     setNeedRefresh(false);
   };
 
   return (
     <>
-      {(offlineReady || needRefresh) && (
+      {(needRefresh) && (
         <div className="fixed right-0 bottom-0 m-[16px] p-[12px] border rounded-[4px] z-[200] text-left bg-background">
           <div className="mb-[8px]">
-            {offlineReady ? <span>App ready to work offline</span> : <span>New content available, click on reload button to update.</span>}
+            <span>{t('common:text.refresh_pwa_app')}</span>
           </div>
           <div className="space-x-[8px]">
-            {needRefresh && <Button onClick={() => updateServiceWorker(true)}>Reload</Button>}
+            {needRefresh && <Button onClick={() => updateServiceWorker(true)}>{t('common.reload')}</Button>}
             <Button variant="secondary" onClick={() => close()}>
-              Close
+              {t('common.close')}
             </Button>
           </div>
         </div>

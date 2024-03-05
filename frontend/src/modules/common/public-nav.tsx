@@ -11,14 +11,16 @@ import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent } from '~/modules/ui/sheet';
 import HamburgerButton from './hamburger';
 import LanguageDropdown from './language-dropdown';
+import { useTranslation } from 'react-i18next';
 
 const publicNavConfig = [
-  { title: 'Features', url: '/about', hash: 'features' },
-  { title: 'Pricing', url: '/about', hash: 'pricing' },
-  { title: 'Docs', url: `${config.backendUrl}/docs`, hash: '' },
+  { id: 'features', url: '/about', hash: 'features' },
+  { id: 'pricing', url: '/about', hash: 'pricing' },
+  { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 
 export function PublicNav() {
+  const { t } = useTranslation();
   const [showSheet, setShowSheet] = useState<boolean>(false);
 
   const toggleSheet = useCallback((isOpen: boolean) => {
@@ -32,11 +34,11 @@ export function PublicNav() {
       <Link
         to={item.url}
         hash={item.hash}
-        key={item.title}
+        key={item.id}
         onClick={() => toggleSheet(false)}
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
       >
-        {item.title}
+        {t(item.id)}
       </Link>
     ));
   };
@@ -92,7 +94,7 @@ export function PublicNav() {
             </Button>
 
             <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
-              Sign in
+              {t('common:sign_in')}
             </Link>
           </div>
         </div>

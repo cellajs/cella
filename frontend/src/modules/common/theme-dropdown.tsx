@@ -5,6 +5,7 @@ import { Mode, Theme, useThemeStore } from '~/store/theme';
 import { Ban, Circle, LucideProps, Moon, Sun } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { useTranslation } from 'react-i18next';
 
 interface ThemeDropdownProps {
   size?: number;
@@ -12,15 +13,16 @@ interface ThemeDropdownProps {
 }
 
 const ThemeDropdown = ({ size = 24, className = '' }: ThemeDropdownProps) => {
+  const { t } = useTranslation();
   const { mode, theme, setMode, setTheme } = useThemeStore();
 
   const modes = [
-    { id: 'light', label: 'Light', icon: Sun },
-    { id: 'dark', label: 'Dark', icon: Moon },
+    { id: 'light', label: t('common:light'), icon: Sun },
+    { id: 'dark', label: t('common:dark'), icon: Moon },
   ];
 
   const themes = [
-    { id: 'none', label: 'No color', icon: Ban, color: 'opacity-50' },
+    { id: 'none', label: t('common:no_color'), icon: Ban, color: 'opacity-50' },
     { id: 'rose', label: 'Rose', icon: Circle, color: 'text-rose-600' },
   ];
 
@@ -31,7 +33,7 @@ const ThemeDropdown = ({ size = 24, className = '' }: ThemeDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={className} aria-label="Change site theme">
+        <Button variant="ghost" size="icon" className={className} aria-label="Change theme">
           {mode === 'light' ? (
             <Sun size={size} strokeWidth={config.theme.strokeWidth} />
           ) : (

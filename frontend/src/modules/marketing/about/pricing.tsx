@@ -8,7 +8,6 @@ import { Button } from '~/modules/ui/button';
 
 interface PricingPlan {
   id: string;
-  price: string;
   priceId: string | null;
   featureCount: number;
   borderColor: string;
@@ -16,9 +15,9 @@ interface PricingPlan {
 }
 
 const pricingPlans: PricingPlan[] = [
-  { id: 'donate', price: 'pay €1k', priceId: null, featureCount: 7, borderColor: '' },
-  { id: 'build', price: 'receive €1-12k', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
-  { id: 'partner', price: 'To be decided', priceId: null, featureCount: 3, borderColor: '' },
+  { id: 'donate', priceId: null, featureCount: 7, borderColor: '' },
+  { id: 'build', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
+  { id: 'partner', priceId: null, featureCount: 3, borderColor: '' },
 ];
 
 const Pricing = () => {
@@ -29,8 +28,8 @@ const Pricing = () => {
     dialog(<ContactForm dialog />, {
       drawerOnMobile: false,
       className: 'sm:max-w-[64rem]',
-      title: 'Contact us',
-      text: 'We will get back to you as soon as possible!',
+      title: t('common:contact_us'),
+      text: t('common:text.contact_us'),
     });
   };
 
@@ -38,9 +37,11 @@ const Pricing = () => {
     <div
       className={`mx-auto mt-8 max-w-[86rem] ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}
     >
-      {pricingPlans.map(({ id, borderColor, featureCount, popular, price }, planIndex) => {
+      <h1>{t('common:contact_us')}</h1>
+      {pricingPlans.map(({ id, borderColor, featureCount, popular }, planIndex) => {
         const title = `about:pricing.title_${planIndex + 1}`;
         const text = `about:pricing.text_${planIndex + 1}`;
+        const price = `about:pricing.plan_${planIndex + 1}.title`;
 
         return (
           <div
@@ -51,7 +52,7 @@ const Pricing = () => {
           >
             {popular && (
               <Badge className="absolute top-0 left-1/2 -translate-x-2/4 font-light -translate-y-2/4 py-1 px-4 text-center">
-                🚀 Build & get paid!
+                🚀 {t('about:pricing.popular')}
               </Badge>
             )}
             <div className="mt-4">
@@ -60,7 +61,7 @@ const Pricing = () => {
                 {popular && <Sparkles className="ml-1 w-5 text-primary" strokeWidth={config.theme.strokeWidth} />}
               </h3>
               <div className="text-center mt-4 text-gray-600 dark:text-gray-400">
-                <span className="mr-1 text-3xl font-bold">{price}</span>
+                <span className="mr-1 text-3xl font-bold">{t(price)}</span>
                 <span className="font-light">/ {t('common:year')}</span>
               </div>
 
@@ -80,7 +81,7 @@ const Pricing = () => {
             </div>
 
             <Button variant={popular ? 'gradient' : 'plain'} className="w-full mt-6" aria-label="Open contact form" onClick={openContactForm}>
-              Contact us
+              {t('common:contact_us')}
             </Button>
           </div>
         );

@@ -151,7 +151,7 @@
   "clear_filter": "Clear filter",
   "success.create_newsletter": "Newsletter has been sent.",
   "subject": "Subject",
-  "placeholder.select_country": "Select country",
+  "placeholder.select_country": "Select a country",
   "placeholder.select_timezone": "Select timezone",
   "text.reset_password": "Enter your email address to receive a link to reset your password.",
   "reset_password": "Reset password",
@@ -218,5 +218,11 @@
   "connect": "Connect",
   "accessibility": "Accessibility",
   "request_info": "Request info",
-  "text.request_info": "Interested in becoming a donate or build member? Leave your email and we will contact you."
+  "text.request_info": "Interested in becoming a donate or build member? Leave your email and we will contact you.",
+  "pricing": "Pricing",
+  "docs": "Docs",
+  "no_color": "No color",
+  "light": "Light",
+  "dark": "Dark",
+  "text.refresh_pwa_app": "New version available. Click on reload button to update."
 }
