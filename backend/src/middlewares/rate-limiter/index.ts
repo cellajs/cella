@@ -1,10 +1,11 @@
 import { MiddlewareHandler } from 'hono';
 
-import { IRateLimiterOptions, RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
+import { IRateLimiterPostgresOptions, RateLimiterPostgres, RateLimiterRes } from 'rate-limiter-flexible';
 import { tooManyRequestsError } from '../../lib/errors';
 
 import { customLogger } from '../../lib/custom-logger';
 import { Env } from '../../types/common';
+import { queryClient } from '../../db/db';
 
 type RateLimiterMode = 'success' | 'fail' | 'limit';
 
@@ -12,7 +13,7 @@ type RateLimiterMode = 'success' | 'fail' | 'limit';
  * This file contains the implementation of a rate limiter middleware.
  * It uses the `rate-limiter-flexible` library to limit the number of requests per user or IP address.
  * https://github.com/animir/node-rate-limiter-flexible#readme
- * The rate limiter is implemented as a class `RateLimiter` that extends `RateLimiterMemory`.
+ * The rate limiter is implemented as a class `RateLimiter` that extends `RateLimiterPostgres`.
  *
  * The 'success' mode decreases the available points for the user or IP address on successful requests.
  * The 'fail' (default mode does the same but for failed requests.
@@ -23,7 +24,7 @@ type RateLimiterMode = 'success' | 'fail' | 'limit';
 
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
 
-class RateLimiter extends RateLimiterMemory {
+class RateLimiter extends RateLimiterPostgres {
   public middleware(mode: RateLimiterMode = 'fail'): MiddlewareHandler<Env> {
     if (mode === 'success' || mode === 'fail') {
       this.points = this.points - 1;
@@ -78,14 +79,14 @@ class RateLimiter extends RateLimiterMemory {
         if (mode === 'success') {
           try {
             await this.consume(usernameIPkey);
-          } catch {}
+          } catch { }
         } else if (mode === 'fail') {
           await this.delete(usernameIPkey);
         }
       } else if (mode === 'fail') {
         try {
           await this.consume(usernameIPkey);
-        } catch {}
+        } catch { }
       }
     };
   }
@@ -98,5 +99,8 @@ const defaultOptions = {
   blockDuration: 60 * 10, // Block for 10 minutes
 };
 
-export const rateLimiter = (options: IRateLimiterOptions = defaultOptions, mode: RateLimiterMode = 'fail') =>
-  new RateLimiter(options).middleware(mode);
+export const rateLimiter = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'> = defaultOptions, mode: RateLimiterMode = 'fail') =>
+  new RateLimiter({
+    ...options,
+    storeClient: queryClient,
+  }).middleware(mode);

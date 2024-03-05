@@ -1,10 +1,11 @@
 import { MiddlewareHandler } from 'hono';
 
-import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { RateLimiterPostgres } from 'rate-limiter-flexible';
 import { tooManyRequestsError } from '../../lib/errors';
 
 import { customLogger } from '../../lib/custom-logger';
 import { Env } from '../../types/common';
+import { queryClient } from '../../db/db';
 
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
 
@@ -12,14 +13,16 @@ const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`
 const maxWrongAttemptsByIPperDay = 100;
 const maxConsecutiveFailsByUsernameAndIP = 5;
 
-const limiterSlowBruteByIP = new RateLimiterMemory({
+const limiterSlowBruteByIP = new RateLimiterPostgres({
+  storeClient: queryClient,
   keyPrefix: 'login_fail_ip_per_day',
   points: maxWrongAttemptsByIPperDay,
   duration: 60 * 60 * 24,
   blockDuration: 60 * 60 * 24, // Block for 1 day, if 100 wrong attempts per day
 });
 
-const limiterConsecutiveFailsByUsernameAndIP = new RateLimiterMemory({
+const limiterConsecutiveFailsByUsernameAndIP = new RateLimiterPostgres({
+  storeClient: queryClient,
   keyPrefix: 'login_fail_consecutive_username_and_ip',
   points: maxConsecutiveFailsByUsernameAndIP,
   duration: 60 * 60, // Store number for 1 hour since first fail
@@ -57,7 +60,9 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
     return ctx.json(tooManyRequestsError(), 429);
   }
 
-  await limiterSlowBruteByIP.consume(ipAddr);
+  if (ipAddr) {
+    await limiterSlowBruteByIP.consume(ipAddr);
+  }
 
   await next();
 

@@ -44,7 +44,7 @@ will be used in the the business/service logic?
 
 */
 
-const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10 }, 'fail');
+const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');
 
 // authGuard() is used for all routes that require authentication
 // tenantGuard() is used for all routes that require organization membership; it also requires authGuard() to be used before and organizationId to be in the path
@@ -74,7 +74,7 @@ const routesMiddlewares: {
   { route: updateUserInOrganizationRoute, middlewares: [authGuard(), tenantGuard(['ADMIN'])] },
   {
     route: inviteRoute,
-    middlewares: [authGuard(), tenantGuard(['ADMIN']), rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10 }, 'success')],
+    middlewares: [authGuard(), tenantGuard(['ADMIN']), rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   },
   { route: deleteUsersFromOrganizationRoute, middlewares: [authGuard(), tenantGuard(['ADMIN'])] },
   { route: getUploadTokenRoute, middlewares: [authGuard()] },

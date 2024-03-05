@@ -20,7 +20,7 @@ app.get('/ping', (c) => c.text('pong'));
 app.use('*', logger(customLogger as unknown as Parameters<typeof logger>[0]));
 
 // Rate limiter
-app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30 }, 'fail'));
+app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));
 
 // CORS
 app.use(

@@ -1,12 +1,12 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { env } from 'env';
-import postgres from 'postgres';
+import pg from 'pg';
 
 import { config } from 'config';
 import { sql } from 'drizzle-orm';
 
-export const queryClient = postgres(env.DATABASE_URL ?? '', {
-  onnotice: () => {},
+export const queryClient = new pg.Pool({
+  connectionString: env.DATABASE_URL,
 });
 
 export const db = drizzle(queryClient, {
