@@ -37,7 +37,6 @@ const Pricing = () => {
     <div
       className={`mx-auto mt-8 max-w-[86rem] ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}
     >
-      <h1>{t('common:contact_us')}</h1>
       {pricingPlans.map(({ id, borderColor, featureCount, popular }, planIndex) => {
         const title = `about:pricing.title_${planIndex + 1}`;
         const text = `about:pricing.text_${planIndex + 1}`;

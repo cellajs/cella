@@ -3,7 +3,6 @@ import clsx from 'clsx';
 import { config } from 'config';
 import { Github, Twitter } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { i18n } from '~/lib/i18n';
 
 import Logo from '~/modules/common/logo';
 import NewsletterForm from '~/modules/common/newsletter';
@@ -20,40 +19,42 @@ const productName = config.name;
 
 const footerSections = [
   {
-    title: i18n.t('common:product'),
+    title: 'common:product',
     links: [
-      { title: i18n.t('common:about'), href: '/about' },
-      { title: i18n.t('common:sign_up'), href: '/auth/sign-in' },
+      { title: 'common:about', href: '/about' },
+      { title: 'common:sign_up', href: '/auth/sign-in' },
     ],
   },
   {
-    title: i18n.t('common:documentation'),
+    title: 'common:documentation',
     hideOnMobile: true,
     links: [
-      { title: i18n.t('common:api_docs'), href: `${config.backendUrl}/docs` },
-      { title: i18n.t('common:architecture'), href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
-      { title: i18n.t('common:roadmap'), href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
+      { title: 'common:api_docs', href: `${config.backendUrl}/docs` },
+      { title: 'common:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
+      { title: 'common:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
     ],
   },
   {
-    title: i18n.t('common:connect'),
-    links: [{ title: i18n.t('common:contact_us'), href: '/contact' }, ...socials],
+    title: 'common:connect',
+    links: [{ title: 'common:contact_us', href: '/contact' }, ...socials],
   },
 ];
 
 const legalLinks = [
-  { title: i18n.t('common:terms'), href: '/terms' },
-  { title: i18n.t('common:privacy'), href: '/privacy' },
-  { title: i18n.t('common:accessibility'), href: '/accessibility' },
+  { title: 'common:terms', href: '/terms' },
+  { title: 'common:privacy', href: '/privacy' },
+  { title: 'common:accessibility', href: '/accessibility' },
 ];
 
 function FooterLinks() {
+  const { t } = useTranslation();
+  
   return (
     <nav>
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {footerSections.map((section) => (
           <li key={section.title} className={section.hideOnMobile ? 'hidden sm:block' : ''}>
-            <div className="font-display text-sm font-semibold tracking-wider text-white/40">{section.title}</div>
+            <div className="font-display text-sm font-semibold tracking-wider text-white/40">{t(section.title)}</div>
 
             <ul className="mt-4 text-sm text-white/90">
               {section.links.map((link) => {
@@ -61,7 +62,7 @@ function FooterLinks() {
                 return (
                   <li key={link.title} className="mt-4">
                     <Link to={link.href} target={target} className="underline-offset-4 transition hover:underline">
-                      {link.title}
+                      {t(link.title)}
                     </Link>
                   </li>
                 );
@@ -75,9 +76,11 @@ function FooterLinks() {
 }
 
 export function Credits({ className }: { className?: string }) {
+  const { t } = useTranslation();
+
   return (
     <div className={clsx('pb-12 text-center text-xs', className)}>
-      © {currentYear}. {productName} {i18n.t('common:is_built_by')} {companyName}.
+      © {currentYear}. {productName} {t('common:is_built_by')} {companyName}.
     </div>
   );
 }
@@ -113,7 +116,7 @@ export function PublicFooter() {
             {legalLinks.map((link) => (
               <li key={link.title}>
                 <Link to={link.href} className="underline-offset-4 transition hover:underline">
-                  {link.title}
+                  {t(link.title)}
                 </Link>
               </li>
             ))}
