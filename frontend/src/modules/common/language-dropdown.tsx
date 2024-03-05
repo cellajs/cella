@@ -2,8 +2,8 @@ import { config } from 'config';
 
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { useUserStore } from '~/store/user';
 import CountryFlag from './country-flag';
+import { i18n } from '~/lib/i18n';
 
 interface Props {
   size?: number;
@@ -12,7 +12,10 @@ interface Props {
 }
 
 const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
-  const { language, setLanguage } = useUserStore();
+  const language = i18n.resolvedLanguage || i18n.language;
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
 
   return (
     <DropdownMenu>
@@ -23,7 +26,7 @@ const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-48">
         {config.languages.map((item) => (
-          <DropdownMenuCheckboxItem key={item.value} checked={language === item.value} onCheckedChange={() => setLanguage(item.value)}>
+          <DropdownMenuCheckboxItem key={item.value} checked={language === item.value} onCheckedChange={() => changeLanguage(item.value)}>
             <CountryFlag countryCode={item.value} imgType="png" />
             <span className="ml-2">{item.label}</span>
           </DropdownMenuCheckboxItem>
