@@ -6,8 +6,6 @@ import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema
 
 export const apiUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
-  clearSessionsAt: z.string().nullable(),
-  lastEmailAt: z.string().nullable(),
   lastSeenAt: z.string().nullable(),
   lastVisitAt: z.string().nullable(),
   lastSignInAt: z.string().nullable(),
