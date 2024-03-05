@@ -16,7 +16,7 @@ import ResetPassword from '~/modules/auth/reset-password';
 import SignIn from '~/modules/auth/sign-in';
 import SignOut from '~/modules/auth/sign-out';
 import App from '~/modules/common/app';
-import ErrorPage from '~/modules/common/error';
+import ErrorNotice from '~/modules/common/error-notice';
 import Home from '~/modules/home';
 import About from '~/modules/marketing/about';
 import Accessibility from '~/modules/marketing/accessibility';
@@ -152,10 +152,10 @@ const AccessibilityRoute = createRoute({
   component: () => <Accessibility />,
 });
 
-const ErrorPageRoute = createRoute({
+const ErrorNoticeRoute = createRoute({
   path: '/error',
   getParentRoute: () => rootRoute,
-  component: () => <ErrorPage />,
+  component: () => <ErrorNotice />,
 });
 
 const IndexRoute = createRoute({
@@ -221,7 +221,7 @@ export const UserProfileRoute = createRoute({
   loader: async ({ context: { queryClient }, params: { userIdentifier } }) => {
     queryClient.ensureQueryData(userQueryOptions(userIdentifier));
   },
-  errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
+  errorComponent: ({ error }) => <ErrorNotice error={error as Error} />,
   component: () => (
     <Suspense>
       <UserProfile />
@@ -248,7 +248,7 @@ export const OrganizationRoute = createRoute({
   loader: async ({ context: { queryClient }, params: { organizationIdentifier } }) => {
     queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
   },
-  errorComponent: ({ error }) => <ErrorPage error={error as Error} />,
+  errorComponent: ({ error }) => <ErrorNotice error={error as Error} />,
   component: () => (
     <Suspense>
       <Organization />
@@ -283,7 +283,7 @@ export const routeTree = rootRoute.addChildren([
   TermsRoute,
   PrivacyRoute,
   AccessibilityRoute,
-  ErrorPageRoute,
+  ErrorNoticeRoute,
   SignOutRoute,
   AuthRoute.addChildren([SignInRoute, AcceptRoute, ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken])]),
   IndexRoute.addChildren([

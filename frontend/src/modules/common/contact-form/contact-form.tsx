@@ -15,6 +15,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
+import { i18n } from '~/lib/i18n';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
@@ -54,9 +55,9 @@ const CustomFormField = <TFieldValues extends FieldValues = FieldValues, TName e
 };
 
 const formSchema = z.object({
-  name: z.string().min(5, 'Name is required').default(''),
-  email: z.string().email('Invalid email address').default(''),
-  message: z.string().min(5, 'Message must be at least 5 characters long').default(''),
+  name: z.string().min(5, i18n.t('common:error.name_required')).default(''),
+  email: z.string().email(i18n.t('common:error.invalid_email')).default(''),
+  message: z.string().min(10, i18n.t('common:error.message_too_short')).default(''),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -96,9 +97,9 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     const isSuccess = await submitContactForm(data);
 
     if (isSuccess) {
-      toast.success('Message sent successfully!');
+      toast.success(t('common:text.message_sent'));
     } else {
-      toast.error('Something went wrong, please try again later.');
+      toast.error(t('common:error.reported_try_later'));
     }
   };
 
@@ -108,9 +109,9 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
         <div className="w-full">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
-              <CustomFormField control={form.control} name="name" label="Name" icon={User} />
-              <CustomFormField control={form.control} name="email" label="Email" type="email" icon={Mail} />
-              <CustomFormField control={form.control} name="message" label="Message" type="textarea" icon={MessageSquare} />
+              <CustomFormField control={form.control} name="name" label={t('common:name')} icon={User} />
+              <CustomFormField control={form.control} name="email" label={t('common:email')} type="email" icon={Mail} />
+              <CustomFormField control={form.control} name="message" label={t('common:message')} type="textarea" icon={MessageSquare} />
 
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="submit">

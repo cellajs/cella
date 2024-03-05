@@ -20,7 +20,7 @@ const Contact = () => {
     <PublicPage title="common:contact_us">
       <div className="container pb-16 pt-20">
         <h1 className="mb-4 text-3xl font-semibold text-center sm:text-left md:text-4xl">{t('common:text.leave_message')}</h1>
-        <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:success.leave_message')}</p>
+        <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:text.contact_us')}</p>
         <ContactFormMap />
       </div>
 

@@ -5,12 +5,12 @@ import { AppContent } from '~/modules/common/app-content';
 
 import HolyLoader from 'holy-loader';
 import AppNav from './app-nav';
-import ErrorPage from './error';
+import ErrorNotice from './error-notice';
 import { NavSheet } from './nav-sheet';
 
 const App = () => {
   return (
-    <ErrorBoundary instance={appSignal} fallback={(error: Error) => <ErrorPage error={error} />}>
+    <ErrorBoundary instance={appSignal} fallback={(error: Error) => <ErrorNotice error={error} />}>
       <AppNav />
       <NavSheet />
       <AppContent />

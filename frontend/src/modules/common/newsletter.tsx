@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { config } from 'config';
 import { toast } from 'sonner';
 import { Button } from '~/modules/ui/button';
+import { useTranslation } from 'react-i18next';
 
 export async function addEmail(email: string) {
   if (!email) return { success: false };
@@ -30,6 +31,7 @@ export async function addEmail(email: string) {
 }
 
 const NewsletterForm = () => {
+  const { t } = useTranslation();
   const [isPending, setPending] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -43,9 +45,9 @@ const NewsletterForm = () => {
     const response = await addEmail(email);
 
     if (response.success) {
-      toast.success('Thanks for signing up!');
+      toast.success(t('common:success.newsletter_sign_up'));
     } else {
-      toast.error('Unable to submit your email address. Please try again later.');
+      toast.error(t('common:error.newsletter_sign_up'));
     }
     setPending(false);
     formRef.current?.reset();
@@ -58,9 +60,9 @@ const NewsletterForm = () => {
           type="email"
           name="email"
           id="email"
-          placeholder="Your email ..."
+          placeholder={t('common:placeholder.your_email')}
           autoComplete="email"
-          aria-label="Email address for newsletter"
+          aria-label="Email for newsletter"
           required
           className="block w-full rounded-2xl border border-gray-300/40 bg-transparent py-4 pl-6 pr-20 text-base/6 text-gray-200 ring-4 ring-primary/10 transition placeholder:text-gray-300/50 focus:border-gray-300 focus:outline-none focus:ring-primary/20"
         />

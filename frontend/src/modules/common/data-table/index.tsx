@@ -88,9 +88,8 @@ export const DataTable = <TData,>({
   onRowsChange,
   fetchMore,
 }: DataTableProps<TData>) => {
-  const { measureRef, isIntersecting, observer } = useOnScreen({
-    firstChild: true,
-  });
+  const { measureRef, isIntersecting, observer } = useOnScreen({ firstChild: true});
+  const { t } = useTranslation();
 
   const [initial, setInitial] = useState(false);
 
@@ -163,7 +162,7 @@ export const DataTable = <TData,>({
                 <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             )}
-            {error && <div className=" text-center my-8 text-sm text-red-500">Could not load more data. Try reloading or come back later.</div>}
+            {error && <div className=" text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}
           </div>
         ))}
     </div>

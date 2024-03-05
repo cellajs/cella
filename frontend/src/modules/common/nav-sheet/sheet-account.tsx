@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { CircleUserRound, LogOut, LucideProps, UserCog, Wrench } from 'lucide-react';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { getColorClass } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
@@ -28,6 +29,7 @@ const AccountButton: React.FC<AccountButtonProps> = ({ lucideButton: Icon, label
 };
 
 export const SheetAccount = () => {
+  const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
@@ -48,21 +50,21 @@ export const SheetAccount = () => {
 
   return (
     <>
-      <SheetTitle>Account</SheetTitle>
+      <SheetTitle>{t('common:account')}</SheetTitle>
 
       <button type="button" id="account" onClick={() => navigateTo(`/user/${user.slug}`)} className="max-sm:hidden w-full">
         <div className={bannerClass} style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}>
           <div className="flex justify-center items-center bg-background/75 w-full group-hover:opacity-100 transition duration-300 h-full opacity-0">
-            View profile
+            {t('common:view_profile')}
           </div>
         </div>
       </button>
 
       <div className="space-y-2 max-sm:mt-4">
-        <AccountButton lucideButton={CircleUserRound} id="btn-profile" label="View profile" accountAction={() => navigateTo(`/user/${user.slug}`)} />
-        <AccountButton lucideButton={UserCog} id="btn-account" label="Account settings" accountAction={() => navigateTo('/user/settings')} />
-        {isSystemAdmin && <AccountButton lucideButton={Wrench} id="btn-system" label="System panel" accountAction={() => navigateTo('/system')} />}
-        <AccountButton lucideButton={LogOut} id="btn-signout" label="Sign out" accountAction={onSignOut} />
+        <AccountButton lucideButton={CircleUserRound} id="btn-profile" label={t('common:view_profile')} accountAction={() => navigateTo(`/user/${user.slug}`)} />
+        <AccountButton lucideButton={UserCog} id="btn-account" label={t('common:account_settings')} accountAction={() => navigateTo('/user/settings')} />
+        {isSystemAdmin && <AccountButton lucideButton={Wrench} id="btn-system" label={t('common:system_panel')} accountAction={() => navigateTo('/system')} />}
+        <AccountButton lucideButton={LogOut} id="btn-signout" label={t('common:sign_out')} accountAction={onSignOut} />
       </div>
     </>
   );

@@ -1,16 +1,17 @@
 import { useRouterState } from '@tanstack/react-router';
-import { config } from 'config';
 import { Home, RefreshCw } from 'lucide-react';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppFooter } from '~/modules/common/app-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 
-interface ErrorPageProps {
+interface ErrorNoticeProps {
   error?: Error;
 }
 
-const ErrorPage: React.FC<ErrorPageProps> = ({ error }) => {
+const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
+  const { t } = useTranslation();
   const { location } = useRouterState();
 
   const handleReload = () => {
@@ -26,22 +27,22 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error }) => {
       <div className="mt-auto mb-auto">
         <Card className="max-w-[32rem] m-4">
           <CardHeader className="text-center">
-            <CardTitle className="text-4xl">Error</CardTitle>
-            <CardDescription>The error has been reported. Please try again later and contact us if the problem persists.</CardDescription>
+            <CardTitle className="text-4xl">{t('common:error.error')}</CardTitle>
+            <CardDescription>{t('common:error.reported_try_or_contact')}</CardDescription>
           </CardHeader>
           <div className="p-4 text-center">
-            <pre className="whitespace-pre-wrap text-sm text-red-600">{error?.message || 'Error details not available'}</pre>
+            <pre className="whitespace-pre-wrap text-sm text-red-600">{error?.message || t('common:error.reported')}</pre>
           </div>
           <CardFooter className="flex justify-center">
             {!location.pathname.startsWith('/error') && (
               <Button onClick={handleReload}>
-                <RefreshCw size={20} className="mr-2" strokeWidth={config.theme.strokeWidth} />
-                Reload
+                <RefreshCw size={16} className="mr-1" />
+                {t('common:reload')}
               </Button>
             )}
             <Button className="ml-4" onClick={handleGoToHome} variant="secondary">
-              <Home size={20} className="mr-2" strokeWidth={config.theme.strokeWidth} />
-              Go to home
+              <Home size={16} className="mr-1" />
+              {t('common:home')}
             </Button>
           </CardFooter>
         </Card>
@@ -51,4 +52,4 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error }) => {
   );
 };
 
-export default ErrorPage;
+export default ErrorNotice;

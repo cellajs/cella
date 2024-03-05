@@ -36,25 +36,29 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows }
           }}
         >
           <Download size={16} />
-          <span className="ml-1">Export</span>
+          <span className="ml-1">{t('common:export')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => onExport('csv', false)}>
           <span>CSV</span>
-          <span className="ml-2 font-light text-xs opacity-75">max 1k rows</span>
+          <span className="ml-2 font-light text-xs opacity-75">{t('common:max_1k_rows')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onExport('pdf', false)}>
           <span>PDF</span>
-          <span className="ml-2 font-light text-xs opacity-75">max 1k rows</span>
+          <span className="ml-2 font-light text-xs opacity-75">{t('common:max_1k_rows')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onExport('csv', true)} disabled={selectedRows.length === 0}>
           <span>CSV</span>
-          <span className="ml-2 font-light text-xs opacity-75">{selectedRows.length ? `${selectedRows.length} selected` : 'only selected'}</span>
+          <span className="ml-2 font-light text-xs opacity-75">
+            {selectedRows.length ? `${selectedRows.length} ${t('common:selected').toLowerCase()}` : t('common:no_selection').toLowerCase()}
+          </span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onExport('pdf', true)} disabled={selectedRows.length === 0}>
           <span>PDF</span>
-          <span className="ml-2 font-light text-xs opacity-75">{selectedRows.length ? `${selectedRows.length} selected` : 'only selected'}</span>
+          <span className="ml-2 font-light text-xs opacity-75">
+            {selectedRows.length ? `${selectedRows.length} ${t('common:selected').toLowerCase()}` : t('common:no_selection').toLowerCase()}
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

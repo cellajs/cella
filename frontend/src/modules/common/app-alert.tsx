@@ -2,10 +2,12 @@ import { Info, X } from 'lucide-react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useAlertsStore } from '~/store/alerts';
 import { Button } from '../ui/button';
+import { useTranslation } from 'react-i18next';
 
 const CURRENT_ALERT = 'experimental';
 
 export function AppAlert() {
+  const { t } = useTranslation();
   const { alertsSeen, setAlertSeen } = useAlertsStore();
   const showAlert = !alertsSeen.includes(CURRENT_ALERT);
   const closeAlert = () => setAlertSeen(CURRENT_ALERT);
@@ -19,8 +21,8 @@ export function AppAlert() {
         <Button variant="ghost" size="sm" className="absolute top-2 right-1" onClick={closeAlert}>
           <X size={16} />
         </Button>
-        <strong className="mr-2">Prerelease</strong>
-        This site is online to experiment and discuss further development. Database resets periodically.
+        <strong className="mr-2">{t('common:prerelease')}</strong>
+        {t('common:text.experiment_notice')}
       </AlertDescription>
     </Alert>
   );

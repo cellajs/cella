@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { Input } from '~/modules/ui/input';
 import { Page, UserMenu } from '~/types';
 import { SearchResultsType, initialSearchResults, menuSections } from './sheet-menu';
+import { useTranslation } from 'react-i18next';
 
 interface SheetMenuSearchProps {
   menu: UserMenu;
@@ -13,6 +14,8 @@ interface SheetMenuSearchProps {
 }
 
 export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResultsChange }: SheetMenuSearchProps) => {
+  const { t } = useTranslation();
+  
   const filterResults = useCallback(
     (term: string) => {
       const lowerCaseTerm = term.toLowerCase();
@@ -41,7 +44,7 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResul
   return (
     <div className="relative">
       <Search size={16} className="absolute left-3 -z-10 top-1/2 -translate-y-1/2" />
-      <Input type="text" placeholder="Search" value={searchTerm} onChange={handleSearchChange} className="bg-transparent border-0 px-10" />
+      <Input type="text" placeholder={t('common:search')} value={searchTerm} onChange={handleSearchChange} className="bg-transparent border-0 px-10" />
       {searchTerm && <XCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setSearchTerm('')} />}
     </div>
   );

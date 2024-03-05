@@ -2,6 +2,8 @@ import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { config } from 'config';
 import { Github, Twitter } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { i18n } from '~/lib/i18n';
 
 import Logo from '~/modules/common/logo';
 import NewsletterForm from '~/modules/common/newsletter';
@@ -16,33 +18,33 @@ const currentYear = new Date().getFullYear();
 const companyName = config.company.name;
 const productName = config.name;
 
-export const footerSections = [
+const footerSections = [
   {
-    title: 'Product',
+    title: i18n.t('common:product'),
     links: [
-      { title: 'About', href: '/about' },
-      { title: 'Sign up', href: '/auth/sign-in' },
+      { title: i18n.t('common:about'), href: '/about' },
+      { title: i18n.t('common:sign_up'), href: '/auth/sign-in' },
     ],
   },
   {
-    title: 'Documentation',
+    title: i18n.t('common:documentation'),
     hideOnMobile: true,
     links: [
-      { title: 'API docs', href: `${config.backendUrl}/docs` },
-      { title: 'Architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
-      { title: 'Roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
+      { title: i18n.t('common:api_docs'), href: `${config.backendUrl}/docs` },
+      { title: i18n.t('common:architecture'), href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
+      { title: i18n.t('common:roadmap'), href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
     ],
   },
   {
-    title: 'Connect',
-    links: [{ title: 'Contact us', href: '/contact' }, ...socials],
+    title: i18n.t('common:connect'),
+    links: [{ title: i18n.t('common:contact_us'), href: '/contact' }, ...socials],
   },
 ];
 
-export const legalLinks = [
-  { title: 'Terms', href: '/terms' },
-  { title: 'Privacy', href: '/privacy' },
-  { title: 'Accessibility', href: '/accessibility' },
+const legalLinks = [
+  { title: i18n.t('common:terms'), href: '/terms' },
+  { title: i18n.t('common:privacy'), href: '/privacy' },
+  { title: i18n.t('common:accessibility'), href: '/accessibility' },
 ];
 
 function FooterLinks() {
@@ -75,12 +77,13 @@ function FooterLinks() {
 export function Credits({ className }: { className?: string }) {
   return (
     <div className={clsx('pb-12 text-center text-xs', className)}>
-      © {currentYear}. {productName} is built by {companyName}.
+      © {currentYear}. {productName} {i18n.t('common:is_built_by')} {companyName}.
     </div>
   );
 }
 
 export function PublicFooter() {
+  const { t } = useTranslation();
   const sectionClass = 'rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]';
 
   return (
@@ -94,9 +97,9 @@ export function PublicFooter() {
           <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
             <FooterLinks />
             <div className="">
-              <div className="font-display text-sm font-semibold tracking-wider text-white/50">Join waitlist</div>
+              <div className="font-display text-sm font-semibold tracking-wider text-white/50">{t('common:request_info')}</div>
               <div className="mt-4 text-sm text-white/90">
-                Interested in becoming a donate or build member? Join the waitlist and we will contact you.
+                {t('common:text.request_info')}
               </div>
               <NewsletterForm />
             </div>

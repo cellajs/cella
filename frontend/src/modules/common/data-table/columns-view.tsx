@@ -1,6 +1,7 @@
 import { SlidersHorizontal } from 'lucide-react';
 import { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import { ColumnOrColumnGroup as BaseColumnOrColumnGroup } from 'react-data-grid';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -16,6 +17,7 @@ interface Props<TData> {
 }
 
 const ColumnsView = <TData,>({ columns, setColumns }: Props<TData>) => {
+  const { t } = useTranslation();
   const [columnSearch, setColumnSearch] = useState('');
 
   const filteredColumns = useMemo(
@@ -38,7 +40,7 @@ const ColumnsView = <TData,>({ columns, setColumns }: Props<TData>) => {
         <Button variant="outline" className="relative flex">
           {filteredColumns.some((column) => !column.visible) && <Badge className="absolute -right-2 -top-2 flex h-4 w-4 justify-center p-0">!</Badge>}
           <SlidersHorizontal className="h-4 w-4" />
-          <span className="ml-1 max-xs:hidden">View</span>
+          <span className="ml-1 max-xs:hidden">{t('common:view')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[220px] pt-2" collisionPadding={16}>

@@ -3,8 +3,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '~/lib/utils';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { SheetState, SheetT, SheetToRemove } from './state';
+import { useTranslation } from 'react-i18next';
 
 export function Sheeter() {
+  const { t } = useTranslation();
   const [open] = useState(true);
   const [sheets, setSheets] = useState<SheetT[]>([]);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
@@ -64,7 +66,7 @@ export function Sheeter() {
           {sheet.content}
           <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
             <X className="h-6 w-6" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t('common:close')}</span>
           </SheetClose>
         </SheetContent>
       </Sheet>

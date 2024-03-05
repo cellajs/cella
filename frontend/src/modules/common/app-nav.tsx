@@ -15,10 +15,10 @@ import { useNavigationStore } from '~/store/navigation';
 import { SheetAccount } from './nav-sheet/sheet-account';
 import { SheetMenu } from './nav-sheet/sheet-menu';
 import { SheetNotifications } from './nav-sheet/sheet-notifications';
+import { useTranslation } from 'react-i18next';
 
 export type NavItem = {
   id: string;
-  name: string;
   icon: React.ElementType<LucideProps>;
   sheet?: React.ReactNode;
   href?: string;
@@ -26,14 +26,15 @@ export type NavItem = {
 };
 
 export const navItems: NavItem[] = [
-  { id: 'menu', name: 'Menu', sheet: <SheetMenu />, icon: Menu },
-  { id: 'home', name: 'Home', icon: Home, href: '/' },
-  { id: 'notifications', name: 'Notifications', sheet: <SheetNotifications />, icon: Bell, mirrorOnMobile: true },
-  { id: 'search', name: 'Search', icon: Search },
-  { id: 'account', name: 'Account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
+  { id: 'menu', sheet: <SheetMenu />, icon: Menu },
+  { id: 'home', icon: Home, href: '/' },
+  { id: 'notifications', sheet: <SheetNotifications />, icon: Bell, mirrorOnMobile: true },
+  { id: 'search', icon: Search },
+  { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
 ];
 
 const AppNav = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isSmallScreen = useBreakpoints('max', 'lg');
   const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore(({ activeSheet, setSheet, keepMenuOpen }) => ({
@@ -48,10 +49,10 @@ const AppNav = () => {
   const navButtonClick = (navItem: NavItem) => {
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
-      dialog(<Input placeholder={'Search ...'} />, {
+      dialog(<Input placeholder={t('common:placeholder.search')} />, {
         className: 'sm:max-w-2xl sm:-mt-[calc(70vh-140px)]',
-        title: 'Search',
-        text: 'Search organizations & users within Cella.',
+        title: t('common:search'),
+        text: t('common:text.global_search'),
         drawerOnMobile: false,
       });
       return;

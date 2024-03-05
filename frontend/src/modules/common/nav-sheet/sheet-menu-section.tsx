@@ -29,7 +29,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
 
   const renderSection = (items: Page[]) => {
     if (items.length === 0 && !data.canCreate) {
-      return <li className="py-2 text-muted-foreground text-sm text-light text-center">No {section.type} yet</li>;
+      return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
 
     if (items.length === 0 && data.canCreate && section.createForm) {
@@ -37,7 +37,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
         <div className="flex items-center">
           <Button className="w-full" variant="ghost" onClick={createDialog}>
             <Plus size={14} />
-            <span className="ml-1 text-sm text-light">Create your first {section.type}</span>
+            <span className="ml-1 text-sm text-light">{t('common:create_your_first')} {section.type}</span>
           </Button>
         </div>
       );

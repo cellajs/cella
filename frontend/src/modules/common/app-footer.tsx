@@ -4,6 +4,7 @@ import Logo from '~/modules/common/logo';
 import ThemeDropdown from '~/modules/common/theme-dropdown';
 import { dialog } from './dialoger/state';
 import LanguageDropdown from './language-dropdown';
+import { useTranslation } from 'react-i18next';
 
 export interface FooterLinkProps {
   title: string;
@@ -18,13 +19,15 @@ const FooterLink = ({ title, href }: FooterLinkProps) => (
   </li>
 );
 
-const footerlinks = [
-  { title: 'About', href: '/about' },
-  { title: 'Terms', href: '/terms' },
-  { title: 'Privacy', href: '/privacy' },
-];
-
 function AppFooter() {
+  const { t } = useTranslation();
+  
+  const footerlinks = [
+    { title: t('common:about'), href: '/about' },
+    { title: t('common:terms'), href: '/terms' },
+    { title: t('common:privacy'), href: '/privacy' },
+  ];
+  
   return (
     <footer className="container flex flex-col mt-12 items-center gap-4">
       <div className="flex items-center gap-4">
@@ -49,12 +52,12 @@ function AppFooter() {
               dialog(<ContactForm dialog />, {
                 drawerOnMobile: false,
                 className: 'sm:max-w-[64rem]',
-                title: 'Contact us',
-                text: 'We will get back to you as soon as possible!',
+                title: t('common:contact_us'),
+                text: t('common:text.contact_us'),
               });
             }}
           >
-            Contact
+            {t('common:contact')}
           </button>
         </li>
       </ul>

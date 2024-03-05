@@ -1,6 +1,7 @@
 import { DialogTitle } from '@radix-ui/react-dialog';
 import Autoplay from 'embla-carousel-autoplay';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { cn } from '~/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
@@ -17,6 +18,7 @@ interface DeviceMockupProps {
 }
 
 const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockupProps) => {
+  const { t } = useTranslation();
   const { mode } = useThemeStore();
   const [isOpen, setOpen] = useState(false);
   const [carouselSlide, setCarouselSlide] = useState(0);
@@ -104,7 +106,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="min-w-full h-svh border-0 p-4 rounded-none flex flex-col ">
           <DialogHeader>
-            <DialogTitle className="text-center font-semibold text-lg">View screenshot</DialogTitle>
+            <DialogTitle className="text-center font-semibold text-lg">{t('common:view_screenshot')}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-wrap justify-center grow">{renderCarousel({ inDialog: true, slide: carouselSlide })}</div>
         </DialogContent>

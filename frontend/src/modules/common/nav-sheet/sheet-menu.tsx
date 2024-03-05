@@ -99,14 +99,14 @@ export const SheetMenu = memo(() => {
             id="keepMenuOpen"
             checked={keepMenuOpen}
             onCheckedChange={toggleKeepMenu}
-            aria-label="Keep menu open"
+            aria-label={t('common:keep_menu_open')}
             className="duration-250 opacity-0 transition-opacity ease-in-out lg:translate-x-0 lg:opacity-100"
           />
           <label
             htmlFor="keepMenuOpen"
             className="duration-250 cursor-pointer select-none text-sm font-medium leading-none opacity-0 transition-opacity ease-in-out lg:translate-x-0 lg:opacity-100"
           >
-            Keep menu open
+            {t('common:keep_menu_open')}
           </label>
         </div>
       )}

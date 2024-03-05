@@ -55,7 +55,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
       <AvatarWrap type={type} className="h-20 w-20" id={id} name={name} url={url} />
 
       <div className="flex flex-col gap-2">
-        <p className="font-light text-sm">Upload a PNG or JPEG under 10MB</p>
+        <p className="font-light text-sm">{t('common:text.upload_img_max_10mb')}</p>
         <div className="flex gap-2 items-center">
           <Button variant="secondary" type="button" size="sm" onClick={openUploadDialog}>
             <Upload size={20} className="mr-2" />

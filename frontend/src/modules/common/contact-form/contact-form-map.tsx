@@ -1,6 +1,7 @@
 import { config } from 'config';
 import L from 'leaflet';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import '~/modules/common/contact-form/leaflet.css';
 
@@ -20,6 +21,7 @@ const greenIcon = L.icon({
 
 // Updated CustomMarker to use hardcoded config
 const CustomMarker = ({ isActive, map, positionArray }: CustomMarkerProps) => {
+  const { t } = useTranslation();
   const popupRef = useRef<L.Popup | null>(null);
 
   useEffect(() => {
@@ -39,8 +41,8 @@ const CustomMarker = ({ isActive, map, positionArray }: CustomMarkerProps) => {
         <strong className="block">{config.company.name}</strong>
         <span className="block">{config.company.streetAddress}</span>
         <span className="block">{config.company.country}</span>
-        <a href={config.company.googleMapsUrl} target="_blank" className="text-primary" rel="noopener noreferrer">
-          Get directions
+        <a href={config.company.googleMapsUrl} target="_blank" className="text-primary" rel="noreferrer">
+          {t('common:get_directions')}
         </a>
       </Popup>
     </Marker>

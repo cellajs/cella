@@ -17,7 +17,7 @@ const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={className} aria-label="Change site language">
+        <Button variant="ghost" size="icon" className={className} aria-label="Change language">
           <span className="font-light">{language.toUpperCase()}</span>
         </Button>
       </DropdownMenuTrigger>

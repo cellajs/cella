@@ -47,7 +47,7 @@ const ResetPassword = () => {
     <AuthPage>
       <Form {...form}>
         <h1 className="text-2xl text-center">
-          {t('common.reset_password')} <br />{' '}
+          {t('common:reset_password')} <br />{' '}
           <span className="font-light text-xl">
             {t('common:for')} {'"email here"'}
           </span>
