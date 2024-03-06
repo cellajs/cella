@@ -19,12 +19,12 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
-import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import MultipleSelector from '../ui/multiple-selector';
+import AvatarFormField from '../common/forms/avatar';
 
 const SelectCountry = lazy(() => import('~/modules/common/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/select-timezone'));
@@ -124,24 +124,14 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
+        <AvatarFormField
           control={form.control}
+          label={t('common:organization_logo')}
+          type="organization"
           name="thumbnailUrl"
-          render={({ field: { ref, ...rest } }) => (
-            <FormItem>
-              <FormLabel>{t('common:organization_logo')}</FormLabel>
-              <FormControl>
-                <UploadAvatar
-                  {...rest}
-                  type="organization"
-                  id={organization.id}
-                  name={organization.name}
-                  url={form.getValues('thumbnailUrl')}
-                  setUrl={setImageUrl}
-                />
-              </FormControl>
-            </FormItem>
-          )}
+          entity={organization}
+          url={form.getValues('thumbnailUrl')}
+          setUrl={setImageUrl}
         />
         <FormField
           control={form.control}

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { queryClient } from '~/router';
 import { User } from '~/types';
+import AvatarFormField from '../common/forms/avatar';
 
 import { UpdateUserParams, updateUser } from '~/api/users';
 
@@ -25,7 +26,6 @@ import { checkSlug } from '~/api/general';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
-import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import { Textarea } from '../ui/textarea';
@@ -133,17 +133,14 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-        <FormField
+        <AvatarFormField
           control={form.control}
+          label={t('common:profile_picture')}
+          type="user"
           name="thumbnailUrl"
-          render={({ field: { ref, ...rest } }) => (
-            <FormItem>
-              <FormLabel>{t('common:profile_picture')}</FormLabel>
-              <FormControl>
-                <UploadAvatar {...rest} type="user" id={user.id} name={user.name} url={form.getValues('thumbnailUrl')} setUrl={setImageUrl} />
-              </FormControl>
-            </FormItem>
-          )}
+          entity={user}
+          url={form.getValues('thumbnailUrl')}
+          setUrl={setImageUrl}
         />
         <FormField
           control={form.control}
