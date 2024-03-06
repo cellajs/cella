@@ -1,6 +1,11 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../lib/common-responses';
+import {
+  errorResponses,
+  successResponseWithDataSchema,
+  successResponseWithPaginationSchema,
+  successResponseWithErrorsSchema,
+} from '../../lib/common-responses';
 import { userMenuSchema } from '../organizations/schema';
 import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
 
@@ -178,7 +183,7 @@ export const deleteUsersRoute = createRoute({
       description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
+          schema: successResponseWithErrorsSchema(),
         },
       },
     },

@@ -1,17 +1,16 @@
 import { appSignal } from './appsignal';
+import type { LogData } from './error-response';
 
-type Severity = 'trace' | 'debug' | 'info' | 'log' | 'warn' | 'error';
+export type Severity = 'trace' | 'debug' | 'info' | 'log' | 'warn' | 'error';
 
-const apiSignalLogger = appSignal.logger('log', 'info');
+const apiSignalLogger = appSignal.logger('backend', 'info', 'json');
 
-export const customLogger = (message: string, data?: Parameters<(typeof apiSignalLogger)['info']>[1], severity: Severity = 'info') => {
+export const customLogger = (message: string, data?: LogData, severity: Severity = 'info') => {
   if (data) {
     console[severity](message, data);
-
     apiSignalLogger[severity](message, data);
   } else {
     console[severity](message);
-
     apiSignalLogger[severity](message);
   }
 };

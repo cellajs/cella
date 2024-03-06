@@ -6,11 +6,11 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
   const id = query.organizationId;
 
   if (!id && type === UploadType.Organization) {
-    throw new ApiError(400, 'Organization id required for organization uploads');
+    return console.error('Organization id required for organization uploads');
   }
 
   if (id && type === UploadType.Personal) {
-    throw new ApiError(400, 'Personal uploads should be typed as personal');
+    return console.error( 'Personal uploads should be typed as personal');
   }
 
   const preparedQuery = {

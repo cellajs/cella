@@ -1,9 +1,8 @@
 import { MiddlewareHandler } from 'hono';
 
 import { RateLimiterPostgres } from 'rate-limiter-flexible';
-import { tooManyRequestsError } from '../../lib/errors';
+import { errorResponse } from '../../lib/error-response';
 
-import { customLogger } from '../../lib/custom-logger';
 import { Env } from '../../types/common';
 import { queryClient } from '../../db/db';
 
@@ -54,10 +53,8 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
   }
 
   if (retrySecs > 0) {
-    customLogger('Too many requests (Login)', { usernameIPkey }, 'warn');
-
     ctx.header('Retry-After', String(retrySecs));
-    return ctx.json(tooManyRequestsError(), 429);
+    return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
   }
 
   if (ipAddr) {
@@ -70,9 +67,7 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
     try {
       await limiterConsecutiveFailsByUsernameAndIP.consume(usernameIPkey);
     } catch (error) {
-      customLogger('Too many requests (Limit)', { usernameIPkey }, 'warn');
-
-      return ctx.json(tooManyRequestsError(), 429);
+      return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
     }
   } else {
     await limiterConsecutiveFailsByUsernameAndIP.delete(usernameIPkey);

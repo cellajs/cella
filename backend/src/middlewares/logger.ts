@@ -39,7 +39,7 @@ export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
     c.set('logId', logId);
 
     // Show path with search params
-    const stripUrl = c.req.raw.url.replace(/(https?:\/\/)?([^\/]+)/, '').slice(0, 200);
+    const stripUrl = c.req.raw.url.replace(/(https?:\/\/)?([^\/]+)/, '').slice(0, 150);
 
     // Log incoming
     log(fn, LogPrefix.Incoming, logId, method, stripUrl);

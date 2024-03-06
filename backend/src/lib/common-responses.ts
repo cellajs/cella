@@ -1,6 +1,6 @@
 import type { createRoute } from '@hono/zod-openapi';
 import { z } from 'zod';
-import { errorResponseSchema } from './common-schemas';
+import { errorResponseSchema, errorSchema } from './common-schemas';
 
 type Responses = Parameters<typeof createRoute>[0]['responses'];
 
@@ -22,6 +22,12 @@ export const successResponseWithPaginationSchema = <T extends z.ZodTypeAny>(sche
         example: 1,
       }),
     }),
+  });
+
+export const successResponseWithErrorsSchema = () =>
+  z.object({
+    success: z.boolean(),
+    errors: z.array(errorSchema),
   });
 
 export const errorResponses = {

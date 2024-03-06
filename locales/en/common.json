@@ -233,5 +233,10 @@
   "leave": "Leave",
   "all": "all",
   "placeholder.select_role": "Select a role",
-  "terms_of_use": "Terms of use"
+  "terms_of_use": "Terms of use",
+  "verify_my_email": "Verify my email address",
+  "unknown_name": "Unknown name",
+  "unknown_organization": "Unknown organization",
+  "unknown_inviter": "Unknown inviter",
+  "error.route_not_found": "Route not found"
 }

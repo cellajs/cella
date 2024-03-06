@@ -37,7 +37,7 @@ const SystemPanel = () => {
 
   return (
     <>
-      <SimpleHeader heading={t('common.system_panel')} text={t('common:text.system_panel')} />
+      <SimpleHeader heading={t('common:system_panel')} text={t('common:text.system_panel')} />
       <Button variant="gradient" className="w-40 mx-4" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
         Test checkout
       </Button>

@@ -44,9 +44,9 @@ function ReloadPrompt() {
             <span>{t('common:text.refresh_pwa_app')}</span>
           </div>
           <div className="space-x-[8px]">
-            {needRefresh && <Button onClick={() => updateServiceWorker(true)}>{t('common.reload')}</Button>}
+            {needRefresh && <Button onClick={() => updateServiceWorker(true)}>{t('common:reload')}</Button>}
             <Button variant="secondary" onClick={() => close()}>
-              {t('common.close')}
+              {t('common:close')}
             </Button>
           </div>
         </div>

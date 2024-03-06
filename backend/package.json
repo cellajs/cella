@@ -51,6 +51,7 @@
     "rate-limiter-flexible": "^5.0.0",
     "react-i18next": "^14.0.5",
     "slugify": "^1.6.6",
+    "stacktrace-parser-node": "^1.1.5",
     "zod": "^3.22.4"
   },
   "devDependencies": {

@@ -10,7 +10,7 @@ import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { setSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
-import { createError } from '../../lib/errors';
+import { errorResponse } from '../../lib/error-response';
 import { nanoid } from '../../lib/nanoid';
 import { CustomHono } from '../../types/common';
 import { createSession, findOauthAccount, getRedirectUrl, insertOauthAccount } from './oauth-helpers';
@@ -82,7 +82,7 @@ const oauthRoutes = app
 
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
-      return ctx.json(createError('error.invalid_state', 'Invalid state'), 400);
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', true, { strategy: 'github' });
     }
 
     const redirectUrl = getRedirectUrl(ctx);
@@ -150,7 +150,7 @@ const oauthRoutes = app
       const primaryEmail = githubUserEmails.find((email) => email.primary);
 
       if (!primaryEmail) {
-        return ctx.json(createError('error.no_email_found', 'No email found'), 400);
+        return errorResponse(ctx, 400, 'no_email_found', 'warn');
       }
 
       const [slug] = primaryEmail.email.split('@');
@@ -166,7 +166,7 @@ const oauthRoutes = app
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-          return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
+          return errorResponse(ctx, 400, 'invalid_token', 'warn', true, { strategy: 'github', type: 'invitation' });
         }
 
         userEmail = token.email;
@@ -246,8 +246,7 @@ const oauthRoutes = app
       });
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
-        // bad verification code, invalid credentials, etc
-        return ctx.json(createError('error.invalid_credentials', 'Invalid credentials'), 400);
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', true, { strategy: 'github' });
       }
 
       customLogger('Error signing in with GitHub', { strategy: 'github', errorMessage: (error as Error).message }, 'error');
@@ -263,7 +262,7 @@ const oauthRoutes = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return ctx.json(createError('error.invalid_state', 'Invalid state'), 400);
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', true, { strategy: 'google' });
     }
 
     const redirectUrl = getRedirectUrl(ctx);
@@ -325,8 +324,7 @@ const oauthRoutes = app
       });
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
-        // bad verification code, invalid credentials, etc
-        return ctx.json(createError('error.invalid_credentials', 'Invalid credentials'), 400);
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', true, { strategy: 'google' });
       }
 
       const errorMessage = (error as Error).message;
@@ -344,7 +342,7 @@ const oauthRoutes = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return ctx.json(createError('error.invalid_state', 'Invalid state'), 400);
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', true, { strategy: 'microsoft' });
     }
 
     const redirectUrl = getRedirectUrl(ctx);
@@ -374,7 +372,7 @@ const oauthRoutes = app
       }
 
       if (!user.email) {
-        return ctx.json(createError('error.no_email_found', 'No email found'), 400);
+        return errorResponse(ctx, 400, 'no_email_found', 'warn', true);
       }
 
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
@@ -407,8 +405,7 @@ const oauthRoutes = app
       });
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
-        // bad verification code, invalid credentials, etc
-        return ctx.json(createError('error.invalid_credentials', 'Invalid credentials'), 400);
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', true, { strategy: 'microsoft' });
       }
 
       const errorMessage = (error as Error).message;

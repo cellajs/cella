@@ -9,7 +9,7 @@ import { usersTable } from '../../db/schema/users';
 import { checkSlugExists } from '../../lib/check-slug';
 import { removeSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
-import { createError, forbiddenError } from '../../lib/errors';
+import { ErrorType, createError, errorResponse } from '../../lib/error-response';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { CustomHono } from '../../types/common';
 import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute, userSuggestionsRoute } from './routes';
@@ -96,23 +96,20 @@ const usersRoutes = app
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
-      customLogger('User not found', { user: userId }, 'warn');
-      return ctx.json(createError('error.user_not_found', 'User not found'), 404);
+      return errorResponse(ctx, 404, 'user_not_found', 'warn', true, { user: userId });
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      customLogger('User forbidden', { user: user.id }, 'warn');
-      return ctx.json(forbiddenError(), 403);
+      return errorResponse(ctx, 403, 'update_user_forbidden', 'warn', true, { user: userId });
     }
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
-    if (slug) {
+    if (slug && slug !== targetUser.slug) {
       const slugExists = await checkSlugExists(slug);
 
-      if (slugExists && slug !== targetUser.slug) {
-        customLogger('Slug already exists', { slug }, 'warn');
-        return ctx.json(createError('error.slug_exists', 'Slug already exists'), 400);
+      if (slugExists) {
+        return errorResponse(ctx, 400, 'slug_exists', 'warn', true, { slug });
       }
     }
 
@@ -262,27 +259,23 @@ const usersRoutes = app
 
     const userIds = Array.isArray(ids) ? ids : [ids];
 
-    const errors: ReturnType<typeof createError>[] = [];
+    const errors: ErrorType[] = [];
 
     await Promise.all(
       userIds.map(async (id) => {
         const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
 
         if (!targetUser) {
-          customLogger('User not found', { user: id }, 'warn');
-          errors.push(createError('error.user_not_found', 'User not found'));
-          return;
+          errors.push(createError(ctx, 404, 'user_not_found', 'warn', true, { user: id }));
         }
 
-        if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-          customLogger('User forbidden', { user: user.id }, 'warn');
-          errors.push(forbiddenError());
-          return;
+        if (user.role !== 'ADMIN' && user.id !== id) {
+          errors.push(createError(ctx, 403, 'delete_user_forbidden', 'warn', true, { user: id }));
         }
 
         await db.delete(usersTable).where(eq(usersTable.id, id));
 
-        if (user.id === targetUser.id) {
+        if (user.id === id) {
           await auth.invalidateUserSessions(user.id);
           removeSessionCookie(ctx);
         }
@@ -293,7 +286,7 @@ const usersRoutes = app
 
     return ctx.json({
       success: true,
-      data: errors.length > 0 ? { error: errors[0].error } : undefined,
+      errors: errors,
     });
   })
   .openapi(getUserByIdOrSlugRoute, async (ctx) => {
@@ -306,13 +299,11 @@ const usersRoutes = app
       .where(or(eq(usersTable.id, userIdentifier), eq(usersTable.slug, userIdentifier)));
 
     if (!targetUser) {
-      customLogger('User not found', { user: userIdentifier }, 'warn');
-      return ctx.json(createError('error.user_not_found', 'User not found'), 404);
+      return errorResponse(ctx, 404, 'user_not_found', 'warn', true, { user: userIdentifier });
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      customLogger('User forbidden', { user: user.id }, 'warn');
-      return ctx.json(forbiddenError(), 403);
+      return errorResponse(ctx, 403, 'get_user_forbidden', 'warn', true, { user: targetUser.id });
     }
 
     const [{ memberships }] = await db

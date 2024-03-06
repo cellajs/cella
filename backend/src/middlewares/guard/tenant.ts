@@ -4,8 +4,8 @@ import { db } from '../../db/db';
 import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { customLogger } from '../../lib/custom-logger';
-import { createError, forbiddenError } from '../../lib/errors';
-import { Env, ErrorResponse } from '../../types/common';
+import { errorResponse } from '../../lib/error-response';
+import { Env } from '../../types/common';
 
 // organizationAuthMiddleware() is checking if the user has membership in the organization and if the user has the required role
 const organizationAuthMiddleware =
@@ -25,8 +25,7 @@ const organizationAuthMiddleware =
       .where(or(eq(organizationsTable.id, organizationIdentifier), eq(organizationsTable.slug, organizationIdentifier)));
 
     if (!organization) {
-      customLogger('Organization not found', { organization: organizationIdentifier }, 'warn');
-      return ctx.json<ErrorResponse>(createError('error.organization_not_found', 'Organization not found'), 404);
+      return errorResponse(ctx, 404, 'organization_not_found', 'warn', true, { organization: organizationIdentifier });
     }
 
     const [membership] = await db
@@ -35,8 +34,7 @@ const organizationAuthMiddleware =
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
 
     if ((!membership || (accessibleFor && !accessibleFor.includes(membership.role))) && user.role !== 'ADMIN') {
-      customLogger('User forbidden in organization', { user: user.id, organization: organization.id }, 'warn');
-      return ctx.json<ErrorResponse>(forbiddenError(), 403);
+      return errorResponse(ctx, 403, 'forbidden', 'warn', true, { user: user.id, organization: organization.id });
     }
 
     ctx.set('organization', organization);

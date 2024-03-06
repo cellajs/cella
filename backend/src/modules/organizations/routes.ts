@@ -1,6 +1,6 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../lib/common-responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema, successResponseWithPaginationSchema } from '../../lib/common-responses';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
@@ -99,7 +99,7 @@ export const deleteOrganizationsRoute = createRoute({
       description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
+          schema: successResponseWithErrorsSchema(),
         },
       },
     },

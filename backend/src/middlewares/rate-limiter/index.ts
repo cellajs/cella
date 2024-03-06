@@ -1,9 +1,8 @@
 import { MiddlewareHandler } from 'hono';
 
 import { IRateLimiterPostgresOptions, RateLimiterPostgres, RateLimiterRes } from 'rate-limiter-flexible';
-import { tooManyRequestsError } from '../../lib/errors';
+import { errorResponse } from '../../lib/error-response';
 
-import { customLogger } from '../../lib/custom-logger';
 import { Env } from '../../types/common';
 import { queryClient } from '../../db/db';
 
@@ -52,21 +51,19 @@ class RateLimiter extends RateLimiterPostgres {
       }
 
       if (retrySecs > 0) {
-        customLogger('Too many requests', { usernameIPkey }, 'warn');
-
         ctx.header('Retry-After', String(retrySecs));
-        return ctx.json(tooManyRequestsError(), 429);
+        return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
       }
 
       if (mode === 'limit') {
         try {
           await this.consume(usernameIPkey);
+          
         } catch (rlRejected) {
-          if (rlRejected instanceof RateLimiterRes) {
-            customLogger('Too many requests (Limit)', { usernameIPkey }, 'warn');
 
+          if (rlRejected instanceof RateLimiterRes) {
             ctx.header('Retry-After', String(Math.round(rlRejected.msBeforeNext / 1000) || 1));
-            return ctx.json(tooManyRequestsError(), 429);
+            return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
           }
 
           throw rlRejected;

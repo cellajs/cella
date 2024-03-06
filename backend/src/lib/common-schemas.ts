@@ -4,9 +4,20 @@ export const passwordSchema = z.string().min(8).max(100);
 
 export const cookieSchema = z.string();
 
+export const errorSchema = z.object({
+  message: z.string(),
+  type: z.string(),
+  httpStatus: z.number(),
+  severity: z.string(),
+  logId: z.string().optional(),
+  path: z.string().optional(),
+  method: z.string().optional(),
+  timestamp: z.string().optional(),
+});
+
 export const errorResponseSchema = z.object({
   success: z.boolean().default(false),
-  error: z.string(),
+  error: errorSchema,
 });
 
 const offsetRefine = (value: string) => Number(value) >= 0;

@@ -1,8 +1,8 @@
 import configureRoutes from './configure';
-import { customLogger } from './lib/custom-logger';
 import defaultHook from './lib/default-hook';
 import docs from './lib/docs';
 import errorHandler from './lib/error-handler';
+import { errorResponse } from './lib/error-response';
 import middlewares from './middlewares';
 import authRoutes from './modules/auth';
 import generalRoutes from './modules/general';
@@ -24,16 +24,7 @@ docs(app);
 
 // Not found handler
 app.notFound((ctx) => {
-  const data = {
-    requestPath: ctx.req.path,
-    requestMethod: ctx.req.method,
-    error: 'Not found',
-    errorCode: 404,
-  };
-
-  customLogger('Error', data, 'warn');
-
-  return ctx.json({ success: false, error: 'Not found' }, 404);
+  return errorResponse(ctx, 404, 'route_not_found', 'warn', true);
 });
 
 // Error handler

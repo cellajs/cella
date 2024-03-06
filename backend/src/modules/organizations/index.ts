@@ -6,9 +6,9 @@ import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
 import { checkSlugExists } from '../../lib/check-slug';
 import { customLogger } from '../../lib/custom-logger';
-import { createError } from '../../lib/errors';
+import { ErrorType, createError, errorResponse } from '../../lib/error-response';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
-import { CustomHono, ErrorResponse } from '../../types/common';
+import { CustomHono } from '../../types/common';
 import {
   createOrganizationRoute,
   deleteOrganizationsRoute,
@@ -31,18 +31,14 @@ const organizationsRoutes = app
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.name, name));
 
     if (organization) {
-      customLogger('Organization with this name exists', { name }, 'warn');
-
-      return ctx.json<ErrorResponse>(createError('error.organization_name_exists', 'Organization with this name already exists'), 400);
+      return errorResponse(ctx, 400, 'organization_name_exists', 'warn', true, { name });
     }
 
     const [createdOrganization] = await db
       .insert(organizationsTable)
       .values({
         name,
-        slug: slugify(name, {
-          lower: true,
-        }),
+        slug: slugify(name, { lower: true }),
         createdBy: user.id,
       })
       .returning();
@@ -128,10 +124,7 @@ const organizationsRoutes = app
         items: organizations.map(({ organization, userRole, admins, members }) => ({
           ...organization,
           userRole,
-          counts: {
-            admins,
-            members,
-          },
+          counts: { admins, members },
         })),
         total,
       },
@@ -165,9 +158,8 @@ const organizationsRoutes = app
       const slugExists = await checkSlugExists(slug);
 
       if (slugExists && slug !== organization.slug) {
-        customLogger('Slug already exists', { slug }, 'warn');
 
-        return ctx.json(createError('error.slug_exists', 'Slug already exists'), 400);
+        return errorResponse(ctx, 400, 'slug_exists', 'warn', true, { slug });
       }
     }
 
@@ -239,8 +231,7 @@ const organizationsRoutes = app
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
-      customLogger('User not found', { user: userId }, 'warn');
-      return ctx.json(createError('error.user_not_found', 'User not found'), 404);
+      return errorResponse(ctx, 404, 'user_not_found', 'warn', true, { user: userId });
     }
 
     const [membership] = await db
@@ -250,8 +241,7 @@ const organizationsRoutes = app
       .returning();
 
     if (!membership) {
-      customLogger('Membership not found', { user: targetUser.id, organization: organization.id }, 'warn');
-      return ctx.json(createError('error.user_not_found', 'User not found'), 404);
+      return errorResponse(ctx, 404, 'member_not_found', 'warn', true, { user: targetUser.id, organization: organization.id });
     }
 
     const [{ memberships }] = await db
@@ -276,42 +266,34 @@ const organizationsRoutes = app
   })
   .openapi(deleteOrganizationsRoute, async (ctx) => {
     const { ids } = ctx.req.valid('query');
-    // const user = ctx.get('user');
+    const user = ctx.get('user');
 
     const organizationIds = Array.isArray(ids) ? ids : [ids];
 
-    const errors: ReturnType<typeof createError>[] = [];
+    const errors: ErrorType[] = [];
 
     await Promise.all(
       organizationIds.map(async (id) => {
         const [targetOrganization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, id));
 
         if (!targetOrganization) {
-          customLogger('Organization not found', { organization: id }, 'warn');
-          errors.push(createError('error.organization_not_found', 'Organization not found'));
-          return;
+          errors.push(createError(ctx, 404, 'organization_not_found', 'warn', true, { organization: id }));
         }
 
-        // if (user.role !== 'ADMIN') {
-        //   customLogger('User forbidden', { user: user.id }, 'warn);
-        //   errors.push(forbiddenError());
-        //   return;
-        // }
+        if (user.role !== 'ADMIN') {
+          errors.push(createError(ctx, 403, 'delete_organization_forbidden', 'warn', true, { organization: id }));
+        }
 
         await db.delete(organizationsTable).where(eq(organizationsTable.id, id));
-
+        
         customLogger('Organization deleted', { organization: id });
       }),
     );
 
+
     return ctx.json({
       success: true,
-      data:
-        errors.length > 0
-          ? {
-              error: errors[0].error,
-            }
-          : undefined,
+      errors: errors,
     });
   })
   .openapi(getOrganizationByIdOrSlugRoute, async (ctx) => {
@@ -445,8 +427,6 @@ const organizationsRoutes = app
 
     const usersIds = Array.isArray(ids) ? ids : [ids];
 
-    const errors: ReturnType<typeof createError>[] = [];
-
     await Promise.all(
       usersIds.map(async (id) => {
         const [targetMembership] = await db
@@ -455,23 +435,16 @@ const organizationsRoutes = app
           .returning();
 
         if (!targetMembership) {
-          customLogger('Membership not found', { user: id, organization: organization.id }, 'warn');
-          errors.push(createError('error.membership_not_found', 'Membership not found'));
-          return;
+          return errorResponse(ctx, 404, 'member_not_found', 'warn', true, { user: id, organization: organization.id });
         }
 
-        customLogger('Membership deleted', { user: id, organization: organization.id });
+        customLogger('Member deleted', { user: id, organization: organization.id });
       }),
     );
 
     return ctx.json({
       success: true,
-      data:
-        errors.length > 0
-          ? {
-              error: errors[0].error,
-            }
-          : undefined,
+      data: undefined,
     });
   });
 

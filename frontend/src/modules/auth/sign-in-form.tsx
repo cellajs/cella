@@ -95,7 +95,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
         />
 
         <Button type="submit" loading={pending} className="w-full">
-          t('common:sign_in')
+          {t('common:sign_in')}
           <ArrowRight size={16} className="ml-2" />
         </Button>
 

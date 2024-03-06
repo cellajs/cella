@@ -16,7 +16,7 @@ const errorHandler: ErrorHandler<Env> = (err, c) => {
     errorCode: 500,
   };
 
-  customLogger('Error', data, 'error');
+  customLogger('Unhandled error', data, 'error');
 
   sendError(err, () => {
     setCustomData(data);

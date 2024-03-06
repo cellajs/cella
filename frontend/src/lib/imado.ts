@@ -21,6 +21,8 @@ export async function ImadoUppy(
   // Get upload token and check if public or private files
   const token = await getUploadToken(type, { public: opts.public, organizationId: opts.organizationId });
 
+  if (!token) throw new Error('Failed to get upload token');
+
   const { public: isPublic, sub, imado: useImadoAPI } = readJwt(token);
 
   const rootUrl = isPublic ? config.publicCDNUrl : config.privateCDNUrl;

@@ -125,6 +125,9 @@ importers:
       slugify:
         specifier: ^1.6.6
         version: 1.6.6
+      stacktrace-parser-node:
+        specifier: ^1.1.5
+        version: 1.1.5
       zod:
         specifier: ^3.22.4
         version: 3.22.4
@@ -15700,6 +15703,10 @@ packages:
     requiresBuild: true
     dev: false
     optional: true
+
+  /stacktrace-parser-node@1.1.5:
+    resolution: {integrity: sha512-A7wSJtJrVO2S4IO9sPpCAeFdJOoExPkg4Kv5tiMZHLpfwpyatHqhCax2lk8Aip5Vvma3zP2QV1Kl/TQjpWIasw==}
+    dev: false
 
   /stacktrace-parser@0.1.10:
     resolution: {integrity: sha512-KJP1OCML99+8fhOHxwwzyWrlUuVX5GQ0ZpJTd1DFXhdkrvg1szxfHhawXUZ3g9TkXORQd4/WG68jMlQZ2p8wlg==}

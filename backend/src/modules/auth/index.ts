@@ -21,11 +21,11 @@ import { usersTable } from '../../db/schema/users';
 import { checkSlugExists } from '../../lib/check-slug';
 import { removeSessionCookie, setSessionCookie } from '../../lib/cookies';
 import { customLogger } from '../../lib/custom-logger';
-import { createError, unauthorizedError } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
-import { CustomHono, ErrorResponse } from '../../types/common';
+import { CustomHono } from '../../types/common';
 import oauthRoutes from './oauth';
+import { errorResponse } from '../../lib/error-response';
 import {
   checkEmailRoute,
   resetPasswordCallbackRoute,
@@ -80,9 +80,7 @@ const authRoutes = app
       });
     } catch (error) {
       if (error instanceof postgres.PostgresError && error.message.startsWith('duplicate key')) {
-        customLogger('User already exists', { email }, 'warn');
-
-        return ctx.json(createError('error.email_exists', 'Email already exists'), 400);
+        return errorResponse(ctx, 409, 'error.email_exists', 'warn', true, { email });
       }
 
       customLogger('Error signing up', { errorMessage: (error as Error).message }, 'error');
@@ -115,7 +113,7 @@ const authRoutes = app
         });
       }
 
-      return ctx.json(createError('error.invalid_token_or_expired', 'Invalid token or expired'), 400);
+      return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn', true, { user: token?.userId || 'na', type: 'verification' });
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
@@ -138,7 +136,7 @@ const authRoutes = app
         });
       }
 
-      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
+      return errorResponse(ctx, 400, 'invalid_token', 'warn');
     }
 
     await db
@@ -160,7 +158,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user) {
-      return ctx.json(createError('error.no_email_found', 'No email found'), 400);
+      return errorResponse(ctx, 400, 'email_not_found', 'warn', true, { email });
     }
 
     // creating email verification token
@@ -206,7 +204,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user || !user.emailVerified) {
-      return ctx.json(createError('error.invalid_email', 'Invalid email'), 400);
+      return errorResponse(ctx, 400, 'invalid_email', 'warn', true, { email });
     }
 
     // creating password reset token
@@ -243,13 +241,13 @@ const authRoutes = app
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
-      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
+      return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     if (!user || user.email !== token.email) {
-      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
+      return errorResponse(ctx, 404, 'user_by_token_not_found', 'warn', true, { userId: token.userId });
     }
 
     await auth.invalidateUserSessions(user.id);
@@ -269,15 +267,16 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user || !user.hashedPassword) {
-      return ctx.json(createError('error.invalid_email_or_password', 'Invalid email or password'), 400);
+      return errorResponse(ctx, 404, 'user_by_email_not_found', 'warn');
     }
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
 
     if (!validPassword) {
-      return ctx.json(createError('error.invalid_email_or_password', 'Invalid email or password'), 400);
+      return errorResponse(ctx, 400, 'invalid_password', 'warn');
     }
 
+    // Send verify email first
     if (!user.emailVerified) {
       fetch(config.backendUrl + sendVerificationEmailRoute.path, {
         method: sendVerificationEmailRoute.method,
@@ -294,10 +293,6 @@ const authRoutes = app
 
     await setSessionCookie(ctx, user.id, 'password');
 
-    const lastSignInAt = new Date();
-
-    await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
-
     return ctx.json({
       success: true,
       data: transformDatabaseUser(user),
@@ -309,20 +304,17 @@ const authRoutes = app
 
     if (!sessionId) {
       removeSessionCookie(ctx);
-      return ctx.json<ErrorResponse>(unauthorizedError(), 401);
+      return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
     const { session } = await auth.validateSession(sessionId);
 
-    if (!session) {
-      removeSessionCookie(ctx);
-      return ctx.json(unauthorizedError(), 401);
+    if (session) {
+      await auth.invalidateSession(session.id);
     }
 
-    await auth.invalidateSession(session.id);
-
     removeSessionCookie(ctx);
-    customLogger('User signed out', { user: session.userId });
+    customLogger('User signed out', { user: session?.userId || 'na' });
 
     return ctx.json({ success: true, data: undefined });
   })
@@ -358,7 +350,7 @@ const authRoutes = app
       .where(and(eq(tokensTable.id, verificationToken)));
 
     if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
+      return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
     }
 
     let organization: OrganizationModel | undefined;
@@ -367,7 +359,7 @@ const authRoutes = app
       [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, token.organizationId));
 
       if (!organization) {
-        return ctx.json(createError('error.organization_not_found', 'Organization not found'), 404);
+        return errorResponse(ctx, 404, 'organization_not_found', 'warn', true, { organizationId: token.organizationId });
       }
     }
 
@@ -380,7 +372,7 @@ const authRoutes = app
         .where(and(eq(usersTable.id, token.userId)));
 
       if (!user || user.email !== token.email) {
-        return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
+        return errorResponse(ctx, 400, 'invalid_token', 'warn', true, { userId: token.userId, type: 'invitation' });
       }
     } else if (password || oauth) {
       const hashedPassword = password ? await new Argon2id().hash(password) : undefined;
@@ -411,7 +403,7 @@ const authRoutes = app
         ctx.header('Set-Cookie', sessionCookie.serialize());
       }
     } else {
-      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
+      return errorResponse(ctx, 400, 'invalid_token', 'warn', true, { type: 'invitation' });
     }
 
     if (organization) {
@@ -451,7 +443,7 @@ const authRoutes = app
         // return ctx.redirect(url, 302);
       }
 
-      return ctx.json(createError('error.invalid_token', 'Invalid token'), 400);
+      return errorResponse(ctx, 400, 'invalid_token', 'warn', true, { type: 'invitation' });
     }
 
     return ctx.json({

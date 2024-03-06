@@ -16,9 +16,9 @@ import { OrganizationModel, organizationsTable } from '../../db/schema/organizat
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { customLogger } from '../../lib/custom-logger';
-import { forbiddenError } from '../../lib/errors';
+import { errorResponse } from '../../lib/error-response';
 import { i18n } from '../../lib/i18n';
-import { CustomHono, ErrorResponse } from '../../types/common';
+import { CustomHono } from '../../types/common';
 import { checkSlugRoute, getUploadTokenRoute, inviteRoute } from './routes';
 
 const app = new CustomHono();
@@ -65,7 +65,7 @@ const generalRoutes = app
     const organization = ctx.get('organization') as OrganizationModel | undefined;
 
     if (!organization && user.role !== 'ADMIN') {
-      return ctx.json<ErrorResponse>(forbiddenError(), 403);
+      return errorResponse(ctx, 403, 'invite_forbidden', 'warn');
     }
 
     for (const email of emails) {

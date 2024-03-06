@@ -5,9 +5,7 @@ import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { usersTable } from '../../db/schema/users';
 import { removeSessionCookie } from '../../lib/cookies';
-import { customLogger } from '../../lib/custom-logger';
-import { forbiddenError, unauthorizedError } from '../../lib/errors';
-import { ErrorResponse } from '../../types/common';
+import { errorResponse } from '../../lib/error-response';
 
 const authGuard =
   (accessibleFor?: User['role'][]): MiddlewareHandler =>
@@ -17,19 +15,18 @@ const authGuard =
 
     if (!sessionId) {
       removeSessionCookie(ctx);
-      return ctx.json<ErrorResponse>(unauthorizedError(), 401);
+      return errorResponse(ctx, 401, 'unauthorized', 'warn')
     }
 
     const { session, user } = await auth.validateSession(sessionId);
 
     if (!session) {
       removeSessionCookie(ctx);
-      return ctx.json<ErrorResponse>(unauthorizedError(), 401);
+      return errorResponse(ctx, 401, 'unauthorized', 'warn')
     }
 
     if (accessibleFor && !accessibleFor.includes(user.role)) {
-      customLogger('User forbidden', { user: user.id }, 'warn');
-      return ctx.json<ErrorResponse>(forbiddenError(), 403);
+      return errorResponse(ctx, 403, 'forbidden', 'warn', true, { user: user.id })
     }
 
     if (session?.fresh) {
@@ -53,3 +50,4 @@ const authGuard =
   };
 
 export default authGuard;
+
