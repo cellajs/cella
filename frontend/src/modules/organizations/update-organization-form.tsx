@@ -18,10 +18,10 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import AvatarFormField from '../common/forms/avatar';
 import LanguageFormField from '../common/forms/language';
+import InputFormField from '../common/forms/input';
 
 const SelectCountry = lazy(() => import('~/modules/common/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/select-timezone'));
@@ -130,83 +130,31 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           url={form.getValues('thumbnailUrl')}
           setUrl={setImageUrl}
         />
-        <FormField
+        <InputFormField
           control={form.control}
           name="slug"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('common:organization_handle')}</FormLabel>
-              <FormDescription>{t('common:text.organization_handle')}</FormDescription>
-              <FormControl>
-                {/* TODO: This breaks accessibility of the form label? */}
-                <div className="relative">
-                  <Input {...field} />
-                  {organization.slug !== slug && (
-                    <div className="absolute inset-y-1 right-1 flex justify-end">
-                      <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
-                        <Undo size={16} className="mr-2" /> {t('common:revert_to')} <strong className="ml-1">{organization.slug}</strong>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label={t('common:organization_handle')}
+          description={t('common:text.organization_handle')}
+          subComponent={
+            organization.slug !== slug && (
+              <div className="absolute inset-y-1 right-1 flex justify-end">
+                <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
+                  <Undo size={16} className="mr-2" /> {t('common:revert_to')} <strong className="ml-1">{organization.slug}</strong>
+                </Button>
+              </div>
+            )
+          }
         />
-        <FormField
+        <InputFormField control={form.control} name="name" label={t('common:name')} />
+        <InputFormField control={form.control} name="shortName" label={t('common:short_name')} />
+        <InputFormField
           control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('common:name')}</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="shortName"
-          render={({ field: { value, ...rest } }) => (
-            <FormItem>
-              <FormLabel>{t('common:short_name')}</FormLabel>
-              <FormControl>
-                <Input value={value ?? ''} {...rest} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
+          type="email"
           name="notificationEmail"
-          render={({ field: { value, ...rest } }) => (
-            <FormItem>
-              <FormLabel>{t('common:notification_email')}</FormLabel>
-              <FormDescription>{t('common:text.notification_email')}</FormDescription>
-              <FormControl>
-                <Input type="email" value={value ?? ''} {...rest} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label={t('common:notification_email')}
+          description={t('common:text.notification_email')}
         />
-        <FormField
-          control={form.control}
-          name="websiteUrl"
-          render={({ field: { value, ...rest } }) => (
-            <FormItem>
-              <FormLabel>{t('common:website_url')}</FormLabel>
-              <FormControl>
-                <Input placeholder="https://" type="url" value={value ?? ''} {...rest} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <InputFormField control={form.control} name="websiteUrl" label={t('common:website_url')} placeholder="https://" type="url" />
         <LanguageFormField
           control={form.control}
           name="languages"

@@ -15,8 +15,7 @@ import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 import { useWatch } from 'react-hook-form';
 import { checkSlug } from '~/api/general';
@@ -25,8 +24,8 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
-import { Textarea } from '../ui/textarea';
 import LanguageFormField from '../common/forms/language';
+import InputFormField from '../common/forms/input';
 
 interface Props {
   user: User;
@@ -140,76 +139,25 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           url={form.getValues('thumbnailUrl')}
           setUrl={setImageUrl}
         />
-        <FormField
+        <InputFormField
           control={form.control}
           name="slug"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('common:user_handle')}</FormLabel>
-              <FormDescription>A unique handle for your profile URL.</FormDescription>
-              <FormControl>
-                {/* TODO: This breaks accessibility of the form label? */}
-                <div className="relative">
-                  <Input {...field} />
-                  {user.slug !== slug && (
-                    <div className="absolute inset-y-1 right-1 flex justify-end">
-                      <Button variant="ghost" size="sm" aria-label="Revert to current user handle" onClick={revertSlug} className="h-full">
-                        <Undo size={16} className="mr-2" /> Revert to <strong className="ml-1">{user.slug}</strong>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label={t('common:user_handle')}
+          description={t('common:text.user_handle')}
+          subComponent={
+            user.slug !== slug && (
+              <div className="absolute inset-y-1 right-1 flex justify-end">
+                <Button variant="ghost" size="sm" aria-label="Revert to current user handle" onClick={revertSlug} className="h-full">
+                  <Undo size={16} className="mr-2" /> Revert to <strong className="ml-1">{user.slug}</strong>
+                </Button>
+              </div>
+            )
+          }
         />
-        <FormItem>
-          <FormLabel>{t('common:email')}</FormLabel>
-          <FormControl>
-            <Input value={user.email} disabled />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-        <FormField
-          control={form.control}
-          name="firstName"
-          render={({ field: { value, ...rest } }) => (
-            <FormItem>
-              <FormLabel>{t('common:first_name')}</FormLabel>
-              <FormControl>
-                <Input value={value ?? ''} {...rest} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="lastName"
-          render={({ field: { value, ...rest } }) => (
-            <FormItem>
-              <FormLabel>{t('common:last_name')}</FormLabel>
-              <FormControl>
-                <Input value={value ?? ''} {...rest} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="bio"
-          render={({ field: { value, ...rest } }) => (
-            <FormItem>
-              <FormLabel>{t('common:bio')}</FormLabel>
-              <FormControl>
-                <Textarea value={value ?? ''} {...rest} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <InputFormField control={form.control} value={user.email} name="email" label={t('common:email')} type="email" disabled />
+        <InputFormField control={form.control} name="firstName" label={t('common:first_name')} />
+        <InputFormField control={form.control} name="lastName" label={t('common:last_name')} />
+        <InputFormField control={form.control} name="bio" label={t('common:bio')} type="textarea" />
         <LanguageFormField control={form.control} name="language" label={t('common:language')} placeholder="Select a language" />
         <FormField
           control={form.control}
