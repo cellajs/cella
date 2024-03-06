@@ -4,11 +4,9 @@ import { updateOrganizationJsonSchema } from 'backend/modules/organizations/sche
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
-import CountryFlag from '~/modules/common/country-flag';
 import { queryClient } from '~/router';
 import { Organization } from '~/types';
 
-import { config } from 'config';
 import { Loader2, Undo } from 'lucide-react';
 import { Suspense, useEffect, lazy } from 'react';
 import { useWatch } from 'react-hook-form';
@@ -22,9 +20,8 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import MultipleSelector from '../ui/multiple-selector';
 import AvatarFormField from '../common/forms/avatar';
+import LanguageFormField from '../common/forms/language';
 
 const SelectCountry = lazy(() => import('~/modules/common/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/select-timezone'));
@@ -210,51 +207,21 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             </FormItem>
           )}
         />
-        <FormField
+        <LanguageFormField
           control={form.control}
           name="languages"
-          render={({ field: { value, onChange } }) => (
-            <FormItem>
-              <FormLabel>{t('common:languages')}</FormLabel>
-              <FormControl>
-                <MultipleSelector
-                  value={config.languages.filter((language) => value?.includes(language.value))}
-                  onChange={(value) => {
-                    onChange(value.map((language) => language.value));
-                  }}
-                  defaultOptions={config.languages}
-                  placeholder={t('common:select')}
-                  emptyIndicator={t('common:empty_languages')}
-                />
-              </FormControl>
-            </FormItem>
-          )}
+          label={t('common:languages')}
+          mode="multiple"
+          placeholder={t('common:select')}
+          emptyIndicator={t('common:empty_languages')}
         />
-        <FormField
+        <LanguageFormField
           control={form.control}
           name="defaultLanguage"
-          render={({ field: { value, onChange } }) => (
-            <FormItem>
-              <FormLabel>{t('common:default_language')}</FormLabel>
-              <FormDescription>{t('common:text.default_language')}</FormDescription>
-              <FormControl>
-                <Select onValueChange={onChange} value={value || ''}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('common:select_language')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {config.languages.map((language: { value: string; label: string }) => (
-                      <SelectItem key={language.value} value={language.value} disabled={!form.getValues('languages')?.includes(language.value)}>
-                        <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
-                        {language.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label={t('common:default_language')}
+          description={t('common:text.default_language')}
+          placeholder={t('common:select_language')}
+          disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
         />
         <FormField
           control={form.control}

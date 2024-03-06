@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { DefaultError, useMutation } from '@tanstack/react-query';
 import { updateUserJsonSchema } from 'backend/modules/users/schema';
-import { config } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -14,12 +13,10 @@ import { UpdateUserParams, updateUser } from '~/api/users';
 import { Undo } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import CountryFlag from '~/modules/common/country-flag';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
 import { useWatch } from 'react-hook-form';
 import { checkSlug } from '~/api/general';
@@ -29,6 +26,7 @@ import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import { Textarea } from '../ui/textarea';
+import LanguageFormField from '../common/forms/language';
 
 interface Props {
   user: User;
@@ -212,31 +210,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="language"
-          render={({ field: { value, onChange } }) => (
-            <FormItem>
-              <FormLabel>{t('common:language')}</FormLabel>
-              <FormControl>
-                <Select onValueChange={onChange} value={value || ''}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {config.languages.map((language) => (
-                      <SelectItem key={language.value} value={language.value}>
-                        <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
-                        {language.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <LanguageFormField control={form.control} name="language" label={t('common:language')} placeholder="Select a language" />
         <FormField
           control={form.control}
           name="newsletter"
