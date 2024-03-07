@@ -42,7 +42,7 @@ export const config = {
   publicCDNUrl: 'https://cdn.cellajs.com',
 
   // Monitoring with AppSignal
-  appsignalFrontendKey: undefined,
+  appsignalFrontendKey: 'e625b6ea-b7c7-4417-b91f-50295e69a5bc',
 
   // Theme settings
   theme: {
