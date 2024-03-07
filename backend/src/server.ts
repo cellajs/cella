@@ -1,4 +1,3 @@
-import configureRoutes from './configure';
 import defaultHook from './lib/default-hook';
 import docs from './lib/docs';
 import { errorResponse } from './lib/errors';
@@ -30,9 +29,6 @@ app.notFound((ctx) => {
 app.onError((err, ctx) => {
   return errorResponse(ctx, 500, 'server_error', 'error', true, {}, err);
 });
-
-// Configure routes with their specific middleware
-configureRoutes(app);
 
 // Add routes for each module
 const route = app.route('/', authRoutes).route('/', usersRoutes).route('/', organizationsRoutes).route('/', generalRoutes).route('/', publicRoutes);

@@ -19,13 +19,13 @@ import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkSlugRoute, getUploadTokenRoute, inviteRoute } from './routes';
+import { checkSlugRouteConfig, getUploadTokenRouteConfig, inviteRouteConfig } from './routes';
 
 const app = new CustomHono();
 
 // routes
 const generalRoutes = app
-  .openapi(getUploadTokenRoute, async (ctx) => {
+  .add(getUploadTokenRouteConfig, async (ctx) => {
     const isPublic = ctx.req.query('public');
     const user = ctx.get('user');
     // TODO: validate query param organization
@@ -47,7 +47,7 @@ const generalRoutes = app
       data: token,
     });
   })
-  .openapi(checkSlugRoute, async (ctx) => {
+  .add(checkSlugRouteConfig, async (ctx) => {
     const { slug } = ctx.req.valid('param');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.slug, slug));
@@ -59,7 +59,7 @@ const generalRoutes = app
       data: !!user || !!organization,
     });
   })
-  .openapi(inviteRoute, async (ctx) => {
+  .add(inviteRouteConfig, async (ctx) => {
     const { emails } = ctx.req.valid('json');
     const user = ctx.get('user');
     const organization = ctx.get('organization') as OrganizationModel | undefined;

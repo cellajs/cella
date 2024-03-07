@@ -1,4 +1,4 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { z } from '@hono/zod-openapi';
 
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { cookieSchema } from '../../lib/common-schemas';
@@ -11,10 +11,16 @@ import {
   signInJsonSchema,
   signUpJsonSchema,
 } from './schema';
+import { createRouteConfig } from '../../lib/createRoute';
+import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
+import { rateLimiter } from '../../middlewares/rate-limiter';
 
-export const signUpRoute = createRoute({
+const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');
+
+export const signUpRouteConfig = createRouteConfig({
   method: 'post',
   path: '/sign-up',
+  guard: 'public',
   tags: ['auth'],
   summary: 'Sign up a new user',
   security: [],
@@ -43,9 +49,11 @@ export const signUpRoute = createRoute({
   },
 });
 
-export const verifyEmailRoute = createRoute({
+export const verifyEmailRouteConfig = createRouteConfig({
   method: 'get',
   path: '/verify-email/{token}',
+  guard: 'public',
+  middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Verify a user email address',
   security: [],
@@ -70,9 +78,11 @@ export const verifyEmailRoute = createRoute({
   },
 });
 
-export const sendVerificationEmailRoute = createRoute({
+export const sendVerificationEmailRouteConfig = createRouteConfig({
   method: 'post',
   path: '/send-verification-email',
+  guard: 'public',
+  middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Resend a verification email',
   security: [],
@@ -100,9 +110,11 @@ export const sendVerificationEmailRoute = createRoute({
   },
 });
 
-export const resetPasswordRoute = createRoute({
+export const resetPasswordRouteConfig = createRouteConfig({
   method: 'post',
   path: '/reset-password',
+  guard: 'public',
+  middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Reset a user password',
   security: [],
@@ -130,9 +142,11 @@ export const resetPasswordRoute = createRoute({
   },
 });
 
-export const resetPasswordCallbackRoute = createRoute({
+export const resetPasswordCallbackRouteConfig = createRouteConfig({
   method: 'post',
   path: '/reset-password/{token}',
+  guard: 'public',
+  middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Callback for password reset',
   security: [],
@@ -161,9 +175,11 @@ export const resetPasswordCallbackRoute = createRoute({
   },
 });
 
-export const checkEmailRoute = createRoute({
+export const checkEmailRouteConfig = createRouteConfig({
   method: 'post',
   path: '/check-email',
+  guard: 'public',
+  middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Check if an email address exists for a user',
   security: [],
@@ -189,9 +205,11 @@ export const checkEmailRoute = createRoute({
   },
 });
 
-export const signInRoute = createRoute({
+export const signInRouteConfig = createRouteConfig({
   method: 'post',
   path: '/sign-in',
+  guard: 'public',
+  middlewares: [signInRateLimiter()],
   tags: ['auth'],
   summary: 'Sign in a user',
   security: [],
@@ -226,9 +244,10 @@ export const signInRoute = createRoute({
   },
 });
 
-export const githubSignInRoute = createRoute({
+export const githubSignInRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/github',
+  guard: 'public',
   tags: ['auth'],
   summary: 'Sign in a user with GitHub',
   security: [],
@@ -248,9 +267,10 @@ export const githubSignInRoute = createRoute({
   },
 });
 
-export const githubSignInCallbackRoute = createRoute({
+export const githubSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/github/callback',
+  guard: 'public',
   tags: ['auth'],
   summary: 'Callback for GitHub sign in',
   security: [],
@@ -271,9 +291,10 @@ export const githubSignInCallbackRoute = createRoute({
   },
 });
 
-export const googleSignInRoute = createRoute({
+export const googleSignInRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/google',
+  guard: 'public',
   tags: ['auth'],
   summary: 'Sign in a user with Google',
   security: [],
@@ -293,9 +314,10 @@ export const googleSignInRoute = createRoute({
   },
 });
 
-export const googleSignInCallbackRoute = createRoute({
+export const googleSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/google/callback',
+  guard: 'public',
   tags: ['auth'],
   summary: 'Callback for Google sign in',
   security: [],
@@ -316,9 +338,10 @@ export const googleSignInCallbackRoute = createRoute({
   },
 });
 
-export const microsoftSignInRoute = createRoute({
+export const microsoftSignInRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/microsoft',
+  guard: 'public',
   tags: ['auth'],
   summary: 'Sign in a user with Microsoft',
   security: [],
@@ -338,9 +361,10 @@ export const microsoftSignInRoute = createRoute({
   },
 });
 
-export const microsoftSignInCallbackRoute = createRoute({
+export const microsoftSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/microsoft/callback',
+  guard: 'public',
   tags: ['auth'],
   summary: 'Callback for Microsoft sign in',
   security: [],
@@ -361,9 +385,10 @@ export const microsoftSignInCallbackRoute = createRoute({
   },
 });
 
-export const signOutRoute = createRoute({
+export const signOutRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-out',
+  guard: 'public',
   tags: ['auth'],
   summary: 'Sign out a user',
   responses: {
@@ -379,9 +404,11 @@ export const signOutRoute = createRoute({
   },
 });
 
-export const acceptInviteRoute = createRoute({
+export const acceptInviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/accept-invite/{token}',
+  guard: 'public',
+  middlewares: [authRateLimiter],
   tags: ['general'],
   summary: 'Accept invitation',
   request: {
@@ -415,9 +442,10 @@ export const acceptInviteRoute = createRoute({
   },
 });
 
-export const checkInviteRoute = createRoute({
+export const checkInviteRouteConfig = createRouteConfig({
   method: 'get',
   path: '/check-invite/{token}',
+  guard: 'public',
   tags: ['general'],
   summary: 'Check invite by invite token',
   request: {

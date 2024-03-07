@@ -1,10 +1,11 @@
-import { createRoute } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
 import { apiPublicCountsSchema } from './schema';
+import { createRouteConfig } from '../../lib/createRoute';
 
-export const getPublicCountsRoute = createRoute({
+export const getPublicCountsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/public/counts',
+  guard: 'public',
   tags: ['public'],
   summary: 'Get public counts',
   responses: {

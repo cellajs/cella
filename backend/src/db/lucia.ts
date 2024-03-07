@@ -4,26 +4,26 @@ import { config } from 'config';
 import { Lucia, SessionCookieOptions, TimeSpan } from 'lucia';
 
 import { env } from 'env';
-import { githubSignInCallbackRoute, googleSignInCallbackRoute, microsoftSignInCallbackRoute } from '../modules/auth/routes';
+import { githubSignInCallbackRouteConfig, googleSignInCallbackRouteConfig, microsoftSignInCallbackRouteConfig } from '../modules/auth/routes';
 import { db } from './db';
 import { sessionsTable } from './schema/sessions';
 import { UserModel, usersTable } from './schema/users';
 
 export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', {
-  redirectURI: `${config.backendUrl}${githubSignInCallbackRoute.path}`,
+  redirectURI: `${config.backendUrl}${githubSignInCallbackRouteConfig.route.path}`,
 });
 
 export const googleAuth = new Google(
   env.GOOGLE_CLIENT_ID || '',
   env.GOOGLE_CLIENT_SECRET || '',
-  `${config.backendUrl}${googleSignInCallbackRoute.path}`,
+  `${config.backendUrl}${googleSignInCallbackRouteConfig.route.path}`,
 );
 
 export const microsoftAuth = new MicrosoftEntraId(
   env.MICROSOFT_TENANT_ID || '',
   env.MICROSOFT_CLIENT_ID || '',
   env.MICROSOFT_CLIENT_SECRET || '',
-  `${config.backendUrl}${microsoftSignInCallbackRoute.path}`,
+  `${config.backendUrl}${microsoftSignInCallbackRouteConfig.route.path}`,
 );
 
 // Create Lucia adapter instance

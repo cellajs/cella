@@ -54,6 +54,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@asteasolutions/zod-to-openapi": "5.5.0",
     "@babel/preset-typescript": "^7.23.3",
     "@faker-js/faker": "^8.3.1",
     "@types/node-cron": "^3.0.11",

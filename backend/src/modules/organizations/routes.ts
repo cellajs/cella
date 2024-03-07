@@ -1,4 +1,4 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { z } from '@hono/zod-openapi';
 
 import {
   errorResponses,
@@ -19,10 +19,12 @@ import {
   updateUserInOrganizationJsonSchema,
   updateUserInOrganizationParamSchema,
 } from './schema';
+import { createRouteConfig } from '../../lib/createRoute';
 
-export const createOrganizationRoute = createRoute({
+export const createOrganizationRouteConfig = createRouteConfig({
   method: 'post',
   path: '/organizations',
+  guard: 'system',
   tags: ['organizations'],
   summary: 'Create a new organization',
   description: `
@@ -52,9 +54,10 @@ export const createOrganizationRoute = createRoute({
   },
 });
 
-export const updateOrganizationRoute = createRoute({
+export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
   path: '/organizations/{organizationIdentifier}',
+  guard: 'tenant-system',
   tags: ['organizations'],
   summary: 'Update organization',
   description: `
@@ -85,9 +88,10 @@ export const updateOrganizationRoute = createRoute({
   },
 });
 
-export const deleteOrganizationsRoute = createRoute({
+export const deleteOrganizationsRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/organizations',
+  guard: 'system',
   tags: ['organizations'],
   summary: 'Delete organizations',
   description: `
@@ -112,9 +116,10 @@ export const deleteOrganizationsRoute = createRoute({
   },
 });
 
-export const getOrganizationsRoute = createRoute({
+export const getOrganizationsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations',
+  guard: 'system',
   tags: ['organizations'],
   summary: 'Get organizations',
   description: `
@@ -137,9 +142,10 @@ export const getOrganizationsRoute = createRoute({
   },
 });
 
-export const getOrganizationByIdOrSlugRoute = createRoute({
+export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organizationIdentifier}',
+  guard: 'tenant',
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
   description: `
@@ -163,9 +169,10 @@ export const getOrganizationByIdOrSlugRoute = createRoute({
   },
 });
 
-export const getUsersByOrganizationIdRoute = createRoute({
+export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organizationIdentifier}/members',
+  guard: 'tenant',
   tags: ['organizations'],
   summary: 'Get members(users) of organization',
   description: `
@@ -190,9 +197,10 @@ export const getUsersByOrganizationIdRoute = createRoute({
   },
 });
 
-export const updateUserInOrganizationRoute = createRoute({
+export const updateUserInOrganizationRouteConfig = createRouteConfig({
   method: 'put',
   path: '/organizations/{organizationIdentifier}/members/{userId}',
+  guard: 'tenant-system',
   tags: ['organizations'],
   summary: 'Update member(user) in organization',
   description: `
@@ -223,9 +231,10 @@ export const updateUserInOrganizationRoute = createRoute({
   },
 });
 
-export const deleteUsersFromOrganizationRoute = createRoute({
+export const deleteUsersFromOrganizationRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/organizations/{organizationIdentifier}/members',
+  guard: 'tenant-system',
   tags: ['organizations'],
   summary: 'Delete members(users) from organization',
   description: `

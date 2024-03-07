@@ -10,21 +10,21 @@ import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import {
-  createOrganizationRoute,
-  deleteOrganizationsRoute,
-  deleteUsersFromOrganizationRoute,
-  getOrganizationByIdOrSlugRoute,
-  getOrganizationsRoute,
-  getUsersByOrganizationIdRoute,
-  updateOrganizationRoute,
-  updateUserInOrganizationRoute,
+  createOrganizationRouteConfig,
+  deleteOrganizationsRouteConfig,
+  deleteUsersFromOrganizationRouteConfig,
+  getOrganizationByIdOrSlugRouteConfig,
+  getOrganizationsRouteConfig,
+  getUsersByOrganizationIdRouteConfig,
+  updateOrganizationRouteConfig,
+  updateUserInOrganizationRouteConfig,
 } from './routes';
 
 const app = new CustomHono();
 
 // routes
 const organizationsRoutes = app
-  .openapi(createOrganizationRoute, async (ctx) => {
+  .add(createOrganizationRouteConfig, async (ctx) => {
     const { name } = ctx.req.valid('json');
     const user = ctx.get('user');
 
@@ -57,7 +57,7 @@ const organizationsRoutes = app
       },
     });
   })
-  .openapi(getOrganizationsRoute, async (ctx) => {
+  .add(getOrganizationsRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -130,7 +130,7 @@ const organizationsRoutes = app
       },
     });
   })
-  .openapi(updateOrganizationRoute, async (ctx) => {
+  .add(updateOrganizationRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -221,7 +221,7 @@ const organizationsRoutes = app
       },
     });
   })
-  .openapi(updateUserInOrganizationRoute, async (ctx) => {
+  .add(updateUserInOrganizationRouteConfig, async (ctx) => {
     const { userId } = ctx.req.valid('param');
     const { role } = ctx.req.valid('json');
     const user = ctx.get('user');
@@ -263,7 +263,7 @@ const organizationsRoutes = app
       },
     });
   })
-  .openapi(deleteOrganizationsRoute, async (ctx) => {
+  .add(deleteOrganizationsRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -294,7 +294,7 @@ const organizationsRoutes = app
       errors: errors,
     });
   })
-  .openapi(getOrganizationByIdOrSlugRoute, async (ctx) => {
+  .add(getOrganizationByIdOrSlugRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -329,7 +329,7 @@ const organizationsRoutes = app
       },
     });
   })
-  .openapi(getUsersByOrganizationIdRoute, async (ctx) => {
+  .add(getUsersByOrganizationIdRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 
@@ -419,7 +419,7 @@ const organizationsRoutes = app
       },
     });
   })
-  .openapi(deleteUsersFromOrganizationRoute, async (ctx) => {
+  .add(deleteUsersFromOrganizationRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 
