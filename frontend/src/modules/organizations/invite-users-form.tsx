@@ -48,7 +48,9 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
           organization?.id,
         ),
       () => {
-        form.reset(values);
+        form.reset(undefined, {
+          keepDirtyValues: true,
+        });
         callback?.();
 
         if (isDialog) {

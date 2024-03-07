@@ -58,7 +58,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       shortName: organization.shortName,
       websiteUrl: organization.websiteUrl,
       thumbnailUrl: cleanUrl(organization.thumbnailUrl),
-      notificationEmail: organization.shortName,
+      notificationEmail: organization.notificationEmail,
       timezone: organization.timezone,
       country: organization.country,
       defaultLanguage: organization.defaultLanguage,
@@ -75,9 +75,12 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
+    console.log('values', values);
     mutate(values, {
       onSuccess: (data) => {
-        form.reset(data);
+        form.reset(undefined, {
+          keepDirtyValues: true,
+        });
         callback?.(data);
         if (isDialog) {
           dialog.remove();
