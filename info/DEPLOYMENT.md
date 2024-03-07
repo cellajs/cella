@@ -20,7 +20,7 @@ Now run `pnpm run proxy:deploy` and follow the steps from there.
 
 ## Logging and error tracking
 
-We use [AppSignal](https://appsignal.com) for logging and error tracking. You need to create an account and set `APPSIGNAL_BACKEND_KEY` env variable in your .env file (and Render env variables) for backend tracking. For frontend error logging, created another key and add it to /config/default.ts under `appsignalFrontendKey`.
+We use [AppSignal](https://appsignal.com) for logging and error tracking. You need to create a key and add it to /config/default.ts under `appsignalKey`.
 
 For testing backend on development, you need to change `active` in /backend/src/lib/appsignal.ts\
 For testing frontend on development, you need to change `key` in /frontend/src/lib/appsignal.ts

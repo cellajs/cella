@@ -8,7 +8,6 @@ export const env = createEnv({
 
     SEND_ALL_TO_EMAIL: z.string().optional(),
     SENDGRID_API_KEY: z.string().optional(),
-    APPSIGNAL_BACKEND_KEY: z.string().optional(),
 
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
