@@ -45,25 +45,20 @@ export const createError = (
     org: organization?.id,
   };
 
+  // Send  error to AppSignal
   if (err || ['warn', 'error'].includes(severity)) {
-
-    const data = { ...error, eventData, group: type };
-
-    // Send error to AppSignal
     sendError(err || (error.message as unknown as Error), () => {
-      setCustomData(data);
+      setCustomData(error);
       setNamespace('backend');
     });
 
-    // Log to AppSignal and in console
+    const data = { ...error, eventData };
+
     appSignalLogger[severity](message, data as unknown as EventData);
     console.error(err);
-
-    return error;
   }
-
   // Log significant events with additional data
-  if (isEvent) logEvent(message, eventData, severity);
+  else if (isEvent) logEvent(message, eventData, severity);
 
   return error;
 };

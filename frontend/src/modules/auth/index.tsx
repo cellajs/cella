@@ -6,7 +6,6 @@ interface AuthPageProps {
 }
 
 const AuthPage = ({ children }: AuthPageProps) => {
-  
   return (
     <div className="container rich-gradient before:fixed after:fixed flex flex-col min-h-[90vh] sm:min-h-svh items-center">
       <div className="mt-auto mb-auto">
