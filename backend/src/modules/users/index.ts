@@ -12,13 +12,13 @@ import { ErrorType, createError, errorResponse } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute, userSuggestionsRoute } from './routes';
+import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuConfig, getUsersConfig, meRouteConfig, updateUserConfig, userSuggestionsConfig } from './routes';
 
 const app = new CustomHono();
 
 // routes
 const usersRoutes = app
-  .openapi(meRoute, async (ctx) => {
+  .add(meRouteConfig, async (ctx) => {
     const user = ctx.get('user');
 
     const [{ memberships }] = await db
@@ -38,7 +38,7 @@ const usersRoutes = app
       },
     });
   })
-  .openapi(getUserMenuRoute, async (ctx) => {
+  .add(getUserMenuConfig, async (ctx) => {
     const user = ctx.get('user');
 
     const organizationsWithMemberships = await db
@@ -89,7 +89,7 @@ const usersRoutes = app
       },
     });
   })
-  .openapi(updateUserRoute, async (ctx) => {
+  .add(updateUserConfig, async (ctx) => {
     const { userId } = ctx.req.valid('param');
     const user = ctx.get('user');
 
@@ -151,7 +151,7 @@ const usersRoutes = app
       },
     });
   })
-  .openapi(getUsersRoute, async (ctx) => {
+  .add(getUsersConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const orderFunc = order === 'asc' ? asc : desc;
@@ -235,7 +235,7 @@ const usersRoutes = app
       },
     });
   })
-  .openapi(userSuggestionsRoute, async (ctx) => {
+  .add(userSuggestionsConfig, async (ctx) => {
     const { q } = ctx.req.valid('query');
 
     const users = await db

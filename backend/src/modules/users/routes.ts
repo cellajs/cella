@@ -8,10 +8,12 @@ import {
 } from '../../lib/common-responses';
 import { userMenuSchema } from '../organizations/schema';
 import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
+import { createRouteConfig } from '../../lib/createRoute';
 
-export const meRoute = createRoute({
+export const meRouteConfig = createRouteConfig({
   method: 'get',
   path: '/me',
+  guard: 'auth',
   tags: ['users'],
   summary: 'Get the current user',
   responses: {
@@ -27,9 +29,10 @@ export const meRoute = createRoute({
   },
 });
 
-export const getUsersRoute = createRoute({
+export const getUsersConfig = createRouteConfig({
   method: 'get',
   path: '/users',
+  guard: 'system',
   tags: ['users'],
   summary: 'Get users',
   description: `
@@ -52,9 +55,10 @@ export const getUsersRoute = createRoute({
   },
 });
 
-export const userSuggestionsRoute = createRoute({
+export const userSuggestionsConfig = createRouteConfig({
   method: 'get',
   path: '/users/suggestions',
+  guard: 'auth',
   tags: ['users'],
   summary: 'Get user suggestions',
   request: {
@@ -83,9 +87,10 @@ export const userSuggestionsRoute = createRoute({
   },
 });
 
-export const updateUserRoute = createRoute({
+export const updateUserConfig = createRouteConfig({
   method: 'put',
   path: '/users/{userId}',
+  guard: 'auth',
   tags: ['users'],
   summary: 'Update a user',
   description: `
@@ -142,9 +147,10 @@ export const getUserByIdOrSlugRoute = createRoute({
   },
 });
 
-export const getUserMenuRoute = createRoute({
+export const getUserMenuConfig = createRouteConfig({
   method: 'get',
   path: '/menu',
+  guard: 'auth',
   tags: ['users'],
   summary: 'Get the menu of a current user',
   description: `

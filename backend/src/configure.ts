@@ -26,7 +26,7 @@ import {
   updateOrganizationRoute,
   updateUserInOrganizationRoute,
 } from './modules/organizations/routes';
-import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute } from './modules/users/routes';
+import { deleteUsersRoute, getUserByIdOrSlugRoute } from './modules/users/routes';
 
 /* 
 TODO:
@@ -59,11 +59,11 @@ const routesMiddlewares: {
   { route: resetPasswordRoute, middlewares: [authRateLimiter] },
   { route: resetPasswordCallbackRoute, middlewares: [authRateLimiter] },
   { route: checkEmailRoute, middlewares: [authRateLimiter] },
-  { route: meRoute, middlewares: [authGuard()] },
-  { route: getUserMenuRoute, middlewares: [authGuard()] },
-  { route: getUsersRoute, middlewares: [authGuard(['ADMIN'])] },
+  // { route: meRoute, middlewares: [authGuard()] },
+  // { route: getUserMenuRoute, middlewares: [authGuard()] },
+  // { route: getUsersRoute, middlewares: [authGuard(['ADMIN'])] },
   { route: getUserByIdOrSlugRoute, middlewares: [authGuard()] },
-  { route: updateUserRoute, middlewares: [authGuard()] },
+  // { route: updateUserRoute, middlewares: [authGuard()] },
   { route: deleteUsersRoute, middlewares: [authGuard()] },
   { route: createOrganizationRoute, middlewares: [authGuard(['ADMIN'])] },
   { route: getOrganizationsRoute, middlewares: [authGuard()] },
