@@ -41,7 +41,6 @@ const app = new CustomHono();
 
 // routes
 const authRoutes = app
-  .route('/', oauthRoutes)
   .add(signUpRouteConfig, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
@@ -445,4 +444,4 @@ const authRoutes = app
     });
   });
 
-export default authRoutes;
+export default authRoutes.route('/', oauthRoutes);

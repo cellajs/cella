@@ -7,10 +7,8 @@ import { errorResponseSchema } from '../lib/common-schemas';
 import { RouteConfig } from '../lib/createRoute';
 import authGuard from '../middlewares/guard/auth';
 import tenantGuard from '../middlewares/guard/tenant';
-import { Handler, Hono, Input, Schema, ToSchema, TypedResponse } from 'hono';
+import { Handler, Input, Schema, ToSchema, TypedResponse } from 'hono';
 import type { ZodRequestBody, ZodMediaTypeObject, ZodContentObject, ResponseConfig } from '@asteasolutions/zod-to-openapi';
-import { MergePath, MergeSchemaPath } from 'hono/types';
-import { RemoveBlankRecord } from 'hono/utils/types';
 
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 
@@ -101,33 +99,33 @@ type OutputType<R extends RouteConfig['route']> = R['responses'] extends Record<
 
 // biome-ignore lint/complexity/noBannedTypes: <explanation>
 export class CustomHono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> extends OpenAPIHono<E, S, BasePath> {
-  override route<
-    SubPath extends string,
-    SubEnv extends Env,
-    SubSchema extends Schema,
-    SubBasePath extends string
-  >(
-    path: SubPath,
-    app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): CustomHono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath>;
-  override route<SubPath extends string>(path: SubPath): Hono<E, RemoveBlankRecord<S>, BasePath>;
-  override route<
-    SubPath extends string,
-    SubEnv extends Env,
-    SubSchema extends Schema,
-    SubBasePath extends string
-  >(
-    path: SubPath,
-    app?: Hono<SubEnv, SubSchema, SubBasePath>
-  ): CustomHono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
-    if (!(app instanceof CustomHono)) {
-      return this;
-    }
+  // override route<
+  //   SubPath extends string,
+  //   SubEnv extends Env,
+  //   SubSchema extends Schema,
+  //   SubBasePath extends string
+  // >(
+  //   path: SubPath,
+  //   app: Hono<SubEnv, SubSchema, SubBasePath>
+  // ): CustomHono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath>;
+  // override route<SubPath extends string>(path: SubPath): Hono<E, RemoveBlankRecord<S>, BasePath>;
+  // override route<
+  //   SubPath extends string,
+  //   SubEnv extends Env,
+  //   SubSchema extends Schema,
+  //   SubBasePath extends string
+  // >(
+  //   path: SubPath,
+  //   app?: Hono<SubEnv, SubSchema, SubBasePath>
+  // ): CustomHono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
+  //   if (!(app instanceof CustomHono)) {
+  //     return this;
+  //   }
 
-    super.route(path, app);
+  //   super.route(path, app);
 
-    return this;
-  }
+  //   return this;
+  // }
 
   public add<
     R extends RouteConfig['route'],
