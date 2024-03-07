@@ -1,10 +1,13 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { inviteJsonSchema } from './schema';
+import { createRouteConfig } from '../../lib/createRoute';
+import { rateLimiter } from '../../middlewares/rate-limiter';
 
-export const getUploadTokenRoute = createRoute({
+export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
   path: '/upload-token',
+  guard: 'auth',
   tags: ['general'],
   summary: 'Get upload token for user or organization',
   request: {
@@ -34,9 +37,10 @@ export const getUploadTokenRoute = createRoute({
   },
 });
 
-export const checkSlugRoute = createRoute({
+export const checkSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/check-slug/{slug}',
+  guard: 'auth',
   tags: ['general'],
   summary: 'Check if a slug is already in use',
   request: {
@@ -57,9 +61,11 @@ export const checkSlugRoute = createRoute({
   },
 });
 
-export const inviteRoute = createRoute({
+export const inviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/invite',
+  guard: 'tenant-system',
+  middlewares: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
   summary: 'Invite a new member(user) to organization or system',
   description: `

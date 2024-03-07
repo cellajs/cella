@@ -12,7 +12,7 @@ import { ErrorType, createError, errorResponse } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuConfig, getUsersConfig, meRouteConfig, updateUserConfig, userSuggestionsConfig } from './routes';
+import { deleteUsersRouteConfig, getUserByIdOrSlugRouteConfig, getUserMenuConfig, getUsersConfig, meRouteConfig, updateUserConfig, userSuggestionsConfig } from './routes';
 
 const app = new CustomHono();
 
@@ -157,6 +157,7 @@ const usersRoutes = app
     const orderFunc = order === 'asc' ? asc : desc;
 
     const memberships = db
+
       .select({
         userId: membershipsTable.userId,
       })
@@ -253,7 +254,7 @@ const usersRoutes = app
       data: users,
     });
   })
-  .openapi(deleteUsersRoute, async (ctx) => {
+  .add(deleteUsersRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -289,7 +290,7 @@ const usersRoutes = app
       errors: errors,
     });
   })
-  .openapi(getUserByIdOrSlugRoute, async (ctx) => {
+  .add(getUserByIdOrSlugRouteConfig, async (ctx) => {
     const userIdentifier = ctx.req.param('userId').toLowerCase();
     const user = ctx.get('user');
 

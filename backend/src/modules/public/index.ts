@@ -4,12 +4,12 @@ import { db } from '../../db/db';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
 import { CustomHono } from '../../types/common';
-import { getPublicCountsRoute } from './routes';
+import { getPublicCountsRouteConfig } from './routes';
 
 const app = new CustomHono();
 
 // routes
-const publicRoutes = app.openapi(getPublicCountsRoute, async (ctx) => {
+const publicRoutes = app.add(getPublicCountsRouteConfig, async (ctx) => {
   const [organizationsResult, usersResult] = await Promise.all([
     db
       .select({

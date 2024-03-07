@@ -15,13 +15,13 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { createSession, findOauthAccount, getRedirectUrl, insertOauthAccount } from './oauth-helpers';
 import {
-  githubSignInCallbackRoute,
-  githubSignInRoute,
-  googleSignInCallbackRoute,
-  googleSignInRoute,
-  microsoftSignInCallbackRoute,
-  microsoftSignInRoute,
-  sendVerificationEmailRoute,
+  githubSignInCallbackRouteConfig,
+  githubSignInRouteConfig,
+  googleSignInCallbackRouteConfig,
+  googleSignInRouteConfig,
+  microsoftSignInCallbackRouteConfig,
+  microsoftSignInRouteConfig,
+  sendVerificationEmailRouteConfig,
 } from './routes';
 
 const app = new CustomHono();
@@ -37,7 +37,7 @@ const findUserByEmail = async (email: string) => {
 
 // All oauth sign in and callback routes
 const oauthRoutes = app
-  .openapi(githubSignInRoute, async (ctx) => {
+  .add(githubSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
@@ -47,7 +47,7 @@ const oauthRoutes = app
 
     return ctx.redirect(url.toString());
   })
-  .openapi(googleSignInRoute, async (ctx) => {
+  .add(googleSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
@@ -61,7 +61,7 @@ const oauthRoutes = app
     });
     // return ctx.redirect(url.toString(), 302);
   })
-  .openapi(microsoftSignInRoute, async (ctx) => {
+  .add(microsoftSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
@@ -75,7 +75,7 @@ const oauthRoutes = app
     });
     // return ctx.redirect(url.toString(), 302);
   })
-  .openapi(githubSignInCallbackRoute, async (ctx) => {
+  .add(githubSignInCallbackRouteConfig, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
 
     const stateCookie = getCookie(ctx, 'oauth_state');
@@ -191,8 +191,8 @@ const oauthRoutes = app
           .where(eq(usersTable.id, existingUser.id));
 
         if (!emailVerified) {
-          await fetch(config.backendUrl + sendVerificationEmailRoute.path, {
-            method: sendVerificationEmailRoute.method,
+          await fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
+            method: sendVerificationEmailRouteConfig.route.method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: primaryEmail.email,
@@ -226,8 +226,8 @@ const oauthRoutes = app
       await insertOauthAccount(userId, 'GITHUB', String(githubUser.id));
 
       if (!primaryEmail.verified) {
-        await fetch(config.backendUrl + sendVerificationEmailRoute.path, {
-          method: sendVerificationEmailRoute.method,
+        await fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
+          method: sendVerificationEmailRouteConfig.route.method,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -254,7 +254,7 @@ const oauthRoutes = app
       throw error;
     }
   })
-  .openapi(googleSignInCallbackRoute, async (ctx) => {
+  .add(googleSignInCallbackRouteConfig, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     const storedState = getCookie(ctx, 'oauth_state');
@@ -334,7 +334,7 @@ const oauthRoutes = app
     }
   })
 
-  .openapi(microsoftSignInCallbackRoute, async (ctx) => {
+  .add(microsoftSignInCallbackRouteConfig, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     const storedState = getCookie(ctx, 'oauth_state');

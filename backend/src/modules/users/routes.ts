@@ -1,4 +1,4 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { z } from '@hono/zod-openapi';
 
 import {
   errorResponses,
@@ -121,9 +121,10 @@ export const updateUserConfig = createRouteConfig({
   },
 });
 
-export const getUserByIdOrSlugRoute = createRoute({
+export const getUserByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/users/{userId}',
+  guard: 'auth',
   tags: ['users'],
   summary: 'Get user by id or slug',
   description: `
@@ -169,9 +170,10 @@ export const getUserMenuConfig = createRouteConfig({
   },
 });
 
-export const deleteUsersRoute = createRoute({
+export const deleteUsersRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/users',
+  guard: 'auth',
   tags: ['users'],
   summary: 'Delete users',
   request: {

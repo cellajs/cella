@@ -9,7 +9,7 @@ import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
 import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
 import { setCookie } from '../../lib/cookies';
-import { acceptInviteRoute, checkInviteRoute, githubSignInRoute } from './routes';
+import { acceptInviteRouteConfig, checkInviteRouteConfig, githubSignInRouteConfig } from './routes';
 
 import { config } from 'config';
 import { emailSender } from '../../../../email';
@@ -27,14 +27,14 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import oauthRoutes from './oauth';
 import {
-  checkEmailRoute,
-  resetPasswordCallbackRoute,
-  resetPasswordRoute,
-  sendVerificationEmailRoute,
-  signInRoute,
-  signOutRoute,
-  signUpRoute,
-  verifyEmailRoute,
+  checkEmailRouteConfig,
+  resetPasswordCallbackRouteConfig,
+  resetPasswordRouteConfig,
+  sendVerificationEmailRouteConfig,
+  signInRouteConfig,
+  signOutRouteConfig,
+  signUpRouteConfig,
+  verifyEmailRouteConfig,
 } from './routes';
 
 const app = new CustomHono();
@@ -42,7 +42,7 @@ const app = new CustomHono();
 // routes
 const authRoutes = app
   .route('/', oauthRoutes)
-  .openapi(signUpRoute, async (ctx) => {
+  .add(signUpRouteConfig, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
     const hashedPassword = await new Argon2id().hash(password);
@@ -65,8 +65,8 @@ const authRoutes = app
         })
         .returning();
 
-      await fetch(config.backendUrl + sendVerificationEmailRoute.path, {
-        method: sendVerificationEmailRoute.method,
+      await fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
+        method: sendVerificationEmailRouteConfig.route.method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -88,7 +88,7 @@ const authRoutes = app
       throw error;
     }
   })
-  .openapi(verifyEmailRoute, async (ctx) => {
+  .add(verifyEmailRouteConfig, async (ctx) => {
     const { resend } = ctx.req.valid('query');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -97,8 +97,8 @@ const authRoutes = app
 
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
       if (resend === 'true' && token && token.email) {
-        fetch(config.backendUrl + sendVerificationEmailRoute.path, {
-          method: sendVerificationEmailRoute.method,
+        fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
+          method: sendVerificationEmailRouteConfig.route.method,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -120,8 +120,8 @@ const authRoutes = app
 
     if (!user || user.email !== token.email) {
       if (resend === 'true' && token && token.email) {
-        fetch(config.backendUrl + sendVerificationEmailRoute.path, {
-          method: sendVerificationEmailRoute.method,
+        fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
+          method: sendVerificationEmailRouteConfig.route.method,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -152,7 +152,7 @@ const authRoutes = app
       success: true,
     });
   })
-  .openapi(sendVerificationEmailRoute, async (ctx) => {
+  .add(sendVerificationEmailRouteConfig, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -186,7 +186,7 @@ const authRoutes = app
       success: true,
     });
   })
-  .openapi(checkEmailRoute, async (ctx) => {
+  .add(checkEmailRouteConfig, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -198,7 +198,7 @@ const authRoutes = app
       },
     });
   })
-  .openapi(resetPasswordRoute, async (ctx) => {
+  .add(resetPasswordRouteConfig, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -233,7 +233,7 @@ const authRoutes = app
       data: undefined,
     });
   })
-  .openapi(resetPasswordCallbackRoute, async (ctx) => {
+  .add(resetPasswordCallbackRouteConfig, async (ctx) => {
     const { password } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -261,7 +261,7 @@ const authRoutes = app
       data: undefined,
     });
   })
-  .openapi(signInRoute, async (ctx) => {
+  .add(signInRouteConfig, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -278,8 +278,8 @@ const authRoutes = app
 
     // Send verify email first
     if (!user.emailVerified) {
-      fetch(config.backendUrl + sendVerificationEmailRoute.path, {
-        method: sendVerificationEmailRoute.method,
+      fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
+        method: sendVerificationEmailRouteConfig.route.method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -298,7 +298,7 @@ const authRoutes = app
       data: transformDatabaseUser(user),
     });
   })
-  .openapi(signOutRoute, async (ctx) => {
+  .add(signOutRouteConfig, async (ctx) => {
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
 
@@ -318,7 +318,7 @@ const authRoutes = app
 
     return ctx.json({ success: true, data: undefined });
   })
-  .openapi(checkInviteRoute, async (ctx) => {
+  .add(checkInviteRouteConfig, async (ctx) => {
     const token = ctx.req.valid('param').token;
 
     const [tokenRecord] = await db
@@ -340,7 +340,7 @@ const authRoutes = app
       success: false,
     });
   })
-  .openapi(acceptInviteRoute, async (ctx) => {
+  .add(acceptInviteRouteConfig, async (ctx) => {
     const { password, oauth } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -414,8 +414,8 @@ const authRoutes = app
     }
 
     if (oauth === 'github') {
-      const response = await fetch(`${config.backendUrl + githubSignInRoute.path}${organization ? `?redirect=${organization.slug}` : ''}`, {
-        method: githubSignInRoute.method,
+      const response = await fetch(`${config.backendUrl + githubSignInRouteConfig.route.path}${organization ? `?redirect=${organization.slug}` : ''}`, {
+        method: githubSignInRouteConfig.route.method,
         redirect: 'manual',
       });
 
