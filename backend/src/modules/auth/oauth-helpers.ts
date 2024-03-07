@@ -6,7 +6,7 @@ import { setCookie } from '../../lib/cookies';
 
 import { config } from 'config';
 import { db } from '../../db/db';
-import { customLogger } from '../../lib/custom-logger';
+import { logEvent } from '../../middlewares/logger/log-event';
 
 type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
 
@@ -17,7 +17,7 @@ export const createSession = (ctx: Context, provider: string, state: string, cod
   if (codeVerifier) setCookie(ctx, 'oauth_code_verifier', codeVerifier);
   if (redirect) setCookie(ctx, 'oauth_redirect', redirect);
 
-  customLogger('User redirected', { strategy: provider });
+  logEvent('User redirected', { strategy: provider });
 };
 
 // Get the redirect URL from the cookie or use default

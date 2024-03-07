@@ -7,7 +7,7 @@ export const PrivacyText = () => {
 
 export const Privacy = () => {
   const { t } = useTranslation();
-  
+
   return (
     <PublicPage title={t('common:privacy_policy')}>
       <section className="py-16 bg-background">

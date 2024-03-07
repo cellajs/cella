@@ -11,11 +11,11 @@ import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { i18n } from '~/lib/i18n';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
-import { i18n } from '~/lib/i18n';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 

@@ -4,7 +4,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 
 function ReloadPrompt() {
   const { t } = useTranslation();
-  
+
   // replaced dynamically
   const buildDate = '__DATE__';
   // replaced dynamically
@@ -38,7 +38,7 @@ function ReloadPrompt() {
 
   return (
     <>
-      {(needRefresh) && (
+      {needRefresh && (
         <div className="fixed right-0 bottom-0 m-[16px] p-[12px] border rounded-[4px] z-[200] text-left bg-background">
           <div className="mb-[8px]">
             <span>{t('common:text.refresh_pwa_app')}</span>

@@ -23,9 +23,7 @@ export const VerificationEmail = ({ verificationLink = baseUrl }: Props) => {
                 <Img src={`${baseUrl}/static/logo.png`} height="37" alt={config.name} className="mx-auto my-0" />
               </Section>
               <Section>
-                <Text>
-                  {i18n.t('backend:email.verification_text_1')}
-                </Text>
+                <Text>{i18n.t('backend:email.verification_text_1')}</Text>
                 <Section className="text-center">
                   <Button
                     className="rounded bg-[#000000] px-5 py-3 text-center text-[12px] font-semibold text-white no-underline"

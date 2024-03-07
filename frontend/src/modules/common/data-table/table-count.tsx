@@ -24,7 +24,7 @@ const TableCount = ({ count, singular, plural, isFiltered, onResetFilters }: Tab
             </Button>
           )}
           <div className="w-max px-2">
-            {new Intl.NumberFormat("de-DE").format(count)} {count === 1 ? singular : plural}
+            {new Intl.NumberFormat('de-DE').format(count)} {count === 1 ? singular : plural}
             {isFiltered && ' '}
             {isFiltered && t('common:found')}
           </div>

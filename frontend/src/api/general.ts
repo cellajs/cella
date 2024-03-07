@@ -10,7 +10,7 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
   }
 
   if (id && type === UploadType.Personal) {
-    return console.error( 'Personal uploads should be typed as personal');
+    return console.error('Personal uploads should be typed as personal');
   }
 
   const preparedQuery = {

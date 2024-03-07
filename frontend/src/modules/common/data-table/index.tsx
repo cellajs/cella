@@ -88,7 +88,7 @@ export const DataTable = <TData,>({
   onRowsChange,
   fetchMore,
 }: DataTableProps<TData>) => {
-  const { measureRef, isIntersecting, observer } = useOnScreen({ firstChild: true});
+  const { measureRef, isIntersecting, observer } = useOnScreen({ firstChild: true });
   const { t } = useTranslation();
 
   const [initial, setInitial] = useState(false);

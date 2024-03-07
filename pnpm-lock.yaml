@@ -48,8 +48,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1(hono@4.0.8)
       '@hono/zod-openapi':
-        specifier: 0.9.6
-        version: 0.9.6(hono@4.0.8)(zod@3.22.4)
+        specifier: 0.9.8
+        version: 0.9.8(hono@4.0.8)(zod@3.22.4)
       '@lucia-auth/adapter-drizzle':
         specifier: ^1.0.2
         version: 1.0.2(lucia@3.0.1)
@@ -125,9 +125,6 @@ importers:
       slugify:
         specifier: ^1.6.6
         version: 1.6.6
-      stacktrace-parser-node:
-        specifier: ^1.1.5
-        version: 1.1.5
       zod:
         specifier: ^3.22.4
         version: 3.22.4
@@ -4121,8 +4118,8 @@ packages:
       hono: 4.0.8
     dev: false
 
-  /@hono/zod-openapi@0.9.6(hono@4.0.8)(zod@3.22.4):
-    resolution: {integrity: sha512-MLF8xpd4fEwbEaylFqAt1qci4wOTXu3oq3BKb01trccapYfodP50VCO0YDNBQTyMT/Iapq6GMO4+RAIFBgG5WQ==}
+  /@hono/zod-openapi@0.9.8(hono@4.0.8)(zod@3.22.4):
+    resolution: {integrity: sha512-NS6lvQEGnsjyQkp+aQjMARREz3WGf19y0+RiiJMVrihWlmKbGaJkPuOWpfFQG6FU9q+FVUyUCryXK+3J07GPAw==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
       hono: '>=3.11.3'
@@ -15703,10 +15700,6 @@ packages:
     requiresBuild: true
     dev: false
     optional: true
-
-  /stacktrace-parser-node@1.1.5:
-    resolution: {integrity: sha512-A7wSJtJrVO2S4IO9sPpCAeFdJOoExPkg4Kv5tiMZHLpfwpyatHqhCax2lk8Aip5Vvma3zP2QV1Kl/TQjpWIasw==}
-    dev: false
 
   /stacktrace-parser@0.1.10:
     resolution: {integrity: sha512-KJP1OCML99+8fhOHxwwzyWrlUuVX5GQ0ZpJTd1DFXhdkrvg1szxfHhawXUZ3g9TkXORQd4/WG68jMlQZ2p8wlg==}

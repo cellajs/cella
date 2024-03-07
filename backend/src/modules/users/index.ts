@@ -8,9 +8,9 @@ import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
 import { checkSlugExists } from '../../lib/check-slug';
 import { removeSessionCookie } from '../../lib/cookies';
-import { customLogger } from '../../lib/custom-logger';
-import { ErrorType, createError, errorResponse } from '../../lib/error-response';
+import { ErrorType, createError, errorResponse } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
+import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { deleteUsersRoute, getUserByIdOrSlugRoute, getUserMenuRoute, getUsersRoute, meRoute, updateUserRoute, userSuggestionsRoute } from './routes';
 
@@ -139,7 +139,7 @@ const usersRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, updatedUser.id));
 
-    customLogger('User updated', { user: updatedUser.id });
+    logEvent('User updated', { user: updatedUser.id });
 
     return ctx.json({
       success: true,
@@ -280,7 +280,7 @@ const usersRoutes = app
           removeSessionCookie(ctx);
         }
 
-        customLogger('User deleted', { user: targetUser.id });
+        logEvent('User deleted', { user: targetUser.id });
       }),
     );
 

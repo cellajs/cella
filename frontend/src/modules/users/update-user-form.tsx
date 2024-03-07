@@ -24,8 +24,8 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
-import LanguageFormField from '../common/forms/language';
 import InputFormField from '../common/forms/input';
+import LanguageFormField from '../common/forms/language';
 
 interface Props {
   user: User;

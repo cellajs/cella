@@ -15,9 +15,9 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
-import { customLogger } from '../../lib/custom-logger';
-import { errorResponse } from '../../lib/error-response';
+import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
+import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugRoute, getUploadTokenRoute, inviteRoute } from './routes';
 
@@ -78,7 +78,7 @@ const generalRoutes = app
           .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
 
         if (existingMembership) {
-          customLogger('User already member of organization', { user: targetUser.id, organization: organization.id });
+          logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
           continue;
         }
 
@@ -93,7 +93,7 @@ const generalRoutes = app
             })
             .returning();
 
-          customLogger('User added to organization', { user: user.id, organization: organization.id });
+          logEvent('User added to organization', { user: user.id, organization: organization.id });
           continue;
         }
       }
@@ -123,9 +123,9 @@ const generalRoutes = app
               type: 'system',
             }),
           );
-          customLogger('User invited on system level');
+          logEvent('User invited on system level');
         } else {
-          customLogger('User already exists', { user: targetUser.id }, 'warn');
+          logEvent('User already exists', { user: targetUser.id }, 'warn');
           continue;
         }
       } else {
@@ -139,7 +139,7 @@ const generalRoutes = app
             inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
           }),
         );
-        customLogger('User invited to organization', { organization: organization?.id });
+        logEvent('User invited to organization', { organization: organization?.id });
       }
       try {
         emailSender.send(
@@ -149,7 +149,7 @@ const generalRoutes = app
         );
       } catch (error) {
         const errorMessage = (error as Error).message;
-        customLogger('Error sending email', { errorMessage }, 'error');
+        logEvent('Error sending email', { errorMessage }, 'error');
       }
     }
 

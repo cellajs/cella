@@ -1,6 +1,11 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema, successResponseWithPaginationSchema } from '../../lib/common-responses';
+import {
+  errorResponses,
+  successResponseWithDataSchema,
+  successResponseWithErrorsSchema,
+  successResponseWithPaginationSchema,
+} from '../../lib/common-responses';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,

@@ -17,9 +17,7 @@ export const ResetPasswordEmail = ({ username = i18n.t('common:unknown_name'), r
     <React.Fragment>
       <Html>
         <Head />
-        <Preview>
-          {i18n.t('backend:email.reset_password_preview_text')}
-        </Preview>
+        <Preview>{i18n.t('backend:email.reset_password_preview_text')}</Preview>
         <Tailwind>
           <Body className="bg-white py-2.5 font-sans">
             <Container className="border-[#f0f0f0] p-[45px] font-light text-[#404040] leading-[26px]">
@@ -28,12 +26,9 @@ export const ResetPasswordEmail = ({ username = i18n.t('common:unknown_name'), r
               </Section>
               <Section>
                 <Text>
-                  {i18n.t('backend:email.hi')}{' '}
-                  {username},
+                  {i18n.t('backend:email.hi')} {username},
                 </Text>
-                <Text>
-                  {i18n.t('backend:email.reset_password_text_1')}
-                </Text>
+                <Text>{i18n.t('backend:email.reset_password_text_1')}</Text>
                 <Button
                   className="rounded bg-[#000000] px-5 py-3 text-center text-[12px] font-semibold text-white no-underline"
                   href={resetPasswordLink}
@@ -41,12 +36,9 @@ export const ResetPasswordEmail = ({ username = i18n.t('common:unknown_name'), r
                   {i18n.t('common:reset_password')}
                 </Button>
                 <Text>
-                  {i18n.t('backend:email.reset_password_text_2')}{' '}
-                  <Link href={resetPasswordUrl}>{resetPasswordUrl}</Link>
+                  {i18n.t('backend:email.reset_password_text_2')} <Link href={resetPasswordUrl}>{resetPasswordUrl}</Link>
                 </Text>
-                <Text>
-                  {i18n.t('backend:email.reset_password_text_3')}
-                </Text>
+                <Text>{i18n.t('backend:email.reset_password_text_3')}</Text>
               </Section>
             </Container>
           </Body>

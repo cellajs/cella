@@ -1,9 +1,9 @@
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { SheetState, SheetT, SheetToRemove } from './state';
-import { useTranslation } from 'react-i18next';
 
 export function Sheeter() {
   const { t } = useTranslation();

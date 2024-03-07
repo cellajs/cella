@@ -1,10 +1,10 @@
 import { MiddlewareHandler } from 'hono';
 
 import { IRateLimiterPostgresOptions, RateLimiterPostgres, RateLimiterRes } from 'rate-limiter-flexible';
-import { errorResponse } from '../../lib/error-response';
+import { errorResponse } from '../../lib/errors';
 
-import { Env } from '../../types/common';
 import { queryClient } from '../../db/db';
+import { Env } from '../../types/common';
 
 type RateLimiterMode = 'success' | 'fail' | 'limit';
 
@@ -58,9 +58,7 @@ class RateLimiter extends RateLimiterPostgres {
       if (mode === 'limit') {
         try {
           await this.consume(usernameIPkey);
-          
         } catch (rlRejected) {
-
           if (rlRejected instanceof RateLimiterRes) {
             ctx.header('Retry-After', String(Math.round(rlRejected.msBeforeNext / 1000) || 1));
             return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
@@ -76,14 +74,14 @@ class RateLimiter extends RateLimiterPostgres {
         if (mode === 'success') {
           try {
             await this.consume(usernameIPkey);
-          } catch { }
+          } catch {}
         } else if (mode === 'fail') {
           await this.delete(usernameIPkey);
         }
       } else if (mode === 'fail') {
         try {
           await this.consume(usernameIPkey);
-        } catch { }
+        } catch {}
       }
     };
   }

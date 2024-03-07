@@ -3,9 +3,9 @@ import { MiddlewareHandler } from 'hono';
 import { db } from '../../db/db';
 import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
-import { customLogger } from '../../lib/custom-logger';
-import { errorResponse } from '../../lib/error-response';
+import { errorResponse } from '../../lib/errors';
 import { Env } from '../../types/common';
+import { logEvent } from '../logger/log-event';
 
 // organizationAuthMiddleware() is checking if the user has membership in the organization and if the user has the required role
 const organizationAuthMiddleware =
@@ -39,7 +39,7 @@ const organizationAuthMiddleware =
 
     ctx.set('organization', organization);
 
-    customLogger('User authenticated in organization', { user: user.id, organization: organization.id });
+    logEvent('User authenticated in organization', { user: user.id, organization: organization.id });
 
     await next();
   };

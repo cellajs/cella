@@ -1,8 +1,8 @@
 import { Info, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useAlertsStore } from '~/store/alerts';
 import { Button } from '../ui/button';
-import { useTranslation } from 'react-i18next';
 
 const CURRENT_ALERT = 'experimental';
 

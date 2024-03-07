@@ -20,12 +20,12 @@ import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { checkSlugExists } from '../../lib/check-slug';
 import { removeSessionCookie, setSessionCookie } from '../../lib/cookies';
-import { customLogger } from '../../lib/custom-logger';
+import { errorResponse } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
+import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import oauthRoutes from './oauth';
-import { errorResponse } from '../../lib/error-response';
 import {
   checkEmailRoute,
   resetPasswordCallbackRoute,
@@ -83,7 +83,7 @@ const authRoutes = app
         return errorResponse(ctx, 409, 'error.email_exists', 'warn', true, { email });
       }
 
-      customLogger('Error signing up', { errorMessage: (error as Error).message }, 'error');
+      logEvent('Error signing up', { errorMessage: (error as Error).message }, 'error');
 
       throw error;
     }
@@ -180,7 +180,7 @@ const authRoutes = app
 
     emailSender.send(email, 'Verify email for Cella', emailHtml);
 
-    customLogger('Verification email sent', { user: user.id });
+    logEvent('Verification email sent', { user: user.id });
 
     return ctx.json({
       success: true,
@@ -226,7 +226,7 @@ const authRoutes = app
 
     emailSender.send(email, 'Reset Cella password', emailHtml);
 
-    customLogger('Reset password link sent', { user: user.id });
+    logEvent('Reset password link sent', { user: user.id });
 
     return ctx.json({
       success: true,
@@ -314,7 +314,7 @@ const authRoutes = app
     }
 
     removeSessionCookie(ctx);
-    customLogger('User signed out', { user: session?.userId || 'na' });
+    logEvent('User signed out', { user: session?.userId || 'na' });
 
     return ctx.json({ success: true, data: undefined });
   })
@@ -395,12 +395,7 @@ const authRoutes = app
         .returning();
 
       if (password) {
-        await db.delete(tokensTable).where(and(eq(tokensTable.id, verificationToken)));
-
-        const session = await auth.createSession(userId, {});
-        const sessionCookie = auth.createSessionCookie(session.id);
-
-        ctx.header('Set-Cookie', sessionCookie.serialize());
+        await Promise.all([db.delete(tokensTable).where(and(eq(tokensTable.id, verificationToken))), setSessionCookie(ctx, user.id, 'password')]);
       }
     } else {
       return errorResponse(ctx, 400, 'invalid_token', 'warn', true, { type: 'invitation' });
@@ -427,9 +422,7 @@ const authRoutes = app
       const url = response.headers.get('Location');
 
       if (response.status === 302 && url) {
-        ctx.header('Set-Cookie', response.headers.get('Set-Cookie') ?? '', {
-          append: true,
-        });
+        ctx.header('Set-Cookie', response.headers.get('Set-Cookie') ?? '', { append: true });
         setCookie(ctx, 'oauth_invite_token', verificationToken);
 
         return ctx.json({

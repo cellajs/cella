@@ -9,9 +9,9 @@ import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { setSessionCookie } from '../../lib/cookies';
-import { customLogger } from '../../lib/custom-logger';
-import { errorResponse } from '../../lib/error-response';
+import { errorResponse } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
+import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { createSession, findOauthAccount, getRedirectUrl, insertOauthAccount } from './oauth-helpers';
 import {
@@ -249,7 +249,7 @@ const oauthRoutes = app
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', true, { strategy: 'github' });
       }
 
-      customLogger('Error signing in with GitHub', { strategy: 'github', errorMessage: (error as Error).message }, 'error');
+      logEvent('Error signing in with GitHub', { strategy: 'github', errorMessage: (error as Error).message }, 'error');
 
       throw error;
     }
@@ -328,7 +328,7 @@ const oauthRoutes = app
       }
 
       const errorMessage = (error as Error).message;
-      customLogger('Error signing in with Google', { strategy: 'google', errorMessage }, 'error');
+      logEvent('Error signing in with Google', { strategy: 'google', errorMessage }, 'error');
 
       throw error;
     }
@@ -409,7 +409,7 @@ const oauthRoutes = app
       }
 
       const errorMessage = (error as Error).message;
-      customLogger('Error signing in with Microsoft', { strategy: 'microsoft', errorMessage }, 'error');
+      logEvent('Error signing in with Microsoft', { strategy: 'microsoft', errorMessage }, 'error');
 
       throw error;
     }

@@ -2,10 +2,10 @@ import { Paddle, initializePaddle } from '@paddle/paddle-js';
 import { Outlet } from '@tanstack/react-router';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PageNav from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Button } from '../ui/button';
-import { useTranslation } from 'react-i18next';
 
 const systemTabs = [
   { id: 'users', path: '/system' },

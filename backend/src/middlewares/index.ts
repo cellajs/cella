@@ -3,9 +3,9 @@ import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
-import { customLogger } from '../lib/custom-logger';
 import { CustomHono } from '../types/common';
-import { logger } from './logger';
+import { logEvent } from './logger/log-event';
+import { logger } from './logger/logger';
 import { rateLimiter } from './rate-limiter';
 
 const app = new CustomHono();
@@ -17,7 +17,7 @@ app.use('*', secureHeaders());
 app.get('/ping', (c) => c.text('pong'));
 
 // Logger
-app.use('*', logger(customLogger as unknown as Parameters<typeof logger>[0]));
+app.use('*', logger(logEvent as unknown as Parameters<typeof logger>[0]));
 
 // Rate limiter
 app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));

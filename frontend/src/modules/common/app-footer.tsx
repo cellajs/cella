@@ -1,10 +1,10 @@
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import Logo from '~/modules/common/logo';
 import ThemeDropdown from '~/modules/common/theme-dropdown';
 import { dialog } from './dialoger/state';
 import LanguageDropdown from './language-dropdown';
-import { useTranslation } from 'react-i18next';
 
 export interface FooterLinkProps {
   title: string;
@@ -21,13 +21,13 @@ const FooterLink = ({ title, href }: FooterLinkProps) => (
 
 function AppFooter() {
   const { t } = useTranslation();
-  
+
   const footerlinks = [
     { title: t('common:about'), href: '/about' },
     { title: t('common:terms'), href: '/terms' },
     { title: t('common:privacy'), href: '/privacy' },
   ];
-  
+
   return (
     <footer className="container flex flex-col mt-12 items-center gap-4">
       <div className="flex items-center gap-4">

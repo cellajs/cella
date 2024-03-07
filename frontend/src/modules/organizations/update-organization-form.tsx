@@ -8,7 +8,7 @@ import { queryClient } from '~/router';
 import { Organization } from '~/types';
 
 import { Loader2, Undo } from 'lucide-react';
-import { Suspense, useEffect, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { checkSlug } from '~/api/general';
@@ -20,8 +20,8 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import AvatarFormField from '../common/forms/avatar';
-import LanguageFormField from '../common/forms/language';
 import InputFormField from '../common/forms/input';
+import LanguageFormField from '../common/forms/language';
 
 const SelectCountry = lazy(() => import('~/modules/common/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/select-timezone'));

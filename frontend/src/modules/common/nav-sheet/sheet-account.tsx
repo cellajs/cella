@@ -61,9 +61,21 @@ export const SheetAccount = () => {
       </button>
 
       <div className="space-y-2 max-sm:mt-4">
-        <AccountButton lucideButton={CircleUserRound} id="btn-profile" label={t('common:view_profile')} accountAction={() => navigateTo(`/user/${user.slug}`)} />
-        <AccountButton lucideButton={UserCog} id="btn-account" label={t('common:account_settings')} accountAction={() => navigateTo('/user/settings')} />
-        {isSystemAdmin && <AccountButton lucideButton={Wrench} id="btn-system" label={t('common:system_panel')} accountAction={() => navigateTo('/system')} />}
+        <AccountButton
+          lucideButton={CircleUserRound}
+          id="btn-profile"
+          label={t('common:view_profile')}
+          accountAction={() => navigateTo(`/user/${user.slug}`)}
+        />
+        <AccountButton
+          lucideButton={UserCog}
+          id="btn-account"
+          label={t('common:account_settings')}
+          accountAction={() => navigateTo('/user/settings')}
+        />
+        {isSystemAdmin && (
+          <AccountButton lucideButton={Wrench} id="btn-system" label={t('common:system_panel')} accountAction={() => navigateTo('/system')} />
+        )}
         <AccountButton lucideButton={LogOut} id="btn-signout" label={t('common:sign_out')} accountAction={onSignOut} />
       </div>
     </>

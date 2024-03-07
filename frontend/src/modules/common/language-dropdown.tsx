@@ -1,9 +1,9 @@
 import { config } from 'config';
 
+import { i18n } from '~/lib/i18n';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import CountryFlag from './country-flag';
-import { i18n } from '~/lib/i18n';
 
 interface Props {
   size?: number;

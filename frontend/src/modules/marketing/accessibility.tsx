@@ -3,7 +3,7 @@ import PublicPage from '~/modules/common/public-page';
 
 const Accessibility = () => {
   const { t } = useTranslation();
-  
+
   return (
     <PublicPage title={t('common:accessibility')}>
       <section className="py-16 bg-background">

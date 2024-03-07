@@ -3,8 +3,8 @@ import { createRoute, z } from '@hono/zod-openapi';
 import {
   errorResponses,
   successResponseWithDataSchema,
-  successResponseWithPaginationSchema,
   successResponseWithErrorsSchema,
+  successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
 import { userMenuSchema } from '../organizations/schema';
 import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';

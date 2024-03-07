@@ -1,8 +1,8 @@
 import CountryFlag from '~/modules/common/country-flag';
 
+import { useTranslation } from 'react-i18next';
 import countries from '~/lib/countries.json';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import { useTranslation } from 'react-i18next';
 
 const SelectCountry = ({ onChange, value }: { onChange: (value: string) => void; value: string }) => {
   const { t } = useTranslation();

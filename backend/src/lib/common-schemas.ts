@@ -7,12 +7,14 @@ export const cookieSchema = z.string();
 export const errorSchema = z.object({
   message: z.string(),
   type: z.string(),
-  httpStatus: z.number(),
+  status: z.number(),
   severity: z.string(),
   logId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
   timestamp: z.string().optional(),
+  usr: z.string().optional(),
+  org: z.string().optional(),
 });
 
 export const errorResponseSchema = z.object({

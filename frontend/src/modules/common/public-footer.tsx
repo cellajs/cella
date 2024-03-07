@@ -48,7 +48,7 @@ const legalLinks = [
 
 function FooterLinks() {
   const { t } = useTranslation();
-  
+
   return (
     <nav>
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
@@ -101,9 +101,7 @@ export function PublicFooter() {
             <FooterLinks />
             <div className="">
               <div className="font-display text-sm font-semibold tracking-wider text-white/50">{t('common:request_info')}</div>
-              <div className="mt-4 text-sm text-white/90">
-                {t('common:text.request_info')}
-              </div>
+              <div className="mt-4 text-sm text-white/90">{t('common:text.request_info')}</div>
               <NewsletterForm />
             </div>
           </div>

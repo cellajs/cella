@@ -7,6 +7,7 @@ import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user';
 import { AvatarWrap } from './avatar-wrap';
 
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -15,7 +16,6 @@ import { useNavigationStore } from '~/store/navigation';
 import { SheetAccount } from './nav-sheet/sheet-account';
 import { SheetMenu } from './nav-sheet/sheet-menu';
 import { SheetNotifications } from './nav-sheet/sheet-notifications';
-import { useTranslation } from 'react-i18next';
 
 export type NavItem = {
   id: string;

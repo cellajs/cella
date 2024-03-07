@@ -2,9 +2,9 @@ import { Send } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { config } from 'config';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '~/modules/ui/button';
-import { useTranslation } from 'react-i18next';
 
 export async function addEmail(email: string) {
   if (!email) return { success: false };

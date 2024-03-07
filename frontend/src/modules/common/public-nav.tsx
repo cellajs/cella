@@ -4,6 +4,7 @@ import { Github } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 
+import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import Logo from '~/modules/common/logo';
 import ThemeDropdown from '~/modules/common/theme-dropdown';
@@ -11,7 +12,6 @@ import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent } from '~/modules/ui/sheet';
 import HamburgerButton from './hamburger';
 import LanguageDropdown from './language-dropdown';
-import { useTranslation } from 'react-i18next';
 
 const publicNavConfig = [
   { id: 'features', url: '/about', hash: 'features' },

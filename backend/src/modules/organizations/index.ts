@@ -5,9 +5,9 @@ import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
 import { checkSlugExists } from '../../lib/check-slug';
-import { customLogger } from '../../lib/custom-logger';
-import { ErrorType, createError, errorResponse } from '../../lib/error-response';
+import { ErrorType, createError, errorResponse } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
+import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import {
   createOrganizationRoute,
@@ -43,7 +43,7 @@ const organizationsRoutes = app
       })
       .returning();
 
-    customLogger('Organization created', { organization: createdOrganization.id });
+    logEvent('Organization created', { organization: createdOrganization.id });
 
     return ctx.json({
       success: true,
@@ -158,7 +158,6 @@ const organizationsRoutes = app
       const slugExists = await checkSlugExists(slug);
 
       if (slugExists && slug !== organization.slug) {
-
         return errorResponse(ctx, 400, 'slug_exists', 'warn', true, { slug });
       }
     }
@@ -208,7 +207,7 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
 
-    customLogger('Organization updated', { organization: updatedOrganization.id });
+    logEvent('Organization updated', { organization: updatedOrganization.id });
 
     return ctx.json({
       success: true,
@@ -251,7 +250,7 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
 
-    customLogger('User updated in organization', { user: targetUser.id, organization: organization.id });
+    logEvent('User updated in organization', { user: targetUser.id, organization: organization.id });
 
     return ctx.json({
       success: true,
@@ -285,11 +284,10 @@ const organizationsRoutes = app
         }
 
         await db.delete(organizationsTable).where(eq(organizationsTable.id, id));
-        
-        customLogger('Organization deleted', { organization: id });
+
+        logEvent('Organization deleted', { organization: id });
       }),
     );
-
 
     return ctx.json({
       success: true,
@@ -438,7 +436,7 @@ const organizationsRoutes = app
           return errorResponse(ctx, 404, 'member_not_found', 'warn', true, { user: id, organization: organization.id });
         }
 
-        customLogger('Member deleted', { user: id, organization: organization.id });
+        logEvent('Member deleted', { user: id, organization: organization.id });
       }),
     );
 

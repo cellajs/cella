@@ -1,7 +1,7 @@
+import type { ErrorType } from 'backend/lib/errors';
 import type { AppRoute } from 'backend/server';
 import { config } from 'config';
 import { hc } from 'hono/client';
-import type { ErrorType } from 'backend/lib/error-response'
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
@@ -23,7 +23,7 @@ export class ApiError extends Error {
     this.method = error.method;
     this.timestamp = error.timestamp;
   }
-};
+}
 
 // Create a Hono client to make requests to the backend
 export const client = hc<AppRoute>(config.backendUrl, {

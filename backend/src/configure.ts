@@ -74,7 +74,11 @@ const routesMiddlewares: {
   { route: updateUserInOrganizationRoute, middlewares: [authGuard(), tenantGuard(['ADMIN'])] },
   {
     route: inviteRoute,
-    middlewares: [authGuard(), tenantGuard(['ADMIN']), rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
+    middlewares: [
+      authGuard(),
+      tenantGuard(['ADMIN']),
+      rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success'),
+    ],
   },
   { route: deleteUsersFromOrganizationRoute, middlewares: [authGuard(), tenantGuard(['ADMIN'])] },
   { route: getUploadTokenRoute, middlewares: [authGuard()] },

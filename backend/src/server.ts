@@ -1,8 +1,7 @@
 import configureRoutes from './configure';
 import defaultHook from './lib/default-hook';
 import docs from './lib/docs';
-import errorHandler from './lib/error-handler';
-import { errorResponse } from './lib/error-response';
+import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import authRoutes from './modules/auth';
 import generalRoutes from './modules/general';
@@ -28,7 +27,9 @@ app.notFound((ctx) => {
 });
 
 // Error handler
-app.onError(errorHandler);
+app.onError((err, ctx) => {
+  return errorResponse(ctx, 500, 'server_error', 'error', true, {}, err);
+});
 
 // Configure routes with their specific middleware
 configureRoutes(app);
