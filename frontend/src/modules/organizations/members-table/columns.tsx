@@ -10,6 +10,7 @@ import { dateShort } from '~/lib/utils';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
+import { renderSelect } from '../../common/data-table/select-column';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -42,6 +43,10 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       name: t('common:role'),
       renderCell: ({ row }) => t(row.organizationRole),
+      renderEditCell: renderSelect('organizationRole', [
+        { label: t('common:admin'), value: 'ADMIN' },
+        { label: t('common:member'), value: 'MEMBER' },
+      ]),
     },
   ];
 

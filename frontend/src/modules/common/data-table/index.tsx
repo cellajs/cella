@@ -2,7 +2,7 @@ import 'react-data-grid/lib/styles.css';
 
 import { Loader2, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import DataGrid, { Row, RowsChangeData, SortColumn } from 'react-data-grid';
+import DataGrid, { CellClickArgs, CellMouseEvent, Row, RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 
 import { useRef } from 'react';
@@ -22,7 +22,7 @@ interface DataTableProps<TData> {
   isFiltered?: boolean;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
-
+  onCellClick?: (args: CellClickArgs<TData, unknown>, event: CellMouseEvent) => void;
   selectedRows?: Set<string>;
   onSelectedRowsChange?: (selectedRows: Set<string>) => void;
   sortColumns?: SortColumn[];
@@ -87,6 +87,7 @@ export const DataTable = <TData,>({
   enableVirtualization,
   onRowsChange,
   fetchMore,
+  onCellClick,
 }: DataTableProps<TData>) => {
   const { measureRef, isIntersecting, observer } = useOnScreen({ firstChild: true });
   const { t } = useTranslation();
@@ -125,6 +126,7 @@ export const DataTable = <TData,>({
               columns={columns}
               onRowsChange={onRowsChange}
               rows={rows}
+              onCellClick={onCellClick}
               className="fill-grid"
               selectedRows={selectedRows}
               onSelectedRowsChange={onSelectedRowsChange}

@@ -1,20 +1,21 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { DefaultError, infiniteQueryOptions, useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Member } from '~/types';
 
-import { getMembersByOrganizationIdentifier } from '~/api/organizations';
+import { getMembersByOrganizationIdentifier, updateUserInOrganization } from '~/api/organizations';
 import { DataTable } from '~/modules/common/data-table';
 
 import { Bird } from 'lucide-react';
-import { SortColumn } from 'react-data-grid';
+import { RowsChangeData, SortColumn } from 'react-data-grid';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { MembersSearch, organizationMembersRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { queryClient } from '~/router';
 
 export const membersQueryOptions = ({
   organizationIdentifier,
@@ -55,6 +56,18 @@ export const membersQueryOptions = ({
   });
 };
 
+export const useUpdateUserInOrganizationMutation = (organizationIdentifier: string) => {
+  return useMutation<Member, DefaultError, {
+    id: string;
+    role: Member['organizationRole'];
+  }>({
+    mutationKey: ['members', 'update', organizationIdentifier],
+    mutationFn: (params) => updateUserInOrganization(organizationIdentifier, params.id, params.role),
+    onSuccess: () => queryClient.invalidateQueries(),
+    gcTime: 1000 * 10,
+  });
+};
+
 const MembersTable = () => {
   const { t } = useTranslation();
   const { organization } = useContext(OrganizationContext);
@@ -62,6 +75,7 @@ const MembersTable = () => {
   const search = useSearch({
     from: organizationMembersRoute.id,
   });
+  const { mutate: mutateMember } = useUpdateUserInOrganizationMutation(organization.slug)
 
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
@@ -117,6 +131,18 @@ const MembersTable = () => {
     }),
   );
 
+  const onRowsChange = (records: Member[], { column, indexes }: RowsChangeData<Member>) => {
+    // mutate member
+    for (const index of indexes) {
+      const member = records[index];
+      if (column.key === 'organizationRole') {
+        mutateMember({ id: member.id, role: member.organizationRole });
+      }
+    }
+
+    setRows(records);
+  };
+
   const isFiltered = role !== undefined || !!query;
 
   const onResetFilters = () => {
@@ -169,6 +195,7 @@ const MembersTable = () => {
           overflowNoRows: true,
           isFiltered,
           selectedRows,
+          onRowsChange,
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
