@@ -9,11 +9,12 @@ import {
 import { userMenuSchema } from '../organizations/schema';
 import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
 import { createRouteConfig } from '../../lib/createRoute';
+import { authGuard, systemGuard } from '../../middlewares/guard';
 
 export const meRouteConfig = createRouteConfig({
   method: 'get',
   path: '/me',
-  guard: 'auth',
+  guard: authGuard(),
   tags: ['users'],
   summary: 'Get the current user',
   responses: {
@@ -32,7 +33,7 @@ export const meRouteConfig = createRouteConfig({
 export const getUsersConfig = createRouteConfig({
   method: 'get',
   path: '/users',
-  guard: 'system',
+  guard: systemGuard,
   tags: ['users'],
   summary: 'Get users',
   description: `
@@ -58,7 +59,7 @@ export const getUsersConfig = createRouteConfig({
 export const userSuggestionsConfig = createRouteConfig({
   method: 'get',
   path: '/users/suggestions',
-  guard: 'auth',
+  guard: authGuard(),
   tags: ['users'],
   summary: 'Get user suggestions',
   request: {
@@ -90,7 +91,7 @@ export const userSuggestionsConfig = createRouteConfig({
 export const updateUserConfig = createRouteConfig({
   method: 'put',
   path: '/users/{userId}',
-  guard: 'auth',
+  guard: authGuard(),
   tags: ['users'],
   summary: 'Update a user',
   description: `
@@ -124,7 +125,7 @@ export const updateUserConfig = createRouteConfig({
 export const getUserByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/users/{userId}',
-  guard: 'auth',
+  guard: authGuard(),
   tags: ['users'],
   summary: 'Get user by id or slug',
   description: `
@@ -151,7 +152,7 @@ export const getUserByIdOrSlugRouteConfig = createRouteConfig({
 export const getUserMenuConfig = createRouteConfig({
   method: 'get',
   path: '/menu',
-  guard: 'auth',
+  guard: authGuard(),
   tags: ['users'],
   summary: 'Get the menu of a current user',
   description: `
@@ -173,7 +174,7 @@ export const getUserMenuConfig = createRouteConfig({
 export const deleteUsersRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/users',
-  guard: 'auth',
+  guard: authGuard(),
   tags: ['users'],
   summary: 'Delete users',
   request: {

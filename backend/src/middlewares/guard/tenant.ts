@@ -7,8 +7,8 @@ import { errorResponse } from '../../lib/errors';
 import { Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
-// organizationAuthMiddleware() is checking if the user has membership in the organization and if the user has the required role
-const organizationAuthMiddleware =
+// tenant() is checking if the user has membership in the organization and if the user has the required role
+const tenant =
   (accessibleFor?: MembershipModel['role'][]): MiddlewareHandler<Env, ':organizationIdentifier?'> =>
   async (ctx, next) => {
     const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.raw.clone().json() : undefined;
@@ -44,4 +44,4 @@ const organizationAuthMiddleware =
     await next();
   };
 
-export default organizationAuthMiddleware;
+export default tenant;

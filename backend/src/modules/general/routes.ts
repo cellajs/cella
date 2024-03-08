@@ -3,11 +3,12 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithoutDa
 import { inviteJsonSchema } from './schema';
 import { createRouteConfig } from '../../lib/createRoute';
 import { rateLimiter } from '../../middlewares/rate-limiter';
+import { authGuard, tenantGuard } from '../../middlewares/guard';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
   path: '/upload-token',
-  guard: 'auth',
+  guard: authGuard(),
   tags: ['general'],
   summary: 'Get upload token for user or organization',
   request: {
@@ -40,7 +41,7 @@ export const getUploadTokenRouteConfig = createRouteConfig({
 export const checkSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/check-slug/{slug}',
-  guard: 'auth',
+  guard: authGuard(),
   tags: ['general'],
   summary: 'Check if a slug is already in use',
   request: {
@@ -64,7 +65,7 @@ export const checkSlugRouteConfig = createRouteConfig({
 export const inviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/invite',
-  guard: 'tenant-system',
+  guard: tenantGuard(['ADMIN']),
   middlewares: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
   summary: 'Invite a new member(user) to organization or system',

@@ -5,10 +5,10 @@ import { AnyZodObject, ZodSchema, ZodType, z } from 'zod';
 import { OrganizationModel } from '../db/schema/organizations';
 import { errorResponseSchema } from '../lib/common-schemas';
 import { RouteConfig } from '../lib/createRoute';
-import authGuard from '../middlewares/guard/auth';
-import tenantGuard from '../middlewares/guard/tenant';
-import { Handler, Input, Schema, ToSchema, TypedResponse } from 'hono';
+import { Handler, Input, MiddlewareHandler, Schema, ToSchema, TypedResponse } from 'hono';
 import type { ZodRequestBody, ZodMediaTypeObject, ZodContentObject, ResponseConfig } from '@asteasolutions/zod-to-openapi';
+
+export type NonEmptyArray<T> = readonly [T, ...T[]]
 
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 
@@ -97,6 +97,10 @@ type OutputType<R extends RouteConfig['route']> = R['responses'] extends Record<
   : // biome-ignore lint/complexity/noBannedTypes: required for type inference
   {};
 
+const isNotPublicRoute = (guard: RouteConfig['guard']): guard is NonEmptyArray<MiddlewareHandler> => {
+  return !guard.includes('public');
+};
+
 // biome-ignore lint/complexity/noBannedTypes: <explanation>
 export class CustomHono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> extends OpenAPIHono<E, S, BasePath> {
   // override route<
@@ -158,25 +162,18 @@ export class CustomHono<E extends Env = Env, S extends Schema = {}, BasePath ext
       : HandlerAllResponse<OutputType<R>>
     >,
   ): CustomHono<E, S & ToSchema<R['method'], P, I['in'], OutputType<R>>, '/'> {
-    if (guard === 'auth') {
-      this[route.method as 'get' | 'post' | 'put' | 'delete'](route.getRoutingPath(), authGuard());
-    }
+    const handlers = [];
 
-    if (guard === 'tenant') {
-      this[route.method as 'get' | 'post' | 'put' | 'delete'](route.getRoutingPath(), authGuard(), tenantGuard());
-    }
-
-    if (guard === 'tenant-system') {
-      this[route.method as 'get' | 'post' | 'put' | 'delete'](route.getRoutingPath(), authGuard(), tenantGuard(['ADMIN']));
-    }
-
-    if (guard === 'system') {
-      this[route.method as 'get' | 'post' | 'put' | 'delete'](route.getRoutingPath(), authGuard(['ADMIN']));
+    if (isNotPublicRoute(guard)) {
+      handlers.push(...guard);
     }
 
     if (middlewares && middlewares.length > 0) {
-      this[route.method as 'get' | 'post' | 'put' | 'delete'](route.getRoutingPath(), ...middlewares);
+      handlers.push(...middlewares);
     }
+
+    // add guards and middlewares
+    this[route.method as 'get' | 'post' | 'put' | 'delete'](route.getRoutingPath(), ...handlers);
 
     this.openapi(route, handler);
 

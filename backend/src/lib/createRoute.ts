@@ -1,15 +1,16 @@
 import { createRoute } from '@hono/zod-openapi';
 import { MiddlewareHandler } from 'hono';
+import { NonEmptyArray } from '../types/common';
 
 export type RouteOptions = Parameters<typeof createRoute>[0] & {
-  guard: 'auth' | 'tenant' | 'tenant-system' | 'system' | 'public';
+  guard: NonEmptyArray<MiddlewareHandler | 'public'>
   middlewares?: MiddlewareHandler[];
 };
 
 export type RouteConfig = {
   route: ReturnType<typeof createRoute>;
   guard: RouteOptions['guard'];
-  middlewares?: MiddlewareHandler[];
+  middlewares?: RouteOptions['middlewares'];
 }
 
 export type Route<P extends string, R extends Omit<RouteOptions, 'path'> & {

@@ -14,13 +14,14 @@ import {
 import { createRouteConfig } from '../../lib/createRoute';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { rateLimiter } from '../../middlewares/rate-limiter';
+import { publicGuard } from '../../middlewares/guard';
 
 const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');
 
 export const signUpRouteConfig = createRouteConfig({
   method: 'post',
   path: '/sign-up',
-  guard: 'public',
+  guard: publicGuard,
   tags: ['auth'],
   summary: 'Sign up a new user',
   security: [],
@@ -52,7 +53,7 @@ export const signUpRouteConfig = createRouteConfig({
 export const verifyEmailRouteConfig = createRouteConfig({
   method: 'get',
   path: '/verify-email/{token}',
-  guard: 'public',
+  guard: publicGuard,
   middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Verify a user email address',
@@ -81,7 +82,7 @@ export const verifyEmailRouteConfig = createRouteConfig({
 export const sendVerificationEmailRouteConfig = createRouteConfig({
   method: 'post',
   path: '/send-verification-email',
-  guard: 'public',
+  guard: publicGuard,
   middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Resend a verification email',
@@ -113,7 +114,7 @@ export const sendVerificationEmailRouteConfig = createRouteConfig({
 export const resetPasswordRouteConfig = createRouteConfig({
   method: 'post',
   path: '/reset-password',
-  guard: 'public',
+  guard: publicGuard,
   middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Reset a user password',
@@ -145,7 +146,7 @@ export const resetPasswordRouteConfig = createRouteConfig({
 export const resetPasswordCallbackRouteConfig = createRouteConfig({
   method: 'post',
   path: '/reset-password/{token}',
-  guard: 'public',
+  guard: publicGuard,
   middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Callback for password reset',
@@ -178,7 +179,7 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
 export const checkEmailRouteConfig = createRouteConfig({
   method: 'post',
   path: '/check-email',
-  guard: 'public',
+  guard: publicGuard,
   middlewares: [authRateLimiter],
   tags: ['auth'],
   summary: 'Check if an email address exists for a user',
@@ -208,7 +209,7 @@ export const checkEmailRouteConfig = createRouteConfig({
 export const signInRouteConfig = createRouteConfig({
   method: 'post',
   path: '/sign-in',
-  guard: 'public',
+  guard: publicGuard,
   middlewares: [signInRateLimiter()],
   tags: ['auth'],
   summary: 'Sign in a user',
@@ -247,7 +248,7 @@ export const signInRouteConfig = createRouteConfig({
 export const githubSignInRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/github',
-  guard: 'public',
+  guard: publicGuard,
   tags: ['auth'],
   summary: 'Sign in a user with GitHub',
   security: [],
@@ -270,7 +271,7 @@ export const githubSignInRouteConfig = createRouteConfig({
 export const githubSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/github/callback',
-  guard: 'public',
+  guard: publicGuard,
   tags: ['auth'],
   summary: 'Callback for GitHub sign in',
   security: [],
@@ -294,7 +295,7 @@ export const githubSignInCallbackRouteConfig = createRouteConfig({
 export const googleSignInRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/google',
-  guard: 'public',
+  guard: publicGuard,
   tags: ['auth'],
   summary: 'Sign in a user with Google',
   security: [],
@@ -317,7 +318,7 @@ export const googleSignInRouteConfig = createRouteConfig({
 export const googleSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/google/callback',
-  guard: 'public',
+  guard: publicGuard,
   tags: ['auth'],
   summary: 'Callback for Google sign in',
   security: [],
@@ -341,7 +342,7 @@ export const googleSignInCallbackRouteConfig = createRouteConfig({
 export const microsoftSignInRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/microsoft',
-  guard: 'public',
+  guard: publicGuard,
   tags: ['auth'],
   summary: 'Sign in a user with Microsoft',
   security: [],
@@ -364,7 +365,7 @@ export const microsoftSignInRouteConfig = createRouteConfig({
 export const microsoftSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-in/microsoft/callback',
-  guard: 'public',
+  guard: publicGuard,
   tags: ['auth'],
   summary: 'Callback for Microsoft sign in',
   security: [],
@@ -388,7 +389,7 @@ export const microsoftSignInCallbackRouteConfig = createRouteConfig({
 export const signOutRouteConfig = createRouteConfig({
   method: 'get',
   path: '/sign-out',
-  guard: 'public',
+  guard: publicGuard,
   tags: ['auth'],
   summary: 'Sign out a user',
   responses: {
@@ -407,7 +408,7 @@ export const signOutRouteConfig = createRouteConfig({
 export const acceptInviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/accept-invite/{token}',
-  guard: 'public',
+  guard: publicGuard,
   middlewares: [authRateLimiter],
   tags: ['general'],
   summary: 'Accept invitation',
@@ -445,7 +446,7 @@ export const acceptInviteRouteConfig = createRouteConfig({
 export const checkInviteRouteConfig = createRouteConfig({
   method: 'get',
   path: '/check-invite/{token}',
-  guard: 'public',
+  guard: publicGuard,
   tags: ['general'],
   summary: 'Check invite by invite token',
   request: {

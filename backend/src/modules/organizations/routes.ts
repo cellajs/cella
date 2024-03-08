@@ -20,11 +20,12 @@ import {
   updateUserInOrganizationParamSchema,
 } from './schema';
 import { createRouteConfig } from '../../lib/createRoute';
+import { systemGuard, tenantGuard } from '../../middlewares/guard';
 
 export const createOrganizationRouteConfig = createRouteConfig({
   method: 'post',
   path: '/organizations',
-  guard: 'system',
+  guard: systemGuard,
   tags: ['organizations'],
   summary: 'Create a new organization',
   description: `
@@ -57,7 +58,7 @@ export const createOrganizationRouteConfig = createRouteConfig({
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
   path: '/organizations/{organizationIdentifier}',
-  guard: 'tenant-system',
+  guard: tenantGuard(['ADMIN']),
   tags: ['organizations'],
   summary: 'Update organization',
   description: `
@@ -91,7 +92,7 @@ export const updateOrganizationRouteConfig = createRouteConfig({
 export const deleteOrganizationsRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/organizations',
-  guard: 'system',
+  guard: systemGuard,
   tags: ['organizations'],
   summary: 'Delete organizations',
   description: `
@@ -119,7 +120,7 @@ export const deleteOrganizationsRouteConfig = createRouteConfig({
 export const getOrganizationsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations',
-  guard: 'system',
+  guard: systemGuard,
   tags: ['organizations'],
   summary: 'Get organizations',
   description: `
@@ -145,7 +146,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organizationIdentifier}',
-  guard: 'tenant',
+  guard: tenantGuard(),
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
   description: `
@@ -172,7 +173,7 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
 export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organizationIdentifier}/members',
-  guard: 'tenant',
+  guard: tenantGuard(),
   tags: ['organizations'],
   summary: 'Get members(users) of organization',
   description: `
@@ -200,7 +201,7 @@ export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
 export const updateUserInOrganizationRouteConfig = createRouteConfig({
   method: 'put',
   path: '/organizations/{organizationIdentifier}/members/{userId}',
-  guard: 'tenant-system',
+  guard: tenantGuard(['ADMIN']),
   tags: ['organizations'],
   summary: 'Update member(user) in organization',
   description: `
@@ -234,7 +235,7 @@ export const updateUserInOrganizationRouteConfig = createRouteConfig({
 export const deleteUsersFromOrganizationRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/organizations/{organizationIdentifier}/members',
-  guard: 'tenant-system',
+  guard: tenantGuard(['ADMIN']),
   tags: ['organizations'],
   summary: 'Delete members(users) from organization',
   description: `

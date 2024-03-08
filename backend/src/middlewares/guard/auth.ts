@@ -2,23 +2,23 @@ import { eq } from 'drizzle-orm';
 import { MiddlewareHandler } from 'hono';
 import { User } from 'lucia';
 import { db } from '../../db/db';
-import { auth } from '../../db/lucia';
+import { auth as luciaAuth } from '../../db/lucia';
 import { usersTable } from '../../db/schema/users';
 import { removeSessionCookie } from '../../lib/cookies';
 import { errorResponse } from '../../lib/errors';
 
-const authGuard =
+const auth =
   (accessibleFor?: User['role'][]): MiddlewareHandler =>
   async (ctx, next) => {
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
-    const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+    const sessionId = luciaAuth.readSessionCookie(cookieHeader ?? '');
 
     if (!sessionId) {
       removeSessionCookie(ctx);
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    const { session, user } = await auth.validateSession(sessionId);
+    const { session, user } = await luciaAuth.validateSession(sessionId);
 
     if (!session) {
       removeSessionCookie(ctx);
@@ -30,7 +30,7 @@ const authGuard =
     }
 
     if (session?.fresh) {
-      const sessionCookie = auth.createSessionCookie(session.id);
+      const sessionCookie = luciaAuth.createSessionCookie(session.id);
       ctx.header('Set-Cookie', sessionCookie.serialize());
     }
 
@@ -49,4 +49,4 @@ const authGuard =
     await next();
   };
 
-export default authGuard;
+export default auth;
