@@ -29,10 +29,10 @@ const limiterConsecutiveFailsByUsernameAndIP = new RateLimiterPostgres({
 });
 
 export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next) => {
-  const ipAddr = ctx.req.header('x-forwarded-for') || '';
+  const ipAddr = ctx.req.header('x-forwarded-for')?.split(',')[0] || '';
   const body = await ctx.req.raw.clone().json();
 
-  if (!body.email) {
+  if (!body.email || !ipAddr) {
     return next();
   }
 
@@ -57,9 +57,7 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
     return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
   }
 
-  if (ipAddr) {
-    await limiterSlowBruteByIP.consume(ipAddr);
-  }
+  await limiterSlowBruteByIP.consume(ipAddr);
 
   await next();
 
