@@ -19,7 +19,10 @@ import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkSlugRouteConfig, getUploadTokenRouteConfig, inviteRouteConfig } from './routes';
+import { checkSlugRouteConfig, getUploadTokenRouteConfig, inviteRouteConfig, paddleWebhookRouteConfig } from './routes';
+import { Paddle, EventName } from '@paddle/paddle-node-sdk';
+
+const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
 const app = new CustomHono();
 
@@ -151,6 +154,34 @@ const generalRoutes = app
         const errorMessage = (error as Error).message;
         logEvent('Error sending email', { errorMessage }, 'error');
       }
+    }
+
+    return ctx.json({
+      success: true,
+      data: undefined,
+    });
+  })
+  .add(paddleWebhookRouteConfig, async (ctx) => {
+    const signature = ctx.req.header('paddle-signature');
+    const rawRequestBody = String(ctx.req.raw.body);
+
+    try {
+      if (signature && rawRequestBody) {
+        const eventData = paddle.webhooks.unmarshal(rawRequestBody, env.PADDLE_WEBHOOK_KEY || '', signature);
+        switch (eventData?.eventType) {
+          case EventName.SubscriptionCreated:
+            logEvent(`Subscription ${eventData.data.id} was created`, {
+              ecent: JSON.stringify(eventData),
+            });
+            break;
+          default:
+            logEvent("Unhandled paddle event", {
+              event: JSON.stringify(eventData),
+            });
+        }
+      }
+    } catch (error) {
+      logEvent('Error handling paddle webhook', { error: (error as Error).message }, 'error');
     }
 
     return ctx.json({

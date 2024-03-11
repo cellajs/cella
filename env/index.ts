@@ -6,6 +6,9 @@ export const env = createEnv({
     DATABASE_URL: z.string().url().optional(),
     PORT: z.string().optional(),
 
+    PADDLE_API_KEY: z.string().optional(),
+    PADDLE_WEBHOOK_KEY: z.string().optional(),
+
     SEND_ALL_TO_EMAIL: z.string().optional(),
     SENDGRID_API_KEY: z.string().optional(),
     APPSIGNAL_BACKEND_KEY: z.string().optional(),

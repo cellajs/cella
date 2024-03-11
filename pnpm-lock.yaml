@@ -56,6 +56,9 @@ importers:
       '@lucia-auth/adapter-postgresql':
         specifier: ^3.1.0
         version: 3.1.0(lucia@3.0.1)(pg@8.11.3)(postgres@3.4.3)
+      '@paddle/paddle-node-sdk':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@react-email/render':
         specifier: ^0.0.12
         version: 0.0.12
@@ -5696,6 +5699,15 @@ packages:
 
   /@paddle/paddle-js@1.0.2:
     resolution: {integrity: sha512-H5tS4dsh6ouxbiD5XbDW2vMKfK5kpuaV0QxQrw9M2+WR2rYgutYKVAho+fpeDYRLgi8GD1JulROB7EKGavSMPw==}
+    dev: false
+
+  /@paddle/paddle-node-sdk@1.0.1:
+    resolution: {integrity: sha512-XUfQozh9Ys8PQYzoKNL3aqY05Dh9/pZ0zEhKogoKdmz9WBMo11LqdM7arEkFCKH9sHnqdXLthLShravVsTW2jg==}
+    dependencies:
+      lodash: 4.17.21
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@pkgjs/parseargs@0.11.0:

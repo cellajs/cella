@@ -3,7 +3,7 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithoutDa
 import { inviteJsonSchema } from './schema';
 import { createRouteConfig } from '../../lib/createRoute';
 import { rateLimiter } from '../../middlewares/rate-limiter';
-import { authGuard, tenantGuard } from '../../middlewares/guard';
+import { authGuard, publicGuard, tenantGuard } from '../../middlewares/guard';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
@@ -86,6 +86,35 @@ export const inviteRouteConfig = createRouteConfig({
   responses: {
     200: {
       description: 'Invitation was sent',
+      content: {
+        'application/json': {
+          schema: successResponseWithoutDataSchema,
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const paddleWebhookRouteConfig = createRouteConfig({
+  method: 'post',
+  path: '/paddle-webhook',
+  guard: publicGuard,
+  tags: ['general'],
+  summary: 'Paddle webhook',
+  description: 'Paddle webhook for subscription events',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.unknown(),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Paddle webhook received',
       content: {
         'application/json': {
           schema: successResponseWithoutDataSchema,
