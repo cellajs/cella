@@ -25,9 +25,13 @@ export const config = {
   contactWebhookUrl: 'https://cella.app.n8n.cloud/webhook/contact?',
 
   // Payment with Paddle
-  paddleToken: 'live_ba8bb57b62089459e4f4fd1da8c',
+  // paddleToken: 'live_ba8bb57b62089459e4f4fd1da8c',
+  // paddlePriceIds: {
+  //   donate: 'pri_01hq8hech7se5y1dw9tnscfzpc',
+  // },
+  paddleToken: 'test_85052d6574ab68d36b341e0afc8',
   paddlePriceIds: {
-    donate: 'pri_01hq8hech7se5y1dw9tnscfzpc',
+    donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
   },
 
   // Customer support with Gleap

@@ -12,7 +12,15 @@ import { ErrorType, createError, errorResponse } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { deleteUsersRouteConfig, getUserByIdOrSlugRouteConfig, getUserMenuConfig, getUsersConfig, meRouteConfig, updateUserConfig, userSuggestionsConfig } from './routes';
+import {
+  deleteUsersRouteConfig,
+  getUserByIdOrSlugRouteConfig,
+  getUserMenuConfig,
+  getUsersConfig,
+  meRouteConfig,
+  updateUserConfig,
+  userSuggestionsConfig,
+} from './routes';
 
 const app = new CustomHono();
 
@@ -221,7 +229,7 @@ const usersRoutes = app
       })
       .from(usersQuery.as('users'));
 
-    const result = await usersQuery.limit(+limit).offset(+offset);
+    const result = await usersQuery.limit(Number(limit)).offset(Number(offset));
 
     const users = result.map(({ user, counts }) => ({
       ...transformDatabaseUser(user),

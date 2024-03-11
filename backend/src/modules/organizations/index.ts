@@ -115,8 +115,8 @@ const organizationsRoutes = app
       .from(organizationsQuery.as('organizations'))
       .leftJoin(membershipRoles, eq(organizationsTable.id, membershipRoles.organizationId))
       .leftJoin(counts, eq(organizationsTable.id, counts.organizationId))
-      .limit(+limit)
-      .offset(+offset);
+      .limit(Number(limit))
+      .offset(Number(offset));
 
     return ctx.json({
       success: true,
@@ -401,7 +401,7 @@ const organizationsRoutes = app
       })
       .from(membersQuery.as('memberships'));
 
-    const result = await membersQuery.limit(+limit).offset(+offset);
+    const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
 
     const members = await Promise.all(
       result.map(async ({ user, organizationRole, counts }) => ({
