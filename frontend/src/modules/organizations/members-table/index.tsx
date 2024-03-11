@@ -173,7 +173,6 @@ const MembersTable = () => {
         callback={callback}
         onResetFilters={onResetFilters}
         onResetSelectedRows={() => setSelectedRows(new Set<string>())}
-        organization={organization}
         role={role}
         sort={sortColumns[0]?.columnKey as MembersSearch['sort']}
         order={sortColumns[0]?.direction.toLowerCase() as MembersSearch['order']}

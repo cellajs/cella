@@ -1,5 +1,5 @@
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import { ChangeEvent, Dispatch, SetStateAction, useContext } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
@@ -12,19 +12,19 @@ import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { MembersSearch } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
-import { Member, Organization } from '~/types';
+import { Member } from '~/types';
 import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import RemoveMembersForm from './remove-member-form';
 import debounce from 'lodash.debounce';
+import { OrganizationContext } from '../organization';
 
 interface Props {
   selectedMembers: Member[];
   total?: number;
   query?: string;
   setQuery: (value?: string) => void;
-  organization: Organization;
   role: GetMembersParams['role'];
   callback: (members: Member[], action: 'update' | 'delete') => void;
   isFiltered?: boolean;
@@ -49,7 +49,6 @@ function Toolbar({
   query,
   setQuery,
   setRole,
-  organization,
   callback,
   isFiltered,
   selectedMembers,
@@ -62,6 +61,7 @@ function Toolbar({
   order,
 }: Props) {
   const { t } = useTranslation();
+  const { organization } = useContext(OrganizationContext);
   const user = useUserStore((state) => state.user);
 
   const openInviteDialog = () => {
