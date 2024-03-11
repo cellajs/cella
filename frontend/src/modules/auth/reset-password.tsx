@@ -8,8 +8,8 @@ import { Button } from '~/modules/ui/button';
 import AuthPage from '.';
 
 import { ArrowRight } from 'lucide-react';
-import { Suspense, lazy } from 'react';
-import { resetPassword } from '~/api/authentication';
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { checkInvite, resetPassword } from '~/api/authentication';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -21,6 +21,7 @@ const formSchema = resetPasswordJsonSchema;
 const ResetPassword = () => {
   const { t } = useTranslation();
   const { token }: { token: string } = useParams({ strict: false });
+  const [email, setEmail] = useState('');
   const navigate = useNavigate();
 
   const [apiWrapper, pending] = useApiWrapper();
@@ -43,13 +44,25 @@ const ResetPassword = () => {
     );
   };
 
+  useEffect(() => {
+    checkInvite(token)
+      .then((data) => {
+        setEmail(data);
+      })
+      .catch(() => {
+        navigate({
+          to: '/auth/sign-in',
+        });
+      });
+  }, [token]);
+
   return (
     <AuthPage>
       <Form {...form}>
         <h1 className="text-2xl text-center">
           {t('common:reset_password')} <br />{' '}
           <span className="font-light text-xl">
-            {t('common:for')} {'"email here"'}
+            {t('common:for')} {email}
           </span>
         </h1>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

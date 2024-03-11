@@ -9,8 +9,8 @@ import AuthPage from '.';
 import OauthOptions from './oauth-options';
 
 import { ArrowRight } from 'lucide-react';
-import { Suspense, lazy } from 'react';
-import { acceptInvite } from '~/api/authentication';
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { acceptInvite, checkInvite } from '~/api/authentication';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -24,6 +24,7 @@ const Accept = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token }: { token: string } = useParams({ strict: false });
+  const [email, setEmail] = useState('');
 
   const [apiWrapper, pending] = useApiWrapper();
 
@@ -49,13 +50,25 @@ const Accept = () => {
     );
   };
 
+  useEffect(() => {
+    checkInvite(token)
+      .then((data) => {
+        setEmail(data);
+      })
+      .catch(() => {
+        navigate({
+          to: '/auth/sign-in',
+        });
+      });
+  }, [token]);
+
   return (
     <AuthPage>
       <Form {...form}>
         <h1 className="text-2xl text-center">
           {t('common:accept_invitation')} <br />{' '}
           <span className="font-light text-xl">
-            {t('common:for')} {'"email here"'}
+            {t('common:for')} {email}
           </span>
         </h1>
 

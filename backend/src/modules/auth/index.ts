@@ -331,13 +331,12 @@ const authRoutes = app
       if (user) {
         return ctx.json({
           success: true,
+          data: tokenRecord.email,
         });
       }
     }
 
-    return ctx.json({
-      success: false,
-    });
+    return errorResponse(ctx, 404, 'invite_not_found', 'warn');
   })
   .add(acceptInviteRouteConfig, async (ctx) => {
     const { password, oauth } = ctx.req.valid('json');
@@ -413,10 +412,13 @@ const authRoutes = app
     }
 
     if (oauth === 'github') {
-      const response = await fetch(`${config.backendUrl + githubSignInRouteConfig.route.path}${organization ? `?redirect=${organization.slug}` : ''}`, {
-        method: githubSignInRouteConfig.route.method,
-        redirect: 'manual',
-      });
+      const response = await fetch(
+        `${config.backendUrl + githubSignInRouteConfig.route.path}${organization ? `?redirect=${organization.slug}` : ''}`,
+        {
+          method: githubSignInRouteConfig.route.method,
+          redirect: 'manual',
+        },
+      );
 
       const url = response.headers.get('Location');
 

@@ -459,7 +459,7 @@ export const checkInviteRouteConfig = createRouteConfig({
       description: 'Emails of invited users',
       content: {
         'application/json': {
-          schema: successResponseWithoutDataSchema,
+          schema: successResponseWithDataSchema(z.string().email()),
         },
       },
     },

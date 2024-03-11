@@ -112,5 +112,5 @@ export const checkInvite = async (token: string) => {
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(response.status, json.error);
-  return json.success;
+  return json.data;
 };
