@@ -1,5 +1,5 @@
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { GetUsersParams } from '~/api/users';
@@ -15,6 +15,7 @@ import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/column
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
+import debounce from 'lodash.debounce';
 
 interface Props {
   total?: number;
@@ -53,7 +54,6 @@ function Toolbar({
 }: Props) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const [queryValue, setQueryValue] = useState(query ?? '');
 
   const openInviteDialog = () => {
     dialog(<InviteUsersForm dialog />, {
@@ -82,17 +82,6 @@ function Toolbar({
       },
     );
   };
-
-  useEffect(() => {
-    const delayQueryTimeoutId = setTimeout(() => {
-      setQuery(queryValue || undefined);
-    }, 200);
-    return () => clearTimeout(delayQueryTimeoutId);
-  }, [queryValue]);
-
-  useEffect(() => {
-    setQueryValue(query ?? '');
-  }, [query]);
 
   return (
     <div className="items-center justify-between sm:flex">
@@ -132,10 +121,10 @@ function Toolbar({
         <Input
           className="h-10 w-[150px] lg:w-[250px]"
           placeholder={t('common:placeholder.search')}
-          value={queryValue}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-            setQueryValue(event.target.value);
-          }}
+          defaultValue={query}
+          onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
+            setQuery(event.target.value);
+          }, 200)}
         />
         <Select
           value={role === undefined ? 'all' : role}

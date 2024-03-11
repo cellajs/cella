@@ -1,5 +1,5 @@
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
-import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getOrganizations } from '~/api/organizations';
@@ -17,6 +17,7 @@ import { Input } from '~/modules/ui/input';
 import { OrganizationsSearch } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import { Organization } from '~/types';
+import debounce from 'lodash.debounce';
 
 interface Props {
   total?: number;
@@ -49,7 +50,6 @@ function Toolbar({
 }: Props) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const [queryValue, setQueryValue] = useState(query ?? '');
 
   const openDeleteDialog = () => {
     dialog(
@@ -78,17 +78,6 @@ function Toolbar({
       id: 'newsletter-form',
     });
   };
-
-  useEffect(() => {
-    const delayQueryTimeoutId = setTimeout(() => {
-      setQuery(queryValue || undefined);
-    }, 200);
-    return () => clearTimeout(delayQueryTimeoutId);
-  }, [queryValue]);
-
-  useEffect(() => {
-    setQueryValue(query ?? '');
-  }, [query]);
 
   return (
     <div className="items-center justify-between sm:flex">
@@ -139,10 +128,10 @@ function Toolbar({
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
         <Input
           placeholder={t('common:placeholder.search')}
-          value={queryValue}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-            setQueryValue(event.target.value);
-          }}
+          defaultValue={query}
+          onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
+            setQuery(event.target.value);
+          }, 200)}
           className="h-10 w-[150px] lg:w-[250px]"
         />
         <ColumnsView columns={columns} setColumns={setColumns} />
