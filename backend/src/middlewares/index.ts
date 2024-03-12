@@ -7,11 +7,17 @@ import { CustomHono } from '../types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
 import { rateLimiter } from './rate-limiter';
+import { sentry } from '@hono/sentry';
 
 const app = new CustomHono();
 
 // Secure headers
 app.use('*', secureHeaders());
+
+// Sentry
+app.use('*', sentry({
+  dsn: config.sentryDsn,
+}));
 
 // Health check for render.com
 app.get('/ping', (c) => c.text('pong'));
