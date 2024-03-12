@@ -1,4 +1,4 @@
-import { type AnyColumn, type SQL, and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
+import { type AnyColumn, type SQL, and, asc, count, desc, eq, ilike, sql, or } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
@@ -32,17 +32,23 @@ const organizationsRoutes = app
     const { name } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.name, name));
+    let slug = slugify(name, { lower: true });
 
-    if (organization) {
+    const [organization] = await db.select().from(organizationsTable).where(or(eq(organizationsTable.name, name), eq(organizationsTable.slug, slug)));
+
+    if (organization?.name === name) {
       return errorResponse(ctx, 400, 'organization_name_exists', 'warn', true, { name });
+    }
+
+    if (organization?.slug === slug) {
+      slug = `${slug}-${user.slug}`;
     }
 
     const [createdOrganization] = await db
       .insert(organizationsTable)
       .values({
         name,
-        slug: slugify(name, { lower: true }),
+        slug,
         createdBy: user.id,
       })
       .returning();
