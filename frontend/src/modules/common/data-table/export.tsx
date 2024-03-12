@@ -1,5 +1,5 @@
 import { Download } from 'lucide-react';
-import { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { exportToCsv, exportToPdf } from '~/lib/export';

@@ -1,10 +1,10 @@
 import { ChevronDown, Plus } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
-import { Page, UserMenu } from '~/types';
+import type { Page, UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
-import { SectionItem } from './sheet-menu';
+import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 
 interface MenuSectionProps {

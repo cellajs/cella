@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { removeMembersFromOrganization } from '~/api/organizations';
-import { Member, Organization } from '~/types';
+import type { Member, Organization } from '~/types';
 
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { dialog } from '~/modules/common/dialoger/state';

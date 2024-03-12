@@ -6,6 +6,9 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
+import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
+import { createRouteConfig } from '../../lib/route-config';
+import { systemGuard, tenantGuard } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
@@ -19,8 +22,6 @@ import {
   updateUserInOrganizationJsonSchema,
   updateUserInOrganizationParamSchema,
 } from './schema';
-import { createRouteConfig } from '../../lib/createRoute';
-import { systemGuard, tenantGuard } from '../../middlewares/guard';
 
 export const createOrganizationRouteConfig = createRouteConfig({
   method: 'post',
@@ -100,9 +101,7 @@ export const deleteOrganizationsRouteConfig = createRouteConfig({
       - Users with role 'ADMIN'
   `,
   request: {
-    query: z.object({
-      ids: z.union([z.string(), z.array(z.string())]),
-    }),
+    query: deleteByIdsQuerySchema,
   },
   responses: {
     200: {
@@ -244,9 +243,7 @@ export const deleteUsersFromOrganizationRouteConfig = createRouteConfig({
       - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
-    query: z.object({
-      ids: z.union([z.string(), z.array(z.string())]),
-    }),
+    query: deleteByIdsQuerySchema,
   },
   responses: {
     200: {

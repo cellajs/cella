@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback } from 'react';
+import { type ChangeEvent, useCallback } from 'react';
 import { cn } from '~/lib/utils';
 import { Button } from '../../../components/ui/Button';
 import { Icon } from '../../../components/ui/Icon';

@@ -8,12 +8,13 @@ import { db } from '../../db/db';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
-import { setSessionCookie } from '../../lib/cookies';
 import { errorResponse } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { createSession, findOauthAccount, getRedirectUrl, insertOauthAccount } from './oauth-helpers';
+import { setSessionCookie } from './helpers/cookies';
+import { sendVerificationEmail } from './helpers/verify-email';
+import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, insertOauthAccount } from './oauth-helpers';
 import {
   githubSignInCallbackRouteConfig,
   githubSignInRouteConfig,
@@ -22,7 +23,6 @@ import {
   microsoftSignInCallbackRouteConfig,
   microsoftSignInRouteConfig,
 } from './routes';
-import { sendVerificationEmail } from './helpers';
 
 const app = new CustomHono();
 
@@ -30,13 +30,11 @@ const githubScopes = { scopes: ['user:email'] };
 const googleScopes = { scopes: ['profile', 'email'] };
 const microsoftScopes = { scopes: ['profile', 'email'] };
 
-// Find user by email
-const findUserByEmail = async (email: string) => {
-  return db.select().from(usersTable).where(eq(usersTable.email, email));
-};
-
-// All oauth sign in and callback routes
+// Oauth endpoints
 const oauthRoutes = app
+  /*
+   * Github sign in
+   */
   .add(githubSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
@@ -47,6 +45,9 @@ const oauthRoutes = app
 
     return ctx.redirect(url.toString());
   })
+  /*
+   * Google sign in
+   */
   .add(googleSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 

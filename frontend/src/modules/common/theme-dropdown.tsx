@@ -1,8 +1,8 @@
 import { config } from 'config';
 
-import { Mode, Theme, useThemeStore } from '~/store/theme';
+import { type Mode, type Theme, useThemeStore } from '~/store/theme';
 
-import { Ban, Circle, LucideProps, Moon, Sun } from 'lucide-react';
+import { Ban, Circle, type LucideProps, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';

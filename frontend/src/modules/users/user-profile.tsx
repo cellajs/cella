@@ -4,7 +4,7 @@ import { createContext } from 'react';
 
 import { getUserBySlugOrId } from '~/api/users';
 import { UserProfileRoute } from '~/router/routeTree';
-import { User } from '~/types';
+import type { User } from '~/types';
 
 import { PageHeader } from '~/modules/common/page-header';
 

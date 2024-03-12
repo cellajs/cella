@@ -2,13 +2,13 @@ import 'react-data-grid/lib/styles.css';
 
 import { Loader2, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import DataGrid, { CellClickArgs, CellMouseEvent, Row, RowsChangeData, SortColumn } from 'react-data-grid';
+import DataGrid, { type CellClickArgs, type CellMouseEvent, Row, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 
 import { useRef } from 'react';
 import { useOnScreen } from '~/hooks/use-on-screen';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { ColumnOrColumnGroup } from './columns-view';
+import type { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
 
 interface DataTableProps<TData> {

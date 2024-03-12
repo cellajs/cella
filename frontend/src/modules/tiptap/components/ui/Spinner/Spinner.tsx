@@ -1,4 +1,4 @@
-import { HTMLProps, forwardRef } from 'react';
+import { type HTMLProps, forwardRef } from 'react';
 import { cn } from '~/lib/utils';
 
 export const Spinner = forwardRef<HTMLDivElement, HTMLProps<HTMLDivElement>>(({ className, ...rest }, ref) => {

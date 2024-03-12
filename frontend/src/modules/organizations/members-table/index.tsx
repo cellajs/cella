@@ -1,21 +1,21 @@
-import { DefaultError, infiniteQueryOptions, useInfiniteQuery, useMutation } from '@tanstack/react-query';
+import { type DefaultError, infiniteQueryOptions, useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Member } from '~/types';
+import type { Member } from '~/types';
 
 import { getMembersByOrganizationIdentifier, updateUserInOrganization } from '~/api/organizations';
 import { DataTable } from '~/modules/common/data-table';
 
 import { Bird } from 'lucide-react';
-import { RowsChangeData, SortColumn } from 'react-data-grid';
+import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationContext } from '~/modules/organizations/organization';
-import { MembersSearch, organizationMembersRoute } from '~/router/routeTree';
+import { queryClient } from '~/router';
+import { type MembersSearch, organizationMembersRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { queryClient } from '~/router';
 
 export const membersQueryOptions = ({
   organizationIdentifier,
@@ -57,10 +57,14 @@ export const membersQueryOptions = ({
 };
 
 export const useUpdateUserInOrganizationMutation = (organizationIdentifier: string) => {
-  return useMutation<Member, DefaultError, {
-    id: string;
-    role: Member['organizationRole'];
-  }>({
+  return useMutation<
+    Member,
+    DefaultError,
+    {
+      id: string;
+      role: Member['organizationRole'];
+    }
+  >({
     mutationKey: ['members', 'update', organizationIdentifier],
     mutationFn: (params) => updateUserInOrganization(organizationIdentifier, params.id, params.role),
     onSuccess: () => queryClient.invalidateQueries(),
@@ -75,7 +79,7 @@ const MembersTable = () => {
   const search = useSearch({
     from: organizationMembersRoute.id,
   });
-  const { mutate: mutateMember } = useUpdateUserInOrganizationMutation(organization.slug)
+  const { mutate: mutateMember } = useUpdateUserInOrganizationMutation(organization.slug);
 
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());

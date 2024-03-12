@@ -1,10 +1,10 @@
 import { and, eq, or } from 'drizzle-orm';
-import { MiddlewareHandler } from 'hono';
+import type { MiddlewareHandler } from 'hono';
 import { db } from '../../db/db';
-import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { errorResponse } from '../../lib/errors';
-import { Env } from '../../types/common';
+import type { Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
 // tenant() is checking if the user has membership in the organization and if the user has the required role

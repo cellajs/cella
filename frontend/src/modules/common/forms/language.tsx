@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Control } from 'react-hook-form';
+import type { Control } from 'react-hook-form';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import MultipleSelector from '~/modules/ui/multiple-selector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';

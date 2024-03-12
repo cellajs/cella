@@ -1,5 +1,5 @@
-import { InferResponseType } from 'hono/client';
-import { client } from '~/api';
+import type { InferResponseType } from 'hono/client';
+import type { client } from '~/api';
 
 export enum UploadType {
   Personal,

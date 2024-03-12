@@ -1,5 +1,5 @@
 // import { Language } from '@tiptap-pro/extension-ai'
-import { Editor } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 import { useCallback } from 'react';
 
 export const useTextmenuCommands = (editor: Editor) => {

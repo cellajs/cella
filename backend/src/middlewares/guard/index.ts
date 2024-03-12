@@ -1,5 +1,5 @@
-import auth from "./auth";
-import tenant from "./tenant";
+import auth from './auth';
+import tenant from './tenant';
 
 export const authGuard = (accessibleFor?: Parameters<typeof auth>[0]) => [auth(accessibleFor)] as const;
 

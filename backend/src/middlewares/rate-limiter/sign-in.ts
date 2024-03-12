@@ -1,10 +1,10 @@
-import { MiddlewareHandler } from 'hono';
+import type { MiddlewareHandler } from 'hono';
 
 import { RateLimiterPostgres } from 'rate-limiter-flexible';
 import { errorResponse } from '../../lib/errors';
 
 import { queryClient } from '../../db/db';
-import { Env } from '../../types/common';
+import type { Env } from '../../types/common';
 
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
 

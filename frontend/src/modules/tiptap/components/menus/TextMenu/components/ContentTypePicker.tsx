@@ -1,5 +1,5 @@
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
-import { icons } from 'lucide-react';
+import type { icons } from 'lucide-react';
 import { useMemo } from 'react';
 import { DropdownButton, DropdownCategoryTitle } from '../../../../components/ui/Dropdown';
 import { Icon } from '../../../../components/ui/Icon';

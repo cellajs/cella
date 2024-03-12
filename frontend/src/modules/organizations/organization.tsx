@@ -12,7 +12,7 @@ import PageNav from '~/modules/common/page-nav';
 import { Button } from '~/modules/ui/button';
 import { OrganizationRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
-import { Organization } from '~/types';
+import type { Organization } from '~/types';
 
 interface OrganizationContextValue {
   organization: Organization;

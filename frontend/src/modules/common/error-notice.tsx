@@ -1,6 +1,6 @@
 import { useRouterState } from '@tanstack/react-router';
 import { Home, RefreshCw } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppFooter } from '~/modules/common/app-footer';
 import { Button } from '~/modules/ui/button';

@@ -1,4 +1,4 @@
-import { Range, mergeAttributes } from '@tiptap/core';
+import { type Range, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 
 import { Image } from '../Image';

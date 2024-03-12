@@ -1,6 +1,6 @@
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 
 function ReloadPrompt() {
   const { t } = useTranslation();

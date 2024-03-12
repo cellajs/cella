@@ -33,6 +33,10 @@ export const paginationQuerySchema = z.object({
   limit: z.string().default('50').optional().refine(limitRefine, 'Must be number greater than 0'),
 });
 
+export const deleteByIdsQuerySchema = z.object({
+  ids: z.union([z.string(), z.array(z.string())]),
+});
+
 export const idSchema = z.string();
 
 export const slugSchema = z.string();

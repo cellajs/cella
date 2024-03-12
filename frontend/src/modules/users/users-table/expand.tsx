@@ -2,7 +2,7 @@ import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getUserBySlugOrId } from '~/api/users';
 import { dateShort } from '~/lib/utils';
-import { User } from '~/types';
+import type { User } from '~/types';
 
 // id, modified, modifiedBy
 const Expand = ({ row }: { row: User }) => {

@@ -1,4 +1,4 @@
-import { Paddle, initializePaddle } from '@paddle/paddle-js';
+import { type Paddle, initializePaddle } from '@paddle/paddle-js';
 import { Outlet } from '@tanstack/react-router';
 import { config } from 'config';
 import { useEffect, useState } from 'react';

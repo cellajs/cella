@@ -1,4 +1,4 @@
-import { UserModel } from '../db/schema/users';
+import type { UserModel } from '../../../db/schema/users';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 

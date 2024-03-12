@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import { Outlet, createRootRouteWithContext, createRoute, createRouteMask, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 import { acceptInvite, checkInvite } from '~/api/authentication';

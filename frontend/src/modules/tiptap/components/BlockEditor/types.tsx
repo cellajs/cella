@@ -1,6 +1,6 @@
-import { TiptapCollabProvider } from '@hocuspocus/provider';
+import type { TiptapCollabProvider } from '@hocuspocus/provider';
 // import { Language } from '@tiptap-pro/extension-ai'
-import * as Y from 'yjs';
+import type * as Y from 'yjs';
 
 export interface TiptapProps {
   aiToken: string;

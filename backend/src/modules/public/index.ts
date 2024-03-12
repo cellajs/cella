@@ -8,31 +8,35 @@ import { getPublicCountsRouteConfig } from './routes';
 
 const app = new CustomHono();
 
-// routes
-const publicRoutes = app.add(getPublicCountsRouteConfig, async (ctx) => {
-  const [organizationsResult, usersResult] = await Promise.all([
-    db
-      .select({
-        total: sql<number>`count(*)`.mapWith(Number),
-      })
-      .from(organizationsTable),
-    db
-      .select({
-        total: sql<number>`count(*)`.mapWith(Number),
-      })
-      .from(usersTable),
-  ]);
+// Public endpoints
+const publicRoutes = app
+  /*
+   * Get public counts
+   */
+  .add(getPublicCountsRouteConfig, async (ctx) => {
+    const [organizationsResult, usersResult] = await Promise.all([
+      db
+        .select({
+          total: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(organizationsTable),
+      db
+        .select({
+          total: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(usersTable),
+    ]);
 
-  const organizations = organizationsResult[0].total;
-  const users = usersResult[0].total;
+    const organizations = organizationsResult[0].total;
+    const users = usersResult[0].total;
 
-  return ctx.json({
-    success: true,
-    data: {
-      organizations,
-      users,
-    },
+    return ctx.json({
+      success: true,
+      data: {
+        organizations,
+        users,
+      },
+    });
   });
-});
 
 export default publicRoutes;

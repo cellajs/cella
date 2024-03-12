@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 
 import { LinkEditorPanel } from '../../../components/panels';
 import { LinkPreviewPanel } from '../../../components/panels/LinkPreviewPanel';
-import { MenuProps } from '../types';
+import type { MenuProps } from '../types';
 
 export const LinkMenu = ({ editor, appendTo }: MenuProps): JSX.Element => {
   const [showEdit, setShowEdit] = useState(false);

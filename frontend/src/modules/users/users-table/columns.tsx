@@ -1,17 +1,17 @@
 import { Link } from '@tanstack/react-router';
 
 import { useTranslation } from 'react-i18next';
-import { User } from '~/types';
+import type { User } from '~/types';
 
 import { ChevronRight, UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
-import { UserRow } from '.';
+import type { UserRow } from '.';
 import { AvatarWrap } from '../../common/avatar-wrap';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
-import { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import Expand from './expand';
 import RowEdit from './row-edit';

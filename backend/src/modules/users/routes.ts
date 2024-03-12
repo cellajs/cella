@@ -6,10 +6,11 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
+import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
+import { createRouteConfig } from '../../lib/route-config';
+import { authGuard, systemGuard } from '../../middlewares/guard';
 import { userMenuSchema } from '../organizations/schema';
 import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
-import { createRouteConfig } from '../../lib/createRoute';
-import { authGuard, systemGuard } from '../../middlewares/guard';
 
 export const meRouteConfig = createRouteConfig({
   method: 'get',
@@ -204,9 +205,7 @@ export const deleteUsersRouteConfig = createRouteConfig({
   tags: ['users'],
   summary: 'Delete users',
   request: {
-    query: z.object({
-      ids: z.union([z.string(), z.array(z.string())]),
-    }),
+    query: deleteByIdsQuerySchema,
   },
   description: `
     Permissions:

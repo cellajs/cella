@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { invite } from '~/api/general';
-import { Organization } from '~/types';
+import type { Organization } from '~/types';
 
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';

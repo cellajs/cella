@@ -56,8 +56,8 @@ export function generateNumber(id: string) {
 
   for (let i = id.length - 1; i >= 0; i--) {
     const char = id[i].toLowerCase();
-    if (parseInt(char) >= 0 && parseInt(char) <= 9) {
-      return parseInt(char) % 10;
+    if (Number.parseInt(char) >= 0 && Number.parseInt(char) <= 9) {
+      return Number.parseInt(char) % 10;
     }
     if (char >= 'a' && char <= 'z') {
       return (char.charCodeAt(0) - 'a'.charCodeAt(0)) % 10;

@@ -1,4 +1,4 @@
-import { Editor } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 
 import { CodeBlock, Figcaption, HorizontalRule, ImageBlock, ImageUpload, Link } from '../../extensions';
 // import { TableOfContentsNode } from '../../extensions/TableOfContentsNode';

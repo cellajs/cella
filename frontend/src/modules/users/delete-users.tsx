@@ -1,5 +1,5 @@
 import { deleteUsers } from '~/api/users';
-import { User } from '~/types';
+import type { User } from '~/types';
 
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { DeleteForm } from '../common/delete-form';

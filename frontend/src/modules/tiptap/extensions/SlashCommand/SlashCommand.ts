@@ -1,7 +1,7 @@
-import { Editor, Extension } from '@tiptap/core';
+import { type Editor, Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import { ReactRenderer } from '@tiptap/react';
-import Suggestion, { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion';
+import Suggestion, { type SuggestionProps, type SuggestionKeyDownProps } from '@tiptap/suggestion';
 import tippy from 'tippy.js';
 
 import { MenuList } from './MenuList';

@@ -1,6 +1,6 @@
 import { SlidersHorizontal } from 'lucide-react';
-import { Dispatch, SetStateAction, useMemo, useState } from 'react';
-import { ColumnOrColumnGroup as BaseColumnOrColumnGroup } from 'react-data-grid';
+import { type Dispatch, type SetStateAction, useMemo, useState } from 'react';
+import type { ColumnOrColumnGroup as BaseColumnOrColumnGroup } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';

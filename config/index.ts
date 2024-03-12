@@ -1,4 +1,4 @@
-import _default, { DeepPartial } from './default';
+import _default, { type DeepPartial } from './default';
 import development from './development';
 import production from './production';
 import tunnel from './tunnel';

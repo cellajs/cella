@@ -1,6 +1,6 @@
 import { swaggerUI } from '@hono/swagger-ui';
 import { config } from 'config';
-import { CustomHono } from '../types/common';
+import type { CustomHono } from '../types/common';
 
 const openAPITags = [
   { name: 'auth', description: 'Authentication' },

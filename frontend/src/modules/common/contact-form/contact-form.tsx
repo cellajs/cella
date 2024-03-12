@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { config } from 'config';
 
 import { Mail, MessageSquare, Send, User } from 'lucide-react';
-import { Control, FieldPath, FieldValues, SubmitHandler } from 'react-hook-form';
+import type { Control, FieldPath, FieldValues, SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 import { dialog } from '~/modules/common/dialoger/state';

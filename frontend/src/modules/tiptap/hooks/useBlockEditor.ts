@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { TiptapCollabProvider, WebSocketStatus } from '@hocuspocus/provider';
+import { type TiptapCollabProvider, WebSocketStatus } from '@hocuspocus/provider';
 // import Ai from '@tiptap-pro/extension-ai'
 // import Collaboration from '@tiptap/extension-collaboration';
 // import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
-import { Editor, useEditor } from '@tiptap/react';
-import * as Y from 'yjs';
+import { type Editor, useEditor } from '@tiptap/react';
+import type * as Y from 'yjs';
 
-import { EditorUser } from '../components/BlockEditor/types';
+import type { EditorUser } from '../components/BlockEditor/types';
 // import { EditorContext } from '../context/EditorContext';
 import { ExtensionKit } from '../extensions/extension-kit';
 // import { userColors, userNames } from '../lib/constants';

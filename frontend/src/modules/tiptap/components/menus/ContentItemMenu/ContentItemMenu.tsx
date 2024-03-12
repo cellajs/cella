@@ -1,5 +1,5 @@
 // import DragHandle from '@tiptap-pro/extension-drag-handle-react'
-import { Editor } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 import { Icon } from '../../../components/ui/Icon';
 import { Toolbar } from '../../../components/ui/Toolbar';
 

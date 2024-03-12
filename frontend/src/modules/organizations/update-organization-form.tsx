@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { DefaultError, useMutation } from '@tanstack/react-query';
+import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateOrganizationJsonSchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
-import { UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
+import type { z } from 'zod';
+import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
 import { queryClient } from '~/router';
-import { Organization } from '~/types';
+import type { Organization } from '~/types';
 
 import { Loader2, Undo } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';

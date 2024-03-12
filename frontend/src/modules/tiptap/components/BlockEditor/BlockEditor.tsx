@@ -19,7 +19,7 @@ import { TableColumnMenu, TableRowMenu } from '../../extensions/Table/menus';
 import { ContentItemMenu } from '../menus/ContentItemMenu';
 import { TextMenu } from '../menus/TextMenu';
 import { EditorHeader } from './components/EditorHeader';
-import { TiptapProps } from './types';
+import type { TiptapProps } from './types';
 
 export const BlockEditor = ({ aiToken, ydoc, provider }: TiptapProps) => {
   // const aiState = useAIState();

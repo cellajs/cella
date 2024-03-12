@@ -1,4 +1,4 @@
-import { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { type DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { uploadImage } from '../../../lib/api';
 
 export const useUploader = ({ onUpload }: { onUpload: (url: string) => void }) => {

@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
-import { MiddlewareHandler } from 'hono';
-import { User } from 'lucia';
+import type { MiddlewareHandler } from 'hono';
+import type { User } from 'lucia';
 import { db } from '../../db/db';
 import { auth as luciaAuth } from '../../db/lucia';
 import { usersTable } from '../../db/schema/users';
-import { removeSessionCookie } from '../../lib/cookies';
 import { errorResponse } from '../../lib/errors';
+import { removeSessionCookie } from '../../modules/auth/helpers/cookies';
 
 const auth =
   (accessibleFor?: User['role'][]): MiddlewareHandler =>

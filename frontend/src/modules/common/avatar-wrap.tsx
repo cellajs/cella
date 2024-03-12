@@ -1,4 +1,4 @@
-import { AvatarProps } from '@radix-ui/react-avatar';
+import type { AvatarProps } from '@radix-ui/react-avatar';
 import { memo, useMemo } from 'react';
 import { getColorClass } from '~/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';

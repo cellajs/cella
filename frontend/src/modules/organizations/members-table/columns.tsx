@@ -1,14 +1,14 @@
 import { Link } from '@tanstack/react-router';
 
 import { useTranslation } from 'react-i18next';
-import { Member } from '~/types';
+import type { Member } from '~/types';
 import { AvatarWrap } from '../../common/avatar-wrap';
 
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
-import { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import { renderSelect } from '../../common/data-table/select-column';
 

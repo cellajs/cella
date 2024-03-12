@@ -5,7 +5,7 @@ import { config } from 'config';
 import { immer } from 'zustand/middleware/immer';
 import { client } from '~/api';
 import { getMe } from '~/api/users';
-import { User } from '~/types';
+import type { User } from '~/types';
 
 type PartialUser = Partial<User>;
 

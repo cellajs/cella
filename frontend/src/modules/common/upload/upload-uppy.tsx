@@ -1,13 +1,13 @@
 import Audio from '@uppy/audio';
-import { Uppy, UppyOptions } from '@uppy/core';
-import ImageEditor, { ImageEditorOptions } from '@uppy/image-editor';
+import type { Uppy, UppyOptions } from '@uppy/core';
+import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
-import Webcam, { WebcamOptions } from '@uppy/webcam';
+import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { useEffect, useState } from 'react';
 import { ImadoUppy } from '~/lib/imado';
 import { useThemeStore } from '~/store/theme';
-import { UploadType } from '~/types';
+import type { UploadType } from '~/types';
 
 import '@uppy/audio/dist/style.css';
 import '@uppy/dashboard/dist/style.min.css';

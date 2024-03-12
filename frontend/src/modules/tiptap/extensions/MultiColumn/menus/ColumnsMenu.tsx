@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { useCallback } from 'react';
 import { sticky } from 'tippy.js';
 
-import { MenuProps } from '../../../components/menus/types';
+import type { MenuProps } from '../../../components/menus/types';
 import { Icon } from '../../../components/ui/Icon';
 import { Toolbar } from '../../../components/ui/Toolbar';
 import { getRenderContainer } from '../../../lib/utils/getRenderContainer';

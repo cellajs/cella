@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
-import { CircleUserRound, LogOut, LucideProps, UserCog, Wrench } from 'lucide-react';
-import React from 'react';
+import { CircleUserRound, LogOut, type LucideProps, UserCog, Wrench } from 'lucide-react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { getColorClass } from '~/lib/utils';

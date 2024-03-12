@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { findParentNode } from '@tiptap/core';
-import { Node, ResolvedPos } from '@tiptap/pm/model';
-import { Selection, Transaction } from '@tiptap/pm/state';
+import type { Node, ResolvedPos } from '@tiptap/pm/model';
+import type { Selection, Transaction } from '@tiptap/pm/state';
 import { CellSelection, TableMap } from '@tiptap/pm/tables';
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>

@@ -6,13 +6,14 @@ import { render } from '@react-email/render';
 import { config } from 'config';
 import { env } from 'env';
 import jwt from 'jsonwebtoken';
-import { User, generateId } from 'lucia';
+import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
 
 import { db } from '../../db/db';
 
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { membershipsTable } from '../../db/schema/memberships';
-import { OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
@@ -20,18 +21,20 @@ import { i18n } from '../../lib/i18n';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugRouteConfig, getUploadTokenRouteConfig, inviteRouteConfig, paddleWebhookRouteConfig } from './routes';
-import { Paddle, EventName } from '@paddle/paddle-node-sdk';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
 const app = new CustomHono();
 
-// routes
+// General endpoints
 const generalRoutes = app
+  /*
+   * Get upload token
+   */
   .add(getUploadTokenRouteConfig, async (ctx) => {
     const isPublic = ctx.req.query('public');
     const user = ctx.get('user');
-    // TODO: validate query param organization
+    // TODO: validate query param organization?
     const organizationId = ctx.req.query('organizationId');
 
     const sub = organizationId ? `${organizationId}/${user.id}` : user.id;
@@ -50,6 +53,9 @@ const generalRoutes = app
       data: token,
     });
   })
+  /*
+   * Check slug
+   */
   .add(checkSlugRouteConfig, async (ctx) => {
     const { slug } = ctx.req.valid('param');
 
@@ -62,6 +68,9 @@ const generalRoutes = app
       data: !!user || !!organization,
     });
   })
+  /*
+   * Invite users to the system or members to an organization
+   */
   .add(inviteRouteConfig, async (ctx) => {
     const { emails } = ctx.req.valid('json');
     const user = ctx.get('user');
@@ -161,6 +170,9 @@ const generalRoutes = app
       data: undefined,
     });
   })
+  /*
+   * Paddle webhook
+   */
   .add(paddleWebhookRouteConfig, async (ctx) => {
     const signature = ctx.req.header('paddle-signature');
     const rawRequestBody = String(ctx.req.raw.body);
@@ -175,7 +187,7 @@ const generalRoutes = app
             });
             break;
           default:
-            logEvent("Unhandled paddle event", {
+            logEvent('Unhandled paddle event', {
               event: JSON.stringify(eventData),
             });
         }

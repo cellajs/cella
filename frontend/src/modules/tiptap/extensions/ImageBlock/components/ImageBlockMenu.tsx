@@ -1,9 +1,9 @@
 import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react';
 import { nanoid } from 'nanoid';
 import { useCallback, useRef } from 'react';
-import { Instance, sticky } from 'tippy.js';
+import { type Instance, sticky } from 'tippy.js';
 
-import { MenuProps } from '../../../components/menus/types';
+import type { MenuProps } from '../../../components/menus/types';
 import { Icon } from '../../../components/ui/Icon';
 import { Toolbar } from '../../../components/ui/Toolbar';
 import { getRenderContainer } from '../../../lib/utils';
@@ -78,7 +78,7 @@ export const ImageBlockMenu = ({ editor, appendTo }: MenuProps): JSX.Element => 
           <Icon name="AlignHorizontalDistributeEnd" />
         </Toolbar.Button>
         <Toolbar.Divider />
-        <ImageBlockWidth onChange={onWidthChange} value={parseInt(editor.getAttributes('imageBlock').width)} />
+        <ImageBlockWidth onChange={onWidthChange} value={Number.parseInt(editor.getAttributes('imageBlock').width)} />
       </Toolbar.Wrapper>
     </BaseBubbleMenu>
   );

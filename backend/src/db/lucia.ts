@@ -1,13 +1,13 @@
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle';
 import { GitHub, Google, MicrosoftEntraId } from 'arctic';
 import { config } from 'config';
-import { Lucia, SessionCookieOptions, TimeSpan } from 'lucia';
+import { Lucia, type SessionCookieOptions, TimeSpan } from 'lucia';
 
 import { env } from 'env';
 import { githubSignInCallbackRouteConfig, googleSignInCallbackRouteConfig, microsoftSignInCallbackRouteConfig } from '../modules/auth/routes';
 import { db } from './db';
 import { sessionsTable } from './schema/sessions';
-import { UserModel, usersTable } from './schema/users';
+import { type UserModel, usersTable } from './schema/users';
 
 export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', {
   redirectURI: `${config.backendUrl}${githubSignInCallbackRouteConfig.route.path}`,

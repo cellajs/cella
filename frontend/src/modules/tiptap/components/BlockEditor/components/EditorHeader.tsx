@@ -1,7 +1,7 @@
-import { WebSocketStatus } from '@hocuspocus/provider';
+import type { WebSocketStatus } from '@hocuspocus/provider';
 // import { Icon } from '../../../components/ui/Icon';
 // import { Toolbar } from '../../../components/ui/Toolbar';
-import { EditorUser } from '../types';
+import type { EditorUser } from '../types';
 import { EditorInfo } from './EditorInfo';
 
 export type EditorHeaderProps = {

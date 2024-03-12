@@ -1,9 +1,10 @@
+import debounce from 'lodash.debounce';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
-import { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getOrganizations } from '~/api/organizations';
-import ColumnsView, { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -14,10 +15,9 @@ import NewsletterForm from '~/modules/system/newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
-import { OrganizationsSearch } from '~/router/routeTree';
+import type { OrganizationsSearch } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
-import { Organization } from '~/types';
-import debounce from 'lodash.debounce';
+import type { Organization } from '~/types';
 
 interface Props {
   total?: number;

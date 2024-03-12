@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { Page, UserRole } from '~/types';
+import { type Page, UserRole } from '~/types';
 
 interface SheetMenuItemProps {
   item: Page;

@@ -1,6 +1,6 @@
-import { Editor } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 import { useMemo } from 'react';
-import { ContentPickerOptions } from '../components/ContentTypePicker';
+import type { ContentPickerOptions } from '../components/ContentTypePicker';
 
 export const useTextmenuContentTypes = (editor: Editor) => {
   const options = useMemo<ContentPickerOptions>(() => {

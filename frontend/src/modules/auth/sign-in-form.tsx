@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { signInJsonSchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import * as z from 'zod';
+import type * as z from 'zod';
 
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
@@ -18,7 +18,7 @@ import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
-import { User } from '~/types';
+import type { User } from '~/types';
 
 const formSchema = signInJsonSchema;
 

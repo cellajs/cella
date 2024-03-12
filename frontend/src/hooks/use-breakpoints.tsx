@@ -6,12 +6,12 @@ type ValidBreakpoints = keyof typeof config.theme.screenSizes;
 // This hook is used to conditionally render components based on the current screen width
 export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: ValidBreakpoints): boolean => {
   const breakpoints: { [key: string]: string } = config.theme.screenSizes;
-  const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => parseInt(breakpoints[a], 10) - parseInt(breakpoints[b], 10));
+  const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10));
   const smallestBreakpoint = sortedBreakpoints[0];
 
   const getBreakpoint = () => {
     const matchedBreakpoints = sortedBreakpoints.filter((point) => {
-      const breakpointSize = parseInt(breakpoints[point], 10);
+      const breakpointSize = Number.parseInt(breakpoints[point], 10);
       return !Number.isNaN(breakpointSize) && window.innerWidth >= breakpointSize;
     });
 

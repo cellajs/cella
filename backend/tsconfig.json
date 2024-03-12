@@ -2,7 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     /* Bundler mode */
-    "jsx": "react-jsx",
+    "jsx": "react-jsx"
   },
   "include": ["src", "drizzle.config.ts"]
 }

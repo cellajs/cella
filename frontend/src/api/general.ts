@@ -1,4 +1,4 @@
-import { UploadParams, UploadType } from '~/types';
+import { type UploadParams, UploadType } from '~/types';
 import { ApiError, client } from '.';
 
 // Get upload token to securely upload files with imado: https://imado.eu

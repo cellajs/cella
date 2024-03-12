@@ -1,5 +1,5 @@
 import * as Popover from '@radix-ui/react-popover';
-import { BubbleMenu, Editor } from '@tiptap/react';
+import { BubbleMenu, type Editor } from '@tiptap/react';
 import { memo } from 'react';
 import { ColorPicker } from '../../../components/panels';
 import { Icon } from '../../../components/ui/Icon';

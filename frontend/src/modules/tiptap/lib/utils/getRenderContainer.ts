@@ -1,4 +1,4 @@
-import { Editor } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 
 export const getRenderContainer = (editor: Editor, nodeType: string) => {
   const {

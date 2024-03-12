@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { Suspense, lazy } from 'react';
+import type React from 'react';
+import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 

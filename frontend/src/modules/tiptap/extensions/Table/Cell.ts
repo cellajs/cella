@@ -38,7 +38,7 @@ export const TableCell = Node.create<TableCellOptions>({
         default: 1,
         parseHTML: (element) => {
           const colspan = element.getAttribute('colspan');
-          const value = colspan ? parseInt(colspan, 10) : 1;
+          const value = colspan ? Number.parseInt(colspan, 10) : 1;
 
           return value;
         },
@@ -47,7 +47,7 @@ export const TableCell = Node.create<TableCellOptions>({
         default: 1,
         parseHTML: (element) => {
           const rowspan = element.getAttribute('rowspan');
-          const value = rowspan ? parseInt(rowspan, 10) : 1;
+          const value = rowspan ? Number.parseInt(rowspan, 10) : 1;
 
           return value;
         },
@@ -56,7 +56,7 @@ export const TableCell = Node.create<TableCellOptions>({
         default: null,
         parseHTML: (element) => {
           const colwidth = element.getAttribute('colwidth');
-          const value = colwidth ? [parseInt(colwidth, 10)] : null;
+          const value = colwidth ? [Number.parseInt(colwidth, 10)] : null;
 
           return value;
         },

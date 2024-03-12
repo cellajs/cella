@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
-import { inviteJsonSchema } from './schema';
-import { createRouteConfig } from '../../lib/createRoute';
-import { rateLimiter } from '../../middlewares/rate-limiter';
+import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, publicGuard, tenantGuard } from '../../middlewares/guard';
+import { rateLimiter } from '../../middlewares/rate-limiter';
+import { inviteJsonSchema } from './schema';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',

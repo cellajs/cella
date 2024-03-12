@@ -2,6 +2,10 @@ import { z } from '@hono/zod-openapi';
 
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { cookieSchema } from '../../lib/common-schemas';
+import { createRouteConfig } from '../../lib/route-config';
+import { publicGuard } from '../../middlewares/guard';
+import { rateLimiter } from '../../middlewares/rate-limiter';
+import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { apiUserSchema } from '../users/schema';
 import {
   acceptInviteJsonSchema,
@@ -11,10 +15,6 @@ import {
   signInJsonSchema,
   signUpJsonSchema,
 } from './schema';
-import { createRouteConfig } from '../../lib/createRoute';
-import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
-import { rateLimiter } from '../../middlewares/rate-limiter';
-import { publicGuard } from '../../middlewares/guard';
 
 const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');
 

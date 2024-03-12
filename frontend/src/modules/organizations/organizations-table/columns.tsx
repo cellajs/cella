@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Organization } from '~/types';
+import type { Organization } from '~/types';
 
 import { Link } from '@tanstack/react-router';
 import { Shield, UserRound } from 'lucide-react';
@@ -8,7 +8,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import { AvatarWrap } from '../../common/avatar-wrap';
-import { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import RowEdit from './row-edit';
 

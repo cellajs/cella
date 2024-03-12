@@ -1,7 +1,7 @@
-import { ButtonHTMLAttributes, HTMLProps, forwardRef } from 'react';
+import { type ButtonHTMLAttributes, type HTMLProps, forwardRef } from 'react';
 
 import { cn } from '~/lib/utils';
-import { Button, ButtonProps } from './Button';
+import { Button, type ButtonProps } from './Button';
 import { Surface } from './Surface';
 import Tooltip from './Tooltip';
 

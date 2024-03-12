@@ -1,13 +1,15 @@
-import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
+import { type AnyColumn, type SQL, and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '../../db/db';
-import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
-import { ErrorType, createError, errorResponse } from '../../lib/errors';
-import { transformDatabaseUser } from '../../lib/transform-database-user';
+
+import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { checkSlugExists } from '../general/helpers/check-slug';
+import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import {
   createOrganizationRouteConfig,
   deleteOrganizationsRouteConfig,
@@ -18,12 +20,14 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
-import { checkSlugExists } from '../general/helpers';
 
 const app = new CustomHono();
 
-// routes
+// Organization endpoints
 const organizationsRoutes = app
+  /*
+   * Create organization
+   */
   .add(createOrganizationRouteConfig, async (ctx) => {
     const { name } = ctx.req.valid('json');
     const user = ctx.get('user');
@@ -57,6 +61,9 @@ const organizationsRoutes = app
       },
     });
   })
+  /*
+   * Get an organization
+   */
   .add(getOrganizationsRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = ctx.get('user');
@@ -80,11 +87,7 @@ const organizationsRoutes = app
 
     const organizationsQuery = db.select().from(organizationsTable).where(filter).orderBy(orderFunc(orderColumn));
 
-    const [{ total }] = await db
-      .select({
-        total: count(),
-      })
-      .from(organizationsQuery.as('organizations'));
+    const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
     const counts = db
       .select({
@@ -130,6 +133,9 @@ const organizationsRoutes = app
       },
     });
   })
+  /*
+   * Update an organization
+   */
   .add(updateOrganizationRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
@@ -221,6 +227,9 @@ const organizationsRoutes = app
       },
     });
   })
+  /*
+   * Update user in organization
+   */
   .add(updateUserInOrganizationRouteConfig, async (ctx) => {
     const { userId } = ctx.req.valid('param');
     const { role } = ctx.req.valid('json');
@@ -263,6 +272,9 @@ const organizationsRoutes = app
       },
     });
   })
+  /*
+   * Delete organizations
+   */
   .add(deleteOrganizationsRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
@@ -294,6 +306,9 @@ const organizationsRoutes = app
       errors: errors,
     });
   })
+  /*
+   * Get organization by id or slug
+   */
   .add(getOrganizationByIdOrSlugRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
@@ -329,6 +344,9 @@ const organizationsRoutes = app
       },
     });
   })
+  /*
+   * Get users by organization id
+   */
   .add(getUsersByOrganizationIdRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
     const organization = ctx.get('organization');
@@ -395,11 +413,7 @@ const organizationsRoutes = app
       .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
       .orderBy(sort === 'organizationRole' ? orderFunc(roles.role) : orderFunc(orderColumn));
 
-    const [{ total }] = await db
-      .select({
-        total: count(),
-      })
-      .from(membersQuery.as('memberships'));
+    const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
     const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
 
@@ -419,6 +433,9 @@ const organizationsRoutes = app
       },
     });
   })
+  /*
+   * Delete users from organization
+   */
   .add(deleteUsersFromOrganizationRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const organization = ctx.get('organization');

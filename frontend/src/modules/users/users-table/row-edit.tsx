@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { User } from '~/types';
+import type { User } from '~/types';
 
 import { Pencil } from 'lucide-react';
 import { Button } from '~/modules/ui/button';

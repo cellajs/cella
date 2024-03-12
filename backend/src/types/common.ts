@@ -1,14 +1,14 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { User } from 'lucia';
-import { AnyZodObject, ZodSchema, ZodType, z } from 'zod';
+import type { User } from 'lucia';
+import type { AnyZodObject, ZodSchema, ZodType, z } from 'zod';
 
-import { OrganizationModel } from '../db/schema/organizations';
-import { errorResponseSchema } from '../lib/common-schemas';
-import { RouteConfig } from '../lib/createRoute';
-import { Handler, Input, MiddlewareHandler, Schema, ToSchema, TypedResponse } from 'hono';
-import type { ZodRequestBody, ZodMediaTypeObject, ZodContentObject, ResponseConfig } from '@asteasolutions/zod-to-openapi';
+import type { ResponseConfig, ZodContentObject, ZodMediaTypeObject, ZodRequestBody } from '@asteasolutions/zod-to-openapi';
+import type { Handler, Input, MiddlewareHandler, Schema, ToSchema, TypedResponse } from 'hono';
+import type { OrganizationModel } from '../db/schema/organizations';
+import type { errorResponseSchema } from '../lib/common-schemas';
+import type { RouteConfig } from '../lib/route-config';
 
-export type NonEmptyArray<T> = readonly [T, ...T[]]
+export type NonEmptyArray<T> = readonly [T, ...T[]];
 
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 
@@ -32,18 +32,18 @@ type RequestTypes = {
 type RequestPart<R extends RouteConfig['route'], Part extends string> = Part extends keyof R['request']
   ? R['request'][Part]
   : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {};
+    {};
 
 type InputTypeBase<R extends RouteConfig['route'], Part extends string, Type extends string> = R['request'] extends RequestTypes
   ? RequestPart<R, Part> extends AnyZodObject
-  ? {
-    in: { [K in Type]: z.input<RequestPart<R, Part>> };
-    out: { [K in Type]: z.output<RequestPart<R, Part>> };
-  }
+    ? {
+        in: { [K in Type]: z.input<RequestPart<R, Part>> };
+        out: { [K in Type]: z.output<RequestPart<R, Part>> };
+      }
+    : // biome-ignore lint/complexity/noBannedTypes: required for type inference
+      {}
   : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {}
-  : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {};
+    {};
 
 type InputTypeParam<R extends RouteConfig['route']> = InputTypeBase<R, 'params', 'param'>;
 type InputTypeQuery<R extends RouteConfig['route']> = InputTypeBase<R, 'query', 'query'>;
@@ -54,48 +54,48 @@ type IsJson<T> = T extends string ? (T extends `application/json${infer _Rest}` 
 
 type InputTypeJson<R extends RouteConfig['route']> = R['request'] extends RequestTypes
   ? R['request']['body'] extends ZodRequestBody
-  ? R['request']['body']['content'] extends ZodContentObject
-  ? IsJson<keyof R['request']['body']['content']> extends never
-  ? // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {}
-  : // biome-ignore lint/suspicious/noExplicitAny: required for type inference
-  R['request']['body']['content'][keyof R['request']['body']['content']]['schema'] extends ZodSchema<any>
-  ? {
-    in: {
-      json: z.input<R['request']['body']['content'][keyof R['request']['body']['content']]['schema']>;
-    };
-    out: {
-      json: z.output<R['request']['body']['content'][keyof R['request']['body']['content']]['schema']>;
-    };
-  }
+    ? R['request']['body']['content'] extends ZodContentObject
+      ? IsJson<keyof R['request']['body']['content']> extends never
+        ? // biome-ignore lint/complexity/noBannedTypes: required for type inference
+          {}
+        : // biome-ignore lint/suspicious/noExplicitAny: required for type inference
+          R['request']['body']['content'][keyof R['request']['body']['content']]['schema'] extends ZodSchema<any>
+          ? {
+              in: {
+                json: z.input<R['request']['body']['content'][keyof R['request']['body']['content']]['schema']>;
+              };
+              out: {
+                json: z.output<R['request']['body']['content'][keyof R['request']['body']['content']]['schema']>;
+              };
+            }
+          : // biome-ignore lint/complexity/noBannedTypes: required for type inference
+            {}
+      : // biome-ignore lint/complexity/noBannedTypes: required for type inference
+        {}
+    : // biome-ignore lint/complexity/noBannedTypes: required for type inference
+      {}
   : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {}
-  : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {}
-  : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {}
-  : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {};
+    {};
 
 type HandlerTypedResponse<O> = TypedResponse<O> | Promise<TypedResponse<O>>;
 type HandlerAllResponse<O> = Response | Promise<Response> | TypedResponse<O> | Promise<TypedResponse<O>>;
 
 type OutputType<R extends RouteConfig['route']> = R['responses'] extends Record<infer _, infer C>
   ? C extends ResponseConfig
-  ? C['content'] extends ZodContentObject
-  ? IsJson<keyof C['content']> extends never
-  ? // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {}
-  : C['content'][keyof C['content']]['schema'] extends ZodSchema
-  ? z.infer<C['content'][keyof C['content']]['schema']>
+    ? C['content'] extends ZodContentObject
+      ? IsJson<keyof C['content']> extends never
+        ? // biome-ignore lint/complexity/noBannedTypes: required for type inference
+          {}
+        : C['content'][keyof C['content']]['schema'] extends ZodSchema
+          ? z.infer<C['content'][keyof C['content']]['schema']>
+          : // biome-ignore lint/complexity/noBannedTypes: required for type inference
+            {}
+      : // biome-ignore lint/complexity/noBannedTypes: required for type inference
+        {}
+    : // biome-ignore lint/complexity/noBannedTypes: required for type inference
+      {}
   : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {}
-  : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {}
-  : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {}
-  : // biome-ignore lint/complexity/noBannedTypes: required for type inference
-  {};
+    {};
 
 const isNotPublicRoute = (guard: RouteConfig['guard']): guard is NonEmptyArray<MiddlewareHandler> => {
   return !guard.includes('public');
@@ -158,8 +158,8 @@ export class CustomHono<E extends Env = Env, S extends Schema = {}, BasePath ext
           };
         };
       }
-      ? HandlerTypedResponse<OutputType<R>>
-      : HandlerAllResponse<OutputType<R>>
+        ? HandlerTypedResponse<OutputType<R>>
+        : HandlerAllResponse<OutputType<R>>
     >,
   ): CustomHono<E, S & ToSchema<R['method'], P, I['in'], OutputType<R>>, '/'> {
     const handlers = [];

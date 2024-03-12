@@ -33,10 +33,10 @@ app.use(
   }),
 );
 
-// Compress middleware
+// Compress response
 app.use('*', compress());
 
-// CSRF middleware
+// CSRF protection
 app.use(
   '*',
   csrf({

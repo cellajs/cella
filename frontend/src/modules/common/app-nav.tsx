@@ -1,7 +1,8 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { Bell, Home, LucideProps, Menu, Search, User } from 'lucide-react';
-import React, { Fragment } from 'react';
+import { Bell, Home, type LucideProps, Menu, Search, User } from 'lucide-react';
+import type React from 'react';
+import { Fragment } from 'react';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user';

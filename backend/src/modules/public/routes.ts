@@ -1,7 +1,7 @@
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
-import { apiPublicCountsSchema } from './schema';
-import { createRouteConfig } from '../../lib/createRoute';
+import { createRouteConfig } from '../../lib/route-config';
 import { publicGuard } from '../../middlewares/guard';
+import { apiPublicCountsSchema } from './schema';
 
 export const getPublicCountsRouteConfig = createRouteConfig({
   method: 'get',

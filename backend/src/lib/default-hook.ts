@@ -1,7 +1,7 @@
-import { Hook } from '@hono/zod-openapi';
+import type { Hook } from '@hono/zod-openapi';
 import { ZodError } from 'zod';
 import { logEvent } from '../middlewares/logger/log-event';
-import { Env } from '../types/common';
+import type { Env } from '../types/common';
 
 const defaultHook: Hook<unknown, Env, '', unknown> = (result, ctx) => {
   if (!result.success && result.error instanceof ZodError) {

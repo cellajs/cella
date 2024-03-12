@@ -1,21 +1,21 @@
+import debounce from 'lodash.debounce';
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { GetUsersParams } from '~/api/users';
+import type { GetUsersParams } from '~/api/users';
 import InviteUsersForm from '~/modules/organizations/invite-users-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useUserStore } from '~/store/user';
-import { User } from '~/types';
-import { UserRow } from '.';
-import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import type { User } from '~/types';
+import type { UserRow } from '.';
+import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
-import debounce from 'lodash.debounce';
 
 interface Props {
   total?: number;

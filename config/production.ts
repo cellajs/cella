@@ -1,4 +1,4 @@
-import { Config } from './default';
+import type { Config } from './default';
 
 export default {
   mode: 'production',

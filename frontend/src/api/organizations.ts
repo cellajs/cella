@@ -1,4 +1,4 @@
-import { Member } from '~/types';
+import type { Member } from '~/types';
 import { ApiError, client } from '.';
 
 // Create a new organization

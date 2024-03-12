@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Config } from 'tailwindcss';
+import type { Config } from 'tailwindcss';
 import animatePlugin from 'tailwindcss-animate';
 
 /** @type {Config} */

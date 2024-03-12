@@ -1,14 +1,14 @@
-import { MiddlewareHandler } from 'hono';
+import type { MiddlewareHandler } from 'hono';
 
-import { IRateLimiterPostgresOptions, RateLimiterPostgres, RateLimiterRes } from 'rate-limiter-flexible';
+import { type IRateLimiterPostgresOptions, RateLimiterPostgres, RateLimiterRes } from 'rate-limiter-flexible';
 import { errorResponse } from '../../lib/errors';
 
 import { queryClient } from '../../db/db';
-import { Env } from '../../types/common';
+import type { Env } from '../../types/common';
 
 type RateLimiterMode = 'success' | 'fail' | 'limit';
 
-/**
+/*
  * This file contains the implementation of a rate limiter middleware.
  * It uses the `rate-limiter-flexible` library to limit the number of requests per user or IP address.
  * https://github.com/animir/node-rate-limiter-flexible#readme

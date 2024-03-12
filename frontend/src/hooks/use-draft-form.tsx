@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FieldValues, Path, UseFormProps, UseFormReturn, useForm } from 'react-hook-form';
+import { type FieldValues, type Path, type UseFormProps, type UseFormReturn, useForm } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
 // This hook is used to create a form with unsaved draft support

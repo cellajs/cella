@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React from 'react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 // Change this in the future on current schema
 import { createOrganizationJsonSchema } from 'backend/modules/organizations/schema';
@@ -15,7 +15,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { useNavigationStore } from '~/store/navigation';
-import { Organization } from '~/types';
+import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
 
 interface CreateOrganizationFormProps {

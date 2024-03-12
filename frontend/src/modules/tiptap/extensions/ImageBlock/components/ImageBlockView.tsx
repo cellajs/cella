@@ -1,5 +1,5 @@
-import { Node } from '@tiptap/pm/model';
-import { Editor, NodeViewWrapper } from '@tiptap/react';
+import type { Node } from '@tiptap/pm/model';
+import { type Editor, NodeViewWrapper } from '@tiptap/react';
 import { useCallback, useRef } from 'react';
 import { cn } from '~/lib/utils';
 

@@ -1,8 +1,8 @@
 import { sendError, setCustomData, setNamespace } from '@appsignal/nodejs';
-import { Context } from 'hono';
-import { z } from 'zod';
+import type { Context } from 'hono';
+import type { z } from 'zod';
 import { appSignalLogger, logEvent } from '../middlewares/logger/log-event';
-import { errorSchema } from './common-schemas';
+import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
 
 export type HttpStatus = 400 | 401 | 403 | 404 | 409 | 429 | 500;

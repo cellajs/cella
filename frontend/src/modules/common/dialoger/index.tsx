@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
-import { DialogState, DialogT, DialogToRemove } from './state';
+import { DialogState, type DialogT, type DialogToRemove } from './state';
 
 export function Dialoger() {
   const [dialogs, setDialogs] = useState<DialogT[]>([]);

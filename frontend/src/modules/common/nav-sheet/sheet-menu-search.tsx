@@ -3,8 +3,8 @@ import { useCallback, useEffect } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
-import { Page, UserMenu } from '~/types';
-import { SearchResultsType, initialSearchResults, menuSections } from './sheet-menu';
+import type { Page, UserMenu } from '~/types';
+import { type SearchResultsType, initialSearchResults, menuSections } from './sheet-menu';
 
 interface SheetMenuSearchProps {
   menu: UserMenu;

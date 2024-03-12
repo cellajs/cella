@@ -1,5 +1,5 @@
 import { SelectTrigger } from '@radix-ui/react-select';
-import { RenderEditCellProps } from 'react-data-grid';
+import type { RenderEditCellProps } from 'react-data-grid';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
 
 export const renderSelect =

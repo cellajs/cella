@@ -1,7 +1,7 @@
 import { Trash, Upload } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AvatarWrap, AvatarWrapProps } from '~/modules/common/avatar-wrap';
+import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { UploadType } from '~/types';

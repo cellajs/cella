@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
-import { RenderHeaderCellProps } from 'react-data-grid';
+import type { RenderHeaderCellProps } from 'react-data-grid';
 
 const HeaderCell = <TData,>({ column, sortDirection }: RenderHeaderCellProps<TData>) => {
   if (!column.sortable) {

@@ -1,14 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { DefaultError, useMutation } from '@tanstack/react-query';
+import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateUserJsonSchema } from 'backend/modules/users/schema';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { queryClient } from '~/router';
-import { User } from '~/types';
+import type { User } from '~/types';
 import AvatarFormField from '../common/forms/avatar';
 
-import { UpdateUserParams, updateUser } from '~/api/users';
+import { type UpdateUserParams, updateUser } from '~/api/users';
 
 import { Undo } from 'lucide-react';
 import { toast } from 'sonner';

@@ -1,8 +1,9 @@
+import debounce from 'lodash.debounce';
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { ChangeEvent, Dispatch, SetStateAction, useContext } from 'react';
+import { type ChangeEvent, type Dispatch, type SetStateAction, useContext } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
+import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { cn } from '~/lib/utils';
 import Export from '~/modules/common/data-table/export';
 import InviteUsersForm from '~/modules/organizations/invite-users-form';
@@ -10,15 +11,14 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import { MembersSearch } from '~/router/routeTree';
+import type { MembersSearch } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
-import { Member } from '~/types';
-import ColumnsView, { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import type { Member } from '~/types';
+import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
-import RemoveMembersForm from './remove-member-form';
-import debounce from 'lodash.debounce';
 import { OrganizationContext } from '../organization';
+import RemoveMembersForm from './remove-member-form';
 
 interface Props {
   selectedMembers: Member[];

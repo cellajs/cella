@@ -1,5 +1,5 @@
 import { deleteOrganizations } from '~/api/organizations';
-import { Organization } from '~/types';
+import type { Organization } from '~/types';
 
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { DeleteForm } from '~/modules/common/delete-form';

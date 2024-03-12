@@ -1,7 +1,7 @@
 {
-    "name": "config",
-    "type": "module",
-    "exports": {
-        ".": "./index.ts"
-    }
+  "name": "config",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  }
 }

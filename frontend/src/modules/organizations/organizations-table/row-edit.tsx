@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Organization } from '~/types';
+import type { Organization } from '~/types';
 import UpdateOrganizationForm from '../update-organization-form';
 
 import { Pencil } from 'lucide-react';

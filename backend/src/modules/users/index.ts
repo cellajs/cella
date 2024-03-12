@@ -1,16 +1,17 @@
-import { AnyColumn, SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { type AnyColumn, type SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 
-import { User } from 'lucia';
+import type { User } from 'lucia';
 import { coalesce, db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
-import { removeSessionCookie } from '../../lib/cookies';
-import { ErrorType, createError, errorResponse } from '../../lib/errors';
-import { transformDatabaseUser } from '../../lib/transform-database-user';
+import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { removeSessionCookie } from '../auth/helpers/cookies';
+import { checkSlugExists } from '../general/helpers/check-slug';
+import { transformDatabaseUser } from './helpers/transform-database-user';
 import {
   deleteUsersRouteConfig,
   getUserByIdOrSlugRouteConfig,
@@ -20,12 +21,14 @@ import {
   updateUserConfig,
   userSuggestionsConfig,
 } from './routes';
-import { checkSlugExists } from '../general/helpers';
 
 const app = new CustomHono();
 
-// routes
+// User endpoints
 const usersRoutes = app
+  /*
+   * Get current user
+   */
   .add(meRouteConfig, async (ctx) => {
     const user = ctx.get('user');
 
@@ -46,16 +49,6 @@ const usersRoutes = app
       },
     });
   })
-  // .add(getUserSessionsConfig, async (ctx) => {
-  //   const user = ctx.get('user');
-
-  //   const sessions = await auth.getUserSessions(user.id);
-
-  //   return ctx.json({
-  //     success: true,
-  //     data: sessions,
-  //   });
-  // })
   .add(getUserMenuConfig, async (ctx) => {
     const user = ctx.get('user');
 
@@ -107,6 +100,9 @@ const usersRoutes = app
       },
     });
   })
+  /*
+   * Update a user
+   */
   .add(updateUserConfig, async (ctx) => {
     const { userId } = ctx.req.valid('param');
     const user = ctx.get('user');
@@ -169,13 +165,15 @@ const usersRoutes = app
       },
     });
   })
+  /*
+   * Get user config
+   */
   .add(getUsersConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const orderFunc = order === 'asc' ? asc : desc;
 
     const memberships = db
-
       .select({
         userId: membershipsTable.userId,
       })
@@ -233,11 +231,7 @@ const usersRoutes = app
       .orderBy(orderFunc(orderColumn))
       .leftJoin(membershipCounts, eq(membershipCounts.userId, usersTable.id));
 
-    const [{ total }] = await db
-      .select({
-        total: count(),
-      })
-      .from(usersQuery.as('users'));
+    const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
 
     const result = await usersQuery.limit(Number(limit)).offset(Number(offset));
 
@@ -254,6 +248,9 @@ const usersRoutes = app
       },
     });
   })
+  /*
+   * Get user suggestions
+   */
   .add(userSuggestionsConfig, async (ctx) => {
     const { q } = ctx.req.valid('query');
 
@@ -272,6 +269,9 @@ const usersRoutes = app
       data: users,
     });
   })
+  /*
+   * Delete users
+   */
   .add(deleteUsersRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
@@ -308,6 +308,9 @@ const usersRoutes = app
       errors: errors,
     });
   })
+  /*
+   * Get a user by id or slug
+   */
   .add(getUserByIdOrSlugRouteConfig, async (ctx) => {
     const userIdentifier = ctx.req.param('userId').toLowerCase();
     const user = ctx.get('user');

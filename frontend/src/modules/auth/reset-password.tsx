@@ -3,7 +3,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { resetPasswordJsonSchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import * as z from 'zod';
+import type * as z from 'zod';
 import { Button } from '~/modules/ui/button';
 import AuthPage from '.';
 

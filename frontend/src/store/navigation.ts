@@ -3,9 +3,9 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { getUserMenu } from '~/api/users';
-import { NavItem } from '~/modules/common/app-nav';
+import type { NavItem } from '~/modules/common/app-nav';
 import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
-import { UserMenu } from '~/types';
+import type { UserMenu } from '~/types';
 
 interface NavigationState {
   activeSheet: NavItem | null;

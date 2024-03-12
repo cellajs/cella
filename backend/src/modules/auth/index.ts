@@ -1,6 +1,6 @@
 import { render } from '@react-email/render';
 import { and, eq } from 'drizzle-orm';
-import { User, generateId } from 'lucia';
+import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import postgres from 'postgres';
 import { VerificationEmail } from '../../../../email/emails/email-verification';
@@ -8,22 +8,24 @@ import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
 
 import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
-import { setCookie } from '../../lib/cookies';
+import { setCookie } from './helpers/cookies';
 import { acceptInviteRouteConfig, checkInviteRouteConfig, githubSignInRouteConfig } from './routes';
 
 import { config } from 'config';
 import { emailSender } from '../../../../email';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
-import { OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
-import { removeSessionCookie, setSessionCookie } from '../../lib/cookies';
 import { errorResponse } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
-import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { checkSlugExists } from '../general/helpers/check-slug';
+import { transformDatabaseUser } from '../users/helpers/transform-database-user';
+import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
+import { sendVerificationEmail } from './helpers/verify-email';
 import oauthRoutes from './oauth';
 import {
   checkEmailRouteConfig,
@@ -35,13 +37,14 @@ import {
   signUpRouteConfig,
   verifyEmailRouteConfig,
 } from './routes';
-import { sendVerificationEmail } from './helpers';
-import { checkSlugExists } from '../general/helpers';
 
 const app = new CustomHono();
 
-// routes
+// Authentication endpoints
 const authRoutes = app
+  /*
+   * Sign up with email and password
+   */
   .add(signUpRouteConfig, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
@@ -80,6 +83,9 @@ const authRoutes = app
       throw error;
     }
   })
+  /*
+   * Verify email
+   */
   .add(verifyEmailRouteConfig, async (ctx) => {
     const { resend } = ctx.req.valid('query');
     const verificationToken = ctx.req.valid('param').token;
@@ -130,6 +136,9 @@ const authRoutes = app
       success: true,
     });
   })
+  /*
+   * Send verification email
+   */
   .add(sendVerificationEmailRouteConfig, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
@@ -164,6 +173,9 @@ const authRoutes = app
       success: true,
     });
   })
+  /*
+   * Check if email exists
+   */
   .add(checkEmailRouteConfig, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
@@ -176,6 +188,9 @@ const authRoutes = app
       },
     });
   })
+  /*
+   * Request reset password email with token
+   */
   .add(resetPasswordRouteConfig, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
@@ -211,6 +226,9 @@ const authRoutes = app
       data: undefined,
     });
   })
+  /*
+   * Reset password with token
+   */
   .add(resetPasswordCallbackRouteConfig, async (ctx) => {
     const { password } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
@@ -239,6 +257,9 @@ const authRoutes = app
       data: undefined,
     });
   })
+  /*
+   * Sign in with email and password
+   */
   .add(signInRouteConfig, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
@@ -268,6 +289,9 @@ const authRoutes = app
       data: transformDatabaseUser(user),
     });
   })
+  /*
+   * Sign out
+   */
   .add(signOutRouteConfig, async (ctx) => {
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
@@ -288,6 +312,9 @@ const authRoutes = app
 
     return ctx.json({ success: true, data: undefined });
   })
+  /*
+   * Check invite token
+   */
   .add(checkInviteRouteConfig, async (ctx) => {
     const token = ctx.req.valid('param').token;
 
@@ -309,6 +336,9 @@ const authRoutes = app
 
     return errorResponse(ctx, 404, 'invite_not_found', 'warn');
   })
+  /*
+   * Accept invite token
+   */
   .add(acceptInviteRouteConfig, async (ctx) => {
     const { password, oauth } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
