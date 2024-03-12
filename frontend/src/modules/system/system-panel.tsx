@@ -26,17 +26,15 @@ const SystemPanel = () => {
 
   // Download and initialize Paddle instance from CDN
   useEffect(() => {
-    initializePaddle({ 
+    initializePaddle({
       // environment: config.mode === 'development' ? 'sandbox' : 'production',
       environment: 'sandbox',
-      token: config.paddleToken
-    }).then(
-      (paddleInstance: Paddle | undefined) => {
-        if (paddleInstance) {
-          setPaddle(paddleInstance);
-        }
-      },
-    );
+      token: config.paddleToken,
+    }).then((paddleInstance: Paddle | undefined) => {
+      if (paddleInstance) {
+        setPaddle(paddleInstance);
+      }
+    });
   }, []);
 
   return (

@@ -1,4 +1,4 @@
-import { type AnyColumn, type SQL, and, asc, count, desc, eq, ilike, sql, or } from 'drizzle-orm';
+import { type AnyColumn, type SQL, and, asc, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
@@ -34,7 +34,10 @@ const organizationsRoutes = app
 
     let slug = slugify(name, { lower: true });
 
-    const [organization] = await db.select().from(organizationsTable).where(or(eq(organizationsTable.name, name), eq(organizationsTable.slug, slug)));
+    const [organization] = await db
+      .select()
+      .from(organizationsTable)
+      .where(or(eq(organizationsTable.name, name), eq(organizationsTable.slug, slug)));
 
     if (organization?.name === name) {
       return errorResponse(ctx, 400, 'organization_name_exists', 'warn', true, { name });
