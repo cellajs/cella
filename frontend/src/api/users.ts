@@ -117,3 +117,14 @@ export const searchUsers = async (query: string) => {
   if ('error' in json) throw new ApiError(response.status, json.error);
   return json.data;
 };
+
+// Get user sessions
+// export const getUserSessions = async (userId: string) => {
+//   const response = await client.users[':userId'].sessions.$get({
+//     param: { userId },
+//   });
+
+//   const json = await response.json();
+//   if ('error' in json) throw new ApiError(response.status, json.error);
+//   return json.data;
+// };

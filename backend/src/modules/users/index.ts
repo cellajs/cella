@@ -46,6 +46,16 @@ const usersRoutes = app
       },
     });
   })
+  // .add(getUserSessionsConfig, async (ctx) => {
+  //   const user = ctx.get('user');
+
+  //   const sessions = await auth.getUserSessions(user.id);
+
+  //   return ctx.json({
+  //     success: true,
+  //     data: sessions,
+  //   });
+  // })
   .add(getUserMenuConfig, async (ctx) => {
     const user = ctx.get('user');
 

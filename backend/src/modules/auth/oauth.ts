@@ -21,8 +21,8 @@ import {
   googleSignInRouteConfig,
   microsoftSignInCallbackRouteConfig,
   microsoftSignInRouteConfig,
-  sendVerificationEmailRouteConfig,
 } from './routes';
+import { sendVerificationEmail } from '../../lib/send-verification-email';
 
 const app = new CustomHono();
 
@@ -191,13 +191,7 @@ const oauthRoutes = app
           .where(eq(usersTable.id, existingUser.id));
 
         if (!emailVerified) {
-          await fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
-            method: sendVerificationEmailRouteConfig.route.method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: primaryEmail.email,
-            }),
-          });
+          sendVerificationEmail(primaryEmail.email);
 
           return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
         }
@@ -226,15 +220,7 @@ const oauthRoutes = app
       await insertOauthAccount(userId, 'GITHUB', String(githubUser.id));
 
       if (!primaryEmail.verified) {
-        await fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
-          method: sendVerificationEmailRouteConfig.route.method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: primaryEmail.email,
-          }),
-        });
+        sendVerificationEmail(primaryEmail.email);
 
         return ctx.redirect(`${config.frontendUrl}/auth/verify-email`, 302);
       }

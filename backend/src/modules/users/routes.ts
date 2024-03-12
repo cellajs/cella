@@ -30,6 +30,32 @@ export const meRouteConfig = createRouteConfig({
   },
 });
 
+export const getUserSessionsConfig = createRouteConfig({
+  method: 'get',
+  path: '/me/sessions',
+  guard: authGuard(),
+  tags: ['users'],
+  summary: 'Get the sessions of the current user',
+  responses: {
+    200: {
+      description: 'Sessions',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(
+            z
+              .object({
+                id: z.string(),
+                expiresAt: z.string(),
+              })
+              .array(),
+          ),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
 export const getUsersConfig = createRouteConfig({
   method: 'get',
   path: '/users',

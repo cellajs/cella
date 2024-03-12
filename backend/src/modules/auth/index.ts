@@ -36,6 +36,7 @@ import {
   signUpRouteConfig,
   verifyEmailRouteConfig,
 } from './routes';
+import { sendVerificationEmail } from '../../lib/send-verification-email';
 
 const app = new CustomHono();
 
@@ -64,15 +65,7 @@ const authRoutes = app
         })
         .returning();
 
-      await fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
-        method: sendVerificationEmailRouteConfig.route.method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-        }),
-      });
+      await sendVerificationEmail(email);
 
       return ctx.json({
         success: true,
@@ -96,15 +89,8 @@ const authRoutes = app
 
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
       if (resend === 'true' && token && token.email) {
-        fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
-          method: sendVerificationEmailRouteConfig.route.method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: token.email,
-          }),
-        });
+        sendVerificationEmail(token.email);
+
         await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
         return ctx.json({
@@ -119,15 +105,8 @@ const authRoutes = app
 
     if (!user || user.email !== token.email) {
       if (resend === 'true' && token && token.email) {
-        fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
-          method: sendVerificationEmailRouteConfig.route.method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: token.email,
-          }),
-        });
+        sendVerificationEmail(token.email);
+
         await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
         return ctx.json({
@@ -277,15 +256,7 @@ const authRoutes = app
 
     // Send verify email first
     if (!user.emailVerified) {
-      fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
-        method: sendVerificationEmailRouteConfig.route.method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-        }),
-      });
+      sendVerificationEmail(email);
 
       return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
     }
