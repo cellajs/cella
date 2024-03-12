@@ -23,7 +23,7 @@ import {
 
 const app = new CustomHono();
 
-// Organization endpoints
+// * Organization endpoints
 const organizationsRoutes = app
   /*
    * Create organization

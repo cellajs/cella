@@ -40,7 +40,7 @@ import {
 
 const app = new CustomHono();
 
-// Authentication endpoints
+// * Authentication endpoints
 const authRoutes = app
   /*
    * Sign up with email and password
@@ -91,9 +91,10 @@ const authRoutes = app
     const verificationToken = ctx.req.valid('param').token;
 
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
-    // await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
+    // * If the token is not found or expired
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
+      // * If 'resend' is true and the token has an email we will resend the email
       if (resend === 'true' && token && token.email) {
         sendVerificationEmail(token.email);
 
@@ -109,7 +110,9 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
+    // * If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) {
+      // * If 'resend' is true and the token has an email we will resend the email
       if (resend === 'true' && token && token.email) {
         sendVerificationEmail(token.email);
 
@@ -148,7 +151,7 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'email_not_found', 'warn', true, { email });
     }
 
-    // creating email verification token
+    // * creating email verification token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
     const token = generateId(40);
     await db.insert(tokensTable).values({
@@ -200,7 +203,7 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'invalid_email', 'warn', true, { email });
     }
 
-    // creating password reset token
+    // * creating password reset token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
     const token = generateId(40);
     await db.insert(tokensTable).values({
@@ -275,7 +278,7 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'invalid_password', 'warn');
     }
 
-    // Send verify email first
+    // * send verify email first
     if (!user.emailVerified) {
       sendVerificationEmail(email);
 
@@ -432,6 +435,7 @@ const authRoutes = app
           data: url,
         });
 
+        // TODO: Fix redirect
         // return ctx.json({}, 302, {
         //   Location: url,
         // });

@@ -49,6 +49,23 @@ const usersRoutes = app
       },
     });
   })
+  /*
+   * Get current user sessions
+   */
+  // TODO: Implement this route
+  // .add(getUserSessionsConfig, async (ctx) => {
+  //   const user = ctx.get('user');
+
+  //   const sessions = await auth.getUserSessions(user.id);
+
+  //   return ctx.json({
+  //     success: true,
+  //     data: sessions,
+  //   });
+  // })
+  /*
+   * Get user menu
+   */
   .add(getUserMenuConfig, async (ctx) => {
     const user = ctx.get('user');
 

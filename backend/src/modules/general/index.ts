@@ -26,7 +26,7 @@ const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
 const app = new CustomHono();
 
-// General endpoints
+// * General endpoints
 const generalRoutes = app
   /*
    * Get upload token

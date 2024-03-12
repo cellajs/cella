@@ -30,7 +30,7 @@ const githubScopes = { scopes: ['user:email'] };
 const googleScopes = { scopes: ['profile', 'email'] };
 const microsoftScopes = { scopes: ['profile', 'email'] };
 
-// Oauth endpoints
+// * Oauth endpoints
 const oauthRoutes = app
   /*
    * Github sign in
@@ -60,6 +60,7 @@ const oauthRoutes = app
     return ctx.json({}, 302, {
       Location: url.toString(),
     });
+    // TODO: Fix redirect
     // return ctx.redirect(url.toString(), 302);
   })
   .add(microsoftSignInRouteConfig, async (ctx) => {
@@ -74,6 +75,7 @@ const oauthRoutes = app
     return ctx.json({}, 302, {
       Location: url.toString(),
     });
+    // TODO: Fix redirect
     // return ctx.redirect(url.toString(), 302);
   })
   .add(githubSignInCallbackRouteConfig, async (ctx) => {
@@ -81,7 +83,7 @@ const oauthRoutes = app
 
     const stateCookie = getCookie(ctx, 'oauth_state');
 
-    // verify state
+    // * verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
       return errorResponse(ctx, 400, 'invalid_state', 'warn', true, { strategy: 'github' });
     }
@@ -247,7 +249,7 @@ const oauthRoutes = app
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
 
-    // verify state
+    // * verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
       return errorResponse(ctx, 400, 'invalid_state', 'warn', true, { strategy: 'google' });
     }
@@ -327,7 +329,7 @@ const oauthRoutes = app
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
 
-    // verify state
+    // * verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
       return errorResponse(ctx, 400, 'invalid_state', 'warn', true, { strategy: 'microsoft' });
     }
