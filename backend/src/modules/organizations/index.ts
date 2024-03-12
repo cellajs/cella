@@ -4,7 +4,6 @@ import { db } from '../../db/db';
 import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
-import { checkSlugExists } from '../../lib/check-slug';
 import { ErrorType, createError, errorResponse } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -19,6 +18,7 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
+import { checkSlugExists } from '../general/helpers';
 
 const app = new CustomHono();
 

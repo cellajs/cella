@@ -6,7 +6,6 @@ import { auth } from '../../db/lucia';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
-import { checkSlugExists } from '../../lib/check-slug';
 import { removeSessionCookie } from '../../lib/cookies';
 import { ErrorType, createError, errorResponse } from '../../lib/errors';
 import { transformDatabaseUser } from '../../lib/transform-database-user';
@@ -21,6 +20,7 @@ import {
   updateUserConfig,
   userSuggestionsConfig,
 } from './routes';
+import { checkSlugExists } from '../general/helpers';
 
 const app = new CustomHono();
 

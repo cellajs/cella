@@ -18,7 +18,6 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
-import { checkSlugExists } from '../../lib/check-slug';
 import { removeSessionCookie, setSessionCookie } from '../../lib/cookies';
 import { errorResponse } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
@@ -36,7 +35,8 @@ import {
   signUpRouteConfig,
   verifyEmailRouteConfig,
 } from './routes';
-import { sendVerificationEmail } from '../../lib/send-verification-email';
+import { sendVerificationEmail } from './helpers';
+import { checkSlugExists } from '../general/helpers';
 
 const app = new CustomHono();
 

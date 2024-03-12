@@ -39,7 +39,7 @@
     "email": "workspace:*",
     "enforce-unique": "^1.2.0",
     "env": "workspace:*",
-    "hono": "4.0.8",
+    "hono": "4.1.0",
     "i18next": "^23.10.0",
     "jsonwebtoken": "^9.0.2",
     "locales": "workspace:*",

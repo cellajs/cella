@@ -22,7 +22,7 @@ import {
   microsoftSignInCallbackRouteConfig,
   microsoftSignInRouteConfig,
 } from './routes';
-import { sendVerificationEmail } from '../../lib/send-verification-email';
+import { sendVerificationEmail } from './helpers';
 
 const app = new CustomHono();
 
