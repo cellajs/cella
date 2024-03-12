@@ -1,4 +1,4 @@
-import { type AnyColumn, type SQL, and, asc, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, or, sql } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
@@ -20,6 +20,7 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
+import { getOrderColumn } from '../../lib/order-column';
 
 const app = new CustomHono();
 
@@ -77,24 +78,9 @@ const organizationsRoutes = app
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    const orderFunc = order === 'asc' ? asc : desc;
-
-    let orderColumn: AnyColumn;
-    switch (sort) {
-      case 'name':
-        orderColumn = organizationsTable.name;
-        break;
-      case 'createdAt':
-        orderColumn = organizationsTable.createdAt;
-        break;
-      default:
-        orderColumn = organizationsTable.id;
-        break;
-    }
-
     const filter: SQL | undefined = q ? ilike(organizationsTable.name, `%${q}%`) : undefined;
 
-    const organizationsQuery = db.select().from(organizationsTable).where(filter).orderBy(orderFunc(orderColumn));
+    const organizationsQuery = db.select().from(organizationsTable).where(filter);
 
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
@@ -117,6 +103,18 @@ const organizationsRoutes = app
       .where(eq(membershipsTable.userId, user.id))
       .as('membership_roles');
 
+    const orderColumn = getOrderColumn(
+      {
+        id: organizationsTable.id,
+        name: organizationsTable.name,
+        createdAt: organizationsTable.createdAt,
+        userRole: membershipRoles.role,
+      },
+      sort,
+      organizationsTable.id,
+      order,
+    );
+
     const organizations = await db
       .select({
         organization: organizationsTable,
@@ -127,6 +125,7 @@ const organizationsRoutes = app
       .from(organizationsQuery.as('organizations'))
       .leftJoin(membershipRoles, eq(organizationsTable.id, membershipRoles.organizationId))
       .leftJoin(counts, eq(organizationsTable.id, counts.organizationId))
+      .orderBy(orderColumn)
       .limit(Number(limit))
       .offset(Number(offset));
 
@@ -360,27 +359,6 @@ const organizationsRoutes = app
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 
-    const orderFunc = order === 'asc' ? asc : desc;
-
-    let orderColumn: AnyColumn;
-    switch (sort) {
-      case 'name':
-        orderColumn = usersTable.name;
-        break;
-      case 'email':
-        orderColumn = usersTable.email;
-        break;
-      case 'createdAt':
-        orderColumn = usersTable.createdAt;
-        break;
-      case 'lastSeenAt':
-        orderColumn = usersTable.lastSeenAt;
-        break;
-      default:
-        orderColumn = usersTable.id;
-        break;
-    }
-
     const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
@@ -409,6 +387,20 @@ const organizationsRoutes = app
       .groupBy(membershipsTable.userId)
       .as('membership_count');
 
+    const orderColumn = getOrderColumn(
+      {
+        id: usersTable.id,
+        name: usersTable.name,
+        email: usersTable.email,
+        createdAt: usersTable.createdAt,
+        lastSeenAt: usersTable.lastSeenAt,
+        organizationRole: roles.role,
+      },
+      sort,
+      usersTable.id,
+      order,
+    );
+
     const membersQuery = db
       .select({
         user: usersTable,
@@ -420,7 +412,7 @@ const organizationsRoutes = app
       .from(usersQuery)
       .innerJoin(roles, eq(usersTable.id, roles.userId))
       .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
-      .orderBy(sort === 'organizationRole' ? orderFunc(roles.role) : orderFunc(orderColumn));
+      .orderBy(orderColumn);
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 

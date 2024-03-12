@@ -1,4 +1,4 @@
-import { type AnyColumn, type SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 
 import type { User } from 'lucia';
 import { coalesce, db } from '../../db/db';
@@ -21,6 +21,7 @@ import {
   updateUserConfig,
   userSuggestionsConfig,
 } from './routes';
+import { getOrderColumn } from '../../lib/order-column';
 
 const app = new CustomHono();
 
@@ -183,12 +184,10 @@ const usersRoutes = app
     });
   })
   /*
-   * Get user config
+   * Get users
    */
   .add(getUsersConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
-
-    const orderFunc = order === 'asc' ? asc : desc;
 
     const memberships = db
       .select({
@@ -206,27 +205,19 @@ const usersRoutes = app
       .groupBy(memberships.userId)
       .as('membership_counts');
 
-    let orderColumn: AnyColumn | SQL.Aliased;
-    switch (sort) {
-      case 'name':
-        orderColumn = usersTable.name;
-        break;
-      case 'email':
-        orderColumn = usersTable.email;
-        break;
-      case 'createdAt':
-        orderColumn = usersTable.createdAt;
-        break;
-      case 'membershipCount':
-        orderColumn = membershipCounts.count;
-        break;
-      case 'role':
-        orderColumn = usersTable.role;
-        break;
-      default:
-        orderColumn = usersTable.id;
-        break;
-    }
+    const orderColumn = getOrderColumn(
+      {
+        id: usersTable.id,
+        name: usersTable.name,
+        email: usersTable.email,
+        createdAt: usersTable.createdAt,
+        membershipCount: membershipCounts.count,
+        role: usersTable.role,
+      },
+      sort,
+      usersTable.id,
+      order,
+    );
 
     const filters = [];
     if (q) {
@@ -245,7 +236,7 @@ const usersRoutes = app
       })
       .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
-      .orderBy(orderFunc(orderColumn))
+      .orderBy(orderColumn)
       .leftJoin(membershipCounts, eq(membershipCounts.userId, usersTable.id));
 
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
