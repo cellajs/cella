@@ -5,6 +5,6 @@ export const getPublicCounts = async () => {
   const response = await client.public.counts.$get();
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };

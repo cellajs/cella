@@ -8,7 +8,7 @@ export const createOrganization = async (name: string) => {
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -22,7 +22,7 @@ export const updateOrganization = async (organizationIdentifier: string, params:
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -60,7 +60,7 @@ export const getOrganizations = async (
   );
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -71,7 +71,7 @@ export const getOrganizationBySlugOrId = async (organizationIdentifier: string) 
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -83,7 +83,7 @@ export const updateUserInOrganization = async (organizationIdentifier: string, u
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -94,7 +94,7 @@ export const deleteOrganizations = async (organizationIds: string[]) => {
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return;
 };
 
@@ -137,7 +137,7 @@ export const getMembersByOrganizationIdentifier = async (
   );
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -149,7 +149,7 @@ export const removeMembersFromOrganization = async (organizationIdentifier: stri
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 

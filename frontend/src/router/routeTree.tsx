@@ -31,6 +31,7 @@ import SystemPanel from '~/modules/system/system-panel';
 import { UserProfile, userQueryOptions } from '~/modules/users/user-profile';
 import UserSettings from '~/modules/users/user-settings';
 import UsersTable from '~/modules/users/users-table';
+import { ErrorType } from 'backend/lib/errors';
 
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
@@ -221,7 +222,7 @@ export const UserProfileRoute = createRoute({
   loader: async ({ context: { queryClient }, params: { userIdentifier } }) => {
     queryClient.ensureQueryData(userQueryOptions(userIdentifier));
   },
-  errorComponent: ({ error }) => <ErrorNotice error={error as Error} />,
+  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
     <Suspense>
       <UserProfile />
@@ -248,7 +249,7 @@ export const OrganizationRoute = createRoute({
   loader: async ({ context: { queryClient }, params: { organizationIdentifier } }) => {
     queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
   },
-  errorComponent: ({ error }) => <ErrorNotice error={error as Error} />,
+  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
     <Suspense>
       <Organization />

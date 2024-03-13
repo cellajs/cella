@@ -11,6 +11,7 @@ export type Severity = 'trace' | 'debug' | 'info' | 'log' | 'warn' | 'error';
 
 export type ErrorType = z.infer<typeof errorSchema> & {
   eventData?: EventData;
+  name?: Error['name'];
 };
 
 export type EventData = {

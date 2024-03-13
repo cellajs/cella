@@ -21,7 +21,7 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
   const response = await client['upload-token'].$get({ query: preparedQuery });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -32,7 +32,7 @@ export const checkSlug = async (slug: string) => {
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -43,6 +43,6 @@ export const invite = async (emails: string[], organizationIdentifier?: string) 
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return;
 };
