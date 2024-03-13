@@ -1,4 +1,4 @@
-import { Body, Button, Container, Head, Html, Img, Link, Preview, Section, Tailwind, Text } from '@react-email/components';
+import { Body, Button, Container, Head, Html, Img, Link, Preview, Section, Tailwind, Text, Hr } from '@react-email/components';
 import * as React from 'react';
 
 import { config } from 'config';
@@ -39,6 +39,18 @@ export const ResetPasswordEmail = ({ username = i18n.t('common:unknown_name'), r
                   {i18n.t('backend:email.reset_password_text_2')} <Link href={resetPasswordUrl}>{resetPasswordUrl}</Link>
                 </Text>
                 <Text>{i18n.t('backend:email.reset_password_text_3')}</Text>
+              </Section>
+              <Hr />
+              <Section className="text-[#6a737d]">
+                <Text className="text-[12px] leading-[18px]">
+                  {config.name}
+                  <br />
+                  {config.company.streetAddress}
+                  <br />
+                  {config.company.city}
+                  <br />
+                  {config.company.country}, {config.company.postcode}
+                </Text>
               </Section>
             </Container>
           </Body>
