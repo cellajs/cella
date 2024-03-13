@@ -7,6 +7,8 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
+
 // https://vitejs.dev/config/
 export default defineConfig(() => {
   const frontendUrl = new URL(config.frontendUrl);
@@ -16,8 +18,17 @@ export default defineConfig(() => {
       host: '0.0.0.0',
       port: Number(frontendUrl.port),
     },
+    build: {
+      sourcemap: true,
+    },
     plugins: [
       react(),
+      sentryVitePlugin({
+        disable: process.env.NODE_ENV === 'development',
+        org: 'cella',
+        project: 'cella',
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+      }),
       splitVendorChunkPlugin(),
       viteStaticCopy({
         targets: [

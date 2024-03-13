@@ -1,13 +1,12 @@
-import { sendError, setCustomData, setNamespace } from '@appsignal/nodejs';
 import type { Context } from 'hono';
 import type { z } from 'zod';
-import { appSignalLogger, logEvent } from '../middlewares/logger/log-event';
+import { logtail, logEvent } from '../middlewares/logger/log-event';
 import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
 
 export type HttpStatus = 400 | 401 | 403 | 404 | 409 | 429 | 500;
 
-export type Severity = 'trace' | 'debug' | 'info' | 'log' | 'warn' | 'error';
+export type Severity = 'debug' | 'info' | 'log' | 'warn' | 'error';
 
 export type ErrorType = z.infer<typeof errorSchema> & {
   eventData?: EventData;
@@ -46,16 +45,10 @@ export const createError = (
     org: organization?.id,
   };
 
-  // Send  error to AppSignal
   if (err || ['warn', 'error'].includes(severity)) {
-    sendError(err || (error.message as unknown as Error), () => {
-      setCustomData(error);
-      setNamespace('backend');
-    });
-
     const data = { ...error, eventData };
 
-    appSignalLogger[severity](message, data as unknown as EventData);
+    logtail[severity](message, undefined, data as unknown as EventData);
     console.error(err);
   }
   // Log significant events with additional data

@@ -34,6 +34,8 @@ export const config = {
     donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
   },
 
+  sentryDsn: 'https://0f6c6e4d1e825242d9d5b0b73faa97fa@o4506897995399168.ingest.us.sentry.io/4506898171559936',
+
   // Customer support with Gleap
   gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
 
@@ -44,9 +46,6 @@ export const config = {
   s3UploadRegion: 'eu-west-1',
   privateCDNUrl: 'https://cdn-priv.cellajs.com',
   publicCDNUrl: 'https://cdn.cellajs.com',
-
-  // Monitoring with AppSignal
-  appsignalFrontendKey: 'e625b6ea-b7c7-4417-b91f-50295e69a5bc',
 
   // Theme settings
   theme: {

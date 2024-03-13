@@ -26,7 +26,7 @@
 #       Content-Security-Policy = '''
 #           default-src 'self';
 #           script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com;
-#           connect-src 'self' blob: *.cellajs.com *.appsignal.com;
+#           connect-src 'self' blob: *.cellajs.com;
 #           img-src 'self' blob: https: data:;
 #           media-src 'self' blob: data: https://i.ytimg.com;
 #           frame-src 'self' *.youtube.com *.vimeo.com;

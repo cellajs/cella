@@ -11,7 +11,8 @@ import { logEvent } from '../logger/log-event';
 const tenant =
   (accessibleFor?: MembershipModel['role'][]): MiddlewareHandler<Env, ':organizationIdentifier?'> =>
   async (ctx, next) => {
-    const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.raw.clone().json() : undefined;
+    // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
+    const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.raw.clone().json<any>() : undefined;
     const organizationIdentifier = (ctx.req.param('organizationIdentifier') || body?.organizationIdentifier)?.toLowerCase();
     const user = ctx.get('user');
 

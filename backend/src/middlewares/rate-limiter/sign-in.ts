@@ -30,7 +30,8 @@ const limiterConsecutiveFailsByUsernameAndIP = new RateLimiterPostgres({
 
 export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next) => {
   const ipAddr = ctx.req.header('x-forwarded-for')?.split(',')[0] || '';
-  const body = await ctx.req.raw.clone().json();
+  // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
+  const body = await ctx.req.raw.clone().json<any>();
 
   if (!body.email || !ipAddr) {
     return next();

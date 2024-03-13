@@ -1,4 +1,4 @@
-import { Body, Button, Container, Head, Html, Img, Preview, Section, Tailwind, Text } from '@react-email/components';
+import { Body, Button, Container, Head, Hr, Html, Img, Preview, Section, Tailwind, Text } from '@react-email/components';
 import * as React from 'react';
 
 import { config } from 'config';
@@ -24,7 +24,7 @@ export const VerificationEmail = ({ verificationLink = baseUrl }: Props) => {
               </Section>
               <Section>
                 <Text>{i18n.t('backend:email.verification_text_1')}</Text>
-                <Section className="text-center">
+                <Section className="text-center mt-[32px]">
                   <Button
                     className="rounded bg-[#000000] px-5 py-3 text-center text-[12px] font-semibold text-white no-underline"
                     href={verificationLink}
@@ -32,6 +32,18 @@ export const VerificationEmail = ({ verificationLink = baseUrl }: Props) => {
                     {i18n.t('common:verify_my_email')}
                   </Button>
                 </Section>
+              </Section>
+              <Hr className='mt-[24px]' />
+              <Section className="text-[#6a737d]">
+                <Text className="text-[12px] leading-[18px]">
+                  {config.name}
+                  <br />
+                  {config.company.streetAddress}
+                  <br />
+                  {config.company.city}
+                  <br />
+                  {config.company.country}, {config.company.postcode}
+                </Text>
               </Section>
             </Container>
           </Body>

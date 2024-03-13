@@ -1,7 +1,5 @@
-import { ErrorBoundary } from '@appsignal/react';
-
-import { appSignal } from '~/lib/appsignal';
 import { AppContent } from '~/modules/common/app-content';
+import { ErrorBoundary } from 'react-error-boundary';
 
 import HolyLoader from 'holy-loader';
 import AppNav from './app-nav';
@@ -11,7 +9,7 @@ import { ErrorType } from 'backend/lib/errors';
 
 const App = () => {
   return (
-    <ErrorBoundary instance={appSignal} fallback={(error: ErrorType) => <ErrorNotice error={error} />}>
+    <ErrorBoundary fallbackRender={({ error }) => <ErrorNotice error={error} />}>
       <AppNav />
       <NavSheet />
       <AppContent />

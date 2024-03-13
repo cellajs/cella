@@ -1,4 +1,4 @@
-import { Body, Button, Column, Container, Head, Heading, Html, Img, Preview, Row, Section, Tailwind, Text } from '@react-email/components';
+import { Body, Button, Column, Container, Head, Heading, Hr, Html, Img, Preview, Row, Section, Tailwind, Text } from '@react-email/components';
 import * as React from 'react';
 
 import { config } from 'config';
@@ -85,6 +85,18 @@ export const InviteEmail = ({
                 <Button className="rounded bg-[#000000] px-5 py-3 text-center text-[12px] font-semibold text-white no-underline" href={inviteUrl}>
                   {i18n.t('common:accept')}
                 </Button>
+              </Section>
+              <Hr />
+              <Section className="text-[#6a737d]">
+                <Text className="text-[12px] leading-[18px]">
+                  {config.name}
+                  <br />
+                  {config.company.streetAddress}
+                  <br />
+                  {config.company.city}
+                  <br />
+                  {config.company.country}, {config.company.postcode}
+                </Text>
               </Section>
             </Container>
           </Body>
