@@ -15,9 +15,6 @@ export default {
   newsletterWebhookUrl: 'https://cella.app.n8n.cloud/webhook-test/subscription?',
   contactWebhookUrl: 'https://cella.app.n8n.cloud/webhook-test/contact?',
 
-  // AppSignal
-  appsignalFrontendKey: 'a253516a-39a9-47e1-a3b7-fa011785f675',
-
   // Payment with Paddle
   paddleToken: 'test_85052d6574ab68d36b341e0afc8',
   paddlePriceIds: {

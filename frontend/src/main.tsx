@@ -18,7 +18,7 @@ if (!root) {
 }
 
 Sentry.init({
-  dsn: 'https://0f6c6e4d1e825242d9d5b0b73faa97fa@o4506897995399168.ingest.us.sentry.io/4506898171559936',
+  dsn: config.sentryDsn,
 
   enabled: config.mode === 'production',
   environment: config.mode,

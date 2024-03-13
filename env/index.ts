@@ -8,10 +8,10 @@ export const env = createEnv({
 
     PADDLE_API_KEY: z.string().optional(),
     PADDLE_WEBHOOK_KEY: z.string().optional(),
+    LOGTAIL_TOKEN: z.string().optional(),
 
     SEND_ALL_TO_EMAIL: z.string().optional(),
     SENDGRID_API_KEY: z.string().optional(),
-    APPSIGNAL_BACKEND_KEY: z.string().optional(),
 
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
