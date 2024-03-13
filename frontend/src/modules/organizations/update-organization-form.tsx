@@ -75,7 +75,6 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
-    console.log('values', values);
     mutate(values, {
       onSuccess: (data) => {
         form.reset(undefined, {

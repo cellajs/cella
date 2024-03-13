@@ -30,7 +30,7 @@ function log(fn: PrintFunc, prefix: string, logId: string, method: string, path:
   fn(out);
 }
 
-export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
+export const logger = (fn: PrintFunc = console.info): MiddlewareHandler => {
   return async function logger(c, next) {
     const { method } = c.req;
 

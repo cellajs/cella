@@ -5,7 +5,6 @@ import HolyLoader from 'holy-loader';
 import AppNav from './app-nav';
 import ErrorNotice from './error-notice';
 import { NavSheet } from './nav-sheet';
-import { ErrorType } from 'backend/lib/errors';
 
 const App = () => {
   return (

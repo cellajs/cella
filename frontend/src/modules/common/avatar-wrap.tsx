@@ -15,11 +15,11 @@ const AvatarWrap = memo(({ type, id, name, url, className, ...props }: AvatarWra
   const avatarBackground = useMemo(() => getColorClass(id), [id]);
 
   return (
-    <Avatar {...props} className={`${type === 'user' ? 'rounded-full' : 'rounded-md'} ${className} ${avatarBackground}`}>
+    <Avatar {...props} className={`${type === 'user' ? 'rounded-full' : 'rounded-md'} ${className}`}>
       {url ? (
         <AvatarImage src={`${url}?width=100&format=avif`} />
       ) : (
-        <AvatarFallback>
+        <AvatarFallback className={avatarBackground}>
           <span className="sr-only">{name}</span>
           <div className={`text-black/50 flex h-full items-center justify-center ${avatarBackground}`}>{name?.charAt(0).toUpperCase() || '-'}</div>
         </AvatarFallback>
