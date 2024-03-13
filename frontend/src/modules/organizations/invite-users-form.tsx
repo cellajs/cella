@@ -75,7 +75,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
           name="emails"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('common:emails')}</FormLabel>
+              <FormLabel>{t('common:email.plural')}</FormLabel>
               <FormControl>
                 <MultipleSelector
                   value={field.value}

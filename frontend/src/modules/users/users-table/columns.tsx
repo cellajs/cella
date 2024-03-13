@@ -119,7 +119,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row.type === 'MASTER' && t(row.role),
+            renderCell: ({ row }) => row.type === 'MASTER' && t(row.role.toLowerCase()),
             width: 100,
           },
           {
@@ -133,7 +133,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
           },
           {
             key: 'membershipCount',
-            name: t('common:memberships'),
+            name: t('common:membership.plural'),
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,

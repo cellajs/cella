@@ -1,12 +1,12 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { Outlet, createRootRouteWithContext, createRoute, createRouteMask, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
-import { acceptInvite, checkInvite } from '~/api/authentication';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
+import type { ErrorType } from 'backend/lib/errors';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersQuerySchema } from 'backend/modules/users/schema';
@@ -31,7 +31,6 @@ import SystemPanel from '~/modules/system/system-panel';
 import { UserProfile, userQueryOptions } from '~/modules/users/user-profile';
 import UserSettings from '~/modules/users/user-settings';
 import UsersTable from '~/modules/users/users-table';
-import { ErrorType } from 'backend/lib/errors';
 
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
@@ -81,20 +80,6 @@ export const SignInRoute = createRoute({
 export const AcceptRoute = createRoute({
   path: '/auth/accept-invite/$token',
   getParentRoute: () => AuthRoute,
-  beforeLoad: async ({ params: { token } }) => {
-    const isInviteExists = await checkInvite(token);
-
-    if (isInviteExists) {
-      const organizationIdentifier = await acceptInvite({
-        token,
-      });
-
-      throw redirect({
-        to: '/$organizationIdentifier/members',
-        params: { organizationIdentifier },
-      });
-    }
-  },
   component: () => <AcceptInvite />,
   validateSearch: z.object({ redirect: z.string().optional() }),
 });

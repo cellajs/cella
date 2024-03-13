@@ -22,12 +22,14 @@ docs(app);
 
 // Not found handler
 app.notFound((ctx) => {
-  return errorResponse(ctx, 404, 'route_not_found', 'warn', true);
+  // t('common:error.route_not_found.text')
+  return errorResponse(ctx, 404, 'route_not_found', 'warn', undefined, { path: ctx.req.path });
 });
 
 // Error handler
 app.onError((err, ctx) => {
-  return errorResponse(ctx, 500, 'server_error', 'error', true, {}, err);
+    // t('common:error.server_error.text')
+  return errorResponse(ctx, 500, 'server_error', 'error', undefined, {}, err);
 });
 
 // Add routes for each module

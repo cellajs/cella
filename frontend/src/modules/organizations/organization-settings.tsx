@@ -56,7 +56,7 @@ const OrganizationSettings = () => {
         <hr className="my-6" />
 
         <p className="font-light mb-4 text-sm">
-          <Trans i18nKey="common:text.delete_organization_notice" values={{ name: organization.name }} />
+          <Trans i18nKey="common:delete_organization_notice.text" values={{ name: organization.name }} />
         </p>
 
         <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>

@@ -85,7 +85,7 @@ const oauthRoutes = app
 
     // * verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', true, { strategy: 'github' });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'github' });
     }
 
     const redirectUrl = getRedirectUrl(ctx);
@@ -169,7 +169,7 @@ const oauthRoutes = app
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-          return errorResponse(ctx, 400, 'invalid_token', 'warn', true, { strategy: 'github', type: 'invitation' });
+          return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, { strategy: 'github', type: 'invitation' });
         }
 
         userEmail = token.email;
@@ -235,7 +235,7 @@ const oauthRoutes = app
       });
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', true, { strategy: 'github' });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'github' });
       }
 
       logEvent('Error signing in with GitHub', { strategy: 'github', errorMessage: (error as Error).message }, 'error');
@@ -251,7 +251,7 @@ const oauthRoutes = app
 
     // * verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', true, { strategy: 'google' });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'google' });
     }
 
     const redirectUrl = getRedirectUrl(ctx);
@@ -313,7 +313,7 @@ const oauthRoutes = app
       });
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', true, { strategy: 'google' });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'google' });
       }
 
       const errorMessage = (error as Error).message;
@@ -331,7 +331,7 @@ const oauthRoutes = app
 
     // * verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', true, { strategy: 'microsoft' });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'microsoft' });
     }
 
     const redirectUrl = getRedirectUrl(ctx);
@@ -361,7 +361,7 @@ const oauthRoutes = app
       }
 
       if (!user.email) {
-        return errorResponse(ctx, 400, 'no_email_found', 'warn', true);
+        return errorResponse(ctx, 400, 'no_email_found', 'warn', undefined);
       }
 
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
@@ -394,7 +394,7 @@ const oauthRoutes = app
       });
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', true, { strategy: 'microsoft' });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'microsoft' });
       }
 
       const errorMessage = (error as Error).message;

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ApiError } from '~/api';
 
 const defaultMessages = (t: ReturnType<typeof useTranslation>['t']) => ({
+  '400': t('common:error.bad_request_action'),
   '401': t('common:error.unauthorized_action'),
   '403': t('common:error.forbidden_action'),
   '404': t('common:error.resource_not_found'),

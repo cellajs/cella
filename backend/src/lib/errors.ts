@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import type { z } from 'zod';
-import { logtail, logEvent } from '../middlewares/logger/log-event';
+import { logEvent, logtail } from '../middlewares/logger/log-event';
 import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
 
@@ -23,7 +23,7 @@ export const createError = (
   status: HttpStatus,
   type: string,
   severity: Severity = 'info',
-  isEvent = false,
+  resourceType?: string,
   eventData?: EventData,
   err?: Error,
 ) => {
@@ -41,6 +41,7 @@ export const createError = (
     logId: ctx.get('logId'),
     path: ctx.req.path,
     method: ctx.req.method,
+    resourceType,
     usr: user?.id,
     org: organization?.id,
   };
@@ -52,7 +53,7 @@ export const createError = (
     console.error(err);
   }
   // Log significant events with additional data
-  else if (isEvent) logEvent(message, eventData, severity);
+  else if (eventData) logEvent(message, eventData, severity);
 
   return error;
 };
@@ -63,11 +64,11 @@ export const errorResponse = (
   status: HttpStatus,
   type: string,
   severity: Severity = 'info',
-  isEvent = false,
+  resourceType?: string,
   eventData?: EventData,
   err?: Error,
 ) => {
-  const error: ErrorType = createError(ctx, status, type, severity, isEvent, eventData, err);
+  const error: ErrorType = createError(ctx, status, type, severity, resourceType, eventData, err);
 
   return ctx.json({ success: false, error }, status);
 };

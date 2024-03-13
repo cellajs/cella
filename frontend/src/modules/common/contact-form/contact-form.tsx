@@ -97,7 +97,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     const isSuccess = await submitContactForm(data);
 
     if (isSuccess) {
-      toast.success(t('common:text.message_sent'));
+      toast.success(t('common:message_sent.text'));
     } else {
       toast.error(t('common:error.reported_try_later'));
     }

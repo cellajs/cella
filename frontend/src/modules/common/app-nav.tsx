@@ -53,7 +53,7 @@ const AppNav = () => {
       dialog(<Input placeholder={t('common:placeholder.search')} />, {
         className: 'sm:max-w-2xl sm:-mt-[calc(70vh-140px)]',
         title: t('common:search'),
-        text: t('common:text.global_search'),
+        text: t('common:global_search.text'),
         drawerOnMobile: false,
       });
       return;

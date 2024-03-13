@@ -29,7 +29,11 @@ The recommended settings to put in your `.vscode/settings.json` or to edit in th
 ### Tips for consistency
 * Keep texts short
 * One-word translations have a one-word key
-* Two-word translations have a two-word key
-* Sentences (>2 words) have a prefix such as `text.`, `question.`, `confirm.` or `success.`
+* Two-word or three translations have a two-word key
+* Above three words is considered a sentence
+* Action related sentences have a prefix such as `question.`, `confirm.` or `success.`
+* Other (explanation related) sentences have a suffix `.text`
+* By default the first letter is uppercase. For explicitly lowercase, add a suffix `.lc`.
+* Plurals use suffix `.plural`
 * Sort JSON translation keys by alphabetical order
 * Modules or pages with a big amount of unique texts should get their own translation namespace and json: `about:` keys are provided by `about.json`.

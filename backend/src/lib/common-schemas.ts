@@ -9,6 +9,7 @@ export const errorSchema = z.object({
   type: z.string(),
   status: z.number(),
   severity: z.string(),
+  resourceType: z.string().optional(),
   logId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),

@@ -42,7 +42,7 @@ export const useColumns = () => {
       visible: true,
       renderHeaderCell: HeaderCell,
       name: t('common:role'),
-      renderCell: ({ row }) => t(row.organizationRole),
+      renderCell: ({ row }) => t(row.organizationRole.toLowerCase()),
       renderEditCell: renderSelect('organizationRole', [
         { label: t('common:admin'), value: 'ADMIN' },
         { label: t('common:member'), value: 'MEMBER' },

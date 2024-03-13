@@ -53,7 +53,7 @@ const VerifyEmail = () => {
     <AuthPage>
       <div className="text-center">
         <h1 className="text-2xl">{t('common:almost_there')}</h1>
-        <p className="font-light mt-4">{t('common:text.verify_email_notice')}</p>
+        <p className="font-light mt-4">{t('common:verify_email_notice.text')}</p>
       </div>
     </AuthPage>
   );

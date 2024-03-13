@@ -55,7 +55,7 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
 
   if (retrySecs > 0) {
     ctx.header('Retry-After', String(retrySecs));
-    return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
+    return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { usernameIPkey });
   }
 
   await limiterSlowBruteByIP.consume(ipAddr);
@@ -66,7 +66,7 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
     try {
       await limiterConsecutiveFailsByUsernameAndIP.consume(usernameIPkey);
     } catch (error) {
-      return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
+      return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { usernameIPkey });
     }
   } else {
     await limiterConsecutiveFailsByUsernameAndIP.delete(usernameIPkey);

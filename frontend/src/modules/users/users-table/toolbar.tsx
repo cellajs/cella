@@ -60,7 +60,7 @@ function Toolbar({
       drawerOnMobile: false,
       className: 'max-w-xl',
       title: t('common:invite'),
-      text: t('common:text.invite_users'),
+      text: t('common:invite_users.text'),
     });
   };
 
@@ -110,8 +110,7 @@ function Toolbar({
         {selectedUsers.length === 0 && (
           <TableCount
             count={total}
-            singular={t('common:singular_user')}
-            plural={t('common:plural_users')}
+            type='user'
             isFiltered={isFiltered}
             onResetFilters={onResetFilters}
           />

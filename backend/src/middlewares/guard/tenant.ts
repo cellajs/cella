@@ -26,7 +26,8 @@ const tenant =
       .where(or(eq(organizationsTable.id, organizationIdentifier), eq(organizationsTable.slug, organizationIdentifier)));
 
     if (!organization) {
-      return errorResponse(ctx, 404, 'organization_not_found', 'warn', true, { organization: organizationIdentifier });
+        // t('common:error.resource_not_found.text', { resource: 'organization' })
+  return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: organizationIdentifier });
     }
 
     const [membership] = await db
@@ -35,7 +36,7 @@ const tenant =
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
 
     if ((!membership || (accessibleFor && !accessibleFor.includes(membership.role))) && user.role !== 'ADMIN') {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', true, { user: user.id, organization: organization.id });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id, organization: organization.id });
     }
 
     ctx.set('organization', organization);

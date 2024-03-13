@@ -145,7 +145,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           control={form.control}
           name="slug"
           label={t('common:user_handle')}
-          description={t('common:text.user_handle')}
+          description={t('common:user_handle.text')}
           subComponent={
             user.slug !== slug && (
               <div className="absolute inset-y-1 right-1 flex justify-end">

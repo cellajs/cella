@@ -33,7 +33,7 @@ export const VerificationEmail = ({ verificationLink = baseUrl }: Props) => {
                   </Button>
                 </Section>
               </Section>
-              <Hr className='mt-[24px]' />
+              <Hr className="mt-[24px]" />
               <Section className="text-[#6a737d]">
                 <Text className="text-[12px] leading-[18px]">
                   {config.name}

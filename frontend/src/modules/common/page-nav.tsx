@@ -4,6 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 
+export type PageNavTab = {
+  id: string;
+  label: string;
+  path: string;
+}
+
 interface Props {
   title?: string;
   avatar?: {
@@ -11,13 +17,10 @@ interface Props {
     thumbnailUrl?: string | null;
     name: string;
   };
-  tabs: {
-    id: string;
-    path: string;
-  }[];
+  tabs: PageNavTab[];
 }
 
-const PageNav = ({ title, avatar, tabs }: Props) => {
+export const PageNav = ({ title, avatar, tabs }: Props) => {
   const { t } = useTranslation();
   const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
@@ -62,9 +65,9 @@ const PageNav = ({ title, avatar, tabs }: Props) => {
           </div>
         </div>
 
-        {tabs.map(({ id, path }) => (
+        {tabs.map(({ id, path, label }) => (
           <Link
-            key={path}
+            key={id}
             resetScroll={false}
             className="p-2 border-b-4 border-transparent"
             to={path}
@@ -72,12 +75,10 @@ const PageNav = ({ title, avatar, tabs }: Props) => {
             onClick={updateScrollPosition}
             activeProps={{ className: '!border-primary' }}
           >
-            {t(id)}
+            {t(label)}
           </Link>
         ))}
       </div>
     </>
   );
 };
-
-export default PageNav;

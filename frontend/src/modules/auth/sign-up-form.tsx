@@ -112,7 +112,7 @@ export const LegalNotice = () => {
 
   return (
     <p className="font-light text-sm space-x-1">
-      <span>{t('common:text.legal_notice')}</span>
+      <span>{t('common:legal_notice.text')}</span>
       <Button variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
         {t('common:terms').toLocaleLowerCase()}
       </Button>

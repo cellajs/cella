@@ -22,7 +22,7 @@ export function AppAlert() {
           <X size={16} />
         </Button>
         <strong className="mr-2">{t('common:prerelease')}</strong>
-        {t('common:text.experiment_notice')}
+        {t('common:experiment_notice.text')}
       </AlertDescription>
     </Alert>
   );

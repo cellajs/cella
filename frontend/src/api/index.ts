@@ -7,6 +7,7 @@ import { hc } from 'hono/client';
 export class ApiError extends Error {
   status: string | number;
   type?: string;
+  resourceType?: string;
   severity?: string;
   logId?: string;
   path?: string;
@@ -19,6 +20,7 @@ export class ApiError extends Error {
     super(error.message);
     this.status = error.status;
     this.type = error.type;
+    this.resourceType = error.resourceType;
     this.severity = error.severity;
     this.logId = error.logId;
     this.path = error.path;

@@ -74,7 +74,7 @@ function Toolbar({
     sheet(<NewsletterForm sheet />, {
       className: 'sm:max-w-[64rem] z-50',
       title: t('common:newsletter'),
-      text: t('common:text.newsletter'),
+      text: t('common:newsletter.text'),
       id: 'newsletter-form',
     });
   };
@@ -118,8 +118,7 @@ function Toolbar({
         {selectedOrganizations.length === 0 && (
           <TableCount
             count={total}
-            singular={t('common:singular_organization')}
-            plural={t('common:plural_organization')}
+            type='organization'
             isFiltered={isFiltered}
             onResetFilters={onResetFilters}
           />

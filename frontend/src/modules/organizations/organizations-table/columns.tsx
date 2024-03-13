@@ -56,7 +56,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (row.userRole ? t(row.userRole) : '-'),
+            renderCell: ({ row }) => (row.userRole ? t(row.userRole.toLowerCase()) : '-'),
             width: 120,
           },
           {
@@ -79,7 +79,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
           },
           {
             key: 'memberCount',
-            name: t('common:members'),
+            name: t('common:member.plural'),
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
@@ -93,7 +93,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
           },
           {
             key: 'adminCount',
-            name: t('common:admins'),
+            name: t('common:admin.plural'),
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,

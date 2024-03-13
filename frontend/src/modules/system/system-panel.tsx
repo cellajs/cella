@@ -3,13 +3,13 @@ import { Outlet } from '@tanstack/react-router';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import PageNav from '~/modules/common/page-nav';
+import { PageNav, PageNavTab} from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Button } from '../ui/button';
 
-const systemTabs = [
-  { id: 'users', path: '/system' },
-  { id: 'organizations', path: '/system/organizations' },
+const systemTabs: PageNavTab[] = [
+  { id: 'users', label: 'user.plural', path: '/system' },
+  { id: 'organizations', label: 'organization.plural', path: '/system/organizations' },
 ];
 
 const SystemPanel = () => {
@@ -39,7 +39,7 @@ const SystemPanel = () => {
 
   return (
     <>
-      <SimpleHeader heading={t('common:system_panel')} text={t('common:text.system_panel')} />
+      <SimpleHeader heading={t('common:system_panel')} text={t('common:system_panel.text')} />
       <Button variant="gradient" className="w-40 mx-4" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
         Test checkout
       </Button>

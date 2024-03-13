@@ -1,5 +1,5 @@
-import { AppContent } from '~/modules/common/app-content';
 import { ErrorBoundary } from 'react-error-boundary';
+import { AppContent } from '~/modules/common/app-content';
 
 import HolyLoader from 'holy-loader';
 import AppNav from './app-nav';

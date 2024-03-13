@@ -8,7 +8,7 @@ import { invite } from '~/api/general';
 import { getOrganizationBySlugOrId, removeMembersFromOrganization } from '~/api/organizations';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { PageHeader } from '~/modules/common/page-header';
-import PageNav from '~/modules/common/page-nav';
+import { PageNav, PageNavTab } from '~/modules/common/page-nav';
 import { Button } from '~/modules/ui/button';
 import { OrganizationRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
@@ -18,9 +18,9 @@ interface OrganizationContextValue {
   organization: Organization;
 }
 
-const organizationTabs = [
-  { id: 'members', path: '/$organizationIdentifier/members' },
-  { id: 'settings', path: '/$organizationIdentifier/settings' },
+const organizationTabs: PageNavTab[] = [
+  { id: 'members', label: 'member.plural', path: '/$organizationIdentifier/members' },
+  { id: 'settings', label: 'settings', path: '/$organizationIdentifier/settings' },
 ];
 
 export const OrganizationContext = createContext({} as OrganizationContextValue);

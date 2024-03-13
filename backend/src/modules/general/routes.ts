@@ -10,7 +10,8 @@ export const getUploadTokenRouteConfig = createRouteConfig({
   path: '/upload-token',
   guard: authGuard(),
   tags: ['general'],
-  summary: 'Get upload token for user or organization',
+  summary: 'Get upload token',
+  description: 'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using imado.',
   request: {
     query: z.object({
       public: z.string().optional().default('false'),
@@ -44,6 +45,7 @@ export const checkSlugRouteConfig = createRouteConfig({
   guard: authGuard(),
   tags: ['general'],
   summary: 'Check if a slug is already in use',
+  description: 'This endpoint is used to check if a slug is already in use. It is used for organizations and users.',
   request: {
     params: z.object({
       slug: z.string(),
@@ -55,6 +57,31 @@ export const checkSlugRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(z.boolean()),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const checkTokenRouteConfig = createRouteConfig({
+  method: 'get',
+  path: '/check-token/{token}',
+  guard: publicGuard,
+  tags: ['general'],
+  summary: 'Token validation check',
+  description: 'This endpoint is used to check if a token is still valid. It is used for reset password and invitation tokens.',
+  request: {
+    params: z.object({
+      token: z.string(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Email address of user',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(z.string().email()),
         },
       },
     },

@@ -21,7 +21,7 @@ const AvatarWrap = memo(({ type, id, name, url, className, ...props }: AvatarWra
       ) : (
         <AvatarFallback className={avatarBackground}>
           <span className="sr-only">{name}</span>
-          <div className={`text-black/50 flex h-full items-center justify-center ${avatarBackground}`}>{name?.charAt(0).toUpperCase() || '-'}</div>
+          <div className={"text-black/50 flex h-full items-center justify-center"}>{name?.charAt(0).toUpperCase() || '-'}</div>
         </AvatarFallback>
       )}
     </Avatar>

@@ -136,7 +136,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           control={form.control}
           name="slug"
           label={t('common:organization_handle')}
-          description={t('common:text.organization_handle')}
+          description={t('common:organization_handle.text')}
           subComponent={
             organization.slug !== slug && (
               <div className="absolute inset-y-1 right-1 flex justify-end">
@@ -154,13 +154,13 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           type="email"
           name="notificationEmail"
           label={t('common:notification_email')}
-          description={t('common:text.notification_email')}
+          description={t('common:notification_email.text')}
         />
         <InputFormField control={form.control} name="websiteUrl" label={t('common:website_url')} placeholder="https://" type="url" />
         <LanguageFormField
           control={form.control}
           name="languages"
-          label={t('common:languages')}
+          label={t('common:language.plural')}
           mode="multiple"
           placeholder={t('common:select')}
           emptyIndicator={t('common:empty_languages')}
@@ -169,7 +169,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           control={form.control}
           name="defaultLanguage"
           label={t('common:default_language')}
-          description={t('common:text.default_language')}
+          description={t('common:default_language.text')}
           placeholder={t('common:select_language')}
           disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
         />

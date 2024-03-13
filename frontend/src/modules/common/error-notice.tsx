@@ -1,5 +1,5 @@
 import { useRouterState } from '@tanstack/react-router';
-import { ErrorType } from 'backend/lib/errors';
+import type { ErrorType } from 'backend/lib/errors';
 import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
@@ -36,9 +36,21 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
       <div className="mt-auto mb-auto">
         <Card className="max-w-[32rem] m-4">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl mb-2">{error?.type ? error.message : t('common:error.error')}</CardTitle>
+            <CardTitle className="text-2xl mb-2">
+              {error?.resourceType
+                ? t(`error.resource_${error.type}`, { resource: error.resourceType })
+                : error?.type
+                  ? t(`error.${error.type}`)
+                  : error?.message || t('common:error.error')}
+            </CardTitle>
             <CardDescription>
-              <span>{error?.type ? t(`common:error.text.${error.type}`) : t('common:error.reported_try_or_contact')}</span>
+              <span>
+              {error?.resourceType
+                ? t(`error.resource_${error.type}.text`, { resource: error.resourceType })
+                : error?.type
+                  ? t(`error.${error.type}.text`)
+                  : error?.message || t('common:error.reported_try_or_contact')}
+              </span>
               <span className="ml-1">{error?.severity && error.severity === 'warn' && t('common:error.contact_mistake')}</span>
               <span className="ml-1">{error?.severity && error.severity === 'error' && t('common:error.try_again_later')}</span>
             </CardDescription>
@@ -62,6 +74,8 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
                   <div>{error.message || 'na'}</div>
                   <div className="font-medium pr-4">Type</div>
                   <div>{error.type || 'na'}</div>
+                  <div className="font-medium pr-4">Resource type</div>
+                  <div>{error.resourceType || 'na'}</div>
                   <div className="font-medium pr-4">HTTP status</div>
                   <div>{error.status || 'na'}</div>
                   <div className="font-medium pr-4">Severity</div>

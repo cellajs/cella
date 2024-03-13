@@ -103,14 +103,3 @@ export const acceptInvite = async ({
   if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
-
-// Check invite
-export const checkInvite = async (token: string) => {
-  const response = await client['check-invite'][':token'].$get({
-    param: { token },
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return json.data;
-};

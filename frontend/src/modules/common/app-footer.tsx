@@ -53,7 +53,7 @@ function AppFooter() {
                 drawerOnMobile: false,
                 className: 'sm:max-w-[64rem]',
                 title: t('common:contact_us'),
-                text: t('common:text.contact_us'),
+                text: t('common:contact_us.text'),
               });
             }}
           >

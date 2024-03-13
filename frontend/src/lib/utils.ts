@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import i18next from 'i18next';
 import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -65,7 +66,8 @@ export function generateNumber(id: string) {
   }
   return null;
 }
-
+  
+  // Get valid children from a React component
 export function getValidChildren(children: React.ReactNode) {
   return React.Children.toArray(children).filter((child) => React.isValidElement(child)) as React.ReactElement[];
 }
@@ -79,3 +81,8 @@ export function cleanUrl(url?: string | null) {
   newUrl.hash = '';
   return newUrl.toString();
 }
+
+// If key and value are equal, then translation does not exist
+export const translationExists = (key: string) => {
+  return i18next.t(key) !== key;
+};

@@ -7,6 +7,7 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
+import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
@@ -21,7 +22,6 @@ import {
   updateUserConfig,
   userSuggestionsConfig,
 } from './routes';
-import { getOrderColumn } from '../../lib/order-column';
 
 const app = new CustomHono();
 
@@ -128,11 +128,11 @@ const usersRoutes = app
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'user_not_found', 'warn', true, { user: userId });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: userId });
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'update_user_forbidden', 'warn', true, { user: userId });
+      return errorResponse(ctx, 403, 'update_forbidden', 'warn', 'user', { user: userId });
     }
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
@@ -141,7 +141,7 @@ const usersRoutes = app
       const slugExists = await checkSlugExists(slug);
 
       if (slugExists) {
-        return errorResponse(ctx, 400, 'slug_exists', 'warn', true, { slug });
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
       }
     }
 
@@ -293,11 +293,11 @@ const usersRoutes = app
         const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
 
         if (!targetUser) {
-          errors.push(createError(ctx, 404, 'user_not_found', 'warn', true, { user: id }));
+          errors.push(createError(ctx, 404, 'not_found', 'warn', 'user', { user: id }));
         }
 
         if (user.role !== 'ADMIN' && user.id !== id) {
-          errors.push(createError(ctx, 403, 'delete_user_forbidden', 'warn', true, { user: id }));
+          errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'user', { user: id }));
         }
 
         await db.delete(usersTable).where(eq(usersTable.id, id));
@@ -329,11 +329,11 @@ const usersRoutes = app
       .where(or(eq(usersTable.id, userIdentifier), eq(usersTable.slug, userIdentifier)));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'user_not_found', 'warn', true, { user: userIdentifier });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: userIdentifier });
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'get_user_forbidden', 'warn', true, { user: targetUser.id });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
     }
 
     const [{ memberships }] = await db

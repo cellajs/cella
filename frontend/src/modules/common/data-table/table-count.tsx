@@ -4,13 +4,12 @@ import { Button } from '../../ui/button';
 
 interface TableCountProps {
   count?: number;
-  singular: string;
-  plural: string;
+  type: string;
   isFiltered?: boolean;
   onResetFilters?: () => void;
 }
 
-const TableCount = ({ count, singular, plural, isFiltered, onResetFilters }: TableCountProps) => {
+const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps) => {
   const { t } = useTranslation();
 
   return (
@@ -24,7 +23,7 @@ const TableCount = ({ count, singular, plural, isFiltered, onResetFilters }: Tab
             </Button>
           )}
           <div className="w-max px-2">
-            {new Intl.NumberFormat('de-DE').format(count)} {count === 1 ? singular : plural}
+            {new Intl.NumberFormat('de-DE').format(count)} {count === 1 ? t(`common:${type}`) : t(`common:${type}.plural`)}
             {isFiltered && ' '}
             {isFiltered && t('common:found')}
           </div>

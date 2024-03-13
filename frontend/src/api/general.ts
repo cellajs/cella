@@ -25,6 +25,17 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
   return json.data;
 };
 
+// Invite users
+export const invite = async (emails: string[], organizationIdentifier?: string) => {
+  const response = await client.invite.$post({
+    json: { emails, organizationIdentifier },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return;
+};
+
 // Check if slug is available
 export const checkSlug = async (slug: string) => {
   const response = await client['check-slug'][':slug'].$get({
@@ -36,13 +47,13 @@ export const checkSlug = async (slug: string) => {
   return json.data;
 };
 
-// Invite users
-export const invite = async (emails: string[], organizationIdentifier?: string) => {
-  const response = await client.invite.$post({
-    json: { emails, organizationIdentifier },
+// Check token validation
+export const checkToken = async (token: string) => {
+  const response = await client['check-token'][':token'].$get({
+    param: { token },
   });
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
-  return;
+  return json.data;
 };

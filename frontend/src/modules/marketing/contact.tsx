@@ -11,7 +11,7 @@ const methods = [
 ];
 
 if (config.company.scheduleCallUrl)
-  methods.push({ icon: CalendarCheck, title: 'common:book', link: config.company.scheduleCallUrl, text: 'common:text.schedule_call' });
+  methods.push({ icon: CalendarCheck, title: 'common:book', link: config.company.scheduleCallUrl, text: 'common:schedule_call.text' });
 if (config.company.tel) methods.push({ icon: PhoneCall, title: 'common:call', link: `tel:${config.company.tel}`, text: config.company.tel });
 
 const Contact = () => {
@@ -19,8 +19,8 @@ const Contact = () => {
   return (
     <PublicPage title="common:contact_us">
       <div className="container pb-16 pt-20">
-        <h1 className="mb-4 text-3xl font-semibold text-center sm:text-left md:text-4xl">{t('common:text.leave_message')}</h1>
-        <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:text.contact_us')}</p>
+        <h1 className="mb-4 text-3xl font-semibold text-center sm:text-left md:text-4xl">{t('common:leave_message.text')}</h1>
+        <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:contact_us.text')}</p>
         <ContactFormMap />
       </div>
 

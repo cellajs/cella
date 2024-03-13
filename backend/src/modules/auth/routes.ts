@@ -117,7 +117,7 @@ export const resetPasswordRouteConfig = createRouteConfig({
   guard: publicGuard,
   middlewares: [authRateLimiter],
   tags: ['auth'],
-  summary: 'Reset a user password',
+  summary: 'Request a reset password email',
   security: [],
   request: {
     body: {
@@ -149,7 +149,7 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
   guard: publicGuard,
   middlewares: [authRateLimiter],
   tags: ['auth'],
-  summary: 'Callback for password reset',
+  summary: 'Submit a new password',
   security: [],
   request: {
     params: z.object({
@@ -182,7 +182,7 @@ export const checkEmailRouteConfig = createRouteConfig({
   guard: publicGuard,
   middlewares: [authRateLimiter],
   tags: ['auth'],
-  summary: 'Check if an email address exists for a user',
+  summary: 'Check if an email address exists',
   security: [],
   request: {
     body: {
@@ -410,7 +410,7 @@ export const acceptInviteRouteConfig = createRouteConfig({
   path: '/accept-invite/{token}',
   guard: publicGuard,
   middlewares: [authRateLimiter],
-  tags: ['general'],
+  tags: ['auth'],
   summary: 'Accept invitation',
   request: {
     params: z.object({
@@ -438,30 +438,6 @@ export const acceptInviteRouteConfig = createRouteConfig({
       headers: z.object({
         Location: z.string(),
       }),
-    },
-    ...errorResponses,
-  },
-});
-
-export const checkInviteRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/check-invite/{token}',
-  guard: publicGuard,
-  tags: ['general'],
-  summary: 'Check invite by invite token',
-  request: {
-    params: z.object({
-      token: z.string(),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'Emails of invited users',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(z.string().email()),
-        },
-      },
     },
     ...errorResponses,
   },

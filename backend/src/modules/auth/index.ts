@@ -9,7 +9,7 @@ import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
 import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
 import { setCookie } from './helpers/cookies';
-import { acceptInviteRouteConfig, checkInviteRouteConfig, githubSignInRouteConfig } from './routes';
+import { acceptInviteRouteConfig, githubSignInRouteConfig } from './routes';
 
 import { config } from 'config';
 import { emailSender } from '../../../../email';
@@ -75,7 +75,8 @@ const authRoutes = app
       });
     } catch (error) {
       if (error instanceof postgres.PostgresError && error.message.startsWith('duplicate key')) {
-        return errorResponse(ctx, 409, 'error.email_exists', 'warn', true, { email });
+        // t('common:error.email_exists.text')
+        return errorResponse(ctx, 409, 'email_exists', 'warn', undefined, { email });
       }
 
       logEvent('Error signing up', { errorMessage: (error as Error).message }, 'error');
@@ -105,7 +106,7 @@ const authRoutes = app
         });
       }
 
-      return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn', true, { user: token?.userId || 'na', type: 'verification' });
+      return errorResponse(ctx, 400, 'invalid_verification_token', 'warn', undefined, { user: token?.userId || 'na', type: 'verification' });
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
@@ -148,7 +149,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user) {
-      return errorResponse(ctx, 400, 'email_not_found', 'warn', true, { email });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     }
 
     // * creating email verification token
@@ -200,7 +201,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user || !user.emailVerified) {
-      return errorResponse(ctx, 400, 'invalid_email', 'warn', true, { email });
+      return errorResponse(ctx, 400, 'invalid_email', 'warn');
     }
 
     // * creating password reset token
@@ -246,7 +247,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     if (!user || user.email !== token.email) {
-      return errorResponse(ctx, 404, 'user_by_token_not_found', 'warn', true, { userId: token.userId });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
     }
 
     await auth.invalidateUserSessions(user.id);
@@ -269,7 +270,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user || !user.hashedPassword) {
-      return errorResponse(ctx, 404, 'user_by_email_not_found', 'warn');
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     }
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
@@ -316,30 +317,6 @@ const authRoutes = app
     return ctx.json({ success: true, data: undefined });
   })
   /*
-   * Check invite token
-   */
-  .add(checkInviteRouteConfig, async (ctx) => {
-    const token = ctx.req.valid('param').token;
-
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, token)));
-
-    if (tokenRecord?.email) {
-      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
-
-      if (user) {
-        return ctx.json({
-          success: true,
-          data: tokenRecord.email,
-        });
-      }
-    }
-
-    return errorResponse(ctx, 404, 'invite_not_found', 'warn');
-  })
-  /*
    * Accept invite token
    */
   .add(acceptInviteRouteConfig, async (ctx) => {
@@ -361,7 +338,7 @@ const authRoutes = app
       [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, token.organizationId));
 
       if (!organization) {
-        return errorResponse(ctx, 404, 'organization_not_found', 'warn', true, { organizationId: token.organizationId });
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organizationId: token.organizationId });
       }
     }
 
@@ -374,7 +351,7 @@ const authRoutes = app
         .where(and(eq(usersTable.id, token.userId)));
 
       if (!user || user.email !== token.email) {
-        return errorResponse(ctx, 400, 'invalid_token', 'warn', true, { userId: token.userId, type: 'invitation' });
+        return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, { userId: token.userId, type: 'invitation' });
       }
     } else if (password || oauth) {
       const hashedPassword = password ? await new Argon2id().hash(password) : undefined;
@@ -400,7 +377,7 @@ const authRoutes = app
         await Promise.all([db.delete(tokensTable).where(and(eq(tokensTable.id, verificationToken))), setSessionCookie(ctx, user.id, 'password')]);
       }
     } else {
-      return errorResponse(ctx, 400, 'invalid_token', 'warn', true, { type: 'invitation' });
+      return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, { type: 'invitation' });
     }
 
     if (organization) {
@@ -442,7 +419,7 @@ const authRoutes = app
         // return ctx.redirect(url, 302);
       }
 
-      return errorResponse(ctx, 400, 'invalid_token', 'warn', true, { type: 'invitation' });
+      return errorResponse(ctx, 400, 'invalid_invitation', 'warn', undefined, { type: 'invitation' });
     }
 
     return ctx.json({

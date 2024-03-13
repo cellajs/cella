@@ -53,7 +53,7 @@ class RateLimiter extends RateLimiterPostgres {
 
       if (retrySecs > 0) {
         ctx.header('Retry-After', String(retrySecs));
-        return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
+        return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { usernameIPkey });
       }
 
       if (mode === 'limit') {
@@ -62,7 +62,7 @@ class RateLimiter extends RateLimiterPostgres {
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) {
             ctx.header('Retry-After', String(Math.round(rlRejected.msBeforeNext / 1000) || 1));
-            return errorResponse(ctx, 429, 'too_many_requests', 'warn', true, { usernameIPkey });
+            return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { usernameIPkey });
           }
 
           throw rlRejected;

@@ -26,7 +26,7 @@ const auth =
     }
 
     if (accessibleFor && !accessibleFor.includes(user.role)) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', true, { user: user.id });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
     }
 
     if (session?.fresh) {

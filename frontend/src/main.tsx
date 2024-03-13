@@ -5,10 +5,10 @@ import { StrictMode, Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeManager } from '~/modules/common/theme-manager';
 
+import * as Sentry from '@sentry/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import './lib/i18n';
-import * as Sentry from '@sentry/react';
 import router, { queryClient } from './router';
 
 const root = document.getElementById('root');

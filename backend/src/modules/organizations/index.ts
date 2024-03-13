@@ -6,6 +6,7 @@ import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
+import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugExists } from '../general/helpers/check-slug';
@@ -20,7 +21,6 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
-import { getOrderColumn } from '../../lib/order-column';
 
 const app = new CustomHono();
 
@@ -41,7 +41,7 @@ const organizationsRoutes = app
       .where(or(eq(organizationsTable.name, name), eq(organizationsTable.slug, slug)));
 
     if (organization?.name === name) {
-      return errorResponse(ctx, 400, 'organization_name_exists', 'warn', true, { name });
+      return errorResponse(ctx, 400, 'name_exists', 'warn', 'organization', { name });
     }
 
     if (organization?.slug === slug) {
@@ -172,7 +172,7 @@ const organizationsRoutes = app
       const slugExists = await checkSlugExists(slug);
 
       if (slugExists && slug !== organization.slug) {
-        return errorResponse(ctx, 400, 'slug_exists', 'warn', true, { slug });
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
       }
     }
 
@@ -247,7 +247,7 @@ const organizationsRoutes = app
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'user_not_found', 'warn', true, { user: userId });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: userId });
     }
 
     const [membership] = await db
@@ -257,7 +257,7 @@ const organizationsRoutes = app
       .returning();
 
     if (!membership) {
-      return errorResponse(ctx, 404, 'member_not_found', 'warn', true, { user: targetUser.id, organization: organization.id });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', { user: targetUser.id, organization: organization.id });
     }
 
     const [{ memberships }] = await db
@@ -296,11 +296,11 @@ const organizationsRoutes = app
         const [targetOrganization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, id));
 
         if (!targetOrganization) {
-          errors.push(createError(ctx, 404, 'organization_not_found', 'warn', true, { organization: id }));
+          errors.push(createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
         }
 
         if (user.role !== 'ADMIN') {
-          errors.push(createError(ctx, 403, 'delete_organization_forbidden', 'warn', true, { organization: id }));
+          errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'organization', { organization: id }));
         }
 
         await db.delete(organizationsTable).where(eq(organizationsTable.id, id));
@@ -451,7 +451,7 @@ const organizationsRoutes = app
           .returning();
 
         if (!targetMembership) {
-          return errorResponse(ctx, 404, 'member_not_found', 'warn', true, { user: id, organization: organization.id });
+          return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', { user: id, organization: organization.id });
         }
 
         logEvent('Member deleted', { user: id, organization: organization.id });
