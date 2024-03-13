@@ -5,23 +5,27 @@ import { hc } from 'hono/client';
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
-  status: string;
-  type: string;
-  severity: string;
+  status: string | number;
+  type?: string;
+  severity?: string;
   logId?: string;
   path?: string;
   method?: string;
   timestamp?: string;
+  usr?: string;
+  org?: string;
 
-  constructor(status: number | string, error: ErrorType) {
+  constructor(error: ErrorType) {
     super(error.message);
-    this.status = String(status);
+    this.status = error.status;
     this.type = error.type;
     this.severity = error.severity;
     this.logId = error.logId;
     this.path = error.path;
     this.method = error.method;
     this.timestamp = error.timestamp;
+    this.usr = error.usr;
+    this.org = error.org;
   }
 }
 

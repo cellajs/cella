@@ -5,7 +5,7 @@ export const getMe = async () => {
   const response = await client.me.$get();
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -14,7 +14,7 @@ export const getUserMenu = async () => {
   const response = await client.menu.$get();
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -50,7 +50,7 @@ export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit 
   );
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -61,7 +61,7 @@ export const getUserSuggestions = async (query: string) => {
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -72,7 +72,7 @@ export const deleteUsers = async (userIds: string[]) => {
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return;
 };
 
@@ -83,7 +83,7 @@ export const getUserBySlugOrId = async (userIdentifier: string) => {
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -97,7 +97,7 @@ export const updateUser = async (userId: string, params: UpdateUserParams) => {
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -114,7 +114,7 @@ export const searchUsers = async (query: string) => {
   });
 
   const json = await response.json();
-  if ('error' in json) throw new ApiError(response.status, json.error);
+  if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
 
@@ -125,6 +125,6 @@ export const searchUsers = async (query: string) => {
 //   });
 
 //   const json = await response.json();
-//   if ('error' in json) throw new ApiError(response.status, json.error);
+//   if ('error' in json) throw new ApiError(json.error);
 //   return json.data;
 // };
