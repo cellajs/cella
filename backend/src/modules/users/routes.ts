@@ -7,12 +7,15 @@ import {
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
-import { createRouteConfig } from '../../lib/route-config';
+import { createRoute } from '../../lib/route-config';
 import { authGuard, systemGuard } from '../../middlewares/guard';
 import { userMenuSchema } from '../organizations/schema';
 import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
+import { CustomHono } from '../../types/common';
 
-export const meRouteConfig = createRouteConfig({
+export const app = new CustomHono();
+
+export const meRoute = createRoute(app, {
   method: 'get',
   path: '/me',
   guard: authGuard(),
@@ -31,7 +34,7 @@ export const meRouteConfig = createRouteConfig({
   },
 });
 
-export const getUserSessionsConfig = createRouteConfig({
+export const getUserSessionsRoute = createRoute(app, {
   method: 'get',
   path: '/me/sessions',
   guard: authGuard(),
@@ -57,7 +60,7 @@ export const getUserSessionsConfig = createRouteConfig({
   },
 });
 
-export const getUsersConfig = createRouteConfig({
+export const getUsersRoute = createRoute(app, {
   method: 'get',
   path: '/users',
   guard: systemGuard,
@@ -83,7 +86,7 @@ export const getUsersConfig = createRouteConfig({
   },
 });
 
-export const userSuggestionsConfig = createRouteConfig({
+export const userSuggestionsRoute = createRoute(app, {
   method: 'get',
   path: '/users/suggestions',
   guard: authGuard(),
@@ -115,7 +118,7 @@ export const userSuggestionsConfig = createRouteConfig({
   },
 });
 
-export const updateUserConfig = createRouteConfig({
+export const updateUserRoute = createRoute(app, {
   method: 'put',
   path: '/users/{userId}',
   guard: authGuard(),
@@ -149,7 +152,7 @@ export const updateUserConfig = createRouteConfig({
   },
 });
 
-export const getUserByIdOrSlugRouteConfig = createRouteConfig({
+export const getUserByIdOrSlugRouteRoute = createRoute(app, {
   method: 'get',
   path: '/users/{userId}',
   guard: authGuard(),
@@ -176,7 +179,7 @@ export const getUserByIdOrSlugRouteConfig = createRouteConfig({
   },
 });
 
-export const getUserMenuConfig = createRouteConfig({
+export const getUserMenuRoute = createRoute(app, {
   method: 'get',
   path: '/menu',
   guard: authGuard(),
@@ -198,7 +201,7 @@ export const getUserMenuConfig = createRouteConfig({
   },
 });
 
-export const deleteUsersRouteConfig = createRouteConfig({
+export const deleteUsersRouteRoute = createRoute(app, {
   method: 'delete',
   path: '/users',
   guard: authGuard(),

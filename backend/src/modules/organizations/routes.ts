@@ -7,7 +7,7 @@ import {
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
-import { createRouteConfig } from '../../lib/route-config';
+import { createRoute } from '../../lib/route-config';
 import { systemGuard, tenantGuard } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
@@ -22,8 +22,11 @@ import {
   updateUserInOrganizationJsonSchema,
   updateUserInOrganizationParamSchema,
 } from './schema';
+import { CustomHono } from '../../types/common';
 
-export const createOrganizationRouteConfig = createRouteConfig({
+export const app = new CustomHono();
+
+export const createOrganizationRoute = createRoute(app, {
   method: 'post',
   path: '/organizations',
   guard: systemGuard,
@@ -56,7 +59,7 @@ export const createOrganizationRouteConfig = createRouteConfig({
   },
 });
 
-export const updateOrganizationRouteConfig = createRouteConfig({
+export const updateOrganizationRoute = createRoute(app, {
   method: 'put',
   path: '/organizations/{organizationIdentifier}',
   guard: tenantGuard(['ADMIN']),
@@ -90,7 +93,7 @@ export const updateOrganizationRouteConfig = createRouteConfig({
   },
 });
 
-export const deleteOrganizationsRouteConfig = createRouteConfig({
+export const deleteOrganizationsRoute = createRoute(app, {
   method: 'delete',
   path: '/organizations',
   guard: systemGuard,
@@ -116,7 +119,7 @@ export const deleteOrganizationsRouteConfig = createRouteConfig({
   },
 });
 
-export const getOrganizationsRouteConfig = createRouteConfig({
+export const getOrganizationsRoute = createRoute(app, {
   method: 'get',
   path: '/organizations',
   guard: systemGuard,
@@ -142,7 +145,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
   },
 });
 
-export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
+export const getOrganizationByIdOrSlugRoute = createRoute(app, {
   method: 'get',
   path: '/organizations/{organizationIdentifier}',
   guard: tenantGuard(),
@@ -169,7 +172,7 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   },
 });
 
-export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
+export const getUsersByOrganizationIdRoute = createRoute(app, {
   method: 'get',
   path: '/organizations/{organizationIdentifier}/members',
   guard: tenantGuard(),
@@ -197,7 +200,7 @@ export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   },
 });
 
-export const updateUserInOrganizationRouteConfig = createRouteConfig({
+export const updateUserInOrganizationRoute = createRoute(app, {
   method: 'put',
   path: '/organizations/{organizationIdentifier}/members/{userId}',
   guard: tenantGuard(['ADMIN']),
@@ -231,7 +234,7 @@ export const updateUserInOrganizationRouteConfig = createRouteConfig({
   },
 });
 
-export const deleteUsersFromOrganizationRouteConfig = createRouteConfig({
+export const deleteUsersFromOrganizationRoute = createRoute(app, {
   method: 'delete',
   path: '/organizations/{organizationIdentifier}/members',
   guard: tenantGuard(['ADMIN']),

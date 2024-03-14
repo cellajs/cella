@@ -19,19 +19,16 @@ import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
-import { checkSlugRouteConfig, checkTokenRouteConfig, getUploadTokenRouteConfig, inviteRouteConfig, paddleWebhookRouteConfig } from './routes';
+import { app, checkSlugRoute, checkTokenRoute, getUploadTokenRoute, inviteRoute, paddleWebhookRoute } from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
-
-const app = new CustomHono();
 
 // * General endpoints
 const generalRoutes = app
   /*
    * Get upload token
    */
-  .add(getUploadTokenRouteConfig, async (ctx) => {
+  .openapi(getUploadTokenRoute, async (ctx) => {
     const isPublic = ctx.req.query('public');
     const user = ctx.get('user');
     // TODO: validate query param organization?
@@ -56,7 +53,7 @@ const generalRoutes = app
   /*
    * Check slug
    */
-  .add(checkSlugRouteConfig, async (ctx) => {
+  .openapi(checkSlugRoute, async (ctx) => {
     const { slug } = ctx.req.valid('param');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.slug, slug));
@@ -71,7 +68,7 @@ const generalRoutes = app
   /*
    * Check token (token validation)
    */
-  .add(checkTokenRouteConfig, async (ctx) => {
+  .openapi(checkTokenRoute, async (ctx) => {
     const token = ctx.req.valid('param').token;
 
     // Check if token exists
@@ -92,7 +89,7 @@ const generalRoutes = app
   /*
    * Invite users to the system or members to an organization
    */
-  .add(inviteRouteConfig, async (ctx) => {
+  .openapi(inviteRoute, async (ctx) => {
     const { emails } = ctx.req.valid('json');
     const user = ctx.get('user');
     const organization = ctx.get('organization') as OrganizationModel | undefined;
@@ -194,7 +191,7 @@ const generalRoutes = app
   /*
    * Paddle webhook
    */
-  .add(paddleWebhookRouteConfig, async (ctx) => {
+  .openapi(paddleWebhookRoute, async (ctx) => {
     const signature = ctx.req.header('paddle-signature');
     const rawRequestBody = String(ctx.req.raw.body);
 

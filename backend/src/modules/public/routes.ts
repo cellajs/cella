@@ -1,9 +1,12 @@
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
-import { createRouteConfig } from '../../lib/route-config';
+import { createRoute } from '../../lib/route-config';
 import { publicGuard } from '../../middlewares/guard';
+import { CustomHono } from '../../types/common';
 import { apiPublicCountsSchema } from './schema';
 
-export const getPublicCountsRouteConfig = createRouteConfig({
+export const app = new CustomHono();
+
+export const getPublicCountsRoute = createRoute(app, {
   method: 'get',
   path: '/public/counts',
   guard: publicGuard,

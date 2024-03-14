@@ -1,40 +1,39 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute as baseCreateRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
-import type { NonEmptyArray } from '../types/common';
+import type { CustomHono, NonEmptyArray } from '../types/common';
 
-export type RouteOptions = Parameters<typeof createRoute>[0] & {
+export type RouteOptions = Parameters<typeof baseCreateRoute>[0] & {
   guard: NonEmptyArray<MiddlewareHandler | 'public'>;
   middlewares?: MiddlewareHandler[];
 };
 
-export type RouteConfig = {
-  route: ReturnType<typeof createRoute>;
-  guard: RouteOptions['guard'];
-  middlewares?: RouteOptions['middlewares'];
+const isNotPublicRoute = (guard: RouteOptions['guard']): guard is NonEmptyArray<MiddlewareHandler> => {
+  return !guard.includes('public');
 };
 
-export type Route<
+export const createRoute = <
   P extends string,
   R extends Omit<RouteOptions, 'path'> & {
     path: P;
   },
-> = ReturnType<typeof createRoute<P, Omit<R, 'guard' | 'middlewares'>>>;
+>(
+  app: CustomHono,
+  { middlewares, guard, ...routeConfig }: R,
+) => {
+  const handlers = [];
 
-export const createRouteConfig = <
-  P extends string,
-  R extends Omit<RouteOptions, 'path'> & {
-    path: P;
-  },
->({
-  middlewares,
-  guard,
-  ...routeConfig
-}: R): {
-  route: Route<P, R>;
-  guard: RouteConfig['guard'];
-  middlewares: RouteConfig['middlewares'];
-} => ({
-  route: createRoute(routeConfig),
-  guard,
-  middlewares,
-});
+  if (isNotPublicRoute(guard)) {
+    handlers.push(...guard);
+  }
+
+  if (middlewares && middlewares.length > 0) {
+    handlers.push(...middlewares);
+  }
+
+  const route = baseCreateRoute(routeConfig);
+
+  // add guards and middlewares
+  app[route.method as 'get' | 'post' | 'put' | 'delete'](route.getRoutingPath(), ...handlers);
+
+  return route;
+};

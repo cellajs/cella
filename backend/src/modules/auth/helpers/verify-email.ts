@@ -1,9 +1,9 @@
 import { config } from 'config';
-import { sendVerificationEmailRouteConfig } from '../routes';
+import { sendVerificationEmailRoute } from '../routes';
 
 export const sendVerificationEmail = (email: string) =>
-  fetch(config.backendUrl + sendVerificationEmailRouteConfig.route.path, {
-    method: sendVerificationEmailRouteConfig.route.method,
+  fetch(config.backendUrl + sendVerificationEmailRoute.path, {
+    method: sendVerificationEmailRoute.method,
     headers: {
       'Content-Type': 'application/json',
     },

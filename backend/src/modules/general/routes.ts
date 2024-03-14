@@ -1,11 +1,14 @@
 import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
-import { createRouteConfig } from '../../lib/route-config';
+import { createRoute } from '../../lib/route-config';
 import { authGuard, publicGuard, tenantGuard } from '../../middlewares/guard';
 import { rateLimiter } from '../../middlewares/rate-limiter';
 import { inviteJsonSchema } from './schema';
+import { CustomHono } from '../../types/common';
 
-export const getUploadTokenRouteConfig = createRouteConfig({
+export const app = new CustomHono();
+
+export const getUploadTokenRoute = createRoute(app, {
   method: 'get',
   path: '/upload-token',
   guard: authGuard(),
@@ -39,7 +42,7 @@ export const getUploadTokenRouteConfig = createRouteConfig({
   },
 });
 
-export const checkSlugRouteConfig = createRouteConfig({
+export const checkSlugRoute = createRoute(app, {
   method: 'get',
   path: '/check-slug/{slug}',
   guard: authGuard(),
@@ -64,7 +67,7 @@ export const checkSlugRouteConfig = createRouteConfig({
   },
 });
 
-export const checkTokenRouteConfig = createRouteConfig({
+export const checkTokenRoute = createRoute(app, {
   method: 'get',
   path: '/check-token/{token}',
   guard: publicGuard,
@@ -89,7 +92,7 @@ export const checkTokenRouteConfig = createRouteConfig({
   },
 });
 
-export const inviteRouteConfig = createRouteConfig({
+export const inviteRoute = createRoute(app, {
   method: 'post',
   path: '/invite',
   guard: tenantGuard(['ADMIN']),
@@ -123,7 +126,7 @@ export const inviteRouteConfig = createRouteConfig({
   },
 });
 
-export const paddleWebhookRouteConfig = createRouteConfig({
+export const paddleWebhookRoute = createRoute(app, {
   method: 'post',
   path: '/paddle-webhook',
   guard: publicGuard,

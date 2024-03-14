@@ -3,17 +3,14 @@ import { sql } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
-import { CustomHono } from '../../types/common';
-import { getPublicCountsRouteConfig } from './routes';
-
-const app = new CustomHono();
+import { app, getPublicCountsRoute } from './routes';
 
 // Public endpoints
 const publicRoutes = app
   /*
    * Get public counts
    */
-  .add(getPublicCountsRouteConfig, async (ctx) => {
+  .openapi(getPublicCountsRoute, async (ctx) => {
     const [organizationsResult, usersResult] = await Promise.all([
       db
         .select({

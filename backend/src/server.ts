@@ -3,6 +3,7 @@ import docs from './lib/docs';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import authRoutes from './modules/auth';
+import oauthRoutes from './modules/auth/oauth';
 import generalRoutes from './modules/general';
 import organizationsRoutes from './modules/organizations';
 import publicRoutes from './modules/public';
@@ -33,7 +34,13 @@ app.onError((err, ctx) => {
 });
 
 // Add routes for each module
-const route = app.route('/', authRoutes).route('/', usersRoutes).route('/', organizationsRoutes).route('/', generalRoutes).route('/', publicRoutes);
+const route = app
+.route('/', authRoutes)
+.route('/', oauthRoutes)
+.route('/', usersRoutes)
+.route('/', organizationsRoutes)
+.route('/', generalRoutes)
+.route('/', publicRoutes);
 
 // Export type to share API with Client (RP)
 export type AppRoute = typeof route;

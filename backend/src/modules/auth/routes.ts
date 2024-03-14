@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { cookieSchema } from '../../lib/common-schemas';
-import { createRouteConfig } from '../../lib/route-config';
+import { createRoute } from '../../lib/route-config';
 import { publicGuard } from '../../middlewares/guard';
 import { rateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
@@ -15,10 +15,13 @@ import {
   signInJsonSchema,
   signUpJsonSchema,
 } from './schema';
+import { CustomHono } from '../../types/common';
+
+export const app = new CustomHono();
 
 const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');
 
-export const signUpRouteConfig = createRouteConfig({
+export const signUpRoute = createRoute(app, {
   method: 'post',
   path: '/sign-up',
   guard: publicGuard,
@@ -50,7 +53,7 @@ export const signUpRouteConfig = createRouteConfig({
   },
 });
 
-export const verifyEmailRouteConfig = createRouteConfig({
+export const verifyEmailRoute = createRoute(app, {
   method: 'get',
   path: '/verify-email/{token}',
   guard: publicGuard,
@@ -79,7 +82,7 @@ export const verifyEmailRouteConfig = createRouteConfig({
   },
 });
 
-export const sendVerificationEmailRouteConfig = createRouteConfig({
+export const sendVerificationEmailRoute = createRoute(app, {
   method: 'post',
   path: '/send-verification-email',
   guard: publicGuard,
@@ -111,7 +114,7 @@ export const sendVerificationEmailRouteConfig = createRouteConfig({
   },
 });
 
-export const resetPasswordRouteConfig = createRouteConfig({
+export const resetPasswordRoute = createRoute(app, {
   method: 'post',
   path: '/reset-password',
   guard: publicGuard,
@@ -143,7 +146,7 @@ export const resetPasswordRouteConfig = createRouteConfig({
   },
 });
 
-export const resetPasswordCallbackRouteConfig = createRouteConfig({
+export const resetPasswordCallbackRoute = createRoute(app, {
   method: 'post',
   path: '/reset-password/{token}',
   guard: publicGuard,
@@ -176,7 +179,7 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
   },
 });
 
-export const checkEmailRouteConfig = createRouteConfig({
+export const checkEmailRoute = createRoute(app, {
   method: 'post',
   path: '/check-email',
   guard: publicGuard,
@@ -206,7 +209,7 @@ export const checkEmailRouteConfig = createRouteConfig({
   },
 });
 
-export const signInRouteConfig = createRouteConfig({
+export const signInRoute = createRoute(app, {
   method: 'post',
   path: '/sign-in',
   guard: publicGuard,
@@ -245,148 +248,7 @@ export const signInRouteConfig = createRouteConfig({
   },
 });
 
-export const githubSignInRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/sign-in/github',
-  guard: publicGuard,
-  tags: ['auth'],
-  summary: 'Sign in a user with GitHub',
-  security: [],
-  request: {
-    query: z.object({
-      redirect: z.string().optional(),
-    }),
-  },
-  responses: {
-    302: {
-      description: 'Redirect to GitHub',
-      headers: z.object({
-        Location: z.string(),
-      }),
-    },
-    ...errorResponses,
-  },
-});
-
-export const githubSignInCallbackRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/sign-in/github/callback',
-  guard: publicGuard,
-  tags: ['auth'],
-  summary: 'Callback for GitHub sign in',
-  security: [],
-  request: {
-    query: z.object({
-      code: z.string(),
-      state: z.string(),
-    }),
-  },
-  responses: {
-    302: {
-      description: 'Redirect to frontend',
-      headers: z.object({
-        Location: z.string(),
-      }),
-    },
-    ...errorResponses,
-  },
-});
-
-export const googleSignInRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/sign-in/google',
-  guard: publicGuard,
-  tags: ['auth'],
-  summary: 'Sign in a user with Google',
-  security: [],
-  request: {
-    query: z.object({
-      redirect: z.string().optional(),
-    }),
-  },
-  responses: {
-    302: {
-      description: 'Redirect to Google',
-      headers: z.object({
-        Location: z.string(),
-      }),
-    },
-    ...errorResponses,
-  },
-});
-
-export const googleSignInCallbackRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/sign-in/google/callback',
-  guard: publicGuard,
-  tags: ['auth'],
-  summary: 'Callback for Google sign in',
-  security: [],
-  request: {
-    query: z.object({
-      code: z.string(),
-      state: z.string(),
-    }),
-  },
-  responses: {
-    302: {
-      description: 'Redirect to frontend',
-      headers: z.object({
-        Location: z.string(),
-      }),
-    },
-    ...errorResponses,
-  },
-});
-
-export const microsoftSignInRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/sign-in/microsoft',
-  guard: publicGuard,
-  tags: ['auth'],
-  summary: 'Sign in a user with Microsoft',
-  security: [],
-  request: {
-    query: z.object({
-      redirect: z.string().optional(),
-    }),
-  },
-  responses: {
-    302: {
-      description: 'Redirect to Microsoft',
-      headers: z.object({
-        Location: z.string(),
-      }),
-    },
-    ...errorResponses,
-  },
-});
-
-export const microsoftSignInCallbackRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/sign-in/microsoft/callback',
-  guard: publicGuard,
-  tags: ['auth'],
-  summary: 'Callback for Microsoft sign in',
-  security: [],
-  request: {
-    query: z.object({
-      code: z.string(),
-      state: z.string(),
-    }),
-  },
-  responses: {
-    302: {
-      description: 'Redirect to frontend',
-      headers: z.object({
-        Location: z.string(),
-      }),
-    },
-    ...errorResponses,
-  },
-});
-
-export const signOutRouteConfig = createRouteConfig({
+export const signOutRoute = createRoute(app, {
   method: 'get',
   path: '/sign-out',
   guard: publicGuard,
@@ -405,7 +267,7 @@ export const signOutRouteConfig = createRouteConfig({
   },
 });
 
-export const acceptInviteRouteConfig = createRouteConfig({
+export const acceptInviteRoute = createRoute(app, {
   method: 'post',
   path: '/accept-invite/{token}',
   guard: publicGuard,

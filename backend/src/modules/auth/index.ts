@@ -9,7 +9,6 @@ import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
 import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
 import { setCookie } from './helpers/cookies';
-import { acceptInviteRouteConfig, githubSignInRouteConfig } from './routes';
 
 import { config } from 'config';
 import { emailSender } from '../../../../email';
@@ -21,31 +20,30 @@ import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
 import { checkSlugExists } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
 import { sendVerificationEmail } from './helpers/verify-email';
-import oauthRoutes from './oauth';
 import {
-  checkEmailRouteConfig,
-  resetPasswordCallbackRouteConfig,
-  resetPasswordRouteConfig,
-  sendVerificationEmailRouteConfig,
-  signInRouteConfig,
-  signOutRouteConfig,
-  signUpRouteConfig,
-  verifyEmailRouteConfig,
+  acceptInviteRoute,
+  app,
+  checkEmailRoute,
+  resetPasswordCallbackRoute,
+  resetPasswordRoute,
+  sendVerificationEmailRoute,
+  signInRoute,
+  signOutRoute,
+  signUpRoute,
+  verifyEmailRoute,
 } from './routes';
-
-const app = new CustomHono();
+import { githubSignInRoute } from './oauth-routes';
 
 // * Authentication endpoints
 const authRoutes = app
   /*
    * Sign up with email and password
    */
-  .add(signUpRouteConfig, async (ctx) => {
+  .openapi(signUpRoute, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
     const hashedPassword = await new Argon2id().hash(password);
@@ -87,7 +85,7 @@ const authRoutes = app
   /*
    * Verify email
    */
-  .add(verifyEmailRouteConfig, async (ctx) => {
+  .openapi(verifyEmailRoute, async (ctx) => {
     const { resend } = ctx.req.valid('query');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -143,7 +141,7 @@ const authRoutes = app
   /*
    * Send verification email
    */
-  .add(sendVerificationEmailRouteConfig, async (ctx) => {
+  .openapi(sendVerificationEmailRoute, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -180,7 +178,7 @@ const authRoutes = app
   /*
    * Check if email exists
    */
-  .add(checkEmailRouteConfig, async (ctx) => {
+  .openapi(checkEmailRoute, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -195,7 +193,7 @@ const authRoutes = app
   /*
    * Request reset password email with token
    */
-  .add(resetPasswordRouteConfig, async (ctx) => {
+  .openapi(resetPasswordRoute, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -233,7 +231,7 @@ const authRoutes = app
   /*
    * Reset password with token
    */
-  .add(resetPasswordCallbackRouteConfig, async (ctx) => {
+  .openapi(resetPasswordCallbackRoute, async (ctx) => {
     const { password } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -264,7 +262,7 @@ const authRoutes = app
   /*
    * Sign in with email and password
    */
-  .add(signInRouteConfig, async (ctx) => {
+  .openapi(signInRoute, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -296,7 +294,7 @@ const authRoutes = app
   /*
    * Sign out
    */
-  .add(signOutRouteConfig, async (ctx) => {
+  .openapi(signOutRoute, async (ctx) => {
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
 
@@ -319,7 +317,7 @@ const authRoutes = app
   /*
    * Accept invite token
    */
-  .add(acceptInviteRouteConfig, async (ctx) => {
+  .openapi(acceptInviteRoute, async (ctx) => {
     const { password, oauth } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -393,13 +391,10 @@ const authRoutes = app
     }
 
     if (oauth === 'github') {
-      const response = await fetch(
-        `${config.backendUrl + githubSignInRouteConfig.route.path}${organization ? `?redirect=${organization.slug}` : ''}`,
-        {
-          method: githubSignInRouteConfig.route.method,
-          redirect: 'manual',
-        },
-      );
+      const response = await fetch(`${config.backendUrl + githubSignInRoute.path}${organization ? `?redirect=${organization.slug}` : ''}`, {
+        method: githubSignInRoute.method,
+        redirect: 'manual',
+      });
 
       const url = response.headers.get('Location');
 
@@ -428,4 +423,4 @@ const authRoutes = app
     });
   });
 
-export default authRoutes.route('/', oauthRoutes);
+export default authRoutes;

@@ -8,28 +8,26 @@ import { usersTable } from '../../db/schema/users';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
 import { checkSlugExists } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import {
-  createOrganizationRouteConfig,
-  deleteOrganizationsRouteConfig,
-  deleteUsersFromOrganizationRouteConfig,
-  getOrganizationByIdOrSlugRouteConfig,
-  getOrganizationsRouteConfig,
-  getUsersByOrganizationIdRouteConfig,
-  updateOrganizationRouteConfig,
-  updateUserInOrganizationRouteConfig,
+  app,
+  createOrganizationRoute,
+  deleteOrganizationsRoute,
+  deleteUsersFromOrganizationRoute,
+  getOrganizationByIdOrSlugRoute,
+  getOrganizationsRoute,
+  getUsersByOrganizationIdRoute,
+  updateOrganizationRoute,
+  updateUserInOrganizationRoute,
 } from './routes';
-
-const app = new CustomHono();
 
 // * Organization endpoints
 const organizationsRoutes = app
   /*
    * Create organization
    */
-  .add(createOrganizationRouteConfig, async (ctx) => {
+  .openapi(createOrganizationRoute, async (ctx) => {
     const { name } = ctx.req.valid('json');
     const user = ctx.get('user');
 
@@ -74,7 +72,7 @@ const organizationsRoutes = app
   /*
    * Get an organization
    */
-  .add(getOrganizationsRouteConfig, async (ctx) => {
+  .openapi(getOrganizationsRoute, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -144,7 +142,7 @@ const organizationsRoutes = app
   /*
    * Update an organization
    */
-  .add(updateOrganizationRouteConfig, async (ctx) => {
+  .openapi(updateOrganizationRoute, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -238,7 +236,7 @@ const organizationsRoutes = app
   /*
    * Update user in organization
    */
-  .add(updateUserInOrganizationRouteConfig, async (ctx) => {
+  .openapi(updateUserInOrganizationRoute, async (ctx) => {
     const { userId } = ctx.req.valid('param');
     const { role } = ctx.req.valid('json');
     const user = ctx.get('user');
@@ -283,7 +281,7 @@ const organizationsRoutes = app
   /*
    * Delete organizations
    */
-  .add(deleteOrganizationsRouteConfig, async (ctx) => {
+  .openapi(deleteOrganizationsRoute, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -317,7 +315,7 @@ const organizationsRoutes = app
   /*
    * Get organization by id or slug
    */
-  .add(getOrganizationByIdOrSlugRouteConfig, async (ctx) => {
+  .openapi(getOrganizationByIdOrSlugRoute, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -355,7 +353,7 @@ const organizationsRoutes = app
   /*
    * Get users by organization id
    */
-  .add(getUsersByOrganizationIdRouteConfig, async (ctx) => {
+  .openapi(getUsersByOrganizationIdRoute, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 
@@ -437,7 +435,7 @@ const organizationsRoutes = app
   /*
    * Delete users from organization
    */
-  .add(deleteUsersFromOrganizationRouteConfig, async (ctx) => {
+  .openapi(deleteUsersFromOrganizationRoute, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 
@@ -462,6 +460,20 @@ const organizationsRoutes = app
       success: true,
       data: undefined,
     });
-  });
+  })
+  // .get('/stream', async (ctx) => {
+  //   return streamSSE(ctx, async (stream) => {
+  //     while (true) {
+  //       const message = `It is ${new Date().toISOString()}`;
+  //       console.log('Sending message:', message);
+  //       await stream.writeSSE({
+  //         data: message,
+  //         event: 'time-update',
+  //         id: nanoid(),
+  //       });
+  //       await stream.sleep(1000);
+  //     }
+  //   });
+  // });
 
 export default organizationsRoutes;

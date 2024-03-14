@@ -9,28 +9,26 @@ import { usersTable } from '../../db/schema/users';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugExists } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
 import {
-  deleteUsersRouteConfig,
-  getUserByIdOrSlugRouteConfig,
-  getUserMenuConfig,
-  getUsersConfig,
-  meRouteConfig,
-  updateUserConfig,
-  userSuggestionsConfig,
+  app,
+  deleteUsersRouteRoute,
+  getUserByIdOrSlugRouteRoute,
+  getUserMenuRoute,
+  getUsersRoute,
+  meRoute,
+  updateUserRoute,
+  userSuggestionsRoute,
 } from './routes';
-
-const app = new CustomHono();
 
 // User endpoints
 const usersRoutes = app
   /*
    * Get current user
    */
-  .add(meRouteConfig, async (ctx) => {
+  .openapi(meRoute, async (ctx) => {
     const user = ctx.get('user');
 
     const [{ memberships }] = await db
@@ -54,7 +52,7 @@ const usersRoutes = app
    * Get current user sessions
    */
   // TODO: Implement this route
-  // .add(getUserSessionsConfig, async (ctx) => {
+  // .openapi(getUserSessionsRoute, async (ctx) => {
   //   const user = ctx.get('user');
 
   //   const sessions = await auth.getUserSessions(user.id);
@@ -67,7 +65,7 @@ const usersRoutes = app
   /*
    * Get user menu
    */
-  .add(getUserMenuConfig, async (ctx) => {
+  .openapi(getUserMenuRoute, async (ctx) => {
     const user = ctx.get('user');
 
     const organizationsWithMemberships = await db
@@ -121,7 +119,7 @@ const usersRoutes = app
   /*
    * Update a user
    */
-  .add(updateUserConfig, async (ctx) => {
+  .openapi(updateUserRoute, async (ctx) => {
     const { userId } = ctx.req.valid('param');
     const user = ctx.get('user');
 
@@ -186,7 +184,7 @@ const usersRoutes = app
   /*
    * Get users
    */
-  .add(getUsersConfig, async (ctx) => {
+  .openapi(getUsersRoute, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const memberships = db
@@ -259,7 +257,7 @@ const usersRoutes = app
   /*
    * Get user suggestions
    */
-  .add(userSuggestionsConfig, async (ctx) => {
+  .openapi(userSuggestionsRoute, async (ctx) => {
     const { q } = ctx.req.valid('query');
 
     const users = await db
@@ -280,7 +278,7 @@ const usersRoutes = app
   /*
    * Delete users
    */
-  .add(deleteUsersRouteConfig, async (ctx) => {
+  .openapi(deleteUsersRouteRoute, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -319,7 +317,7 @@ const usersRoutes = app
   /*
    * Get a user by id or slug
    */
-  .add(getUserByIdOrSlugRouteConfig, async (ctx) => {
+  .openapi(getUserByIdOrSlugRouteRoute, async (ctx) => {
     const userIdentifier = ctx.req.param('userId').toLowerCase();
     const user = ctx.get('user');
 
