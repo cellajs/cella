@@ -15,10 +15,14 @@ export function dateShort(date?: string | null) {
   if (!date) return '-';
 
   return dayjs(date).calendar(null, {
-    sameDay: '[Today]',
-    lastDay: '[Yesterday]',
-    lastWeek: '[Last] dddd',
-    sameElse: 'DD/MM/YYYY',
+    sameDay: '[Today], H:mm',
+    lastDay: '[Yesterday], H:mm',
+    lastWeek: 'dddd, H:mm',
+    sameElse: (now: dayjs.Dayjs) => {
+      const monthDiff = now.diff(dayjs(date), 'month');
+      if (monthDiff <= 3) return dayjs(date).format('MMM D, H:mm');
+      return dayjs(date).format('MMM D, YYYY');
+    },
   });
 }
 
@@ -66,8 +70,8 @@ export function generateNumber(id: string) {
   }
   return null;
 }
-  
-  // Get valid children from a React component
+
+// Get valid children from a React component
 export function getValidChildren(children: React.ReactNode) {
   return React.Children.toArray(children).filter((child) => React.isValidElement(child)) as React.ReactElement[];
 }
