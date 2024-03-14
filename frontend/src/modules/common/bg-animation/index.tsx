@@ -14,16 +14,16 @@ const BgAnimation = () => {
 
   useEffect(() => {
     const c = document.getElementById('animation-canvas') as HTMLCanvasElement;
+    if (!c) return;
 
     start_cells(c);
     set_cell_color([0.9, 0.2, 0.2]);
-
     maximize_canvas(c);
     
     return () => {
       stop_cells();
     };
-  });
+  },[document]);
 
   return <canvas id="animation-canvas" className="absolute z-[-1] w-full h-full opacity-50" />;
 };
