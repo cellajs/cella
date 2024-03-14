@@ -28,9 +28,6 @@ app.get('/ping', (c) => c.text('pong'));
 // Logger
 app.use('*', logger(logEvent as unknown as Parameters<typeof logger>[0]));
 
-// Rate limiter
-app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));
-
 // CORS
 app.use(
   '*',
@@ -52,5 +49,8 @@ app.use(
     origin: config.frontendUrl,
   }),
 );
+
+// Rate limiter
+app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));
 
 export default app;
