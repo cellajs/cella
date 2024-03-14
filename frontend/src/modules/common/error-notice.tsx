@@ -1,4 +1,5 @@
 import { useRouterState } from '@tanstack/react-router';
+import Gleap from 'gleap';
 import type { ErrorType } from 'backend/lib/errors';
 import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import type React from 'react';
@@ -28,7 +29,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
   };
 
   const handleAskForHelp = () => {
-    // TODO: Open chat
+    Gleap.openConversations();
   };
 
   return (
@@ -45,11 +46,11 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
             </CardTitle>
             <CardDescription>
               <span>
-              {error?.resourceType
-                ? t(`error.resource_${error.type}.text`, { resource: error.resourceType })
-                : error?.type
-                  ? t(`error.${error.type}.text`)
-                  : error?.message || t('common:error.reported_try_or_contact')}
+                {error?.resourceType
+                  ? t(`error.resource_${error.type}.text`, { resource: error.resourceType })
+                  : error?.type
+                    ? t(`error.${error.type}.text`)
+                    : error?.message || t('common:error.reported_try_or_contact')}
               </span>
               <span className="ml-1">{error?.severity && error.severity === 'warn' && t('common:error.contact_mistake')}</span>
               <span className="ml-1">{error?.severity && error.severity === 'error' && t('common:error.try_again_later')}</span>

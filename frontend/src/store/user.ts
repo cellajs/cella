@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import Gleap from 'gleap';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
 import { config } from 'config';
@@ -30,6 +31,12 @@ export const useUserStore = create<UserState>()(
           });
         },
         setUser: (user) => {
+          if (Gleap.isUserIdentified()) {
+            Gleap.updateContact({ email: user.email, name: user.name || user.email });
+          } else {
+            Gleap.identify(user.id, { email: user.email, name: user.name || user.email, createdAt: new Date(user.createdAt) });
+          }
+
           set((state) => {
             state.user = user;
             state.lastUser = { email: user.email, name: user.name, id: user.id, slug: user.slug };
@@ -38,7 +45,7 @@ export const useUserStore = create<UserState>()(
         async getMe() {
           try {
             const user = await getMe();
-            set({ user: user, lastUser: { email: user.email, name: user.name, id: user.id, slug: user.slug } });
+            get().setUser(user);
             return user;
           } catch (error) {
             await get().signOut();
@@ -47,6 +54,7 @@ export const useUserStore = create<UserState>()(
         },
         async signOut() {
           set({ user: null as unknown as User });
+          Gleap.clearIdentity();
           await client['sign-out'].$get();
         },
       })),
