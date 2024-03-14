@@ -8,8 +8,9 @@ export const config = {
 
   defaultRedirectPath: '/home',
 
-  aboutUrl: 'https://about.example.com',
-  statusUrl: 'https://status.example.com',
+  aboutUrl: '/about',
+  statusUrl: 'https://status.cellajs.com',
+  productionUrl: 'https://cellajs.com',
 
   description: 'A no-nonsense TypeScript template to build modern web apps. Open source.',
   keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',

@@ -132,12 +132,12 @@ function Toolbar({
           }}
         >
           <SelectTrigger className="h-10 w-[150px]">
-            <SelectValue placeholder="Select a role" className="capitalize" />
+            <SelectValue placeholder={t('common:placeholder.select_role')} />
           </SelectTrigger>
           <SelectContent>
             {items.map(({ key, value }) => (
-              <SelectItem key={key} value={key} className="capitalize">
-                {value}
+              <SelectItem key={key} value={key}>
+                {t(value)}
               </SelectItem>
             ))}
           </SelectContent>

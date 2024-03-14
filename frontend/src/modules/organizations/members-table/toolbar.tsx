@@ -142,10 +142,10 @@ function Toolbar({
           className="h-10 w-[150px] lg:w-[250px]"
         />
         <Select
+          value={role === undefined ? 'all' : role}
           onValueChange={(role) => {
             setRole(role === 'all' ? undefined : (role as GetMembersParams['role']));
           }}
-          value={role === undefined ? t('common:all') : t(role)}
         >
           <SelectTrigger className={cn('h-10 w-[125px]', role !== undefined && 'text-primary')}>
             <SelectValue placeholder={t('common:placeholder.select_role')} />
@@ -153,7 +153,7 @@ function Toolbar({
           <SelectContent>
             {items.map(({ key, value }) => (
               <SelectItem key={key} value={key}>
-                {value}
+                {t(value)}
               </SelectItem>
             ))}
           </SelectContent>

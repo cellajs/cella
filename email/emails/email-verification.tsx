@@ -9,6 +9,7 @@ interface Props {
 }
 
 const baseUrl = config.frontendUrl;
+const productionUrl = config.productionUrl;
 
 export const VerificationEmail = ({ verificationLink = baseUrl }: Props) => {
   return (
@@ -20,7 +21,7 @@ export const VerificationEmail = ({ verificationLink = baseUrl }: Props) => {
           <Body className="bg-white py-2.5 font-sans">
             <Container className="border-[#f0f0f0] p-[45px] font-light text-[#404040] leading-[26px]">
               <Section className="mt-[32px]">
-                <Img src={`${baseUrl}/static/logo.png`} height="37" alt={config.name} className="mx-auto my-0" />
+                <Img src={`${productionUrl}/static/logo.png`} height="37" alt={config.name} className="mx-auto my-0" />
               </Section>
               <Section>
                 <Text>{i18n.t('backend:email.verification_text_1')}</Text>

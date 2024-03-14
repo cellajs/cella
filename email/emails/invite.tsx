@@ -15,12 +15,13 @@ interface Props {
 }
 
 const baseUrl = config.frontendUrl;
+const productionUrl = config.productionUrl;
 
 export const InviteEmail = ({
   username = i18n.t('common:unknown_name'),
-  userImage = '../static/user.png',
+  userImage = `${productionUrl}/static/user.png`,
   orgName = i18n.t('common:unknown_organization'),
-  orgImage = '../static/org.png',
+  orgImage = `${productionUrl}/static/org.png`,
   inviteUrl = baseUrl,
   invitedBy,
   type = 'organization',
@@ -70,7 +71,7 @@ export const InviteEmail = ({
                     <Img className="rounded-full" src={userImage} width="64" height="64" />
                   </Column>
                   <Column align="center">
-                    <Img src="../static/arrow.png" width="12" height="9" alt="invited to" />
+                    <Img src={`${productionUrl}/static/arrow.png`} width="12" height="9" alt="invited to" />
                   </Column>
                   <Column align="left">
                     {type === 'system' ? (

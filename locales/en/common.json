@@ -63,6 +63,7 @@
   "error.forbidden_action": "Forbidden: Not allowed to perform this action",
   "error.image_upload_failed": "Image upload failed. Try again later",
   "error.invalid_credentials": "Invalid credentials",
+  "error.invalid_password": "Invalid password",
   "error.invalid_email": "Invalid email address",
   "error.invalid_email_or_password": "Invalid email or password",
   "error.invalid_origin": "Invalid origin",

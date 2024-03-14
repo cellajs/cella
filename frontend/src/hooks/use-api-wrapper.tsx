@@ -38,7 +38,7 @@ export const useApiWrapper = () => {
           if (onError) {
             onError(e);
           } else {
-            toast.error(preparedMessages[e.status] || e.message);
+            toast.error(e.type ? t(`common:error.${e.type}`) : preparedMessages[e.status] || e.message);
           }
 
           if (e.status === '401') {
