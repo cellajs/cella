@@ -34,7 +34,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
   return (
     <div className="container flex flex-col min-h-svh items-center">
       <div className="mt-auto mb-auto">
-        <Card className="max-w-[32rem] m-4">
+        <Card className="max-w-[36rem] m-4">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl mb-2">
               {error?.resourceType
@@ -65,24 +65,24 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
                 </Button>
               )}
               {error.type && showError && (
-                <div className="grid gap-1 grid-cols-[auto_auto] text-sm">
-                  <div className="font-medium pr-4">Log ID</div>
+                <div className="grid gap-1 grid-cols-[1fr_1fr] text-sm place-items-start">
+                  <div className="font-medium pr-4 place-self-end">Log ID</div>
                   <div>{error.logId || 'na'}</div>
-                  <div className="font-medium pr-4">Timestamp</div>
+                  <div className="font-medium pr-4 place-self-end">Timestamp</div>
                   <div>{dateNow}</div>
-                  <div className="font-medium pr-4">Message</div>
+                  <div className="font-medium pr-4 place-self-end">Message</div>
                   <div>{error.message || 'na'}</div>
-                  <div className="font-medium pr-4">Type</div>
+                  <div className="font-medium pr-4 place-self-end">Type</div>
                   <div>{error.type || 'na'}</div>
-                  <div className="font-medium pr-4">Resource type</div>
+                  <div className="font-medium pr-4 place-self-end">Resource type</div>
                   <div>{error.resourceType || 'na'}</div>
-                  <div className="font-medium pr-4">HTTP status</div>
+                  <div className="font-medium pr-4 place-self-end">HTTP status</div>
                   <div>{error.status || 'na'}</div>
-                  <div className="font-medium pr-4">Severity</div>
+                  <div className="font-medium pr-4 place-self-end">Severity</div>
                   <div>{error.severity || 'na'}</div>
-                  <div className="font-medium pr-4">User ID</div>
+                  <div className="font-medium pr-4 place-self-end">User ID</div>
                   <div>{error.usr || 'na'}</div>
-                  <div className="font-medium pr-4">Organization ID</div>
+                  <div className="font-medium pr-4 place-self-end">Organization ID</div>
                   <div>{error.org || 'na'}</div>
                 </div>
               )}
