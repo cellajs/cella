@@ -45,7 +45,7 @@ export function Dialoger() {
     if (!isMobile || !dialog.drawerOnMobile) {
       return (
         <Dialog key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)}>
-          <DialogContent className={dialog.className}>
+          <DialogContent className={dialog.className} container={dialog.container}>
             {dialog.title || dialog.text ? (
               <DialogHeader>
                 {dialog.title && <DialogTitle>{dialog.title}</DialogTitle>}

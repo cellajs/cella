@@ -15,12 +15,12 @@ DialogPortal.displayName = DialogPrimitive.Portal.displayName;
 
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay> & { disabled?: boolean }
+>(({ className, disabled, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 pt-4 sm:grid place-items-center overflow-y-auto bg-background/40 backdrop-blur-sm',
+      disabled ? '' : 'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 sm:grid place-items-center overflow-y-auto bg-background/40 backdrop-blur-sm',
       className,
     )}
     {...props}
@@ -30,10 +30,10 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay>
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null }
+>(({ className, children, container, ...props }, ref) => (
+  <DialogPortal container={container}>
+    <DialogOverlay disabled={!!container}>
       <DialogPrimitive.Content
         ref={ref}
         className={cn(

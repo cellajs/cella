@@ -5,6 +5,7 @@ export type DialogT = {
   title?: string | React.ReactNode;
   text?: React.ReactNode;
   drawerOnMobile?: boolean;
+  container?: HTMLElement | null;
   className?: string;
   content?: React.ReactNode;
 };

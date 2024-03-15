@@ -1,6 +1,6 @@
 import debounce from 'lodash.debounce';
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { type ChangeEvent, type Dispatch, type SetStateAction, useContext } from 'react';
+import { type ChangeEvent, type Dispatch, type SetStateAction, useContext, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
@@ -64,10 +64,13 @@ function Toolbar({
   const { organization } = useContext(OrganizationContext);
   const user = useUserStore((state) => state.user);
 
+  const containerRef = useRef(null);
+
   const openInviteDialog = () => {
     dialog(<InviteUsersForm organization={organization} dialog />, {
       drawerOnMobile: false,
       className: 'max-w-xl',
+      container: containerRef.current,
       title: t('common:invite'),
       text: t('common:invite_members.text'),
     });
@@ -100,7 +103,8 @@ function Toolbar({
   };
 
   return (
-    <div className="items-center justify-between sm:flex">
+    <>
+     <div className="items-center justify-between sm:flex">
       <div className="flex items-center space-x-2">
         {selectedMembers.length > 0 ? (
           <>
@@ -176,6 +180,9 @@ function Toolbar({
         />
       </div>
     </div>
+
+    <div ref={containerRef} />
+    </>
   );
 }
 
