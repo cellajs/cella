@@ -69,7 +69,7 @@ function Toolbar({
   const openInviteDialog = () => {
     dialog(<InviteUsersForm organization={organization} dialog />, {
       drawerOnMobile: false,
-      className: 'max-w-xl',
+      className: 'w-auto shadow-none relative z-[100]',
       container: containerRef.current,
       title: t('common:invite'),
       text: t('common:invite_members.text'),

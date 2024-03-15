@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogOverlay } from '~/modules/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { DialogState, type DialogT, type DialogToRemove } from './state';
 
@@ -45,6 +45,7 @@ export function Dialoger() {
     if (!isMobile || !dialog.drawerOnMobile) {
       return (
         <Dialog key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)}>
+          {dialog.container && <DialogOverlay className="backdrop-blur-none" />}
           <DialogContent className={dialog.className} container={dialog.container}>
             {dialog.title || dialog.text ? (
               <DialogHeader>
