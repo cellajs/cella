@@ -14,15 +14,29 @@ type Props = {
   description?: string;
   disabledItemFunction?: (value: string) => boolean;
   emptyIndicator?: string;
+  required?: boolean;
 };
 
-const LanguageFormField = ({ mode = 'single', control, name, label, description, placeholder, disabledItemFunction, emptyIndicator }: Props) => (
+const LanguageFormField = ({
+  mode = 'single',
+  control,
+  name,
+  label,
+  description,
+  placeholder,
+  disabledItemFunction,
+  emptyIndicator,
+  required,
+}: Props) => (
   <FormField
     control={control}
     name={name}
     render={({ field: { value, onChange } }) => (
       <FormItem>
-        <FormLabel>{label}</FormLabel>
+        <FormLabel>
+          {label}
+          {required && <span className="ml-1 opacity-50">*</span>}
+        </FormLabel>
         {description && <FormDescription>{description}</FormDescription>}
         <FormControl>
           {mode === 'single' ? (
@@ -45,6 +59,7 @@ const LanguageFormField = ({ mode = 'single', control, name, label, description,
               onChange={(value) => {
                 onChange(value.map((language) => language.value));
               }}
+              hidePlaceholderWhenSelected
               defaultOptions={config.languages}
               placeholder={placeholder}
               emptyIndicator={emptyIndicator}

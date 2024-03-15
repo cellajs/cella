@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
+import type { Control } from 'react-hook-form';
 
 // Change this in the future on current schema
 import { createOrganizationJsonSchema } from 'backend/modules/organizations/schema';
@@ -12,11 +13,11 @@ import { toast } from 'sonner';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
+import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
+import InputFormField from '../common/forms/input';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -74,19 +75,8 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('common:name')}</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* TODO: fix this typescript issue */}
+        <InputFormField control={form.control as unknown as Control} name="name" label={t('common:name')} required />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
             {t('common:create')}

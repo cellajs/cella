@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
-import { idSchema, imageUrlSchema, paginationQuerySchema, slugSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 import { apiUserSchema } from '../users/schema';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
@@ -40,11 +40,14 @@ export const apiOrganizationSchema = z.object({
 export type ApiOrganization = z.infer<typeof apiOrganizationSchema>;
 
 export const createOrganizationJsonSchema = z.object({
-  name: apiOrganizationSchema.shape.name,
+  name: nameSchema,
 });
 
 export const updateOrganizationJsonSchema = createInsertSchema(organizationsTable, {
-  languages: z.array(z.string()).optional(),
+  slug: validSlugSchema,
+  name: nameSchema,
+  shortName: nameSchema,
+  languages: z.array(z.string()).min(1),
   emailDomains: z.array(z.string()).optional(),
   authStrategies: z.array(z.string()).optional(),
   thumbnailUrl: imageUrlSchema,

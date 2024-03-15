@@ -21,6 +21,7 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
+import { config } from 'config';
 
 const app = new CustomHono();
 
@@ -52,7 +53,10 @@ const organizationsRoutes = app
       .insert(organizationsTable)
       .values({
         name,
+        shortName: name,
         slug,
+        languages: [config.defaultLanguage],
+        defaultLanguage: config.defaultLanguage,
         createdBy: user.id,
       })
       .returning();

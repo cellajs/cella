@@ -44,6 +44,8 @@ export const slugSchema = z.string();
 
 export const validSlugSchema = z
   .string()
+  .min(2)
+  .max(200)
   .refine(
     (s) => /^[a-z0-9]+(-[a-z0-9]+)*$/i.test(s),
     'Slug may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.',
@@ -54,4 +56,8 @@ export const imageUrlSchema = z
   .url()
   .refine((url) => new URL(url).search === '', 'Search params not allowed');
 
-export const nameSchema = z.string().refine((s) => /^[a-z ,.'-]+$/i.test(s), "Name may only contain letters, spaces and these characters: ,.'-");
+export const nameSchema = z
+  .string()
+  .min(2)
+  .max(200)
+  .refine((s) => /^[a-z ,.'-]+$/i.test(s), "Name may only contain letters, spaces and these characters: ,.'-");

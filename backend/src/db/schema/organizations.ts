@@ -3,6 +3,7 @@ import { boolean, index, json, pgTable, timestamp, varchar } from 'drizzle-orm/p
 import { nanoid } from '../../lib/nanoid';
 import { membershipsTable } from './memberships';
 import { usersTable } from './users';
+import { config } from 'config';
 
 export const organizationsTable = pgTable(
   'organizations',
@@ -13,8 +14,8 @@ export const organizationsTable = pgTable(
     slug: varchar('slug').unique().notNull(),
     country: varchar('country'),
     timezone: varchar('timezone'),
-    defaultLanguage: varchar('default_language'),
-    languages: json('languages').$type<string[]>(),
+    defaultLanguage: varchar('default_language').notNull().default(config.defaultLanguage),
+    languages: json('languages').$type<string[]>().notNull().default([config.defaultLanguage]),
     notificationEmail: varchar('notification_email'),
     emailDomains: json('email_domains').$type<string[]>(),
     brandColor: varchar('brand_color'),

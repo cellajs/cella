@@ -12,16 +12,20 @@ interface Props {
   description?: string;
   placeholder?: string;
   subComponent?: React.ReactNode;
+  required?: boolean;
   disabled?: boolean;
 }
 
-const InputFormField = ({ control, name, label, value, description, type = 'text', placeholder, subComponent, disabled }: Props) => (
+const InputFormField = ({ control, name, label, value, description, type = 'text', placeholder, subComponent, required, disabled }: Props) => (
   <FormField
     control={control}
     name={name}
     render={({ field: { value: formFieldValue, ...rest } }) => (
       <FormItem>
-        <FormLabel>{label}</FormLabel>
+        <FormLabel>
+          {label}
+          {required && <span className="ml-1 opacity-50">*</span>}
+          </FormLabel>
         {description && <FormDescription>{description}</FormDescription>}
         <FormControl>
           <div className="relative">

@@ -144,6 +144,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
         <InputFormField
           control={form.control}
           name="slug"
+          required
           label={t('common:user_handle')}
           description={t('common:user_handle.text')}
           subComponent={
@@ -156,11 +157,11 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
             )
           }
         />
-        <InputFormField control={form.control} value={user.email} name="email" label={t('common:email')} type="email" disabled />
-        <InputFormField control={form.control} name="firstName" label={t('common:first_name')} />
-        <InputFormField control={form.control} name="lastName" label={t('common:last_name')} />
+        <InputFormField control={form.control} value={user.email} name="email" label={t('common:email')} type="email" disabled required />
+        <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
+        <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
         <InputFormField control={form.control} name="bio" label={t('common:bio')} type="textarea" />
-        <LanguageFormField control={form.control} name="language" label={t('common:language')} placeholder="Select a language" />
+        <LanguageFormField control={form.control} name="language" label={t('common:language')} placeholder={t('common:placeholder.select_language')} required />
         <FormField
           control={form.control}
           name="newsletter"

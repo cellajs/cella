@@ -1,11 +1,11 @@
-import { X } from 'lucide-react';
 import * as React from 'react';
+import { X } from 'lucide-react';
 
-import { Command as CommandPrimitive } from 'cmdk';
-import { useEffect } from 'react';
-import { cn } from '~/lib/utils';
+import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
+import { Command as CommandPrimitive, useCommandState } from 'cmdk';
+import { useEffect, forwardRef } from 'react';
 import { Badge } from '~/modules/ui/badge';
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
+import { cn } from '~/lib/utils';
 
 export interface Option {
   value: string;
@@ -26,6 +26,7 @@ interface MultipleSelectorProps {
   /** manually controlled options */
   options?: Option[];
   placeholder?: string;
+  createPlaceholder?: string;
   /** Loading component. */
   loadingIndicator?: React.ReactNode;
   /** Empty component. */
@@ -60,12 +61,13 @@ interface MultipleSelectorProps {
   selectFirstItem?: boolean;
   /** Allow user to create option when there is no option matched. */
   creatable?: boolean;
-  /** Placeholder for the creatable item. */
-  creatablePlaceholder?: string;
   /** Props of `Command` */
   commandProps?: React.ComponentPropsWithoutRef<typeof Command>;
   /** Props of `CommandInput` */
-  inputProps?: Omit<React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>, 'value' | 'placeholder' | 'disabled'>;
+  inputProps?: Omit<
+    React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>,
+    'value' | 'placeholder' | 'disabled'
+  >;
 }
 
 export interface MultipleSelectorRef {
@@ -117,12 +119,40 @@ function removePickedOption(groupOption: GroupOption, picked: Option[]) {
   return cloneOption;
 }
 
+/**
+ * The `CommandEmpty` of shadcn/ui will cause the cmdk empty not rendering correctly.
+ * So we create one and copy the `Empty` implementation from `cmdk`.
+ *
+ * @reference: https://github.com/hsuanyi-chou/shadcn-ui-expansions/issues/34#issuecomment-1949561607
+ **/
+const CommandEmpty = forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof CommandPrimitive.Empty>
+>(({ className, ...props }, forwardedRef) => {
+  const render = useCommandState((state) => state.filtered.count === 0);
+
+  if (!render) return null;
+
+  return (
+    <div
+      ref={forwardedRef}
+      className={cn('py-6 text-center text-sm', className)}
+      cmdk-empty=""
+      role="presentation"
+      {...props}
+    />
+  );
+});
+
+CommandEmpty.displayName = 'CommandEmpty';
+
 const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorProps>(
   (
     {
       value,
       onChange,
       placeholder,
+      createPlaceholder,
       defaultOptions: arrayDefaultOptions = [],
       options: arrayOptions,
       delay,
@@ -138,7 +168,6 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       badgeClassName,
       selectFirstItem = true,
       creatable = false,
-      creatablePlaceholder = 'Create',
       triggerSearchOnFocus = false,
       commandProps,
       inputProps,
@@ -150,7 +179,9 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     const [isLoading, setIsLoading] = React.useState(false);
 
     const [selected, setSelected] = React.useState<Option[]>(value || []);
-    const [options, setOptions] = React.useState<GroupOption>(transToGroupOption(arrayDefaultOptions, groupBy));
+    const [options, setOptions] = React.useState<GroupOption>(
+      transToGroupOption(arrayDefaultOptions, groupBy),
+    );
     const [inputValue, setInputValue] = React.useState('');
     const debouncedSearchTerm = useDebounce(inputValue, delay || 500);
 
@@ -169,7 +200,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         setSelected(newOptions);
         onChange?.(newOptions);
       },
-      [selected, onChange],
+      [selected],
     );
 
     const handleKeyDown = React.useCallback(
@@ -187,7 +218,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
           }
         }
       },
-      [selected, handleUnselect],
+      [selected],
     );
 
     useEffect(() => {
@@ -205,7 +236,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       if (JSON.stringify(newOption) !== JSON.stringify(options)) {
         setOptions(newOption);
       }
-    }, [arrayOptions, groupBy, onSearch, options]);
+    }, [arrayDefaultOptions, arrayOptions, groupBy, onSearch, options]);
 
     useEffect(() => {
       const doSearch = async () => {
@@ -228,20 +259,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       };
 
       void exec();
-    }, [debouncedSearchTerm, open, onSearch, triggerSearchOnFocus, groupBy]);
+    }, [debouncedSearchTerm, open]);
 
     const CreatableItem = () => {
       if (!creatable) return undefined;
-
-      const split = inputValue
-        .split(',')
-        .map((i) => i.trim())
-        .filter((i) => i.length > 0)
-        .filter((value, index, self) => self.indexOf(value) === index)
-        .filter((value) => !selected.find((s) => s.value === value));
-      const text = split.map((i) => `"${i}"`).join(', ');
-
-      if (split.length === 0) return undefined;
 
       const Item = (
         <CommandItem
@@ -251,17 +272,17 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
             e.preventDefault();
             e.stopPropagation();
           }}
-          onSelect={() => {
+          onSelect={(value: string) => {
             if (selected.length >= maxSelected) {
               onMaxSelected?.(selected.length);
               return;
             }
             setInputValue('');
-            const newOptions = [...selected, ...split.map((value) => ({ value, label: value }))];
+            const newOptions = [...selected, { value, label: value }];
             setSelected(newOptions);
             onChange?.(newOptions);
           }}
-        >{`${creatablePlaceholder} ${text}`}</CommandItem>
+        >{`${createPlaceholder || 'Create'} '${inputValue}'`}</CommandItem>
       );
 
       // For normal creatable
@@ -277,7 +298,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       return undefined;
     };
 
-    const EmptyItem = () => {
+    const EmptyItem = React.useCallback(() => {
       if (!emptyIndicator) return undefined;
 
       // For async search that showing emptyIndicator
@@ -290,9 +311,27 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       }
 
       return <CommandEmpty>{emptyIndicator}</CommandEmpty>;
-    };
+    }, [creatable, emptyIndicator, onSearch, options]);
 
-    const selectables = React.useMemo<GroupOption>(() => removePickedOption(options, selected), [options, selected]);
+    const selectables = React.useMemo<GroupOption>(
+      () => removePickedOption(options, selected),
+      [options, selected],
+    );
+
+    /** Avoid Creatable Selector freezing or lagging when paste a long string. */
+    const commandFilter = React.useCallback(() => {
+      if (commandProps?.filter) {
+        return commandProps.filter;
+      }
+
+      if (creatable) {
+        return (value: string, search: string) => {
+          return value.toLowerCase().includes(search.toLowerCase()) ? 1 : -1;
+        };
+      }
+      // Using default filter in `cmdk`. We don't have to provide it.
+      return undefined;
+    }, [creatable, commandProps?.filter]);
 
     return (
       <Command
@@ -302,11 +341,14 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
           commandProps?.onKeyDown?.(e);
         }}
         className={cn('overflow-visible bg-transparent', commandProps?.className)}
-        shouldFilter={commandProps?.shouldFilter !== undefined ? commandProps.shouldFilter : !onSearch} // When onSearch is provided, we don't want to filter the options. You can still override it.
+        shouldFilter={
+          commandProps?.shouldFilter !== undefined ? commandProps.shouldFilter : !onSearch
+        } // When onSearch is provided, we don't want to filter the options. You can still override it.
+        filter={commandFilter()}
       >
         <div
           className={cn(
-            'group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+            'group rounded-md border border-input px-3 py-2 text-sm ring-offset-background bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
             className,
           )}
         >
@@ -327,7 +369,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                   <button
                     type="button"
                     className={cn(
-                      'ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                      'py-1 m-[-4px] ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2',
                       (disabled || option.fixed) && 'hidden',
                     )}
                     onKeyDown={(e) => {
@@ -341,7 +383,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                     }}
                     onClick={() => handleUnselect(option)}
                   >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                    <X className="h-4 w-4 opacity-50 hover:opacity-100" />
                   </button>
                 </Badge>
               );
@@ -366,7 +408,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 inputProps?.onFocus?.(event);
               }}
               placeholder={hidePlaceholderWhenSelected && selected.length !== 0 ? '' : placeholder}
-              className={cn('ml-2 flex-1 bg-transparent outline-none placeholder:text-muted-foreground', inputProps?.className)}
+              className={cn(
+                'ml-2 flex-1 bg-transparent outline-none placeholder:text-muted-foreground',
+                inputProps?.className,
+              )}
             />
           </div>
         </div>
@@ -403,7 +448,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                                 setSelected(newOptions);
                                 onChange?.(newOptions);
                               }}
-                              className={cn('cursor-pointer', option.disable && 'cursor-default text-muted-foreground')}
+                              className={cn(
+                                'cursor-pointer',
+                                option.disable && 'cursor-default text-muted-foreground',
+                              )}
                             >
                               {option.label}
                             </CommandItem>

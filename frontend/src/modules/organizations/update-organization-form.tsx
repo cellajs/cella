@@ -136,6 +136,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           control={form.control}
           name="slug"
           label={t('common:organization_handle')}
+          required
           description={t('common:organization_handle.text')}
           subComponent={
             organization.slug !== slug && (
@@ -147,11 +148,12 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             )
           }
         />
-        <InputFormField control={form.control} name="name" label={t('common:name')} />
-        <InputFormField control={form.control} name="shortName" label={t('common:short_name')} />
+        <InputFormField control={form.control} name="name" label={t('common:name')} required />
+        <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
         <InputFormField
           control={form.control}
           type="email"
+          placeholder={t('common:placeholder.your_email')}
           name="notificationEmail"
           label={t('common:notification_email')}
           description={t('common:notification_email.text')}
@@ -162,8 +164,9 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="languages"
           label={t('common:language.plural')}
           mode="multiple"
-          placeholder={t('common:select')}
+          placeholder={t('common:placeholder.select_languages')}
           emptyIndicator={t('common:empty_languages')}
+          required
         />
         <LanguageFormField
           control={form.control}
@@ -172,6 +175,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           description={t('common:default_language.text')}
           placeholder={t('common:select_language')}
           disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
+          required
         />
         <FormField
           control={form.control}
