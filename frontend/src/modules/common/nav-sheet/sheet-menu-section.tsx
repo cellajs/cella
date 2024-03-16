@@ -7,6 +7,7 @@ import { dialog } from '../dialoger/state';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import Sticky from 'react-sticky-el';
+import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 
 interface MenuSectionProps {
   key: string;
@@ -62,9 +63,18 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
           {isSectionVisible && data.canCreate && section.createForm && (
-            <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
-              <Plus size={16} />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
+                  <Plus size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipPortal>
+                <TooltipContent sideOffset={22} side="right">
+                  {t('common:create')}
+                </TooltipContent>
+              </TooltipPortal>
+            </Tooltip>
           )}
         </div>
       </Sticky>

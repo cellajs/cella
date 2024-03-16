@@ -18,6 +18,8 @@ import { SheetAccount } from './nav-sheet/sheet-account';
 import { SheetMenu } from './nav-sheet/sheet-menu';
 import { SheetNotifications } from './nav-sheet/sheet-notifications';
 
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
+
 export type NavItem = {
   id: string;
   icon: React.ElementType<LucideProps>;
@@ -104,6 +106,7 @@ interface NavButtonProps {
 
 // Create a nav button component
 const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
+  const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const { theme } = useThemeStore();
 
@@ -111,22 +114,29 @@ const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   const activeClass = isActive ? 'bg-accent/20 hover:bg-accent/20' : '';
 
   return (
-    <Button
-      variant="ghost"
-      className={cn('hover:bg-accent/10 transition-transform h-14 w-14', navIconColor, activeClass)}
-      onClick={() => onClick(navItem.id)}
-    >
-      {navItem.id === 'account' ? (
-        <AvatarWrap
-          type="user"
-          className="border-[1.5px] border-current text-primary-foreground"
-          id={user.id}
-          name={user.name}
-          url={user.thumbnailUrl}
-        />
-      ) : (
-        <navItem.icon strokeWidth={config.theme.strokeWidth} />
-      )}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn('hover:bg-accent/10 transition-transform h-14 w-14', navIconColor, activeClass)}
+          onClick={() => onClick(navItem.id)}
+        >
+          {navItem.id === 'account' ? (
+            <AvatarWrap
+              type="user"
+              className="border-[1.5px] border-current text-primary-foreground"
+              id={user.id}
+              name={user.name}
+              url={user.thumbnailUrl}
+            />
+          ) : (
+            <navItem.icon strokeWidth={config.theme.strokeWidth} />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={10}>
+        {t(`common:${navItem.id}`)}
+      </TooltipContent>
+    </Tooltip>
   );
 };
