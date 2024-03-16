@@ -60,10 +60,10 @@ function Toolbar({
   const openInviteDialog = () => {
     dialog(<InviteUsersForm dialog />, {
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-[100]',
+      className: 'w-auto shadow-none relative z-[100] max-w-3xl',
       container: containerRef.current,
       title: t('common:invite'),
-      text: t('common:invite_users.text'),
+      text: `${t('common:invite_explanation.text')} ${t('common:invite_users.text')}`,
     });
   };
 

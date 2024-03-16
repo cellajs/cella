@@ -12,7 +12,7 @@ const NavSheet = () => {
 
   return (
     <Sheet open={!!activeSheet} modal={false}>
-      <SheetContent side={isMirrorSide ? 'mirrorOnMobile' : 'left'} className={sheetClass} onClick={() => setSheet(null)}>
+      <SheetContent side={isMirrorSide ? 'mirrorOnMobile' : 'left'} className={sheetClass} id="nav-sheet" onClick={() => setSheet(null)}>
         {activeSheet?.sheet}
       </SheetContent>
     </Sheet>

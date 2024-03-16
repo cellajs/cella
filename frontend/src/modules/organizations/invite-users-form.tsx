@@ -4,14 +4,14 @@ import { z } from 'zod';
 import { invite } from '~/api/general';
 import type { Organization } from '~/types';
 
-import { Send } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUserSuggestions } from '~/api/users';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import MultipleSelector from '../ui/multiple-selector';
 
 interface Props {
@@ -75,7 +75,6 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
           name="emails"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('common:email.plural')}</FormLabel>
               <FormControl>
                 <MultipleSelector
                   value={field.value}
@@ -91,10 +90,9 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
                   creatable
                   createPlaceholder={t('common:invite')}
                   hidePlaceholderWhenSelected
-                  loadingIndicator={<p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">loading...</p>}
+                  loadingIndicator={<Loader2 className="animate-spin" size={16} />}
                   defaultOptions={[]}
                   placeholder={t('common:type_emails')}
-                  emptyIndicator={<p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">no emails found.</p>}
                 />
               </FormControl>
               <FormMessage />

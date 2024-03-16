@@ -70,7 +70,7 @@ const AppNav = () => {
   };
 
   return (
-    <nav className={cn('fixed z-40 w-full overflow-y-auto md:fixed md:left-0 md:top-0 md:h-svh md:w-16', navBackground)}>
+    <nav id="app-nav" className={cn('fixed z-40 w-full overflow-y-auto md:fixed md:left-0 md:top-0 md:h-svh md:w-16', navBackground)}>
       <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1">
         {navItems.map((navItem: NavItem, index: number) => {
           const isSecondItem = index === 1;

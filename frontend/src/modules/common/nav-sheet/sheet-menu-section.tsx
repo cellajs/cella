@@ -6,6 +6,7 @@ import type { Page, UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
+import Sticky from 'react-sticky-el';
 
 interface MenuSectionProps {
   key: string;
@@ -49,23 +50,25 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
   };
 
   return (
-    <div className="mt-4">
-      <div className="flex items-center gap-2 justify-between">
-        <Button onClick={toggleSection} className="w-full justify-between transition-transform" variant="secondary">
-          <div>
-            <span className="capitalize">{section.name}</span>
-            {!isSectionVisible && <span className="ml-2 inline-block px-2 py-1 text-xs font-light text-muted-foreground">{itemCount}</span>}
-          </div>
+    <div className="mt-2">
+      <Sticky scrollElement="#nav-sheet" stickyClassName="z-10">
+        <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between">
+          <Button onClick={toggleSection} className="w-full justify-between transition-transform" variant="secondary">
+            <div>
+              <span className="capitalize">{section.name}</span>
+              {!isSectionVisible && <span className="ml-2 inline-block px-2 py-1 text-xs font-light text-muted-foreground">{itemCount}</span>}
+            </div>
 
-          <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
-        </Button>
-        {isSectionVisible && data.canCreate && section.createForm && (
-          <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
-            <Plus size={16} />
+            <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
-        )}
-      </div>
-      {isSectionVisible && <ul className="mt-2">{renderSection(data.active)}</ul>}
+          {isSectionVisible && data.canCreate && section.createForm && (
+            <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
+              <Plus size={16} />
+            </Button>
+          )}
+        </div>
+      </Sticky>
+      {isSectionVisible && <ul className="mt-1">{renderSection(data.active)}</ul>}
     </div>
   );
 };

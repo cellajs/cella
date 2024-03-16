@@ -119,6 +119,7 @@
     "react-i18next": "^14.0.5",
     "react-intersection-observer": "^9.5.3",
     "react-leaflet": "^4.2.1",
+    "react-sticky-el": "^2.1.0",
     "sonner": "^1.4.2",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
@@ -153,7 +154,11 @@
     "vite-plugin-pwa": "^0.19.0",
     "vite-plugin-static-copy": "^1.0.1"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},
