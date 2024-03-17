@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 
 // This hook is used to listen for a key press
-export const useKeypress = (targetKey: string, onKeyPress: (event: KeyboardEvent) => void, enable = true): void => {
+export const useKeyPress = (targetKey: string, onKeyPress: (event: KeyboardEvent) => void, enable = true): void => {
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
       if (!enable || event.key !== targetKey) return;

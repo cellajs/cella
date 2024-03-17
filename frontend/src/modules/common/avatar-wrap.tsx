@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 
 export interface AvatarWrapProps extends AvatarProps {
   id?: string;
-  type?: 'user' | 'organization';
+  type: 'user' | 'organization';
   name?: string | null;
   url?: string | null;
   className?: string;

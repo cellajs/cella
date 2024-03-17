@@ -52,14 +52,14 @@ interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetP
 }
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
   ({ side = 'right', className, children, onClick, ...props }, ref) => (
-    <SheetPortal>
+    <>
       <SheetOverlay
         onClick={onClick} // Using the passed onClick function
       />
       <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
         {children}
       </SheetPrimitive.Content>
-    </SheetPortal>
+    </>
   ),
 );
 SheetContent.displayName = SheetPrimitive.Content.displayName;
