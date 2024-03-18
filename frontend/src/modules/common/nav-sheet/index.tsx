@@ -3,6 +3,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { useKeyPress } from '~/hooks/use-key-press';
 import { useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { ScrollArea } from '~/modules/ui/scroll-area';
 
 const NavSheet = () => {
   const isMobile = useBreakpoints('max', 'sm');
@@ -20,7 +21,7 @@ const NavSheet = () => {
   const hideShadow = keepMenuOpen && activeSheet?.id === 'menu';
   const sheetClass = `${
     hideShadow ? 'lg:shadow-none' : ''
-  } top-16 h-[calc(100%-16)] duration-300 ease-in-out md:left-16 md:top-0 z-30 data-[state=closed]:duration-300 data-[state=open]:duration-300`;
+  } top-16 h-[calc(100%-16)] duration-300 ease-in-out p-0 md:left-16 md:top-0 z-30 data-[state=closed]:duration-300 data-[state=open]:duration-300`;
 
   return (
     <div>
@@ -36,10 +37,11 @@ const NavSheet = () => {
           side={isMirrorSide ? 'mirrorOnMobile' : 'left'}
           ref={containerRef}
           className={sheetClass}
-          id="nav-sheet"
           onClick={() => setSheet(null)}
         >
-          {activeSheet?.sheet}
+          <ScrollArea className="h-full" id="nav-sheet">
+            <div className="p-4">{activeSheet?.sheet}</div>
+          </ScrollArea>
         </SheetContent>
       </Sheet>
     </div>

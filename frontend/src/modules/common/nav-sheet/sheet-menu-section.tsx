@@ -52,7 +52,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
 
   return (
     <div className="mt-2">
-      <Sticky scrollElement="#nav-sheet" stickyClassName="z-10">
+      <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <Button onClick={toggleSection} className="w-full justify-between transition-transform" variant="secondary">
             <div>
