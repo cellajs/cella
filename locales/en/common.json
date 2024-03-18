@@ -234,7 +234,7 @@
   "update_member": "Update member",
   "upload": "Upload",
   "upload_cover": "Upload cover",
-  "upload_image": "Upload image", 
+  "upload_image": "Upload image",
   "upload_img_max_10mb.text": "Upload a PNG or JPEG under 10MB",
   "upload_profile_picture": "Upload profile picture",
   "user": "User",
@@ -251,5 +251,6 @@
   "welcome_back": "Welcome back",
   "year": "year",
   "your_role": "Your role",
-  "placeholder.select_languages": "Select languages"
+  "placeholder.select_languages": "Select languages",
+  "error.gleap_not_initialized": "Chat support unavailable: please use 'Contact' link."
 }

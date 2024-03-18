@@ -1,10 +1,10 @@
 import { useRouterState } from '@tanstack/react-router';
-import Gleap from 'gleap';
 import type { ErrorType } from 'backend/lib/errors';
 import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { AppFooter } from '~/modules/common/app-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
@@ -29,7 +29,8 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
   };
 
   const handleAskForHelp = () => {
-    Gleap.openConversations();
+    if (!window.Gleap) return toast.error(t('common:error.gleap_not_initialized'));
+    window.Gleap.openConversations();
   };
 
   return (
