@@ -78,7 +78,9 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
           )}
         </div>
       </Sticky>
-      {isSectionVisible && <ul className="mt-1">{renderSection(data.active)}</ul>}
+      <div className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} grid-rows-[0fr] ease-in-outss duration-300`}>
+        <ul className="overflow-hidden">{renderSection(data.active)}</ul>
+      </div>
     </div>
   );
 };

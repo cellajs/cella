@@ -34,7 +34,7 @@ export type SearchResultsType = typeof initialSearchResults;
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
-  const isSmallScreen = useBreakpoints('max', 'lg');
+  const isSmallScreen = useBreakpoints('max', 'md');
 
   const { keepMenuOpen, toggleKeepMenu, activeSections, toggleSection, setSheet } = useNavigationStore();
 

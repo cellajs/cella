@@ -84,6 +84,7 @@ export function PublicNav() {
 
             <Button
               variant="ghost"
+              aria-label="Github repository"
               className="max-sm:hidden"
               size="icon"
               onClick={() => {

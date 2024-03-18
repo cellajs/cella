@@ -11,14 +11,14 @@ export const SheetMenuItem = ({ item, menutItemClick }: SheetMenuItemProps) => {
   return (
     <Link
       resetScroll={false}
-      className="group mb-2 flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-2 ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground"
+      className="group mb-2 flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground"
       onClick={menutItemClick}
-      aria-label={`$(t('common:select')) ${item.name}`}
+      aria-label={item.name}
       to="/$organizationIdentifier/members"
       preload="intent"
       preloadDelay={200}
       params={{ organizationIdentifier: item.slug }}
-      activeProps={{ className: 'bg-accent/50 text-accent-foreground border border-primary/50 text-primary' }}
+      activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
       <div className="p-2">
         <AvatarWrap type="organization" id={item.id} name={item.name} url={item.thumbnailUrl} />

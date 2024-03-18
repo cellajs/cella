@@ -31,6 +31,7 @@ export const useUserStore = create<UserState>()(
           });
         },
         setUser: (user) => {
+          // TODO: move to Gleap component and listen to user changes?
           if (Gleap.isUserIdentified()) {
             Gleap.updateContact({ email: user.email, name: user.name || user.email });
           } else {

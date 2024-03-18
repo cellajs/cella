@@ -61,6 +61,7 @@ const AppNav = () => {
       return;
     }
 
+
     // If its a route, navigate to it, otherwise open sheet component
     if (navItem.href) {
       if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
