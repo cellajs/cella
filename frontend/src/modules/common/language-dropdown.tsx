@@ -1,7 +1,5 @@
 import { config } from 'config';
-
 import { i18n } from '~/lib/i18n';
-import Gleap from 'gleap';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import CountryFlag from './country-flag';
@@ -15,7 +13,7 @@ interface Props {
 const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
   const language = i18n.resolvedLanguage || i18n.language;
   const changeLanguage = (lng: string) => {
-    Gleap.setLanguage(lng);
+    window.Gleap?.setLanguage(lng);
     i18n.changeLanguage(lng);
   };
 

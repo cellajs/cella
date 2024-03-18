@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import Gleap from 'gleap';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
 import { config } from 'config';
@@ -32,10 +31,10 @@ export const useUserStore = create<UserState>()(
         },
         setUser: (user) => {
           // TODO: move to Gleap component and listen to user changes?
-          if (Gleap.isUserIdentified()) {
-            Gleap.updateContact({ email: user.email, name: user.name || user.email });
+          if (window.Gleap?.isUserIdentified()) {
+            window.Gleap.updateContact({ email: user.email, name: user.name || user.email });
           } else {
-            Gleap.identify(user.id, { email: user.email, name: user.name || user.email, createdAt: new Date(user.createdAt) });
+            window.Gleap.identify(user.id, { email: user.email, name: user.name || user.email, createdAt: new Date(user.createdAt) });
           }
 
           set((state) => {
@@ -55,7 +54,7 @@ export const useUserStore = create<UserState>()(
         },
         async signOut() {
           set({ user: null as unknown as User });
-          Gleap.clearIdentity();
+          window.Gleap?.clearIdentity();
           await client['sign-out'].$get();
         },
       })),
