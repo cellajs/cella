@@ -12,6 +12,7 @@ interface Props {
   inviteUrl?: string;
   invitedBy?: string | null;
   type?: 'system' | 'organization';
+  replyTo?: string;
 }
 
 const baseUrl = config.frontendUrl;
@@ -25,6 +26,7 @@ export const InviteEmail = ({
   inviteUrl = baseUrl,
   invitedBy,
   type = 'organization',
+  replyTo = config.notificationsEmail,
 }: Props) => {
   return (
     <React.Fragment>
@@ -65,7 +67,14 @@ export const InviteEmail = ({
                   }}
                 />
               </Text>
-              <Section>
+              <Text className="text-[12px] leading-[18px] text-[#6a737d] mt-[20px]">
+                {i18n.t('backend:email.invite_reply_to')}
+                <a className="ml-1" href={`mailto:${replyTo}`}>
+                  {replyTo}
+                </a>
+              </Text>
+              <Text className="text-[12px] leading-[18px] text-[#6a737d] mt-[20px]">{i18n.t('backend:email.invite_expire')}</Text>
+              <Section className="mt-[50px]">
                 <Row>
                   <Column align="right">
                     <Img className="rounded-full" src={userImage} width="64" height="64" />

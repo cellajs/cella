@@ -154,6 +154,7 @@ const generalRoutes = app
               inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
               invitedBy: user.name,
               type: 'system',
+              replyTo: user.email,
             }),
           );
           logEvent('User invited on system level');
@@ -170,6 +171,7 @@ const generalRoutes = app
             username: targetUser?.name || email.toLowerCase() || '',
             invitedBy: user.name,
             inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
+            replyTo: user.email,
           }),
         );
         logEvent('User invited to organization', { organization: organization?.id });
