@@ -29,12 +29,12 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel }: PageHea
           <AvatarWrap className="m-2" type={type} id={id} name={title} url={thumbnailUrl} />
           <div className="my-auto">
             {/* Page title */}
-            <h1 className="text-xl leading-5 font-semibold">{title}</h1>
+            <h1 className="md:text-xl leading-4 md:-mt-1 font-semibold">{title}</h1>
 
             {/* Breadcrumb */}
-            <Breadcrumb>
+            <Breadcrumb className="flex">
               <BreadcrumbItem>
-                <strong className="text-sm font-light">{type}</strong>
+                <strong className="text-sm leading-4 font-light">{type}</strong>
               </BreadcrumbItem>
             </Breadcrumb>
           </div>
