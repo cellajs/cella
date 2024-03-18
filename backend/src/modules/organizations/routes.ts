@@ -6,21 +6,18 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { systemGuard, tenantGuard } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
   createOrganizationJsonSchema,
-  getOrganizationParamSchema,
   getOrganizationsQuerySchema,
-  getUsersByOrganizationIdParamSchema,
   getUsersByOrganizationQuerySchema,
+  organizationWithUserParamSchema,
   updateOrganizationJsonSchema,
-  updateOrganizationParamSchema,
   updateUserInOrganizationJsonSchema,
-  updateUserInOrganizationParamSchema,
 } from './schema';
 
 export const createOrganizationRouteConfig = createRouteConfig({
@@ -68,7 +65,7 @@ export const updateOrganizationRouteConfig = createRouteConfig({
       - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
-    params: updateOrganizationParamSchema,
+    params: organizationParamSchema,
     body: {
       content: {
         'application/json': {
@@ -154,7 +151,7 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
       - Users, who are members of the organization
   `,
   request: {
-    params: getOrganizationParamSchema,
+    params: organizationParamSchema,
   },
   responses: {
     200: {
@@ -181,7 +178,7 @@ export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
       - Users, who are members of the organization
   `,
   request: {
-    params: getUsersByOrganizationIdParamSchema,
+    params: organizationParamSchema,
     query: getUsersByOrganizationQuerySchema,
   },
   responses: {
@@ -209,7 +206,7 @@ export const updateUserInOrganizationRouteConfig = createRouteConfig({
       - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
-    params: updateUserInOrganizationParamSchema,
+    params: organizationWithUserParamSchema,
     body: {
       content: {
         'application/json': {

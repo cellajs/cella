@@ -51,6 +51,10 @@ export const validSlugSchema = z
     'Slug may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.',
   );
 
+export const organizationParamSchema = z.object({
+  organizationIdentifier: slugSchema.or(idSchema),
+});
+
 export const imageUrlSchema = z
   .string()
   .url()
