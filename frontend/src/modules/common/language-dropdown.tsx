@@ -13,7 +13,7 @@ interface Props {
 const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
   const language = i18n.resolvedLanguage || i18n.language;
   const changeLanguage = (lng: string) => {
-    window.Gleap?.setLanguage(lng);
+    if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);
   };
 

@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, ToPathOption } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
@@ -7,7 +7,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 export type PageNavTab = {
   id: string;
   label: string;
-  path: string;
+  path: ToPathOption;
 }
 
 interface Props {
@@ -71,6 +71,7 @@ export const PageNav = ({ title, avatar, tabs }: Props) => {
             resetScroll={false}
             className="p-2 border-b-4 border-transparent"
             to={path}
+            params={''}
             activeOptions={{ exact: true, includeSearch: false }}
             onClick={updateScrollPosition}
             activeProps={{ className: '!border-primary' }}

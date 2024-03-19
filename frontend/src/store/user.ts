@@ -30,17 +30,19 @@ export const useUserStore = create<UserState>()(
           });
         },
         setUser: (user) => {
-          // TODO: move to Gleap component and listen to user changes?
-          if (window.Gleap?.isUserIdentified()) {
-            window.Gleap.updateContact({ email: user.email, name: user.name || user.email });
-          } else {
-            window.Gleap.identify(user.id, { email: user.email, name: user.name || user.email, createdAt: new Date(user.createdAt) });
-          }
-
           set((state) => {
             state.user = user;
             state.lastUser = { email: user.email, name: user.name, id: user.id, slug: user.slug };
           });
+
+          // TODO: move to Gleap component and listen to user changes?
+          if (!window.Gleap) return;
+
+          if (window.Gleap.isUserIdentified()) {
+            window.Gleap.updateContact({ email: user.email, name: user.name || user.email });
+          } else {
+            window.Gleap.identify(user.id, { email: user.email, name: user.name || user.email, createdAt: new Date(user.createdAt) });
+          }
         },
         async getMe() {
           try {
@@ -54,7 +56,7 @@ export const useUserStore = create<UserState>()(
         },
         async signOut() {
           set({ user: null as unknown as User });
-          window.Gleap?.clearIdentity();
+          if (window.Gleap) window.Gleap.clearIdentity();
           await client['sign-out'].$get();
         },
       })),
