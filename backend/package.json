@@ -16,8 +16,8 @@
     "generate": "drizzle-kit generate:pg",
     "push": "drizzle-kit push:pg",
     "migrate": "tsx src/db/migrate.ts",
-    "migrate:script": "tsx dist/src/db/migrate.cjs",
-    "seeds:script": "tsx dist/seed/users.cjs && tsx dist/seed/organizations.cjs",
+    "migrate:script": "tsx ./dist/src/db/migrate.cjs",
+    "seeds:script": "tsx ./dist/seed/users.cjs && tsx dist/seed/organizations.cjs",
     "studio": "drizzle-kit studio",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend ./dist && sentry-cli sourcemaps upload --org cella --project backend ./dist"
   },

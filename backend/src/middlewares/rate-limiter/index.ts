@@ -32,7 +32,7 @@ class RateLimiter extends RateLimiterPostgres {
     return async (ctx, next) => {
       const ipAddr = ctx.req.header('x-forwarded-for');
       // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-      const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.raw.clone().json<any>() : undefined;
+      const body = ctx.req.header('content-type') === 'application/json' ? (await ctx.req.raw.clone().json()) as any : undefined;
       const user = ctx.get('user');
       const username = body?.email || user?.id;
 
@@ -75,14 +75,14 @@ class RateLimiter extends RateLimiterPostgres {
         if (mode === 'success') {
           try {
             await this.consume(usernameIPkey);
-          } catch {}
+          } catch { }
         } else if (mode === 'fail') {
           await this.delete(usernameIPkey);
         }
       } else if (mode === 'fail') {
         try {
           await this.consume(usernameIPkey);
-        } catch {}
+        } catch { }
       }
     };
   }
