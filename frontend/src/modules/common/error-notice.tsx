@@ -59,7 +59,6 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
           </CardHeader>
           {error && (
             <CardContent className="text-center whitespace-pre-wrap text-red-600 font-mono">
-              {error.message && !error.type && <p>{error.message}</p>}
               {error.type && !showError && (
                 <Button variant="link" size="sm" onClick={() => setShowError(true)} className="whitespace-pre-wrap text-red-600">
                   <span>{t('common:error.show_details')}</span>
@@ -90,8 +89,8 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
               )}
             </CardContent>
           )}
-          <CardFooter className="flex mt-4 justify-center">
-            {!location.pathname.startsWith('/error') && !error?.message && (
+          <CardFooter className="flex gap-2 mt-4 justify-center">
+            {!location.pathname.startsWith('/error') && (
               <Button onClick={handleReload}>
                 <RefreshCw size={16} className="mr-1" />
                 {t('common:reload')}
@@ -103,7 +102,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
                 {t('common:ask_for_help')}
               </Button>
             )}
-            <Button className="ml-2" onClick={handleGoToHome} variant="secondary">
+            <Button onClick={handleGoToHome} variant="secondary">
               <Home size={16} className="mr-1" />
               {t('common:home')}
             </Button>

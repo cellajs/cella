@@ -477,8 +477,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0
       lucide-react:
-        specifier: ^0.316.0
-        version: 0.316.0(react@18.2.0)
+        specifier: ^0.358.0
+        version: 0.358.0(react@18.2.0)
       nanoid:
         specifier: ^5.0.4
         version: 5.0.4
@@ -12431,8 +12431,8 @@ packages:
       oslo: 1.0.1
     dev: false
 
-  /lucide-react@0.316.0(react@18.2.0):
-    resolution: {integrity: sha512-dTmYX1H4IXsRfVcj/KUxworV6814ApTl7iXaS21AimK2RUEl4j4AfOmqD3VR8phe5V91m4vEJ8tCK4uT1jE5nA==}
+  /lucide-react@0.358.0(react@18.2.0):
+    resolution: {integrity: sha512-rBSptRjZTMBm24zsFhR6pK/NgbT18JegZGKcH4+1H3+UigMSRpeoWLtR/fAwMYwYnlJOZB+y8WpeHne9D6X6Kg==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0
     dependencies:

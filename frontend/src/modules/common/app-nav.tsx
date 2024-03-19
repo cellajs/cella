@@ -17,6 +17,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { SheetAccount } from './nav-sheet/sheet-account';
 import { SheetMenu } from './nav-sheet/sheet-menu';
 import { SheetNotifications } from './nav-sheet/sheet-notifications';
+import { NavSheet } from './nav-sheet';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 
@@ -61,7 +62,6 @@ const AppNav = () => {
       return;
     }
 
-
     // If its a route, navigate to it, otherwise open sheet component
     if (navItem.href) {
       if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
@@ -73,27 +73,30 @@ const AppNav = () => {
   };
 
   return (
-    <nav id="app-nav" className={cn('fixed z-40 w-full overflow-y-auto md:fixed md:left-0 md:top-0 md:h-svh md:w-16', navBackground)}>
-      <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1">
-        {navItems.map((navItem: NavItem, index: number) => {
-          const isSecondItem = index === 1;
-          const isActive = activeSheet?.id === navItem.id;
+    <>
+      <nav id="app-nav" className={cn('fixed z-40 w-full overflow-y-auto md:fixed md:left-0 md:top-0 md:h-svh md:w-16', navBackground)}>
+        <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1">
+          {navItems.map((navItem: NavItem, index: number) => {
+            const isSecondItem = index === 1;
+            const isActive = activeSheet?.id === navItem.id;
 
-          const listItemClass = isSecondItem
-            ? 'flex xs:absolute xs:left-1/2 md:left-0 transform xs:-translate-x-1/2 md:relative md:transform-none md:justify-start'
-            : 'flex justify-start';
+            const listItemClass = isSecondItem
+              ? 'flex xs:absolute xs:left-1/2 md:left-0 transform xs:-translate-x-1/2 md:relative md:transform-none md:justify-start'
+              : 'flex justify-start';
 
-          return (
-            <Fragment key={navItem.id}>
-              {isSecondItem && <div className="hidden xs:flex xs:grow md:hidden" />}
-              <li className={cn('md:grow-0', listItemClass)} key={navItem.id}>
-                <NavButton navItem={navItem} isActive={isActive} onClick={() => navButtonClick(navItem)} />
-              </li>
-            </Fragment>
-          );
-        })}
-      </ul>
-    </nav>
+            return (
+              <Fragment key={navItem.id}>
+                {isSecondItem && <div className="hidden xs:flex xs:grow md:hidden" />}
+                <li className={cn('md:grow-0', listItemClass)} key={navItem.id}>
+                  <NavButton navItem={navItem} isActive={isActive} onClick={() => navButtonClick(navItem)} />
+                </li>
+              </Fragment>
+            );
+          })}
+        </ul>
+      </nav>
+      <NavSheet />
+    </>
   );
 };
 

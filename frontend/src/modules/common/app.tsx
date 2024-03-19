@@ -2,15 +2,19 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { AppContent } from '~/modules/common/app-content';
 
 import HolyLoader from 'holy-loader';
-import AppNav from './app-nav';
 import ErrorNotice from './error-notice';
-import { NavSheet } from './nav-sheet';
+import { Suspense, lazy } from 'react';
+
+// Lazy load gleap chat support
+const AppNav = lazy(() => import('~/modules/common/app-nav'));
+
 
 const App = () => {
   return (
     <ErrorBoundary fallbackRender={({ error }) => <ErrorNotice error={error} />}>
-      <AppNav />
-      <NavSheet />
+      <Suspense>
+        <AppNav />
+      </Suspense>
       <AppContent />
       <HolyLoader />
     </ErrorBoundary>

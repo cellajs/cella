@@ -20,9 +20,7 @@ export const SheetMenuItem = ({ item, menutItemClick }: SheetMenuItemProps) => {
       params={{ organizationIdentifier: item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
-      <div className="p-2">
-        <AvatarWrap type="organization" id={item.id} name={item.name} url={item.thumbnailUrl} />
-      </div>
+      <AvatarWrap className="m-2" type="organization" id={item.id} name={item.name} url={item.thumbnailUrl} />
       <div className="truncate p-2 pl-0 text-left">
         <div className="truncate leading-5">{item.name}</div>
         {item.userRole && (

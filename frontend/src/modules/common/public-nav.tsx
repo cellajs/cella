@@ -49,7 +49,7 @@ export function PublicNav() {
 
   return (
     <>
-      <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-40 h-16 w-full">
+      <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-[101] h-16 w-full">
         <div className="flex h-full items-center gap-2 max-w-[84rem] mx-auto justify-between transition-colors duration-300">
           <div className="flex h-full items-center gap-2 md:gap-6">
             <div className="md:hidden">
@@ -102,7 +102,7 @@ export function PublicNav() {
       </header>
 
       <Sheet open={showSheet} onOpenChange={toggleSheet}>
-        <SheetContent side="top" className={`fixed z-30 border-none ${showSheet ? '' : 'delay-300'}`}>
+        <SheetContent side="top" className={`fixed z-[100] border-none ${showSheet ? '' : 'delay-300'}`}>
           <div
             ref={ref}
             className={`bg-background flex mt-2 flex-col gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
