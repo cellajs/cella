@@ -23,7 +23,7 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResul
       // Filter each menu section
       return menuSections.reduce(
         (acc, section) => {
-          acc[section.name] = menu[section.name as keyof UserMenu].active.filter((page) => page.name.toLowerCase().includes(lowerCaseTerm));
+          acc[section.id] = menu[section.id as keyof UserMenu].active.filter((page) => page.name.toLowerCase().includes(lowerCaseTerm));
           return acc;
         },
         {} as Record<string, Page[]>,

@@ -12,18 +12,18 @@ import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
 
 export type SectionItem = {
-  name: string;
+  id: string;
   type: string;
   createForm?: React.ReactNode;
 };
 
 // Here you declare the menu sections
-export const menuSections: SectionItem[] = [{ name: 'organizations', type: 'organization', createForm: <CreateOrganizationForm dialog /> }];
+export const menuSections: SectionItem[] = [{ id: 'organizations', type: 'organization', createForm: <CreateOrganizationForm dialog /> }];
 
 // Set search results to empty array for each menu type
 export const initialSearchResults = menuSections.reduce(
   (acc, section) => {
-    acc[section.name] = [];
+    acc[section.id] = [];
     return acc;
   },
   {} as Record<string, Page[]>,
@@ -36,7 +36,7 @@ export const SheetMenu = memo(() => {
   const { menu } = useNavigationStore();
   const isSmallScreen = useBreakpoints('max', 'md');
 
-  const { keepMenuOpen, toggleKeepMenu, activeSections, toggleSection, setSheet } = useNavigationStore();
+  const { keepMenuOpen, toggleKeepMenu, setSheet } = useNavigationStore();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<SearchResultsType>(initialSearchResults);
@@ -56,21 +56,10 @@ export const SheetMenu = memo(() => {
   const renderedSections = useMemo(
     () =>
       menuSections.map((section) => {
-        const menuSection = menu[section.name as keyof UserMenu];
-
-        return (
-          <MenuSection
-            key={section.name}
-            section={section}
-            data={menuSection}
-            isSectionVisible={activeSections[section.name]}
-            toggleSection={() => toggleSection(section.name)}
-            menutItemClick={menutItemClick}
-            itemCount={menuSection.active.length + menuSection.inactive.length}
-          />
-        );
+        const menuSection = menu[section.id as keyof UserMenu];
+        return <MenuSection key={section.id} section={section} data={menuSection} menutItemClick={menutItemClick} />;
       }),
-    [menu, activeSections, toggleSection, menutItemClick],
+    [menu, menutItemClick],
   );
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {

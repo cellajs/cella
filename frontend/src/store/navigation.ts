@@ -20,7 +20,7 @@ interface NavigationState {
 
 // Build the initial menu (for menu sheet)
 const initialMenuState = menuSections.reduce<UserMenu>((acc, section) => {
-  acc[section.name as keyof UserMenu] = { active: [], inactive: [], canCreate: false };
+  acc[section.id as keyof UserMenu] = { active: [], inactive: [], canCreate: false };
   return acc;
 }, {} as UserMenu);
 

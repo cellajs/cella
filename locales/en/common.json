@@ -253,5 +253,8 @@
   "your_role": "Your role",
   "placeholder.select_languages": "Select languages",
   "error.gleap_not_initialized": "Chat support unavailable: please use 'Contact' link.",
-  "options": "Options"
+  "options": "Options",
+  "archive": "Archive",
+  "mute": "Mute",
+  "archived": "Archived"
 }

@@ -6,29 +6,35 @@ import type { Page, UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
+import { SheetMenuItemOptions } from './sheet-menu-item-options';
+import { MenuArchiveToggle } from './menu-archive-toggle';
 import Sticky from 'react-sticky-el';
 import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 import { useState } from 'react';
+import { useNavigationStore } from '~/store/navigation';
 
 interface MenuSectionProps {
   key: string;
   section: SectionItem;
   data: UserMenu[keyof UserMenu];
-  isSectionVisible: boolean;
-  toggleSection: () => void;
   menutItemClick: () => void;
-  itemCount?: number;
 }
 
-export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSectionVisible, toggleSection, menutItemClick, itemCount }) => {
+export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
+  const { activeSections, toggleSection } = useNavigationStore();
+  const isSectionVisible = activeSections[section.id];
 
   const createDialog = () => {
     dialog(section.createForm, {
       className: 'md:max-w-xl',
       title: t('common:create_organization'),
     });
+  };
+
+  const archiveToggleClick = () => {
+    console.log('archiveToggleClick');
   };
 
   // Render the menu items for each section
@@ -60,17 +66,17 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
 
-    return sectionData.active.map((item: Page) => <SheetMenuItem key={item.id} item={item} menutItemClick={menutItemClick} />);
+    return sectionData.active.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} />);
   };
 
   return (
     <div className="mt-2">
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
-          <Button onClick={toggleSection} className="w-full justify-between transition-transform" variant="secondary">
+          <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
             <div>
-              <span className="capitalize">{section.name}</span>
-              {!isSectionVisible && <span className="ml-2 inline-block px-2 py-1 text-xs font-light text-muted-foreground">{itemCount}</span>}
+              <span>{t(section.id)}</span>
+              {!isSectionVisible && <span className="ml-2 inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>}
             </div>
 
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
@@ -83,7 +89,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
                 </Button>
               </TooltipTrigger>
               <TooltipPortal>
-                <TooltipContent side="bottom">{t('common:options')}</TooltipContent>
+                <TooltipContent side="bottom" sideOffset={10}>{t('common:options')}</TooltipContent>
               </TooltipPortal>
             </Tooltip>
           )}
@@ -108,7 +114,10 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, isSecti
           isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
         } grid-rows-[0fr] ease-in-outss duration-300`}
       >
-        <ul className="overflow-hidden">{optionsView ? renderSectionOptions(data) : renderSectionItems(data)}</ul>
+        <ul className="overflow-hidden">
+          {optionsView ? renderSectionOptions(data) : renderSectionItems(data)}
+          <MenuArchiveToggle archiveToggleClick={archiveToggleClick} />
+          </ul>
       </div>
     </div>
   );
