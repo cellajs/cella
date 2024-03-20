@@ -47,7 +47,7 @@ const create_shader = (vert, frag_source, uniform_names) => {
   gl.attachShader(shader, frag);
   gl.linkProgram(shader);
   // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
-uniform_names.map((name) => (shader[name] = gl.getUniformLocation(shader, name)));
+  uniform_names.map((name) => (shader[name] = gl.getUniformLocation(shader, name)));
   return shader;
 };
 const create_tex = (width, height) => {

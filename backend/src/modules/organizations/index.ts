@@ -5,6 +5,7 @@ import { type MembershipModel, membershipsTable } from '../../db/schema/membersh
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
 
+import { config } from 'config';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -21,7 +22,6 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
-import { config } from 'config';
 
 const app = new CustomHono();
 

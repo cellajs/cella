@@ -1,6 +1,6 @@
-import { useThemeStore } from '~/store/theme.js';
-import {start_cells, set_cell_color, stop_cells} from './animation.js';
 import { useEffect } from 'react';
+import { useThemeStore } from '~/store/theme.js';
+import { set_cell_color, start_cells, stop_cells } from './animation.js';
 
 function maximize_canvas(c: HTMLCanvasElement) {
   if (!c) return;
@@ -21,13 +21,13 @@ const BgAnimation = () => {
     start_cells(c);
     set_cell_color(theme === 'none' ? [0.3, 0.3, 0.3] : [0.9, 0.2, 0.2]);
     maximize_canvas(c);
-    
+
     return () => {
       stop_cells();
     };
-  },[document]);
+  }, [document]);
 
-  const className = `absolute z-[-1] w-full h-full ${mode === 'light' ? 'opacity-30' : 'opacity-50'}`
+  const className = `absolute z-[-1] w-full h-full ${mode === 'light' ? 'opacity-30' : 'opacity-50'}`;
 
   return <canvas id="animation-canvas" className={className} />;
 };

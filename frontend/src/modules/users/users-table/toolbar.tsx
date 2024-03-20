@@ -1,6 +1,6 @@
 import debounce from 'lodash.debounce';
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { useRef, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
+import { type ChangeEvent, type Dispatch, type SetStateAction, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { GetUsersParams } from '~/api/users';
@@ -139,7 +139,7 @@ function Toolbar({
               ))}
             </SelectContent>
           </Select>
-          <ColumnsView columns={columns} setColumns={setColumns} />
+          <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         </div>
       </div>
 

@@ -76,7 +76,7 @@ export default {
         },
       },
       animation: {
-          'spin-slow': 'spin 2s linear infinite',
+        'spin-slow': 'spin 2s linear infinite',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },

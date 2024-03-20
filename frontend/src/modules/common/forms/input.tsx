@@ -25,7 +25,7 @@ const InputFormField = ({ control, name, label, value, description, type = 'text
         <FormLabel>
           {label}
           {required && <span className="ml-1 opacity-50">*</span>}
-          </FormLabel>
+        </FormLabel>
         {description && <FormDescription>{description}</FormDescription>}
         <FormControl>
           <div className="relative">

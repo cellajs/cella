@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { exportToCsv, exportToPdf } from '~/lib/export';
+import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
@@ -11,9 +12,10 @@ interface Props<R> {
   columns: { key: string; name: ReactElement | string }[];
   selectedRows: R[];
   fetchRows: (limit: number) => Promise<R[]>;
+  className?: string;
 }
 
-const Export = <R extends object>({ filename, columns, selectedRows, fetchRows }: Props<R>) => {
+const Export = <R extends object>({ filename, columns, selectedRows, fetchRows, className = '' }: Props<R>) => {
   const { t } = useTranslation();
 
   const onExport = async (type: 'csv' | 'pdf', selected: boolean) => {
@@ -30,7 +32,7 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows }
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          className="flex max-xs:hidden"
+          className={cn('flex max-xs:hidden', className)}
           onClick={() => {
             toast.error(t('common:error.image_upload_failed'));
           }}

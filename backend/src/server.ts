@@ -28,7 +28,7 @@ app.notFound((ctx) => {
 
 // Error handler
 app.onError((err, ctx) => {
-    // t('common:error.server_error.text')
+  // t('common:error.server_error.text')
   return errorResponse(ctx, 500, 'server_error', 'error', undefined, {}, err);
 });
 

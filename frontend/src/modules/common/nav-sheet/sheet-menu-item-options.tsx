@@ -2,7 +2,7 @@ import { Archive, BellOff, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { type Page } from '~/types';
+import type { Page } from '~/types';
 
 interface SheetMenuItemProps {
   item: Page;
@@ -17,7 +17,7 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
       <div className="truncate grow p-2 pl-2 text-left">
         <div className="truncate text-foreground/50 leading-5">{item.name}</div>
         <div className="flex items-center gap-4 mt-1">
-        <Button variant="link" size="sm" className="p-0 font-light text-xs h-4 leading-3" aria-label="Toggle archive">
+          <Button variant="link" size="sm" className="p-0 font-light text-xs h-4 leading-3" aria-label="Toggle archive">
             <Archive size={14} className="mr-1" />
             {t('common:archive')}
           </Button>
@@ -27,7 +27,7 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
           </Button>
         </div>
       </div>
-      <div className="p-2 cursor-move">
+      <div className="p-2 cursor-grab">
         <GripVertical size={16} className="mt-3 mr-1 opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
       </div>
     </div>

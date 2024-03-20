@@ -1,4 +1,4 @@
-import { closestCorners, getFirstCollision, KeyboardCode, DroppableContainer, KeyboardCoordinateGetter } from '@dnd-kit/core';
+import { type DroppableContainer, KeyboardCode, type KeyboardCoordinateGetter, closestCorners, getFirstCollision } from '@dnd-kit/core';
 
 const directions: string[] = [KeyboardCode.Down, KeyboardCode.Right, KeyboardCode.Up, KeyboardCode.Left];
 

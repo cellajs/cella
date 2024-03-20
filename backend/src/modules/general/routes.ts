@@ -11,7 +11,8 @@ export const getUploadTokenRouteConfig = createRouteConfig({
   guard: authGuard(),
   tags: ['general'],
   summary: 'Get upload token',
-  description: 'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using imado.',
+  description:
+    'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using imado.',
   request: {
     query: z.object({
       public: z.string().optional().default('false'),

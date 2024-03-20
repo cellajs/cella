@@ -17,6 +17,7 @@ import SignIn from '~/modules/auth/sign-in';
 import SignOut from '~/modules/auth/sign-out';
 import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
+import Projects from '~/modules/common/projects';
 import Home from '~/modules/home';
 import About from '~/modules/marketing/about';
 import Accessibility from '~/modules/marketing/accessibility';
@@ -27,7 +28,6 @@ import MembersTable, { membersQueryOptions } from '~/modules/organizations/membe
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import OrganizationsTable from '~/modules/organizations/organizations-table';
-import Projects from '~/modules/common/projects';
 import SystemPanel from '~/modules/system/system-panel';
 import { UserProfile, userQueryOptions } from '~/modules/users/user-profile';
 import UserSettings from '~/modules/users/user-settings';

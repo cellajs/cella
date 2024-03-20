@@ -1,13 +1,13 @@
+import { type UniqueIdentifier, useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
-import { useDndContext, type UniqueIdentifier } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { useMemo } from 'react';
-import { Task, TaskCard } from './task-card';
 import { cva } from 'class-variance-authority';
-import { Card, CardContent, CardHeader } from '~/modules/ui/card';
-import { Button } from '~/modules/ui/button';
 import { GripVertical } from 'lucide-react';
+import { useMemo } from 'react';
+import { Button } from '~/modules/ui/button';
+import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { type Task, TaskCard } from './task-card';
 
 export interface Column {
   id: UniqueIdentifier;
@@ -48,7 +48,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('h-[500px] max-h-[500px] w-[350px] max-w-full bg-primary-foreground flex flex-col flex-shrink-0 snap-center', {
+  const variants = cva('h-[500px] max-h-[500px] w-[350px] max-w-full bg-card flex flex-col flex-shrink-0 snap-center', {
     variants: {
       dragging: {
         default: 'border-2 border-transparent',
@@ -66,15 +66,15 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
       })}
     >
-      <CardHeader className="p-4 font-semibold border-b-2 text-left flex flex-row space-between items-center">
+      <CardHeader className="p-3 font-semibold border-b flex flex-row gap-2 space-between items-center">
         <Button variant={'ghost'} {...attributes} {...listeners} className=" p-1 text-primary/50 -ml-2 h-auto cursor-grab relative">
           <span className="sr-only">{`Move column: ${column.title}`}</span>
           <GripVertical />
         </Button>
-        <span className="ml-auto"> {column.title}</span>
+        <span> {column.title}</span>
       </CardHeader>
       <ScrollArea>
-        <CardContent className="flex flex-grow flex-col gap-2 p-2">
+        <CardContent className="flex flex-grow flex-col p-0">
           <SortableContext items={tasksIds}>
             {tasks.map((task) => (
               <TaskCard key={task.id} task={task} />
@@ -104,7 +104,7 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
         dragging: dndContext.active ? 'active' : 'default',
       })}
     >
-      <div className="flex gap-4 items-center flex-row justify-center">{children}</div>
+      <div className="flex gap-2 items-center flex-row justify-center">{children}</div>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
   );

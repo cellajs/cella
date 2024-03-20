@@ -1,17 +1,17 @@
 import { ChevronDown, Plus, Settings2 } from 'lucide-react';
 import type React from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Sticky from 'react-sticky-el';
 import { Button } from '~/modules/ui/button';
+import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
+import { useNavigationStore } from '~/store/navigation';
 import type { Page, UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
+import { MenuArchiveToggle } from './menu-archive-toggle';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
-import { MenuArchiveToggle } from './menu-archive-toggle';
-import Sticky from 'react-sticky-el';
-import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
-import { useState } from 'react';
-import { useNavigationStore } from '~/store/navigation';
 
 interface MenuSectionProps {
   key: string;

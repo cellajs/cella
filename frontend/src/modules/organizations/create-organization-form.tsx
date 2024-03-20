@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
+import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import type { Control } from 'react-hook-form';
 
 // Change this in the future on current schema
 import { createOrganizationJsonSchema } from 'backend/modules/organizations/schema';

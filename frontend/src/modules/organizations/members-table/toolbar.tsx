@@ -104,84 +104,78 @@ function Toolbar({
 
   return (
     <>
-     <div className="items-center justify-between sm:flex">
-      <div className="flex items-center space-x-2">
-        {selectedMembers.length > 0 ? (
-          <>
-            <Button variant="destructive" onClick={openRemoveDialog} className="relative">
-              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedMembers.length}</Badge>
-              <Trash size={16} />
-              <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
-            </Button>
-            <Button variant="ghost" onClick={onResetSelectedRows}>
-              <XSquare size={16} />
-              <span className="ml-1">{t('common:clear')}</span>
-            </Button>
-          </>
-        ) : (
-          !isFiltered &&
-          (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
-            <Button onClick={openInviteDialog}>
-              <Mail size={16} />
-              <span className="ml-1">{t('common:invite')}</span>
-            </Button>
-          )
-        )}
-        {selectedMembers.length === 0 && (
-          <TableCount
-            count={total}
-            type='member'
-            isFiltered={isFiltered}
-            onResetFilters={onResetFilters}
+      <div className="items-center justify-between sm:flex">
+        <div className="flex items-center space-x-2">
+          {selectedMembers.length > 0 ? (
+            <>
+              <Button variant="destructive" onClick={openRemoveDialog} className="relative">
+                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedMembers.length}</Badge>
+                <Trash size={16} />
+                <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+              </Button>
+              <Button variant="ghost" onClick={onResetSelectedRows}>
+                <XSquare size={16} />
+                <span className="ml-1">{t('common:clear')}</span>
+              </Button>
+            </>
+          ) : (
+            !isFiltered &&
+            (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
+              <Button onClick={openInviteDialog}>
+                <Mail size={16} />
+                <span className="ml-1">{t('common:invite')}</span>
+              </Button>
+            )
+          )}
+          {selectedMembers.length === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+        </div>
+        <div className="mt-2 flex items-center space-x-2 sm:mt-0">
+          <Input
+            placeholder={t('common:placeholder.search')}
+            defaultValue={query}
+            onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
+              setQuery(event.target.value);
+            }, 200)}
+            className="h-10 w-[150px] lg:w-[250px]"
           />
-        )}
+          <Select
+            value={role === undefined ? 'all' : role}
+            onValueChange={(role) => {
+              setRole(role === 'all' ? undefined : (role as GetMembersParams['role']));
+            }}
+          >
+            <SelectTrigger className={cn('h-10 w-[125px]', role !== undefined && 'text-primary')}>
+              <SelectValue placeholder={t('common:placeholder.select_role')} />
+            </SelectTrigger>
+            <SelectContent>
+              {items.map(({ key, value }) => (
+                <SelectItem key={key} value={key}>
+                  {t(value)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+          <Export
+            className="max-lg:hidden"
+            filename="members"
+            columns={columns}
+            selectedRows={selectedMembers}
+            fetchRows={async (limit) => {
+              const { items } = await getMembersByOrganizationIdentifier(organization.id, {
+                limit,
+                role,
+                q: query,
+                sort,
+                order,
+              });
+              return items;
+            }}
+          />
+        </div>
       </div>
-      <div className="mt-2 flex items-center space-x-2 sm:mt-0">
-        <Input
-          placeholder={t('common:placeholder.search')}
-          defaultValue={query}
-          onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
-            setQuery(event.target.value);
-          }, 200)}
-          className="h-10 w-[150px] lg:w-[250px]"
-        />
-        <Select
-          value={role === undefined ? 'all' : role}
-          onValueChange={(role) => {
-            setRole(role === 'all' ? undefined : (role as GetMembersParams['role']));
-          }}
-        >
-          <SelectTrigger className={cn('h-10 w-[125px]', role !== undefined && 'text-primary')}>
-            <SelectValue placeholder={t('common:placeholder.select_role')} />
-          </SelectTrigger>
-          <SelectContent>
-            {items.map(({ key, value }) => (
-              <SelectItem key={key} value={key}>
-                {t(value)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <ColumnsView columns={columns} setColumns={setColumns} />
-        <Export
-          filename="members"
-          columns={columns}
-          selectedRows={selectedMembers}
-          fetchRows={async (limit) => {
-            const { items } = await getMembersByOrganizationIdentifier(organization.id, {
-              limit,
-              role,
-              q: query,
-              sort,
-              order,
-            });
-            return items;
-          }}
-        />
-      </div>
-    </div>
 
-    <div ref={containerRef} />
+      <div ref={containerRef} />
     </>
   );
 }

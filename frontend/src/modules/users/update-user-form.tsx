@@ -161,7 +161,13 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
         <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
         <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
         <InputFormField control={form.control} name="bio" label={t('common:bio')} type="textarea" />
-        <LanguageFormField control={form.control} name="language" label={t('common:language')} placeholder={t('common:placeholder.select_language')} required />
+        <LanguageFormField
+          control={form.control}
+          name="language"
+          label={t('common:language')}
+          placeholder={t('common:placeholder.select_language')}
+          required
+        />
         <FormField
           control={form.control}
           name="newsletter"

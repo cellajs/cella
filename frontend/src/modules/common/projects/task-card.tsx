@@ -1,12 +1,12 @@
 import type { UniqueIdentifier } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Card, CardContent, CardHeader } from '~/modules/ui/card';
-import { Button } from '~/modules/ui/button';
 import { cva } from 'class-variance-authority';
 import { GripVertical } from 'lucide-react';
 import { Badge } from '~/modules/ui/badge';
-import { ColumnId } from './kanban-board';
+import { Button } from '~/modules/ui/button';
+import { Card, CardContent, CardHeader } from '~/modules/ui/card';
+import type { ColumnId } from './kanban-board';
 
 export interface Task {
   id: UniqueIdentifier;
@@ -43,7 +43,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('', {
+  const variants = cva('rounded-none border-none', {
     variants: {
       dragging: {
         over: 'ring-2 opacity-30',
@@ -60,7 +60,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
       })}
     >
-      <CardHeader className="px-3 py-3 space-between flex flex-row border-b-2 border-secondary relative">
+      <CardHeader className="px-3 py-3 space-between flex flex-row border-b border-secondary relative">
         <Button variant={'ghost'} {...attributes} {...listeners} className="p-1 text-secondary-foreground/50 -ml-2 h-auto cursor-grab">
           <span className="sr-only">Move task</span>
           <GripVertical />

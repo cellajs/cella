@@ -3,7 +3,7 @@ import { Outlet } from '@tanstack/react-router';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PageNav, PageNavTab} from '~/modules/common/page-nav';
+import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Button } from '../ui/button';
 

@@ -1,26 +1,26 @@
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { BoardColumn, BoardContainer } from './board-column';
 import {
+  type Announcements,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  type UniqueIdentifier,
   useSensor,
   useSensors,
-  KeyboardSensor,
-  Announcements,
-  UniqueIdentifier,
-  TouchSensor,
-  MouseSensor,
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
-import { type Task, TaskCard } from './task-card';
+import { BoardColumn, BoardContainer } from './board-column';
 import type { Column } from './board-column';
-import { hasDraggableData } from './utils';
 import { coordinateGetter } from './keyboard-preset';
+import { type Task, TaskCard } from './task-card';
+import { hasDraggableData } from './utils';
 
 const defaultCols = [
   {

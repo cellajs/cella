@@ -14,13 +14,13 @@ import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Input } from '~/modules/ui/input';
 import { useNavigationStore } from '~/store/navigation';
+import { NavSheet } from './nav-sheet';
 import { SheetAccount } from './nav-sheet/sheet-account';
 import { SheetMenu } from './nav-sheet/sheet-menu';
 import { SheetNotifications } from './nav-sheet/sheet-notifications';
-import { NavSheet } from './nav-sheet';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import useAppState from '~/hooks/use-app-state';
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import HomeIconLoader from './home-icon-loader';
 
 export type NavItem = {
@@ -126,15 +126,11 @@ const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          className={cn('hover:bg-accent/10 transition-transform group hover:scale-110 h-14 w-14', navIconColor, activeClass)}
-          onClick={() => onClick(navItem.id)}
-        >
+        <Button variant="ghost" className={cn('hover:bg-accent/10 group h-14 w-14', navIconColor, activeClass)} onClick={() => onClick(navItem.id)}>
           {navItem.id === 'account' ? (
             <AvatarWrap
               type="user"
-              className="border-[1.5px] border-primary text-primary-foreground"
+              className="border-[1.5px] border-primary group-hover:scale-110 transition-transform text-primary-foreground"
               id={user.id}
               name={user.name}
               url={user.thumbnailUrl}
@@ -142,7 +138,7 @@ const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
           ) : navItem.id === 'home' ? (
             <HomeIconLoader />
           ) : (
-            <navItem.icon strokeWidth={config.theme.strokeWidth} />
+            <navItem.icon className="group-hover:scale-110 transition-transform" strokeWidth={config.theme.strokeWidth} />
           )}
         </Button>
       </TooltipTrigger>

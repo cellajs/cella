@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogOverlay } from '~/modules/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogOverlay, DialogTitle } from '~/modules/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { DialogState, type DialogT, type DialogToRemove } from './state';
 

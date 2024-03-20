@@ -116,12 +116,7 @@ function Toolbar({
           )
         )}
         {selectedOrganizations.length === 0 && (
-          <TableCount
-            count={total}
-            type='organization'
-            isFiltered={isFiltered}
-            onResetFilters={onResetFilters}
-          />
+          <TableCount count={total} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />
         )}
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
@@ -133,8 +128,9 @@ function Toolbar({
           }, 200)}
           className="h-10 w-[150px] lg:w-[250px]"
         />
-        <ColumnsView columns={columns} setColumns={setColumns} />
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         <Export
+          className="max-lg:hidden"
           filename="organizations"
           columns={columns}
           selectedRows={selectedOrganizations}

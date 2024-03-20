@@ -1,4 +1,4 @@
-import { Link, ToPathOption } from '@tanstack/react-router';
+import { Link, type ToPathOption } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
@@ -8,7 +8,7 @@ export type PageNavTab = {
   id: string;
   label: string;
   path: ToPathOption;
-}
+};
 
 interface Props {
   title?: string;

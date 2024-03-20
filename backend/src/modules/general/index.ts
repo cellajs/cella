@@ -75,7 +75,10 @@ const generalRoutes = app
     const token = ctx.req.valid('param').token;
 
     // Check if token exists
-    const [tokenRecord] = await db.select().from(tokensTable).where(and(eq(tokensTable.id, token)));
+    const [tokenRecord] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.id, token)));
     if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
 
     // Check if token has valid user
