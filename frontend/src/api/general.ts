@@ -57,3 +57,14 @@ export const checkToken = async (token: string) => {
   if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
+
+// Get suggestions
+export const getSuggestions = async (query: string, type?: 'user' | 'organization') => {
+  const response = await client.users.suggestions.$get({
+    query: { q: query, type },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return json.data;
+};

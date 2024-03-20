@@ -4,6 +4,8 @@ import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, publicGuard, tenantGuard } from '../../middlewares/guard';
 import { rateLimiter } from '../../middlewares/rate-limiter';
 import { inviteJsonSchema } from './schema';
+import { apiUserSchema } from '../users/schema';
+import { apiOrganizationSchema } from '../organizations/schema';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
@@ -11,7 +13,8 @@ export const getUploadTokenRouteConfig = createRouteConfig({
   guard: authGuard(),
   tags: ['general'],
   summary: 'Get upload token',
-  description: 'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using imado.',
+  description:
+    'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using imado.',
   request: {
     query: z.object({
       public: z.string().optional().default('false'),
@@ -145,6 +148,45 @@ export const paddleWebhookRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithoutDataSchema,
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const suggestionsConfig = createRouteConfig({
+  method: 'get',
+  path: '/suggestions',
+  guard: authGuard(),
+  tags: ['general'],
+  summary: 'Get suggestions',
+  request: {
+    query: z.object({
+      q: z.string().optional().openapi({ description: 'Search by user/org name or user email' }),
+      type: z.enum(['user', 'organization']).optional().openapi({ description: 'Type of suggestions' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Suggestions',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(
+            z.array(
+              z.union([
+                apiUserSchema.pick({
+                  name: true,
+                  email: true,
+                  thumbnailUrl: true,
+                }),
+                apiOrganizationSchema.pick({
+                  name: true,
+                  thumbnailUrl: true,
+                }),
+              ]),
+            ),
+          ),
         },
       },
     },
