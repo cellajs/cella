@@ -23,13 +23,14 @@ export default defineConfig(() => {
     },
     plugins: [
       react(),
-      config.sentSentrySourceMaps ?
-        sentryVitePlugin({
-          disable: process.env.NODE_ENV === 'development',
-          org: 'cella',
-          project: 'cella',
-          authToken: process.env.SENTRY_AUTH_TOKEN,
-        }) : undefined,
+      config.sentSentrySourceMaps
+        ? sentryVitePlugin({
+            disable: process.env.NODE_ENV === 'development',
+            org: 'cella',
+            project: 'cella',
+            authToken: process.env.SENTRY_AUTH_TOKEN,
+          })
+        : undefined,
       splitVendorChunkPlugin(),
       viteStaticCopy({
         targets: [
