@@ -46,6 +46,7 @@ const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, so
 export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  beforeLoad: () => ({ getTitle: () => 'CellaJS' }),
   component: () => <Root />,
 });
 
@@ -73,6 +74,7 @@ const AuthRoute = createRoute({
 
 export const SignInRoute = createRoute({
   path: '/auth/sign-in',
+  beforeLoad: () => ({ getTitle: () => 'Sign In' }),
   getParentRoute: () => AuthRoute,
   component: () => <SignIn />,
   validateSearch: z.object({ redirect: z.string().optional() }),
@@ -80,6 +82,7 @@ export const SignInRoute = createRoute({
 
 export const AcceptRoute = createRoute({
   path: '/auth/accept-invite/$token',
+  beforeLoad: () => ({ getTitle: () => 'Accept Invite' }),
   getParentRoute: () => AuthRoute,
   component: () => <AcceptInvite />,
   validateSearch: z.object({ redirect: z.string().optional() }),
@@ -87,60 +90,70 @@ export const AcceptRoute = createRoute({
 
 export const ResetPasswordRoute = createRoute({
   path: '/auth/reset-password/$token',
+  beforeLoad: () => ({ getTitle: () => 'Reset Password' }),
   getParentRoute: () => AuthRoute,
   component: () => <ResetPassword />,
 });
 
 export const VerifyEmailRoute = createRoute({
   path: '/auth/verify-email',
+  beforeLoad: () => ({ getTitle: () => 'Verify Email' }),
   getParentRoute: () => AuthRoute,
   component: () => <VerifyEmail />,
 });
 
 export const VerifyEmailRouteWithToken = createRoute({
   path: '/auth/verify-email/$token',
+  beforeLoad: () => ({ getTitle: () => 'Verify Email' }),
   getParentRoute: () => AuthRoute,
   component: () => <VerifyEmail />,
 });
 
 export const SignOutRoute = createRoute({
   getParentRoute: () => rootRoute,
+  beforeLoad: () => ({ getTitle: () => 'Sign Out' }),
   path: '/sign-out',
   component: SignOut,
 });
 
 const AboutRoute = createRoute({
   path: '/about',
+  beforeLoad: () => ({ getTitle: () => 'About' }),
   getParentRoute: () => rootRoute,
   component: () => <About />,
 });
 
 const ContactRoute = createRoute({
   path: '/contact',
+  beforeLoad: () => ({ getTitle: () => 'Contact' }),
   getParentRoute: () => rootRoute,
   component: () => <Contact />,
 });
 
 const TermsRoute = createRoute({
   path: '/terms',
+  beforeLoad: () => ({ getTitle: () => 'Terms' }),
   getParentRoute: () => rootRoute,
   component: () => <Terms />,
 });
 
 const PrivacyRoute = createRoute({
   path: '/privacy',
+  beforeLoad: () => ({ getTitle: () => 'Privacy' }),
   getParentRoute: () => rootRoute,
   component: () => <Privacy />,
 });
 
 const AccessibilityRoute = createRoute({
   path: '/accessibility',
+  beforeLoad: () => ({ getTitle: () => 'Accessibility' }),
   getParentRoute: () => rootRoute,
   component: () => <Accessibility />,
 });
 
 const ErrorNoticeRoute = createRoute({
   path: '/error',
+  beforeLoad: () => ({ getTitle: () => 'Error' }),
   getParentRoute: () => rootRoute,
   component: () => <ErrorNotice />,
 });
@@ -171,12 +184,14 @@ const IndexRoute = createRoute({
 
 const HomeRoute = createRoute({
   path: '/',
+  beforeLoad: () => ({ getTitle: () => 'Home' }),
   getParentRoute: () => IndexRoute,
   component: () => <Home />,
 });
 
 // We need an alias for '/' to forward users better if coming from backend
 const HomeAliasRoute = createRoute({
+  beforeLoad: () => ({ getTitle: () => 'Home' }),
   path: '/home',
   getParentRoute: () => IndexRoute,
   component: () => <Home />,
@@ -184,12 +199,14 @@ const HomeAliasRoute = createRoute({
 
 const SystemPanelRoute = createRoute({
   path: '/system',
+  beforeLoad: () => ({ getTitle: () => 'System' }),
   getParentRoute: () => IndexRoute,
   component: () => <SystemPanel />,
 });
 
 export const UsersTableRoute = createRoute({
   path: '/',
+  beforeLoad: () => ({ getTitle: () => 'Users' }),
   getParentRoute: () => SystemPanelRoute,
   component: () => <UsersTable />,
   validateSearch: usersSearchSchema,
@@ -197,6 +214,7 @@ export const UsersTableRoute = createRoute({
 
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
+  beforeLoad: () => ({ getTitle: () => 'Organizations' }),
   getParentRoute: () => SystemPanelRoute,
   component: () => <OrganizationsTable />,
   validateSearch: organizationsSearchSchema,
@@ -205,6 +223,7 @@ export const OrganizationsTableRoute = createRoute({
 export const UserProfileRoute = createRoute({
   path: '/user/$userIdentifier',
   getParentRoute: () => IndexRoute,
+  beforeLoad: ({ params: { userIdentifier } }) => ({ getTitle: () => userIdentifier }),
   loader: async ({ context: { queryClient }, params: { userIdentifier } }) => {
     queryClient.ensureQueryData(userQueryOptions(userIdentifier));
   },
@@ -218,6 +237,7 @@ export const UserProfileRoute = createRoute({
 
 const UserSettingsRoute = createRoute({
   path: '/user/settings',
+  beforeLoad: () => ({ getTitle: () => 'Settings' }),
   getParentRoute: () => IndexRoute,
   component: () => <UserSettings />,
 });
@@ -231,6 +251,8 @@ export const OrganizationRoute = createRoute({
     if (!location.pathname.split('/')[2]) {
       throw redirect({ to: '/$organizationIdentifier/members', replace: true, params });
     }
+
+    return { getTitle: () => params.organizationIdentifier };
   },
   loader: async ({ context: { queryClient }, params: { organizationIdentifier } }) => {
     queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
@@ -247,6 +269,7 @@ export const organizationMembersRoute = createRoute({
   path: '/members',
   getParentRoute: () => OrganizationRoute,
   validateSearch: membersSearchSchema,
+  beforeLoad: () => ({ getTitle: () => 'Members' }),
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
     const membersInfiniteQueryOptions = membersQueryOptions({ organizationIdentifier, q, sort, order, role });
@@ -260,12 +283,14 @@ export const organizationMembersRoute = createRoute({
 
 export const organizationSettingsRoute = createRoute({
   path: '/settings',
+  beforeLoad: () => ({ getTitle: () => 'Settings' }),
   getParentRoute: () => OrganizationRoute,
   component: () => <OrganizationSettings />,
 });
 
 export const projectsRoute = createRoute({
   path: '/projects',
+  beforeLoad: () => ({ getTitle: () => 'Projects' }),
   getParentRoute: () => OrganizationRoute,
   component: () => <Projects />,
 });

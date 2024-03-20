@@ -1,6 +1,6 @@
-import { Outlet, ScrollRestoration } from '@tanstack/react-router';
+import { Outlet, ScrollRestoration, useMatches } from '@tanstack/react-router';
 import { config } from 'config';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 
 import { Dialoger } from '~/modules/common/dialoger';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
@@ -19,6 +19,31 @@ const TanStackRouterDevtools =
       );
 
 function Root() {
+  const matches = useMatches();
+
+  useEffect(() => {
+    console.log('matches', matches);
+    // Set document title based on lowest matching route with a title
+    const breadcrumbPromises = [...matches]
+      .reverse()
+      .map((match, index) => {
+        if (!('getTitle' in match.routeContext)) {
+          if (index === 0 && import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.warn('no getTitle', match.pathname, match);
+          }
+          return undefined;
+        }
+        const { routeContext } = match;
+        return routeContext.getTitle();
+      })
+      .filter(Boolean);
+    void Promise.all(breadcrumbPromises).then((titles) => {
+      document.title = titles.join(' · ');
+      return titles;
+    });
+  }, [matches]);
+
   return (
     <TooltipProvider disableHoverableContent delayDuration={500} skipDelayDuration={0}>
       <Outlet />
