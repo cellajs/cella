@@ -16,6 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
+import { useUserStore } from '~/store/user';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
@@ -82,10 +83,12 @@ export async function submitContactForm(data: FormData) {
 // Main contact form map component
 const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const isMediumScreen = useBreakpoints('min', 'md');
+  const { user } = useUserStore(({ user }) => ({ user }));
   const { t } = useTranslation();
 
   const form = useFormWithDraft<FormData>('contact-form', {
     resolver: zodResolver(formSchema),
+    defaultValues: { name: user?.name || '', email: user?.email || '' },
   });
 
   const cancel = () => {
@@ -98,6 +101,10 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
 
     if (isSuccess) {
       toast.success(t('common:message_sent.text'));
+      if (isDialog) {
+        dialog.remove();
+      }
+      form.reset();
     } else {
       toast.error(t('common:error.reported_try_later'));
     }
