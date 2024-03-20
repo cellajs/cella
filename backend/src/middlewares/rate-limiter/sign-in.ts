@@ -14,6 +14,7 @@ const maxConsecutiveFailsByUsernameAndIP = 5;
 
 const limiterSlowBruteByIP = new RateLimiterPostgres({
   storeClient: queryClient,
+  tableName: 'rate_limits',
   keyPrefix: 'login_fail_ip_per_day',
   points: maxWrongAttemptsByIPperDay,
   duration: 60 * 60 * 24,
@@ -22,6 +23,7 @@ const limiterSlowBruteByIP = new RateLimiterPostgres({
 
 const limiterConsecutiveFailsByUsernameAndIP = new RateLimiterPostgres({
   storeClient: queryClient,
+  tableName: 'rate_limits',
   keyPrefix: 'login_fail_consecutive_username_and_ip',
   points: maxConsecutiveFailsByUsernameAndIP,
   duration: 60 * 60, // Store number for 1 hour since first fail

@@ -98,5 +98,6 @@ const defaultOptions = {
 export const rateLimiter = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'> = defaultOptions, mode: RateLimiterMode = 'fail') =>
   new RateLimiter({
     ...options,
+    tableName: 'rate_limits',
     storeClient: queryClient,
   }).middleware(mode);
