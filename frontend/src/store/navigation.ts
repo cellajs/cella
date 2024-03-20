@@ -16,6 +16,8 @@ interface NavigationState {
   toggleKeepMenu: (status: boolean) => void;
   activeSections: Record<string, boolean>;
   toggleSection: (section: string) => void;
+  navLoading: boolean;
+  setLoading: (status: boolean) => void;
 }
 
 // Build the initial menu (for menu sheet)
@@ -31,6 +33,7 @@ export const useNavigationStore = create<NavigationState>()(
         (set) => ({
           activeSheet: null as NavItem | null,
           keepMenuOpen: false as boolean,
+          navLoading: false as boolean,
           menu: initialMenuState,
           activeSections: {},
           setSheet: (component) => {
@@ -49,6 +52,11 @@ export const useNavigationStore = create<NavigationState>()(
           toggleKeepMenu: (status) => {
             set((state) => {
               state.keepMenuOpen = status;
+            });
+          },
+          setLoading: (status) => {
+            set((state) => {
+              state.navLoading = status;
             });
           },
           toggleSection: (section) => {

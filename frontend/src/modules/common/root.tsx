@@ -22,7 +22,6 @@ function Root() {
   const matches = useMatches();
 
   useEffect(() => {
-    console.log('matches', matches);
     // Set document title based on lowest matching route with a title
     const breadcrumbPromises = [...matches]
       .reverse()

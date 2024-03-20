@@ -33,6 +33,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
     });
   };
 
+  // TODO implement archiveToggleClick
   const archiveToggleClick = () => {
     console.log('archiveToggleClick');
   };
@@ -82,7 +83,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
 
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
-          {isSectionVisible && data.active.length && (
+          {!!(isSectionVisible && data.active.length) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -124,7 +125,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
       >
         <ul className="overflow-hidden">
           {optionsView ? renderSectionOptions(data) : renderSectionItems(data)}
-          <MenuArchiveToggle archiveToggleClick={archiveToggleClick} />
+          {!!(data.inactive.length || data.active.length) && <MenuArchiveToggle archiveToggleClick={archiveToggleClick} />}
         </ul>
       </div>
     </div>

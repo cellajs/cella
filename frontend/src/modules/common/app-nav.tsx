@@ -20,8 +20,8 @@ import { SheetNotifications } from './nav-sheet/sheet-notifications';
 import { NavSheet } from './nav-sheet';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
-import Logo from './logo';
-import useHasActed from '~/hooks/use-has-acted';
+import useAppState from '~/hooks/use-app-state';
+import HomeIconLoader from './home-icon-loader';
 
 export type NavItem = {
   id: string;
@@ -42,13 +42,9 @@ export const navItems: NavItem[] = [
 const AppNav = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { hasStarted } = useHasActed();
+  const { hasStarted } = useAppState();
   const isSmallScreen = useBreakpoints('max', 'lg');
-  const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore(({ activeSheet, setSheet, keepMenuOpen }) => ({
-    activeSheet,
-    setSheet,
-    keepMenuOpen,
-  }));
+  const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore();
   const { theme } = useThemeStore();
 
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
@@ -123,7 +119,6 @@ const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const { theme } = useThemeStore();
-  const { hasStarted } = useHasActed();
 
   const navIconColor = theme !== 'none' ? 'text-primary-foreground' : '';
   const activeClass = isActive ? 'bg-accent/20 hover:bg-accent/20' : '';
@@ -145,17 +140,7 @@ const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
               url={user.thumbnailUrl}
             />
           ) : navItem.id === 'home' ? (
-            // TODO animate when page is loading with: animate-spin-slow
-            <>
-              <Logo
-                className={`w-8 saturate-[.9] absolute transition-all ease-in-out duration-500 group-hover:opacity-0 -z-0 ${hasStarted && 'delay-500 opacity-0 scale-0'}`}
-                iconOnly
-              />
-              <navItem.icon
-                strokeWidth={config.theme.strokeWidth}
-                className={`transition-all duration-500 ease-in-out group-hover:opacity-100 ${!hasStarted ? 'opacity-0 scale-0' : 'delay-500'}`}
-              />
-            </>
+            <HomeIconLoader />
           ) : (
             <navItem.icon strokeWidth={config.theme.strokeWidth} />
           )}

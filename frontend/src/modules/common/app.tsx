@@ -1,7 +1,6 @@
 import { ErrorBoundary } from 'react-error-boundary';
 import { AppContent } from '~/modules/common/app-content';
 
-import HolyLoader from 'holy-loader';
 import ErrorNotice from './error-notice';
 import { Suspense, lazy } from 'react';
 
@@ -16,7 +15,6 @@ const App = () => {
         <AppNav />
       </Suspense>
       <AppContent />
-      <HolyLoader />
     </ErrorBoundary>
   );
 };

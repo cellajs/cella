@@ -12,7 +12,6 @@ Gleap.initialize(config.gleapToken);
 
 const GleapSupport = () => {
   window.Gleap = Gleap;
-  console.info('Gleap initialized');
   return <></>;
 };
 
