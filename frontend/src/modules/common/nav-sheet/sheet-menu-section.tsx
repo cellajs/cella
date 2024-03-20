@@ -39,7 +39,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
 
   // Render the menu items for each section
   const renderSectionItems = (sectionData: UserMenu[keyof UserMenu]) => {
-  
     if (sectionData.active.length === 0 && !sectionData.canCreate) {
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
@@ -61,7 +60,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
   };
 
   // Render the option items to configure the section
-  const renderSectionOptions = (sectionData: UserMenu[keyof UserMenu])  => {
+  const renderSectionOptions = (sectionData: UserMenu[keyof UserMenu]) => {
     if (sectionData.active.length === 0) {
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
@@ -76,7 +75,9 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
           <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
             <div>
               <span>{t(section.id)}</span>
-              {!isSectionVisible && <span className="ml-2 inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>}
+              {!isSectionVisible && (
+                <span className="ml-2 inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>
+              )}
             </div>
 
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
@@ -84,12 +85,19 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
           {isSectionVisible && data.active.length && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={() => setOptionsView(!optionsView)}>
+                <Button
+                  className="w-12 transition duration-300 px-3 ease-in-out }"
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => setOptionsView(!optionsView)}
+                >
                   <Settings2 size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipPortal>
-                <TooltipContent side="bottom" sideOffset={10}>{t('common:options')}</TooltipContent>
+                <TooltipContent side="bottom" sideOffset={10}>
+                  {t('common:options')}
+                </TooltipContent>
               </TooltipPortal>
             </Tooltip>
           )}
@@ -117,7 +125,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
         <ul className="overflow-hidden">
           {optionsView ? renderSectionOptions(data) : renderSectionItems(data)}
           <MenuArchiveToggle archiveToggleClick={archiveToggleClick} />
-          </ul>
+        </ul>
       </div>
     </div>
   );

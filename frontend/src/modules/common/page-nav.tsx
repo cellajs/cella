@@ -69,7 +69,7 @@ export const PageNav = ({ title, avatar, tabs }: Props) => {
           <Link
             key={id}
             resetScroll={false}
-            className="p-2 border-b-4 border-transparent"
+            className="p-2 border-b-4 lg:px-4 border-transparent"
             to={path}
             params={''}
             activeOptions={{ exact: true, includeSearch: false }}
