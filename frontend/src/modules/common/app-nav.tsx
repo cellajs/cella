@@ -20,6 +20,8 @@ import { SheetNotifications } from './nav-sheet/sheet-notifications';
 import { NavSheet } from './nav-sheet';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
+import Logo from './logo';
+import useHasActed from '~/hooks/use-has-acted';
 
 export type NavItem = {
   id: string;
@@ -40,6 +42,7 @@ export const navItems: NavItem[] = [
 const AppNav = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { hasStarted } = useHasActed();
   const isSmallScreen = useBreakpoints('max', 'lg');
   const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore(({ activeSheet, setSheet, keepMenuOpen }) => ({
     activeSheet,
@@ -74,7 +77,14 @@ const AppNav = () => {
 
   return (
     <>
-      <nav id="app-nav" className={cn('fixed z-40 w-full overflow-y-auto md:fixed md:left-0 md:top-0 md:h-svh md:w-16', navBackground)}>
+      <nav
+        id="app-nav"
+        className={cn(
+          'fixed z-40 w-full overflow-y-auto transition-transform ease-out md:fixed md:left-0 md:top-0 md:h-svh md:w-16',
+          navBackground,
+          !hasStarted && 'max-md:-translate-y-full md:-translate-x-full',
+        )}
+      >
         <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1">
           {navItems.map((navItem: NavItem, index: number) => {
             const isSecondItem = index === 1;
@@ -113,6 +123,7 @@ const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const { theme } = useThemeStore();
+  const { hasStarted } = useHasActed();
 
   const navIconColor = theme !== 'none' ? 'text-primary-foreground' : '';
   const activeClass = isActive ? 'bg-accent/20 hover:bg-accent/20' : '';
@@ -122,17 +133,29 @@ const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
       <TooltipTrigger asChild>
         <Button
           variant="ghost"
-          className={cn('hover:bg-accent/10 transition-transform h-14 w-14', navIconColor, activeClass)}
+          className={cn('hover:bg-accent/10 transition-transform group hover:scale-110 h-14 w-14', navIconColor, activeClass)}
           onClick={() => onClick(navItem.id)}
         >
           {navItem.id === 'account' ? (
             <AvatarWrap
               type="user"
-              className="border-[1.5px] border-current text-primary-foreground"
+              className="border-[1.5px] border-primary text-primary-foreground"
               id={user.id}
               name={user.name}
               url={user.thumbnailUrl}
             />
+          ) : navItem.id === 'home' ? (
+            // TODO animate when page is loading with: animate-spin-slow
+            <>
+              <Logo
+                className={`w-8 saturate-[.9] absolute transition-all ease-in-out duration-500 group-hover:opacity-0 -z-0 ${hasStarted && 'delay-500 opacity-0 scale-0'}`}
+                iconOnly
+              />
+              <navItem.icon
+                strokeWidth={config.theme.strokeWidth}
+                className={`transition-all duration-500 ease-in-out group-hover:opacity-100 ${!hasStarted ? 'opacity-0 scale-0' : 'delay-500'}`}
+              />
+            </>
           ) : (
             <navItem.icon strokeWidth={config.theme.strokeWidth} />
           )}

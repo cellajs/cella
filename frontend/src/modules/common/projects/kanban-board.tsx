@@ -106,7 +106,7 @@ const initialTasks: Task[] = [
     content: 'Launch website and deploy to server',
   },
 ];
-export function KanbanBoard() {
+export default function KanbanBoard() {
   const [columns, setColumns] = useState<Column[]>(defaultCols);
   const pickedUpTaskColumn = useRef<ColumnId | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
@@ -198,13 +198,7 @@ export function KanbanBoard() {
   };
 
   return (
-    <DndContext
-      accessibility={{ announcements }}
-      sensors={sensors}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-    >
+    <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
         <SortableContext items={columnsId}>
           {columns.map((col) => (

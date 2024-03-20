@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 
-// This hook is used to check if the user has scrolled
-export const hasScrolled = () => {
-  const [scrolled, setScrolled] = useState(false);
+// This hook is used to check if the user has started, scrolled
+export const useHasActed = () => {
+  const [hasScrolled, setScrolled] = useState(false);
+  const [hasStarted, setStarted] = useState(false);
 
   const scrollListener = () => {
     setScrolled(true);
@@ -13,14 +14,16 @@ export const hasScrolled = () => {
 
   // Cleanup just in case
   useEffect(() => {
+    setTimeout(() => setStarted(true), 200);
     return () => {
       window.removeEventListener('scroll', scrollListener);
     };
   }, []);
 
   return {
-    scrolled,
+    hasScrolled,
+    hasStarted,
   };
 };
 
-export default hasScrolled;
+export default useHasActed;

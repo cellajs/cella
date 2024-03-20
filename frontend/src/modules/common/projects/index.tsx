@@ -1,8 +1,13 @@
-import { KanbanBoard } from "./kanban-board"; 
+import { Suspense, lazy } from 'react';
+
+const KanbanBoard = lazy(() => import('./kanban-board'));
 
 const Projects = () => {
-
-  return <KanbanBoard />;
+  return (
+    <Suspense>
+      <KanbanBoard />
+    </Suspense>
+  );
 };
 
 export default Projects;
