@@ -32,9 +32,13 @@ export const organizationsTable = pgTable(
     authStrategies: json('auth_strategies').$type<string[]>(),
     chatSupport: boolean('chat_support').notNull().default(false),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    createdBy: varchar('created_by').references(() => usersTable.id),
+    createdBy: varchar('created_by').references(() => usersTable.id, {
+      onDelete: 'set null',
+    }),
     modifiedAt: timestamp('modified_at'),
-    modifiedBy: varchar('modified_by').references(() => usersTable.id),
+    modifiedBy: varchar('modified_by').references(() => usersTable.id, {
+      onDelete: 'set null',
+    }),
   },
   (table) => {
     return {

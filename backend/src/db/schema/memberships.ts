@@ -16,9 +16,13 @@ export const membershipsTable = pgTable(
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     role: varchar('role', { enum: roleEnum }).notNull().default('MEMBER'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    createdBy: varchar('created_by').references(() => usersTable.id),
+    createdBy: varchar('created_by').references(() => usersTable.id, {
+      onDelete: 'set null',
+    }),
     modifiedAt: timestamp('modified_at'),
-    modifiedBy: varchar('modified_by').references(() => usersTable.id),
+    modifiedBy: varchar('modified_by').references(() => usersTable.id, {
+      onDelete: 'set null',
+    }),
   },
   (table) => {
     return {

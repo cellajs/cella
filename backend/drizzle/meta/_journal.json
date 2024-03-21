@@ -36,6 +36,13 @@
       "when": 1709634830722,
       "tag": "0004_chubby_puma",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1711036576078,
+      "tag": "0005_fuzzy_namora",
+      "breakpoints": true
     }
   ]
 }
