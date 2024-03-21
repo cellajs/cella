@@ -24,7 +24,7 @@ const UserSettings = () => {
         dialog
         callback={() => {
           toast.success(t('common:success.delete_account'));
-          navigate({ to: '/auth/sign-in' });
+          navigate({ to: '/sign-out', replace: true });
         }}
       />,
       {
