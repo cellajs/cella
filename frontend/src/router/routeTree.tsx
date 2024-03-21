@@ -201,7 +201,7 @@ const SystemPanelRoute = createRoute({
   path: '/system',
   beforeLoad: ({ location }) => {
     if (location.pathname === '/system') {
-      throw redirect({ to: '/system/', replace: true });
+      throw redirect({ to: '/system/users', replace: true });
     }
     return { getTitle: () => 'System' };
   },
@@ -211,7 +211,7 @@ const SystemPanelRoute = createRoute({
 });
 
 export const UsersTableRoute = createRoute({
-  path: '/',
+  path: '/users',
   beforeLoad: () => ({ getTitle: () => 'Users' }),
   getParentRoute: () => SystemPanelRoute,
   component: () => <UsersTable />,
