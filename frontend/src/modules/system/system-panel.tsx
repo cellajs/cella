@@ -3,14 +3,10 @@ import { Outlet } from '@tanstack/react-router';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
+import { PageNav } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Button } from '../ui/button';
-
-const systemTabs: PageNavTab[] = [
-  { id: 'users', label: 'user.plural', path: '/system' },
-  { id: 'organizations', label: 'organization.plural', path: '/system/organizations' },
-];
+import { OrganizationsTableRoute, UsersTableRoute } from '~/router/routeTree';
 
 const SystemPanel = () => {
   const { t } = useTranslation();
@@ -43,7 +39,12 @@ const SystemPanel = () => {
       <Button variant="gradient" className="w-40 mx-4" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
         Test checkout
       </Button>
-      <PageNav tabs={systemTabs} />
+      <PageNav
+        tabs={[
+          { id: 'users', label: 'user.plural', path: UsersTableRoute.fullPath },
+          { id: 'organizations', label: 'organization.plural', path: OrganizationsTableRoute.fullPath },
+        ]}
+      />
       <div className="container mt-4 flex-[1_1_0]">
         <Outlet />
       </div>

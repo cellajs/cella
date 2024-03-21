@@ -199,7 +199,12 @@ const HomeAliasRoute = createRoute({
 
 const SystemPanelRoute = createRoute({
   path: '/system',
-  beforeLoad: () => ({ getTitle: () => 'System' }),
+  beforeLoad: ({ location }) => {
+    if (location.pathname === '/system') {
+      throw redirect({ to: '/system/', replace: true });
+    }
+    return { getTitle: () => 'System' };
+  },
   getParentRoute: () => IndexRoute,
   component: () => <SystemPanel />,
 });
