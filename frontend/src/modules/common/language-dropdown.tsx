@@ -3,6 +3,8 @@ import { i18n } from '~/lib/i18n';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import CountryFlag from './country-flag';
+import { updateUser } from '~/api/users';
+import { useUserStore } from '~/store/user';
 
 interface Props {
   size?: number;
@@ -11,8 +13,12 @@ interface Props {
 }
 
 const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
+  const { user } = useUserStore(({ user }) => ({ user }));
   const language = i18n.resolvedLanguage || i18n.language;
   const changeLanguage = (lng: string) => {
+    if (user) {
+      updateUser(user.id, { language: lng });
+    }
     if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);
   };

@@ -24,9 +24,6 @@ const initOptions: InitOptions = {
   react: {
     useSuspense: false,
   },
-  detection: {
-    caches: ['cookie'],
-  },
   defaultNS: 'common',
   backend: {
     loadPath: '/locales/{{lng}}/{{ns}}.json',

@@ -6,6 +6,7 @@ import { immer } from 'zustand/middleware/immer';
 import { client } from '~/api';
 import { getMe } from '~/api/users';
 import type { User } from '~/types';
+import { i18n } from '~/lib/i18n';
 
 type PartialUser = Partial<User>;
 
@@ -35,8 +36,12 @@ export const useUserStore = create<UserState>()(
             state.lastUser = { email: user.email, name: user.name, id: user.id, slug: user.slug };
           });
 
+          i18n.changeLanguage(user.language || 'en');
+
           // TODO: move to Gleap component and listen to user changes?
           if (!window.Gleap) return;
+
+          window.Gleap.setLanguage(user.language || 'en');
 
           if (window.Gleap.isUserIdentified()) {
             window.Gleap.updateContact({ email: user.email, name: user.name || user.email });
