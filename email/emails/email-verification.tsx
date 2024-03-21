@@ -5,13 +5,14 @@ import { config } from 'config';
 import { i18n } from '../../backend/src/lib/i18n';
 
 interface Props {
+  i18n: typeof i18n;
   verificationLink: string;
 }
 
 const baseUrl = config.frontendUrl;
 const productionUrl = config.productionUrl;
 
-export const VerificationEmail = ({ verificationLink = baseUrl }: Props) => {
+export const VerificationEmail = ({ i18n, verificationLink = baseUrl }: Props) => {
   return (
     <React.Fragment>
       <Html>

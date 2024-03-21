@@ -145,7 +145,6 @@ const generalRoutes = app
       });
 
       const emailLanguage = organization?.defaultLanguage || targetUser?.language || config.defaultLanguage;
-      await i18n.changeLanguage(i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage);
 
       let emailHtml: string;
 
@@ -153,6 +152,7 @@ const generalRoutes = app
         if (!targetUser) {
           emailHtml = render(
             InviteEmail({
+              i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
               username: email.toLowerCase(),
               inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
               invitedBy: user.name,
@@ -168,6 +168,7 @@ const generalRoutes = app
       } else {
         emailHtml = render(
           InviteEmail({
+            i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
             orgName: organization.name || '',
             orgImage: organization.logoUrl || '',
             userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',

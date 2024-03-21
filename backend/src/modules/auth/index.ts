@@ -165,10 +165,10 @@ const authRoutes = app
     });
 
     const emailLanguage = user?.language || config.defaultLanguage;
-    await i18n.changeLanguage(i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage);
 
     const emailHtml = render(
       VerificationEmail({
+        i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
         verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
       }),
     );
@@ -220,10 +220,10 @@ const authRoutes = app
     });
 
     const emailLanguage = user?.language || config.defaultLanguage;
-    await i18n.changeLanguage(i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage);
 
     const emailHtml = render(
       ResetPasswordEmail({
+        i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
         resetPasswordLink: `${config.frontendUrl}/auth/reset-password/${token}`,
       }),
     );

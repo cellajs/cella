@@ -2,9 +2,10 @@ import { Body, Button, Container, Head, Hr, Html, Img, Link, Preview, Section, T
 import * as React from 'react';
 
 import { config } from 'config';
-import { i18n } from '../../backend/src/lib/i18n';
+import type { i18n } from '../../backend/src/lib/i18n';
 
 interface Props {
+  i18n: typeof i18n;
   username?: string;
   resetPasswordLink: string;
 }
@@ -13,7 +14,9 @@ const baseUrl = config.frontendUrl;
 const resetPasswordUrl = `${baseUrl}/auth/reset-password`;
 const productionUrl = config.productionUrl;
 
-export const ResetPasswordEmail = ({ username = i18n.t('common:unknown_name'), resetPasswordLink = baseUrl }: Props) => {
+export const ResetPasswordEmail = ({ i18n, username, resetPasswordLink = baseUrl }: Props) => {
+  username = username || i18n.t('common:unknown_name');
+
   return (
     <React.Fragment>
       <Html>

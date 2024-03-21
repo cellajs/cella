@@ -5,6 +5,7 @@ import { config } from 'config';
 import { i18n } from '../../backend/src/lib/i18n';
 
 interface Props {
+  i18n: typeof i18n;
   username?: string;
   userImage?: string;
   orgName?: string;
@@ -19,15 +20,19 @@ const baseUrl = config.frontendUrl;
 const productionUrl = config.productionUrl;
 
 export const InviteEmail = ({
-  username = i18n.t('common:unknown_name'),
+  i18n,
+  username,
   userImage = `${productionUrl}/static/user.png`,
-  orgName = i18n.t('common:unknown_organization'),
+  orgName,
   orgImage = `${productionUrl}/static/org.png`,
   inviteUrl = baseUrl,
   invitedBy,
   type = 'organization',
   replyTo = config.notificationsEmail,
 }: Props) => {
+  username = username || i18n.t('common:unknown_name');
+  orgName = orgName || i18n.t('common:unknown_organization');
+
   return (
     <React.Fragment>
       <Html>
