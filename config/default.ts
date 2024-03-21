@@ -79,7 +79,7 @@ export const config = {
     { value: 'en', label: 'English' },
     { value: 'nl', label: 'Nederlands' },
   ],
-  defaultLanguage: 'en',
+  defaultLanguage: 'en' as const,
 
   // Company details
   company: {

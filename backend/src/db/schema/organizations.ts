@@ -14,7 +14,11 @@ export const organizationsTable = pgTable(
     slug: varchar('slug').unique().notNull(),
     country: varchar('country'),
     timezone: varchar('timezone'),
-    defaultLanguage: varchar('default_language').notNull().default(config.defaultLanguage),
+    defaultLanguage: varchar('default_language', {
+      enum: ['en', 'nl'],
+    })
+      .notNull()
+      .default(config.defaultLanguage),
     languages: json('languages').$type<string[]>().notNull().default([config.defaultLanguage]),
     notificationEmail: varchar('notification_email'),
     emailDomains: json('email_domains').$type<string[]>(),

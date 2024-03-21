@@ -17,7 +17,7 @@ const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
   const language = i18n.resolvedLanguage || i18n.language;
   const changeLanguage = (lng: string) => {
     if (user) {
-      updateUser(user.id, { language: lng });
+      updateUser(user.id, { language: lng as 'en' | 'nl' });
     }
     if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);

@@ -17,7 +17,11 @@ export const usersTable = pgTable(
     email: varchar('email').notNull().unique(),
     emailVerified: boolean('email_verified').notNull().default(false),
     bio: varchar('bio'),
-    language: varchar('language').notNull().default(config.defaultLanguage),
+    language: varchar('language', {
+      enum: ['en', 'nl'],
+    })
+      .notNull()
+      .default(config.defaultLanguage),
     bannerUrl: varchar('banner_url'),
     thumbnailUrl: varchar('thumbnail_url'),
     newsletter: boolean('newsletter').notNull().default(false),
