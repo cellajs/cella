@@ -11,9 +11,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 interface ErrorNoticeProps {
   error?: ErrorType;
+  resetErrorBoundary?: () => void;
 }
 
-const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
+const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const dateNow = new Date().toUTCString();
@@ -21,10 +22,12 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error }) => {
   const [showError, setShowError] = useState(false);
 
   const handleReload = () => {
+    if (resetErrorBoundary) resetErrorBoundary();
     window.location.reload();
   };
 
   const handleGoToHome = () => {
+    if (resetErrorBoundary) resetErrorBoundary();
     window.location.replace('/');
   };
 

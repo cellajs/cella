@@ -207,6 +207,7 @@ const SystemPanelRoute = createRoute({
   },
   getParentRoute: () => IndexRoute,
   component: () => <SystemPanel />,
+  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
 });
 
 export const UsersTableRoute = createRoute({

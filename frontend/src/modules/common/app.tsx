@@ -9,7 +9,7 @@ const AppNav = lazy(() => import('~/modules/common/app-nav'));
 
 const App = () => {
   return (
-    <ErrorBoundary fallbackRender={({ error }) => <ErrorNotice error={error} />}>
+    <ErrorBoundary fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} resetErrorBoundary={resetErrorBoundary} />}>
       <Suspense>
         <AppNav />
       </Suspense>
