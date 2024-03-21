@@ -6,6 +6,7 @@ import { auth as luciaAuth } from '../../db/lucia';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { removeSessionCookie } from '../../modules/auth/helpers/cookies';
+import { i18n } from '../../lib/i18n';
 
 const auth =
   (accessibleFor?: User['role'][]): MiddlewareHandler =>
@@ -46,6 +47,9 @@ const auth =
       .where(eq(usersTable.id, user.id));
 
     ctx.set('user', user);
+
+    await i18n.changeLanguage(user.language || 'en');
+
     await next();
   };
 

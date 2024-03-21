@@ -37,6 +37,7 @@ import {
   signUpRouteConfig,
   verifyEmailRouteConfig,
 } from './routes';
+import { i18n } from '../../lib/i18n';
 
 const app = new CustomHono();
 
@@ -163,6 +164,9 @@ const authRoutes = app
       expiresAt: createDate(new TimeSpan(2, 'h')),
     });
 
+    const emailLanguage = user?.language || config.defaultLanguage;
+    await i18n.changeLanguage(i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage);
+
     const emailHtml = render(
       VerificationEmail({
         verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
@@ -214,6 +218,9 @@ const authRoutes = app
       email,
       expiresAt: createDate(new TimeSpan(2, 'h')),
     });
+
+    const emailLanguage = user?.language || config.defaultLanguage;
+    await i18n.changeLanguage(i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage);
 
     const emailHtml = render(
       ResetPasswordEmail({

@@ -21,9 +21,6 @@ const initOptions: InitOptions = {
   supportedLngs: config.languages.map((lng) => lng.value),
   load: 'languageOnly',
   fallbackLng: config.defaultLanguage,
-  detection: {
-    caches: ['cookie'],
-  },
   defaultNS: 'backend',
 };
 
