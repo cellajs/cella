@@ -42,7 +42,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     ...common,
-
     build: {
       emptyOutDir: false,
     },
@@ -71,7 +70,6 @@ export default defineConfig(({ mode }) => {
       honox(),
       pages(),
       mdx({
-        jsxImportSource: 'react',
         remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter],
         rehypePlugins: [rehypeHighlight],
       }),
