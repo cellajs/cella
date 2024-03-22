@@ -5,8 +5,12 @@
     "moduleResolution": "Bundler",
     "strict": true,
     "lib": ["ESNext", "DOM"],
-    "types": ["@cloudflare/workers-types"],
+    "types": ["@cloudflare/workers-types", "vite/client"],
     "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx"
+    "jsxImportSource": "react",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./app/*"]
+    }
   }
 }
