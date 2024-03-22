@@ -1,8 +1,15 @@
 import path from "path";
 import pages from "@hono/vite-cloudflare-pages";
 import honox from "honox/vite";
-import { defineConfig } from "vite";
+import ssg from "@hono/vite-ssg";
+import mdx from "@mdx-js/rollup";
+import rehypeHighlight from "rehype-highlight";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import client from "honox/vite/client";
+import { defineConfig } from "vite";
+
+const entry = "./app/server.ts";
 
 export default defineConfig(({ mode }) => {
   const common = {
@@ -28,11 +35,22 @@ export default defineConfig(({ mode }) => {
         },
       },
     };
-  } else {
-    return {
-      ...common,
-      ssr: { external: ["react", "react-dom"] },
-      plugins: [honox(), pages()],
-    };
   }
+
+  return {
+    ...common,
+    build: {
+      emptyOutDir: false,
+    },
+    ssr: { external: ["react", "react-dom"] },
+    plugins: [
+      honox(),
+      pages(),
+      mdx({
+        jsxImportSource: "react",
+        remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter],
+        rehypePlugins: [rehypeHighlight],
+      }),
+    ],
+  };
 });

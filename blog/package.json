@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@hono/react-renderer": "^0.1.1",
+    "@hono/vite-ssg": "^0.1.0",
+    "@mdx-js/rollup": "^3.0.1",
     "@radix-ui/react-slot": "^1.0.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
@@ -17,10 +19,14 @@
     "lucide-react": "^0.358.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "rehype-highlight": "^7.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-mdx-frontmatter": "^4.0.0",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.23.4",
     "@cloudflare/workers-types": "^4.20240208.0",
     "@hono/vite-cloudflare-pages": "^0.2.4",
     "@types/react": "^18.2.67",
