@@ -1,10 +1,11 @@
 packages:
-  - 'backend'
-  - 'frontend'
-  - 'locales'
-  - 'proxy'
-  - 'email'
-  - 'email/.react-email'
-  - 'tus'
-  - 'config'
-  - 'env'
+  - "backend"
+  - "frontend"
+  - "locales"
+  - "proxy"
+  - "email"
+  - "email/.react-email"
+  - "tus"
+  - "config"
+  - "env"
+  - "blog"
