@@ -108,7 +108,6 @@
   "hide": "Hide",
   "home": "Home",
   "invite": "Invite",
-  "invite_explanation.text": "Search by name or email, or invite new users by email.",
   "invite_members.text": "Invited members will receive an email to accept the invitation.",
   "invite_users.text": "Invited users will receive an email to accept the invitation.",
   "is_built_by": "is built by",
@@ -226,7 +225,6 @@
   "timezone": "Timezone",
   "menu": "Menu",
   "title": "Title",
-  "type_emails": "Search & invite by name or email",
   "unknown_inviter": "Unknown inviter",
   "unknown_name": "Unknown name",
   "unknown_organization": "Unknown organization",
@@ -257,5 +255,9 @@
   "options": "Options",
   "archive": "Archive",
   "mute": "Mute",
-  "archived": "Archived"
+  "archived": "Archived",
+  "search_users": "Search users by name",
+  "no_users_found": "No users found",
+  "invite_by_email": "Invite with email addresses",
+  "invite_by_name": "Invite by searching for users"
 }

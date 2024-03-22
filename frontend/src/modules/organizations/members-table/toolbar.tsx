@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { cn } from '~/lib/utils';
 import Export from '~/modules/common/data-table/export';
-import InviteUsersForm from '~/modules/organizations/invite-users-form';
+import InviteUsers from '~/modules/common/invite-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
@@ -67,12 +67,12 @@ function Toolbar({
   const containerRef = useRef(null);
 
   const openInviteDialog = () => {
-    dialog(<InviteUsersForm organization={organization} dialog />, {
+    dialog(<InviteUsers organization={organization} dialog />, {
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[100] max-w-3xl',
       container: containerRef.current,
       title: t('common:invite'),
-      text: `${t('common:invite_explanation.text')} ${t('common:invite_members.text')}`,
+      text: `${t('common:invite_members.text')}`,
     });
   };
 

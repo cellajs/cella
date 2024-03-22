@@ -11,11 +11,13 @@ const toggleVariants = cva(
       variant: {
         default: 'bg-transparent',
         outline: 'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground',
+        tile: 'bg-transparent text-left border hover:bg-accent hover:text-accent-foreground group sm:p-4',
       },
       size: {
         default: 'h-10 px-3',
         sm: 'h-9 px-2.5',
         lg: 'h-11 px-5',
+        tile: 'h-full w-full',
       },
     },
     defaultVariants: {

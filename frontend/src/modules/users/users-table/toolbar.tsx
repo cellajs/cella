@@ -4,7 +4,7 @@ import { type ChangeEvent, type Dispatch, type SetStateAction, useRef } from 're
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { GetUsersParams } from '~/api/users';
-import InviteUsersForm from '~/modules/organizations/invite-users-form';
+import InviteUsers from '~/modules/common/invite-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
@@ -58,12 +58,12 @@ function Toolbar({
   const containerRef = useRef(null);
 
   const openInviteDialog = () => {
-    dialog(<InviteUsersForm dialog />, {
+    dialog(<InviteUsers mode="email" dialog />, {
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[100] max-w-3xl',
       container: containerRef.current,
       title: t('common:invite'),
-      text: `${t('common:invite_explanation.text')} ${t('common:invite_users.text')}`,
+      text: `${t('common:invite_users.text')}`,
     });
   };
 

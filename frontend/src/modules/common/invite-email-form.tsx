@@ -4,15 +4,14 @@ import { z } from 'zod';
 import { invite } from '~/api/general';
 import type { Organization } from '~/types';
 
-import { Loader2, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { getSuggestions } from '~/api/general';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
-import MultipleSelector from '../ui/multiple-selector';
+import { MultiEmail } from './multi-email';
 
 interface Props {
   organization?: Organization;
@@ -32,7 +31,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) => {
+const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   const [apiWrapper, pending] = useApiWrapper();
 
@@ -60,6 +59,10 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
     );
   };
 
+  const setEmails = (emails: string[]) => {
+    form.setValue('emails', emails.map((email) => ({ label: email, value: email })));
+  };
+
   const cancel = () => {
     form.reset();
     isDialog && dialog.remove();
@@ -74,23 +77,21 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <MultipleSelector
-                  value={field.value}
-                  onChange={field.onChange}
-                  onSearch={async (query) => {
-                    const users = await getSuggestions(query, 'user');
-
-                    return users.map((u) => ({
-                      label: u.name || u.email,
-                      value: u.email,
-                    }));
+                <MultiEmail
+                  placeholder="Input your email"
+                  onChange={(_emails: string[]) => {
+                    setEmails(_emails);
                   }}
-                  creatable
-                  createPlaceholder={t('common:invite')}
-                  hidePlaceholderWhenSelected
-                  loadingIndicator={<Loader2 className="animate-spin" size={16} />}
-                  defaultOptions={[]}
-                  placeholder={t('common:type_emails')}
+                  getLabel={(email, index, removeEmail) => {
+                    return (
+                      <div data-tag key={index}>
+                        <div data-tag-item>{email}</div>
+                        <span data-tag-handle onClick={() => removeEmail(index)}>
+                          ×
+                        </span>
+                      </div>
+                    );
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -113,4 +114,4 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
   );
 };
 
-export default InviteUsersForm;
+export default InviteEmailForm;
