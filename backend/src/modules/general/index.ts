@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ilike, or } from 'drizzle-orm';
 import { emailSender } from '../../../../email';
 import { InviteEmail } from '../../../../email/emails/invite';
 
@@ -20,7 +20,14 @@ import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkSlugRouteConfig, checkTokenRouteConfig, getUploadTokenRouteConfig, inviteRouteConfig, paddleWebhookRouteConfig } from './routes';
+import {
+  checkSlugRouteConfig,
+  checkTokenRouteConfig,
+  getUploadTokenRouteConfig,
+  inviteRouteConfig,
+  paddleWebhookRouteConfig,
+  suggestionsConfig,
+} from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -226,6 +233,45 @@ const generalRoutes = app
     return ctx.json({
       success: true,
       data: undefined,
+    });
+  })
+  /*
+   * Get suggestions
+   */
+  .add(suggestionsConfig, async (ctx) => {
+    const { q, type } = ctx.req.valid('query');
+    const result = [];
+
+    if (type === 'user' || !type) {
+      const users = await db
+        .select({
+          name: usersTable.name,
+          email: usersTable.email,
+          thumbnailUrl: usersTable.thumbnailUrl,
+        })
+        .from(usersTable)
+        .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
+        .limit(10);
+
+      result.push(...users);
+    }
+
+    if (type === 'organization' || !type) {
+      const organizations = await db
+        .select({
+          name: organizationsTable.name,
+          thumbnailUrl: organizationsTable.thumbnailUrl,
+        })
+        .from(organizationsTable)
+        .where(ilike(organizationsTable.name, `%${q}%`))
+        .limit(10);
+
+      result.push(...organizations);
+    }
+
+    return ctx.json({
+      success: true,
+      data: result,
     });
   });
 

@@ -20,7 +20,6 @@ import {
   getUsersConfig,
   meRouteConfig,
   updateUserConfig,
-  userSuggestionsConfig,
 } from './routes';
 
 const app = new CustomHono();
@@ -254,27 +253,6 @@ const usersRoutes = app
         items: users,
         total,
       },
-    });
-  })
-  /*
-   * Get user suggestions
-   */
-  .add(userSuggestionsConfig, async (ctx) => {
-    const { q } = ctx.req.valid('query');
-
-    const users = await db
-      .select({
-        name: usersTable.name,
-        email: usersTable.email,
-        thumbnailUrl: usersTable.thumbnailUrl,
-      })
-      .from(usersTable)
-      .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
-      .limit(10);
-
-    return ctx.json({
-      success: true,
-      data: users,
     });
   })
   /*

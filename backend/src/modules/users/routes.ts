@@ -83,38 +83,6 @@ export const getUsersConfig = createRouteConfig({
   },
 });
 
-export const userSuggestionsConfig = createRouteConfig({
-  method: 'get',
-  path: '/users/suggestions',
-  guard: authGuard(),
-  tags: ['users'],
-  summary: 'Get user suggestions',
-  request: {
-    query: z.object({
-      q: z.string().optional().openapi({ description: 'Search by name or email' }),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'User suggestions',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(
-            z.array(
-              apiUserSchema.pick({
-                name: true,
-                email: true,
-                thumbnailUrl: true,
-              }),
-            ),
-          ),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const updateUserConfig = createRouteConfig({
   method: 'put',
   path: '/users/{userId}',

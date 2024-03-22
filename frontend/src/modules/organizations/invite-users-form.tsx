@@ -6,7 +6,7 @@ import type { Organization } from '~/types';
 
 import { Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { getUserSuggestions } from '~/api/users';
+import { getSuggestions } from '~/api/general';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -80,7 +80,7 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
                   value={field.value}
                   onChange={field.onChange}
                   onSearch={async (query) => {
-                    const users = await getUserSuggestions(query);
+                    const users = await getSuggestions(query, 'user');
 
                     return users.map((u) => ({
                       label: u.name || u.email,
