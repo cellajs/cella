@@ -21,7 +21,6 @@ export default defineConfig(({ mode }) => {
       },
     },
   };
-
   if (mode === 'client') {
     return {
       ...common,
@@ -39,10 +38,8 @@ export default defineConfig(({ mode }) => {
       },
     };
   }
-
   return {
     ...common,
-
     build: {
       emptyOutDir: false,
     },
