@@ -1,11 +1,12 @@
-import { useState } from 'hono/jsx'
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function Counter() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
   return (
     <div>
       <p>{count}</p>
-      <button onClick={() => setCount(count + 1)}>Increment</button>
+      <Button onClick={() => setCount(count + 1)}>Increment</Button>
     </div>
-  )
+  );
 }
