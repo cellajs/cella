@@ -33,7 +33,4 @@ app.onError((err, ctx) => {
 });
 
 // Add routes for each module
-const route = app.route('/', authRoutes).route('/', usersRoutes).route('/', organizationsRoutes).route('/', generalRoutes).route('/', publicRoutes);
-
-// Export type to share API with Client (RP)
-export type AppRoute = typeof route;
+app.route('/', authRoutes).route('/', usersRoutes).route('/', organizationsRoutes).route('/', generalRoutes).route('/', publicRoutes);

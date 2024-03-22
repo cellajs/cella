@@ -3,7 +3,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
 import { config } from 'config';
 import { immer } from 'zustand/middleware/immer';
-import { client } from '~/api';
+import { authClient } from '~/api';
 import { getMe } from '~/api/users';
 import type { User } from '~/types';
 import { i18n } from '~/lib/i18n';
@@ -62,7 +62,7 @@ export const useUserStore = create<UserState>()(
         async signOut() {
           set({ user: null as unknown as User });
           if (window.Gleap) window.Gleap.clearIdentity();
-          await client['sign-out'].$get();
+          await authClient['sign-out'].$get();
         },
       })),
       {

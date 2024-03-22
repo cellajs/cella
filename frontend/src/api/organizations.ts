@@ -1,5 +1,5 @@
 import type { Member } from '~/types';
-import { ApiError, client } from '.';
+import { ApiError, organizationsClient as client } from '.';
 
 // Create a new organization
 export const createOrganization = async (name: string) => {

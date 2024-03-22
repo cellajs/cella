@@ -1,5 +1,5 @@
 import type { InferResponseType } from 'hono/client';
-import type { client } from '~/api';
+import type { usersClient, organizationsClient } from '~/api';
 
 export enum UploadType {
   Personal,
@@ -24,13 +24,13 @@ export interface Page {
   userRole: keyof typeof UserRole | null;
 }
 
-export type User = Extract<InferResponseType<(typeof client.me)['$get']>, { data: unknown }>['data'];
+export type User = Extract<InferResponseType<(typeof usersClient.me)['$get']>, { data: unknown }>['data'];
 
-export type Organization = Extract<InferResponseType<(typeof client.organizations)['$get']>, { data: unknown }>['data']['items'][number];
+export type Organization = Extract<InferResponseType<(typeof organizationsClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Member = Extract<
-  InferResponseType<(typeof client.organizations)[':organizationIdentifier']['members']['$get']>,
+  InferResponseType<(typeof organizationsClient.organizations)[':organizationIdentifier']['members']['$get']>,
   { data: unknown }
 >['data']['items'][number];
 
-export type UserMenu = Extract<InferResponseType<(typeof client.menu)['$get']>, { data: unknown }>['data'];
+export type UserMenu = Extract<InferResponseType<(typeof usersClient.menu)['$get']>, { data: unknown }>['data'];

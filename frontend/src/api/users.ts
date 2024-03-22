@@ -1,4 +1,4 @@
-import { ApiError, client } from '.';
+import { ApiError, usersClient as client } from '.';
 
 // Get the current user
 export const getMe = async () => {

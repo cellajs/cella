@@ -469,3 +469,5 @@ const organizationsRoutes = app
   });
 
 export default organizationsRoutes;
+
+export type OrganizationsRoutes = typeof organizationsRoutes;

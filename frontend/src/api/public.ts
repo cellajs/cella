@@ -1,4 +1,4 @@
-import { ApiError, client } from '.';
+import { ApiError, publicClient as client } from '.';
 
 // Get public counts for about page
 export const getPublicCounts = async () => {

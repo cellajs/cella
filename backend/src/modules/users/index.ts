@@ -355,3 +355,5 @@ const usersRoutes = app
   });
 
 export default usersRoutes;
+
+export type UsersRoutes = typeof usersRoutes;

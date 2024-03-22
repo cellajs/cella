@@ -40,3 +40,5 @@ const publicRoutes = app
   });
 
 export default publicRoutes;
+
+export type PublicRoutes = typeof publicRoutes;

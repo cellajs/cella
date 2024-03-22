@@ -1,4 +1,4 @@
-import { ApiError, client } from '.';
+import { ApiError, authClient as client } from '.';
 
 // Oath endpoints
 export const githubSignInUrl = client['sign-in'].github.$url().href;

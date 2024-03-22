@@ -1,7 +1,11 @@
 import type { ErrorType } from 'backend/lib/errors';
-import type { AppRoute } from 'backend/server';
 import { config } from 'config';
 import { hc } from 'hono/client';
+import type { AuthRoutes } from 'backend/modules/auth/index';
+import type { GeneralRoutes } from 'backend/modules/general/index';
+import type { OrganizationsRoutes } from 'backend/modules/organizations/index';
+import type { PublicRoutes } from 'backend/modules/public/index';
+import type { UsersRoutes } from 'backend/modules/users/index';
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
@@ -31,11 +35,26 @@ export class ApiError extends Error {
   }
 }
 
-// Create a Hono client to make requests to the backend
-export const client = hc<AppRoute>(config.backendUrl, {
+const clientConfig = {
   fetch: (input: RequestInfo | URL, init?: RequestInit) =>
     fetch(input, {
       ...init,
       credentials: 'include',
     }),
-});
+};
+
+// Create a Hono client to make requests to the backend
+// export const client = hc<AppRoute>(config.backendUrl, {
+//   fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+//     fetch(input, {
+//       ...init,
+//       credentials: 'include',
+//     }),
+// });
+
+// Create a Hono clients to make requests to the backend
+export const authClient = hc<AuthRoutes>(config.backendUrl, clientConfig);
+export const usersClient = hc<UsersRoutes>(config.backendUrl, clientConfig);
+export const organizationsClient = hc<OrganizationsRoutes>(config.backendUrl, clientConfig);
+export const generalClient = hc<GeneralRoutes>(config.backendUrl, clientConfig);
+export const publicClient = hc<PublicRoutes>(config.backendUrl, clientConfig);

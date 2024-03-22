@@ -435,4 +435,8 @@ const authRoutes = app
     });
   });
 
-export default authRoutes.route('/', oauthRoutes);
+const allRoutes = authRoutes.route('/', oauthRoutes);
+
+export default allRoutes;
+
+export type AuthRoutes = typeof allRoutes;
