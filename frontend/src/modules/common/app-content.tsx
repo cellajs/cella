@@ -1,11 +1,14 @@
 import { Outlet } from '@tanstack/react-router';
+import { Info } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AppAlert } from '~/modules/common/app-alert';
 import { AppFooter } from '~/modules/common/app-footer';
 import { useNavigationStore } from '~/store/navigation';
 
 export const AppContent = () => {
+  const { t } = useTranslation();
   const { activeSheet, keepMenuOpen, setSheet } = useNavigationStore();
   const addPadding = keepMenuOpen && activeSheet?.id === 'menu' ? 'lg:pl-80' : 'pl-0';
   const isLargeScreen = useBreakpoints('min', 'lg');
@@ -31,7 +34,10 @@ export const AppContent = () => {
     <div ref={clickContentRef} className={`transition-spacing duration-500 ease-in-out ${addPadding}`}>
       <div className="flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-svh mt-16 transition duration-300 ease-in-out md:ml-16 md:mt-0">
         <main className="flex-1 flex flex-col" aria-label="Main Content">
-          <AppAlert />
+          <AppAlert id="experimentalk" Icon={Info} className="rounded-none border-0 border-b">
+            <strong className="mr-2">{t('common:prerelease')}</strong>
+            {t('common:experiment_notice.text')}
+          </AppAlert>
           <Outlet />
         </main>
         <AppFooter />

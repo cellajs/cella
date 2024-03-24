@@ -19,6 +19,7 @@ import { type OrganizationModel, organizationsTable } from '../../db/schema/orga
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
+import { i18n } from '../../lib/i18n';
 import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
@@ -37,7 +38,6 @@ import {
   signUpRouteConfig,
   verifyEmailRouteConfig,
 } from './routes';
-import { i18n } from '../../lib/i18n';
 
 const app = new CustomHono();
 

@@ -27,7 +27,7 @@
     "@hono/node-server": "^1.8.2",
     "@hono/sentry": "^1.0.1",
     "@hono/swagger-ui": "^0.2.1",
-    "@hono/zod-openapi": "0.9.8",
+    "@hono/zod-openapi": "0.9.9",
     "@logtail/node": "^0.4.21",
     "@lucia-auth/adapter-drizzle": "^1.0.7",
     "@lucia-auth/adapter-postgresql": "^3.1.1",

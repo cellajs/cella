@@ -5,8 +5,8 @@ import { db } from '../../db/db';
 import { auth as luciaAuth } from '../../db/lucia';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
-import { removeSessionCookie } from '../../modules/auth/helpers/cookies';
 import { i18n } from '../../lib/i18n';
+import { removeSessionCookie } from '../../modules/auth/helpers/cookies';
 
 const auth =
   (accessibleFor?: User['role'][]): MiddlewareHandler =>

@@ -47,14 +47,15 @@ function isByteLength(str: string, options: { min?: number; max?: number }) {
   return len >= min && (typeof max === 'undefined' || len <= max);
 }
 
-function isFQDN(str: string, options?: IFqdnOptions) {
-  options = { ...defaultFqdnOptions, ...options };
+function isFQDN(str: string, IFqdnOptions?: IFqdnOptions) {
+  const options = { ...defaultFqdnOptions, ...IFqdnOptions };
+  let emailString = str;
 
   /* Remove the optional trailing dot before checking validity */
   if (options.allowTrailingDot && str[str.length - 1] === '.') {
-    str = str.substring(0, str.length - 1);
+    emailString = str.substring(0, str.length - 1);
   }
-  const parts = str.split('.');
+  const parts = emailString.split('.');
 
   if (options.requireTld) {
     const tld: string = `${parts.pop()}`;
@@ -87,19 +88,20 @@ function isFQDN(str: string, options?: IFqdnOptions) {
   return true;
 }
 
-export function isEmail(str: string, options?: IEmailOptions) {
-  options = { ...defaultEmailOptions, ...options };
+export function isEmail(str: string, IEmailOptions?: IEmailOptions) {
+  const options = { ...defaultEmailOptions, ...IEmailOptions };
+  let emailString = str;
 
   if (options.requireDisplayName || options.allowDisplayName) {
     const displayEmail = str.match(displayName);
     if (displayEmail) {
-      str = displayEmail[1];
+      emailString = displayEmail[1];
     } else if (options.requireDisplayName) {
       return false;
     }
   }
 
-  const parts: string[] = str.split('@');
+  const parts: string[] = emailString.split('@');
   const domain: string = `${parts.pop()}`;
   const lowerDomain = domain.toLowerCase();
   let user: string = parts.join('@');

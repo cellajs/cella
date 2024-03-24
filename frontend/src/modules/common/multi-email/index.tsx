@@ -2,9 +2,13 @@
 
 // This file is a modified version of the original source code.
 // * Removed autofocus
-// * Use shadcn UI components
+// * Use shadcn UI components and css
 
+import { X } from 'lucide-react';
 import * as React from 'react';
+import { cn } from '~/lib/utils';
+import { Badge } from '~/modules/ui/badge';
+import { inputClass } from '~/modules/ui/input';
 import { isEmail as isEmailFn } from './is-email';
 
 export interface MultiEmailProps {
@@ -22,10 +26,9 @@ export interface MultiEmailProps {
   validateEmail?: (email: string) => boolean | Promise<boolean>;
   enableSpinner?: boolean;
   style?: React.CSSProperties;
-  getLabel: (email: string, index: number, removeEmail: (index: number, isDisabled?: boolean) => void) => React.ReactNode;
   className?: string;
   inputClassName?: string;
-  placeholder?: string | React.ReactNode;
+  placeholder?: string;
   spinner?: () => React.ReactNode;
   delimiter?: string;
   initialInputValue?: string;
@@ -50,7 +53,6 @@ export function MultiEmail(props: MultiEmailProps) {
     initialInputValue = '',
     inputClassName,
     autoComplete,
-    getLabel,
     enable,
     onDisabled,
     validateEmail,
@@ -290,17 +292,49 @@ export function MultiEmail(props: MultiEmailProps) {
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-<div
-      className={`${className} ${noClass ? '' : 'react-multi-email'} ${focused ? 'focused' : ''} ${
-        inputValue === '' && emails.length === 0 ? 'empty' : 'fill'
-      }`}
+    <div
+      className={cn(
+        inputClass,
+        'relative flex-wrap h-auto',
+        className,
+        noClass ? '' : 'react-multi-email',
+        focused ? 'focused' : '',
+        inputValue === '' && emails.length === 0 ? 'empty' : 'fill',
+      )}
       style={style}
       onClick={() => emailInputRef.current?.focus()}
     >
       {spinning && spinner?.()}
-      {placeholder ? <span data-placeholder>{placeholder}</span> : null}
-      <div className={'data-labels'} style={{ opacity: spinning ? 0.45 : 1.0, display: 'contents', flexWrap: 'inherit' }}>
-        {emails.map((email: string, index: number) => getLabel(email, index, removeEmail))}
+      <div className="flex flex-wrap gap-1" style={{ opacity: spinning ? 0.45 : 1.0 }}>
+        {emails.map((email: string, index: number) => {
+          return (
+            <Badge
+              key={email}
+              className={cn(
+                'data-[disabled]:bg-muted-foreground data-[disabled]:text-muted data-[disabled]:hover:bg-muted-foreground',
+                'data-[fixed]:bg-muted-foreground data-[fixed]:text-muted data-[fixed]:hover:bg-muted-foreground',
+              )}
+            >
+              {email}
+              <button
+                type="button"
+                className={cn('py-1 m-[-4px] ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    removeEmail(index);
+                  }
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={() => removeEmail(index)}
+              >
+                <X className="h-4 w-4 opacity-50 hover:opacity-100" />
+              </button>
+            </Badge>
+          );
+        })}
       </div>
       <input
         id={id}
@@ -309,11 +343,15 @@ export function MultiEmail(props: MultiEmailProps) {
         type="text"
         value={inputValue}
         onFocus={handleOnFocus}
+        placeholder={placeholder || ''}
         onBlur={handleOnBlur}
         onChange={handleOnChange}
         onKeyDown={handleOnKeydown}
         onKeyUp={handleOnKeyup}
-        className={inputClassName}
+        className={cn(
+          inputClassName,
+          'ml-2 flex-1 placeholder:text-muted-foreground w-auto outline-none !bg-transparent border-0 inline-block leading-none py-1',
+        )}
         autoComplete={autoComplete}
       />
     </div>

@@ -60,7 +60,10 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
   };
 
   const setEmails = (emails: string[]) => {
-    form.setValue('emails', emails.map((email) => ({ label: email, value: email })));
+    form.setValue(
+      'emails',
+      emails.map((email) => ({ label: email, value: email })),
+    );
   };
 
   const cancel = () => {
@@ -78,19 +81,9 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
             <FormItem>
               <FormControl>
                 <MultiEmail
-                  placeholder="Input your email"
+                  placeholder={t('common:add_email')}
                   onChange={(_emails: string[]) => {
                     setEmails(_emails);
-                  }}
-                  getLabel={(email, index, removeEmail) => {
-                    return (
-                      <div data-tag key={index}>
-                        <div data-tag-item>{email}</div>
-                        <span data-tag-handle onClick={() => removeEmail(index)}>
-                          ×
-                        </span>
-                      </div>
-                    );
                   }}
                 />
               </FormControl>

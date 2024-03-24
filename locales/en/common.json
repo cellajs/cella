@@ -259,5 +259,7 @@
   "search_users": "Search users by name",
   "no_users_found": "No users found",
   "invite_by_email": "Invite with email addresses",
-  "invite_by_name": "Invite by searching for users"
+  "invite_by_name": "Invite by searching for users",
+  "add_email": "Add an email",
+  "explain.invite_search.text": "Type a name and select the user. You can select multiple users."
 }
