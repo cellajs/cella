@@ -16,12 +16,12 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { BoardColumn, BoardContainer } from './board-column';
 import type { Column } from './board-column';
 import { coordinateGetter } from './keyboard-preset';
 import { type Task, TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 
 const defaultCols = [
   {

@@ -12,7 +12,7 @@ import { TimeSpan, createDate } from 'oslo';
 import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
@@ -20,6 +20,8 @@ import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { membershipSchema } from '../organizations/schema';
+import { apiUserSchema } from '../users/schema';
 import {
   checkSlugRouteConfig,
   checkTokenRouteConfig,
@@ -28,8 +30,6 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import { membershipSchema } from '../organizations/schema';
-import { apiUserSchema } from '../users/schema';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

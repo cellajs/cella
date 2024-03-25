@@ -2,7 +2,7 @@ import { type UniqueIdentifier, useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
-import { GripVertical } from 'lucide-react';
+import { ChevronDown, Footprints, GripVertical, Maximize2, Plus, Settings } from 'lucide-react';
 import { useMemo } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
@@ -67,19 +67,42 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       })}
     >
       <CardHeader className="p-3 font-semibold border-b flex flex-row gap-2 space-between items-center">
-        <Button variant={'ghost'} {...attributes} {...listeners} className=" p-1 text-primary/50 -ml-2 h-auto cursor-grab relative">
+        <Button variant={'ghost'} {...attributes} {...listeners} className=" py-1 px-0 text-primary/50 -ml-1 h-auto cursor-grab relative">
           <span className="sr-only">{`Move column: ${column.title}`}</span>
-          <GripVertical />
+          <GripVertical size={16} />
         </Button>
-        <span> {column.title}</span>
+        <div> {column.title}</div>
+
+        <div className="grow" />
+        <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+          <Footprints size={16} />
+        </Button>
+        <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+          <Maximize2 size={16} />
+        </Button>
+        <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+          <Settings size={16} />
+        </Button>
+        <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8">
+          <Plus size={16} className="mr-1" />
+          Story
+        </Button>
       </CardHeader>
       <ScrollArea>
         <CardContent className="flex flex-grow flex-col p-0">
+          <Button variant="plain" size="sm" className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-success text-sm -mt-[1px]">
+            <span className="text-[12px]">16 accepted stories</span>
+            <ChevronDown size={12} />
+          </Button>
           <SortableContext items={tasksIds}>
             {tasks.map((task) => (
               <TaskCard key={task.id} task={task} />
             ))}
           </SortableContext>
+          <Button variant="plain" size="sm" className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-600 text-sm -mt-[1px]">
+            <span className="text-[12px]">12 iced stories</span>
+            <ChevronDown size={12} />
+          </Button>
         </CardContent>
       </ScrollArea>
     </Card>

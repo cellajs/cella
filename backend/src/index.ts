@@ -5,8 +5,8 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { env } from 'env';
 import { resetDb } from './cron/reset-db';
 import { db } from './db/db';
-import { app } from './server';
 import ascii from './lib/ascii';
+import { app } from './server';
 
 // * Set i18n instance before starting server
 import './lib/i18n';

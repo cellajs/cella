@@ -14,7 +14,7 @@ import { acceptInviteRouteConfig, githubSignInRouteConfig } from './routes';
 import { config } from 'config';
 import { emailSender } from '../../../../email';
 import { db } from '../../db/db';
-import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 import { idSchema, slugSchema } from '../../lib/common-schemas';
-import { apiUserSchema } from '../users/schema';
 import { membershipSchema } from '../organizations/schema';
+import { apiUserSchema } from '../users/schema';
 
 export const inviteJsonSchema = z.object({
   organizationIdentifier: slugSchema.or(idSchema).optional(),
