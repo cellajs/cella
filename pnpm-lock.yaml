@@ -139,8 +139,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@asteasolutions/zod-to-openapi':
-        specifier: 6.4.0
-        version: 6.4.0(zod@3.22.4)
+        specifier: 5.5.0
+        version: 5.5.0(zod@3.22.4)
       '@babel/preset-typescript':
         specifier: ^7.24.1
         version: 7.24.1(@babel/core@7.24.3)
@@ -719,16 +719,6 @@ packages:
     dependencies:
       openapi3-ts: 4.2.1
       zod: 3.22.4
-    dev: false
-
-  /@asteasolutions/zod-to-openapi@6.4.0(zod@3.22.4):
-    resolution: {integrity: sha512-8cxfF7AHHx2PqnN4Cd8/O8CBu/nVYJP9DpnfVLW3BFb66VJDnqI/CczZnkqMc3SNh6J9GiX7JbJ5T4BSP4HZ2Q==}
-    peerDependencies:
-      zod: ^3.20.2
-    dependencies:
-      openapi3-ts: 4.2.1
-      zod: 3.22.4
-    dev: true
 
   /@aws-crypto/crc32@3.0.0:
     resolution: {integrity: sha512-IzSgsrxUcsrejQbPVilIKy16kAT52EwB6zSaI+M3xxIhKh5+aldEyvI+z6erM7TCLB2BJsFrtHjp6/4/sr+3dA==}
