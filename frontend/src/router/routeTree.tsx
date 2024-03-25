@@ -17,7 +17,7 @@ import SignIn from '~/modules/auth/sign-in';
 import SignOut from '~/modules/auth/sign-out';
 import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
-import Projects from '~/modules/common/projects';
+import Projects from '~/modules/projects';
 import Home from '~/modules/home';
 import About from '~/modules/marketing/about';
 import Accessibility from '~/modules/marketing/accessibility';
