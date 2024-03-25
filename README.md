@@ -5,6 +5,14 @@
 
 <br />
 
+<!--
+ *                            _ _
+ *    ░▒▓█████▓▒░     ___ ___| | | __ _
+ *    ░▒▓█   █▓▒░    / __/ _ \ | |/ _` |
+ *    ░▒▓█   █▓▒░   | (_|  __/ | | (_| |
+ *    ░▒▓█████▓▒░    \___\___|_|_|\__,_|                            
+ *
+ -->
 
 [cellajs.com](https://cellajs.com) &centerdot; ❗prerelease version &centerdot; MIT license
 

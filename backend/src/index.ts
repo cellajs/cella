@@ -6,6 +6,7 @@ import { env } from 'env';
 import { resetDb } from './cron/reset-db';
 import { db } from './db/db';
 import { app } from './server';
+import ascii from './lib/ascii';
 
 // * Set i18n instance before starting server
 import './lib/i18n';
@@ -25,7 +26,8 @@ const main = async () => {
       port: Number(env.PORT ?? '4000'),
     },
     (info) => {
-      console.info(`Listening on http://${info.address}:${info.port}`);
+      console.info(`Listening on http://${info.address}${info.port}`);
+      ascii();
     },
   );
 };
