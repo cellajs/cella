@@ -48,7 +48,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('h-[500px] max-h-[500px] w-[350px] max-w-full bg-card flex flex-col flex-shrink-0 snap-center', {
+  const variants = cva('h-[80vh] max-w-full bg-card flex flex-col flex-shrink-0 snap-center', {
     variants: {
       dragging: {
         default: 'border-2 border-transparent',

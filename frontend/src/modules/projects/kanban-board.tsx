@@ -21,6 +21,7 @@ import type { Column } from './board-column';
 import { coordinateGetter } from './keyboard-preset';
 import { type Task, TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 
 const defaultCols = [
   {
@@ -200,11 +201,18 @@ export default function KanbanBoard() {
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
-        <SortableContext items={columnsId}>
-          {columns.map((col) => (
-            <BoardColumn key={col.id} column={col} tasks={tasks.filter((task) => task.columnId === col.id)} />
-          ))}
-        </SortableContext>
+        <ResizablePanelGroup direction="horizontal" className="rounded-lg flex gap-2 p-2 border">
+          <SortableContext items={columnsId}>
+            {columns.map((col) => (
+              <>
+                <ResizablePanel>
+                  <BoardColumn key={col.id} column={col} tasks={tasks.filter((task) => task.columnId === col.id)} />
+                </ResizablePanel>
+                <ResizableHandle className="w-[2px]" />
+              </>
+            ))}
+          </SortableContext>
+        </ResizablePanelGroup>
       </BoardContainer>
 
       {'document' in window &&
