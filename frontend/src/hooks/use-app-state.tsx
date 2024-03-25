@@ -6,17 +6,17 @@ export const useAppState = () => {
   const [hasStarted, setStarted] = useState(false);
   const [isReady, setReady] = useState(false);
 
-  const scrollListener = () => {
-    setScrolled(true);
-    window.removeEventListener('scroll', scrollListener);
-  };
-
-  window.addEventListener('scroll', scrollListener);
-
-  // Cleanup just in case
   useEffect(() => {
+    const scrollListener = () => {
+      setScrolled(true);
+      window.removeEventListener('scroll', scrollListener);
+    };
+
+    window.addEventListener('scroll', scrollListener);
+
     const startTimeout = setTimeout(() => setStarted(true), 200);
     const readyTimeout = setTimeout(() => setReady(true), 800);
+
     return () => {
       clearTimeout(startTimeout);
       clearTimeout(readyTimeout);

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -204,12 +204,12 @@ export default function KanbanBoard() {
         <ResizablePanelGroup direction="horizontal" className="rounded-lg flex gap-2 p-2 border">
           <SortableContext items={columnsId}>
             {columns.map((col) => (
-              <>
-                <ResizablePanel>
-                  <BoardColumn key={col.id} column={col} tasks={tasks.filter((task) => task.columnId === col.id)} />
+              <Fragment key={col.id}>
+                <ResizablePanel key={`${col.id}-panel`}>
+                  <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.columnId === col.id)} />
                 </ResizablePanel>
                 <ResizableHandle className="w-[2px]" />
-              </>
+              </Fragment>
             ))}
           </SortableContext>
         </ResizablePanelGroup>
