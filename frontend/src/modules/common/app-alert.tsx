@@ -1,10 +1,10 @@
 import { type LucideProps, X } from 'lucide-react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '~/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useAlertsStore } from '~/store/alerts';
 import { Button } from '../ui/button';
-import { cn } from '~/lib/utils';
-import type React from 'react';
 
 export type AppAlert = {
   className?: string;

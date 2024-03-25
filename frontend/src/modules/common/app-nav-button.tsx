@@ -6,10 +6,10 @@ import { AvatarWrap } from './avatar-wrap';
 
 import { useTranslation } from 'react-i18next';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
-import HomeIconLoader from './home-icon-loader';
-import type { NavItem } from './app-nav';
 import { cn } from '~/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
+import type { NavItem } from './app-nav';
+import HomeIconLoader from './home-icon-loader';
 
 interface NavButtonProps {
   navItem: NavItem;

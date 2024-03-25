@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { invite } from '~/api/general';
 import type { Organization } from '~/types';
 
+import { config } from 'config';
 import { Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSuggestions } from '~/api/general';
@@ -12,10 +13,9 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import MultipleSelector from '../ui/multiple-selector';
 import { Badge } from '../ui/badge';
+import MultipleSelector from '../ui/multiple-selector';
 import SelectRole from './select-role';
-import { config } from 'config';
 
 interface Props {
   organization?: Organization;

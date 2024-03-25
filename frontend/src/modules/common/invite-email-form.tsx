@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { invite } from '~/api/general';
 import type { Organization } from '~/types';
 
+import { config } from 'config';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApiWrapper } from '~/hooks/use-api-wrapper';
@@ -11,10 +12,9 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { MultiEmail } from './multi-email';
 import { Badge } from '../ui/badge';
+import { MultiEmail } from './multi-email';
 import SelectRole from './select-role';
-import { config } from 'config';
 
 interface Props {
   organization?: Organization;

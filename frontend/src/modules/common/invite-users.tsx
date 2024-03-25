@@ -1,11 +1,11 @@
-import { ChevronRight, AtSign, Search, Info } from 'lucide-react';
+import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { AppAlert } from './app-alert';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
-import { AppAlert } from './app-alert';
 
 interface Props {
   organization?: Organization;
@@ -48,9 +48,9 @@ const InviteUsers = ({ organization, callback, dialog: isDialog, mode }: Props) 
   if (inviteMode === 'search')
     return (
       <>
-         <AppAlert id="invite_search" Icon={Info}>
-            {t('common:explain.invite_search.text')}
-          </AppAlert>
+        <AppAlert id="invite_search" Icon={Info}>
+          {t('common:explain.invite_search.text')}
+        </AppAlert>
         <InviteSearchForm organization={organization} callback={callback} dialog={isDialog} />
       </>
     );
@@ -58,8 +58,8 @@ const InviteUsers = ({ organization, callback, dialog: isDialog, mode }: Props) 
   return (
     <>
       <AppAlert id="invite_email" Icon={Info}>
-            {t('common:explain.invite_email.text')}
-          </AppAlert>
+        {t('common:explain.invite_email.text')}
+      </AppAlert>
       <InviteEmailForm organization={organization} callback={callback} dialog={isDialog} />{' '}
     </>
   );

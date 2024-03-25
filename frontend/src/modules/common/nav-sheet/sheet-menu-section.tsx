@@ -3,6 +3,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sticky from 'react-sticky-el';
+import { toast } from 'sonner';
 import { Button } from '~/modules/ui/button';
 import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 import { useNavigationStore } from '~/store/navigation';
@@ -12,7 +13,6 @@ import { MenuArchiveToggle } from './menu-archive-toggle';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
-import { toast } from 'sonner';
 
 interface MenuSectionProps {
   key: string;
@@ -37,7 +37,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
   const toggleOptionsView = (value: boolean) => {
     if (value) toast(t('common:configure_menu.text'));
     setOptionsView(value);
-  }
+  };
 
   // TODO implement archiveToggleClick
   const archiveToggleClick = () => {
