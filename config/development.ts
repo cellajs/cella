@@ -11,6 +11,9 @@ export default {
   backendUrl: 'http://localhost:4000',
   tusUrl: 'http://localhost:1080',
 
+  // Hide chat widget in development
+  gleapToken: undefined,
+
   // Webhooks with n8n
   newsletterWebhookUrl: 'https://cella.app.n8n.cloud/webhook-test/subscription?',
   contactWebhookUrl: 'https://cella.app.n8n.cloud/webhook-test/contact?',

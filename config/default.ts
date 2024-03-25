@@ -79,6 +79,7 @@ export const config = {
     { value: 'en', label: 'English' },
     { value: 'nl', label: 'Nederlands' },
   ],
+
   defaultLanguage: 'en' as const,
 
   // Company details
@@ -101,6 +102,19 @@ export const config = {
       lat: 51.92760809717153,
       lon: 4.47421039909924,
     },
+  },
+
+  // Roles
+  // TODO, make dynamic and type safe, for now it's hardcoded
+  rolesByType: {
+    system: [
+      { key: 'ADMIN', value: 'common:admin' },
+      { key: 'USER', value: 'common:user' },
+    ],
+    organization: [
+      { key: 'ADMIN', value: 'common:admin' },
+      { key: 'MEMBER', value: 'common:member' },
+    ],
   },
 };
 

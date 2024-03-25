@@ -5,7 +5,6 @@ import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AppAlert } from './app-alert';
 
 interface Props {
@@ -58,11 +57,9 @@ const InviteUsers = ({ organization, callback, dialog: isDialog, mode }: Props) 
 
   return (
     <>
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
-      </Alert>
+      <AppAlert id="invite_email" Icon={Info}>
+            {t('common:explain.invite_email.text')}
+          </AppAlert>
       <InviteEmailForm organization={organization} callback={callback} dialog={isDialog} />{' '}
     </>
   );

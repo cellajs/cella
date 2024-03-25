@@ -10,8 +10,11 @@ import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { MultiEmail } from './multi-email';
+import { Badge } from '../ui/badge';
+import SelectRole from './select-role';
+import { config } from 'config';
 
 interface Props {
   organization?: Organization;
@@ -38,6 +41,9 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
   const form = useFormWithDraft<FormValues>('invite-users', {
     resolver: zodResolver(formSchema),
   });
+
+  // TODO, make dynamic and type safe, for now it's hardcoded
+  const roles = config.rolesByType[organization ? 'organization' : 'system'];
 
   const onSubmit = (values: FormValues) => {
     apiWrapper(
@@ -91,8 +97,24 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field: { value, onChange } }) => (
+            <FormItem>
+              <FormLabel>{t('common:role')}</FormLabel>
+              <FormControl>
+                <SelectRole roles={roles} value={value} onChange={onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" loading={pending}>
+          <Button type="submit" loading={pending} className="relative">
+            {form.getValues('emails')?.length && (
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
+            )}{' '}
             <Send size={16} className="mr-2" />
             {t('common:invite')}
           </Button>
