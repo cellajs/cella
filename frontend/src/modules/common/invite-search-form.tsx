@@ -21,17 +21,11 @@ interface Props {
   organization?: Organization;
   callback?: () => void;
   dialog?: boolean;
-  roles: { key: string; value: string }[];
 }
 
-const optionSchema = z.object({
-  label: z.string(),
-  value: z.string().email('Invalid email'),
-  disable: z.boolean().optional(),
-});
-
 const formSchema = z.object({
-  emails: z.array(optionSchema).min(1),
+  emails: z.array(z.string().email('Invalid email')).min(1),
+  role: z.enum(['ADMIN', 'USER', 'MEMBER']).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -42,6 +36,10 @@ const InviteSearchForm = ({ organization, callback, dialog: isDialog }: Props) =
 
   const form = useFormWithDraft<FormValues>('invite-users', {
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      emails: [],
+      role: config.rolesByType[organization ? 'organization' : 'system'][config.rolesByType[organization ? 'organization' : 'system'].length - 1].key,
+    },
   });
 
   // TODO, make dynamic and type safe, for now it's hardcoded
@@ -49,11 +47,7 @@ const InviteSearchForm = ({ organization, callback, dialog: isDialog }: Props) =
 
   const onSubmit = (values: FormValues) => {
     apiWrapper(
-      () =>
-        invite(
-          values.emails.map((e) => e.value),
-          organization?.id,
-        ),
+      () => invite(values.emails, values.role, organization?.id),
       () => {
         form.reset(undefined, { keepDirtyValues: true });
         callback?.();
@@ -78,12 +72,12 @@ const InviteSearchForm = ({ organization, callback, dialog: isDialog }: Props) =
         <FormField
           control={form.control}
           name="emails"
-          render={({ field }) => (
+          render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormControl>
                 <MultipleSelector
-                  value={field.value}
-                  onChange={field.onChange}
+                  value={value.map((v) => ({ label: v, value: v }))}
+                  onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
                     const users = await getSuggestions(query, 'user');
 

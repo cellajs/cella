@@ -12,7 +12,7 @@ import { TimeSpan, createDate } from 'oslo';
 import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { membershipsTable } from '../../db/schema/memberships';
+import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
@@ -28,6 +28,8 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
+import { membershipSchema } from '../organizations/schema';
+import { apiUserSchema } from '../users/schema';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -103,12 +105,22 @@ const generalRoutes = app
    * Invite users to the system or members to an organization
    */
   .add(inviteRouteConfig, async (ctx) => {
-    const { emails } = ctx.req.valid('json');
+    const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
     const organization = ctx.get('organization') as OrganizationModel | undefined;
 
     if (!organization && user.role !== 'ADMIN') {
       return errorResponse(ctx, 403, 'invite_forbidden', 'warn');
+    }
+
+    if (role && organization && !membershipSchema.shape.role.safeParse(role).success) {
+      logEvent('Invalid role', { role }, 'warn');
+      return errorResponse(ctx, 400, 'invalid_role', 'warn');
+    }
+
+    if (role && !organization && !apiUserSchema.shape.role.safeParse(role).success) {
+      logEvent('Invalid role', { role }, 'warn');
+      return errorResponse(ctx, 400, 'invalid_role', 'warn');
     }
 
     for (const email of emails) {
@@ -122,16 +134,28 @@ const generalRoutes = app
 
         if (existingMembership) {
           logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
+
+          if (role && existingMembership.role !== role) {
+            await db
+              .update(membershipsTable)
+              .set({ role: role as MembershipModel['role'] })
+              .where(
+                and(eq(membershipsTable.organizationId, existingMembership.organizationId), eq(membershipsTable.userId, existingMembership.userId)),
+              );
+            logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
+          }
+
           continue;
         }
 
         if (user.id === targetUser.id) {
+          console.log('User is trying to invite themselves');
           await db
             .insert(membershipsTable)
             .values({
               organizationId: organization.id,
               userId: user.id,
-              role: 'MEMBER',
+              role: (role as MembershipModel['role']) || 'MEMBER',
               createdBy: user.id,
             })
             .returning();
@@ -147,6 +171,7 @@ const generalRoutes = app
         type: 'INVITATION',
         userId: targetUser?.id,
         email: email.toLowerCase(),
+        role: role || 'USER',
         organizationId: organization?.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });

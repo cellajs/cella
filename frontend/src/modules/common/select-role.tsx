@@ -3,7 +3,7 @@ import { cn } from '~/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
 interface SelectRoleProps {
-  roles: { key: string; value: string }[];
+  roles: readonly { key: string; value: string }[];
   onChange: (value?: string) => void;
   value?: string;
   className?: string;

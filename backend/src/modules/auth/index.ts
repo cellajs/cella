@@ -14,7 +14,7 @@ import { acceptInviteRouteConfig, githubSignInRouteConfig } from './routes';
 import { config } from 'config';
 import { emailSender } from '../../../../email';
 import { db } from '../../db/db';
-import { membershipsTable } from '../../db/schema/memberships';
+import { MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
@@ -375,6 +375,7 @@ const authRoutes = app
           slug: slugExists ? `${slug}-${userId}` : slug,
           language: organization?.defaultLanguage || config.defaultLanguage,
           email: token.email,
+          role: (token.role as User['role']) || 'USER',
           emailVerified: true,
           hashedPassword,
         })
@@ -393,7 +394,7 @@ const authRoutes = app
         .values({
           organizationId: organization.id,
           userId: user.id,
-          role: 'MEMBER',
+          role: (token.role as MembershipModel['role']) || 'MEMBER',
           createdBy: user.id,
         })
         .returning();

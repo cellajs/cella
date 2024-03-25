@@ -115,7 +115,7 @@ export const config = {
       { key: 'ADMIN', value: 'common:admin' },
       { key: 'MEMBER', value: 'common:member' },
     ],
-  },
+  } as const,
 };
 
 export default config;
