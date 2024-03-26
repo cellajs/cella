@@ -26,15 +26,15 @@ import { hasDraggableData } from './utils';
 const defaultCols = [
   {
     id: 'todo' as const,
-    title: 'Todo',
+    title: 'Buddycheck',
   },
   {
     id: 'in-progress' as const,
-    title: 'In progress',
+    title: 'Mondieu',
   },
   {
     id: 'done' as const,
-    title: 'Done',
+    title: 'Side project X',
   },
 ] satisfies Column[];
 

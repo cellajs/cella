@@ -3,11 +3,14 @@ import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
 import { ChevronDown, Footprints, GripVertical, Maximize2, Plus, Settings } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { type Task, TaskCard } from './task-card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { useTranslation } from 'react-i18next';
+import { BackgroundPicker } from '~/modules/common/background-picker';
 
 export interface Column {
   id: UniqueIdentifier;
@@ -28,6 +31,8 @@ interface BoardColumnProps {
 }
 
 export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
+  const { t } = useTranslation();
+  
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
   }, [tasks]);
@@ -58,6 +63,9 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     },
   });
 
+  // TODO 
+  const [background, setBackground] = useState('#ff75c3');
+
   return (
     <Card
       ref={setNodeRef}
@@ -71,18 +79,47 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           <span className="sr-only">{`Move column: ${column.title}`}</span>
           <GripVertical size={16} />
         </Button>
+
+        <BackgroundPicker background={background} setBackground={setBackground} className="p-2 h-8 w-8" options={['solid']} />
+
         <div> {column.title}</div>
 
         <div className="grow" />
-        <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-          <Footprints size={16} />
-        </Button>
-        <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+              <Footprints size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" sideOffset={13}>
+            {t('Show velocity')}
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
           <Maximize2 size={16} />
         </Button>
-        <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+          </TooltipTrigger>
+          <TooltipContent side="bottom" sideOffset={13}>
+            {t('Project view')}
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+   
+          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
           <Settings size={16} />
         </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" sideOffset={13}>
+            {t('Project settings')}
+          </TooltipContent>
+        </Tooltip>
+  
         <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8">
           <Plus size={16} className="mr-1" />
           Story
@@ -90,7 +127,11 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       </CardHeader>
       <ScrollArea>
         <CardContent className="flex flex-grow flex-col p-0">
-          <Button variant="plain" size="sm" className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-success text-sm -mt-[1px]">
+          <Button
+            variant="plain"
+            size="sm"
+            className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-success text-sm -mt-[1px]"
+          >
             <span className="text-[12px]">16 accepted stories</span>
             <ChevronDown size={12} />
           </Button>
@@ -99,7 +140,11 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
               <TaskCard key={task.id} task={task} />
             ))}
           </SortableContext>
-          <Button variant="plain" size="sm" className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-600 text-sm -mt-[1px]">
+          <Button
+            variant="plain"
+            size="sm"
+            className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-600 text-sm -mt-[1px]"
+          >
             <span className="text-[12px]">12 iced stories</span>
             <ChevronDown size={12} />
           </Button>
