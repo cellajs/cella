@@ -270,6 +270,8 @@ const generalRoutes = app
     if (type === 'user' || !type) {
       const users = await db
         .select({
+          id: usersTable.id,
+          slug: usersTable.slug,
           name: usersTable.name,
           email: usersTable.email,
           thumbnailUrl: usersTable.thumbnailUrl,
@@ -284,6 +286,8 @@ const generalRoutes = app
     if (type === 'organization' || !type) {
       const organizations = await db
         .select({
+          id: organizationsTable.id,
+          slug: organizationsTable.slug,
           name: organizationsTable.name,
           thumbnailUrl: organizationsTable.thumbnailUrl,
         })

@@ -61,8 +61,8 @@ export const checkToken = async (token: string) => {
 
 type SuggestionsResponse = Extract<InferResponseType<typeof client.suggestions.$get>, { data: unknown }>['data'];
 
-type UserSuggestion = Extract<SuggestionsResponse[0], { email: string }>;
-type OrganizationSuggestion = Extract<SuggestionsResponse[0], { name: string }>;
+export type UserSuggestion = Extract<SuggestionsResponse[0], { email: string }>;
+export type OrganizationSuggestion = Extract<SuggestionsResponse[0], { name: string }>;
 
 type Suggestions<T extends 'user' | 'organization'> = T extends 'user' ? UserSuggestion[] : OrganizationSuggestion[];
 

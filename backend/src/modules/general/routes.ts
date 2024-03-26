@@ -176,11 +176,15 @@ export const suggestionsConfig = createRouteConfig({
             z.array(
               z.union([
                 apiUserSchema.pick({
+                  id: true,
+                  slug: true,
                   name: true,
                   email: true,
                   thumbnailUrl: true,
                 }),
                 apiOrganizationSchema.pick({
+                  id: true,
+                  slug: true,
                   name: true,
                   thumbnailUrl: true,
                 }),
