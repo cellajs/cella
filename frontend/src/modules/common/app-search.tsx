@@ -14,7 +14,9 @@ export const AppSearch = () => {
   const [userSuggestions, setUserSuggestions] = useState<UserSuggestion[]>([]);
   const [organizationSuggestions, setOrganizationSuggestions] = useState<OrganizationSuggestion[]>([]);
 
+  // TODO: why not using api wrapper here? Use entity type property
   useEffect(() => {
+    console.log('tedst', value);
     getSuggestions(value).then((suggestions) => {
       setUserSuggestions(suggestions.filter((suggestion) => 'email' in suggestion) as UserSuggestion[]);
       setOrganizationSuggestions(suggestions.filter((suggestion) => !('email' in suggestion)) as OrganizationSuggestion[]);
@@ -41,11 +43,19 @@ export const AppSearch = () => {
     dialog.remove(false);
   };
 
+  // TODO: UI improvements:
+  // - Add loading spinner
+  // - Add error handling
+  // - height of suggestions should correspond to the height of the screen
+  // - scroll to top when new suggestions are loaded
+  // - use scrollarea
+  // - sticky group type header
   return (
     <Command className="rounded-lg border shadow-md">
       <CommandInput
         placeholder={t('common:placeholder.search')}
         onValueChange={(value) => {
+          console.log('test', value);
           setValue(value);
         }}
       />
