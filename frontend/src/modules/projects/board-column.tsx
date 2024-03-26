@@ -4,13 +4,13 @@ import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
 import { ChevronDown, Footprints, GripVertical, Maximize2, Plus, Settings } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { type Task, TaskCard } from './task-card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import { useTranslation } from 'react-i18next';
-import { BackgroundPicker } from '~/modules/common/background-picker';
+import { type Task, TaskCard } from './task-card';
 
 export interface Column {
   id: UniqueIdentifier;
@@ -32,7 +32,7 @@ interface BoardColumnProps {
 
 export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const { t } = useTranslation();
-  
+
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
   }, [tasks]);
@@ -63,7 +63,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     },
   });
 
-  // TODO 
+  // TODO
   const [background, setBackground] = useState('#ff75c3');
 
   return (
@@ -99,9 +99,9 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 
         <Tooltip>
           <TooltipTrigger asChild>
-          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-          <Maximize2 size={16} />
-        </Button>
+            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+              <Maximize2 size={16} />
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={13}>
             {t('Project view')}
@@ -110,16 +110,15 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 
         <Tooltip>
           <TooltipTrigger asChild>
-   
-          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-          <Settings size={16} />
-        </Button>
+            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+              <Settings size={16} />
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={13}>
             {t('Project settings')}
           </TooltipContent>
         </Tooltip>
-  
+
         <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8">
           <Plus size={16} className="mr-1" />
           Story

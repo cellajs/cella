@@ -1,10 +1,10 @@
+import { Paintbrush } from 'lucide-react';
+import { useMemo } from 'react';
+import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
-import { cn } from '~/lib/utils';
-import { Paintbrush } from 'lucide-react';
-import { useMemo } from 'react';
 
 type PickerType = 'solid' | 'gradient' | 'image';
 
@@ -16,7 +16,13 @@ interface BackgroundPickerProps {
   options?: PickerType[];
 }
 
-export function BackgroundPicker({ background, setBackground, showText, className, options = ['solid', 'gradient', 'image'] }: BackgroundPickerProps) {
+export function BackgroundPicker({
+  background,
+  setBackground,
+  showText,
+  className,
+  options = ['solid', 'gradient', 'image'],
+}: BackgroundPickerProps) {
   const solids = ['#E2E2E2', '#ff75c3', '#ffa647', '#ffe83f', '#9fff5b', '#70e2ff', '#cd93ff', '#09203f'];
 
   const gradients = [

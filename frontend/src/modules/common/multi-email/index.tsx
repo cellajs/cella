@@ -305,7 +305,7 @@ export function MultiEmail(props: MultiEmailProps) {
       onClick={() => emailInputRef.current?.focus()}
     >
       {spinning && spinner?.()}
-      <div className="flex flex-wrap gap-1" style={{ opacity: spinning ? 0.45 : 1.0 }}>
+      <div className="flex flex-wrap gap-1 w-full" style={{ opacity: spinning ? 0.45 : 1.0 }}>
         {emails.map((email: string, index: number) => {
           return (
             <Badge
@@ -335,25 +335,26 @@ export function MultiEmail(props: MultiEmailProps) {
             </Badge>
           );
         })}
+
+        <input
+          id={id}
+          style={{ opacity: spinning ? 0.45 : 1.0 }}
+          ref={emailInputRef}
+          type="text"
+          value={inputValue}
+          onFocus={handleOnFocus}
+          placeholder={placeholder || ''}
+          onBlur={handleOnBlur}
+          onChange={handleOnChange}
+          onKeyDown={handleOnKeydown}
+          onKeyUp={handleOnKeyup}
+          className={cn(
+            inputClassName,
+            'ml-2 grow placeholder:text-muted-foreground w-auto outline-none !bg-transparent border-0 inline-block leading-none py-1',
+          )}
+          autoComplete={autoComplete}
+        />
       </div>
-      <input
-        id={id}
-        style={{ opacity: spinning ? 0.45 : 1.0 }}
-        ref={emailInputRef}
-        type="text"
-        value={inputValue}
-        onFocus={handleOnFocus}
-        placeholder={placeholder || ''}
-        onBlur={handleOnBlur}
-        onChange={handleOnChange}
-        onKeyDown={handleOnKeydown}
-        onKeyUp={handleOnKeyup}
-        className={cn(
-          inputClassName,
-          'ml-2 flex-1 placeholder:text-muted-foreground w-auto outline-none !bg-transparent border-0 inline-block leading-none py-1',
-        )}
-        autoComplete={autoComplete}
-      />
     </div>
   );
 }

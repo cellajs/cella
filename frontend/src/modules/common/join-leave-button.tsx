@@ -1,14 +1,14 @@
-import { invite } from '~/api/general';
-import { removeMembersFromOrganization } from '~/api/organizations';
-import { Button } from '../ui/button';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { toast } from 'sonner';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { organizationQueryOptions } from '../organizations/organization';
-import type { Organization } from '~/types';
+import { invite } from '~/api/general';
+import { removeMembersFromOrganization } from '~/api/organizations';
+import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useUserStore } from '~/store/user';
+import type { Organization } from '~/types';
+import { organizationQueryOptions } from '../organizations/organization';
+import { Button } from '../ui/button';
 
 interface Props {
   organization: Organization;
