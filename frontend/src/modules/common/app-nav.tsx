@@ -45,6 +45,7 @@ const AppNav = () => {
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
 
   const navButtonClick = (navItem: NavItem) => {
+    
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
       dialog(<AppSearch />, {
@@ -52,7 +53,10 @@ const AppNav = () => {
         title: t('common:search'),
         text: t('common:global_search.text'),
         drawerOnMobile: false,
+        refocus: false,
       });
+
+      if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
       return;
     }
 

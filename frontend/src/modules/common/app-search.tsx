@@ -38,7 +38,7 @@ export const AppSearch = () => {
         },
       });
 
-    dialog.remove();
+    dialog.remove(false);
   };
 
   return (

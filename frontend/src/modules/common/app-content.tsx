@@ -31,7 +31,7 @@ export const AppContent = () => {
   }, [activeSheet, isLargeScreen, keepMenuOpen, setSheet]);
 
   return (
-    <div ref={clickContentRef} className={`transition-spacing duration-500 ease-in-out ${addPadding}`}>
+    <div ref={clickContentRef} id="app-content" className={`transition-spacing duration-500 ease-in-out ${addPadding}`}>
       <div className="flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-svh mt-16 transition duration-300 ease-in-out md:ml-16 md:mt-0">
         <main className="flex-1 flex flex-col" aria-label="Main Content">
           <AppAlert id="experimentalk" Icon={Info} className="rounded-none border-0 border-b">

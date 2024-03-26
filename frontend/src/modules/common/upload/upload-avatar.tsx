@@ -37,7 +37,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
           imageMode="avatar"
           setUrl={(url) => {
             setUrl(url);
-            dialog.remove('upload-image');
+            dialog.remove(true, 'upload-image');
           }}
         />
       </Suspense>,

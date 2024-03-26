@@ -44,7 +44,7 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
           )}
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="right" sideOffset={10}>
+      <TooltipContent side="right" sideOffset={10} hideWhenDetached>
         {t(`common:${navItem.id}`)}
       </TooltipContent>
     </Tooltip>
