@@ -63,6 +63,17 @@ const organizationsRoutes = app
 
     logEvent('Organization created', { organization: createdOrganization.id });
 
+    await db
+      .insert(membershipsTable)
+      .values({
+        userId: user.id,
+        organizationId: createdOrganization.id,
+        role: 'ADMIN',
+      })
+      .returning();
+
+    logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
+
     return ctx.json({
       success: true,
       data: {
