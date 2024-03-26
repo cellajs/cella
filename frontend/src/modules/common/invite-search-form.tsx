@@ -14,7 +14,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Badge } from '../ui/badge';
-import MultipleSelector from '../ui/multiple-selector';
+import MultipleSelector from './multiple-selector';
 import SelectRole from './select-role';
 
 interface Props {
@@ -87,10 +87,14 @@ const InviteSearchForm = ({ organization, callback, dialog: isDialog }: Props) =
                     }));
                   }}
                   hidePlaceholderWhenSelected
-                  loadingIndicator={<Loader2 className="animate-spin" size={16} />}
+                  loadingIndicator={
+                    <div className="flex justify-center p-3">
+                      <Loader2 className="animate-spin" size={16} />
+                    </div>
+                  }
                   defaultOptions={[]}
                   placeholder={t('common:search_users')}
-                  emptyIndicator={t('common:no_users_found')}
+                  emptyIndicator={<div className="block w-full text-center p-1">{t('common:no_users_found')}</div>}
                 />
               </FormControl>
               <FormMessage />
@@ -112,7 +116,7 @@ const InviteSearchForm = ({ organization, callback, dialog: isDialog }: Props) =
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" loading={pending} className="relative">
-            {form.getValues('emails')?.length && (
+            {!!form.getValues('emails')?.length && (
               <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
             )}
             <Send size={16} className="mr-2" />

@@ -286,7 +286,8 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       if (!emptyIndicator) return undefined;
 
       // For async search that showing emptyIndicator
-      if (onSearch && !creatable && Object.keys(options).length === 0) {
+      // EDIT: when no inputValue, don't show empty
+      if (inputValue.length && onSearch && !creatable && Object.keys(options).length === 0) {
         return (
           <CommandItem value="-" disabled>
             {emptyIndicator}
@@ -294,7 +295,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         );
       }
 
-      return <CommandEmpty>{emptyIndicator}</CommandEmpty>;
+      // return <CommandEmpty>dd{emptyIndicator}</CommandEmpty>;
     }, [creatable, emptyIndicator, onSearch, options]);
 
     const selectables = React.useMemo<GroupOption>(() => removePickedOption(options, selected), [options, selected]);
