@@ -7,12 +7,14 @@ export type DialogT = {
   drawerOnMobile?: boolean;
   container?: HTMLElement | null;
   className?: string;
+  refocus?: boolean;
   content?: React.ReactNode;
 };
 
 export type DialogToRemove = {
   id: number | string;
   remove: true;
+  refocus?: boolean;
 };
 
 export type ExternalDialog = Omit<DialogT, 'id' | 'content'> & {
@@ -48,10 +50,10 @@ class Observer {
     this.dialogs = [...this.dialogs, data];
   };
 
-  remove = (id?: number | string) => {
+  remove = (refocus = true, id?: number | string) => {
     if (id) {
       for (const subscriber of this.subscribers) {
-        subscriber({ id, remove: true });
+        subscriber({ id, remove: true, refocus });
       }
 
       return;
@@ -59,7 +61,7 @@ class Observer {
 
     for (const dialog of this.dialogs) {
       for (const subscriber of this.subscribers) {
-        subscriber({ id: dialog.id, remove: true });
+        subscriber({ id: dialog.id, remove: true, refocus });
       }
     }
   };
@@ -73,6 +75,7 @@ const dialogFunction = (content: React.ReactNode, data?: ExternalDialog) => {
   DialogState.set({
     content,
     drawerOnMobile: true,
+    refocus: true,
     ...data,
     id,
   });

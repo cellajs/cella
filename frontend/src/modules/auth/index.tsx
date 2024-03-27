@@ -3,7 +3,7 @@ import { Suspense, lazy } from 'react';
 import Logo from '~/modules/common/logo';
 
 interface AuthPageProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 // Lazy load bg animation

@@ -13,14 +13,7 @@ import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugExists } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
-import {
-  deleteUsersRouteConfig,
-  getUserByIdOrSlugRouteConfig,
-  getUserMenuConfig,
-  getUsersConfig,
-  meRouteConfig,
-  updateUserConfig,
-} from './routes';
+import { deleteUsersRouteConfig, getUserByIdOrSlugRouteConfig, getUserMenuConfig, getUsersConfig, meRouteConfig, updateUserConfig } from './routes';
 
 const app = new CustomHono();
 

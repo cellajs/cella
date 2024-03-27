@@ -3,6 +3,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sticky from 'react-sticky-el';
+import { toast } from 'sonner';
 import { Button } from '~/modules/ui/button';
 import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 import { useNavigationStore } from '~/store/navigation';
@@ -31,6 +32,11 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
       className: 'md:max-w-xl',
       title: t('common:create_organization'),
     });
+  };
+
+  const toggleOptionsView = (value: boolean) => {
+    if (value) toast(t('common:configure_menu.text'));
+    setOptionsView(value);
   };
 
   // TODO implement archiveToggleClick
@@ -90,7 +96,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
                   className="w-12 transition duration-300 px-3 ease-in-out }"
                   variant="secondary"
                   size="icon"
-                  onClick={() => setOptionsView(!optionsView)}
+                  onClick={() => toggleOptionsView(!optionsView)}
                 >
                   <Settings2 size={16} />
                 </Button>

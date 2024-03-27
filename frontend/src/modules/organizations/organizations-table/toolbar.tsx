@@ -72,7 +72,7 @@ function Toolbar({
 
   const openNewsletterSheet = () => {
     sheet(<NewsletterForm sheet />, {
-      className: 'sm:max-w-[64rem] z-50',
+      className: 'sm:max-w-[64rem]',
       title: t('common:newsletter'),
       text: t('common:newsletter.text'),
       id: 'newsletter-form',

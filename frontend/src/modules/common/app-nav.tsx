@@ -1,18 +1,13 @@
 import { useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
 import { Bell, Home, type LucideProps, Menu, Search, User } from 'lucide-react';
 import type React from 'react';
 import { Fragment } from 'react';
-import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme';
-import { useUserStore } from '~/store/user';
-import { AvatarWrap } from './avatar-wrap';
 
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
-import { Input } from '~/modules/ui/input';
 import { useNavigationStore } from '~/store/navigation';
 import { NavSheet } from './nav-sheet';
 import { SheetAccount } from './nav-sheet/sheet-account';
@@ -20,8 +15,8 @@ import { SheetMenu } from './nav-sheet/sheet-menu';
 import { SheetNotifications } from './nav-sheet/sheet-notifications';
 
 import useAppState from '~/hooks/use-app-state';
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
-import HomeIconLoader from './home-icon-loader';
+import { NavButton } from './app-nav-button';
+import { AppSearch } from './app-search';
 
 export type NavItem = {
   id: string;
@@ -50,14 +45,18 @@ const AppNav = () => {
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
 
   const navButtonClick = (navItem: NavItem) => {
+    
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
-      dialog(<Input placeholder={t('common:placeholder.search')} />, {
-        className: 'sm:max-w-2xl sm:-mt-[calc(70vh-140px)]',
+      dialog(<AppSearch />, {
+        className: 'sm:max-w-2xl',
         title: t('common:search'),
         text: t('common:global_search.text'),
         drawerOnMobile: false,
+        refocus: false,
       });
+
+      if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
       return;
     }
 
@@ -107,44 +106,3 @@ const AppNav = () => {
 };
 
 export default AppNav;
-
-interface NavButtonProps {
-  navItem: NavItem;
-  isActive: boolean;
-  onClick: (id: string) => void;
-}
-
-// Create a nav button component
-const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
-  const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
-  const { theme } = useThemeStore();
-
-  const navIconColor = theme !== 'none' ? 'text-primary-foreground' : '';
-  const activeClass = isActive ? 'bg-accent/20 hover:bg-accent/20' : '';
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button variant="ghost" className={cn('hover:bg-accent/10 group h-14 w-14', navIconColor, activeClass)} onClick={() => onClick(navItem.id)}>
-          {navItem.id === 'account' ? (
-            <AvatarWrap
-              type="user"
-              className="border-[1.5px] border-primary group-hover:scale-110 transition-transform text-primary-foreground"
-              id={user.id}
-              name={user.name}
-              url={user.thumbnailUrl}
-            />
-          ) : navItem.id === 'home' ? (
-            <HomeIconLoader />
-          ) : (
-            <navItem.icon className="group-hover:scale-110 transition-transform" strokeWidth={config.theme.strokeWidth} />
-          )}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="right" sideOffset={10}>
-        {t(`common:${navItem.id}`)}
-      </TooltipContent>
-    </Tooltip>
-  );
-};

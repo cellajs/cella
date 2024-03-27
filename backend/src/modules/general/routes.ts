@@ -3,9 +3,9 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithoutDa
 import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, publicGuard, tenantGuard } from '../../middlewares/guard';
 import { rateLimiter } from '../../middlewares/rate-limiter';
-import { inviteJsonSchema } from './schema';
-import { apiUserSchema } from '../users/schema';
 import { apiOrganizationSchema } from '../organizations/schema';
+import { apiUserSchema } from '../users/schema';
+import { inviteJsonSchema } from './schema';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
@@ -176,11 +176,15 @@ export const suggestionsConfig = createRouteConfig({
             z.array(
               z.union([
                 apiUserSchema.pick({
+                  id: true,
+                  slug: true,
                   name: true,
                   email: true,
                   thumbnailUrl: true,
                 }),
                 apiOrganizationSchema.pick({
+                  id: true,
+                  slug: true,
                   name: true,
                   thumbnailUrl: true,
                 }),

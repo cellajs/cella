@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { invite } from '~/api/general';
 import type { Organization } from '~/types';
 
+import { config } from 'config';
 import { Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSuggestions } from '~/api/general';
@@ -11,8 +12,10 @@ import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
-import MultipleSelector from '../ui/multiple-selector';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Badge } from '../ui/badge';
+import MultipleSelector from './multiple-selector';
+import SelectRole from './select-role';
 
 interface Props {
   organization?: Organization;
@@ -20,37 +23,33 @@ interface Props {
   dialog?: boolean;
 }
 
-const optionSchema = z.object({
-  label: z.string(),
-  value: z.string().email('Invalid email'),
-  disable: z.boolean().optional(),
-});
-
 const formSchema = z.object({
-  emails: z.array(optionSchema).min(1),
+  emails: z.array(z.string().email('Invalid email')).min(1),
+  role: z.enum(['ADMIN', 'USER', 'MEMBER']).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) => {
+const InviteSearchForm = ({ organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   const [apiWrapper, pending] = useApiWrapper();
 
   const form = useFormWithDraft<FormValues>('invite-users', {
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      emails: [],
+      role: config.rolesByType[organization ? 'organization' : 'system'][config.rolesByType[organization ? 'organization' : 'system'].length - 1].key,
+    },
   });
+
+  // TODO, make dynamic and type safe, for now it's hardcoded
+  const roles = config.rolesByType[organization ? 'organization' : 'system'];
 
   const onSubmit = (values: FormValues) => {
     apiWrapper(
-      () =>
-        invite(
-          values.emails.map((e) => e.value),
-          organization?.id,
-        ),
+      () => invite(values.emails, values.role, organization?.id),
       () => {
-        form.reset(undefined, {
-          keepDirtyValues: true,
-        });
+        form.reset(undefined, { keepDirtyValues: true });
         callback?.();
 
         if (isDialog) {
@@ -73,12 +72,12 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
         <FormField
           control={form.control}
           name="emails"
-          render={({ field }) => (
+          render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormControl>
                 <MultipleSelector
-                  value={field.value}
-                  onChange={field.onChange}
+                  value={value.map((v) => ({ label: v, value: v }))}
+                  onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
                     const users = await getSuggestions(query, 'user');
 
@@ -87,20 +86,39 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
                       value: u.email,
                     }));
                   }}
-                  creatable
-                  createPlaceholder={t('common:invite')}
                   hidePlaceholderWhenSelected
-                  loadingIndicator={<Loader2 className="animate-spin" size={16} />}
+                  loadingIndicator={
+                    <div className="flex justify-center p-3">
+                      <Loader2 className="animate-spin" size={16} />
+                    </div>
+                  }
                   defaultOptions={[]}
-                  placeholder={t('common:type_emails')}
+                  placeholder={t('common:search_users')}
+                  emptyIndicator={<div className="block w-full text-center p-1">{t('common:no_users_found')}</div>}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field: { value, onChange } }) => (
+            <FormItem>
+              <FormLabel>{t('common:role')}</FormLabel>
+              <FormControl>
+                <SelectRole roles={roles} value={value} onChange={onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" loading={pending}>
+          <Button type="submit" loading={pending} className="relative">
+            {!!form.getValues('emails')?.length && (
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
+            )}
             <Send size={16} className="mr-2" />
             {t('common:invite')}
           </Button>
@@ -115,4 +133,4 @@ const InviteUsersForm = ({ organization, callback, dialog: isDialog }: Props) =>
   );
 };
 
-export default InviteUsersForm;
+export default InviteSearchForm;

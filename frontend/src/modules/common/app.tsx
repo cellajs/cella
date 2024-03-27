@@ -4,7 +4,7 @@ import { AppContent } from '~/modules/common/app-content';
 import { Suspense, lazy } from 'react';
 import ErrorNotice from './error-notice';
 
-// Lazy load gleap chat support
+// Lazy load App navigation
 const AppNav = lazy(() => import('~/modules/common/app-nav'));
 
 const App = () => {

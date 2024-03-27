@@ -5,6 +5,14 @@
 
 <br />
 
+<!--
+ *                            _ _
+ *    ░▒▓█████▓▒░     ___ ___| | | __ _
+ *    ░▒▓█   █▓▒░    / __/ _ \ | |/ _` |
+ *    ░▒▓█   █▓▒░   | (_|  __/ | | (_| |
+ *    ░▒▓█████▓▒░    \___\___|_|_|\__,_|                            
+ *
+ -->
 
 [cellajs.com](https://cellajs.com) &centerdot; ❗prerelease version &centerdot; MIT license
 
@@ -48,9 +56,10 @@ pnpm install
 ```
 
 #### Populate database
-If starting from scratch, you will need to run a database migration.
+If starting from scratch, you will need to run a database generate + migrate.
 
 ```bash
+pnpm run generate
 pnpm run migrate
 ```
 Check it out at <http://localhost:3000>:

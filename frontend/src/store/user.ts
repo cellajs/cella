@@ -5,8 +5,8 @@ import { config } from 'config';
 import { immer } from 'zustand/middleware/immer';
 import { authClient } from '~/api';
 import { getMe } from '~/api/users';
-import type { User } from '~/types';
 import { i18n } from '~/lib/i18n';
+import type { User } from '~/types';
 
 type PartialUser = Partial<User>;
 

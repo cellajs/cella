@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { env } from 'env';
 import { resetDb } from './cron/reset-db';
 import { db } from './db/db';
+import ascii from './lib/ascii';
 import { app } from './server';
 
 // * Set i18n instance before starting server
@@ -25,7 +26,8 @@ const main = async () => {
       port: Number(env.PORT ?? '4000'),
     },
     (info) => {
-      console.info(`Listening on http://${info.address}:${info.port}`);
+      console.info(`Listening on http://${info.address}${info.port}`);
+      ascii();
     },
   );
 };

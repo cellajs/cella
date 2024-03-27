@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -16,6 +16,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { BoardColumn, BoardContainer } from './board-column';
 import type { Column } from './board-column';
 import { coordinateGetter } from './keyboard-preset';
@@ -25,15 +26,15 @@ import { hasDraggableData } from './utils';
 const defaultCols = [
   {
     id: 'todo' as const,
-    title: 'Todo',
+    title: 'Buddycheck',
   },
   {
     id: 'in-progress' as const,
-    title: 'In progress',
+    title: 'Mondieu',
   },
   {
     id: 'done' as const,
-    title: 'Done',
+    title: 'Side project X',
   },
 ] satisfies Column[];
 
@@ -200,11 +201,18 @@ export default function KanbanBoard() {
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
-        <SortableContext items={columnsId}>
-          {columns.map((col) => (
-            <BoardColumn key={col.id} column={col} tasks={tasks.filter((task) => task.columnId === col.id)} />
-          ))}
-        </SortableContext>
+        <ResizablePanelGroup direction="horizontal" className="rounded-lg flex gap-2 p-2 border">
+          <SortableContext items={columnsId}>
+            {columns.map((col) => (
+              <Fragment key={col.id}>
+                <ResizablePanel key={`${col.id}-panel`}>
+                  <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.columnId === col.id)} />
+                </ResizablePanel>
+                <ResizableHandle className="w-[2px]" />
+              </Fragment>
+            ))}
+          </SortableContext>
+        </ResizablePanelGroup>
       </BoardContainer>
 
       {'document' in window &&

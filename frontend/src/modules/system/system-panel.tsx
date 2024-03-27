@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageNav } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import { Button } from '../ui/button';
 import { OrganizationsTableRoute, UsersTableRoute } from '~/router/routeTree';
+import { Button } from '../ui/button';
 
 const SystemPanel = () => {
   const { t } = useTranslation();

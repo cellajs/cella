@@ -17,6 +17,10 @@ if (!root) {
   throw new Error('Root element not found');
 }
 
+import ascii from '~/lib/ascii';
+
+ascii();
+
 Sentry.init({
   dsn: config.sentryDsn,
 

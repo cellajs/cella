@@ -1,10 +1,10 @@
 import { config } from 'config';
+import { updateUser } from '~/api/users';
 import { i18n } from '~/lib/i18n';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import CountryFlag from './country-flag';
-import { updateUser } from '~/api/users';
 import { useUserStore } from '~/store/user';
+import CountryFlag from './country-flag';
 
 interface Props {
   size?: number;

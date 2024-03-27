@@ -43,6 +43,13 @@
       "when": 1711036576078,
       "tag": "0005_fuzzy_namora",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1711375721352,
+      "tag": "0006_worthless_thunderbird",
+      "breakpoints": true
     }
   ]
 }

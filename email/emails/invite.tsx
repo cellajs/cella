@@ -2,7 +2,7 @@ import { Body, Button, Column, Container, Head, Heading, Hr, Html, Img, Preview,
 import * as React from 'react';
 
 import { config } from 'config';
-import { i18n } from '../../backend/src/lib/i18n';
+import type { i18n } from '../../backend/src/lib/i18n';
 
 interface Props {
   i18n: typeof i18n;

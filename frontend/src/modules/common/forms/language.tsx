@@ -1,7 +1,7 @@
 import { config } from 'config';
 import type { Control } from 'react-hook-form';
+import MultipleSelector from '~/modules/common/multiple-selector';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import MultipleSelector from '~/modules/ui/multiple-selector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import CountryFlag from '../country-flag';
 
