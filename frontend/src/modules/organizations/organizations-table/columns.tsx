@@ -10,8 +10,8 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import { AvatarWrap } from '../../common/avatar-wrap';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import RowEdit from './row-edit';
 import { renderSelect } from '../../common/data-table/select-column';
+import RowEdit from './row-edit';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();

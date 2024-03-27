@@ -273,11 +273,14 @@ const organizationsRoutes = app
 
     if (!membership) {
       if (targetUser.id === user.id) {
-        [membership] = await db.insert(membershipsTable).values({
-          userId: user.id,
-          organizationId: organization.id,
-          role,
-        }).returning();
+        [membership] = await db
+          .insert(membershipsTable)
+          .values({
+            userId: user.id,
+            organizationId: organization.id,
+            role,
+          })
+          .returning();
       } else {
         return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', { user: targetUser.id, organization: organization.id });
       }

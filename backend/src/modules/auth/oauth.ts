@@ -4,6 +4,7 @@ import { deleteCookie, getCookie } from 'hono/cookie';
 import { isWithinExpirationDate } from 'oslo';
 
 import { config } from 'config';
+import slugify from 'slugify';
 import { db } from '../../db/db';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { tokensTable } from '../../db/schema/tokens';
@@ -14,7 +15,7 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { setSessionCookie } from './helpers/cookies';
 import { sendVerificationEmail } from './helpers/verify-email';
-import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, slugFromEmail, insertOauthAccount, splitFullName } from './oauth-helpers';
+import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, insertOauthAccount, slugFromEmail, splitFullName } from './oauth-helpers';
 import {
   githubSignInCallbackRouteConfig,
   githubSignInRouteConfig,
@@ -23,7 +24,6 @@ import {
   microsoftSignInCallbackRouteConfig,
   microsoftSignInRouteConfig,
 } from './routes';
-import slugify from 'slugify';
 
 const app = new CustomHono();
 
@@ -158,7 +158,7 @@ const oauthRoutes = app
       }
 
       const slug = slugify(githubUser.login, { lower: true });
-      const {firstName, lastName} = splitFullName(githubUser.name || slug)
+      const { firstName, lastName } = splitFullName(githubUser.name || slug);
 
       const inviteToken = getCookie(ctx, 'oauth_invite_token');
 

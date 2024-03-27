@@ -7,6 +7,7 @@ import { ChevronRight, UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
+import { renderSelect } from '~/modules/common/data-table/select-column';
 import { Button } from '~/modules/ui/button';
 import type { UserRow } from '.';
 import { AvatarWrap } from '../../common/avatar-wrap';
@@ -15,7 +16,6 @@ import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import Expand from './expand';
 import RowEdit from './row-edit';
-import { renderSelect } from '~/modules/common/data-table/select-column';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();

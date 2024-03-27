@@ -12,10 +12,10 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { acceptInvite as baseAcceptInvite } from '~/api/authentication';
 import { checkToken as baseCheckToken } from '~/api/general';
+import { useMutation } from '~/hooks/use-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { LegalNotice } from './sign-up-form';
-import { useMutation } from '~/hooks/use-mutations';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 

@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { removeMembersFromOrganization as baseRemoveMembersFromOrganization } from '~/api/organizations';
 import type { Member, Organization } from '~/types';
 
+import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { useMutation } from '~/hooks/use-mutations';
 
 interface Props {
   organization: Organization;

@@ -1,9 +1,9 @@
 import { deleteOrganizations as baseDeleteOrganizations } from '~/api/organizations';
 import type { Organization } from '~/types';
 
+import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useMutation } from '~/hooks/use-mutations';
 
 interface Props {
   organizations: Organization[];

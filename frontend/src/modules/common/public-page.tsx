@@ -1,6 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import { PublicFooter } from '~/modules/common/public-footer';
 import { PublicNav } from './public-nav';
-import { useTranslation } from 'react-i18next';
 
 export interface PublicPageProps {
   title: string;
@@ -17,12 +17,12 @@ const PublicPage = ({ title, children }: PublicPageProps) => {
         <section className="rich-gradient relative py-20 pb-8">
           <h1 className="mt-12 mb-4 max-w-[600px] px-4 mx-auto sm:w-full text-4xl text-center md:text-5xl">{t(title)}</h1>
         </section>
-  
+
         {children}
       </div>
       <PublicFooter />
     </div>
   );
-}
+};
 
 export default PublicPage;

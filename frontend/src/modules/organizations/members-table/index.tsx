@@ -7,8 +7,10 @@ import type { Member } from '~/types';
 import { getMembersByOrganizationIdentifier, updateUserInOrganization } from '~/api/organizations';
 import { DataTable } from '~/modules/common/data-table';
 
+import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
 import { Bird } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
+import type { z } from 'zod';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { queryClient } from '~/router';
@@ -16,8 +18,6 @@ import { organizationMembersRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
-import type { z } from 'zod';
 
 export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 

@@ -48,8 +48,8 @@ export const FocusViewContainer = ({ children, className = '' }: { children: Rea
     };
   }, [focusView]);
 
-    // Set focusView to false when toLocation changes or component unmounts
-    useEffect(() => {
+  // Set focusView to false when toLocation changes or component unmounts
+  useEffect(() => {
     if (toLocation) setFocusView(false);
     return () => {
       setFocusView(false);

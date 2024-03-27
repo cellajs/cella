@@ -2,9 +2,9 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { verifyEmail as baseVerifyEmail } from '~/api/authentication';
+import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import AuthPage from '.';
-import { useMutation } from '~/hooks/use-mutations';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();

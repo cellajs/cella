@@ -90,23 +90,6 @@ export const updateUser = async (userId: string, params: UpdateUserParams) => {
   return json.data;
 };
 
-// Search for users in the system
-export const searchUsers = async (query: string) => {
-  const response = await client.users.$get({
-    query: {
-      q: query,
-      sort: 'id',
-      order: 'asc',
-      offset: '0',
-      limit: '50',
-    },
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return json.data;
-};
-
 // Get user sessions
 // export const getUserSessions = async (userId: string) => {
 //   const response = await client.users[':userId'].sessions.$get({

@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { invite as baseInvite } from '~/api/general';
 import { removeMembersFromOrganization } from '~/api/organizations';
+import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import { organizationQueryOptions } from '../organizations/organization';
 import { Button } from '../ui/button';
-import { useMutation } from '~/hooks/use-mutations';
 
 interface Props {
   organization: Organization;

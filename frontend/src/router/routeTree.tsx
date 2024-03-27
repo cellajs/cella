@@ -10,7 +10,9 @@ import type { ErrorType } from 'backend/lib/errors';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersQuerySchema } from 'backend/modules/users/schema';
+import { config } from 'config';
 import { Suspense } from 'react';
+import { getMe } from '~/api/users';
 import AcceptInvite from '~/modules/auth/accept-invite';
 import ResetPassword from '~/modules/auth/reset-password';
 import SignIn from '~/modules/auth/sign-in';
@@ -32,8 +34,6 @@ import SystemPanel from '~/modules/system/system-panel';
 import { UserProfile, userQueryOptions } from '~/modules/users/user-profile';
 import UserSettings from '~/modules/users/user-settings';
 import UsersTable from '~/modules/users/users-table';
-import { getMe } from '~/api/users';
-import { config } from 'config';
 
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 

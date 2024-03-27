@@ -69,7 +69,6 @@ const AppNav = () => {
     }
   };
 
-
   return (
     <>
       <nav

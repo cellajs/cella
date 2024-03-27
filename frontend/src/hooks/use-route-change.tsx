@@ -8,7 +8,7 @@ export const useRouteChange = () => {
   useEffect(() => {
     const checkHasChanged = router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
       pathChanged && setHasChanged(true);
-      setToLocation(toLocation.pathname); 
+      setToLocation(toLocation.pathname);
     });
 
     return () => {

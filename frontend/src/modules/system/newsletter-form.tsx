@@ -11,11 +11,11 @@ import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { sheet } from '../common/sheeter/state';
-import { useMutation } from '~/hooks/use-mutations';
 
 const TiptapEditor = lazy(() => import('~/modules/tiptap'));
 

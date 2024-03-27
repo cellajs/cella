@@ -32,7 +32,11 @@ export const AppContent = () => {
 
   return (
     <div ref={clickContentRef} id="app-content" className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding}`}>
-      <div className={`flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-svh transition duration-300 ease-in-out ${!focusView && 'mt-16 md:ml-16'} md:mt-0`}>
+      <div
+        className={`flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-svh transition duration-300 ease-in-out ${
+          !focusView && 'mt-16 md:ml-16'
+        } md:mt-0`}
+      >
         <main id="main-app-content" className="flex-1 flex flex-col" aria-label="Main Content">
           <AppAlert id="experimentalk" Icon={Info} className="rounded-none border-0 border-b">
             <strong className="mr-2">{t('common:prerelease')}</strong>

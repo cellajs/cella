@@ -1,12 +1,12 @@
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { AvatarWrap } from './avatar-wrap';
-import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
 
 export const AppSearch = () => {
   const { t } = useTranslation();

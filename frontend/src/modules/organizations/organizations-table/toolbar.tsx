@@ -1,3 +1,4 @@
+import { config } from 'config';
 import debounce from 'lodash.debounce';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
@@ -8,6 +9,7 @@ import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-tab
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { dialog } from '~/modules/common/dialoger/state';
+import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
@@ -18,8 +20,6 @@ import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import type { OrganizationsSearch } from '.';
-import { config } from 'config';
-import {FocusView} from '~/modules/common/focus-view';
 
 interface Props {
   total?: number;
@@ -146,9 +146,7 @@ function Toolbar({
             return items;
           }}
         />
-         <FocusView
-          iconOnly
-        />
+        <FocusView iconOnly />
       </div>
     </div>
   );

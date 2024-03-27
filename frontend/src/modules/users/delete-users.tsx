@@ -1,9 +1,9 @@
 import { deleteUsers as baseDeleteUsers } from '~/api/users';
 import type { User } from '~/types';
 
+import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '../common/delete-form';
 import { dialog } from '../common/dialoger/state';
-import { useMutation } from '~/hooks/use-mutations';
 
 interface Props {
   users: User[];
