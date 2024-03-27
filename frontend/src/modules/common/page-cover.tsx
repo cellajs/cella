@@ -58,7 +58,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
           imageMode="cover"
           setUrl={(url) => {
             setUrl(url);
-            dialog.remove('page-cover');
+            dialog.remove(true, 'page-cover');
           }}
         />
       </Suspense>,

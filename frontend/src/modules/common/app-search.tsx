@@ -24,7 +24,7 @@ export const AppSearch = () => {
 
   const onSelectSuggestion = (suggestion: UserSuggestion | OrganizationSuggestion) => {
     // TODO: use type
-    if (suggestion.email)
+    if ('email' in suggestion)
       navigate({
         to: '/user/$userIdentifier',
         params: {
