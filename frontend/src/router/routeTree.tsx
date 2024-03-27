@@ -38,15 +38,9 @@ import type { User } from '~/types';
 
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
-export type UsersSearch = z.infer<typeof getUsersQuerySchema>;
-
 const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
 
-export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
-
 const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
-
-export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
 const getAndSetUser = async () => {
   const user = await getMe();
@@ -266,12 +260,7 @@ export const OrganizationRoute = createRoute({
   path: '$organizationIdentifier',
   getParentRoute: () => IndexRoute,
   validateSearch: membersSearchSchema,
-  beforeLoad: ({ location, params }) => {
-    // redirect to members table
-    if (!location.pathname.split('/')[2]) {
-      throw redirect({ to: '/$organizationIdentifier/members', replace: true, params });
-    }
-
+  beforeLoad: ({ params }) => {
     return { getTitle: () => params.organizationIdentifier };
   },
   loader: async ({ context: { queryClient }, params: { organizationIdentifier } }) => {

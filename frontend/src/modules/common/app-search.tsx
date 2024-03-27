@@ -27,6 +27,7 @@ export const AppSearch = () => {
     if ('email' in suggestion)
       navigate({
         to: '/user/$userIdentifier',
+        resetScroll: false,
         params: {
           userIdentifier: suggestion.slug,
         },
@@ -34,6 +35,7 @@ export const AppSearch = () => {
     else
       navigate({
         to: '/$organizationIdentifier/members',
+        resetScroll: false,
         params: {
           organizationIdentifier: suggestion.slug,
         },

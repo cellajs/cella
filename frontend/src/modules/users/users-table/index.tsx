@@ -9,15 +9,19 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { DataTable } from '~/modules/common/data-table';
 import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
-import { type UsersSearch, UsersTableRoute } from '~/router/routeTree';
+import { UsersTableRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import type { getUsersQuerySchema } from 'backend/modules/users/schema';
+import type { z } from 'zod';
 
 // export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
 export type UserRow = User & { type: 'MASTER' | 'DETAIL'; expanded?: boolean; parent?: User };
+
+export type UsersSearch = z.infer<typeof getUsersQuerySchema>;
 
 const UsersTable = () => {
   const search = useSearch({ from: UsersTableRoute.id });

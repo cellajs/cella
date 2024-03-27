@@ -12,10 +12,14 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { queryClient } from '~/router';
-import { type MembersSearch, organizationMembersRoute } from '~/router/routeTree';
+import { organizationMembersRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
+import type { z } from 'zod';
+
+export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
 export const membersQueryOptions = ({
   organizationIdentifier,

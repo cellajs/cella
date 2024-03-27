@@ -28,7 +28,6 @@ function Root() {
       .map((match, index) => {
         if (!('getTitle' in match.routeContext)) {
           if (index === 0 && import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
             console.warn('no getTitle', match.pathname, match);
           }
           return undefined;
@@ -45,8 +44,8 @@ function Root() {
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={500} skipDelayDuration={0}>
-      <Outlet />
       <ScrollRestoration />
+      <Outlet />
       <Toaster richColors />
       <Dialoger />
       <Sheeter />

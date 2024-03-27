@@ -11,7 +11,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import type { MembersSearch } from '~/router/routeTree';
+import type { MembersSearch } from '.';
 import { useUserStore } from '~/store/user';
 import type { Member } from '~/types';
 import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/columns-view';

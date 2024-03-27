@@ -15,9 +15,9 @@ import NewsletterForm from '~/modules/system/newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
-import type { OrganizationsSearch } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
+import type { OrganizationsSearch } from '.';
 
 interface Props {
   total?: number;
