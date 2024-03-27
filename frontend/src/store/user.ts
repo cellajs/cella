@@ -3,8 +3,6 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
 import { config } from 'config';
 import { immer } from 'zustand/middleware/immer';
-import { authClient } from '~/api';
-import { getMe } from '~/api/users';
 import { i18n } from '~/lib/i18n';
 import type { User } from '~/types';
 
@@ -15,14 +13,12 @@ interface UserState {
   lastUser: PartialUser;
   clearLastUser: () => void;
   setUser: (user: User) => void;
-  getMe(): Promise<User | null>;
-  signOut(): Promise<void>;
 }
 
 export const useUserStore = create<UserState>()(
   devtools(
     persist(
-      immer((set, get) => ({
+      immer((set) => ({
         user: null as unknown as User,
         lastUser: null as unknown as PartialUser,
         clearLastUser: () => {
@@ -48,21 +44,6 @@ export const useUserStore = create<UserState>()(
           } else {
             window.Gleap.identify(user.id, { email: user.email, name: user.name || user.email, createdAt: new Date(user.createdAt) });
           }
-        },
-        async getMe() {
-          try {
-            const user = await getMe();
-            get().setUser(user);
-            return user;
-          } catch (error) {
-            await get().signOut();
-            throw error;
-          }
-        },
-        async signOut() {
-          set({ user: null as unknown as User });
-          if (window.Gleap) window.Gleap.clearIdentity();
-          await authClient['sign-out'].$get();
         },
       })),
       {

@@ -103,3 +103,5 @@ export const acceptInvite = async ({
   if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
+
+export const signOut = () => client['sign-out'].$get();

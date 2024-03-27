@@ -1,13 +1,15 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useUserStore } from '~/store/user';
+import { useEffect } from 'react';
+import { signOutUser } from '~/router/routeTree';
 
 const SignOut = () => {
-  const signOut = useUserStore((state) => state.signOut);
   const navigate = useNavigate();
 
-  signOut().then(() => {
-    navigate({ to: '/', replace: true });
-  });
+  useEffect(() => {
+    signOutUser().then(() => {
+      navigate({ to: '/', replace: true });
+    });
+  }, []);
 
   return null;
 };

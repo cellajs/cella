@@ -32,6 +32,9 @@ import SystemPanel from '~/modules/system/system-panel';
 import { UserProfile, userQueryOptions } from '~/modules/users/user-profile';
 import UserSettings from '~/modules/users/user-settings';
 import UsersTable from '~/modules/users/users-table';
+import { getMe } from '~/api/users';
+import { signOut } from '~/api/authentication';
+import type { User } from '~/types';
 
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
@@ -44,6 +47,17 @@ export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
+
+const getAndSetUser = async () => {
+  const user = await getMe();
+  useUserStore.getState().setUser(user);
+};
+
+export const signOutUser = async () => {
+  useUserStore.setState({ user: null as unknown as User });
+  if (window.Gleap) window.Gleap.clearIdentity();
+  await signOut();
+};
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   beforeLoad: () => ({ getTitle: () => 'CellaJS' }),
@@ -59,9 +73,10 @@ const AuthRoute = createRoute({
     if (storedUser) throw redirect({ to: '/', replace: true });
 
     try {
-      const getMe = useUserStore.getState().getMe;
-      await getMe();
+      // Check if authenticated
+      await getAndSetUser();
     } catch (error) {
+      await signOutUser();
       return console.error('Not authenticated');
     }
 
@@ -168,11 +183,10 @@ const IndexRoute = createRoute({
     if (location.pathname === '/' && !lastUser) throw redirect({ to: '/about', replace: true });
 
     try {
-      const { getMe } = useUserStore.getState();
       const { getMenu } = useNavigationStore.getState();
 
       if (cause === 'enter') {
-        await Promise.all([getMe(), getMenu()]);
+        await Promise.all([getAndSetUser(), getMenu()]);
       }
     } catch {
       console.info('Not authenticated, redirect to sign in');
