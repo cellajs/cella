@@ -16,7 +16,6 @@ export const AppSearch = () => {
 
   // TODO: why not using api wrapper here? Use entity type property
   useEffect(() => {
-    console.log('tedst', value);
     getSuggestions(value).then((suggestions) => {
       setUserSuggestions(suggestions.filter((suggestion) => 'email' in suggestion) as UserSuggestion[]);
       setOrganizationSuggestions(suggestions.filter((suggestion) => !('email' in suggestion)) as OrganizationSuggestion[]);
@@ -55,7 +54,6 @@ export const AppSearch = () => {
       <CommandInput
         placeholder={t('common:placeholder.search')}
         onValueChange={(value) => {
-          console.log('test', value);
           setValue(value);
         }}
       />
