@@ -33,8 +33,7 @@ import { UserProfile, userQueryOptions } from '~/modules/users/user-profile';
 import UserSettings from '~/modules/users/user-settings';
 import UsersTable from '~/modules/users/users-table';
 import { getMe } from '~/api/users';
-import { signOut } from '~/api/authentication';
-import type { User } from '~/types';
+import { config } from 'config';
 
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
@@ -47,14 +46,8 @@ const getAndSetUser = async () => {
   useUserStore.getState().setUser(user);
 };
 
-export const signOutUser = async () => {
-  useUserStore.setState({ user: null as unknown as User });
-  if (window.Gleap) window.Gleap.clearIdentity();
-  await signOut();
-};
-
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  beforeLoad: () => ({ getTitle: () => 'CellaJS' }),
+  beforeLoad: () => ({ getTitle: () => config.name }),
   component: () => <Root />,
 });
 
@@ -70,7 +63,6 @@ const AuthRoute = createRoute({
       // Check if authenticated
       await getAndSetUser();
     } catch (error) {
-      await signOutUser();
       return console.error('Not authenticated');
     }
 
