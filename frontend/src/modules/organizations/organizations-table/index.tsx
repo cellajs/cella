@@ -1,9 +1,9 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { getOrganizations } from '~/api/organizations';
+import { getOrganizations, updateUserInOrganization } from '~/api/organizations';
 
-import type { SortColumn } from 'react-data-grid';
+import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { type OrganizationsSearch, OrganizationsTableRoute } from '~/router/routeTree';
 import type { Organization } from '~/types';
@@ -11,12 +11,16 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { useUserStore } from '~/store/user';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const OrganizationsTable = () => {
   const search = useSearch({
     from: OrganizationsTableRoute.id,
   });
-
+  const { t } = useTranslation();
+  const user = useUserStore((state) => state.user);
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
@@ -60,6 +64,24 @@ const OrganizationsTable = () => {
   });
 
   const [columns, setColumns] = useColumns(callback);
+
+  const onRowsChange = async (records: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
+    // mutate member
+    for (const index of indexes) {
+      const organization = records[index];
+      if (column.key === 'userRole' && organization.userRole) {
+        updateUserInOrganization(organization.id, user.id, organization.userRole)
+          .then(() => {
+            toast.success(t('common:success.your_role_updated'));
+          })
+          .catch(() => {
+            toast.error(t('common:error.error'));
+          });
+      }
+    }
+
+    setRows(records);
+  };
 
   const isFiltered = !!query;
 
@@ -106,6 +128,7 @@ const OrganizationsTable = () => {
           enableVirtualization: false,
           isFiltered,
           selectedRows,
+          onRowsChange,
           fetchMore: queryResult.fetchNextPage,
           onSelectedRowsChange: setSelectedRows,
           sortColumns,

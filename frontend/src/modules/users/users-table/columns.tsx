@@ -15,6 +15,7 @@ import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import Expand from './expand';
 import RowEdit from './row-edit';
+import { renderSelect } from '~/modules/common/data-table/select-column';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
@@ -34,6 +35,8 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
         if (row.type !== 'MASTER') return;
+
+        console.log('row', row);
 
         return (
           <Link
@@ -73,7 +76,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
               return row.type === 'DETAIL' ? 'p-2 rdg-expand-cell relative' : undefined;
             },
             renderCell: ({ row, tabIndex, onRowChange }) => {
-              if (row.type === 'DETAIL') {
+              if (row.type === 'DETAIL' && row.parent) {
                 return <Expand row={row.parent} />;
               }
 
@@ -121,6 +124,10 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => row.type === 'MASTER' && t(row.role.toLowerCase()),
             width: 100,
+            renderEditCell: renderSelect('role', [
+              { label: t('common:admin'), value: 'ADMIN' },
+              { label: t('common:user'), value: 'USER' },
+            ]),
           },
           {
             key: 'createdAt',

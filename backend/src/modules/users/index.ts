@@ -127,7 +127,7 @@ const usersRoutes = app
       return errorResponse(ctx, 403, 'update_forbidden', 'warn', 'user', { user: userId });
     }
 
-    const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+    const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
 
     if (slug && slug !== targetUser.slug) {
       const slugExists = await checkSlugExists(slug);
@@ -149,6 +149,7 @@ const usersRoutes = app
         newsletter,
         thumbnailUrl,
         slug,
+        role,
         name: [firstName, lastName].filter(Boolean).join(' ') || null,
         modifiedAt: new Date(),
         modifiedBy: user.id,

@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 
-import { getUsers } from '~/api/users';
+import { getUsers, updateUser } from '~/api/users';
 import type { User } from '~/types';
 
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
@@ -13,11 +13,15 @@ import { type UsersSearch, UsersTableRoute } from '~/router/routeTree';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
-export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
+// export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
+export type UserRow = User & { type: 'MASTER' | 'DETAIL'; expanded?: boolean; parent?: User };
 
 const UsersTable = () => {
   const search = useSearch({ from: UsersTableRoute.id });
+  const { t } = useTranslation();
 
   const [rows, setRows] = useState<UserRow[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
@@ -75,8 +79,25 @@ const UsersTable = () => {
     setRole(undefined);
   };
 
-  const onRowsChange = (changedRows: UserRow[], { indexes }: RowsChangeData<UserRow>) => {
+  const onRowsChange = (changedRows: UserRow[], { indexes, column }: RowsChangeData<UserRow>) => {
     const rows = toggleExpand(changedRows, indexes);
+
+    // mutate member
+    for (const index of indexes) {
+      if (column.key === 'role') {
+        const user = rows[index] as User;
+        console.log(user);
+        updateUser(user.id, { role: user.role })
+          .then(() => {
+            callback([user], 'update');
+            toast.success(t('common:success.your_role_updated'));
+          })
+          .catch(() => {
+            toast.error(t('common:error.error'));
+          });
+      }
+    }
+
     setRows(rows);
   };
 

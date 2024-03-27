@@ -265,14 +265,22 @@ const organizationsRoutes = app
       return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: userId });
     }
 
-    const [membership] = await db
+    let [membership] = await db
       .update(membershipsTable)
       .set({ role, modifiedBy: user.id, modifiedAt: new Date() })
       .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)))
       .returning();
 
     if (!membership) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', { user: targetUser.id, organization: organization.id });
+      if (targetUser.id === user.id) {
+        [membership] = await db.insert(membershipsTable).values({
+          userId: user.id,
+          organizationId: organization.id,
+          role,
+        }).returning();
+      } else {
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', { user: targetUser.id, organization: organization.id });
+      }
     }
 
     const [{ memberships }] = await db

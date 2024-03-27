@@ -57,5 +57,6 @@ export const updateUserJsonSchema = createInsertSchema(usersTable, {
     newsletter: true,
     thumbnailUrl: true,
     slug: true,
+    role: true,
   })
   .partial();
