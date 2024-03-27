@@ -8,14 +8,14 @@ import type * as z from 'zod';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy } from 'react';
-import { signUp } from '~/api/authentication';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { signUp as baseSignUp } from '~/api/authentication';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { PrivacyText } from '../marketing/privacy';
 import { TermsText } from '../marketing/terms';
+import { useMutation } from '~/hooks/use-mutations';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -25,7 +25,14 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [apiWrapper, pending] = useApiWrapper();
+  const { mutate: signUp, isPending } = useMutation({
+    mutationFn: baseSignUp,
+    onSuccess: () => {
+      navigate({
+        to: '/auth/verify-email',
+      });
+    },
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,14 +43,7 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    apiWrapper(
-      () => signUp(values.email, values.password),
-      () => {
-        navigate({
-          to: '/auth/verify-email',
-        });
-      },
-    );
+    signUp(values);
   };
 
   return (
@@ -88,7 +88,7 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
             </FormItem>
           )}
         />
-        <Button type="submit" loading={pending} className="w-full">
+        <Button type="submit" loading={isPending} className="w-full">
           {t('common:sign_up')}
           <ArrowRight size={16} className="ml-2" />
         </Button>

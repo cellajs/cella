@@ -11,8 +11,7 @@ import { Loader2, Undo } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
-import { checkSlug } from '~/api/general';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { checkSlug as baseCheckSlug } from '~/api/general';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
@@ -47,8 +46,20 @@ export const useUpdateOrganizationMutation = (organizationIdentifier: string) =>
 
 const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
-  const [apiWrapper, apiPending] = useApiWrapper();
   const { mutate, isPending } = useUpdateOrganizationMutation(organization.id);
+  const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
+    mutationFn: baseCheckSlug,
+    onSuccess: (isExists) => {
+      if (isExists) {
+        form.setError('slug', {
+          type: 'manual',
+          message: t('common:error.slug_exists'),
+        });
+      } else {
+        form.clearErrors('slug');
+      }
+    },
+  });
 
   const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, {
     resolver: zodResolver(formSchema),
@@ -104,19 +115,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
 
   useEffect(() => {
     if (slug && slug !== organization.slug) {
-      apiWrapper(
-        () => checkSlug(slug),
-        (isExists) => {
-          if (isExists) {
-            form.setError('slug', {
-              type: 'manual',
-              message: t('common:error.slug_exists'),
-            });
-          } else {
-            form.clearErrors('slug');
-          }
-        },
-      );
+      checkSlug(slug);
     }
   }, [slug]);
 
@@ -209,7 +208,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           )}
         />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || apiPending}>
+          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || isCheckPending}>
             {t('common:save_changes')}
           </Button>
           <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>

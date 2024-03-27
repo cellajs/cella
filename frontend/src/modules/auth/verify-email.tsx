@@ -1,19 +1,30 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { verifyEmail } from '~/api/authentication';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { verifyEmail as baseVerifyEmail } from '~/api/authentication';
 import { Button } from '~/modules/ui/button';
 import AuthPage from '.';
+import { useMutation } from '~/hooks/use-mutations';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();
   const { token }: { token: string } = useParams({ strict: false });
-  const [apiWrapper, , error] = useApiWrapper();
   const navigate = useNavigate();
 
+  const { mutate: verifyEmail, error } = useMutation({
+    mutationFn: baseVerifyEmail,
+    onSuccess: () => {
+      navigate({
+        to: '/home',
+      });
+    },
+  });
+
   const resendEmail = () => {
-    verifyEmail(token, true);
+    verifyEmail({
+      token,
+      resend: true,
+    });
   };
 
   useEffect(() => {
@@ -21,14 +32,7 @@ const VerifyEmail = () => {
       return;
     }
 
-    apiWrapper(
-      () => verifyEmail(token),
-      () => {
-        navigate({
-          to: '/home',
-        });
-      },
-    );
+    verifyEmail({ token });
   }, []);
 
   if (token) {

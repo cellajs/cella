@@ -10,11 +10,11 @@ import AuthPage from '.';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';
 import type { ApiError } from '~/api';
-import { resetPassword } from '~/api/authentication';
-import { checkToken } from '~/api/general';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { resetPassword as baseResetPassword } from '~/api/authentication';
+import { checkToken as baseCheckToken } from '~/api/general';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { useMutation } from '~/hooks/use-mutations';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -28,7 +28,19 @@ const ResetPassword = () => {
   const [email, setEmail] = useState('');
   const [tokenError, setError] = useState<ApiError | null>(null);
 
-  const [apiWrapper, pending] = useApiWrapper();
+  const { mutate: checkToken } = useMutation({
+    mutationFn: baseCheckToken,
+    onSuccess: (email) => setEmail(email),
+    onError: (error) => setError(error),
+  });
+  const { mutate: resetPassword, isPending } = useMutation({
+    mutationFn: baseResetPassword,
+    onSuccess: () => {
+      navigate({
+        to: '/',
+      });
+    },
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,22 +50,14 @@ const ResetPassword = () => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    apiWrapper(
-      () => resetPassword(token, values.password),
-      () => {
-        navigate({
-          to: '/',
-        });
-      },
-    );
+    resetPassword({
+      token,
+      password: values.password,
+    });
   };
 
   useEffect(() => {
-    apiWrapper(
-      () => checkToken(token),
-      (data) => setEmail(data),
-      (error) => setError(error),
-    );
+    checkToken(token);
   }, [token]);
 
   return (
@@ -86,7 +90,7 @@ const ResetPassword = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit" loading={pending} className="w-full">
+            <Button type="submit" loading={isPending} className="w-full">
               {t('common:reset')}
               <ArrowRight size={16} className="ml-2" />
             </Button>
@@ -94,7 +98,7 @@ const ResetPassword = () => {
         ) : (
           <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
             {tokenError && <span className="text-muted-foreground text-sm">{t(`common:error.${tokenError.type}`)}</span>}
-            {pending && <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}
+            {isPending && <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}
           </div>
         )}
       </Form>

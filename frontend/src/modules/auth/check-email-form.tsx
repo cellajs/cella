@@ -9,15 +9,13 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 
 import { ArrowRight } from 'lucide-react';
-import { checkEmail } from '~/api/authentication';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { checkEmail as baseCheckEmail } from '~/api/authentication';
+import { useMutation } from '~/hooks/use-mutations';
 
 const formSchema = checkEmailJsonSchema;
 
 export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: string) => void }) => {
   const { t } = useTranslation();
-
-  const [apiWrapper, pending] = useApiWrapper();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -26,14 +24,16 @@ export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: str
     },
   });
 
+  const { mutate: checkEmail, isPending } = useMutation({
+    mutationFn: baseCheckEmail,
+    onSuccess: (result) => {
+      const nextStep = result.exists ? 'signIn' : 'signUp';
+      setStep(nextStep, form.getValues('email'));
+    },
+  });
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    apiWrapper(
-      () => checkEmail(values.email),
-      (result) => {
-        const nextStep = result.exists ? 'signIn' : 'signUp';
-        setStep(nextStep, values.email);
-      },
-    );
+    checkEmail(values.email);
   };
 
   return (
@@ -53,7 +53,7 @@ export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: str
             </FormItem>
           )}
         />
-        <Button type="submit" loading={pending} className="w-full">
+        <Button type="submit" loading={isPending} className="w-full">
           {t('common:continue')}
           <ArrowRight size={16} className="ml-2" />
         </Button>

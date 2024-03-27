@@ -1,13 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { invite } from '~/api/general';
+import { invite as baseInvite } from '~/api/general';
 import type { Organization } from '~/types';
 
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
@@ -15,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Badge } from '../ui/badge';
 import { MultiEmail } from './multi-email';
 import SelectRole from './select-role';
+import { useMutation } from '~/hooks/use-mutations';
 
 interface Props {
   organization?: Organization;
@@ -31,7 +31,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
-  const [apiWrapper, pending] = useApiWrapper();
 
   const form = useFormWithDraft<FormValues>('invite-users', {
     resolver: zodResolver(formSchema),
@@ -41,23 +40,29 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
     },
   });
 
+  const { mutate: invite, isPending } = useMutation({
+    mutationFn: baseInvite,
+    onSuccess: () => {
+      form.reset(undefined, { keepDirtyValues: true });
+      callback?.();
+
+      if (isDialog) {
+        dialog.remove();
+      }
+
+      toast.success(t('common:success.user_invited'));
+    },
+  });
+
   // TODO, make dynamic and type safe, for now it's hardcoded
   const roles = config.rolesByType[organization ? 'organization' : 'system'];
 
   const onSubmit = (values: FormValues) => {
-    apiWrapper(
-      () => invite(values.emails, values.role, organization?.id),
-      () => {
-        form.reset(undefined, { keepDirtyValues: true });
-        callback?.();
-
-        if (isDialog) {
-          dialog.remove();
-        }
-
-        toast.success(t('common:success.user_invited'));
-      },
-    );
+    invite({
+      emails: values.emails,
+      role: values.role,
+      organizationIdentifier: organization?.id,
+    });
   };
 
   const cancel = () => {
@@ -94,7 +99,7 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
           )}
         />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" loading={pending} className="relative">
+          <Button type="submit" loading={isPending} className="relative">
             {!!form.getValues('emails')?.length && (
               <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
             )}{' '}

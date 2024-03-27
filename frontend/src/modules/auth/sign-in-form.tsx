@@ -13,12 +13,12 @@ import { t } from 'i18next';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useRef } from 'react';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail, signIn } from '~/api/authentication';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn } from '~/api/authentication';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/router/routeTree';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
+import { useMutation } from '~/hooks/use-mutations';
 
 const formSchema = signInJsonSchema;
 
@@ -31,7 +31,16 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
     from: SignInRoute.id,
   });
 
-  const [apiWrapper, pending] = useApiWrapper();
+  const { mutate: signIn, isPending } = useMutation({
+    mutationFn: baseSignIn,
+    onSuccess: (result) => {
+      setUser(result as User);
+
+      navigate({
+        to: redirect || '/',
+      });
+    },
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -42,16 +51,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    apiWrapper(
-      () => signIn(values.email, values.password),
-      (result) => {
-        setUser(result as User);
-
-        navigate({
-          to: redirect || '/',
-        });
-      },
-    );
+    signIn(values);
   };
 
   const cancel = () => {
@@ -94,7 +94,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
           )}
         />
 
-        <Button type="submit" loading={pending} className="w-full">
+        <Button type="submit" loading={isPending} className="w-full">
           {t('common:sign_in')}
           <ArrowRight size={16} className="ml-2" />
         </Button>
@@ -106,17 +106,18 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
 };
 
 export const ResetPasswordRequest = ({ email }: { email: string }) => {
-  const [apiWrapper, pending] = useApiWrapper();
   const resetEmailRef = useRef(email);
 
+  const { mutate: sendResetPasswordEmail, isPending } = useMutation({
+    mutationFn: baseSendResetPasswordEmail,
+    onSuccess: () => {
+      toast.success(t('common:success.reset_link_sent'));
+      dialog.remove();
+    },
+  });
+
   const handleResetRequestSubmit = () => {
-    apiWrapper(
-      () => sendResetPasswordEmail(resetEmailRef.current),
-      () => {
-        toast.success(t('common:success.reset_link_sent'));
-        dialog.remove();
-      },
-    );
+    sendResetPasswordEmail(resetEmailRef.current);
   };
 
   const openDialog = () => {
@@ -133,7 +134,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
           }}
           required
         />
-        <Button className="w-full" disabled={!resetEmailRef.current} loading={pending} onClick={handleResetRequestSubmit}>
+        <Button className="w-full" disabled={!resetEmailRef.current} loading={isPending} onClick={handleResetRequestSubmit}>
           <Send size={16} className="mr-2" />
           {t('common:send_reset_link')}
         </Button>

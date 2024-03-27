@@ -10,7 +10,6 @@ import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -18,6 +17,7 @@ import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/forms/input';
+import { useMutation } from '~/hooks/use-mutations';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -32,7 +32,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
-  const [apiWrapper, pending] = useApiWrapper();
 
   const form = useFormWithDraft<FormValues>('create-organization', {
     resolver: zodResolver(formSchema),
@@ -41,30 +40,32 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     },
   });
 
+  const { mutate: create, isPending } = useMutation({
+    mutationFn: createOrganization,
+    onSuccess: (result) => {
+      form.reset();
+      callback?.(result);
+
+      toast.success(t('common:success.create_organization'));
+
+      if (!callback) {
+        setSheet(null);
+        navigate({
+          to: '/$organizationIdentifier/members',
+          params: {
+            organizationIdentifier: result.slug,
+          },
+        });
+      }
+
+      if (isDialog) {
+        dialog.remove();
+      }
+    },
+  });
+
   const onSubmit = (values: FormValues) => {
-    apiWrapper(
-      () => createOrganization(values.name),
-      (result) => {
-        form.reset();
-        callback?.(result);
-
-        toast.success(t('common:success.create_organization'));
-
-        if (!callback) {
-          setSheet(null);
-          navigate({
-            to: '/$organizationIdentifier/members',
-            params: {
-              organizationIdentifier: result.slug,
-            },
-          });
-        }
-
-        if (isDialog) {
-          dialog.remove();
-        }
-      },
-    );
+    create(values.name);
   };
 
   const cancel = () => {
@@ -78,7 +79,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         {/* TODO: fix this typescript issue */}
         <InputFormField control={form.control as unknown as Control} name="name" label={t('common:name')} required />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
+          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}
           </Button>
           <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>

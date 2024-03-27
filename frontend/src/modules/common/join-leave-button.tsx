@@ -2,13 +2,13 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { invite } from '~/api/general';
+import { invite as baseInvite } from '~/api/general';
 import { removeMembersFromOrganization } from '~/api/organizations';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import { organizationQueryOptions } from '../organizations/organization';
 import { Button } from '../ui/button';
+import { useMutation } from '~/hooks/use-mutations';
 
 interface Props {
   organization: Organization;
@@ -17,27 +17,37 @@ interface Props {
 const JoinLeaveButton = ({ organization }: Props) => {
   const user = useUserStore((state) => state.user);
   const { t } = useTranslation();
-  const [apiWrapper] = useApiWrapper();
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(organization.slug));
 
+  const { mutate: invite } = useMutation({
+    mutationFn: baseInvite,
+    onSuccess: () => {
+      organizationQuery.refetch();
+      toast.success(t('common:success.you_joined_organization'));
+    },
+  });
+
+  const { mutate: leave } = useMutation({
+    mutationFn: removeMembersFromOrganization,
+    onSuccess: () => {
+      organizationQuery.refetch();
+      toast.success(t('common:success.you_left_organization'));
+    },
+  });
+
   const onJoin = () => {
-    apiWrapper(
-      () => invite([user.email], 'MEMBER', organization.slug),
-      () => {
-        organizationQuery.refetch();
-        toast.success(t('common:success.you_joined_organization'));
-      },
-    );
+    invite({
+      emails: [user.email],
+      role: 'MEMBER',
+      organizationIdentifier: organization.slug,
+    });
   };
 
   const onLeave = () => {
-    apiWrapper(
-      () => removeMembersFromOrganization(organization.slug, [user.id]),
-      () => {
-        organizationQuery.refetch();
-        toast.success(t('common:success.you_left_organization'));
-      },
-    );
+    leave({
+      organizationIdentifier: organization.slug,
+      userIds: [user.id],
+    });
   };
 
   return organization.userRole ? (

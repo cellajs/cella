@@ -3,28 +3,30 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { AvatarWrap } from './avatar-wrap';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 
 export const AppSearch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [value, setValue] = useState('');
-  const [userSuggestions, setUserSuggestions] = useState<UserSuggestion[]>([]);
-  const [organizationSuggestions, setOrganizationSuggestions] = useState<OrganizationSuggestion[]>([]);
 
-  // TODO: why not using api wrapper here? Use entity type property
-  useEffect(() => {
-    getSuggestions(value).then((suggestions) => {
-      setUserSuggestions(suggestions.filter((suggestion) => 'email' in suggestion) as UserSuggestion[]);
-      setOrganizationSuggestions(suggestions.filter((suggestion) => !('email' in suggestion)) as OrganizationSuggestion[]);
-    });
-  }, [value]);
+  const { data, isFetching } = useQuery({
+    queryKey: ['search', value],
+    queryFn: () => getSuggestions(value),
+
+    enabled: value.length > 0,
+  });
+
+  const userSuggestions = data?.filter((suggestion) => 'email' in suggestion) ?? [];
+  const organizationSuggestions = data?.filter((suggestion) => !('email' in suggestion)) ?? [];
 
   const onSelectSuggestion = (suggestion: UserSuggestion | OrganizationSuggestion) => {
     // TODO: use type
-    if ('email' in suggestion)
+    if ('email' in suggestion) {
       navigate({
         to: '/user/$userIdentifier',
         resetScroll: false,
@@ -32,7 +34,7 @@ export const AppSearch = () => {
           userIdentifier: suggestion.slug,
         },
       });
-    else
+    } else {
       navigate({
         to: '/$organizationIdentifier/members',
         resetScroll: false,
@@ -40,9 +42,14 @@ export const AppSearch = () => {
           organizationIdentifier: suggestion.slug,
         },
       });
+    }
 
     dialog.remove(false);
   };
+
+  useEffect(() => {
+    console.log('userSuggestions', userSuggestions);
+  }, [userSuggestions]);
 
   // TODO: UI improvements:
   // - Add loading spinner
@@ -52,7 +59,7 @@ export const AppSearch = () => {
   // - use scrollarea
   // - sticky group type header
   return (
-    <Command className="rounded-lg border shadow-md">
+    <Command className="rounded-lg border shadow-md" shouldFilter={false}>
       <CommandInput
         placeholder={t('common:placeholder.search')}
         onValueChange={(value) => {
@@ -60,7 +67,20 @@ export const AppSearch = () => {
         }}
       />
       <CommandList>
-        <CommandEmpty>{t('common:no_results_found')}</CommandEmpty>
+        <CommandEmpty>
+          {isFetching ? (
+            <CommandLoading>
+              <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+            </CommandLoading>
+          ) : (
+            t('common:no_results_found')
+          )}
+        </CommandEmpty>
+        {/* {isFetching && (
+          <CommandLoading>
+            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+          </CommandLoading>
+        )} */}
         {userSuggestions.length > 0 && (
           <CommandGroup heading={t('common:user.plural')}>
             {userSuggestions.map((suggestion) => (

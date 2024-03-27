@@ -6,16 +6,16 @@ import { z } from 'zod';
 
 // Change this in the future on current schema
 // import { sendNewsletterJsonSchema } from 'backend/modules/organizations/schema';
-import { sendNewsletter } from '~/api/organizations';
+import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
 
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { sheet } from '../common/sheeter/state';
+import { useMutation } from '~/hooks/use-mutations';
 
 const TiptapEditor = lazy(() => import('~/modules/tiptap'));
 
@@ -36,7 +36,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
   const { t } = useTranslation();
-  const [apiWrapper, pending] = useApiWrapper();
 
   const form = useFormWithDraft<FormValues>('send-newsletter', {
     resolver: zodResolver(formSchema),
@@ -47,20 +46,26 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
     },
   });
 
+  const { mutate: sendNewsletter, isPending } = useMutation({
+    mutationFn: baseSendNewsletter,
+    onSuccess: () => {
+      form.reset();
+      toast.success(t('common:success.create_newsletter'));
+
+      if (isSheet) {
+        sheet.remove();
+      }
+    },
+  });
+
   const onSubmit = (values: FormValues) => {
     // TODO
     const organizationIds = ['1', '2', '3'];
-    apiWrapper(
-      () => sendNewsletter(organizationIds, values.subject, values.content),
-      () => {
-        form.reset();
-        toast.success(t('common:success.create_newsletter'));
-
-        if (isSheet) {
-          sheet.remove();
-        }
-      },
-    );
+    sendNewsletter({
+      organizationIds,
+      subject: values.subject,
+      content: values.content,
+    });
   };
 
   const cancel = () => {
@@ -90,7 +95,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
         </Suspense>
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={pending}>
+          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             <Send size={16} className="mr-2" />
             {t('common:send')}
           </Button>

@@ -18,8 +18,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 import { useWatch } from 'react-hook-form';
-import { checkSlug } from '~/api/general';
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
+import { checkSlug as baseCheckSlug } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
@@ -51,8 +50,20 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
-  const [apiWrapper, apiPending] = useApiWrapper();
   const { mutate, isPending } = useUpdateUserMutation(user.id);
+  const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
+    mutationFn: baseCheckSlug,
+    onSuccess: (isExists) => {
+      if (isExists) {
+        form.setError('slug', {
+          type: 'manual',
+          message: t('common:error.slug_exists'),
+        });
+      } else {
+        form.clearErrors('slug');
+      }
+    },
+  });
 
   const form = useFormWithDraft<FormValues>(`update-user-${user.id}`, {
     resolver: zodResolver(formSchema),
@@ -113,19 +124,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
 
   useEffect(() => {
     if (slug && slug !== user.slug) {
-      apiWrapper(
-        () => checkSlug(slug),
-        (isExists) => {
-          if (isExists) {
-            form.setError('slug', {
-              type: 'manual',
-              message: t('common:error.slug_exists'),
-            });
-          } else {
-            form.clearErrors('slug');
-          }
-        },
-      );
+      checkSlug(slug);
     }
   }, [slug]);
 
@@ -182,7 +181,11 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           )}
         />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending || apiPending}>
+          <Button
+            type="submit"
+            disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0}
+            loading={isPending || isCheckPending}
+          >
             {t('common:save_changes')}
           </Button>
           <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>

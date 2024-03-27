@@ -60,7 +60,7 @@ const InviteUsers = ({ organization, callback, dialog: isDialog, mode }: Props) 
       <AppAlert id="invite_email" Icon={Info}>
         {t('common:explain.invite_email.text')}
       </AppAlert>
-      <InviteEmailForm organization={organization} callback={callback} dialog={isDialog} />{' '}
+      <InviteEmailForm organization={organization} callback={callback} dialog={isDialog} />
     </>
   );
 };

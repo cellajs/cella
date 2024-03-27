@@ -1,9 +1,9 @@
-import { deleteOrganizations } from '~/api/organizations';
+import { deleteOrganizations as baseDeleteOrganizations } from '~/api/organizations';
 import type { Organization } from '~/types';
 
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
+import { useMutation } from '~/hooks/use-mutations';
 
 interface Props {
   organizations: Organization[];
@@ -12,22 +12,22 @@ interface Props {
 }
 
 const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Props) => {
-  const [apiWrapper, pending] = useApiWrapper();
+  const { mutate: deleteOrganizations, isPending } = useMutation({
+    mutationFn: baseDeleteOrganizations,
+    onSuccess: () => {
+      callback?.(organizations);
+
+      if (isDialog) {
+        dialog.remove();
+      }
+    },
+  });
 
   const onDelete = () => {
-    apiWrapper(
-      () => deleteOrganizations(organizations.map((organization) => organization.id)),
-      () => {
-        callback?.(organizations);
-
-        if (isDialog) {
-          dialog.remove();
-        }
-      },
-    );
+    deleteOrganizations(organizations.map((organization) => organization.id));
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={pending} />;
+  return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;
 };
 
 export default DeleteOrganizations;

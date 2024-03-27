@@ -142,7 +142,13 @@ export const getMembersByOrganizationIdentifier = async (
 };
 
 // Remove members from an organization
-export const removeMembersFromOrganization = async (organizationIdentifier: string, userIds: string[]) => {
+export const removeMembersFromOrganization = async ({
+  organizationIdentifier,
+  userIds,
+}: {
+  organizationIdentifier: string;
+  userIds: string[];
+}) => {
   const response = await client.organizations[':organizationIdentifier'].members.$delete({
     param: { organizationIdentifier },
     query: { ids: userIds },
@@ -154,7 +160,15 @@ export const removeMembersFromOrganization = async (organizationIdentifier: stri
 };
 
 // Send newsletter to organizations
-export const sendNewsletter = async (organizationIds: string[], subject: string, content: string) => {
+export const sendNewsletter = async ({
+  organizationIds,
+  subject,
+  content,
+}: {
+  organizationIds: string[];
+  subject: string;
+  content: string;
+}) => {
   console.info('Sending newsletter to organizations', organizationIds, subject, content);
 
   return { success: true };

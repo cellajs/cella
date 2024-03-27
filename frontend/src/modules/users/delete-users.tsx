@@ -1,9 +1,9 @@
-import { deleteUsers } from '~/api/users';
+import { deleteUsers as baseDeleteUsers } from '~/api/users';
 import type { User } from '~/types';
 
-import { useApiWrapper } from '~/hooks/use-api-wrapper';
 import { DeleteForm } from '../common/delete-form';
 import { dialog } from '../common/dialoger/state';
+import { useMutation } from '~/hooks/use-mutations';
 
 interface Props {
   users: User[];
@@ -12,22 +12,22 @@ interface Props {
 }
 
 const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
-  const [apiWrapper, pending] = useApiWrapper();
+  const { mutate: deleteUsers, isPending } = useMutation({
+    mutationFn: baseDeleteUsers,
+    onSuccess: () => {
+      callback?.(users);
+
+      if (isDialog) {
+        dialog.remove();
+      }
+    },
+  });
 
   const onDelete = () => {
-    apiWrapper(
-      () => deleteUsers(users.map((user) => user.id)),
-      () => {
-        callback?.(users);
-
-        if (isDialog) {
-          dialog.remove();
-        }
-      },
-    );
+    deleteUsers(users.map((user) => user.id));
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={pending} />;
+  return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;
 };
 
 export default DeleteUsers;
