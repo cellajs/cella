@@ -14,7 +14,7 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { setSessionCookie } from './helpers/cookies';
 import { sendVerificationEmail } from './helpers/verify-email';
-import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, insertOauthAccount } from './oauth-helpers';
+import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, slugFromEmail, insertOauthAccount, splitFullName } from './oauth-helpers';
 import {
   githubSignInCallbackRouteConfig,
   githubSignInRouteConfig,
@@ -23,6 +23,7 @@ import {
   microsoftSignInCallbackRouteConfig,
   microsoftSignInRouteConfig,
 } from './routes';
+import slugify from 'slugify';
 
 const app = new CustomHono();
 
@@ -156,14 +157,14 @@ const oauthRoutes = app
         return errorResponse(ctx, 400, 'no_email_found', 'warn');
       }
 
-      const [slug] = primaryEmail.email.split('@');
-      const [firstName, lastName] = githubUser.name ? githubUser.name.split(' ') : [slug, undefined];
+      const slug = slugify(githubUser.login, { lower: true });
+      const {firstName, lastName} = splitFullName(githubUser.name || slug)
 
       const inviteToken = getCookie(ctx, 'oauth_invite_token');
 
       deleteCookie(ctx, 'oauth_invite_token');
 
-      let userEmail = primaryEmail.email;
+      let userEmail = primaryEmail.email.toLowerCase();
 
       if (inviteToken) {
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
@@ -194,7 +195,7 @@ const oauthRoutes = app
           .where(eq(usersTable.id, existingUser.id));
 
         if (!emailVerified) {
-          sendVerificationEmail(primaryEmail.email);
+          sendVerificationEmail(primaryEmail.email.toLowerCase());
 
           return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
         }
@@ -210,7 +211,7 @@ const oauthRoutes = app
 
       await db.insert(usersTable).values({
         id: userId,
-        slug: githubUser.login,
+        slug: slugify(githubUser.login, { lower: true }),
         email: primaryEmail.email.toLowerCase(),
         name: githubUser.name,
         thumbnailUrl: githubUser.avatar_url,
@@ -223,7 +224,7 @@ const oauthRoutes = app
       await insertOauthAccount(userId, 'GITHUB', String(githubUser.id));
 
       if (!primaryEmail.verified) {
-        sendVerificationEmail(primaryEmail.email);
+        sendVerificationEmail(primaryEmail.email.toLowerCase());
 
         return ctx.redirect(`${config.frontendUrl}/auth/verify-email`, 302);
       }
@@ -296,7 +297,7 @@ const oauthRoutes = app
       const userId = nanoid();
       await db.insert(usersTable).values({
         id: userId,
-        slug: user.email.split('@')[0],
+        slug: slugFromEmail(user.email),
         email: user.email.toLowerCase(),
         name: user.given_name,
         language: config.defaultLanguage,
@@ -378,7 +379,7 @@ const oauthRoutes = app
       const userId = nanoid();
       await db.insert(usersTable).values({
         id: userId,
-        slug: user.email.split('@')[0],
+        slug: slugFromEmail(user.email),
         language: config.defaultLanguage,
         email: user.email.toLowerCase(),
         name: user.given_name,

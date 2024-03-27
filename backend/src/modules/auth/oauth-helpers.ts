@@ -8,6 +8,7 @@ import { setCookie } from './helpers/cookies';
 import { config } from 'config';
 import { db } from '../../db/db';
 import { logEvent } from '../../middlewares/logger/log-event';
+import slugify from 'slugify';
 
 type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
 
@@ -47,3 +48,15 @@ export const findOauthAccount = async (providerId: ProviderId, providerUserId: s
 export const findUserByEmail = async (email: string) => {
   return db.select().from(usersTable).where(eq(usersTable.email, email));
 };
+
+export const slugFromEmail = (email: string) => {
+  const [alias] = email.split('@');
+  return slugify(alias, { lower: true });
+}
+
+export const splitFullName = (name: string) => {
+  const parts = name.split(' ');
+  const firstName = parts.shift(); 
+  const lastName = parts.join(' ');
+  return { firstName, lastName: lastName || '' };
+}
