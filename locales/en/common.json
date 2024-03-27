@@ -219,6 +219,7 @@
   "success.you_left_organization": "You have left the organization",
   "success.you_updated": "Your profile has been updated",
   "success.your_role_updated": "Your role has been updated",
+  "common:user_role_updated": "User role updated",
   "system_panel": "System panel",
   "system_panel.text": "System admins can manage and monitor all organizations and their members.",
   "terms": "Terms",

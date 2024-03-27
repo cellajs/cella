@@ -86,11 +86,10 @@ const UsersTable = () => {
     for (const index of indexes) {
       if (column.key === 'role') {
         const user = rows[index] as User;
-        console.log(user);
         updateUser(user.id, { role: user.role })
           .then(() => {
             callback([user], 'update');
-            toast.success(t('common:success.your_role_updated'));
+            toast.success(t('common:success.user_role_updated'));
           })
           .catch(() => {
             toast.error(t('common:error.error'));

@@ -36,8 +36,6 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       renderCell: ({ row, tabIndex }) => {
         if (row.type !== 'MASTER') return;
 
-        console.log('row', row);
-
         return (
           <Link
             tabIndex={tabIndex}
