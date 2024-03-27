@@ -1,6 +1,14 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { signOutUser } from '~/router/routeTree';
+import { signOut } from '~/api/authentication';
+import { useUserStore } from '~/store/user';
+import type { User } from '~/types';
+
+export const signOutUser = async () => {
+  useUserStore.setState({ user: null as unknown as User });
+  if (window.Gleap) window.Gleap.clearIdentity();
+  await signOut();
+};
 
 const SignOut = () => {
   const navigate = useNavigate();
