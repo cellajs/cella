@@ -18,6 +18,8 @@ interface NavigationState {
   toggleSection: (section: string) => void;
   navLoading: boolean;
   setLoading: (status: boolean) => void;
+  focusView: boolean;
+  setFocusView: (status: boolean) => void;
 }
 
 // Build the initial menu (for menu sheet)
@@ -34,6 +36,7 @@ export const useNavigationStore = create<NavigationState>()(
           activeSheet: null as NavItem | null,
           keepMenuOpen: false as boolean,
           navLoading: false as boolean,
+          focusView: false as boolean,
           menu: initialMenuState,
           activeSections: {},
           setSheet: (component) => {
@@ -57,6 +60,12 @@ export const useNavigationStore = create<NavigationState>()(
           setLoading: (status) => {
             set((state) => {
               state.navLoading = status;
+            });
+          },
+          setFocusView: (status) => {
+            set((state) => {
+              state.focusView = status;
+              if (status) state.activeSheet = null;
             });
           },
           toggleSection: (section) => {

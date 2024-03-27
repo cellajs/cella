@@ -18,6 +18,8 @@ import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import type { OrganizationsSearch } from '.';
+import { config } from 'config';
+import {FocusView} from '~/modules/common/focus-view';
 
 interface Props {
   total?: number;
@@ -131,7 +133,7 @@ function Toolbar({
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         <Export
           className="max-lg:hidden"
-          filename="organizations"
+          filename={`${config.slug}-organizations`}
           columns={columns}
           selectedRows={selectedOrganizations}
           fetchRows={async (limit) => {
@@ -143,6 +145,9 @@ function Toolbar({
             });
             return items;
           }}
+        />
+         <FocusView
+          iconOnly
         />
       </div>
     </div>

@@ -222,3 +222,8 @@
 .fill-grid {
   block-size: 100%;
 }
+
+/* Hide non-focus-view elements */
+.focus-view #main-app-content *:not(.focus-view-container, .focus-view-container *) {
+  display: none;
+}

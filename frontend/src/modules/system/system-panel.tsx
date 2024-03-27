@@ -7,6 +7,7 @@ import { PageNav } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { OrganizationsTableRoute, UsersTableRoute } from '~/router/routeTree';
 import { Button } from '../ui/button';
+import { FocusViewContainer } from '../common/focus-view';
 
 const SystemPanel = () => {
   const { t } = useTranslation();
@@ -35,19 +36,21 @@ const SystemPanel = () => {
 
   return (
     <>
-      <SimpleHeader heading={t('common:system_panel')} text={t('common:system_panel.text')} />
-      <Button variant="gradient" className="w-40 mx-4" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
-        Test checkout
-      </Button>
-      <PageNav
-        tabs={[
-          { id: 'users', label: 'user.plural', path: UsersTableRoute.fullPath },
-          { id: 'organizations', label: 'organization.plural', path: OrganizationsTableRoute.fullPath },
-        ]}
-      />
-      <div className="container mt-4 flex-[1_1_0]">
+        <SimpleHeader heading={t('common:system_panel')} text={t('common:system_panel.text')} />
+        <Button variant="gradient" className="w-40 mx-4" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
+          Test checkout
+        </Button>
+        <PageNav
+          tabs={[
+            { id: 'users', label: 'user.plural', path: UsersTableRoute.fullPath },
+            { id: 'organizations', label: 'organization.plural', path: OrganizationsTableRoute.fullPath },
+          ]}
+        />
+
+
+      <FocusViewContainer className="container mt-4">
         <Outlet />
-      </div>
+      </FocusViewContainer>
     </>
   );
 };

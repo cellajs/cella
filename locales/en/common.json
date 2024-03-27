@@ -265,5 +265,9 @@
   "add_email": "Add an email",
   "explain.invite_search.text": "Type a name and select the user. You can add multiple users.",
   "explain.invite_email.text": "Type an email address and press ENTER. You can add multiple users.",
-  "configure_menu.text": "Configure your menu items. Changes will be saved automatically."
+  "configure_menu.text": "Configure your menu items. Changes will be saved automatically.",
+  "focus_view": "Focus view",
+  "leave_focus_view": "Leave focus",
+  "entered_focus.text": "Focus view activated",
+  "left_focus.text": "Normal view restored"
 }

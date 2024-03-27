@@ -39,7 +39,7 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
       shouldShow={states.shouldShow}
       updateDelay={100}
     >
-      <Toolbar.Wrapper>
+      <Toolbar.Wrapper className="top-1">
         {/* <AIDropdown
           onCompleteSentence={commands.onCompleteSentence}
           onEmojify={commands.onEmojify}

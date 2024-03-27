@@ -158,7 +158,7 @@ function Toolbar({
           <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
           <Export
             className="max-lg:hidden"
-            filename="members"
+            filename={`${organization.slug}-members`}
             columns={columns}
             selectedRows={selectedMembers}
             fetchRows={async (limit) => {

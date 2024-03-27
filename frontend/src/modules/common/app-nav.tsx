@@ -39,13 +39,12 @@ const AppNav = () => {
   const navigate = useNavigate();
   const { hasStarted } = useAppState();
   const isSmallScreen = useBreakpoints('max', 'lg');
-  const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore();
+  const { activeSheet, setSheet, keepMenuOpen, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
 
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
 
   const navButtonClick = (navItem: NavItem) => {
-    
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
       dialog(<AppSearch />, {
@@ -70,6 +69,7 @@ const AppNav = () => {
     }
   };
 
+
   return (
     <>
       <nav
@@ -78,6 +78,7 @@ const AppNav = () => {
           'fixed z-40 w-full overflow-y-auto transition-transform ease-out md:fixed md:left-0 md:top-0 md:h-svh md:w-16',
           navBackground,
           !hasStarted && 'max-md:-translate-y-full md:-translate-x-full',
+          focusView && 'hidden',
         )}
       >
         <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1">
