@@ -1,27 +1,27 @@
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { getUserBySlugOrId } from '~/api/users';
+import { getUserBySlugOrId as baseGetUserBySlugOrId } from '~/api/users';
+import { useMutation } from '~/hooks/use-mutations';
 import { dateShort } from '~/lib/utils';
 import type { User } from '~/types';
 
 // id, modified, modifiedBy
 const Expand = ({ row }: { row: User }) => {
   const [modifier, setModifier] = useState<User | undefined>(undefined);
-  const [loading, setLoading] = useState(false);
+
+  const { mutate: getUserBySlugOrId, isPending } = useMutation({
+    mutationFn: baseGetUserBySlugOrId,
+    onSuccess: (user) => {
+      setModifier(user);
+    },
+  });
 
   useEffect(() => {
     if (!row.modifiedBy) {
       return;
     }
 
-    setLoading(true);
-    getUserBySlugOrId(row.modifiedBy)
-      .then((user) => {
-        setModifier(user);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    getUserBySlugOrId(row.modifiedBy);
   }, [row.modifiedBy]);
 
   return (
@@ -37,7 +37,7 @@ const Expand = ({ row }: { row: User }) => {
         <div className="font-medium pr-4">Modified</div>
         <div>{dateShort(row.modifiedAt)}</div>
         <div className="font-medium pr-4">Modified By</div>
-        {loading ? (
+        {isPending ? (
           <Loader2 className="animate-spin" size={16} />
         ) : modifier ? (
           <div>
