@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -46,10 +46,6 @@ export const AppSearch = () => {
 
     dialog.remove(false);
   };
-
-  useEffect(() => {
-    console.log('userSuggestions', userSuggestions);
-  }, [userSuggestions]);
 
   // TODO: UI improvements:
   // - Add loading spinner
