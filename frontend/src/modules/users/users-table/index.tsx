@@ -13,7 +13,7 @@ import type { z } from 'zod';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { DataTable } from '~/modules/common/data-table';
 import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
-import { UsersTableRoute } from '~/router/routeTree';
+import { UsersTableRoute } from '~/router/system';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';

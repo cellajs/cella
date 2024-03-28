@@ -14,7 +14,7 @@ import type { z } from 'zod';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { queryClient } from '~/router';
-import { organizationMembersRoute } from '~/router/routeTree';
+import { organizationMembersRoute } from '~/router/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';

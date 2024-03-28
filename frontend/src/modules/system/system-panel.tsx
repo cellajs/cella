@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageNav } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import { OrganizationsTableRoute, UsersTableRoute } from '~/router/routeTree';
+import { OrganizationsTableRoute, UsersTableRoute } from '~/router/system';
 import { FocusViewContainer } from '../common/focus-view';
 import { Button } from '../ui/button';
 

@@ -4,10 +4,10 @@ import { createContext } from 'react';
 import { getOrganizationBySlugOrId } from '~/api/organizations';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
-import { OrganizationRoute } from '~/router/routeTree';
+import { OrganizationRoute } from '~/router/organizations';
 import type { Organization } from '~/types';
-import JoinLeaveButton from '../common/join-leave-button';
 import { FocusViewContainer } from '../common/focus-view';
+import JoinLeaveButton from '../common/join-leave-button';
 
 interface OrganizationContextValue {
   organization: Organization;

@@ -3,7 +3,7 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { acceptInvite, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
 import { Button } from '~/modules/ui/button';
-import { SignInRoute } from '~/router/routeTree';
+import { SignInRoute } from '~/router/authentication';
 import { useThemeStore } from '~/store/theme';
 
 const oauthOptions = [

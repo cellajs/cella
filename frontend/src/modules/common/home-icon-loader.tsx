@@ -1,3 +1,4 @@
+import { useIsFetching } from '@tanstack/react-query';
 import { config } from 'config';
 import { Home } from 'lucide-react';
 import { useEffect } from 'react';
@@ -5,7 +6,6 @@ import useAppState from '~/hooks/use-app-state';
 import router from '~/router';
 import { useNavigationStore } from '~/store/navigation';
 import Logo from './logo';
-import { useIsFetching } from '@tanstack/react-query';
 
 const HomeIconLoader = () => {
   const { isReady } = useAppState();

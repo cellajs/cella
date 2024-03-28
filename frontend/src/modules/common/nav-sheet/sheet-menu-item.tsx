@@ -15,8 +15,6 @@ export const SheetMenuItem = ({ item, menutItemClick }: SheetMenuItemProps) => {
       onClick={menutItemClick}
       aria-label={item.name}
       to="/$organizationIdentifier/members"
-      preload="intent"
-      preloadDelay={200}
       params={{ organizationIdentifier: item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >

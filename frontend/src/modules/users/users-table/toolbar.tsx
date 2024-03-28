@@ -4,6 +4,7 @@ import { type ChangeEvent, type Dispatch, type SetStateAction, useRef } from 're
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { GetUsersParams } from '~/api/users';
+import { FocusView } from '~/modules/common/focus-view';
 import InviteUsers from '~/modules/common/invite-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -16,7 +17,6 @@ import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/c
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
-import { FocusView } from '~/modules/common/focus-view';
 
 interface Props {
   total?: number;

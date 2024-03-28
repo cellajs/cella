@@ -113,9 +113,7 @@ export const getMembersByOrganizationIdentifier = async (
 ) => {
   const response = await client.organizations[':organizationIdentifier'].members.$get(
     {
-      param: {
-        organizationIdentifier,
-      },
+      param: { organizationIdentifier },
       query: {
         q,
         sort,
@@ -159,7 +157,7 @@ export const removeMembersFromOrganization = async ({
   return json.data;
 };
 
-// Send newsletter to organizations
+// INFO: Send newsletter to organizations (not implemented)
 export const sendNewsletter = async ({
   organizationIds,
   subject,

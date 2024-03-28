@@ -28,6 +28,7 @@ import { transformDatabaseUser } from '../users/helpers/transform-database-user'
 import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
 import { sendVerificationEmail } from './helpers/verify-email';
 import oauthRoutes from './oauth';
+import { slugFromEmail } from './oauth-helpers';
 import {
   checkEmailRouteConfig,
   resetPasswordCallbackRouteConfig,
@@ -38,7 +39,6 @@ import {
   signUpRouteConfig,
   verifyEmailRouteConfig,
 } from './routes';
-import { slugFromEmail } from './oauth-helpers';
 
 const app = new CustomHono();
 

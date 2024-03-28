@@ -1,162 +1,38 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { Outlet, createRootRouteWithContext, createRoute, createRouteMask, redirect } from '@tanstack/react-router';
-import { z } from 'zod';
-import VerifyEmail from '~/modules/auth/verify-email';
+import { createRootRouteWithContext, createRoute, createRouteMask, redirect } from '@tanstack/react-router';
+
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
-import type { ErrorType } from 'backend/lib/errors';
-import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
-import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
-import { getUsersQuerySchema } from 'backend/modules/users/schema';
 import { config } from 'config';
-import { Suspense } from 'react';
 import { getMe, getUserMenu } from '~/api/users';
-import AcceptInvite from '~/modules/auth/accept-invite';
-import ResetPassword from '~/modules/auth/reset-password';
-import SignIn from '~/modules/auth/sign-in';
-import SignOut from '~/modules/auth/sign-out';
+
 import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
-import Home from '~/modules/home';
-import About from '~/modules/marketing/about';
-import Accessibility from '~/modules/marketing/accessibility';
-import Contact from '~/modules/marketing/contact';
-import { Privacy } from '~/modules/marketing/privacy';
-import { Terms } from '~/modules/marketing/terms';
-import MembersTable, { membersQueryOptions } from '~/modules/organizations/members-table';
-import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
-import OrganizationSettings from '~/modules/organizations/organization-settings';
-import OrganizationsTable from '~/modules/organizations/organizations-table';
-import Projects from '~/modules/projects';
-import SystemPanel from '~/modules/system/system-panel';
-import { UserProfile, userQueryOptions } from '~/modules/users/user-profile';
-import UserSettings from '~/modules/users/user-settings';
-import UsersTable from '~/modules/users/users-table';
 
-const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+import { AcceptRoute, AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
+import { HomeAliasRoute, HomeRoute } from './home';
+import { AboutRoute, AccessibilityRoute, ContactRoute, PrivacyRoute, TermsRoute } from './marketing';
+import { OrganizationRoute, organizationMembersRoute, organizationSettingsRoute, projectsRoute } from './organizations';
+import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
+import { UserProfileRoute, UserSettingsRoute } from './users';
 
-const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
-
-const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
-
-const getAndSetUser = async () => {
+export const getAndSetMe = async () => {
   const user = await getMe();
   useUserStore.getState().setUser(user);
+  return user;
 };
 
-const getMenu = async () => {
+export const getAndSetMenu = async () => {
   const menu = await getUserMenu();
-  useNavigationStore.setState({
-    menu,
-  });
+  useNavigationStore.setState({ menu });
+  return menu;
 };
 
-const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   beforeLoad: () => ({ getTitle: () => config.name }),
   component: () => <Root />,
-});
-
-const AuthRoute = createRoute({
-  id: 'auth-layout',
-  getParentRoute: () => rootRoute,
-  beforeLoad: async () => {
-    // If stored user, redirect to home
-    const storedUser = useUserStore.getState().user;
-    if (storedUser) throw redirect({ to: '/', replace: true });
-
-    try {
-      // Check if authenticated
-      await getAndSetUser();
-    } catch (error) {
-      return console.error('Not authenticated');
-    }
-
-    // If authenticated, redirect to home
-    console.info('Authenticated, go to home');
-    throw redirect({ to: '/', replace: true });
-  },
-  component: () => <Outlet />,
-});
-
-export const SignInRoute = createRoute({
-  path: '/auth/sign-in',
-  beforeLoad: () => ({ getTitle: () => 'Sign In' }),
-  getParentRoute: () => AuthRoute,
-  component: () => <SignIn />,
-  validateSearch: z.object({ redirect: z.string().optional() }),
-});
-
-export const AcceptRoute = createRoute({
-  path: '/auth/accept-invite/$token',
-  beforeLoad: () => ({ getTitle: () => 'Accept Invite' }),
-  getParentRoute: () => AuthRoute,
-  component: () => <AcceptInvite />,
-  validateSearch: z.object({ redirect: z.string().optional() }),
-});
-
-export const ResetPasswordRoute = createRoute({
-  path: '/auth/reset-password/$token',
-  beforeLoad: () => ({ getTitle: () => 'Reset Password' }),
-  getParentRoute: () => AuthRoute,
-  component: () => <ResetPassword />,
-});
-
-export const VerifyEmailRoute = createRoute({
-  path: '/auth/verify-email',
-  beforeLoad: () => ({ getTitle: () => 'Verify Email' }),
-  getParentRoute: () => AuthRoute,
-  component: () => <VerifyEmail />,
-});
-
-export const VerifyEmailRouteWithToken = createRoute({
-  path: '/auth/verify-email/$token',
-  beforeLoad: () => ({ getTitle: () => 'Verify Email' }),
-  getParentRoute: () => AuthRoute,
-  component: () => <VerifyEmail />,
-});
-
-export const SignOutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  beforeLoad: () => ({ getTitle: () => 'Sign Out' }),
-  path: '/sign-out',
-  component: SignOut,
-});
-
-const AboutRoute = createRoute({
-  path: '/about',
-  beforeLoad: () => ({ getTitle: () => 'About' }),
-  getParentRoute: () => rootRoute,
-  component: () => <About />,
-});
-
-const ContactRoute = createRoute({
-  path: '/contact',
-  beforeLoad: () => ({ getTitle: () => 'Contact' }),
-  getParentRoute: () => rootRoute,
-  component: () => <Contact />,
-});
-
-const TermsRoute = createRoute({
-  path: '/terms',
-  beforeLoad: () => ({ getTitle: () => 'Terms' }),
-  getParentRoute: () => rootRoute,
-  component: () => <Terms />,
-});
-
-const PrivacyRoute = createRoute({
-  path: '/privacy',
-  beforeLoad: () => ({ getTitle: () => 'Privacy' }),
-  getParentRoute: () => rootRoute,
-  component: () => <Privacy />,
-});
-
-const AccessibilityRoute = createRoute({
-  path: '/accessibility',
-  beforeLoad: () => ({ getTitle: () => 'Accessibility' }),
-  getParentRoute: () => rootRoute,
-  component: () => <Accessibility />,
 });
 
 const ErrorNoticeRoute = createRoute({
@@ -166,18 +42,27 @@ const ErrorNoticeRoute = createRoute({
   component: () => <ErrorNotice />,
 });
 
-const IndexRoute = createRoute({
+export const IndexRoute = createRoute({
   id: 'layout',
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ location, cause }) => {
+  beforeLoad: async ({ location, cause, context }) => {
     const lastUser = useUserStore.getState().lastUser;
 
     // If no stored user and no desired path, redirect to about
     if (location.pathname === '/' && !lastUser) throw redirect({ to: '/about', replace: true });
 
     try {
+      // If just entered, fetch me and menu
       if (cause === 'enter') {
-        await Promise.all([getAndSetUser(), getMenu()]);
+        const getMe = async () => {
+          return context.queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+        };
+
+        const getMenu = async () => {
+          return context.queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu });
+        };
+
+        await Promise.all([getMe(), getMenu()]);
       }
     } catch {
       console.info('Not authenticated, redirect to sign in');
@@ -185,120 +70,6 @@ const IndexRoute = createRoute({
     }
   },
   component: () => <App />,
-});
-
-const HomeRoute = createRoute({
-  path: '/',
-  beforeLoad: () => ({ getTitle: () => 'Home' }),
-  getParentRoute: () => IndexRoute,
-  component: () => <Home />,
-});
-
-// We need an alias for '/' to forward users better if coming from backend
-const HomeAliasRoute = createRoute({
-  beforeLoad: () => ({ getTitle: () => 'Home' }),
-  path: '/home',
-  getParentRoute: () => IndexRoute,
-  component: () => <Home />,
-});
-
-const SystemPanelRoute = createRoute({
-  path: '/system',
-  beforeLoad: ({ location }) => {
-    if (location.pathname === '/system') {
-      throw redirect({ to: '/system/users', replace: true });
-    }
-    return { getTitle: () => 'System' };
-  },
-  getParentRoute: () => IndexRoute,
-  component: () => <SystemPanel />,
-  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
-});
-
-export const UsersTableRoute = createRoute({
-  path: '/users',
-  beforeLoad: () => ({ getTitle: () => 'Users' }),
-  getParentRoute: () => SystemPanelRoute,
-  component: () => <UsersTable />,
-  validateSearch: usersSearchSchema,
-});
-
-export const OrganizationsTableRoute = createRoute({
-  path: '/organizations',
-  beforeLoad: () => ({ getTitle: () => 'Organizations' }),
-  getParentRoute: () => SystemPanelRoute,
-  component: () => <OrganizationsTable />,
-  validateSearch: organizationsSearchSchema,
-});
-
-export const UserProfileRoute = createRoute({
-  path: '/user/$userIdentifier',
-  getParentRoute: () => IndexRoute,
-  beforeLoad: ({ params: { userIdentifier } }) => ({ getTitle: () => userIdentifier }),
-  loader: async ({ context: { queryClient }, params: { userIdentifier } }) => {
-    queryClient.ensureQueryData(userQueryOptions(userIdentifier));
-  },
-  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
-  component: () => (
-    <Suspense>
-      <UserProfile />
-    </Suspense>
-  ),
-});
-
-const UserSettingsRoute = createRoute({
-  path: '/user/settings',
-  beforeLoad: () => ({ getTitle: () => 'Settings' }),
-  getParentRoute: () => IndexRoute,
-  component: () => <UserSettings />,
-});
-
-export const OrganizationRoute = createRoute({
-  path: '$organizationIdentifier',
-  getParentRoute: () => IndexRoute,
-  validateSearch: membersSearchSchema,
-  beforeLoad: ({ params }) => {
-    return { getTitle: () => params.organizationIdentifier };
-  },
-  loader: async ({ context: { queryClient }, params: { organizationIdentifier } }) => {
-    queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
-  },
-  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
-  component: () => (
-    <Suspense>
-      <Organization />
-    </Suspense>
-  ),
-});
-
-export const organizationMembersRoute = createRoute({
-  path: '/members',
-  getParentRoute: () => OrganizationRoute,
-  validateSearch: membersSearchSchema,
-  beforeLoad: () => ({ getTitle: () => 'Members' }),
-  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
-    const membersInfiniteQueryOptions = membersQueryOptions(organizationIdentifier, { q, sort, order, role });
-    const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
-    if (!cachedMembers) {
-      queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
-    }
-  },
-  component: () => <MembersTable />,
-});
-
-export const organizationSettingsRoute = createRoute({
-  path: '/settings',
-  beforeLoad: () => ({ getTitle: () => 'Settings' }),
-  getParentRoute: () => OrganizationRoute,
-  component: () => <OrganizationSettings />,
-});
-
-export const projectsRoute = createRoute({
-  path: '/projects',
-  beforeLoad: () => ({ getTitle: () => 'Projects' }),
-  getParentRoute: () => OrganizationRoute,
-  component: () => <Projects />,
 });
 
 export const routeTree = rootRoute.addChildren([

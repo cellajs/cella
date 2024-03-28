@@ -27,15 +27,13 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
 };
 
 // Invite users
-export const invite = async ({
-  emails,
-  organizationIdentifier,
-  role,
-}: {
+interface inviteProps {
   emails: string[];
   role?: Member['organizationRole'] | User['role'];
   organizationIdentifier?: string;
-}) => {
+}
+
+export const invite = async ({ emails, organizationIdentifier, role }: inviteProps) => {
   const response = await client.invite.$post({
     json: { emails, organizationIdentifier, role },
   });

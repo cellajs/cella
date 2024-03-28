@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
 import { cn } from '~/lib/utils';
 import Export from '~/modules/common/data-table/export';
+import { FocusView } from '~/modules/common/focus-view';
 import InviteUsers from '~/modules/common/invite-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -19,7 +20,6 @@ import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import { OrganizationContext } from '../organization';
 import RemoveMembersForm from './remove-member-form';
-import { FocusView } from '~/modules/common/focus-view';
 
 interface Props {
   selectedMembers: Member[];
