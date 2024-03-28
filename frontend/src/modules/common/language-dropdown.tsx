@@ -13,11 +13,13 @@ interface Props {
 }
 
 const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
-  const { user } = useUserStore(({ user }) => ({ user }));
+  const { user, setUser } = useUserStore(({ user, setUser }) => ({ user, setUser }));
   const language = i18n.resolvedLanguage || i18n.language;
   const changeLanguage = (lng: string) => {
     if (user) {
-      updateUser(user.id, { language: lng as 'en' | 'nl' });
+      updateUser(user.id, { language: lng as 'en' | 'nl' }).then((res) => {
+        setUser(res);
+      });
     }
     if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);

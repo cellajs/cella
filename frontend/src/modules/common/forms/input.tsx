@@ -8,6 +8,7 @@ interface Props {
   name: string;
   label: string;
   value?: string;
+  defaultValue?: string;
   type?: Parameters<typeof Input>[0]['type'] | 'textarea';
   description?: string;
   placeholder?: string;
@@ -16,10 +17,22 @@ interface Props {
   disabled?: boolean;
 }
 
-const InputFormField = ({ control, name, label, value, description, type = 'text', placeholder, subComponent, required, disabled }: Props) => (
+const InputFormField = ({
+  control,
+  name,
+  label,
+  value,
+  defaultValue,
+  description,
+  type = 'text',
+  placeholder,
+  subComponent,
+  required,
+  disabled,
+}: Props) => (
   <FormField
-    control={control}
-    name={name}
+    control={disabled ? undefined : control}
+    name={disabled ? '' : name}
     render={({ field: { value: formFieldValue, ...rest } }) => (
       <FormItem>
         <FormLabel>
@@ -30,9 +43,16 @@ const InputFormField = ({ control, name, label, value, description, type = 'text
         <FormControl>
           <div className="relative">
             {type === 'textarea' ? (
-              <Textarea placeholder={placeholder} value={value || formFieldValue || ''} disabled={disabled} {...rest} />
+              <Textarea placeholder={placeholder} defaultValue={defaultValue} value={value || formFieldValue || ''} disabled={disabled} {...rest} />
             ) : (
-              <Input type={type} placeholder={placeholder} value={value || formFieldValue || ''} disabled={disabled} {...rest} />
+              <Input
+                type={type}
+                placeholder={placeholder}
+                defaultValue={defaultValue}
+                value={value || formFieldValue || ''}
+                disabled={disabled}
+                {...rest}
+              />
             )}
             {subComponent}
           </div>

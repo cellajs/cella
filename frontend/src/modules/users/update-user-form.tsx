@@ -91,20 +91,20 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
 
     mutate(values, {
       onSuccess: (data) => {
-        form.reset(undefined, {
-          keepDirtyValues: true,
-        });
+        if (isSelf) {
+          setUser(data);
+          toast.success(t('common:success.you_updated'));
+        } else {
+          toast.success(t('common:success.updated_user'));
+        }
+
+        form.reset();
         callback?.(data);
 
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
         if (isDialog) {
           dialog.remove();
         }
-
-        if (isSelf) {
-          setUser(data);
-          toast.success(t('common:success.you_updated'));
-        } else toast.success(t('common:success.updated_user'));
       },
     });
   };
