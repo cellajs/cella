@@ -12,7 +12,7 @@ import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations
 import { getUsersQuerySchema } from 'backend/modules/users/schema';
 import { config } from 'config';
 import { Suspense } from 'react';
-import { getMe } from '~/api/users';
+import { getMe, getUserMenu } from '~/api/users';
 import AcceptInvite from '~/modules/auth/accept-invite';
 import ResetPassword from '~/modules/auth/reset-password';
 import SignIn from '~/modules/auth/sign-in';
@@ -44,6 +44,13 @@ const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, so
 const getAndSetUser = async () => {
   const user = await getMe();
   useUserStore.getState().setUser(user);
+};
+
+const getMenu = async () => {
+  const menu = await getUserMenu();
+  useNavigationStore.setState({
+    menu,
+  });
 };
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -169,8 +176,6 @@ const IndexRoute = createRoute({
     if (location.pathname === '/' && !lastUser) throw redirect({ to: '/about', replace: true });
 
     try {
-      const { getMenu } = useNavigationStore.getState();
-
       if (cause === 'enter') {
         await Promise.all([getAndSetUser(), getMenu()]);
       }
