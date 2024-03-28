@@ -43,17 +43,17 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) 
           <CardHeader className="text-center">
             <CardTitle className="text-2xl mb-2">
               {error?.resourceType
-                ? t(`error.resource_${error.type}`, { resource: error.resourceType })
+                ? t(`common:error.resource_${error.type}`, { resource: error.resourceType })
                 : error?.type
-                  ? t(`error.${error.type}`)
+                  ? t(`common:error.${error.type}`)
                   : error?.message || t('common:error.error')}
             </CardTitle>
             <CardDescription>
               <span>
                 {error?.resourceType
-                  ? t(`error.resource_${error.type}.text`, { resource: error.resourceType })
+                  ? t(`common:error.resource_${error.type}.text`, { resource: error.resourceType })
                   : error?.type
-                    ? t(`error.${error.type}.text`)
+                    ? t(`common:error.${error.type}.text`)
                     : error?.message || t('common:error.reported_try_or_contact')}
               </span>
               <span className="ml-1">{error?.severity && error.severity === 'warn' && t('common:error.contact_mistake')}</span>
@@ -93,6 +93,10 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) 
             </CardContent>
           )}
           <CardFooter className="flex gap-2 mt-4 justify-center">
+            <Button onClick={handleGoToHome} variant="secondary">
+              <Home size={16} className="mr-1" />
+              {t('common:home')}
+            </Button>
             {!location.pathname.startsWith('/error') && (
               <Button onClick={handleReload}>
                 <RefreshCw size={16} className="mr-1" />
@@ -105,10 +109,6 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) 
                 {t('common:ask_for_help')}
               </Button>
             )}
-            <Button onClick={handleGoToHome} variant="secondary">
-              <Home size={16} className="mr-1" />
-              {t('common:home')}
-            </Button>
           </CardFooter>
         </Card>
         <AppFooter />
