@@ -17,7 +17,6 @@ export const AppSearch = () => {
   const { data, isFetching } = useQuery({
     queryKey: ['search', value],
     queryFn: () => getSuggestions(value),
-
     enabled: value.length > 0,
   });
 
