@@ -8,6 +8,7 @@ import { env } from 'env';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
+import { streamSSE } from 'hono/streaming';
 
 import { db } from '../../db/db';
 
@@ -30,6 +31,7 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
+import { nanoid } from '../../lib/nanoid';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -302,6 +304,28 @@ const generalRoutes = app
       success: true,
       data: result,
     });
+  })
+  .get('/sse', async (c) => {
+    return streamSSE(
+      c,
+      async (stream) => {
+        while (true) {
+          const message = `It is ${new Date().toISOString()}`;
+          console.log('Sending message', message);
+          await stream.writeSSE({
+            data: message,
+            event: 'time-update',
+            id: nanoid(),
+            
+          });
+          await stream.sleep(1000);
+        }
+      },
+      async (err, stream) => {
+        stream.writeln('An error occurred!');
+        console.error(err);
+      },
+    );
   });
 
 export default generalRoutes;
