@@ -19,6 +19,7 @@ import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import { OrganizationContext } from '../organization';
 import RemoveMembersForm from './remove-member-form';
+import { FocusView } from '~/modules/common/focus-view';
 
 interface Props {
   selectedMembers: Member[];
@@ -138,6 +139,7 @@ function Toolbar({
             }, 200)}
             className="h-10 w-[150px] lg:w-[250px]"
           />
+
           <Select
             value={role === undefined ? 'all' : role}
             onValueChange={(role) => {
@@ -155,7 +157,9 @@ function Toolbar({
               ))}
             </SelectContent>
           </Select>
+
           <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+
           <Export
             className="max-lg:hidden"
             filename={`${organization.slug}-members`}
@@ -172,6 +176,8 @@ function Toolbar({
               return items;
             }}
           />
+
+          <FocusView iconOnly />
         </div>
       </div>
 

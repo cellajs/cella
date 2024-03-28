@@ -16,6 +16,7 @@ import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/c
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
+import { FocusView } from '~/modules/common/focus-view';
 
 interface Props {
   total?: number;
@@ -140,6 +141,7 @@ function Toolbar({
             </SelectContent>
           </Select>
           <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+          <FocusView iconOnly />
         </div>
       </div>
 

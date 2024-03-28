@@ -38,6 +38,7 @@ import {
   signUpRouteConfig,
   verifyEmailRouteConfig,
 } from './routes';
+import { slugFromEmail } from './oauth-helpers';
 
 const app = new CustomHono();
 
@@ -52,7 +53,7 @@ const authRoutes = app
     const hashedPassword = await new Argon2id().hash(password);
     const userId = nanoid();
 
-    const [slug] = email.split('@');
+    const slug = slugFromEmail(email);
 
     const slugExists = await checkSlugExists(slug);
 
@@ -364,7 +365,7 @@ const authRoutes = app
       const hashedPassword = password ? await new Argon2id().hash(password) : undefined;
       const userId = nanoid();
 
-      const [slug] = token.email.split('@');
+      const slug = slugFromEmail(token.email);
 
       const slugExists = await checkSlugExists(slug);
 

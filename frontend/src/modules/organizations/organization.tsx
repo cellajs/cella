@@ -7,6 +7,7 @@ import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/router/routeTree';
 import type { Organization } from '~/types';
 import JoinLeaveButton from '../common/join-leave-button';
+import { FocusViewContainer } from '../common/focus-view';
 
 interface OrganizationContextValue {
   organization: Organization;
@@ -46,9 +47,9 @@ const OrganizationPage = () => {
         }
       />
       <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
-      <div className="container min-h-screen mt-4">
+      <FocusViewContainer className="container min-h-screen mt-4">
         <Outlet />
-      </div>
+      </FocusViewContainer>
     </OrganizationContext.Provider>
   );
 };
