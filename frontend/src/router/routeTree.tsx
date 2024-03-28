@@ -278,7 +278,7 @@ export const organizationMembersRoute = createRoute({
   beforeLoad: () => ({ getTitle: () => 'Members' }),
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
-    const membersInfiniteQueryOptions = membersQueryOptions({ organizationIdentifier, q, sort, order, role });
+    const membersInfiniteQueryOptions = membersQueryOptions(organizationIdentifier, { q, sort, order, role });
     const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
     if (!cachedMembers) {
       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);

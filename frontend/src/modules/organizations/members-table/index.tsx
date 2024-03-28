@@ -4,7 +4,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Member } from '~/types';
 
-import { getMembersByOrganizationIdentifier, updateUserInOrganization } from '~/api/organizations';
+import { type GetMembersParams, getMembersByOrganizationIdentifier, updateUserInOrganization } from '~/api/organizations';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
@@ -21,19 +21,7 @@ import Toolbar from './toolbar';
 
 export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
-export const membersQueryOptions = ({
-  organizationIdentifier,
-  q,
-  sort: initialSort,
-  order: initialOrder,
-  role,
-}: {
-  organizationIdentifier: string;
-  q?: string;
-  sort?: MembersSearch['sort'];
-  order?: MembersSearch['order'];
-  role?: MembersSearch['role'];
-}) => {
+export const membersQueryOptions = (organizationIdentifier: string, { q, sort: initialSort, order: initialOrder, role }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -130,8 +118,7 @@ const MembersTable = () => {
   ]);
 
   const queryResult = useInfiniteQuery(
-    membersQueryOptions({
-      organizationIdentifier: organization.slug,
+    membersQueryOptions(organization.slug, {
       q: query,
       sort: sortColumns[0]?.columnKey as MembersSearch['sort'],
       order: sortColumns[0]?.direction.toLowerCase() as MembersSearch['order'],
