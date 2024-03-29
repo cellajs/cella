@@ -19,6 +19,8 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 
+const LIMIT = 40;
+
 export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
 export const membersQueryOptions = (organizationIdentifier: string, { q, sort: initialSort, order: initialOrder, role }: GetMembersParams) => {
@@ -37,6 +39,7 @@ export const membersQueryOptions = (organizationIdentifier: string, { q, sort: i
           sort,
           order,
           role,
+          limit: LIMIT,
         },
         signal,
       );
@@ -63,6 +66,7 @@ export const useUpdateUserInOrganizationMutation = (organizationIdentifier: stri
     gcTime: 1000 * 10,
   });
 };
+
 
 const MembersTable = () => {
   const { t } = useTranslation();
@@ -123,6 +127,7 @@ const MembersTable = () => {
       sort: sortColumns[0]?.columnKey as MembersSearch['sort'],
       order: sortColumns[0]?.direction.toLowerCase() as MembersSearch['order'],
       role,
+      limit: LIMIT,
     }),
   );
 
@@ -187,6 +192,7 @@ const MembersTable = () => {
           isFetching: queryResult.isFetching,
           fetchMore: queryResult.fetchNextPage,
           overflowNoRows: true,
+          limit: LIMIT,
           isFiltered,
           selectedRows,
           onRowsChange,

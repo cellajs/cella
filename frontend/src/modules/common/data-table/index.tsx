@@ -2,14 +2,14 @@ import 'react-data-grid/lib/styles.css';
 
 import { Loader2, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import DataGrid, { type CellClickArgs, type CellMouseEvent, Row, type RowsChangeData, type SortColumn } from 'react-data-grid';
+import DataGrid, { type CellClickArgs, type CellMouseEvent, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 
 import { useRef } from 'react';
-import { useOnScreen } from '~/hooks/use-on-screen';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
+import { useInView } from 'react-intersection-observer';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -19,6 +19,7 @@ interface DataTableProps<TData> {
   error?: Error | null;
   isLoading?: boolean;
   isFetching?: boolean;
+  limit: number;
   isFiltered?: boolean;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
@@ -76,6 +77,7 @@ export const DataTable = <TData,>({
   rowKeyGetter,
   error,
   isLoading,
+  limit,
   isFetching,
   NoRowsComponent,
   isFiltered,
@@ -89,20 +91,24 @@ export const DataTable = <TData,>({
   fetchMore,
   onCellClick,
 }: DataTableProps<TData>) => {
-  const { measureRef, isIntersecting, observer } = useOnScreen({ firstChild: true });
+  
   const { t } = useTranslation();
-
   const [initial, setInitial] = useState(false);
+  const { ref: measureRef, inView } = useInView({
+    triggerOnce: false,
+    threshold: 0,
+  });
 
   useEffect(() => {
-    if (isIntersecting && !isFetching) {
+    if (!rows.length) return 
+
+    if (inView && !isFetching) {
       if (typeof totalCount === 'number' && rows.length >= totalCount) {
-        return;
+        return
       }
       fetchMore?.();
-      observer?.disconnect();
     }
-  }, [isIntersecting, fetchMore]);
+  }, [inView, fetchMore]);
 
   useEffect(() => {
     if (error || !isLoading) {
@@ -133,11 +139,6 @@ export const DataTable = <TData,>({
               sortColumns={sortColumns}
               onSortColumnsChange={onSortColumnsChange}
               renderers={{
-                renderRow: (key, props) => {
-                  // 50 because loading 50 records
-                  const isTargetRow = props.rowIdx === Math.floor(rows.length - 1 - 50 * 0.2);
-                  return <Row {...props} key={key} ref={isTargetRow ? measureRef : undefined} />;
-                },
                 renderCheckbox: ({ onChange, ...props }) => {
                   const withShift = useRef(false);
 
@@ -159,12 +160,19 @@ export const DataTable = <TData,>({
                 },
               }}
             />
+
+            {/* Infinite loading measure ref */}
+            <div ref={measureRef} className="h-0 w-0 relative z-[200]" style={{marginTop: -Number(rowHeight || 40) * limit * (rows.length < 60 ? .5 : 1)}} />
+
+            {/* Loading */}
             {isFetching && !error && (
-              <div className="flex justify-center items-center">
+              <div className="flex justify-center mt-4 items-center">
                 <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             )}
-            {error && <div className=" text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}
+
+            {/* Error */}
+            {error && <div className="text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}
           </div>
         ))}
     </div>

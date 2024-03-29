@@ -26,7 +26,7 @@ export type GetUsersParams = Partial<
 >;
 
 // Get a list of users in the system
-export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50, role }: GetUsersParams = {}, signal?: AbortSignal) => {
+export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 2, role }: GetUsersParams = {}, signal?: AbortSignal) => {
   const response = await client.users.$get(
     {
       query: {

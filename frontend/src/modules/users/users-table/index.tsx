@@ -23,6 +23,8 @@ export type UserRow = User & { type: 'MASTER' | 'DETAIL'; expanded?: boolean; pa
 
 export type UsersSearch = z.infer<typeof getUsersQuerySchema>;
 
+const LIMIT = 40;
+
 const UsersTable = () => {
   const search = useSearch({ from: UsersTableRoute.id });
   const { t } = useTranslation();
@@ -63,6 +65,7 @@ const UsersTable = () => {
           sort: sortColumns[0]?.columnKey as UsersSearch['sort'],
           order: sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
           role,
+          limit: LIMIT,
         },
         signal,
       );
@@ -72,7 +75,6 @@ const UsersTable = () => {
     getNextPageParam: (_lastGroup, groups) => groups.length,
     refetchOnWindowFocus: false,
   });
-
   const [columns, setColumns] = useColumns(callback);
 
   const isFiltered = role !== undefined || !!query;
@@ -137,6 +139,7 @@ const UsersTable = () => {
           enableVirtualization: false,
           onRowsChange,
           rows,
+          limit: LIMIT,
           totalCount: queryResult.data?.pages[0].total,
           rowKeyGetter: (row) => row.id,
           error: queryResult.error,

@@ -20,6 +20,8 @@ import { Bird } from 'lucide-react';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
+const LIMIT = 40;
+
 const OrganizationsTable = () => {
   const search = useSearch({
     from: OrganizationsTableRoute.id,
@@ -59,6 +61,7 @@ const OrganizationsTable = () => {
           q: query,
           sort: sortColumns[0]?.columnKey as OrganizationsSearch['sort'],
           order: sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'],
+          limit: LIMIT,
         },
         signal,
       );
@@ -132,6 +135,7 @@ const OrganizationsTable = () => {
           isFetching: queryResult.isFetching,
           enableVirtualization: false,
           isFiltered,
+          limit: LIMIT,
           selectedRows,
           onRowsChange,
           fetchMore: queryResult.fetchNextPage,
