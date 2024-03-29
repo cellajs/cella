@@ -22,7 +22,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   };
 
   return (
-    <Button variant="outline" className={cn('flex max-xs:hidden', className)} onClick={toggleFocus}>
+    <Button variant="outline" className={cn('flex max-lg:hidden', className)} onClick={toggleFocus}>
       {focusView ? <Shrink size={16} /> : <Expand size={16} />}
       {!iconOnly && <span className="ml-1">{focusView ? t('common:leave_focus_view') : t('common:focus_view')}</span>}
     </Button>

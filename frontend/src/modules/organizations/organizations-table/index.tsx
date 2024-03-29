@@ -16,6 +16,7 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { Bird } from 'lucide-react';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -137,6 +138,12 @@ const OrganizationsTable = () => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
+          NoRowsComponent: (
+            <>
+              <Bird strokeWidth={1} className="w-20 h-20" />
+              <div className="mt-6 text-sm font-light">{t('common:no_organizations')}</div>
+            </>
+          ),
         }}
       />
     </div>

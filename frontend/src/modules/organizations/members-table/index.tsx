@@ -195,10 +195,10 @@ const MembersTable = () => {
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: (
             <>
-              <Bird className="w-20 h-20" />
+              <Bird strokeWidth={1} className="w-20 h-20" />
               <div className="mt-6 text-sm font-light">{t('common:no_members')}</div>
             </>
-          ),
+          )
         }}
       />
     </div>
