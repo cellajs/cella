@@ -104,7 +104,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
       {renderDeviceMockup(inView)}
 
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="min-w-full h-svh border-0 p-4 rounded-none flex flex-col ">
+        <DialogContent className="min-w-full h-svh border-0 p-0 pt-4 rounded-none flex flex-col mt-0 ">
           <DialogHeader>
             <DialogTitle className="text-center font-semibold text-lg">{t('common:view_screenshot')}</DialogTitle>
           </DialogHeader>

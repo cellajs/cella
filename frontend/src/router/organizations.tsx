@@ -1,13 +1,16 @@
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
-import MembersTable, { membersQueryOptions } from '~/modules/organizations/members-table';
+import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import Projects from '~/modules/projects';
 import { IndexRoute } from './routeTree';
+
+// Lazy-loaded route components
+const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
 const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
@@ -42,7 +45,11 @@ export const organizationMembersRoute = createRoute({
       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
     }
   },
-  component: () => <MembersTable />,
+  component: () => (
+    <Suspense>
+      <MembersTable />
+    </Suspense>
+  ),
 });
 
 // INFO: This is a proof of concept development
