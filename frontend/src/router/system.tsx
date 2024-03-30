@@ -3,10 +3,13 @@ import type { ErrorType } from 'backend/lib/errors';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersQuerySchema } from 'backend/modules/users/schema';
 import ErrorNotice from '~/modules/common/error-notice';
-import OrganizationsTable from '~/modules/organizations/organizations-table';
 import SystemPanel from '~/modules/system/system-panel';
 import UsersTable from '~/modules/users/users-table';
 import { IndexRoute } from './routeTree';
+import { Suspense, lazy } from 'react';
+
+// Define your lazy-loaded route
+const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
 
 const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
@@ -36,6 +39,10 @@ export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
   beforeLoad: () => ({ getTitle: () => 'Organizations' }),
   getParentRoute: () => SystemPanelRoute,
-  component: () => <OrganizationsTable />,
+  component: () => (
+    <Suspense>
+      <OrganizationsTable />
+    </Suspense>
+  ),
   validateSearch: organizationsSearchSchema,
 });

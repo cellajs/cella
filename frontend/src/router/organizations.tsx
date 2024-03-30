@@ -15,8 +15,7 @@ export const OrganizationRoute = createRoute({
   path: '$organizationIdentifier',
   getParentRoute: () => IndexRoute,
   validateSearch: membersSearchSchema,
-  beforeLoad: ({ params, context }) => {
-    console.log('OrganizationRoute', params, context.queryClient);
+  beforeLoad: ({ params }) => {
     return { getTitle: () => params.organizationIdentifier };
   },
   loader: async ({ context: { queryClient }, params: { organizationIdentifier } }) => {
