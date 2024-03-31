@@ -43,7 +43,7 @@ const InputFormField = ({
         <FormControl>
           <div className="relative">
             {type === 'textarea' ? (
-              <Textarea placeholder={placeholder} defaultValue={defaultValue} value={value || formFieldValue || ''} disabled={disabled} {...rest} />
+              <Textarea placeholder={placeholder} autoResize={true} defaultValue={defaultValue} value={value || formFieldValue || ''} disabled={disabled} {...rest} />
             ) : (
               <Input
                 type={type}
