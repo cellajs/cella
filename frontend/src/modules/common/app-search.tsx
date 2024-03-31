@@ -46,15 +46,9 @@ export const AppSearch = () => {
     dialog.remove(false);
   };
 
-  // TODO: UI improvements:
-  // - Add loading spinner
-  // - Add error handling
-  // - height of suggestions should correspond to the height of the screen
-  // - scroll to top when new suggestions are loaded
-  // - use scrollarea
-  // - sticky group type header
+  // TODO: UI improvements
   return (
-    <Command className="rounded-lg border shadow-md" shouldFilter={false}>
+    <Command className="rounded-lg border" shouldFilter={false}>
       <CommandInput
         placeholder={t('common:placeholder.search')}
         onValueChange={(value) => {
@@ -88,7 +82,7 @@ export const AppSearch = () => {
             ))}
           </CommandGroup>
         )}
-        <CommandSeparator />
+        {organizationSuggestions.length > 0 && userSuggestions.length > 0 && <CommandSeparator />}
         {organizationSuggestions.length > 0 && (
           <CommandGroup heading={t('common:organization.plural')}>
             {organizationSuggestions.map((suggestion) => (

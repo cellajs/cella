@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { cn } from '~/lib/utils';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
+import { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { Dialog, DialogContent, DialogHeader } from '~/modules/ui/dialog';
 import { useThemeStore } from '~/store/theme';
 
@@ -36,7 +36,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
       <Carousel
         opts={{ duration: 20, loop: true, startIndex: slide }}
         plugins={inDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]}
-        className="w-full h-full"
+        className="w-full h-full group"
       >
         <CarouselContent className="h-full">
           {slides?.map((slide, idx) => (
@@ -47,8 +47,9 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
+        <CarouselPrevious className="left-4 lg:left-8 opacity-50 transition-opacity group-hover:opacity-100" />
+        <CarouselNext className="right-4 lg:right-8 opacity-50 transition-opacity group-hover:opacity-100" />
+       {!inDialog && <CarouselDots className="relative mt-[calc(20px+2%)]" />}
       </Carousel>
     );
   };

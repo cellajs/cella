@@ -1,21 +1,30 @@
-import * as React from 'react';
+'use client'
 
-import { cn } from '~/lib/utils';
+import * as React from "react"
 
-export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+import { cn } from "~/lib/utils"
+import { useAutoResize } from "~/hooks/use-auto-resize"
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, ...props }, ref) => {
-  return (
-    <textarea
-      className={cn(
-        'border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  );
-});
-Textarea.displayName = 'Textarea';
+export interface TextareaProps
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> { autoResize?: boolean }
 
-export { Textarea };
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, autoResize = false, ...props }, ref) => {
+    const { areaRef } = useAutoResize(ref, autoResize)
+
+    return (
+      <textarea
+        className={cn(
+          "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={areaRef}
+        {...props}
+      />
+    )
+  }
+)
+
+Textarea.displayName = "Textarea"
+
+export { Textarea }

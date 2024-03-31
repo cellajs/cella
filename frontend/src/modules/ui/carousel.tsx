@@ -1,6 +1,7 @@
+import * as React from 'react';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import * as React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
@@ -50,14 +51,14 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
     const [canScrollPrev, setCanScrollPrev] = React.useState(false);
     const [canScrollNext, setCanScrollNext] = React.useState(false);
 
-    const onSelect = (api: CarouselApi) => {
+    const onSelect = React.useCallback((api: CarouselApi) => {
       if (!api) {
         return;
       }
 
       setCanScrollPrev(api.canScrollPrev());
       setCanScrollNext(api.canScrollNext());
-    };
+    }, []);
 
     const scrollPrev = React.useCallback(() => {
       api?.scrollPrev();
@@ -168,7 +169,7 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
         size={size}
         className={cn(
           'absolute  h-8 w-8 rounded-full',
-          orientation === 'horizontal' ? 'left-8 top-1/2 -translate-y-1/2' : '-top-12 left-1/2 -translate-x-1/2 rotate-90',
+          orientation === 'horizontal' ? '-left-12 top-1/2 -translate-y-1/2' : '-top-12 left-1/2 -translate-x-1/2 rotate-90',
           className,
         )}
         disabled={!canScrollPrev}
@@ -194,7 +195,7 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
         size={size}
         className={cn(
           'absolute h-8 w-8 rounded-full',
-          orientation === 'horizontal' ? 'right-8 top-1/2 -translate-y-1/2' : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
+          orientation === 'horizontal' ? '-right-12 top-1/2 -translate-y-1/2' : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
           className,
         )}
         disabled={!canScrollNext}
@@ -209,4 +210,61 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
 );
 CarouselNext.displayName = 'CarouselNext';
 
-export { type CarouselApi, Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext };
+const dotsVariants = cva('rounded-full transition-all duration-300', {
+  variants: {
+    size: {
+      default: 'h-2.5 w-2.5',
+      sm: 'h-2 w-2',
+      lg: 'h-3.5 w-3.5',
+    },
+    gap: {
+      default: 'mx-0.5',
+      sm: 'mx-[1px]',
+      lg: 'mx-1',
+    },
+  },
+  defaultVariants: {
+    size: 'default',
+    gap: 'default',
+  },
+});
+
+interface CarouselDotsProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof dotsVariants> {}
+
+const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ className, size, gap, ...props }, ref) => {
+  const { api } = useCarousel();
+  const [current, setCurrent] = React.useState(0);
+  const length = api?.scrollSnapList().length ?? 1;
+
+  React.useEffect(() => {
+    if (!api) return;
+    setCurrent(api.selectedScrollSnap());
+    api.on('select', () => setCurrent(api.selectedScrollSnap()));
+
+    return () => {
+      api?.off('select', () => setCurrent(api.selectedScrollSnap()));
+    };
+  }, [api]);
+
+  return (
+    <div ref={ref} role="tablist" className={cn('my-2 flex justify-center', className)} {...props}>
+      {Array.from({ length }).map((_, index) => (
+        <button
+          type="button"
+          key={`dot-${
+            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+            index
+          }`}
+          role="tab"
+          aria-selected={current === index ? 'true' : 'false'}
+          aria-label={`Slide ${index + 1}`}
+          onClick={() => api?.scrollTo(index)}
+          className={cn(dotsVariants({ size, gap, className }), current === index ? 'bg-muted-foreground' : 'bg-muted-foreground/40')}
+        />
+      ))}
+    </div>
+  );
+});
+CarouselDots.displayName = 'CarouselDots';
+
+export { type CarouselApi, Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, CarouselDots };

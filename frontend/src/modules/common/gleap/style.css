@@ -1,3 +1,7 @@
+.bb-feedback-button {
+  z-index: 20 !important;
+}
+
 .bb-feedback-button > .bb-feedback-button-icon {
   background-color: hsl(var(--secondary));
 }

@@ -1,6 +1,6 @@
 import type { AvatarProps } from '@radix-ui/react-avatar';
 import { memo, useMemo } from 'react';
-import { getColorClass } from '~/lib/utils';
+import { cn, getColorClass } from '~/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 
 export interface AvatarWrapProps extends AvatarProps {
@@ -15,11 +15,11 @@ const AvatarWrap = memo(({ type, id, name, url, className, ...props }: AvatarWra
   const avatarBackground = useMemo(() => getColorClass(id), [id]);
 
   return (
-    <Avatar {...props} className={`${type === 'user' ? 'rounded-full' : 'rounded-md'} ${className}`}>
+    <Avatar {...props} className={className}>
       {url ? (
-        <AvatarImage src={`${url}?width=100&format=avif`} />
+        <AvatarImage src={`${url}?width=100&format=avif`} className={type === 'user' ? 'rounded-full' : 'rounded-md'} />
       ) : (
-        <AvatarFallback className={avatarBackground}>
+        <AvatarFallback className={cn(avatarBackground, type === 'user' ? 'rounded-full' : 'rounded-md')}>
           <span className="sr-only">{name}</span>
           <div className={'text-black/50 flex h-full items-center justify-center'}>{name?.charAt(0).toUpperCase() || '-'}</div>
         </AvatarFallback>

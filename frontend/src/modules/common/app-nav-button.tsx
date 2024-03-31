@@ -32,7 +32,7 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
           {navItem.id === 'account' ? (
             <AvatarWrap
               type="user"
-              className="border-[1.5px] border-primary group-hover:scale-110 transition-transform text-primary-foreground"
+              className="border-[1.5px] rounded-full border-primary group-hover:scale-110 transition-transform text-primary-foreground"
               id={user.id}
               name={user.name}
               url={user.thumbnailUrl}

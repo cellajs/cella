@@ -19,10 +19,10 @@ export const SheetMenuItem = ({ item, menutItemClick }: SheetMenuItemProps) => {
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
       <AvatarWrap className="m-2" type="organization" id={item.id} name={item.name} url={item.thumbnailUrl} />
-      <div className="truncate p-2 pl-0 text-left">
-        <div className="truncate leading-5">{item.name}</div>
+      <div className="truncate p-2 pl-0 flex flex-col justify-center text-left">
+        <div className="max-sm:pt-2 truncate leading-5">{item.name}</div>
         {item.userRole && (
-          <div className="text-muted-foreground text-sm font-light opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-100">
+          <div className="max-sm:hidden text-muted-foreground text-sm font-light opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-100">
             {UserRole[item.userRole]}
           </div>
         )}

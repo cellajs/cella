@@ -127,7 +127,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       <ScrollArea>
         <CardContent className="flex flex-grow flex-col p-0">
           <Button
-            variant="plain"
+            variant="secondary"
             size="sm"
             className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-success text-sm -mt-[1px]"
           >
@@ -140,7 +140,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
             ))}
           </SortableContext>
           <Button
-            variant="plain"
+            variant="secondary"
             size="sm"
             className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-600 text-sm -mt-[1px]"
           >
