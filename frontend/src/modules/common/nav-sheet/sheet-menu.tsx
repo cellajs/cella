@@ -10,6 +10,7 @@ import CreateOrganizationForm from '../../organizations/create-organization-form
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
+import { useSSE } from '../sse/useSSE';
 
 export type SectionItem = {
   id: string;
@@ -35,6 +36,17 @@ export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
   const isSmallScreen = useBreakpoints('max', 'md');
+
+  useSSE('new_membership', (e) => {
+    try {
+      const organization = JSON.parse(e.data);
+      useNavigationStore.setState((state) => {
+        state.menu.organizations.active = [organization, ...state.menu.organizations.active];
+      });
+    } catch (error) {
+      console.error('Error parsing new_membership event', error);
+    }
+  });
 
   const { keepMenuOpen, toggleKeepMenu, setSheet } = useNavigationStore();
 
