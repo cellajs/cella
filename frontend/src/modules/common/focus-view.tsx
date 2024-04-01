@@ -7,7 +7,7 @@ import { useRouteChange } from '~/hooks/use-route-change';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { TooltipButton } from './tooltip-button';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 
 interface FocusViewProps {
   className?: string;
