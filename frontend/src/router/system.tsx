@@ -2,10 +2,10 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersQuerySchema } from 'backend/modules/users/schema';
+import { Suspense, lazy } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPanel from '~/modules/system/system-panel';
 import { IndexRoute } from './routeTree';
-import { Suspense, lazy } from 'react';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));

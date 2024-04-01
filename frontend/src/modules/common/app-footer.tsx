@@ -1,11 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { cn } from '~/lib/utils';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import Logo from '~/modules/common/logo';
 import ThemeDropdown from '~/modules/common/theme-dropdown';
 import { dialog } from './dialoger/state';
 import LanguageDropdown from './language-dropdown';
-import { cn } from '~/lib/utils';
 
 export interface FooterLinkProps {
   id: string;

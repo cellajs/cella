@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getOrganizations, updateUserInOrganization } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
+import { Bird } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -16,7 +17,6 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { Bird } from 'lucide-react';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
