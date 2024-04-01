@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useRouteChange } from '~/hooks/use-route-change';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
+import {Tooltip, TooltipTrigger, TooltipContent} from "~/modules/ui/tooltip"
 import { useNavigationStore } from '~/store/navigation';
 
 interface FocusViewProps {
@@ -22,10 +23,44 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   };
 
   return (
-    <Button variant="outline" className={cn('flex max-lg:hidden', className)} onClick={toggleFocus}>
-      {focusView ? <Shrink size={16} /> : <Expand size={16} />}
-      {!iconOnly && <span className="ml-1">{focusView ? t('common:leave_focus_view') : t('common:focus_view')}</span>}
-    </Button>
+    <>
+      {iconOnly ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant='outline'
+              className={cn('flex max-lg:hidden', className)}
+              onClick={toggleFocus}>
+              {focusView ? <Shrink size={16} /> : <Expand size={16} />}
+              {!iconOnly && (
+                <span className='ml-1'>
+                  {focusView
+                    ? t('common:leave_focus_view')
+                    : t('common:focus_view')}
+                </span>
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side='bottom'>
+            Focus view
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <Button
+          variant='outline'
+          className={cn('flex max-lg:hidden', className)}
+          onClick={toggleFocus}>
+          {focusView ? <Shrink size={16} /> : <Expand size={16} />}
+          {!iconOnly && (
+            <span className='ml-1'>
+              {focusView
+                ? t('common:leave_focus_view')
+                : t('common:focus_view')}
+            </span>
+          )}
+        </Button>
+      )}
+    </>
   );
 };
 
