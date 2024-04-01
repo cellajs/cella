@@ -7,6 +7,7 @@ import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
+import { useNavigationStore } from '~/store/navigation';
 
 // Lazy load Tanstack dev tools in development
 const TanStackRouterDevtools =
@@ -41,6 +42,31 @@ function Root() {
       return titles;
     });
   }, [matches]);
+
+  useEffect(() => {
+    // First, we need to create an instance of EventSource and pass the data stream URL as a
+    // parameter in its constructor
+    const es = new EventSource(`${config.backendUrl}/sse`, {
+      withCredentials: true,
+    });
+    // Whenever the connection is established between the server and the client we'll get notified
+    es.onopen = () => console.log('>>> Connection opened!');
+    // Made a mistake, or something bad happened on the server? We get notified here
+    es.onerror = (e) => console.log('ERROR!', e);
+
+    es.addEventListener('new_membership', (e) => {
+      try {
+        const organization = JSON.parse(e.data);
+        useNavigationStore.setState((state) => {
+          state.menu.organizations.active = [...state.menu.organizations.active, organization];
+        });
+      } catch (error) {
+        console.error('Error parsing new_membership event', error);
+      }
+    });
+    // Whenever we're done with the data stream we must close the connection
+    return () => es.close();
+  }, []);
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={500} skipDelayDuration={0}>

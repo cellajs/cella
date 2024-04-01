@@ -22,6 +22,7 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
+import { streams } from '../general';
 
 const app = new CustomHono();
 
@@ -74,14 +75,26 @@ const organizationsRoutes = app
 
     logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
 
+    const userStream = streams.get(user.id);
+
+    if (userStream) {
+      userStream.writeSSE({
+        event: 'new_membership',
+        data: JSON.stringify({
+          ...createdOrganization,
+          userRole: 'ADMIN',
+        }),
+      });
+    }
+
     return ctx.json({
       success: true,
       data: {
         ...createdOrganization,
-        userRole: null,
+        userRole: 'ADMIN' as const,
         counts: {
-          admins: 0,
-          members: 0,
+          admins: 1,
+          members: 1,
         },
       },
     });

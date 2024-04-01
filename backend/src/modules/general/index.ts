@@ -8,7 +8,7 @@ import { env } from 'env';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
-// import { streamSSE } from 'hono/streaming';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 import { db } from '../../db/db';
 
@@ -31,11 +31,13 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-// import { nanoid } from '../../lib/nanoid';
+import auth from '../../middlewares/guard/auth';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
 const app = new CustomHono();
+
+export const streams = new Map<string, SSEStreamingApi>();
 
 // * General endpoints
 const generalRoutes = app
@@ -305,28 +307,22 @@ const generalRoutes = app
       data: result,
     });
   })
-  // .get('/sse', async (c) => {
-  //   return streamSSE(
-  //     c,
-  //     async (stream) => {
-  //       while (true) {
-  //         const message = `It is ${new Date().toISOString()}`;
-  //         console.log('Sending message', message);
-  //         await stream.writeSSE({
-  //           data: message,
-  //           event: 'time-update',
-  //           id: nanoid(),
-            
-  //         });
-  //         await stream.sleep(1000);
-  //       }
-  //     },
-  //     async (err, stream) => {
-  //       stream.writeln('An error occurred!');
-  //       console.error(err);
-  //     },
-  //   );
-  // });
+  .get('/sse', auth(), async (ctx) => {
+    const user = ctx.get('user');
+    return streamSSE(ctx, async (stream) => {
+      streams.set(user.id, stream);
+      console.log('User connected to SSE', user.id);
+      stream.writeSSE({
+        event: 'connected',
+        data: 'connected',
+      });
+
+      stream.onAbort(() => {
+        console.log('User disconnected from SSE', user.id);
+        streams.delete(user.id);
+      });
+    });
+  });
 
 export default generalRoutes;
 

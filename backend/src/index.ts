@@ -26,7 +26,7 @@ const main = async () => {
       port: Number(env.PORT ?? '4000'),
     },
     (info) => {
-      console.info(`Listening on http://${info.address}${info.port}`);
+      console.info(`Listening on http://${info.address}:${info.port}`);
       ascii();
     },
   );

@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Bell, Home, type LucideProps, Menu, Search, User } from 'lucide-react';
 import type React from 'react';
-import { Fragment, useEffect } from 'react';
+import { Fragment } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import { useTranslation } from 'react-i18next';
@@ -17,7 +17,6 @@ import { SheetNotifications } from './nav-sheet/sheet-notifications';
 import useAppState from '~/hooks/use-app-state';
 import { NavButton } from './app-nav-button';
 import { AppSearch } from './app-search';
-import { config } from 'config';
 
 export type NavItem = {
   id: string;
@@ -69,24 +68,6 @@ const AppNav = () => {
       setSheet(isNew ? navItem : null);
     }
   };
-
-  useEffect(() => {
-    // First, we need to create an instance of EventSource and pass the data stream URL as a
-    // parameter in its constructor
-    const es = new EventSource(`${config.backendUrl}/sse`, {
-      withCredentials: true,
-    });
-    // Whenever the connection is established between the server and the client we'll get notified
-    es.onopen = () => console.log('>>> Connection opened!');
-    // Made a mistake, or something bad happened on the server? We get notified here
-    es.onerror = (e) => console.log('ERROR!', e);
-    // This is where we get the messages. The event is an object and we're interested in its `data` property
-    es.onmessage = (e) => {
-      console.log('>>>', e.data);
-    };
-    // Whenever we're done with the data stream we must close the connection
-    return () => es.close();
-  }, []);
 
   return (
     <>

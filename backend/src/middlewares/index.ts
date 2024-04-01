@@ -1,6 +1,5 @@
 import { sentry } from '@hono/sentry';
 import { config } from 'config';
-import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
@@ -38,9 +37,6 @@ app.use(
     allowHeaders: [],
   }),
 );
-
-// Compress response
-app.use('*', compress());
 
 // CSRF protection
 app.use(
