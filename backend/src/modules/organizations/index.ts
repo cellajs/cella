@@ -10,7 +10,6 @@ import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { streams } from '../general';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import {
@@ -23,6 +22,7 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
+import { sendSSE } from '../../lib/sse';
 
 const app = new CustomHono();
 
@@ -78,17 +78,10 @@ const organizationsRoutes = app
       organization: createdOrganization.id,
     });
 
-    const userStream = streams.get(user.id);
-
-    if (userStream) {
-      userStream.writeSSE({
-        event: 'new_membership',
-        data: JSON.stringify({
-          ...createdOrganization,
-          userRole: 'ADMIN',
-        }),
-      });
-    }
+    sendSSE(user.id, 'new_membership', {
+      ...createdOrganization,
+      userRole: 'ADMIN',
+    });
 
     return ctx.json({
       success: true,
@@ -297,12 +290,22 @@ const organizationsRoutes = app
             role,
           })
           .returning();
+
+        sendSSE(targetUser.id, 'new_membership', {
+          ...organization,
+          userRole: role,
+        });
       } else {
         return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
           user: targetUser.id,
           organization: organization.id,
         });
       }
+    } else {
+      sendSSE(targetUser.id, 'update_membership', {
+        ...organization,
+        userRole: role,
+      });
     }
 
     const [{ memberships }] = await db
@@ -514,6 +517,8 @@ const organizationsRoutes = app
         }
 
         logEvent('Member deleted', { user: id, organization: organization.id });
+
+        sendSSE(id, 'remove_membership', organization);
       }),
     );
 

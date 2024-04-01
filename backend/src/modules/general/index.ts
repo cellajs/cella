@@ -32,6 +32,7 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
+import { sendSSE } from '../../lib/sse';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -147,6 +148,11 @@ const generalRoutes = app
                 and(eq(membershipsTable.organizationId, existingMembership.organizationId), eq(membershipsTable.userId, existingMembership.userId)),
               );
             logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
+
+            sendSSE(targetUser.id, 'update_membership', {
+              ...organization,
+              userRole: role,
+            });
           }
 
           continue;
@@ -165,6 +171,12 @@ const generalRoutes = app
             .returning();
 
           logEvent('User added to organization', { user: user.id, organization: organization.id });
+
+          sendSSE(user.id, 'new_membership', {
+            ...organization,
+            userRole: role || 'MEMBER',
+          });
+
           continue;
         }
       }
@@ -320,6 +332,7 @@ const generalRoutes = app
       stream.onAbort(() => {
         console.log('User disconnected from SSE', user.id);
         streams.delete(user.id);
+        stream.close();
       });
     });
   });

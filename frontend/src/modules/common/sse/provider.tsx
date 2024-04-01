@@ -1,18 +1,17 @@
-import { type FC, createContext, createElement, useState } from 'react';
+import { config } from 'config';
+import { type FC, createContext, createElement } from 'react';
 
 export const SSEContext = createContext<EventSource | null>(null);
 
 export const SSEConsumer = SSEContext.Consumer;
 
-type Props = React.PropsWithChildren<{ endpoint: string }>;
+type Props = React.PropsWithChildren;
 
-export const SSEProvider: FC<Props> = ({ children, ...props }) => {
-  const [source] = useState(
-    new EventSource(props.endpoint, {
-      withCredentials: true,
-    }),
-  );
+const source = new EventSource(`${config.backendUrl}/sse`, {
+  withCredentials: true,
+});
 
+export const SSEProvider: FC<Props> = ({ children }) => {
   return createElement(
     SSEContext.Provider,
     {

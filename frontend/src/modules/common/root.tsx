@@ -7,6 +7,7 @@ import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
+import { SSEProvider } from './sse/provider';
 
 // Lazy load Tanstack dev tools in development
 const TanStackRouterDevtools =
@@ -43,17 +44,19 @@ function Root() {
   }, [matches]);
 
   return (
-    <TooltipProvider disableHoverableContent delayDuration={500} skipDelayDuration={0}>
-      <ScrollRestoration />
-      <Outlet />
-      <Toaster richColors />
-      <Dialoger />
-      <Sheeter />
-      <ReloadPrompt />
-      <Suspense fallback={null}>
-        <TanStackRouterDevtools />
-      </Suspense>
-    </TooltipProvider>
+    <SSEProvider>
+      <TooltipProvider disableHoverableContent delayDuration={500} skipDelayDuration={0}>
+        <ScrollRestoration />
+        <Outlet />
+        <Toaster richColors />
+        <Dialoger />
+        <Sheeter />
+        <ReloadPrompt />
+        <Suspense fallback={null}>
+          <TanStackRouterDevtools />
+        </Suspense>
+      </TooltipProvider>
+    </SSEProvider>
   );
 }
 
