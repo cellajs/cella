@@ -284,7 +284,7 @@ const generalRoutes = app
         .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
         .limit(10);
 
-      result.push(...users);
+      result.push(...users.map((user) => ({ ...user, type: 'user' as const })));
     }
 
     if (type === 'organization' || !type) {
@@ -299,7 +299,7 @@ const generalRoutes = app
         .where(ilike(organizationsTable.name, `%${q}%`))
         .limit(10);
 
-      result.push(...organizations);
+      result.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as const })));
     }
 
     return ctx.json({
