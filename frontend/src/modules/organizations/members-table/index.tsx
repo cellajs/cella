@@ -67,7 +67,6 @@ export const useUpdateUserInOrganizationMutation = (organizationIdentifier: stri
   });
 };
 
-
 const MembersTable = () => {
   const { t } = useTranslation();
   const { organization } = useContext(OrganizationContext);
@@ -204,7 +203,7 @@ const MembersTable = () => {
               <Bird strokeWidth={1} className="w-20 h-20" />
               <div className="mt-6 text-sm font-light">{t('common:no_members')}</div>
             </>
-          )
+          ),
         }}
       />
     </div>

@@ -49,7 +49,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
         </CarouselContent>
         <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-100" />
         <CarouselNext className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-100" />
-       {!inDialog && <CarouselDots className="relative mt-[calc(20px+2%)]" />}
+        {!inDialog && <CarouselDots className="relative mt-[calc(20px+2%)]" />}
       </Carousel>
     );
   };

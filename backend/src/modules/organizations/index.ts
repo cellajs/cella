@@ -10,7 +10,8 @@ import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkSlugExists } from '../general/helpers/check-slug';
+import { streams } from '../general';
+import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import {
   createOrganizationRouteConfig,
@@ -22,7 +23,6 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
-import { streams } from '../general';
 
 const app = new CustomHono();
 
@@ -73,7 +73,10 @@ const organizationsRoutes = app
       })
       .returning();
 
-    logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
+    logEvent('User added to organization', {
+      user: user.id,
+      organization: createdOrganization.id,
+    });
 
     const userStream = streams.get(user.id);
 
@@ -197,7 +200,7 @@ const organizationsRoutes = app
     } = ctx.req.valid('json');
 
     if (slug) {
-      const slugExists = await checkSlugExists(slug);
+      const slugExists = await checkSlugAvailable(slug);
 
       if (slugExists && slug !== organization.slug) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
@@ -295,7 +298,10 @@ const organizationsRoutes = app
           })
           .returning();
       } else {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', { user: targetUser.id, organization: organization.id });
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
+          user: targetUser.id,
+          organization: organization.id,
+        });
       }
     }
 
@@ -306,7 +312,10 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
 
-    logEvent('User updated in organization', { user: targetUser.id, organization: organization.id });
+    logEvent('User updated in organization', {
+      user: targetUser.id,
+      organization: organization.id,
+    });
 
     return ctx.json({
       success: true,
@@ -335,11 +344,19 @@ const organizationsRoutes = app
         const [targetOrganization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, id));
 
         if (!targetOrganization) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
+          errors.push(
+            createError(ctx, 404, 'not_found', 'warn', 'organization', {
+              organization: id,
+            }),
+          );
         }
 
         if (user.role !== 'ADMIN') {
-          errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'organization', { organization: id }));
+          errors.push(
+            createError(ctx, 403, 'delete_forbidden', 'warn', 'organization', {
+              organization: id,
+            }),
+          );
         }
 
         await db.delete(organizationsTable).where(eq(organizationsTable.id, id));
@@ -490,7 +507,10 @@ const organizationsRoutes = app
           .returning();
 
         if (!targetMembership) {
-          return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', { user: id, organization: organization.id });
+          return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
+            user: id,
+            organization: organization.id,
+          });
         }
 
         logEvent('Member deleted', { user: id, organization: organization.id });

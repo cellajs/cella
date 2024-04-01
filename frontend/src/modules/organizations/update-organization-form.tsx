@@ -47,8 +47,8 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   const { mutate, isPending } = useUpdateOrganizationMutation(organization.id);
   const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
     mutationFn: baseCheckSlug,
-    onSuccess: (isExists) => {
-      if (isExists) {
+    onSuccess: (isAvailable) => {
+      if (isAvailable) {
         form.setError('slug', {
           type: 'manual',
           message: t('common:error.slug_exists'),

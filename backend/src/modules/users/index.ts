@@ -11,7 +11,7 @@ import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
-import { checkSlugExists } from '../general/helpers/check-slug';
+import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
 import { deleteUsersRouteConfig, getUserByIdOrSlugRouteConfig, getUserMenuConfig, getUsersConfig, meRouteConfig, updateUserConfig } from './routes';
 
@@ -130,7 +130,7 @@ const usersRoutes = app
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
 
     if (slug && slug !== targetUser.slug) {
-      const slugExists = await checkSlugExists(slug);
+      const slugExists = await checkSlugAvailable(slug);
 
       if (slugExists) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });

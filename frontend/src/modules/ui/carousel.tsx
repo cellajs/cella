@@ -1,7 +1,7 @@
-import * as React from 'react';
+import { type VariantProps, cva } from 'class-variance-authority';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';

@@ -5,10 +5,10 @@ import { InviteEmail } from '../../../../email/emails/invite';
 import { render } from '@react-email/render';
 import { config } from 'config';
 import { env } from 'env';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 import { db } from '../../db/db';
 
@@ -19,6 +19,7 @@ import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
+import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { membershipSchema } from '../organizations/schema';
@@ -31,7 +32,6 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import auth from '../../middlewares/guard/auth';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
