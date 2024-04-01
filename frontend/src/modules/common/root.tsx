@@ -58,7 +58,7 @@ function Root() {
       try {
         const organization = JSON.parse(e.data);
         useNavigationStore.setState((state) => {
-          state.menu.organizations.active = [...state.menu.organizations.active, organization];
+          state.menu.organizations.active = [organization, ...state.menu.organizations.active];
         });
       } catch (error) {
         console.error('Error parsing new_membership event', error);
