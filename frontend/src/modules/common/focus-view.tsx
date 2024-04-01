@@ -1,3 +1,4 @@
+import { TFunction } from 'i18next';
 import { Expand, Shrink } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -5,12 +6,18 @@ import { toast } from 'sonner';
 import { useRouteChange } from '~/hooks/use-route-change';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
-import {Tooltip, TooltipTrigger, TooltipContent} from "~/modules/ui/tooltip"
 import { useNavigationStore } from '~/store/navigation';
+import { TooltipButton } from './tooltip-button';
 
 interface FocusViewProps {
   className?: string;
   iconOnly?: boolean;
+}
+
+interface FocusViewButtonProps extends FocusViewProps {
+  focusView: boolean;
+  toggleFocus: () => void;
+  t: TFunction<'translation', undefined>;
 }
 
 export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
@@ -25,42 +32,47 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   return (
     <>
       {iconOnly ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant='outline'
-              className={cn('flex max-lg:hidden', className)}
-              onClick={toggleFocus}>
-              {focusView ? <Shrink size={16} /> : <Expand size={16} />}
-              {!iconOnly && (
-                <span className='ml-1'>
-                  {focusView
-                    ? t('common:leave_focus_view')
-                    : t('common:focus_view')}
-                </span>
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side='bottom'>
-            Focus view
-          </TooltipContent>
-        </Tooltip>
+        <TooltipButton toolTipContent="Focus view" >
+          <FocusViewButton
+            focusView={focusView}
+            iconOnly={iconOnly}
+            toggleFocus={toggleFocus}
+            t={t}
+            className={className}
+          />
+        </TooltipButton>
       ) : (
-        <Button
-          variant='outline'
-          className={cn('flex max-lg:hidden', className)}
-          onClick={toggleFocus}>
-          {focusView ? <Shrink size={16} /> : <Expand size={16} />}
-          {!iconOnly && (
-            <span className='ml-1'>
-              {focusView
-                ? t('common:leave_focus_view')
-                : t('common:focus_view')}
-            </span>
-          )}
-        </Button>
+        <FocusViewButton
+          focusView={focusView}
+          iconOnly={iconOnly}
+          toggleFocus={toggleFocus}
+          t={t}
+          className={className}
+        />
       )}
     </>
+  );
+};
+
+const FocusViewButton = ({
+  className,
+  focusView,
+  toggleFocus,
+  iconOnly,
+  t,
+}: FocusViewButtonProps) => {
+  return (
+    <Button
+      variant={"outline"}
+      className={cn('flex max-lg:hidden', className)}
+      onClick={toggleFocus}>
+      {focusView ? <Shrink size={16} /> : <Expand size={16} />}
+      {!iconOnly && (
+        <span className='ml-1'>
+          {focusView ? t('common:leave_focus_view') : t('common:focus_view')}
+        </span>
+      )}
+    </Button>
   );
 };
 
