@@ -4,7 +4,6 @@ import { updateOrganizationJsonSchema } from 'backend/modules/organizations/sche
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
-import { queryClient } from '~/router';
 import type { Organization } from '~/types';
 
 import { Loader2, Undo } from 'lucide-react';
@@ -39,7 +38,6 @@ export const useUpdateOrganizationMutation = (organizationIdentifier: string) =>
   return useMutation<Organization, DefaultError, UpdateOrganizationParams>({
     mutationKey: ['organizations', 'update', organizationIdentifier],
     mutationFn: (params) => updateOrganization(organizationIdentifier, params),
-    onSuccess: () => queryClient.invalidateQueries(),
     gcTime: 1000 * 10,
   });
 };
