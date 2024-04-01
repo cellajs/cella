@@ -34,6 +34,7 @@ export const useThemeStore = create<ThemeState>()(
           },
         }),
         {
+          version: 1,
           name: `${config.slug}-theme`,
           partialize: (state) => ({
             mode: state.mode,

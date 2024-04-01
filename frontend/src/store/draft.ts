@@ -36,7 +36,7 @@ export const useDraftStore = create<DraftState>()(
           return get().forms[key] as T | undefined;
         },
       }),
-      { name: `${config.slug}-draft`, storage: createJSONStorage(() => sessionStorage) },
+      { version: 1, name: `${config.slug}-drafts`, storage: createJSONStorage(() => sessionStorage) },
     ),
   ),
 );

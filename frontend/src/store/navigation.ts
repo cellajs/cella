@@ -65,6 +65,7 @@ export const useNavigationStore = create<NavigationState>()(
           },
         }),
         {
+          version: 1,
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
             keepMenuOpen: state.keepMenuOpen,

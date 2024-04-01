@@ -12,7 +12,7 @@ export default {
   tusUrl: 'http://localhost:1080',
 
   // Hide chat widget in development
-  gleapToken: undefined,
+  //gleapToken: undefined,
 
   // Webhooks with n8n
   newsletterWebhookUrl: 'https://cella.app.n8n.cloud/webhook-test/subscription?',

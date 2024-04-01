@@ -24,7 +24,7 @@ export const AppSearch = () => {
   const organizationSuggestions = data?.filter((suggestion) => !('email' in suggestion)) ?? [];
 
   const onSelectSuggestion = (suggestion: UserSuggestion | OrganizationSuggestion) => {
-    // TODO: use type
+    // TODO: use resource type
     if ('email' in suggestion) {
       navigate({
         to: '/user/$userIdentifier',
@@ -46,7 +46,6 @@ export const AppSearch = () => {
     dialog.remove(false);
   };
 
-  // TODO: UI improvements
   return (
     <Command className="rounded-lg border" shouldFilter={false}>
       <CommandInput

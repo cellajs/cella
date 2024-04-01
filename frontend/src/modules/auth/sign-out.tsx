@@ -6,7 +6,6 @@ import type { User } from '~/types';
 
 export const signOutUser = async () => {
   useUserStore.setState({ user: null as unknown as User });
-  if (window.Gleap) window.Gleap.clearIdentity();
   await signOut();
 };
 
