@@ -8,6 +8,7 @@ import { usersTable } from '../../db/schema/users';
 import { config } from 'config';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
+import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -22,7 +23,6 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
-import { sendSSE } from '../../lib/sse';
 
 const app = new CustomHono();
 

@@ -19,6 +19,7 @@ import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
+import { sendSSE } from '../../lib/sse';
 import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
@@ -32,7 +33,6 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import { sendSSE } from '../../lib/sse';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

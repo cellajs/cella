@@ -1,23 +1,18 @@
-import { TFunction } from 'i18next';
+import type { TFunction } from 'i18next';
 import { Expand, Shrink } from 'lucide-react';
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useRouteChange } from '~/hooks/use-route-change';
 import { cn } from '~/lib/utils';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { TooltipButton } from '~/modules/common/tooltip-button';
 
 interface FocusViewProps {
   className?: string;
   iconOnly?: boolean;
-}
-
-interface FocusViewButtonProps extends FocusViewProps {
-  focusView: boolean;
-  toggleFocus: () => void;
-  t: TFunction<'translation', undefined>;
 }
 
 export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
@@ -29,52 +24,34 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
     setFocusView(!focusView);
   };
 
+  // Render tooltip button if iconOnly is true
   return (
     <>
       {iconOnly ? (
-        <TooltipButton toolTipContent="Focus view" >
-          <FocusViewButton
-            focusView={focusView}
-            iconOnly={iconOnly}
-            toggleFocus={toggleFocus}
-            t={t}
-            className={className}
-          />
+        <TooltipButton toolTipContent="Focus view">
+          <FocusViewButton focusView={focusView} iconOnly={iconOnly} toggleFocus={toggleFocus} t={t} className={className} />
         </TooltipButton>
       ) : (
-        <FocusViewButton
-          focusView={focusView}
-          iconOnly={iconOnly}
-          toggleFocus={toggleFocus}
-          t={t}
-          className={className}
-        />
+        <FocusViewButton focusView={focusView} iconOnly={iconOnly} toggleFocus={toggleFocus} t={t} className={className} />
       )}
     </>
   );
 };
 
-const FocusViewButton = ({
-  className,
-  focusView,
-  toggleFocus,
-  iconOnly,
-  t,
-}: FocusViewButtonProps) => {
+interface FocusViewButtonProps extends FocusViewProps {
+  focusView: boolean;
+  toggleFocus: () => void;
+  t: TFunction<'translation', undefined>;
+}
+
+const FocusViewButton = React.forwardRef<HTMLButtonElement, FocusViewButtonProps>(({ focusView, iconOnly, toggleFocus, t, className }, ref) => {
   return (
-    <Button
-      variant={"outline"}
-      className={cn('flex max-lg:hidden', className)}
-      onClick={toggleFocus}>
+    <Button ref={ref} variant={'outline'} className={cn('flex max-lg:hidden', className)} onClick={toggleFocus}>
       {focusView ? <Shrink size={16} /> : <Expand size={16} />}
-      {!iconOnly && (
-        <span className='ml-1'>
-          {focusView ? t('common:leave_focus_view') : t('common:focus_view')}
-        </span>
-      )}
+      {!iconOnly && <span className="ml-1">{focusView ? t('common:leave_focus_view') : t('common:focus_view')}</span>}
     </Button>
   );
-};
+});
 
 export const FocusViewContainer = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
   const { focusView, setFocusView } = useNavigationStore();

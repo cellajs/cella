@@ -2,9 +2,9 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { AppContent } from '~/modules/common/app-content';
 
 import { Suspense, lazy } from 'react';
+import { useNavigationStore } from '~/store/navigation';
 import ErrorNotice from './error-notice';
 import { useSSE } from './sse/useSSE';
-import { useNavigationStore } from '~/store/navigation';
 
 // Lazy load App navigation
 const AppNav = lazy(() => import('~/modules/common/app-nav'));

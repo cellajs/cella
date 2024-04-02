@@ -1,9 +1,9 @@
-import { Input } from '~/modules/ui/input';
 import debounce from 'lodash.debounce';
-import type { ChangeEvent } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
+import type { ChangeEvent } from 'react';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Input } from '~/modules/ui/input';
 function TableSearch({ query, setQuery }: { query?: string; setQuery: (value?: string) => void }) {
   const { t } = useTranslation();
 
