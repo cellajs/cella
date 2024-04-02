@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "pnpm run preview",
-    "dev": "set NODE_ENV=development& vite --mode development",
+    "dev": "NODE_ENV=development vite --mode development",
     "build": "tsc && vite build",
     "check:types": "tsc",
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
