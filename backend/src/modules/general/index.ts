@@ -149,7 +149,7 @@ const generalRoutes = app
               );
             logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
 
-            sendSSE(targetUser.id, 'update_membership', {
+            sendSSE(targetUser.id, 'update_organization', {
               ...organization,
               userRole: role,
             });

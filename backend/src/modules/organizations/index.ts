@@ -231,6 +231,13 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
 
+    if (membership) {
+      sendSSE(user.id, 'update_organization', {
+        ...updatedOrganization,
+        userRole: membership.role,
+      });
+    }
+
     const [{ admins }] = await db
       .select({
         admins: count(),
@@ -302,7 +309,7 @@ const organizationsRoutes = app
         });
       }
     } else {
-      sendSSE(targetUser.id, 'update_membership', {
+      sendSSE(targetUser.id, 'update_organization', {
         ...organization,
         userRole: role,
       });
@@ -344,9 +351,16 @@ const organizationsRoutes = app
 
     await Promise.all(
       organizationIds.map(async (id) => {
-        const [targetOrganization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, id));
+        const [result] = await db
+          .select({
+            organization: organizationsTable,
+            userRole: membershipsTable.role,
+          })
+          .from(organizationsTable)
+          .leftJoin(membershipsTable, and(eq(membershipsTable.organizationId, organizationsTable.id), eq(membershipsTable.userId, user.id)))
+          .where(eq(organizationsTable.id, id));
 
-        if (!targetOrganization) {
+        if (!result) {
           errors.push(
             createError(ctx, 404, 'not_found', 'warn', 'organization', {
               organization: id,
@@ -363,6 +377,10 @@ const organizationsRoutes = app
         }
 
         await db.delete(organizationsTable).where(eq(organizationsTable.id, id));
+
+        if (result.userRole) {
+          sendSSE(user.id, 'remove_organization', result.organization);
+        }
 
         logEvent('Organization deleted', { organization: id });
       }),
