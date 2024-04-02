@@ -86,9 +86,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   const onSubmit = (values: FormValues) => {
     mutate(values, {
       onSuccess: (data) => {
-        form.reset(undefined, {
-          keepDirtyValues: true,
-        });
+        form.reset(data);
         callback?.(data);
         if (isDialog) {
           dialog.remove();

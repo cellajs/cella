@@ -98,7 +98,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           toast.success(t('common:success.updated_user'));
         }
 
-        form.reset();
+        form.reset(data);
         callback?.(data);
 
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
