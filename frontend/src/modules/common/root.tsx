@@ -8,6 +8,7 @@ import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { SSEProvider } from './sse/provider';
+import { DownAlert } from './down-alert';
 
 // Lazy load Tanstack dev tools in development
 const TanStackRouterDevtools =
@@ -45,7 +46,7 @@ function Root() {
 
   return (
     <SSEProvider>
-      <TooltipProvider disableHoverableContent delayDuration={500} skipDelayDuration={0}>
+      <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
         <ScrollRestoration />
         <Outlet />
         <Toaster richColors />
@@ -56,6 +57,7 @@ function Root() {
           <TanStackRouterDevtools />
         </Suspense>
       </TooltipProvider>
+      <DownAlert />
     </SSEProvider>
   );
 }
