@@ -70,8 +70,7 @@ export const config = {
   // Optional settings
   has: {
     pwaSupport: true,
-    signUp: true, // TODO: implement
-    waitlist: true, // TODO: implement
+    signUp: true,
   },
 
   // Languages
