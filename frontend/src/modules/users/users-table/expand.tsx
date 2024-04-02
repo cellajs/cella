@@ -1,51 +1,37 @@
+import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { getUserBySlugOrId as baseGetUserBySlugOrId } from '~/api/users';
-import { useMutation } from '~/hooks/use-mutations';
+import { useTranslation } from 'react-i18next';
+import { getUserBySlugOrId } from '~/api/users';
 import { dateShort } from '~/lib/utils';
 import type { User } from '~/types';
 
-// id, modified, modifiedBy
 const Expand = ({ row }: { row: User }) => {
-  const [modifier, setModifier] = useState<User | undefined>(undefined);
-
-  const { mutate: getUserBySlugOrId, isPending } = useMutation({
-    mutationFn: baseGetUserBySlugOrId,
-    onSuccess: (user) => {
-      setModifier(user);
-    },
+  const { t } = useTranslation();
+  
+  // Get modifiedBy user
+  const { data: modifier, isLoading } = useQuery({
+    queryKey: ['getUserBySlugOrId', row.modifiedBy],
+    queryFn: () => getUserBySlugOrId(row.modifiedBy ?? ''),
+    enabled: !!row.modifiedBy,
   });
-
-  useEffect(() => {
-    if (!row.modifiedBy) {
-      return;
-    }
-
-    getUserBySlugOrId(row.modifiedBy);
-  }, [row.modifiedBy]);
 
   return (
     <div className="leading-normal relative font-light flex flex-col gap-4 sm:flex-row sm:gap-12 p-2">
       <div className="grid gap-1 grid-cols-[auto_auto]">
         <div className="font-medium pr-4">ID</div>
         <div>{row.id}</div>
-        <div className="font-medium pr-4">Slug</div>
+        <div className="font-medium pr-4">Handle</div>
         <div>{row.slug}</div>
       </div>
 
       <div className="grid gap-1 grid-cols-[auto_auto]">
-        <div className="font-medium pr-4">Modified</div>
+        <div className="font-medium pr-4">{t('common:modified')}</div>
         <div>{dateShort(row.modifiedAt)}</div>
-        <div className="font-medium pr-4">Modified By</div>
-        {isPending ? (
-          <Loader2 className="animate-spin" size={16} />
-        ) : modifier ? (
-          <div>
-            {modifier.name} ({modifier.email})
-          </div>
-        ) : (
-          <div>Unknown</div>
-        )}
+        <div className="font-medium pr-4">{t('common:modified_by')}</div>
+        <div>
+          {isLoading && <Loader2 className="animate-spin" size={16} />}
+          {modifier ? `${modifier.name} (${modifier.email})` : row.modifiedAt ? t('common:unknown') : '-'}
+        </div>
       </div>
     </div>
   );
