@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { checkSlugRouteConfig } from '../routes';
 
-export const checkSlugExists = async (slug: string) => {
+export const checkSlugAvailable = async (slug: string) => {
   const response = await fetch(`${config.backendUrl + checkSlugRouteConfig.route.path.replace('{slug}', slug)}`, {
     method: checkSlugRouteConfig.route.method,
   });

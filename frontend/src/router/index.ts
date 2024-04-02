@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
 import { routeMasks, routeTree } from './routeTree';
+import { useAlertsStore } from '~/store/alerts';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -19,7 +20,7 @@ const onError = (error: Error) => {
   if (error instanceof ApiError) {
     const fallback = fallbackMessages(i18n.t);
 
-    // Translate error message, try the most specific first
+    // Translate, try most specific first
     const errorMessage =
       error.resourceType && i18next.exists(`common:error.resource_${error.type}`)
         ? i18n.t(`error.resource_${error.type}`, { resource: error.resourceType })
@@ -27,11 +28,15 @@ const onError = (error: Error) => {
           ? i18n.t(`common:error.${error.type}`)
           : fallback[error.status as keyof typeof fallback];
 
-    // Show error message
+    // Show toast
     toast.error(errorMessage || error.message);
 
+    // Set down alerts
+    if (error.status === 503) useAlertsStore.getState().setDownAlert('maintenance');
+    else if (error.status === 504) useAlertsStore.getState().setDownAlert('offline');
+
     // Redirect to sign-in page if the user is not authenticated
-    if (error.status === '401') {
+    if (error.status === 401) {
       router.navigate({
         to: '/auth/sign-in',
         search: {
@@ -42,15 +47,16 @@ const onError = (error: Error) => {
   }
 };
 
+const onSuccess = () => {
+  // Clear down alerts
+  useAlertsStore.getState().setDownAlert(null);
+};
+
 // Set up a QueryClient instance
 // https://tanstack.com/query/latest/docs/reference/QueryClient
 export const queryClient = new QueryClient({
-  mutationCache: new MutationCache({
-    onError,
-  }),
-  queryCache: new QueryCache({
-    onError,
-  }),
+  mutationCache: new MutationCache({ onError, onSuccess }),
+  queryCache: new QueryCache({ onError, onSuccess }),
 });
 
 // Set up a Router instance
@@ -60,9 +66,7 @@ const router = createRouter({
   routeMasks,
   // notFoundRoute,
   defaultPreload: false,
-  context: {
-    queryClient,
-  },
+  context: { queryClient },
 });
 
 // Register the router

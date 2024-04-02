@@ -5,10 +5,10 @@ import { InviteEmail } from '../../../../email/emails/invite';
 import { render } from '@react-email/render';
 import { config } from 'config';
 import { env } from 'env';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 import { db } from '../../db/db';
 
@@ -19,6 +19,8 @@ import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
+import { sendSSE } from '../../lib/sse';
+import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { membershipSchema } from '../organizations/schema';
@@ -31,7 +33,6 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import auth from '../../middlewares/guard/auth';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -147,6 +148,11 @@ const generalRoutes = app
                 and(eq(membershipsTable.organizationId, existingMembership.organizationId), eq(membershipsTable.userId, existingMembership.userId)),
               );
             logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
+
+            sendSSE(targetUser.id, 'update_organization', {
+              ...organization,
+              userRole: role,
+            });
           }
 
           continue;
@@ -165,6 +171,12 @@ const generalRoutes = app
             .returning();
 
           logEvent('User added to organization', { user: user.id, organization: organization.id });
+
+          sendSSE(user.id, 'new_membership', {
+            ...organization,
+            userRole: role || 'MEMBER',
+          });
+
           continue;
         }
       }
@@ -284,7 +296,7 @@ const generalRoutes = app
         .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
         .limit(10);
 
-      result.push(...users);
+      result.push(...users.map((user) => ({ ...user, type: 'user' as const })));
     }
 
     if (type === 'organization' || !type) {
@@ -299,7 +311,7 @@ const generalRoutes = app
         .where(ilike(organizationsTable.name, `%${q}%`))
         .limit(10);
 
-      result.push(...organizations);
+      result.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as const })));
     }
 
     return ctx.json({
@@ -320,6 +332,7 @@ const generalRoutes = app
       stream.onAbort(() => {
         console.log('User disconnected from SSE', user.id);
         streams.delete(user.id);
+        stream.close();
       });
     });
   });

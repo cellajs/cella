@@ -1,8 +1,8 @@
 import { config } from 'config';
 import Gleap from 'gleap';
-import './style.css';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
+import './style.css';
 
 declare global {
   interface Window {
@@ -35,10 +35,10 @@ const GleapSupport = () => {
   useUserStore.subscribe((state) => {
     const user: User = state.user;
 
-    if (user) return setGleapUser(user)
-      
+    if (user) return setGleapUser(user);
+
     // Clear Gleap user on sign out
-    window.Gleap.clearIdentity()
+    window.Gleap.clearIdentity();
   });
 
   return <></>;

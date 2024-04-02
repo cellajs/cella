@@ -6,10 +6,10 @@ import DataGrid, { type CellClickArgs, type CellMouseEvent, type RowsChangeData,
 import { useTranslation } from 'react-i18next';
 
 import { useRef } from 'react';
+import { useInView } from 'react-intersection-observer';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
-import { useInView } from 'react-intersection-observer';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -91,7 +91,6 @@ export const DataTable = <TData,>({
   fetchMore,
   onCellClick,
 }: DataTableProps<TData>) => {
-  
   const { t } = useTranslation();
   const [initial, setInitial] = useState(false);
   const { ref: measureRef, inView } = useInView({
@@ -100,11 +99,11 @@ export const DataTable = <TData,>({
   });
 
   useEffect(() => {
-    if (!rows.length) return 
+    if (!rows.length) return;
 
     if (inView && !isFetching) {
       if (typeof totalCount === 'number' && rows.length >= totalCount) {
-        return
+        return;
       }
       fetchMore?.();
     }
@@ -162,14 +161,14 @@ export const DataTable = <TData,>({
             />
 
             {/* Infinite loading measure ref */}
-            <div ref={measureRef} className="h-0 w-0 relative z-[200]" style={{marginTop: -Number(rowHeight || 40) * limit * (rows.length < 60 ? .5 : 1)}} />
+            <div
+              ref={measureRef}
+              className="h-0 w-0 relative z-[200]"
+              style={{ marginTop: -Number(rowHeight || 40) * limit * (rows.length < 60 ? 0.5 : 1) }}
+            />
 
             {/* Loading */}
-            {isFetching && !error && (
-              <div className="flex justify-center mt-4 items-center">
-                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-              </div>
-            )}
+            {isFetching && !error && <Loader2 className="text-muted-foreground h-6 w-6 mx-auto my-4 animate-spin" />}
 
             {/* Error */}
             {error && <div className="text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}

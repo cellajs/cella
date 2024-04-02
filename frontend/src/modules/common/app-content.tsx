@@ -38,10 +38,13 @@ export const AppContent = () => {
         } md:mt-0`}
       >
         <main id="main-app-content" className="flex-1 flex flex-col" aria-label="Main Content">
-          <AppAlert id="experimentalk" Icon={Info} className="rounded-none border-0 border-b">
+
+          {/* Prerelease heads up */}
+          <AppAlert id="prerelease" Icon={Info} className="rounded-none border-0 border-b">
             <strong className="mr-2">{t('common:prerelease')}</strong>
             {t('common:experiment_notice.text')}
           </AppAlert>
+
           <Outlet />
         </main>
         <AppFooter />

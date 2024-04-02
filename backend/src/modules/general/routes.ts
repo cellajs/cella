@@ -175,19 +175,27 @@ export const suggestionsConfig = createRouteConfig({
           schema: successResponseWithDataSchema(
             z.array(
               z.union([
-                apiUserSchema.pick({
-                  id: true,
-                  slug: true,
-                  name: true,
-                  email: true,
-                  thumbnailUrl: true,
-                }),
-                apiOrganizationSchema.pick({
-                  id: true,
-                  slug: true,
-                  name: true,
-                  thumbnailUrl: true,
-                }),
+                apiUserSchema
+                  .pick({
+                    id: true,
+                    slug: true,
+                    name: true,
+                    email: true,
+                    thumbnailUrl: true,
+                  })
+                  .extend({
+                    type: z.literal('user'),
+                  }),
+                apiOrganizationSchema
+                  .pick({
+                    id: true,
+                    slug: true,
+                    name: true,
+                    thumbnailUrl: true,
+                  })
+                  .extend({
+                    type: z.literal('organization'),
+                  }),
               ]),
             ),
           ),

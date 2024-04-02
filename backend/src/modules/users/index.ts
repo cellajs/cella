@@ -11,9 +11,17 @@ import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
-import { checkSlugExists } from '../general/helpers/check-slug';
+import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
-import { deleteUsersRouteConfig, getUserByIdOrSlugRouteConfig, getUserMenuConfig, getUsersConfig, meRouteConfig, updateUserConfig } from './routes';
+import {
+  deleteUsersRouteConfig,
+  getUserByIdOrSlugRouteConfig,
+  getUserMenuConfig,
+  getUsersConfig,
+  meRouteConfig,
+  terminateSessionsConfig,
+  updateUserConfig,
+} from './routes';
 
 const app = new CustomHono();
 
@@ -32,10 +40,19 @@ const usersRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, user.id));
 
+    const sessions = await auth.getUserSessions(user.id);
+    const currentSessionId = auth.readSessionCookie(ctx.req.raw.headers.get('Cookie') ?? '');
+    const preparedSessions = sessions.map((session) => ({
+      ...session,
+      type: 'DESKTOP' as const,
+      current: session.id === currentSessionId,
+    }));
+
     return ctx.json({
       success: true,
       data: {
         ...transformDatabaseUser(user),
+        sessions: preparedSessions,
         counts: {
           memberships,
         },
@@ -43,19 +60,36 @@ const usersRoutes = app
     });
   })
   /*
-   * Get current user sessions
+   * Terminate a session
    */
-  // TODO: Implement this route
-  // .add(getUserSessionsConfig, async (ctx) => {
-  //   const user = ctx.get('user');
+  .add(terminateSessionsConfig, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
 
-  //   const sessions = await auth.getUserSessions(user.id);
+    const sessionIds = Array.isArray(ids) ? ids : [ids];
 
-  //   return ctx.json({
-  //     success: true,
-  //     data: sessions,
-  //   });
-  // })
+    const cookieHeader = ctx.req.raw.headers.get('Cookie');
+    const currentSessionId = auth.readSessionCookie(cookieHeader ?? '');
+
+    const errors: ErrorType[] = [];
+
+    await Promise.all(
+      sessionIds.map(async (id) => {
+        try {
+          if (id === currentSessionId) {
+            removeSessionCookie(ctx);
+          }
+          await auth.invalidateSession(id);
+        } catch (error) {
+          errors.push(createError(ctx, 404, 'not_found', 'warn', 'session', { session: id }));
+        }
+      }),
+    );
+
+    return ctx.json({
+      success: true,
+      errors: errors,
+    });
+  })
   /*
    * Get user menu
    */
@@ -130,7 +164,7 @@ const usersRoutes = app
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
 
     if (slug && slug !== targetUser.slug) {
-      const slugExists = await checkSlugExists(slug);
+      const slugExists = await checkSlugAvailable(slug);
 
       if (slugExists) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
@@ -170,6 +204,7 @@ const usersRoutes = app
       success: true,
       data: {
         ...transformDatabaseUser(updatedUser),
+        sessions: [],
         counts: {
           memberships,
         },
@@ -238,6 +273,7 @@ const usersRoutes = app
 
     const users = result.map(({ user, counts }) => ({
       ...transformDatabaseUser(user),
+      sessions: [],
       counts,
     }));
 
@@ -319,6 +355,7 @@ const usersRoutes = app
       success: true,
       data: {
         ...transformDatabaseUser(targetUser),
+        sessions: [],
         counts: {
           memberships,
         },

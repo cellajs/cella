@@ -1,17 +1,14 @@
 import { Link } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
-import Logo from '~/modules/common/logo';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/app-footer';
+import Logo from '~/modules/common/logo';
 
 interface AuthPageProps {
   children?: React.ReactNode;
 }
 
 // Auth footer links
-const authFooterLinks: FooterLinkProps[] = [
-  { id: 'about', href: '/about' },
-];
-
+const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
 
 // Lazy load bg animation
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
@@ -19,7 +16,6 @@ const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
 const AuthPage = ({ children }: AuthPageProps) => {
   return (
     <div className="container rich-gradient before:fixed after:fixed flex flex-col min-h-[90vh] sm:min-h-svh items-center">
-
       {/* Render bg animation */}
       <Suspense fallback={null}>
         <BgAnimation />

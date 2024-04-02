@@ -23,7 +23,7 @@ import { i18n } from '../../lib/i18n';
 import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkSlugExists } from '../general/helpers/check-slug';
+import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
 import { sendVerificationEmail } from './helpers/verify-email';
@@ -55,7 +55,7 @@ const authRoutes = app
 
     const slug = slugFromEmail(email);
 
-    const slugExists = await checkSlugExists(slug);
+    const slugExists = await checkSlugAvailable(slug);
 
     try {
       await db
@@ -108,7 +108,10 @@ const authRoutes = app
         });
       }
 
-      return errorResponse(ctx, 400, 'invalid_verification_token', 'warn', undefined, { user: token?.userId || 'na', type: 'verification' });
+      return errorResponse(ctx, 400, 'invalid_verification_token', 'warn', undefined, {
+        user: token?.userId || 'na',
+        type: 'verification',
+      });
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
@@ -169,7 +172,9 @@ const authRoutes = app
 
     const emailHtml = render(
       VerificationEmail({
-        i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
+        i18n: i18n.cloneInstance({
+          lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
+        }),
         verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
       }),
     );
@@ -224,7 +229,9 @@ const authRoutes = app
 
     const emailHtml = render(
       ResetPasswordEmail({
-        i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
+        i18n: i18n.cloneInstance({
+          lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
+        }),
         resetPasswordLink: `${config.frontendUrl}/auth/reset-password/${token}`,
       }),
     );
@@ -346,7 +353,9 @@ const authRoutes = app
       [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, token.organizationId));
 
       if (!organization) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organizationId: token.organizationId });
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', {
+          organizationId: token.organizationId,
+        });
       }
     }
 
@@ -359,7 +368,10 @@ const authRoutes = app
         .where(and(eq(usersTable.id, token.userId)));
 
       if (!user || user.email !== token.email) {
-        return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, { userId: token.userId, type: 'invitation' });
+        return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
+          userId: token.userId,
+          type: 'invitation',
+        });
       }
     } else if (password || oauth) {
       const hashedPassword = password ? await new Argon2id().hash(password) : undefined;
@@ -367,8 +379,7 @@ const authRoutes = app
 
       const slug = slugFromEmail(token.email);
 
-      const slugExists = await checkSlugExists(slug);
-
+      const slugExists = await checkSlugAvailable(slug);
       [user] = await db
         .insert(usersTable)
         .values({
@@ -386,7 +397,9 @@ const authRoutes = app
         await Promise.all([db.delete(tokensTable).where(and(eq(tokensTable.id, verificationToken))), setSessionCookie(ctx, user.id, 'password')]);
       }
     } else {
-      return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, { type: 'invitation' });
+      return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
+        type: 'invitation',
+      });
     }
 
     if (organization) {
@@ -428,7 +441,9 @@ const authRoutes = app
         // return ctx.redirect(url, 302);
       }
 
-      return errorResponse(ctx, 400, 'invalid_invitation', 'warn', undefined, { type: 'invitation' });
+      return errorResponse(ctx, 400, 'invalid_invitation', 'warn', undefined, {
+        type: 'invitation',
+      });
     }
 
     return ctx.json({

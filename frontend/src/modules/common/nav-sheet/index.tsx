@@ -29,7 +29,7 @@ const NavSheet = () => {
         <div
           onClick={() => setSheet(null)}
           onKeyDown={() => {}}
-          className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          className="fixed inset-0 z-30 bg-background/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
         />
       )}
       <SheetContent side={isMirrorSide ? 'mirrorOnMobile' : 'left'} ref={containerRef} className={sheetClass} onClick={() => setSheet(null)}>

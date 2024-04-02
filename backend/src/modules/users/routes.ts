@@ -192,3 +192,25 @@ export const deleteUsersRouteConfig = createRouteConfig({
     ...errorResponses,
   },
 });
+
+export const terminateSessionsConfig = createRouteConfig({
+  method: 'delete',
+  path: '/me/sessions',
+  guard: authGuard(),
+  tags: ['users'],
+  summary: 'Terminate sessions',
+  request: {
+    query: deleteByIdsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Success',
+      content: {
+        'application/json': {
+          schema: successResponseWithErrorsSchema(),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});

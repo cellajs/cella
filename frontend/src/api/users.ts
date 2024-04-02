@@ -90,13 +90,13 @@ export const updateUser = async (userId: string, params: UpdateUserParams) => {
   return json.data;
 };
 
-// Get user sessions
-// export const getUserSessions = async (userId: string) => {
-//   const response = await client.users[':userId'].sessions.$get({
-//     param: { userId },
-//   });
+// Terminate a user sessions
+export const terminateMySessions = async (sessionIds: string[]) => {
+  const response = await client.me.sessions.$delete({
+    query: { ids: sessionIds },
+  });
 
-//   const json = await response.json();
-//   if ('error' in json) throw new ApiError(json.error);
-//   return json.data;
-// };
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return;
+};

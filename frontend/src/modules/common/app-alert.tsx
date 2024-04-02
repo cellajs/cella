@@ -15,13 +15,13 @@ export type AppAlert = {
   variant?: 'default' | 'destructive';
 };
 
-export function AppAlert({ id, Icon, children, className = '', title = '', variant = 'default' }: AppAlert) {
+export const AppAlert = ({ id, Icon, children, className = '', title = '', variant = 'default' }: AppAlert) => {
   const { t } = useTranslation();
-  const { alertsSeen, setAlertSeen } = useAlertsStore();
+  const { alertsSeen, setAlertSeen, downAlert } = useAlertsStore();
   const showAlert = !alertsSeen.includes(id);
   const closeAlert = () => setAlertSeen(id);
 
-  if (!showAlert) return;
+  if (downAlert || !showAlert) return;
 
   return (
     <Alert variant={variant} className={cn('relative', className)}>

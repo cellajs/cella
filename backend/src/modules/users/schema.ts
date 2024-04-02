@@ -20,7 +20,8 @@ export const apiUserSchema = createSelectSchema(usersTable, {
     z.object({
       memberships: z.number(),
     }),
-  );
+  )
+  .setKey('sessions', z.array(z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string() })));
 
 export type ApiUser = z.infer<typeof apiUserSchema>;
 

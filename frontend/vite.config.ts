@@ -8,6 +8,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
+import terser from '@rollup/plugin-terser';
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
@@ -56,6 +57,11 @@ export default defineConfig(() => {
             url: config.frontendUrl,
             twitter: config.company.twitterHandle,
           },
+        },
+      }),
+      terser({
+        compress: {
+          pure_funcs: ['console.debug'], // Remove only console.debug
         },
       }),
       visualizer({ open: true, gzipSize: true }) as PluginOption,

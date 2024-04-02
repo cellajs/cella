@@ -20,12 +20,11 @@ export const AppSearch = () => {
     enabled: value.length > 0,
   });
 
-  const userSuggestions = data?.filter((suggestion) => 'email' in suggestion) ?? [];
-  const organizationSuggestions = data?.filter((suggestion) => !('email' in suggestion)) ?? [];
+  const userSuggestions = data?.filter((suggestion) => suggestion.type === 'user') ?? [];
+  const organizationSuggestions = data?.filter((suggestion) => suggestion.type === 'organization') ?? [];
 
   const onSelectSuggestion = (suggestion: UserSuggestion | OrganizationSuggestion) => {
-    // TODO: use resource type
-    if ('email' in suggestion) {
+    if (suggestion.type === 'user') {
       navigate({
         to: '/user/$userIdentifier',
         resetScroll: false,
@@ -33,7 +32,7 @@ export const AppSearch = () => {
           userIdentifier: suggestion.slug,
         },
       });
-    } else {
+    } else if (suggestion.type === 'organization') {
       navigate({
         to: '/$organizationIdentifier/members',
         resetScroll: false,
@@ -58,7 +57,7 @@ export const AppSearch = () => {
         <CommandEmpty>
           {isFetching ? (
             <CommandLoading>
-              <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+              <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
             </CommandLoading>
           ) : (
             t('common:no_results_found')

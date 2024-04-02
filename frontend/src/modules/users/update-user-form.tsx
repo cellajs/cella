@@ -53,8 +53,8 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
   const { mutate, isPending } = useUpdateUserMutation(user.id);
   const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
     mutationFn: baseCheckSlug,
-    onSuccess: (isExists) => {
-      if (isExists) {
+    onSuccess: (isAvailable) => {
+      if (isAvailable) {
         form.setError('slug', {
           type: 'manual',
           message: t('common:error.slug_exists'),
@@ -98,7 +98,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
           toast.success(t('common:success.updated_user'));
         }
 
-        form.reset();
+        form.reset(data);
         callback?.(data);
 
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?

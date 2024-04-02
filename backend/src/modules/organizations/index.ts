@@ -8,9 +8,10 @@ import { usersTable } from '../../db/schema/users';
 import { config } from 'config';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
+import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkSlugExists } from '../general/helpers/check-slug';
+import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import {
   createOrganizationRouteConfig,
@@ -22,7 +23,6 @@ import {
   updateOrganizationRouteConfig,
   updateUserInOrganizationRouteConfig,
 } from './routes';
-import { streams } from '../general';
 
 const app = new CustomHono();
 
@@ -73,19 +73,15 @@ const organizationsRoutes = app
       })
       .returning();
 
-    logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
+    logEvent('User added to organization', {
+      user: user.id,
+      organization: createdOrganization.id,
+    });
 
-    const userStream = streams.get(user.id);
-
-    if (userStream) {
-      userStream.writeSSE({
-        event: 'new_membership',
-        data: JSON.stringify({
-          ...createdOrganization,
-          userRole: 'ADMIN',
-        }),
-      });
-    }
+    sendSSE(user.id, 'new_membership', {
+      ...createdOrganization,
+      userRole: 'ADMIN',
+    });
 
     return ctx.json({
       success: true,
@@ -197,7 +193,7 @@ const organizationsRoutes = app
     } = ctx.req.valid('json');
 
     if (slug) {
-      const slugExists = await checkSlugExists(slug);
+      const slugExists = await checkSlugAvailable(slug);
 
       if (slugExists && slug !== organization.slug) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
@@ -234,6 +230,13 @@ const organizationsRoutes = app
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
+
+    if (membership) {
+      sendSSE(user.id, 'update_organization', {
+        ...updatedOrganization,
+        userRole: membership.role,
+      });
+    }
 
     const [{ admins }] = await db
       .select({
@@ -294,9 +297,22 @@ const organizationsRoutes = app
             role,
           })
           .returning();
+
+        sendSSE(targetUser.id, 'new_membership', {
+          ...organization,
+          userRole: role,
+        });
       } else {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', { user: targetUser.id, organization: organization.id });
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
+          user: targetUser.id,
+          organization: organization.id,
+        });
       }
+    } else {
+      sendSSE(targetUser.id, 'update_organization', {
+        ...organization,
+        userRole: role,
+      });
     }
 
     const [{ memberships }] = await db
@@ -306,12 +322,16 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
 
-    logEvent('User updated in organization', { user: targetUser.id, organization: organization.id });
+    logEvent('User updated in organization', {
+      user: targetUser.id,
+      organization: organization.id,
+    });
 
     return ctx.json({
       success: true,
       data: {
         ...transformDatabaseUser(targetUser),
+        sessions: [],
         organizationRole: membership.role,
         counts: {
           memberships,
@@ -332,17 +352,36 @@ const organizationsRoutes = app
 
     await Promise.all(
       organizationIds.map(async (id) => {
-        const [targetOrganization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, id));
+        const [result] = await db
+          .select({
+            organization: organizationsTable,
+            userRole: membershipsTable.role,
+          })
+          .from(organizationsTable)
+          .leftJoin(membershipsTable, and(eq(membershipsTable.organizationId, organizationsTable.id), eq(membershipsTable.userId, user.id)))
+          .where(eq(organizationsTable.id, id));
 
-        if (!targetOrganization) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
+        if (!result) {
+          errors.push(
+            createError(ctx, 404, 'not_found', 'warn', 'organization', {
+              organization: id,
+            }),
+          );
         }
 
         if (user.role !== 'ADMIN') {
-          errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'organization', { organization: id }));
+          errors.push(
+            createError(ctx, 403, 'delete_forbidden', 'warn', 'organization', {
+              organization: id,
+            }),
+          );
         }
 
         await db.delete(organizationsTable).where(eq(organizationsTable.id, id));
+
+        if (result.userRole) {
+          sendSSE(user.id, 'remove_organization', result.organization);
+        }
 
         logEvent('Organization deleted', { organization: id });
       }),
@@ -460,6 +499,7 @@ const organizationsRoutes = app
     const members = await Promise.all(
       result.map(async ({ user, organizationRole, counts }) => ({
         ...user,
+        sessions: [],
         organizationRole,
         counts,
       })),
@@ -490,10 +530,15 @@ const organizationsRoutes = app
           .returning();
 
         if (!targetMembership) {
-          return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', { user: id, organization: organization.id });
+          return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
+            user: id,
+            organization: organization.id,
+          });
         }
 
         logEvent('Member deleted', { user: id, organization: organization.id });
+
+        sendSSE(id, 'remove_membership', organization);
       }),
     );
 
