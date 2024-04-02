@@ -7,7 +7,7 @@
     "build": "NODE_ENV=production tsup",
     "build:dev": "NODE_ENV=development tsup",
     "start": "NODE_ENV=production tsx dist/index.cjs",
-    "dev": "set NODE_ENV=development& tsup --watch --onSuccess \"tsx dist/index.cjs\""
+    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.cjs\""
   },
   "keywords": ["tus", "imado"],
   "author": "CellaJS <info@cellajs.com>",
