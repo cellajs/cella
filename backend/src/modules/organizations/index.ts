@@ -331,6 +331,7 @@ const organizationsRoutes = app
       success: true,
       data: {
         ...transformDatabaseUser(targetUser),
+        sessions: [],
         organizationRole: membership.role,
         counts: {
           memberships,
@@ -498,6 +499,7 @@ const organizationsRoutes = app
     const members = await Promise.all(
       result.map(async ({ user, organizationRole, counts }) => ({
         ...user,
+        sessions: [],
         organizationRole,
         counts,
       })),
