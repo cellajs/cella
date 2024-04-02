@@ -92,11 +92,7 @@ const InviteSearchForm = ({ organization, callback, dialog: isDialog }: Props) =
                     }));
                   }}
                   hidePlaceholderWhenSelected
-                  loadingIndicator={
-                    <div className="flex justify-center p-3">
-                      <Loader2 className="animate-spin" size={16} />
-                    </div>
-                  }
+                  loadingIndicator={<Loader2 className="animate-spin mx-auto my-3" size={16} />}
                   defaultOptions={[]}
                   placeholder={t('common:search_users')}
                   emptyIndicator={<div className="block w-full text-center p-1">{t('common:no_users_found')}</div>}

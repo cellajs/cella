@@ -168,11 +168,7 @@ export const DataTable = <TData,>({
             />
 
             {/* Loading */}
-            {isFetching && !error && (
-              <div className="flex justify-center mt-4 items-center">
-                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-              </div>
-            )}
+            {isFetching && !error && <Loader2 className="text-muted-foreground h-6 w-6 mx-auto my-4 animate-spin" />}
 
             {/* Error */}
             {error && <div className="text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}
