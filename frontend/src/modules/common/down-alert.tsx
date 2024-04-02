@@ -54,6 +54,16 @@ export const DownAlert = () => {
           <strong>{downAlert === 'maintenance' ? t('common:maintenance_mode') : t('common:offline_mode')}</strong>
           <span className="max-sm:hidden mx-2">&#183;</span>
           <span className="max-sm:hidden">{downAlert === 'maintenance' ? t('common:maintenance_mode.text') : t('common:offline_mode.text')}</span>
+          {config.statusUrl && (
+            <span>
+              <span className="max-sm:hidden ml-1">Try again later or check server</span>
+              <span className="sm:hidden mx-2">&#183;</span>
+              <a href={config.statusUrl} className="max-sm:capitalize ml-1 hover:underline font-semibold hover:underline-offset-2" target="_blank" rel="noreferrer">
+                status
+              </a>
+              <span className="max-sm:hidden">.</span>
+            </span>
+          )}
         </AlertDescription>
       </Alert>
     </div>
