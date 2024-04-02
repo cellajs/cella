@@ -17,6 +17,7 @@ import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { useSize } from '~/hooks/use-size';
+import { Filter } from 'lucide-react';
 
 interface Props {
   total?: number;
@@ -108,7 +109,13 @@ function Toolbar({
   }, [isFilterOpen, windowSize.width]);
 
   const filters = useMemo(() => {
-    if (!isFilterOpen) return <Button onClick={onShowFilterClick}>Filter</Button>;
+    if (!isFilterOpen)
+      return (
+        <Button onClick={onShowFilterClick}>
+          <Filter width={16} height={16} />
+          <span className="ml-1">Filter</span>
+        </Button>
+      );
     return (
       <>
         <TableSearch query={query} setQuery={setQuery} />

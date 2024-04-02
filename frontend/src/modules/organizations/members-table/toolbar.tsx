@@ -20,6 +20,7 @@ import { OrganizationContext } from '../organization';
 import RemoveMembersForm from './remove-member-form';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { useSize } from '~/hooks/use-size';
+import { Filter } from 'lucide-react';
 
 interface Props {
   selectedMembers: Member[];
@@ -127,7 +128,8 @@ function Toolbar({
     if (!isFilterOpen)
       return (
         <Button className="mt-0" onClick={onShowFilterClick}>
-          Filter
+          <Filter width={16} height={16} />
+          <span className="ml-1">Filter</span>
         </Button>
       );
     return (
