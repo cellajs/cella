@@ -272,5 +272,9 @@
   "left_focus.text": "Normal view restored",
   "unknown": "Unknown",
   "modified": "Modified",
-  "modified_by": "Modified by"
+  "modified_by": "Modified by",
+  "offline_mode": "Offline mode",
+  "offline_mode.text": "You appear to have no internet connection.",
+  "maintenance_mode": "Maintenance",
+  "maintenance_mode.text": "It appears the server is undergoing maintenance."
 }
