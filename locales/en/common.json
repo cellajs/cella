@@ -269,5 +269,8 @@
   "focus_view": "Focus view",
   "leave_focus_view": "Leave focus",
   "entered_focus.text": "Focus view activated",
-  "left_focus.text": "Normal view restored"
+  "left_focus.text": "Normal view restored",
+  "unknown": "Unknown",
+  "modified": "Modified",
+  "modified_by": "Modified by"
 }
