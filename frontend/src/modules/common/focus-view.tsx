@@ -9,10 +9,17 @@ import { cn } from '~/lib/utils';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 
 interface FocusViewProps {
   className?: string;
   iconOnly?: boolean;
+}
+
+interface FocusViewButtonProps extends FocusViewProps {
+  focusView: boolean;
+  toggleFocus: () => void;
+  t: TFunction<'translation', undefined>;
 }
 
 export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
@@ -48,7 +55,11 @@ const FocusViewButton = React.forwardRef<HTMLButtonElement, FocusViewButtonProps
   return (
     <Button ref={ref} variant={'outline'} className={cn('flex max-lg:hidden', className)} onClick={toggleFocus}>
       {focusView ? <Shrink size={16} /> : <Expand size={16} />}
-      {!iconOnly && <span className="ml-1">{focusView ? t('common:leave_focus_view') : t('common:focus_view')}</span>}
+      {!iconOnly && (
+        <span className='ml-1'>
+          {focusView ? t('common:leave_focus_view') : t('common:focus_view')}
+        </span>
+      )}
     </Button>
   );
 });
