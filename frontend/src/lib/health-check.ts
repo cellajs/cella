@@ -25,10 +25,10 @@ export const healthCheck = async (
       delay = Math.min(maxDelay * 1000, delay * factor);
     }
 
-    console.log(`Waiting ${delay / 1000} seconds before next attempt.`);
+    console.debug(`Waiting ${delay / 1000} seconds before next attempt.`);
     await sleep(delay);
   }
 
-  console.log('Maximum attempts reached. Ping failed.');
+  console.debug('Maximum attempts reached. Health check failed.');
   return false;
 };
