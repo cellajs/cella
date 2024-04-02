@@ -1,7 +1,6 @@
 import { config } from 'config';
-import debounce from 'lodash.debounce';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
-import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getOrganizations } from '~/api/organizations';
@@ -16,10 +15,10 @@ import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import NewsletterForm from '~/modules/system/newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import type { OrganizationsSearch } from '.';
+import TableSearch from '~/modules/common/data-table/table-search';
 
 interface Props {
   total?: number;
@@ -122,14 +121,7 @@ function Toolbar({
         )}
       </div>
       <div className="mt-2 flex items-center space-x-2 sm:mt-0">
-        <Input
-          placeholder={t('common:placeholder.search')}
-          defaultValue={query}
-          onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
-            setQuery(event.target.value);
-          }, 200)}
-          className="h-10 w-[150px] lg:w-[250px]"
-        />
+        <TableSearch query={query} setQuery={setQuery} />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         <Export
           className="max-lg:hidden"

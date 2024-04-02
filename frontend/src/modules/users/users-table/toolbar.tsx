@@ -1,6 +1,5 @@
-import debounce from 'lodash.debounce';
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { type ChangeEvent, type Dispatch, type SetStateAction, useRef } from 'react';
+import { type Dispatch, type SetStateAction, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { GetUsersParams } from '~/api/users';
@@ -8,7 +7,6 @@ import { FocusView } from '~/modules/common/focus-view';
 import InviteUsers from '~/modules/common/invite-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { Input } from '~/modules/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
@@ -17,6 +15,7 @@ import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/c
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
+import TableSearch from '~/modules/common/data-table/table-search';
 
 interface Props {
   total?: number;
@@ -115,14 +114,7 @@ function Toolbar({
           {selectedUsers.length === 0 && <TableCount count={total} type="user" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </div>
         <div className="mt-2 flex items-center space-x-2 sm:mt-0">
-          <Input
-            className="h-10 w-[150px] lg:w-[250px]"
-            placeholder={t('common:placeholder.search')}
-            defaultValue={query}
-            onChange={debounce((event: ChangeEvent<HTMLInputElement>) => {
-              setQuery(event.target.value);
-            }, 200)}
-          />
+          <TableSearch query={query} setQuery={setQuery} />
           <Select
             value={role === undefined ? 'all' : role}
             onValueChange={(role) => {
