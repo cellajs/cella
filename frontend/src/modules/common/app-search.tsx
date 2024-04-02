@@ -57,7 +57,7 @@ export const AppSearch = () => {
         <CommandEmpty>
           {isFetching ? (
             <CommandLoading>
-              <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+              <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
             </CommandLoading>
           ) : (
             t('common:no_results_found')
