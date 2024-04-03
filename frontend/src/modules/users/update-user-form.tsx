@@ -40,7 +40,9 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
   return useMutation<User, DefaultError, UpdateUserParams>({
     mutationKey: ['me', 'update', userIdentifier],
     mutationFn: (params) => updateUser(userIdentifier, params),
-    onSuccess: () => queryClient.invalidateQueries(),
+    onSuccess: (user) => {
+      queryClient.setQueryData(['users', user.id], user);
+    },
     gcTime: 1000 * 10,
   });
 };

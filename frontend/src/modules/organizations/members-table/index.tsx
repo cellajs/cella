@@ -62,7 +62,9 @@ export const useUpdateUserInOrganizationMutation = (organizationIdentifier: stri
   >({
     mutationKey: ['members', 'update', organizationIdentifier],
     mutationFn: (params) => updateUserInOrganization(organizationIdentifier, params.id, params.role),
-    onSuccess: () => queryClient.invalidateQueries(),
+    onSuccess: (member) => {
+      queryClient.setQueryData(['users', organizationIdentifier], member);
+    },
     gcTime: 1000 * 10,
   });
 };
