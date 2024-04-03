@@ -1,10 +1,13 @@
-import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
+// Set up a Router instance
+
 import { createRouter } from '@tanstack/react-router';
+import { routeMasks, routeTree } from '~/routes/routeTree';
+
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import i18next from 'i18next';
 import { toast } from 'sonner';
 import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
-import { routeMasks, routeTree } from './routeTree';
 import { useAlertsStore } from '~/store/alerts';
 
 // Fallback messages for common errors
@@ -59,7 +62,6 @@ export const queryClient = new QueryClient({
   queryCache: new QueryCache({ onError, onSuccess }),
 });
 
-// Set up a Router instance
 // https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
 const router = createRouter({
   routeTree,
