@@ -279,5 +279,7 @@
   "maintenance_mode.text": "It appears the server is undergoing maintenance.",
   "hi": "Hey there!",
   "invite_only.text": "Cella is currently invite-only. Can't wait? Contact us for an invite.",
-  "filter": "Filter"
+  "filter": "Filter",
+  "export_pdf_csv": "Export CSV or PDF",
+  "columns_view": "Change column view"
 }

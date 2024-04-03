@@ -6,6 +6,7 @@ import { exportToCsv, exportToPdf } from '~/lib/export';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { TooltipButton } from '../tooltip-button';
 
 interface Props<R> {
   filename: string;
@@ -29,18 +30,20 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows, 
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn('flex max-xs:hidden', className)}
-          onClick={() => {
-            toast.error(t('common:error.image_upload_failed'));
-          }}
-        >
-          <Download size={16} />
-          <span className="ml-1 max-xl:hidden">{t('common:export')}</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <TooltipButton toolTipContent={t('common:export_pdf_csv')}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn('flex max-xs:hidden', className)}
+            onClick={() => {
+              toast.error(t('common:error.image_upload_failed'));
+            }}
+          >
+            <Download size={16} />
+            <span className="ml-1 max-xl:hidden">{t('common:export')}</span>
+          </Button>
+        </DropdownMenuTrigger>
+      </TooltipButton>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => onExport('csv', false)}>
           <span>CSV</span>

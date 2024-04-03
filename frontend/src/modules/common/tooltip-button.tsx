@@ -1,16 +1,21 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
+import type * as TooltipPrimitive from '@radix-ui/react-tooltip';
 
-interface TooltipButtonProps {
+interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
   children: React.ReactNode;
-  side?: 'bottom' | 'left' | 'right' | 'top';
   toolTipContent: string;
+  disabled?: boolean;
 }
 
-export const TooltipButton = ({ children, side = 'bottom', toolTipContent }: TooltipButtonProps) => {
+export const TooltipButton = ({ children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, ...props }: TooltipButtonProps) => {
+  if (disabled) {
+    return <>{children}</>;
+  }
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side={side}>{toolTipContent}</TooltipContent>
+      <TooltipContent side={side} {...props} sideOffset={sideOffset}>{toolTipContent}</TooltipContent>
     </Tooltip>
   );
 };
