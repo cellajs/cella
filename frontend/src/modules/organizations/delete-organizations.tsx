@@ -4,7 +4,7 @@ import type { Organization } from '~/types';
 import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { queryClient } from '~/lib/router';
+import { queryClient } from '~/lib/query-client';
 
 interface Props {
   organizations: Organization[];

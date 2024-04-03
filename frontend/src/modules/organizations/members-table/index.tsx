@@ -17,7 +17,7 @@ import { organizationMembersRoute } from '~/routes/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { queryClient } from '~/lib/router';
+import { queryClient } from '~/lib/query-client';
 
 const LIMIT = 40;
 

@@ -4,7 +4,7 @@ import type { User } from '~/types';
 import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '../common/delete-form';
 import { dialog } from '../common/dialoger/state';
-import { queryClient } from '~/lib/router';
+import { queryClient } from '~/lib/query-client';
 
 interface Props {
   users: User[];

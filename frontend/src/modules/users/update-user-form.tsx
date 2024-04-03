@@ -24,7 +24,7 @@ import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/forms/input';
 import LanguageFormField from '../common/forms/language';
-import { queryClient } from '~/lib/router';
+import { queryClient } from '~/lib/query-client';
 
 interface Props {
   user: User;

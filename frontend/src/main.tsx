@@ -17,7 +17,8 @@ if (!root) {
 }
 
 import ascii from '~/lib/ascii';
-import router, { queryClient } from './lib/router';
+import router from './lib/router';
+import { queryClient } from './lib/query-client';
 
 ascii();
 
