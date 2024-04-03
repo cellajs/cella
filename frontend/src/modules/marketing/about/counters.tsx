@@ -1,5 +1,5 @@
+import { useQuery } from '@tanstack/react-query';
 import { Building2, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
@@ -21,11 +21,12 @@ const Counters = () => {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
 
-  const [countValues, setCounts] = useState({ users: 0, organizations: 0 });
-
-  useEffect(() => {
-    getPublicCounts().then((results) => setCounts(results));
-  }, []);
+  // Get counts
+  const { data: countValues } = useQuery({
+    queryKey: ['getPublicCounts'],
+    queryFn: () => getPublicCounts(),
+    initialData: { users: 0, organizations: 0 },
+  });
 
   return (
     <div ref={ref} className="mx-auto grid gap-4 md:max-w-[64rem] md:grid-cols-2 lg:grid-cols-2">
