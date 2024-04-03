@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 import { Button } from '~/modules/ui/button';
-import AuthPage from '.';
+import AuthPage from './auth-page';
 import OauthOptions from './oauth-options';
 
 import { ArrowRight, Loader2 } from 'lucide-react';
