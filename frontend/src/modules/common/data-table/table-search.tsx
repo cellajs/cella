@@ -1,4 +1,4 @@
-import debounce from 'lodash.debounce';
+import {debounce} from '@github/mini-throttle';
 import { Search } from 'lucide-react';
 import type { ChangeEvent } from 'react';
 import React, { useState } from 'react';
