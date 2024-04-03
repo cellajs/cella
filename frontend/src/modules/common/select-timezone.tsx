@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import timezones from '~/lib/timezones.json';
+import timezones from '~/json/timezones.json';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
 const SelectTimezone = ({ onChange, value }: { onChange: (value: string) => void; value: string }) => {
