@@ -1,5 +1,5 @@
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import { type Dispatch, type SetStateAction, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { GetUsersParams } from '~/api/users';
@@ -7,7 +7,6 @@ import { FocusView } from '~/modules/common/focus-view';
 import InviteUsers from '~/modules/common/invite-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
 import type { UserRow } from '.';
@@ -15,9 +14,8 @@ import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/c
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
-import TableSearch from '~/modules/common/data-table/table-search';
 import { useSize } from '~/hooks/use-size';
-import { Filter } from 'lucide-react';
+import TableFilterBar from '~/modules/common/data-table/table-filter-bar';
 
 interface Props {
   total?: number;
@@ -61,9 +59,7 @@ function Toolbar({
 
   const windowSize = useSize();
 
-  const [isFilterOpen, setFilterOpen] = useState<boolean>(role !== undefined || query !== undefined ? true : false);
-
-  const [isButtonClicked, setButtonClicked] = useState<boolean>(role !== undefined || query !== undefined ? true : false);
+  const [isFilterOpenParent, setFilterOpenParent] = useState<boolean>(role !== undefined || query !== undefined ? true : false);
 
   const openInviteDialog = () => {
     dialog(<InviteUsers mode="email" dialog />, {
@@ -93,70 +89,10 @@ function Toolbar({
       },
     );
   };
-  const onShowFilterClick = () => {
-    setButtonClicked(true);
-    setFilterOpen(true);
-  };
-
-  const onFiltersHideClick = () => {
-    setButtonClicked(false);
-    setFilterOpen(false);
-    if (onResetFilters) onResetFilters();
-  };
-
-  const crossButton = useMemo(() => {
-    if (windowSize.width < 640 && isFilterOpen) return <Button onClick={onFiltersHideClick}>X</Button>;
-  }, [isFilterOpen, windowSize.width]);
-
-  const filters = useMemo(() => {
-    if (!isFilterOpen)
-      return (
-        <Button onClick={onShowFilterClick}>
-          <Filter width={16} height={16} />
-          <span className="ml-1">Filter</span>
-        </Button>
-      );
-    return (
-      <>
-        <TableSearch query={query} setQuery={setQuery} />
-        <Select
-          value={role === undefined ? 'all' : role}
-          onValueChange={(role) => {
-            setRole(role === 'all' ? undefined : (role as GetUsersParams['role']));
-          }}
-        >
-          <SelectTrigger className="h-10 w-[150px]">
-            <SelectValue placeholder={t('common:placeholder.select_role')} />
-          </SelectTrigger>
-          <SelectContent>
-            {items.map(({ key, value }) => (
-              <SelectItem key={key} value={key}>
-                {t(value)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </>
-    );
-  }, [isFilterOpen, query, role]);
 
   const isFiltersShown = useMemo(() => {
-    return (windowSize.width < 640 && !isFilterOpen) || windowSize.width >= 640;
-  }, [windowSize.width, isFilterOpen]);
-
-  useEffect(() => {
-    (() => {
-      if (windowSize.width >= 640 && !isFilterOpen) {
-        setFilterOpen(true);
-        return;
-      }
-      if (windowSize.width < 640 && !isButtonClicked && isFilterOpen) {
-        setFilterOpen(false);
-        return;
-      }
-    })();
-  }, [windowSize]);
-  
+    return (windowSize.width < 640 && !isFilterOpenParent) || windowSize.width >= 640;
+  }, [windowSize.width, isFilterOpenParent]);
   return (
     <>
       <div className={`items-center flex justify-${isFiltersShown ? 'between' : 'center'}`}>
@@ -185,8 +121,16 @@ function Toolbar({
           {selectedUsers.length === 0 && <TableCount count={total} type="user" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </div>
         <div className="mt-2 flex items-center space-x-2 sm:mt-0">
-          {filters}
-          {crossButton}
+          <TableFilterBar
+            role={role}
+            query={query}
+            items={items}
+            width={windowSize.width}
+            setRole={setRole}
+            setQuery={setQuery}
+            onResetFilters={onResetFilters}
+            setParentFilter={setFilterOpenParent}
+          />
           <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
           <FocusView iconOnly />
         </div>
