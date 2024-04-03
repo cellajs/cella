@@ -37,7 +37,7 @@ const oauthOptions = [
 ];
 
 interface OauthOptionsProps {
-  actionType: 'check' | 'signIn' | 'signUp' | 'acceptInvite';
+  actionType: 'check' | 'signIn' | 'signUp' | 'acceptInvite' | 'inviteOnly';
 }
 
 const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
