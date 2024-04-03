@@ -38,7 +38,7 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows, 
           }}
         >
           <Download size={16} />
-          <span className="ml-1">{t('common:export')}</span>
+          <span className="ml-1 max-xl:hidden">{t('common:export')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

@@ -42,7 +42,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
         <Button variant="outline" className={cn('relative flex', className)}>
           {filteredColumns.some((column) => !column.visible) && <Badge className="absolute -right-2 -top-2 flex h-4 w-4 justify-center p-0">!</Badge>}
           <SlidersHorizontal className="h-4 w-4" />
-          <span className="ml-1 max-xs:hidden">{t('common:view')}</span>
+          <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[220px] pt-2" collisionPadding={16}>

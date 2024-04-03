@@ -156,6 +156,7 @@ function Toolbar({
       }
     })();
   }, [windowSize]);
+  
   return (
     <>
       <div className={`items-center flex justify-${isFiltersShown ? 'between' : 'center'}`}>

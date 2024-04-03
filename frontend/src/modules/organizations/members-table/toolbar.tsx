@@ -185,7 +185,7 @@ function Toolbar({
                 <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
               </Button>
               <Button variant="ghost" onClick={onResetSelectedRows}>
-                <XSquare size={42} />
+                <XSquare size={16} />
                 <span className="ml-1">{t('common:clear')}</span>
               </Button>
             </>
