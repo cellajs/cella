@@ -1,105 +1,70 @@
-import { Filter } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { Filter, FilterX } from 'lucide-react';
+import { createContext, useContext, useState } from 'react';
 import { Button } from '~/modules/ui/button';
-import TableSearch from './table-search';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import { cn } from '~/lib/utils';
-import type { GetMembersParams } from '~/api/organizations';
+
 import { useTranslation } from 'react-i18next';
-import type { GetUsersParams } from '~/api/users';
+import { cn } from '~/lib/utils';
 
-interface Item {
-  key: string;
-  value: string;
-}
-interface Props {
-  total?: number;
-  width: number;
-  items: Item[];
-  query?: string;
-  setQuery: (value?: string) => void;
-  setParentFilter: Dispatch<SetStateAction<boolean>>;
-  role: string | undefined;
+interface TableFilterBarProps {
+  children: React.ReactNode;
   isFiltered?: boolean;
-  setRole: React.Dispatch<React.SetStateAction<GetMembersParams['role']>> | React.Dispatch<React.SetStateAction<GetUsersParams['role']>>;
-  onResetFilters?: () => void;
-  onResetSelectedRows?: () => void;
+  onResetFilters: () => void;
 }
 
-const TableFilterBar = ({ items, role, query, width, setQuery, onResetFilters, setRole, setParentFilter }: Props) => {
-  const { t } = useTranslation();
+interface FilterBarChildProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-  const [isFilterOpen, setFilterOpen] = useState<boolean>(role !== undefined || query !== undefined ? true : false);
-  const [isButtonClicked, setButtonClicked] = useState<boolean>(role !== undefined || query !== undefined ? true : false);
+// Create a Context with default values
+export const TableFilterBarContext = createContext<{
+  isFilterActive: boolean;
+  setFilterActive: (isActive: boolean) => void;
+}>({
+  isFilterActive: false,
+  setFilterActive: () => {},
+});
 
-  const onShowFilterClick = () => {
-    setButtonClicked(true);
-    setFilterOpen(true);
-    setParentFilter(true);
-  };
+export const FilterBarActions = ({ children, className = '' }: FilterBarChildProps) => {
+  const { isFilterActive } = useContext(TableFilterBarContext);
+  return <div className={cn('flex items-center gap-2', className, isFilterActive && 'max-sm:hidden')}>{children}</div>;
+};
 
-  const onFiltersHideClick = () => {
-    setButtonClicked(false);
-    setFilterOpen(false);
-    setParentFilter(false);
-    if (onResetFilters) onResetFilters();
-  };
-
-  const crossButton = useMemo(() => {
-    if (width < 640 && isFilterOpen) return <Button onClick={onFiltersHideClick}>X</Button>;
-  }, [isFilterOpen, width]);
-
-  const filters = useMemo(() => {
-    if (!isFilterOpen)
-      return (
-        <Button className="mt-0" onClick={onShowFilterClick}>
-          <Filter width={16} height={16} />
-          <span className="ml-1">Filter</span>
-        </Button>
-      );
-    return (
-      <>
-        <TableSearch query={query} setQuery={setQuery} />
-        <Select
-          value={role === undefined ? 'all' : role}
-          onValueChange={(role) => {
-            (setRole as React.Dispatch<React.SetStateAction<string | undefined>>)(role === 'all' ? undefined : role);
-          }}
-        >
-          <SelectTrigger className={cn('h-10 w-[125px]', role !== undefined && 'text-primary')}>
-            <SelectValue placeholder={t('common:placeholder.select_role')} />
-          </SelectTrigger>
-          <SelectContent>
-            {items.map(({ key, value }) => (
-              <SelectItem key={key} value={key}>
-                {t(value)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </>
-    );
-  }, [isFilterOpen, query, role]);
-
-  useEffect(() => {
-    (() => {
-      if (width >= 640 && !isFilterOpen) {
-        setFilterOpen(true);
-        return;
-      }
-      if (width < 640 && !isButtonClicked && isFilterOpen) {
-        setFilterOpen(false);
-        return;
-      }
-    })();
-  }, [width]);
-
+export const FilterBarContent = ({ children, className = '' }: FilterBarChildProps) => {
+  const { isFilterActive } = useContext(TableFilterBarContext);
   return (
-    <>
-      {filters}
-      {crossButton}
-    </>
+    <div
+      className={cn('flex items-center max-sm:w-full gap-2 max-sm:relative max-sm:-ml-2 max-sm:mr-2', className, !isFilterActive && 'max-sm:hidden')}
+    >
+      {children}
+    </div>
   );
 };
 
-export default TableFilterBar;
+export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFilterBarProps) => {
+  const { t } = useTranslation();
+
+  const [isFilterActive, setFilterActive] = useState<boolean>(!!isFiltered);
+
+  const clearFilters = () => {
+    setFilterActive(false);
+    onResetFilters();
+  };
+
+  return (
+    <>
+      <TableFilterBarContext.Provider value={{ isFilterActive, setFilterActive }}>{children}</TableFilterBarContext.Provider>
+      {!isFilterActive && (
+        <Button className="sm:hidden" variant="secondary" onClick={() => setFilterActive(true)}>
+          <Filter width={16} height={16} />
+          <span className="ml-1">{t('common:filter')}</span>
+        </Button>
+      )}
+      {isFilterActive && (
+        <Button className="sm:hidden" variant="secondary" onClick={clearFilters}>
+          <FilterX size={16} />
+        </Button>
+      )}
+    </>
+  );
+};

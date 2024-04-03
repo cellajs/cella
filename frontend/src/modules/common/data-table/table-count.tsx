@@ -13,16 +13,16 @@ const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps
   const { t } = useTranslation();
 
   return (
-    <div className="text-muted-foreground text-sm flex items-center">
+    <div className="text-muted-foreground text-sm flex items-center gap-2">
       {count !== undefined && (
         <>
           {isFiltered && (
-            <Button variant="ghost" onClick={onResetFilters} className="mr-2">
+            <Button variant="ghost" onClick={onResetFilters} className="max-sm:hidden">
               <FilterX size={16} className="mr-1" />
               {t('common:clear_filter')}
             </Button>
           )}
-          <div className="w-max px-2">
+          <div className="w-max ml-2">
             {new Intl.NumberFormat('de-DE').format(count)} {count === 1 ? t(`common:${type}`) : t(`common:${type}.plural`)}
             {isFiltered && ' '}
             {isFiltered && t('common:found')}

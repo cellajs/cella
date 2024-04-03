@@ -1,5 +1,5 @@
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useContext, useMemo, useRef, useState } from 'react';
+import { type Dispatch, type SetStateAction, useContext, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
@@ -11,13 +11,15 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import type { Member } from '~/types';
 import type { MembersSearch } from '.';
-import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/columns-view';
-import TableCount from '../../common/data-table/table-count';
-import { dialog } from '../../common/dialoger/state';
-import { OrganizationContext } from '../organization';
+import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import TableCount from '~/modules/common/data-table/table-count';
+import { dialog } from '~/modules/common/dialoger/state';
+import { OrganizationContext } from '~/modules/organizations/organization';
 import RemoveMembersForm from './remove-member-form';
-import { useSize } from '~/hooks/use-size';
-import TableFilterBar from '~/modules/common/data-table/table-filter-bar';
+import { TableFilterBar, FilterBarActions, FilterBarContent } from '~/modules/common/data-table/table-filter-bar';
+import TableSearch from '~/modules/common/data-table/table-search';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import { cn } from '~/lib/utils';
 
 interface Props {
   selectedMembers: Member[];
@@ -28,7 +30,7 @@ interface Props {
   callback: (members: Member[], action: 'update' | 'delete') => void;
   isFiltered?: boolean;
   setRole: React.Dispatch<React.SetStateAction<GetMembersParams['role']>>;
-  onResetFilters?: () => void;
+  onResetFilters: () => void;
   onResetSelectedRows?: () => void;
   refetch?: () => void;
   columns: ColumnOrColumnGroup<Member>[];
@@ -64,9 +66,6 @@ function Toolbar({
   const user = useUserStore((state) => state.user);
 
   const containerRef = useRef(null);
-  const windowSize = useSize();
-
-  const [isFilterOpenParent, setFilterOpenParent] = useState<boolean>(role !== undefined || query !== undefined ? true : false);
 
   const openInviteDialog = () => {
     dialog(<InviteUsers organization={organization} dialog />, {
@@ -104,68 +103,79 @@ function Toolbar({
     );
   };
 
-  const isFiltersShown = useMemo(() => {
-    return (windowSize.width < 640 && !isFilterOpenParent) || windowSize.width >= 640;
-  }, [windowSize.width, isFilterOpenParent]);
-
   return (
     <>
-      <div className={`items-center flex justify-${isFiltersShown ? 'between' : 'center'}`}>
-        <div className={`${isFiltersShown ? 'flex' : 'hidden'} items-center space-x-2`}>
-          {selectedMembers.length > 0 ? (
-            <>
-              <Button variant="destructive" onClick={openRemoveDialog} className="relative">
-                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedMembers.length}</Badge>
-                <Trash size={16} />
-                <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
-              </Button>
-              <Button variant="ghost" onClick={onResetSelectedRows}>
-                <XSquare size={16} />
-                <span className="ml-1">{t('common:clear')}</span>
-              </Button>
-            </>
-          ) : (
-            !isFiltered &&
-            (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
-              <Button onClick={openInviteDialog}>
-                <Mail size={16} />
-                <span className="ml-1">{t('common:invite')}</span>
-              </Button>
-            )
-          )}
-          {selectedMembers.length === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
-        </div>
-        <div className="mt-2 flex items-center space-x-2 sm:mt-0">
-          <TableFilterBar
-            role={role}
-            query={query}
-            items={items}
-            width={windowSize.width}
-            setRole={setRole}
-            setQuery={setQuery}
-            onResetFilters={onResetFilters}
-            setParentFilter={setFilterOpenParent}
-          />
-          <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-          <Export
-            className="max-lg:hidden"
-            filename={`${organization.slug}-members`}
-            columns={columns}
-            selectedRows={selectedMembers}
-            fetchRows={async (limit) => {
-              const { items } = await getMembersByOrganizationIdentifier(organization.id, {
-                limit,
-                role,
-                q: query,
-                sort,
-                order,
-              });
-              return items;
-            }}
-          />
+      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+          <FilterBarActions>
+            {selectedMembers.length > 0 ? (
+              <>
+                <Button variant="destructive" onClick={openRemoveDialog} className="relative">
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedMembers.length}</Badge>
+                  <Trash size={16} />
+                  <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+                </Button>
+                <Button variant="ghost" onClick={onResetSelectedRows}>
+                  <XSquare size={16} />
+                  <span className="ml-1">{t('common:clear')}</span>
+                </Button>
+              </>
+            ) : (
+              !isFiltered &&
+              (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
+                <Button onClick={openInviteDialog}>
+                  <Mail size={16} />
+                  <span className="ml-1">{t('common:invite')}</span>
+                </Button>
+              )
+            )}
+            {selectedMembers.length === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          </FilterBarActions>
 
-          <FocusView iconOnly />
-        </div>
+          <div className="sm:grow" />
+
+          <FilterBarContent>
+            <TableSearch query={query} setQuery={setQuery} />
+            <Select
+              value={role === undefined ? 'all' : role}
+              onValueChange={(role) => {
+                setRole(role === 'all' ? undefined : (role as GetMembersParams['role']));
+              }}
+            >
+              <SelectTrigger className={cn('w-full h-10 sm:min-w-32', role !== undefined && 'text-primary')}>
+                <SelectValue placeholder={t('common:placeholder.select_role')} />
+              </SelectTrigger>
+              <SelectContent>
+                {items.map(({ key, value }) => (
+                  <SelectItem key={key} value={key}>
+                    {t(value)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterBarContent>
+        </TableFilterBar>
+
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+
+        <Export
+          className="max-lg:hidden"
+          filename={`${organization.slug}-members`}
+          columns={columns}
+          selectedRows={selectedMembers}
+          fetchRows={async (limit) => {
+            const { items } = await getMembersByOrganizationIdentifier(organization.id, {
+              limit,
+              role,
+              q: query,
+              sort,
+              order,
+            });
+            return items;
+          }}
+        />
+
+        <FocusView iconOnly />
       </div>
 
       <div ref={containerRef} />
