@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import throttle from 'lodash/fp/throttle';
+import { throttle } from '@github/mini-throttle';
 
 export interface useScrollSpyParams {
   activeSectionDefault?: number;
@@ -17,7 +17,7 @@ export const useScrollSpy = ({
 }: useScrollSpyParams): number | undefined => {
   const [activeSection, setActiveSection] = useState(activeSectionDefault);
 
-  const handle = throttle(throttleMs, () => {
+  const handle = throttle( () => {
     let currentSectionId = activeSection;
     for (let i = 0; i < sectionElementRefs.length; i += 1) {
       const section = sectionElementRefs[i].current;
@@ -33,7 +33,7 @@ export const useScrollSpy = ({
     }
 
     setActiveSection(currentSectionId);
-  });
+  }, throttleMs);
 
   useEffect(() => {
     const scrollable = scrollingElement?.current ?? window;
