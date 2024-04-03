@@ -3,7 +3,7 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { acceptInvite, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
 import { Button } from '~/modules/ui/button';
-import { SignInRoute } from '~/router/authentication';
+import { SignInRoute } from '~/routes/authentication';
 import { useThemeStore } from '~/store/theme';
 
 const oauthOptions = [
@@ -37,7 +37,7 @@ const oauthOptions = [
 ];
 
 interface OauthOptionsProps {
-  actionType: 'check' | 'signIn' | 'signUp' | 'acceptInvite';
+  actionType: 'check' | 'signIn' | 'signUp' | 'acceptInvite' | 'inviteOnly';
 }
 
 const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {

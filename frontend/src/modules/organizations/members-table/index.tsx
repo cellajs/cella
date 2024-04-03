@@ -1,10 +1,10 @@
-import { type DefaultError, infiniteQueryOptions, useInfiniteQuery, useMutation } from '@tanstack/react-query';
+import { infiniteQueryOptions, useInfiniteQuery, useMutation, type DefaultError } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Member } from '~/types';
 
-import { type GetMembersParams, getMembersByOrganizationIdentifier, updateUserInOrganization } from '~/api/organizations';
+import { getMembersByOrganizationIdentifier, updateUserInOrganization, type GetMembersParams } from '~/api/organizations';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
@@ -13,11 +13,11 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import type { z } from 'zod';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationContext } from '~/modules/organizations/organization';
-import { queryClient } from '~/router';
-import { organizationMembersRoute } from '~/router/organizations';
+import { organizationMembersRoute } from '~/routes/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { queryClient } from '~/lib/query-client';
 
 const LIMIT = 40;
 
@@ -62,7 +62,9 @@ export const useUpdateUserInOrganizationMutation = (organizationIdentifier: stri
   >({
     mutationKey: ['members', 'update', organizationIdentifier],
     mutationFn: (params) => updateUserInOrganization(organizationIdentifier, params.id, params.role),
-    onSuccess: () => queryClient.invalidateQueries(),
+    onSuccess: (member) => {
+      queryClient.setQueryData(['users', organizationIdentifier], member);
+    },
     gcTime: 1000 * 10,
   });
 };

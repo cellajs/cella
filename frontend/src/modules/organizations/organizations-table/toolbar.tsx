@@ -19,6 +19,7 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import type { OrganizationsSearch } from '.';
+import { TableFilterBar, FilterBarActions, FilterBarContent } from '~/modules/common/data-table/table-filter-bar';
 
 interface Props {
   total?: number;
@@ -26,7 +27,7 @@ interface Props {
   selectedOrganizations: Organization[];
   setQuery: (value?: string) => void;
   isFiltered?: boolean;
-  onResetFilters?: () => void;
+  onResetFilters: () => void;
   onResetSelectedRows?: () => void;
   callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void;
   columns: ColumnOrColumnGroup<Organization>[];
@@ -81,9 +82,11 @@ function Toolbar({
   };
 
   return (
-    <div className="items-center justify-between sm:flex">
-      <div className="flex items-center space-x-2">
-        {selectedOrganizations.length > 0 ? (
+    <>
+      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+          <FilterBarActions>
+          {selectedOrganizations.length > 0 ? (
           <>
             <Button onClick={openNewsletterSheet} className="relative">
               <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
@@ -119,9 +122,15 @@ function Toolbar({
         {selectedOrganizations.length === 0 && (
           <TableCount count={total} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />
         )}
-      </div>
-      <div className="mt-2 flex items-center space-x-2 sm:mt-0">
-        <TableSearch query={query} setQuery={setQuery} />
+          </FilterBarActions>
+
+          <div className="sm:grow" />
+
+          <FilterBarContent>
+            <TableSearch query={query} setQuery={setQuery} />
+           
+          </FilterBarContent>
+        </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         <Export
           className="max-lg:hidden"
@@ -140,8 +149,9 @@ function Toolbar({
         />
         <FocusView iconOnly />
       </div>
-    </div>
+    </>
   );
 }
+
 
 export default Toolbar;

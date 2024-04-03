@@ -1,5 +1,5 @@
-import { swaggerUI } from '@hono/swagger-ui';
 import { config } from 'config';
+import { apiReference } from '@scalar/hono-api-reference';
 import type { CustomHono } from '../types/common';
 
 const openAPITags = [
@@ -33,8 +33,10 @@ const docs = (app: CustomHono) => {
 
   app.get(
     '/docs',
-    swaggerUI({
-      url: 'openapi.json',
+    apiReference({
+      spec: {
+        url: 'openapi.json',
+      },
     }),
   );
 };

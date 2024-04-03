@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
-import { OrganizationsTableRoute } from '~/router/system';
+import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';

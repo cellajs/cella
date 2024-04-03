@@ -1,11 +1,10 @@
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
-import { createRouter } from '@tanstack/react-router';
 import i18next from 'i18next';
 import { toast } from 'sonner';
 import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
-import { routeMasks, routeTree } from './routeTree';
 import { useAlertsStore } from '~/store/alerts';
+import router from './router';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -58,22 +57,3 @@ export const queryClient = new QueryClient({
   mutationCache: new MutationCache({ onError, onSuccess }),
   queryCache: new QueryCache({ onError, onSuccess }),
 });
-
-// Set up a Router instance
-// https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
-const router = createRouter({
-  routeTree,
-  routeMasks,
-  // notFoundRoute,
-  defaultPreload: false,
-  context: { queryClient },
-});
-
-// Register the router
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router;
-  }
-}
-
-export default router;

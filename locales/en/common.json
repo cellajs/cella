@@ -276,5 +276,8 @@
   "offline_mode": "Offline mode",
   "offline_mode.text": "You appear to have no internet connection.",
   "maintenance_mode": "Maintenance",
-  "maintenance_mode.text": "It appears the server is undergoing maintenance."
+  "maintenance_mode.text": "It appears the server is undergoing maintenance.",
+  "hi": "Hey there!",
+  "invite_only.text": "Cella is currently invite-only. Can't wait? Contact us for an invite.",
+  "filter": "Filter"
 }

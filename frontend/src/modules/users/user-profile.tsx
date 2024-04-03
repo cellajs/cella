@@ -3,7 +3,7 @@ import { useParams } from '@tanstack/react-router';
 import { createContext } from 'react';
 
 import { getUserBySlugOrId } from '~/api/users';
-import { UserProfileRoute } from '~/router/users';
+import { UserProfileRoute } from '~/routes/users';
 import type { User } from '~/types';
 
 import { PageHeader } from '~/modules/common/page-header';

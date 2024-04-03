@@ -4,7 +4,7 @@ import { createContext } from 'react';
 import { getOrganizationBySlugOrId } from '~/api/organizations';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
-import { OrganizationRoute } from '~/router/organizations';
+import { OrganizationRoute } from '~/routes/organizations';
 import type { Organization } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
 import JoinLeaveButton from '../common/join-leave-button';

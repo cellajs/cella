@@ -2,7 +2,7 @@ import { Outlet, createRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 import AcceptInvite from '~/modules/auth/accept-invite';
 import ResetPassword from '~/modules/auth/reset-password';
-import SignIn from '~/modules/auth/sign-in';
+import SignIn from '~/modules/auth';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { useUserStore } from '~/store/user';

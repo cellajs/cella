@@ -4,6 +4,7 @@ import type { User } from '~/types';
 import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '../common/delete-form';
 import { dialog } from '../common/dialoger/state';
+import { queryClient } from '~/lib/query-client';
 
 interface Props {
   users: User[];
@@ -15,6 +16,12 @@ const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
   const { mutate: deleteUsers, isPending } = useMutation({
     mutationFn: baseDeleteUsers,
     onSuccess: () => {
+      for (const user of users) {
+        queryClient.invalidateQueries({
+          queryKey: ['users', user.id],
+        });
+      }
+
       callback?.(users);
 
       if (isDialog) {

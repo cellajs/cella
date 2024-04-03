@@ -3,12 +3,10 @@ import { type Dispatch, type SetStateAction, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { GetUsersParams } from '~/api/users';
-import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import InviteUsers from '~/modules/common/invite-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
 import type { UserRow } from '.';
@@ -16,6 +14,10 @@ import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/c
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
+import { TableFilterBar, FilterBarActions, FilterBarContent } from '~/modules/common/data-table/table-filter-bar';
+import TableSearch from '~/modules/common/data-table/table-search';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import { cn } from '~/lib/utils';
 
 interface Props {
   total?: number;
@@ -26,7 +28,7 @@ interface Props {
   role: GetUsersParams['role'];
   setRole: React.Dispatch<React.SetStateAction<GetUsersParams['role']>>;
   selectedUsers: User[];
-  onResetFilters?: () => void;
+  onResetFilters: () => void;
   onResetSelectedRows?: () => void;
   columns: ColumnOrColumnGroup<UserRow>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<UserRow>[]>>;
@@ -88,53 +90,58 @@ function Toolbar({
 
   return (
     <>
-      <div className="items-center justify-between sm:flex">
-        <div className="flex items-center space-x-2">
-          {selectedUsers.length > 0 ? (
-            <>
-              <Button variant="destructive" onClick={openDeleteDialog} className="relative">
-                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedUsers.length}</Badge>
-                <Trash size={16} />
-                <span className="ml-1">{t('common:delete')}</span>
-              </Button>
-              <Button variant="ghost" onClick={onResetSelectedRows}>
-                <XSquare size={16} />
-                <span className="ml-1">{t('common:clear')}</span>
-              </Button>
-            </>
-          ) : (
-            !isFiltered &&
-            user.role === 'ADMIN' && (
-              <Button onClick={openInviteDialog}>
-                <Mail size={16} />
-                <span className="ml-1">{t('common:invite')}</span>
-              </Button>
-            )
-          )}
-          {selectedUsers.length === 0 && <TableCount count={total} type="user" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
-        </div>
-        <div className="mt-2 flex items-center space-x-2 sm:mt-0">
-          <TableSearch query={query} setQuery={setQuery} />
-          <Select
-            value={role === undefined ? 'all' : role}
-            onValueChange={(role) => {
-              setRole(role === 'all' ? undefined : (role as GetUsersParams['role']));
-            }}
-          >
-            <SelectTrigger className="h-10 w-[150px]">
-              <SelectValue placeholder={t('common:placeholder.select_role')} />
-            </SelectTrigger>
-            <SelectContent>
-              {items.map(({ key, value }) => (
-                <SelectItem key={key} value={key}>
-                  {t(value)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-          <FocusView iconOnly />
-        </div>
+      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+          <FilterBarActions>
+            {selectedUsers.length > 0 ? (
+              <>
+                <Button variant="destructive" onClick={openDeleteDialog} className="relative">
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedUsers.length}</Badge>
+                  <Trash size={16} />
+                  <span className="ml-1">{t('common:delete')}</span>
+                </Button>
+                <Button variant="ghost" onClick={onResetSelectedRows}>
+                  <XSquare size={16} />
+                  <span className="ml-1">{t('common:clear')}</span>
+                </Button>
+              </>
+            ) : (
+              !isFiltered &&
+              user.role === 'ADMIN' && (
+                <Button onClick={openInviteDialog}>
+                  <Mail size={16} />
+                  <span className="ml-1">{t('common:invite')}</span>
+                </Button>
+              )
+            )}
+            {selectedUsers.length === 0 && <TableCount count={total} type="user" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          </FilterBarActions>
+
+          <div className="sm:grow" />
+
+          <FilterBarContent>
+            <TableSearch query={query} setQuery={setQuery} />
+            <Select
+              value={role === undefined ? 'all' : role}
+              onValueChange={(role) => {
+                setRole(role === 'all' ? undefined : (role as GetUsersParams['role']));
+              }}
+            >
+              <SelectTrigger className={cn('w-full h-10 sm:min-w-32', role !== undefined && 'text-primary')}>
+                <SelectValue placeholder={t('common:placeholder.select_role')} />
+              </SelectTrigger>
+              <SelectContent>
+                {items.map(({ key, value }) => (
+                  <SelectItem key={key} value={key}>
+                    {t(value)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterBarContent>
+        </TableFilterBar>
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+        <FocusView iconOnly />
       </div>
 
       <div ref={containerRef} />

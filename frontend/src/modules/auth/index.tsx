@@ -1,39 +1,48 @@
-import { Link } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
-import { type FooterLinkProps, FooterLinks } from '~/modules/common/app-footer';
-import Logo from '~/modules/common/logo';
+import { useEffect, useState } from 'react';
+import { CheckEmailForm } from './check-email-form';
+import { SignInForm } from './sign-in-form';
+import { SignUpForm } from './sign-up-form';
 
-interface AuthPageProps {
-  children?: React.ReactNode;
-}
+import { useUserStore } from '~/store/user';
+import AuthPage from './auth-page';
+import OauthOptions from './oauth-options';
+import { useTranslation } from 'react-i18next';
 
-// Auth footer links
-const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
+type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly';
 
-// Lazy load bg animation
-const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
+const SignIn = () => {
+  const { t } = useTranslation();
+  const { lastUser } = useUserStore();
+  const [step, setStep] = useState<Step>('check');
+  const [email, setEmail] = useState('');
 
-const AuthPage = ({ children }: AuthPageProps) => {
+  useEffect(() => {
+    if (lastUser?.email) handleCheckEmail('signIn', lastUser.email);
+  }, [lastUser]);
+
+  const handleCheckEmail = (step: string, email: string) => {
+    setEmail(email);
+    setStep(step as Step);
+  };
+
+  const handleSetStep = (step: string) => {
+    setStep(step as Step);
+  };
+
   return (
-    <div className="container rich-gradient before:fixed after:fixed flex flex-col min-h-[90vh] sm:min-h-svh items-center">
-      {/* Render bg animation */}
-      <Suspense fallback={null}>
-        <BgAnimation />
-      </Suspense>
-
-      <div className="mt-auto mb-auto">
-        <div className="mx-auto mb-40 mt-8 flex flex-col justify-center space-y-4 w-[280px] sm:w-[360px]">
-          {children}
-
-          <Link to="/about" className="hover:opacity-90 !mt-8 active:scale-95">
-            <Logo height={30} />
-          </Link>
-
-          <FooterLinks className="max-md:hidden !mt-8 scale-110" links={authFooterLinks} />
-        </div>
-      </div>
-    </div>
+    <AuthPage>
+      {step === 'check' && <CheckEmailForm setStep={handleCheckEmail} />}
+      {step === 'signIn' && <SignInForm email={email} setStep={handleSetStep} />}
+      {step === 'signUp' && <SignUpForm email={email} setStep={handleSetStep} />}
+      {step === 'inviteOnly' && (
+        <>
+          <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>
+          <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text')}</h2>
+        </>
+      )}
+      {step !== 'inviteOnly' && <OauthOptions actionType={step} />}
+    </AuthPage>
   );
 };
 
-export default AuthPage;
+export default SignIn;

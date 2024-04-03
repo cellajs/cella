@@ -4,6 +4,7 @@ import type { Organization } from '~/types';
 import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
+import { queryClient } from '~/lib/query-client';
 
 interface Props {
   organizations: Organization[];
@@ -15,6 +16,12 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
   const { mutate: deleteOrganizations, isPending } = useMutation({
     mutationFn: baseDeleteOrganizations,
     onSuccess: () => {
+      for (const organization of organizations) {
+        queryClient.invalidateQueries({
+          queryKey: ['organizations', organization.id],
+        });
+      }
+
       callback?.(organizations);
 
       if (isDialog) {

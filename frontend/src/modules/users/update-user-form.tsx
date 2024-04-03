@@ -4,7 +4,6 @@ import { updateUserJsonSchema } from 'backend/modules/users/schema';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { queryClient } from '~/router';
 import type { User } from '~/types';
 import AvatarFormField from '../common/forms/avatar';
 
@@ -25,6 +24,7 @@ import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/forms/input';
 import LanguageFormField from '../common/forms/language';
+import { queryClient } from '~/lib/query-client';
 
 interface Props {
   user: User;
@@ -40,7 +40,9 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
   return useMutation<User, DefaultError, UpdateUserParams>({
     mutationKey: ['me', 'update', userIdentifier],
     mutationFn: (params) => updateUser(userIdentifier, params),
-    onSuccess: () => queryClient.invalidateQueries(),
+    onSuccess: (user) => {
+      queryClient.setQueryData(['users', user.id], user);
+    },
     gcTime: 1000 * 10,
   });
 };

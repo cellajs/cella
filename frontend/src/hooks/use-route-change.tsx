@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import router from '~/router';
+import router from '~/lib/router';
 
 export const useRouteChange = () => {
   const [hasChanged, setHasChanged] = useState(false);

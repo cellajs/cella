@@ -1,6 +1,5 @@
 import { Search, XCircle } from 'lucide-react';
-import { useCallback, useEffect } from 'react';
-
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
 import type { Page, UserMenu } from '~/types';
@@ -16,30 +15,21 @@ interface SheetMenuSearchProps {
 export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResultsChange }: SheetMenuSearchProps) => {
   const { t } = useTranslation();
 
-  const filterResults = useCallback(
-    (term: string) => {
-      const lowerCaseTerm = term.toLowerCase();
-
-      // Filter each menu section
-      return menuSections.reduce(
-        (acc, section) => {
-          acc[section.id] = menu[section.id as keyof UserMenu].active.filter((page) => page.name.toLowerCase().includes(lowerCaseTerm));
-          return acc;
-        },
-        {} as Record<string, Page[]>,
-      );
-    },
-    [menu],
-  );
-
   useEffect(() => {
-    const results = searchTerm.trim() ? filterResults(searchTerm) : initialSearchResults;
-    onSearchResultsChange(results);
-  }, [searchTerm, filterResults, onSearchResultsChange]);
+    const filterResults = () => {
+      if (!searchTerm.trim()) return initialSearchResults;
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
+      const lowerCaseTerm = searchTerm.toLowerCase();
+      return menuSections.reduce((acc, section) => {
+        acc[section.id] = menu[section.id as keyof UserMenu].active.filter(page => 
+          page.name.toLowerCase().includes(lowerCaseTerm)
+        );
+        return acc;
+      }, {} as Record<string, Page[]>);
+    };
+
+    onSearchResultsChange(filterResults());
+  }, [searchTerm, menu, onSearchResultsChange]);
 
   return (
     <div className="relative">
@@ -48,10 +38,12 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResul
         type="text"
         placeholder={t('common:search')}
         value={searchTerm}
-        onChange={handleSearchChange}
+        onChange={(e) => setSearchTerm(e.target.value)}
         className="bg-transparent border-0 px-10"
       />
-      {searchTerm && <XCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setSearchTerm('')} />}
+      {searchTerm && (
+        <XCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setSearchTerm('')} />
+      )}
     </div>
   );
 };

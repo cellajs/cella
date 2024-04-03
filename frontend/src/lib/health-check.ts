@@ -1,3 +1,4 @@
+// Health check utility to check if backend is up and running again
 export const healthCheck = async (
   url: string,
   maxDelay = 600, // Maximum 10 minutes
