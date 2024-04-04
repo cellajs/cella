@@ -17,6 +17,7 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -123,33 +124,37 @@ const OrganizationsTable = () => {
         sort={sortColumns[0]?.columnKey as OrganizationsSearch['sort']}
         order={sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order']}
       />
-      <DataTable<Organization>
-        {...{
-          columns: columns.filter((column) => column.visible),
-          rows,
-          totalCount: queryResult.data?.pages[0].total,
-          rowHeight: 42,
-          rowKeyGetter: (row) => row.id,
-          error: queryResult.error,
-          isLoading: queryResult.isLoading,
-          isFetching: queryResult.isFetching,
-          enableVirtualization: false,
-          isFiltered,
-          limit: LIMIT,
-          selectedRows,
-          onRowsChange,
-          fetchMore: queryResult.fetchNextPage,
-          onSelectedRowsChange: setSelectedRows,
-          sortColumns,
-          onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <>
-              <Bird strokeWidth={1} className="w-20 h-20" />
-              <div className="mt-6 text-sm font-light">{t('common:no_organizations')}</div>
-            </>
-          ),
-        }}
-      />
+      {queryResult.isLoading || queryResult.isFetching ? (
+        <DataTableSkeleton cellsWidths={['48px']} cellHight={36} cellsCount={columns.length} />
+      ) : (
+        <DataTable<Organization>
+          {...{
+            columns: columns.filter((column) => column.visible),
+            rows,
+            totalCount: queryResult.data?.pages[0].total,
+            rowHeight: 42,
+            rowKeyGetter: (row) => row.id,
+            error: queryResult.error,
+            isLoading: queryResult.isLoading,
+            isFetching: queryResult.isFetching,
+            enableVirtualization: false,
+            isFiltered,
+            limit: LIMIT,
+            selectedRows,
+            onRowsChange,
+            fetchMore: queryResult.fetchNextPage,
+            onSelectedRowsChange: setSelectedRows,
+            sortColumns,
+            onSortColumnsChange: setSortColumns,
+            NoRowsComponent: (
+              <>
+                <Bird strokeWidth={1} className="w-20 h-20" />
+                <div className="mt-6 text-sm font-light">{t('common:no_organizations')}</div>
+              </>
+            ),
+          }}
+        />
+      )}
     </div>
   );
 };
