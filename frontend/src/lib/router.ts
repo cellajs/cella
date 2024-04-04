@@ -17,6 +17,11 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;
   }
+
+  // Required pageTitle in static data
+  interface StaticDataRouteOption {
+    pageTitle: string
+  }
 }
 
 export default router;

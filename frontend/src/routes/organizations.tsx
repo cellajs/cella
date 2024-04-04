@@ -8,19 +8,18 @@ import Organization, { organizationQueryOptions } from '~/modules/organizations/
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import Projects from '~/modules/projects';
 import { IndexRoute } from './routeTree';
+import { noDirectAccess } from '~/lib/utils';
 
-// Lazy-loaded route components
+// Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
 const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export const OrganizationRoute = createRoute({
   path: '$organizationIdentifier',
+  staticData: { pageTitle: 'Organization' },
+  beforeLoad: ({ location }) => noDirectAccess(location, '/members'),
   getParentRoute: () => IndexRoute,
-  validateSearch: membersSearchSchema,
-  beforeLoad: ({ params }) => {
-    return { getTitle: () => params.organizationIdentifier };
-  },
   loader: async ({ context: { queryClient }, params: { organizationIdentifier } }) => {
     queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
   },
@@ -34,9 +33,9 @@ export const OrganizationRoute = createRoute({
 
 export const organizationMembersRoute = createRoute({
   path: '/members',
+  staticData: { pageTitle: 'Members' },
   getParentRoute: () => OrganizationRoute,
   validateSearch: membersSearchSchema,
-  beforeLoad: () => ({ getTitle: () => 'Members' }),
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
     const membersInfiniteQueryOptions = membersQueryOptions(organizationIdentifier, { q, sort, order, role });
@@ -55,14 +54,14 @@ export const organizationMembersRoute = createRoute({
 // INFO: This is a proof of concept development
 export const projectsRoute = createRoute({
   path: '/projects',
-  beforeLoad: () => ({ getTitle: () => 'Projects' }),
+  staticData: { pageTitle: 'Projects' },
   getParentRoute: () => OrganizationRoute,
   component: () => <Projects />,
 });
 
 export const organizationSettingsRoute = createRoute({
   path: '/settings',
-  beforeLoad: () => ({ getTitle: () => 'Settings' }),
+  staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,
   component: () => <OrganizationSettings />,
 });

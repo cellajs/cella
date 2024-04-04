@@ -26,20 +26,14 @@ function Root() {
   useEffect(() => {
     // Set document title based on lowest matching route with a title
     const breadcrumbPromises = [...matches]
-      .reverse()
-      .map((match, index) => {
-        if (!('getTitle' in match.routeContext)) {
-          if (index === 0 && import.meta.env.DEV) {
-            console.warn('no getTitle', match.pathname, match);
-          }
-          return undefined;
-        }
-        const { routeContext } = match;
-        return routeContext.getTitle();
+      .map((match) => {
+        const { staticData } = match;
+        return staticData.pageTitle;
       })
       .filter(Boolean);
     void Promise.all(breadcrumbPromises).then((titles) => {
-      document.title = titles.join(' · ');
+      document.title = titles.join(' › ') + (titles.length  && ' · ') + config.name;
+
       return titles;
     });
   }, [matches]);

@@ -5,7 +5,6 @@ import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
-import { config } from 'config';
 import { getMe, getUserMenu } from '~/api/users';
 
 import App from '~/modules/common/app';
@@ -31,19 +30,20 @@ export const getAndSetMenu = async () => {
 };
 
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  beforeLoad: () => ({ getTitle: () => config.name }),
+  staticData: { pageTitle: '' },
   component: () => <Root />,
 });
 
 const ErrorNoticeRoute = createRoute({
   path: '/error',
-  beforeLoad: () => ({ getTitle: () => 'Error' }),
+  staticData: { pageTitle: 'Error' },
   getParentRoute: () => rootRoute,
   component: () => <ErrorNotice />,
 });
 
 export const IndexRoute = createRoute({
   id: 'layout',
+  staticData: { pageTitle: '' },
   getParentRoute: () => rootRoute,
   beforeLoad: async ({ location, cause, context }) => {
     const lastUser = useUserStore.getState().lastUser;

@@ -10,6 +10,7 @@ import { getAndSetMe, rootRoute } from './routeTree';
 
 export const AuthRoute = createRoute({
   id: 'auth-layout',
+  staticData: { pageTitle: 'Home' },
   getParentRoute: () => rootRoute,
   beforeLoad: async ({ context }) => {
     // If stored user, redirect to home
@@ -32,7 +33,7 @@ export const AuthRoute = createRoute({
 
 export const SignInRoute = createRoute({
   path: '/auth/sign-in',
-  beforeLoad: () => ({ getTitle: () => 'Sign In' }),
+  staticData: { pageTitle: 'Sign in' },
   getParentRoute: () => AuthRoute,
   component: () => <SignIn />,
   validateSearch: z.object({ redirect: z.string().optional() }),
@@ -40,7 +41,7 @@ export const SignInRoute = createRoute({
 
 export const AcceptRoute = createRoute({
   path: '/auth/accept-invite/$token',
-  beforeLoad: () => ({ getTitle: () => 'Accept Invite' }),
+  staticData: { pageTitle: 'Accept invite' },
   getParentRoute: () => AuthRoute,
   component: () => <AcceptInvite />,
   validateSearch: z.object({ redirect: z.string().optional() }),
@@ -48,28 +49,28 @@ export const AcceptRoute = createRoute({
 
 export const ResetPasswordRoute = createRoute({
   path: '/auth/reset-password/$token',
-  beforeLoad: () => ({ getTitle: () => 'Reset Password' }),
+  staticData: { pageTitle: 'Reset password' },
   getParentRoute: () => AuthRoute,
   component: () => <ResetPassword />,
 });
 
 export const VerifyEmailRoute = createRoute({
   path: '/auth/verify-email',
-  beforeLoad: () => ({ getTitle: () => 'Verify Email' }),
+  staticData: { pageTitle: 'Verify email' },
   getParentRoute: () => AuthRoute,
   component: () => <VerifyEmail />,
 });
 
 export const VerifyEmailRouteWithToken = createRoute({
   path: '/auth/verify-email/$token',
-  beforeLoad: () => ({ getTitle: () => 'Verify Email' }),
+  staticData: { pageTitle: 'Verify email' },
   getParentRoute: () => AuthRoute,
   component: () => <VerifyEmail />,
 });
 
 export const SignOutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  beforeLoad: () => ({ getTitle: () => 'Sign Out' }),
   path: '/sign-out',
+  getParentRoute: () => rootRoute,
+  staticData: { pageTitle: 'Sign out' },
   component: SignOut,
 });

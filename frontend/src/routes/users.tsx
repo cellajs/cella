@@ -8,8 +8,8 @@ import { IndexRoute } from './routeTree';
 
 export const UserProfileRoute = createRoute({
   path: '/user/$userIdentifier',
+  staticData: { pageTitle: 'Profile' },
   getParentRoute: () => IndexRoute,
-  beforeLoad: ({ params: { userIdentifier } }) => ({ getTitle: () => userIdentifier }),
   loader: async ({ context: { queryClient }, params: { userIdentifier } }) => {
     queryClient.ensureQueryData(userQueryOptions(userIdentifier));
   },
@@ -23,7 +23,7 @@ export const UserProfileRoute = createRoute({
 
 export const UserSettingsRoute = createRoute({
   path: '/user/settings',
-  beforeLoad: () => ({ getTitle: () => 'Settings' }),
+  staticData: { pageTitle: 'Settings' },
   getParentRoute: () => IndexRoute,
   component: () => <UserSettings />,
 });
