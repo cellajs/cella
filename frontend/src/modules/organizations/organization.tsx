@@ -1,15 +1,15 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { useMatches, useParams } from '@tanstack/react-router';
+import { AnimatePresence } from 'framer-motion';
 import { createContext } from 'react';
 import { getOrganizationBySlugOrId } from '~/api/organizations';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
 import type { Organization } from '~/types';
+import { AnimatedOutlet } from '../common/animated-outlet';
 import { FocusViewContainer } from '../common/focus-view';
 import JoinLeaveButton from './join-leave-button';
-import { AnimatedOutlet } from '../common/animated-outlet';
-import { AnimatePresence } from 'framer-motion';
 
 interface OrganizationContextValue {
   organization: Organization;

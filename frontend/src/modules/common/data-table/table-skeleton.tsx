@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Skeleton } from '../../ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
+import { Skeleton } from '../../ui/skeleton';
 
 interface DataTableSkeletonProps {
   rowCount?: number;

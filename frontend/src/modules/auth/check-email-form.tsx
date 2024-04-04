@@ -8,10 +8,10 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { checkEmail as baseCheckEmail } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
-import { config } from 'config';
 
 const formSchema = checkEmailJsonSchema;
 

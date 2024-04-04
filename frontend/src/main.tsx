@@ -14,16 +14,16 @@ if (!root) {
   throw new Error('Root element not found');
 }
 
-import {renderAscii} from '~/lib/ascii';
-import router from './lib/router';
+import { renderAscii } from '~/lib/ascii';
 import { queryClient } from './lib/query-client';
+import router from './lib/router';
 import { initSentry } from './lib/sentry';
 
 // Render ASCII logo in console
 renderAscii();
 
 // Initialize Sentry
-initSentry()
+initSentry();
 
 ReactDOM.createRoot(root).render(
   <StrictMode>

@@ -1,15 +1,15 @@
-import { initializePaddle, type Paddle } from '@paddle/paddle-js';
+import { type Paddle, initializePaddle } from '@paddle/paddle-js';
 import { useMatches } from '@tanstack/react-router';
 import { config } from 'config';
+import { AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageNav } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { OrganizationsTableRoute, UsersTableRoute } from '~/routes/system';
+import { AnimatedOutlet } from '../common/animated-outlet';
 import { FocusViewContainer } from '../common/focus-view';
 import { Button } from '../ui/button';
-import { AnimatedOutlet } from '../common/animated-outlet';
-import { AnimatePresence } from 'framer-motion';
 
 const SystemPanel = () => {
   const { t } = useTranslation();

@@ -6,7 +6,6 @@ import { immer } from 'zustand/middleware/immer';
 // Down levels are specific categories of alerts for maintenance (503) or offline (no connection) status
 type downLevels = 'maintenance' | 'offline' | null;
 
-
 interface AlertsState {
   alertsSeen: string[];
   downAlert: downLevels;

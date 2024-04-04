@@ -3,10 +3,10 @@ import { CheckEmailForm } from './check-email-form';
 import { SignInForm } from './sign-in-form';
 import { SignUpForm } from './sign-up-form';
 
+import { useTranslation } from 'react-i18next';
 import { useUserStore } from '~/store/user';
 import AuthPage from './auth-page';
 import OauthOptions from './oauth-options';
-import { useTranslation } from 'react-i18next';
 
 type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly';
 

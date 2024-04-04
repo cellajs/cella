@@ -1,4 +1,5 @@
 import path from 'node:path';
+import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
@@ -8,7 +9,6 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
-import terser from '@rollup/plugin-terser';
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {

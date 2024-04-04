@@ -1,11 +1,11 @@
-import { CloudOff, Construction, X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Alert, AlertDescription } from '~/modules/ui/alert';
-import { Button } from '../ui/button';
-import { useAlertsStore } from '~/store/alerts';
-import { useEffect } from 'react';
 import { config } from 'config';
+import { CloudOff, Construction, X } from 'lucide-react';
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { healthCheck } from '~/lib/health-check';
+import { Alert, AlertDescription } from '~/modules/ui/alert';
+import { useAlertsStore } from '~/store/alerts';
+import { Button } from '../ui/button';
 
 export const DownAlert = () => {
   const { t } = useTranslation();
@@ -58,7 +58,12 @@ export const DownAlert = () => {
             <span>
               <span className="max-sm:hidden ml-1">Try again later or check server</span>
               <span className="sm:hidden mx-2">&#183;</span>
-              <a href={config.statusUrl} className="max-sm:capitalize ml-1 hover:underline font-semibold hover:underline-offset-2" target="_blank" rel="noreferrer">
+              <a
+                href={config.statusUrl}
+                className="max-sm:capitalize ml-1 hover:underline font-semibold hover:underline-offset-2"
+                target="_blank"
+                rel="noreferrer"
+              >
                 status
               </a>
               <span className="max-sm:hidden">.</span>

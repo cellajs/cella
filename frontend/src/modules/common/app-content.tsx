@@ -32,7 +32,6 @@ export const AppContent = () => {
     };
   }, [keepMenuOpen, activeSheet, isLargeScreen]);
 
-
   return (
     <div ref={clickContentRef} id="app-content" className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding}`}>
       <div

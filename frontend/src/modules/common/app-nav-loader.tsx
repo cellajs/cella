@@ -3,9 +3,9 @@ import { config } from 'config';
 import { Home } from 'lucide-react';
 import { useEffect } from 'react';
 import useAppState from '~/hooks/use-app-state';
+import router from '~/lib/router';
 import { useNavigationStore } from '~/store/navigation';
 import Logo from './logo';
-import router from '~/lib/router';
 
 const AppNavLoader = () => {
   const { isReady } = useAppState();

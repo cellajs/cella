@@ -1,5 +1,5 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import type * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 
 interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
   children: React.ReactNode;
@@ -15,7 +15,9 @@ export const TooltipButton = ({ children, toolTipContent, disabled, side = 'bott
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side={side} {...props} sideOffset={sideOffset}>{toolTipContent}</TooltipContent>
+      <TooltipContent side={side} {...props} sideOffset={sideOffset}>
+        {toolTipContent}
+      </TooltipContent>
     </Tooltip>
   );
 };

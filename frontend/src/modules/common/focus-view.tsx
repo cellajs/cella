@@ -4,9 +4,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { cn } from '~/lib/utils';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { TooltipButton } from '~/modules/common/tooltip-button';
 
 interface FocusViewProps {
   className?: string;

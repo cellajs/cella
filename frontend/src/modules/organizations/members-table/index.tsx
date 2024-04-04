@@ -1,24 +1,24 @@
-import { infiniteQueryOptions, useInfiniteQuery, useMutation, type DefaultError } from '@tanstack/react-query';
+import { type DefaultError, infiniteQueryOptions, useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Member } from '~/types';
 
-import { getMembersByOrganizationIdentifier, updateUserInOrganization, type GetMembersParams } from '~/api/organizations';
+import { type GetMembersParams, getMembersByOrganizationIdentifier, updateUserInOrganization } from '~/api/organizations';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
 import { Bird } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import type { z } from 'zod';
+import { useDebounce } from '~/hooks/use-debounce';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
+import { queryClient } from '~/lib/query-client';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { organizationMembersRoute } from '~/routes/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { queryClient } from '~/lib/query-client';
-import { useDebounce } from '~/hooks/use-debounce';
 
 const LIMIT = 40;
 

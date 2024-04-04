@@ -19,12 +19,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useWatch } from 'react-hook-form';
 import { checkSlug as baseCheckSlug } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { queryClient } from '~/lib/query-client';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
-import { queryClient } from '~/lib/query-client';
 
 interface Props {
   user: User;
