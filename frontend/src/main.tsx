@@ -15,9 +15,9 @@ if (!root) {
 }
 
 import { renderAscii } from '~/lib/ascii';
-import { queryClient } from './lib/query-client';
-import router from './lib/router';
-import { initSentry } from './lib/sentry';
+import { queryClient } from '~/lib/router';
+import router from '~/lib/router';
+import { initSentry } from '~/lib/sentry';
 
 // Render ASCII logo in console
 renderAscii();

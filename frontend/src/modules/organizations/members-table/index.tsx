@@ -13,7 +13,7 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
-import { queryClient } from '~/lib/query-client';
+import { queryClient } from '~/lib/router';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { organizationMembersRoute } from '~/routes/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';

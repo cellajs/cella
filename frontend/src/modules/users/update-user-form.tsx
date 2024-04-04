@@ -19,7 +19,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useWatch } from 'react-hook-form';
 import { checkSlug as baseCheckSlug } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { queryClient } from '~/lib/query-client';
+import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';

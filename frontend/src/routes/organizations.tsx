@@ -9,6 +9,7 @@ import Organization, { organizationQueryOptions } from '~/modules/organizations/
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import Projects from '~/modules/projects';
 import { IndexRoute } from './routeTree';
+import { queryClient } from '~/lib/router';
 
 // Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
@@ -20,7 +21,7 @@ export const OrganizationRoute = createRoute({
   staticData: { pageTitle: 'Organization' },
   beforeLoad: ({ location }) => noDirectAccess(location, '/members'),
   getParentRoute: () => IndexRoute,
-  loader: async ({ context: { queryClient }, params: { organizationIdentifier } }) => {
+  loader: async ({ params: { organizationIdentifier } }) => {
     queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
@@ -37,7 +38,7 @@ export const organizationMembersRoute = createRoute({
   getParentRoute: () => OrganizationRoute,
   validateSearch: membersSearchSchema,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ context: { queryClient }, params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
+  loader: async ({ params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
     const membersInfiniteQueryOptions = membersQueryOptions(organizationIdentifier, { q, sort, order, role });
     const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
     if (!cachedMembers) {

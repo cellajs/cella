@@ -1,6 +1,14 @@
 import { createRouter } from '@tanstack/react-router';
 import { routeMasks, routeTree } from '~/routes/routeTree';
-import { queryClient } from './query-client';
+import { queryClientConfig } from './query-client';
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
+
+// Set up a QueryClient instance
+// https://tanstack.com/query/latest/docs/reference/QueryClient
+export const queryClient = new QueryClient({
+  mutationCache: new MutationCache(queryClientConfig),
+  queryCache: new QueryCache(queryClientConfig),
+});
 
 // Set up a Router instance
 // https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction

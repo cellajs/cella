@@ -16,6 +16,7 @@ import { AboutRoute, AccessibilityRoute, ContactRoute, PrivacyRoute, TermsRoute 
 import { OrganizationRoute, organizationMembersRoute, organizationSettingsRoute, projectsRoute } from './organizations';
 import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
+import { queryClient } from '~/lib/router';
 
 export const getAndSetMe = async () => {
   const user = await getMe();
@@ -45,7 +46,7 @@ export const IndexRoute = createRoute({
   id: 'layout',
   staticData: { pageTitle: '' },
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ location, cause, context }) => {
+  beforeLoad: async ({ location, cause }) => {
     const lastUser = useUserStore.getState().lastUser;
 
     // If no stored user and no desired path, redirect to about
@@ -55,11 +56,11 @@ export const IndexRoute = createRoute({
       // If just entered, fetch me and menu
       if (cause === 'enter') {
         const getMe = async () => {
-          return context.queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+          return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
         };
 
         const getMenu = async () => {
-          return context.queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu });
+          return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu });
         };
 
         await Promise.all([getMe(), getMenu()]);

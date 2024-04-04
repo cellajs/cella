@@ -1,4 +1,3 @@
-import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import i18next from 'i18next';
 import { toast } from 'sonner';
 import { ApiError } from '~/api';
@@ -51,9 +50,4 @@ const onSuccess = () => {
   useAlertsStore.getState().setDownAlert(null);
 };
 
-// Set up a QueryClient instance
-// https://tanstack.com/query/latest/docs/reference/QueryClient
-export const queryClient = new QueryClient({
-  mutationCache: new MutationCache({ onError, onSuccess }),
-  queryCache: new QueryCache({ onError, onSuccess }),
-});
+export const queryClientConfig = { onError, onSuccess }

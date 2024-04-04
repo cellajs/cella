@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { checkSlug as baseCheckSlug } from '~/api/general';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { queryClient } from '~/lib/query-client';
+import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';

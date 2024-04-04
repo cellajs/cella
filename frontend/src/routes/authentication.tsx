@@ -7,19 +7,20 @@ import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { useUserStore } from '~/store/user';
 import { getAndSetMe, rootRoute } from './routeTree';
+import { queryClient } from '~/lib/router';
 
 export const AuthRoute = createRoute({
   id: 'auth-layout',
   staticData: { pageTitle: 'Home' },
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ context }) => {
+  beforeLoad: async () => {
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (storedUser) throw redirect({ to: '/', replace: true });
 
     try {
       // Check if authenticated
-      await context.queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+      await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
     } catch (error) {
       return console.error('Not authenticated');
     }
