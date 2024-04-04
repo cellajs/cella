@@ -15,7 +15,7 @@ export const AppSearch = () => {
   const navigate = useNavigate();
 
   const [value, setValue] = useState('');
-  const debouncedValue = useDebounce(value);
+  const debouncedValue = useDebounce(value, 500);
 
   const updateResentSearches = (newValue: string) => {
     const store = useNavigationStore.getState();
