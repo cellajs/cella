@@ -1,4 +1,4 @@
-import { Skeleton } from './skeleton';
+import { Skeleton } from '../../ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
 interface DataTableSkeletonProps {
