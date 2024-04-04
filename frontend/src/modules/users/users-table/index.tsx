@@ -17,7 +17,6 @@ import { UsersTableRoute } from '~/routes/system';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 
 // export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
 export type UserRow = User & { type: 'MASTER' | 'DETAIL'; expanded?: boolean; parent?: User };
@@ -133,31 +132,27 @@ const UsersTable = () => {
         columns={columns}
         setColumns={setColumns}
       />
-      {queryResult.isLoading || queryResult.isFetching ? (
-        <DataTableSkeleton cellsWidths={['48px']} cellHight={36} cellsCount={columns.length} />
-      ) : (
-        <DataTable<UserRow>
-          {...{
-            columns: columns.filter((column) => column.visible),
-            rowHeight: 42,
-            enableVirtualization: false,
-            onRowsChange,
-            rows,
-            limit: LIMIT,
-            totalCount: queryResult.data?.pages[0].total,
-            rowKeyGetter: (row) => row.id,
-            error: queryResult.error,
-            isLoading: queryResult.isLoading,
-            isFetching: queryResult.isFetching,
-            fetchMore: queryResult.fetchNextPage,
-            isFiltered,
-            selectedRows,
-            onSelectedRowsChange: setSelectedRows,
-            sortColumns,
-            onSortColumnsChange: setSortColumns,
-          }}
-        />
-      )}
+      <DataTable<UserRow>
+        {...{
+          columns: columns.filter((column) => column.visible),
+          rowHeight: 42,
+          enableVirtualization: false,
+          onRowsChange,
+          rows,
+          limit: LIMIT,
+          totalCount: queryResult.data?.pages[0].total,
+          rowKeyGetter: (row) => row.id,
+          error: queryResult.error,
+          isLoading: queryResult.isLoading,
+          isFetching: queryResult.isFetching,
+          fetchMore: queryResult.fetchNextPage,
+          isFiltered,
+          selectedRows,
+          onSelectedRowsChange: setSelectedRows,
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
+        }}
+      />
     </div>
   );
 };

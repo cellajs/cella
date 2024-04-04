@@ -18,7 +18,6 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { queryClient } from '~/lib/query-client';
-import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 
 const LIMIT = 40;
 
@@ -181,38 +180,34 @@ const MembersTable = () => {
         selectedMembers={rows.filter((row) => selectedRows.has(row.id))}
         setRole={setRole}
       />
-      {queryResult.isLoading || queryResult.isFetching ? (
-        <DataTableSkeleton cellsWidths={['48px']} cellHight={36} cellsCount={columns.length} />
-      ) : (
-        <DataTable<Member>
-          {...{
-            columns: columns.filter((column) => column.visible),
-            rows,
-            totalCount: queryResult.data?.pages[0].total,
-            rowHeight: 42,
-            rowKeyGetter: (row) => row.id,
-            enableVirtualization: false,
-            error: queryResult.error,
-            isLoading: queryResult.isLoading,
-            isFetching: queryResult.isFetching,
-            fetchMore: queryResult.fetchNextPage,
-            overflowNoRows: true,
-            limit: LIMIT,
-            isFiltered,
-            selectedRows,
-            onRowsChange,
-            onSelectedRowsChange: setSelectedRows,
-            sortColumns,
-            onSortColumnsChange: setSortColumns,
-            NoRowsComponent: (
-              <>
-                <Bird strokeWidth={1} className="w-20 h-20" />
-                <div className="mt-6 text-sm font-light">{t('common:no_members')}</div>
-              </>
-            ),
-          }}
-        />
-      )}
+      <DataTable<Member>
+        {...{
+          columns: columns.filter((column) => column.visible),
+          rows,
+          totalCount: queryResult.data?.pages[0].total,
+          rowHeight: 42,
+          rowKeyGetter: (row) => row.id,
+          enableVirtualization: false,
+          error: queryResult.error,
+          isLoading: queryResult.isLoading,
+          isFetching: queryResult.isFetching,
+          fetchMore: queryResult.fetchNextPage,
+          overflowNoRows: true,
+          limit: LIMIT,
+          isFiltered,
+          selectedRows,
+          onRowsChange,
+          onSelectedRowsChange: setSelectedRows,
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
+          NoRowsComponent: (
+            <>
+              <Bird strokeWidth={1} className="w-20 h-20" />
+              <div className="mt-6 text-sm font-light">{t('common:no_members')}</div>
+            </>
+          ),
+        }}
+      />
     </div>
   );
 };

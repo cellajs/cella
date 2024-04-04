@@ -10,6 +10,7 @@ import { useInView } from 'react-intersection-observer';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
+import { DataTableSkeleton } from './table-skeleton';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -117,63 +118,68 @@ export const DataTable = <TData,>({
 
   return (
     <div className="w-full h-full">
-      {initial &&
-        (error && rows.length === 0 ? (
-          <ErrorMessage error={error} />
-        ) : !rows.length ? (
-          <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
-        ) : (
-          <div className="grid rdg-wrapper">
-            <DataGrid
-              rowHeight={rowHeight}
-              enableVirtualization={enableVirtualization}
-              rowKeyGetter={rowKeyGetter}
-              columns={columns}
-              onRowsChange={onRowsChange}
-              rows={rows}
-              onCellClick={onCellClick}
-              className="fill-grid"
-              selectedRows={selectedRows}
-              onSelectedRowsChange={onSelectedRowsChange}
-              sortColumns={sortColumns}
-              onSortColumnsChange={onSortColumnsChange}
-              renderers={{
-                renderCheckbox: ({ onChange, ...props }) => {
-                  const withShift = useRef(false);
+      {initial ? ( // Only render if initial data load is complete
+        <>
+          {error && rows.length === 0 ? (
+            <ErrorMessage error={error as Error} />
+          ) : !rows.length ? (
+            <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
+          ) : (
+            <div className="grid rdg-wrapper">
+              <DataGrid
+                rowHeight={rowHeight}
+                enableVirtualization={enableVirtualization}
+                rowKeyGetter={rowKeyGetter}
+                columns={columns}
+                onRowsChange={onRowsChange}
+                rows={rows}
+                onCellClick={onCellClick}
+                className="fill-grid"
+                selectedRows={selectedRows}
+                onSelectedRowsChange={onSelectedRowsChange}
+                sortColumns={sortColumns}
+                onSortColumnsChange={onSortColumnsChange}
+                renderers={{
+                  renderCheckbox: ({ onChange, ...props }) => {
+                    const withShift = useRef(false);
 
-                  const handleChange = (checked: boolean) => {
-                    onChange(checked, withShift.current);
-                  };
+                    const handleChange = (checked: boolean) => {
+                      onChange(checked, withShift.current);
+                    };
 
-                  return (
-                    <Checkbox
-                      {...props}
-                      onClick={(e) => {
-                        withShift.current = e.nativeEvent.shiftKey;
-                      }}
-                      onCheckedChange={(checked) => {
-                        handleChange(!!checked);
-                      }}
-                    />
-                  );
-                },
-              }}
-            />
+                    return (
+                      <Checkbox
+                        {...props}
+                        onClick={(e) => {
+                          withShift.current = e.nativeEvent.shiftKey;
+                        }}
+                        onCheckedChange={(checked) => {
+                          handleChange(!!checked);
+                        }}
+                      />
+                    );
+                  },
+                }}
+              />
 
-            {/* Infinite loading measure ref */}
-            <div
-              ref={measureRef}
-              className="h-0 w-0 relative z-[200]"
-              style={{ marginTop: -Number(rowHeight || 40) * limit * (rows.length < 60 ? 0.5 : 1) }}
-            />
+              {/* Infinite loading measure ref */}
+              <div
+                ref={measureRef}
+                className="h-0 w-0 relative z-[200]"
+                style={{ marginTop: -Number(rowHeight || 40) * limit * (rows.length < 60 ? 0.5 : 1) }}
+              />
 
-            {/* Loading */}
-            {isFetching && !error && <Loader2 className="text-muted-foreground h-6 w-6 mx-auto my-4 animate-spin" />}
+              {/* Loading */}
+              {isFetching && !error && <Loader2 className="text-muted-foreground h-6 w-6 mx-auto my-4 animate-spin" />}
 
-            {/* Error */}
-            {error && <div className="text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}
-          </div>
-        ))}
+              {/* Error */}
+              {error && <div className="text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}
+            </div>
+          )}
+        </>
+      ) : (
+        <DataTableSkeleton cellsWidths={['48px']} cellHight={36} cellsCount={columns.length} />
+      )}
     </div>
   );
 };
