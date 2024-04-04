@@ -23,7 +23,6 @@ const integrations: Integrations[] = [
   { name: 'Imado', country: 'NL', url: 'imado.eu', logo: 'imado.svg' },
   { name: 'SimpleAnalytics', country: 'NL', url: 'simpleanalytics.com', logo: 'simpleanalytics.svg' },
   { name: 'Oh Dear', country: 'BE', url: 'ohdear.app', logo: 'ohdear.svg' },
-  { name: 'Hanko', planned: true, country: 'DE', url: 'hanko.io', logo: 'hanko.svg' },
 ];
 
 const Integrations = () => {
