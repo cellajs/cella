@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { config } from 'config';
 
 import { Mail, MessageSquare, Send, User } from 'lucide-react';
-import type { Control, FieldPath, FieldValues, SubmitHandler } from 'react-hook-form';
+import type { Control, SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -13,47 +13,11 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { i18n } from '~/lib/i18n';
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
-import { Textarea } from '~/modules/ui/textarea';
+import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
+import InputFormField from '../forms/input';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
-
-interface CustomFormFieldProps<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>> {
-  control: Control<TFieldValues>;
-  name: TName;
-  label: string;
-  type?: string;
-  icon?: JSX.ElementType;
-}
-
-const CustomFormField = <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({
-  control,
-  name,
-  label,
-  type,
-  icon: IconComponent,
-}: CustomFormFieldProps<TFieldValues, TName>) => {
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field, fieldState }) => (
-        <FormItem>
-          <FormLabel className="hidden sm:block">{label}</FormLabel>
-          <FormControl>
-            <div className="flex items-center">
-              {IconComponent && <IconComponent className="mr-2" />}
-              {type === 'textarea' ? <Textarea {...field} placeholder={label} /> : <Input {...field} type={type || 'text'} placeholder={label} />}
-            </div>
-          </FormControl>
-          <FormMessage>{fieldState.error?.message}</FormMessage>
-        </FormItem>
-      )}
-    />
-  );
-};
 
 const formSchema = z.object({
   name: z.string().min(5, i18n.t('common:error.name_required')).default(''),
@@ -116,10 +80,16 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
         <div className="w-full">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
-              <CustomFormField control={form.control} name="name" label={t('common:name')} icon={User} />
-              <CustomFormField control={form.control} name="email" label={t('common:email')} type="email" icon={Mail} />
-              <CustomFormField control={form.control} name="message" label={t('common:message')} type="textarea" icon={MessageSquare} />
-
+              {/* TODO: fix this typescript issue */}
+              <InputFormField control={form.control as unknown as Control} name="name" label={t('common:name')} icon={<User />} />
+              <InputFormField control={form.control as unknown as Control} name="email" label={t('common:email')} type="email" icon={<Mail />} />
+              <InputFormField
+                control={form.control as unknown as Control}
+                name="message"
+                label={t('common:message')}
+                type="textarea"
+                icon={<MessageSquare />}
+              />
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="submit">
                   <Send size={16} className="mr-2" />
