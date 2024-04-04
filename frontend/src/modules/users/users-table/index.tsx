@@ -17,6 +17,7 @@ import { UsersTableRoute } from '~/routes/system';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { useDebounce } from '~/hooks/use-debounce';
 
 // export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
 export type UserRow = User & { type: 'MASTER' | 'DETAIL'; expanded?: boolean; parent?: User };
@@ -61,7 +62,7 @@ const UsersTable = () => {
       const fetchedData = await getUsers(
         {
           page: pageParam,
-          q: query,
+          q: debounceQuery,
           sort: sortColumns[0]?.columnKey as UsersSearch['sort'],
           order: sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
           role,
@@ -78,6 +79,8 @@ const UsersTable = () => {
   const [columns, setColumns] = useColumns(callback);
 
   const isFiltered = role !== undefined || !!query;
+
+  const debounceQuery = useDebounce(query, 500);
 
   const onResetFilters = () => {
     setQuery('');

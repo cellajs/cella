@@ -135,7 +135,7 @@ function Toolbar({
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch query={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={setQuery} />
             <Select
               value={role === undefined ? 'all' : role}
               onValueChange={(role) => {
