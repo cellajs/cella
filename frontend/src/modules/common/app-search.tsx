@@ -1,18 +1,34 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { AvatarWrap } from './avatar-wrap';
+import { useDebounce } from '~/hooks/use-debounce';
+import { useNavigationStore } from '~/store/navigation';
 
 export const AppSearch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [value, setValue] = useState('');
+  const debouncedValue = useDebounce(value);
+
+  const updateResentSearches = (newValue: string) => {
+    const store = useNavigationStore.getState();
+    const searches = store.resentSearches;
+    if (searches.includes(newValue)) {
+      searches.splice(searches.indexOf(newValue), 1);
+      searches.push(newValue);
+    } else {
+      searches.push(newValue);
+      if (searches.length > 5) searches.shift();
+    }
+    store.setResentSearches(searches);
+  }; // Add icon to show Resent Searches
 
   const { data, isFetching } = useQuery({
     queryKey: ['search', value],
@@ -43,6 +59,10 @@ export const AppSearch = () => {
     }
 
     dialog.remove(false);
+
+    useEffect(() => {
+      updateResentSearches(debouncedValue);
+    }, [debouncedValue]);
   };
 
   return (
