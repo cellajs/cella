@@ -32,10 +32,40 @@ This document describes the high-level architecture of Cella.
 - [Lefthook](https://github.com/evilmartians/lefthook)
 
 ## File structure
-coming soon, will still change into a more modular structure.
+```
+.
+├── backend
+│   ├── drizzle               DB migrations
+│   ├── seed                  Seed scripts
+│   ├── src                   
+│   │   ├── cron              
+│   │   ├── db                
+│   │   ├── lib               Library code and helper functions
+│   │   ├── middlewares       Hono middlewares
+│   │   ├── modules           Modular distribution of routes, schemas etc
+│   │   └── types             
+├── config                    Shared config: default, development, production etc
+├── email                     React-email
+├── env                       .env file for secure development
+├── frontend                  Frontend SPA
+│   ├── public                
+│   ├── src                   
+│   │   ├── api               API functions with RPC
+│   │   ├── hooks             
+│   │   ├── json              
+│   │   ├── lib               Library code and helper functions
+│   │   ├── modules           Modular distribution of components
+│   │   ├── routes            Code-based routes
+│   │   ├── store             Zustand data stores
+│   │   ├── types             
+├── info                      General info
+├── locales                   Translations
+├── proxy                     Cloudflare proxy server
+└── tus                       TUS server
 
+```
 ## API Design
-An OpenAPI is built using Hono middleware called [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started.
+An OpenAPI is built with [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started.
 
 ## Security
 
