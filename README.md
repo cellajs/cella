@@ -14,9 +14,14 @@
  *
  -->
 
-[cellajs.com](https://cellajs.com) &centerdot; ❗prerelease version &centerdot; MIT license
+[cellajs.com](https://cellajs.com) &centerdot; prerelease version &centerdot; MIT license
 
 </div>
+
+#### Prerelease
+
+> ❗ Please be aware this is a prerelease. It does not meet production requirements yet. Want to contribute? Lets connect! ✉️ <info@cellajs.com>
+
 
 #### Contents
 - [Installation](#installation)

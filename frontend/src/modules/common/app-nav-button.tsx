@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import type { NavItem } from './app-nav';
-import HomeIconLoader from './home-icon-loader';
+import AppNavLoader from './app-nav-loader';
 
 interface NavButtonProps {
   navItem: NavItem;
@@ -38,7 +38,7 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
               url={user.thumbnailUrl}
             />
           ) : navItem.id === 'home' ? (
-            <HomeIconLoader />
+            <AppNavLoader />
           ) : (
             <navItem.icon className="group-hover:scale-110 transition-transform" strokeWidth={config.theme.strokeWidth} />
           )}

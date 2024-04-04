@@ -74,7 +74,7 @@ export const SheetAccount = () => {
           accountAction={() => navigateTo('/user/settings')}
         />
         {isSystemAdmin && (
-          <AccountButton lucideButton={Wrench} id="btn-system" label={t('common:system_panel')} accountAction={() => navigateTo('/system')} />
+          <AccountButton lucideButton={Wrench} id="btn-system" label={t('common:system_panel')} accountAction={() => navigateTo('/system/users')} />
         )}
         <AccountButton lucideButton={LogOut} id="btn-signout" label={t('common:sign_out')} accountAction={onSignOut} />
       </div>

@@ -1,4 +1,4 @@
-import { createRoute, redirect } from '@tanstack/react-router';
+import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersQuerySchema } from 'backend/modules/users/schema';
@@ -6,6 +6,7 @@ import { Suspense, lazy } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPanel from '~/modules/system/system-panel';
 import { IndexRoute } from './routeTree';
+import { noDirectAccess } from '~/lib/utils';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
@@ -16,12 +17,8 @@ const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order:
 
 export const SystemPanelRoute = createRoute({
   path: '/system',
-  beforeLoad: ({ location }) => {
-    if (location.pathname === '/system') {
-      throw redirect({ to: '/system/users', replace: true });
-    }
-    return { getTitle: () => 'System' };
-  },
+  staticData: { pageTitle: 'System panel' },
+  beforeLoad: ({ location }) => noDirectAccess(location, '/users'),
   getParentRoute: () => IndexRoute,
   component: () => <SystemPanel />,
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
@@ -29,7 +26,7 @@ export const SystemPanelRoute = createRoute({
 
 export const UsersTableRoute = createRoute({
   path: '/users',
-  beforeLoad: () => ({ getTitle: () => 'Users' }),
+  staticData: { pageTitle: 'Users' },
   getParentRoute: () => SystemPanelRoute,
   component: () => (
     <Suspense>
@@ -41,7 +38,7 @@ export const UsersTableRoute = createRoute({
 
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
-  beforeLoad: () => ({ getTitle: () => 'Organizations' }),
+  staticData: { pageTitle: 'Organizations' },
   getParentRoute: () => SystemPanelRoute,
   component: () => (
     <Suspense>

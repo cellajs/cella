@@ -17,6 +17,7 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { useDebounce } from '~/hooks/use-debounce';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -37,6 +38,7 @@ const OrganizationsTable = () => {
   );
   const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
 
+  const debounceQuery = useDebounce(query, 500);
   // Save filters in search params
   const filters = useMemo(
     () => ({
@@ -58,7 +60,7 @@ const OrganizationsTable = () => {
       const fetchedData = await getOrganizations(
         {
           page: pageParam,
-          q: query,
+          q: debounceQuery,
           sort: sortColumns[0]?.columnKey as OrganizationsSearch['sort'],
           order: sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'],
           limit: LIMIT,

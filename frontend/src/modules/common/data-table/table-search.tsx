@@ -2,7 +2,8 @@ import { Search } from 'lucide-react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
-function TableSearch({ query = '', setQuery }: { query?: string; setQuery: (value?: string) => void }) {
+
+const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (value: string) => void }) => {
   const { t } = useTranslation();
 
   const [isFocused, setIsFocused] = useState(false);
@@ -28,7 +29,7 @@ function TableSearch({ query = '', setQuery }: { query?: string; setQuery: (valu
         <Search width="16" height="16" className="relative left-7 top-2 transform -translate-y-1/2" style={{ opacity: isFocused ? 1 : 0.5 }} />
         <Input
           placeholder={t('common:placeholder.search')}
-          value={query} // Use value prop for controlled component
+          value={value}
           onChange={(event) => setQuery(event.target.value)}
           style={{ paddingLeft: '2rem' }}
           className="h-10 w-full"
@@ -39,6 +40,6 @@ function TableSearch({ query = '', setQuery }: { query?: string; setQuery: (valu
       </div>
     </>
   );
-}
+};
 
 export default TableSearch;

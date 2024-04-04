@@ -4,15 +4,15 @@ import { IndexRoute } from './routeTree';
 
 export const HomeRoute = createRoute({
   path: '/',
-  beforeLoad: () => ({ getTitle: () => 'Home' }),
+  staticData: { pageTitle: 'Home' },
   getParentRoute: () => IndexRoute,
   component: () => <Home />,
 });
 
 // We need an alias for '/' to forward users better if coming from backend
 export const HomeAliasRoute = createRoute({
-  beforeLoad: () => ({ getTitle: () => 'Home' }),
   path: '/home',
+  staticData: { pageTitle: 'Home' },
   getParentRoute: () => IndexRoute,
   component: () => <Home />,
 });

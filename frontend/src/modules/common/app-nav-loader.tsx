@@ -7,7 +7,7 @@ import { useNavigationStore } from '~/store/navigation';
 import Logo from './logo';
 import router from '~/lib/router';
 
-const HomeIconLoader = () => {
+const AppNavLoader = () => {
   const { isReady } = useAppState();
   const { navLoading, setLoading } = useNavigationStore();
   const isFetching = useIsFetching();
@@ -40,4 +40,4 @@ const HomeIconLoader = () => {
   );
 };
 
-export default HomeIconLoader;
+export default AppNavLoader;

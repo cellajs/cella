@@ -18,6 +18,7 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { queryClient } from '~/lib/query-client';
+import { useDebounce } from '~/hooks/use-debounce';
 
 const LIMIT = 40;
 
@@ -98,6 +99,7 @@ const MembersTable = () => {
   const [query, setQuery] = useState<MembersSearch['q']>(search.q);
   const [role, setRole] = useState<MembersSearch['role']>(search.role);
 
+  const debounceQuery = useDebounce(query, 500);
   // Save filters in search params
   const filters = useMemo(
     () => ({
@@ -124,7 +126,7 @@ const MembersTable = () => {
 
   const queryResult = useInfiniteQuery(
     membersQueryOptions(organization.slug, {
-      q: query,
+      q: debounceQuery,
       sort: sortColumns[0]?.columnKey as MembersSearch['sort'],
       order: sortColumns[0]?.direction.toLowerCase() as MembersSearch['order'],
       role,

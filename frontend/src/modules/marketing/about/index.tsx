@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 
 import { cn } from '~/lib/utils';
-import { PublicFooter } from '~/modules/common/public-footer';
-import { PublicNav } from '~/modules/common/public-nav';
+import { MarketingFooter } from '~/modules/marketing/footer';
+import { MarketingNav } from '~/modules/marketing/nav';
 import { buttonVariants } from '~/modules/ui/button';
 
 import { config } from 'config';
@@ -52,7 +52,7 @@ const About = () => {
 
   return (
     <>
-      <PublicNav />
+      <MarketingNav />
 
       <div className="container max-w-none px-0">
         {/* Hero landing */}
@@ -100,7 +100,7 @@ const About = () => {
           </AboutSection> */}
         </div>
       </div>
-      <PublicFooter />
+      <MarketingFooter />
     </>
   );
 };

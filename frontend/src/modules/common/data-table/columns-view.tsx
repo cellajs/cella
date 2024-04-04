@@ -6,6 +6,7 @@ import { cn } from '~/lib/utils';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { TooltipButton } from '../tooltip-button';
 
 export type ColumnOrColumnGroup<TData> = BaseColumnOrColumnGroup<TData> & {
   key: string;
@@ -38,6 +39,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
         setColumnSearch('');
       }}
     >
+      <TooltipButton toolTipContent={t('common:columns_view')}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className={cn('relative flex', className)}>
           {filteredColumns.some((column) => !column.visible) && <Badge className="absolute -right-2 -top-2 flex h-4 w-4 justify-center p-0">!</Badge>}
@@ -45,6 +47,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
           <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
         </Button>
       </DropdownMenuTrigger>
+      </TooltipButton>
       <DropdownMenuContent align="end" className="min-w-[220px] pt-2" collisionPadding={16}>
         <div className="overflow-y-auto relative" style={{ height }}>
           {filteredColumns.map((column) => (

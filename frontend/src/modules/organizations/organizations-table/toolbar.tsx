@@ -86,49 +86,48 @@ function Toolbar({
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
-          {selectedOrganizations.length > 0 ? (
-          <>
-            <Button onClick={openNewsletterSheet} className="relative">
-              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
-              <Mailbox size={16} />
-              <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
-            </Button>
-            <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
-              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
-              <Trash size={16} />
-              <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
-            </Button>
-            <Button variant="ghost" onClick={onResetSelectedRows}>
-              <XSquare size={16} />
-              <span className="ml-1">{t('common:clear')}</span>
-            </Button>
-          </>
-        ) : (
-          !isFiltered &&
-          user.role === 'ADMIN' && (
-            <Button
-              onClick={() => {
-                dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
-                  className: 'md:max-w-xl',
-                  title: t('common:create_organization'),
-                });
-              }}
-            >
-              <Plus size={16} />
-              <span className="ml-1">{t('common:create')}</span>
-            </Button>
-          )
-        )}
-        {selectedOrganizations.length === 0 && (
-          <TableCount count={total} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-        )}
+            {selectedOrganizations.length > 0 ? (
+              <>
+                <Button onClick={openNewsletterSheet} className="relative">
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
+                  <Mailbox size={16} />
+                  <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
+                </Button>
+                <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
+                  <Trash size={16} />
+                  <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
+                </Button>
+                <Button variant="ghost" onClick={onResetSelectedRows}>
+                  <XSquare size={16} />
+                  <span className="ml-1">{t('common:clear')}</span>
+                </Button>
+              </>
+            ) : (
+              !isFiltered &&
+              user.role === 'ADMIN' && (
+                <Button
+                  onClick={() => {
+                    dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
+                      className: 'md:max-w-xl',
+                      title: t('common:create_organization'),
+                    });
+                  }}
+                >
+                  <Plus size={16} />
+                  <span className="ml-1">{t('common:create')}</span>
+                </Button>
+              )
+            )}
+            {selectedOrganizations.length === 0 && (
+              <TableCount count={total} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            )}
           </FilterBarActions>
 
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch query={query} setQuery={setQuery} />
-           
+            <TableSearch value={query} setQuery={setQuery} />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
@@ -152,6 +151,5 @@ function Toolbar({
     </>
   );
 }
-
 
 export default Toolbar;

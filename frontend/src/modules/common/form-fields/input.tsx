@@ -1,11 +1,12 @@
-import type { Control } from 'react-hook-form';
+import type { ReactNode } from 'react';
+import type { Control, FieldValues, Path } from 'react-hook-form';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 
-interface Props {
-  control: Control;
-  name: string;
+interface Props<TFieldValues extends FieldValues> {
+  control: Control<TFieldValues>;
+  name: keyof TFieldValues;
   label: string;
   value?: string;
   defaultValue?: string;
@@ -15,9 +16,10 @@ interface Props {
   subComponent?: React.ReactNode;
   required?: boolean;
   disabled?: boolean;
+  icon?: ReactNode;
 }
 
-const InputFormField = ({
+const InputFormField = <TFieldValues extends FieldValues>({
   control,
   name,
   label,
@@ -29,10 +31,11 @@ const InputFormField = ({
   subComponent,
   required,
   disabled,
-}: Props) => (
+  icon,
+}: Props<TFieldValues>) => (
   <FormField
     control={disabled ? undefined : control}
-    name={disabled ? '' : name}
+    name={name as Path<TFieldValues>}
     render={({ field: { value: formFieldValue, ...rest } }) => (
       <FormItem>
         <FormLabel>
@@ -41,7 +44,8 @@ const InputFormField = ({
         </FormLabel>
         {description && <FormDescription>{description}</FormDescription>}
         <FormControl>
-          <div className="relative">
+          <div className="relative flex w-full items-center ">
+            {icon && <div className="pr-2 ">{icon}</div>}
             {type === 'textarea' ? (
               <Textarea
                 placeholder={placeholder}

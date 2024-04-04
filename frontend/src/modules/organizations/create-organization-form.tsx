@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
-import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
@@ -17,7 +16,7 @@ import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
-import InputFormField from '../common/forms/input';
+import InputFormField from '../common/form-fields/input';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -76,8 +75,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* TODO: fix this typescript issue */}
-        <InputFormField control={form.control as unknown as Control} name="name" label={t('common:name')} required />
+        <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}

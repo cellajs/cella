@@ -8,35 +8,35 @@ import { rootRoute } from './routeTree';
 
 export const AboutRoute = createRoute({
   path: '/about',
-  beforeLoad: () => ({ getTitle: () => 'About' }),
+  staticData: { pageTitle: 'About' },
   getParentRoute: () => rootRoute,
   component: () => <About />,
 });
 
 export const ContactRoute = createRoute({
   path: '/contact',
-  beforeLoad: () => ({ getTitle: () => 'Contact' }),
+  staticData: { pageTitle: 'Contact' },
   getParentRoute: () => rootRoute,
   component: () => <Contact />,
 });
 
 export const TermsRoute = createRoute({
   path: '/terms',
-  beforeLoad: () => ({ getTitle: () => 'Terms' }),
+  staticData: { pageTitle: 'Terms' },
   getParentRoute: () => rootRoute,
   component: () => <Terms />,
 });
 
 export const PrivacyRoute = createRoute({
   path: '/privacy',
-  beforeLoad: () => ({ getTitle: () => 'Privacy' }),
+  staticData: { pageTitle: 'Privacy' },
   getParentRoute: () => rootRoute,
   component: () => <Privacy />,
 });
 
 export const AccessibilityRoute = createRoute({
   path: '/accessibility',
-  beforeLoad: () => ({ getTitle: () => 'Accessibility' }),
+  staticData: { pageTitle: 'Accessibility' },
   getParentRoute: () => rootRoute,
   component: () => <Accessibility />,
 });

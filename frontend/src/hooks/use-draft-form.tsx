@@ -29,10 +29,8 @@ export function useFormWithDraft<
       for (const key in values) {
         form.setValue(key as unknown as Path<TFieldValues>, values[key as keyof TFieldValues]);
       }
-    } else {
-      setUnsavedChanges(false);
     }
-  }, [form, getForm]);
+  }, [formId]);
 
   const allFields = form.watch();
 
@@ -42,10 +40,13 @@ export function useFormWithDraft<
       if (Object.keys(values).length > 0) {
         return setForm(formId, values);
       }
-    } else {
+    }
+
+    if (unsavedChanges) {
+      setUnsavedChanges(false);
       resetForm(formId);
     }
-  }, [allFields, setForm, formId]);
+  }, [allFields, formId]);
 
   return {
     ...form,

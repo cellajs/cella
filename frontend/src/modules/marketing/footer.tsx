@@ -5,7 +5,7 @@ import { Github, Twitter } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import Logo from '~/modules/common/logo';
-import NewsletterForm from '~/modules/common/newsletter';
+import NewsletterForm from '~/modules/marketing/newsletter';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 
 export const socials = [
@@ -85,7 +85,7 @@ export function Credits({ className }: { className?: string }) {
   );
 }
 
-export function PublicFooter() {
+export function MarketingFooter() {
   const { t } = useTranslation();
   const sectionClass = 'rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]';
 

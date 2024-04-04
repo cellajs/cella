@@ -71,7 +71,6 @@
   "error.invalid_token": "Invalid token",
   "error.invalid_token_or_expired": "Invalid token or expired",
   "error.load_more_failed": "Could not load more data. Try reloading or come back later.",
-  "error.message_too_short": "Message must be at least 10 characters long",
   "error.name_exists": "This name exists",
   "error.name_required": "Name is required",
   "error.newsletter_sign_up": "Unable to submit your email address. Please try again later.",
@@ -279,5 +278,7 @@
   "maintenance_mode.text": "It appears the server is undergoing maintenance.",
   "hi": "Hey there!",
   "invite_only.text": "Cella is currently invite-only. Can't wait? Contact us for an invite.",
-  "filter": "Filter"
+  "filter": "Filter",
+  "export_pdf_csv": "Export CSV or PDF",
+  "columns_view": "Change column view"
 }

@@ -14,7 +14,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Badge } from '../ui/badge';
 import { MultiEmail } from './multi-email';
-import SelectRole from './select-role';
+import SelectRole from './form-fields/select-role';
 
 interface Props {
   organization?: Organization;

@@ -1,6 +1,6 @@
-import { Outlet, ScrollRestoration, useMatches } from '@tanstack/react-router';
+import { Outlet, ScrollRestoration } from '@tanstack/react-router';
 import { config } from 'config';
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy } from 'react';
 
 import { Dialoger } from '~/modules/common/dialoger';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
@@ -9,6 +9,7 @@ import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { SSEProvider } from './sse/provider';
 import { DownAlert } from './down-alert';
+import { useBuildDocumentTitle } from '~/hooks/use-build-document-title';
 
 // Lazy load Tanstack dev tools in development
 const TanStackRouterDevtools =
@@ -20,29 +21,13 @@ const TanStackRouterDevtools =
         })),
       );
 
-function Root() {
-  const matches = useMatches();
+// Lazy load gleap chat support
+const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gleap')) : () => null;
 
-  useEffect(() => {
-    // Set document title based on lowest matching route with a title
-    const breadcrumbPromises = [...matches]
-      .reverse()
-      .map((match, index) => {
-        if (!('getTitle' in match.routeContext)) {
-          if (index === 0 && import.meta.env.DEV) {
-            console.warn('no getTitle', match.pathname, match);
-          }
-          return undefined;
-        }
-        const { routeContext } = match;
-        return routeContext.getTitle();
-      })
-      .filter(Boolean);
-    void Promise.all(breadcrumbPromises).then((titles) => {
-      document.title = titles.join(' · ');
-      return titles;
-    });
-  }, [matches]);
+function Root() {
+
+   // Hook to build document page title based on lowest matching routes
+   useBuildDocumentTitle();
 
   return (
     <SSEProvider>
@@ -58,6 +43,10 @@ function Root() {
         </Suspense>
       </TooltipProvider>
       <DownAlert />
+
+      <Suspense fallback={null}>
+        <GleapSupport />
+      </Suspense>
     </SSEProvider>
   );
 }
