@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { config } from 'config';
 
 import { Mail, MessageSquare, Send, User } from 'lucide-react';
-import type { Control, SubmitHandler } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -22,12 +22,12 @@ const ContactFormMap = lazy(() => import('./contact-form-map'));
 const formSchema = z.object({
   name: z.string().min(5, i18n.t('common:error.name_required')).default(''),
   email: z.string().email(i18n.t('common:error.invalid_email')).default(''),
-  message: z.string().min(10, i18n.t('common:error.message_too_short')).default(''),
+  message: z.string().default(''),
 });
 
-type FormData = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
-export async function submitContactForm(data: FormData) {
+export async function submitContactForm(data: FormValues) {
   try {
     const webhookUrl = config.contactWebhookUrl;
     let { name, email, message } = data;
@@ -39,7 +39,7 @@ export async function submitContactForm(data: FormData) {
 
     return response.ok;
   } catch (error) {
-    console.error('Error in submitContactForm:', error);
+    console.error('Error in contact form:', error);
     return false;
   }
 }
@@ -50,9 +50,9 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const { user } = useUserStore(({ user }) => ({ user }));
   const { t } = useTranslation();
 
-  const form = useFormWithDraft<FormData>('contact-form', {
+  const form = useFormWithDraft<FormValues>('contact-form', {
     resolver: zodResolver(formSchema),
-    defaultValues: { name: user?.name || '', email: user?.email || '' },
+    defaultValues: { name: user?.name || '', email: user?.email || '', message: '' },
   });
 
   const cancel = () => {
@@ -60,7 +60,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     isDialog && dialog.remove();
   };
 
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
     const isSuccess = await submitContactForm(data);
 
     if (isSuccess) {
@@ -80,15 +80,14 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
         <div className="w-full">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
-              {/* TODO: fix this typescript issue */}
-              <InputFormField control={form.control as unknown as Control} name="name" label={t('common:name')} icon={<User />} />
-              <InputFormField control={form.control as unknown as Control} name="email" label={t('common:email')} type="email" icon={<Mail />} />
+              <InputFormField control={form.control} name="name" label={t('common:name')} icon={<User size={16} />} required />
+              <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<Mail size={16} />} required />
               <InputFormField
-                control={form.control as unknown as Control}
+                control={form.control}
                 name="message"
                 label={t('common:message')}
                 type="textarea"
-                icon={<MessageSquare />}
+                icon={<MessageSquare size={16} />}
               />
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="submit">

@@ -11,7 +11,7 @@ import {
   useFormContext,
 } from 'react-hook-form';
 
-import { ChevronUp, HelpCircle } from 'lucide-react';
+import { ChevronUp, HelpCircle, SquarePen } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
@@ -30,7 +30,12 @@ const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValu
   const { t } = useTranslation();
   return (
     <FormProvider {...props}>
-      {unsavedChanges && <Badge className="w-fit">{t('common:unsaved_changes')}</Badge>}
+      {unsavedChanges && (
+        <Badge className="w-fit mb-4">
+          <SquarePen size={12} className="mr-2" />
+          <span className="font-light">{t('common:unsaved_changes')}</span>
+        </Badge>
+      )}
       {children}
     </FormProvider>
   );

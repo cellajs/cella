@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
-import type { Control, FieldValues } from 'react-hook-form';
+import type { Control, FieldValues, Path } from 'react-hook-form';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 
-interface Props {
-  control: Control<FieldValues>;
-  name: string;
+interface Props<TFieldValues extends FieldValues> {
+  control: Control<TFieldValues>;
+  name: keyof TFieldValues;
   label: string;
   value?: string;
   defaultValue?: string;
@@ -19,7 +19,7 @@ interface Props {
   icon?: ReactNode;
 }
 
-const InputFormField = ({
+const InputFormField = <TFieldValues extends FieldValues>({
   control,
   name,
   label,
@@ -32,10 +32,10 @@ const InputFormField = ({
   required,
   disabled,
   icon,
-}: Props) => (
+}: Props<TFieldValues>) => (
   <FormField
     control={disabled ? undefined : control}
-    name={disabled ? '' : name}
+    name={name as Path<TFieldValues>}
     render={({ field: { value: formFieldValue, ...rest } }) => (
       <FormItem>
         <FormLabel>

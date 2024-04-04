@@ -291,8 +291,8 @@ importers:
         specifier: ^5.28.14
         version: 5.28.14(react@18.2.0)
       '@tanstack/react-router':
-        specifier: 1.26.4
-        version: 1.26.4(react-dom@18.2.0)(react@18.2.0)
+        specifier: 1.26.7
+        version: 1.26.7(react-dom@18.2.0)(react@18.2.0)
       '@tanstack/router-devtools':
         specifier: ^1.26.4
         version: 1.26.4(csstype@3.1.3)(react-dom@18.2.0)(react@18.2.0)
@@ -670,7 +670,7 @@ importers:
     dependencies:
       '@cellajs/imado':
         specifier: ^0.1.2
-        version: 0.1.2(@tus/server@1.4.1)(postcss@8.4.38)
+        version: 0.1.2(@tus/server@1.4.1)
       config:
         specifier: workspace:*
         version: link:../config
@@ -683,7 +683,7 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.0.1(postcss@8.4.38)(typescript@5.3.3)
+        version: 8.0.1(typescript@5.3.3)
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
@@ -2858,6 +2858,26 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@cellajs/imado@0.1.2(@tus/server@1.4.1):
+    resolution: {integrity: sha512-Mz60x71qevowEJXvwv1MVr+clJEEOsrl5m70UayhSDUryYJQqgiD+l/SaUgWvyl0meuvcMsQ19eQFx10kx+VvA==}
+    dependencies:
+      '@aws-sdk/client-s3': 3.501.0
+      '@aws-sdk/cloudfront-signer': 3.496.0
+      '@tus/file-store': 1.2.0(@tus/server@1.4.1)
+      '@tus/s3-store': 1.3.0(@tus/server@1.4.1)
+      jsonwebtoken: 9.0.2
+      tsup: 8.0.1(typescript@5.3.3)
+      typescript: 5.3.3
+    transitivePeerDependencies:
+      - '@microsoft/api-extractor'
+      - '@swc/core'
+      - '@tus/server'
+      - aws-crt
+      - postcss
+      - supports-color
+      - ts-node
+    dev: false
 
   /@cellajs/imado@0.1.2(@tus/server@1.4.1)(postcss@8.4.38):
     resolution: {integrity: sha512-Mz60x71qevowEJXvwv1MVr+clJEEOsrl5m70UayhSDUryYJQqgiD+l/SaUgWvyl0meuvcMsQ19eQFx10kx+VvA==}
@@ -8949,6 +8969,21 @@ packages:
 
   /@tanstack/react-router@1.26.4(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-XMzulbVf4q6cVJ2vey1+SGlJFVxpWsguq1crbB2tajzxHlMmWq2Wpjalcgy4Qja9KFLQuiN4qfMQqxfykDjznQ==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
+    dependencies:
+      '@tanstack/history': 1.26.3
+      '@tanstack/react-store': 0.2.1(react-dom@18.2.0)(react@18.2.0)
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      tiny-invariant: 1.3.1
+      tiny-warning: 1.0.3
+    dev: false
+
+  /@tanstack/react-router@1.26.7(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-sEN4RvkobqcIUa18Eh9NgpaE+4lqmsBStiUG5fkH0XTCdkMJVBaYcpXKJ4owiLEZUxzs2UP6HcEkfIrkP2VuiQ==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8'
@@ -17314,6 +17349,44 @@ packages:
       joycon: 3.1.1
       postcss: 8.4.38
       postcss-load-config: 4.0.2(postcss@8.4.38)
+      resolve-from: 5.0.0
+      rollup: 4.9.6
+      source-map: 0.8.0-beta.0
+      sucrase: 3.35.0
+      tree-kill: 1.2.2
+      typescript: 5.3.3
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+
+  /tsup@8.0.1(typescript@5.3.3):
+    resolution: {integrity: sha512-hvW7gUSG96j53ZTSlT4j/KL0q1Q2l6TqGBFc6/mu/L46IoNWqLLUzLRLP1R8Q7xrJTmkDxxDoojV5uCVs1sVOg==}
+    engines: {node: '>=18'}
+    hasBin: true
+    peerDependencies:
+      '@microsoft/api-extractor': ^7.36.0
+      '@swc/core': ^1
+      postcss: ^8.4.12
+      typescript: '>=4.5.0'
+    peerDependenciesMeta:
+      '@microsoft/api-extractor':
+        optional: true
+      '@swc/core':
+        optional: true
+      postcss:
+        optional: true
+      typescript:
+        optional: true
+    dependencies:
+      bundle-require: 4.0.2(esbuild@0.19.12)
+      cac: 6.7.14
+      chokidar: 3.5.3
+      debug: 4.3.4
+      esbuild: 0.19.12
+      execa: 5.1.1
+      globby: 11.1.0
+      joycon: 3.1.1
+      postcss-load-config: 4.0.2(postcss@8.4.33)
       resolve-from: 5.0.0
       rollup: 4.9.6
       source-map: 0.8.0-beta.0
