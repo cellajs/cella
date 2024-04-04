@@ -1,4 +1,4 @@
-import { Filter, FilterX } from 'lucide-react';
+import { Filter, FilterX, X } from 'lucide-react';
 import { createContext, useContext, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 
@@ -47,8 +47,8 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
   const [isFilterActive, setFilterActive] = useState<boolean>(!!isFiltered);
 
   const clearFilters = () => {
+    if (isFiltered) return onResetFilters();
     setFilterActive(false);
-    onResetFilters();
   };
 
   return (
@@ -62,7 +62,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
       )}
       {isFilterActive && (
         <Button className="sm:hidden" variant="secondary" onClick={clearFilters}>
-          <FilterX size={16} />
+          {isFiltered ? <FilterX size={16} /> : <X size={16} />}
         </Button>
       )}
     </>
