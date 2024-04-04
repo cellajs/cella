@@ -17,13 +17,13 @@ import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import AvatarFormField from '../common/forms/avatar';
-import InputFormField from '../common/forms/input';
-import LanguageFormField from '../common/forms/language';
+import AvatarFormField from '../common/form-fields/avatar';
+import InputFormField from '../common/form-fields/input';
+import LanguageFormField from '../common/form-fields/language';
 import { queryClient } from '~/lib/query-client';
 
-const SelectCountry = lazy(() => import('~/modules/common/select-country'));
-const SelectTimezone = lazy(() => import('~/modules/common/select-timezone'));
+const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
+const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
 
 interface Props {
   organization: Organization;

@@ -12,7 +12,7 @@ interface Props {
   className?: string;
 }
 
-const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
+const UserLanguage = ({ align = 'end', className = '' }: Props) => {
   const { user, setUser } = useUserStore(({ user, setUser }) => ({ user, setUser }));
   const language = i18n.resolvedLanguage || i18n.language;
   const changeLanguage = (lng: string) => {
@@ -44,4 +44,4 @@ const LanguageDropdown = ({ align = 'end', className = '' }: Props) => {
   );
 };
 
-export default LanguageDropdown;
+export default UserLanguage;

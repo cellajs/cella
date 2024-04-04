@@ -7,7 +7,7 @@ import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
 import type { Organization } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
-import JoinLeaveButton from '../common/join-leave-button';
+import JoinLeaveButton from './join-leave-button';
 import { AnimatedOutlet } from '../common/animated-outlet';
 import { AnimatePresence } from 'framer-motion';
 
@@ -37,7 +37,7 @@ const OrganizationPage = () => {
   // Animate outlet
 
   let currentMatch = null;
-  
+
   try {
     const matches = useMatches();
     currentMatch = matches.length ? matches[matches.length - 1] : null;

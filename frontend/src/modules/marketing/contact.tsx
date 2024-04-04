@@ -3,7 +3,7 @@ import { ArrowUpRight, CalendarCheck, Mail, MapPin, PhoneCall } from 'lucide-rea
 
 import { useTranslation } from 'react-i18next';
 import ContactFormMap from '~/modules/common/contact-form/contact-form';
-import PublicPage from '~/modules/common/public-page';
+import PublicPage from '~/modules/marketing/page';
 
 const methods = [
   { icon: MapPin, title: 'common:visit', link: config.company.googleMapsUrl, text: config.company.streetAddress },

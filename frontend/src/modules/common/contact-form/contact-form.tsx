@@ -15,7 +15,7 @@ import { i18n } from '~/lib/i18n';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
-import InputFormField from '../forms/input';
+import InputFormField from '../form-fields/input';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
@@ -82,13 +82,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
               <InputFormField control={form.control} name="name" label={t('common:name')} icon={<User size={16} />} required />
               <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<Mail size={16} />} required />
-              <InputFormField
-                control={form.control}
-                name="message"
-                label={t('common:message')}
-                type="textarea"
-                icon={<MessageSquare size={16} />}
-              />
+              <InputFormField control={form.control} name="message" label={t('common:message')} type="textarea" icon={<MessageSquare size={16} />} />
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="submit">
                   <Send size={16} className="mr-2" />

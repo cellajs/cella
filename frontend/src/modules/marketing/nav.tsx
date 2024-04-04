@@ -7,19 +7,19 @@ import { useInView } from 'react-intersection-observer';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import Logo from '~/modules/common/logo';
-import ThemeDropdown from '~/modules/common/theme-dropdown';
+import UserTheme from '~/modules/common/user-theme';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent } from '~/modules/ui/sheet';
-import HamburgerButton from './hamburger';
-import LanguageDropdown from './language-dropdown';
+import HamburgerButton from '../common/hamburger';
+import UserLanguage from '../common/user-language';
 
-const publicNavConfig = [
+const marketingNavConfig = [
   { id: 'features', url: '/about', hash: 'features' },
   { id: 'pricing', url: '/about', hash: 'pricing' },
   { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 
-export function PublicNav() {
+export function MarketingNav() {
   const { t } = useTranslation();
   const [showSheet, setShowSheet] = useState<boolean>(false);
 
@@ -30,7 +30,7 @@ export function PublicNav() {
   const { ref, inView } = useInView();
 
   const renderNavItems = () => {
-    return publicNavConfig.map((item) => (
+    return marketingNavConfig.map((item) => (
       <Link
         to={item.url}
         hash={item.hash}
@@ -74,13 +74,13 @@ export function PublicNav() {
               </svg>
             </Link>
 
-            {publicNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>}
+            {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>}
           </div>
 
           <div className={`gap-2 px-2 flex transition-all duration-300 ease-in-out ${showSheet ? 'translate-x-2 opacity-0' : 'delay-700'}`}>
-            <LanguageDropdown />
+            <UserLanguage />
 
-            <ThemeDropdown className="max-xs:hidden" />
+            <UserTheme className="max-xs:hidden" />
 
             <Button
               variant="ghost"

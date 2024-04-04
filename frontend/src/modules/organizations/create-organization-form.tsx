@@ -16,7 +16,7 @@ import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
-import InputFormField from '../common/forms/input';
+import InputFormField from '../common/form-fields/input';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;

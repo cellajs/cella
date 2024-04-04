@@ -5,6 +5,8 @@ import { cn } from '~/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useAlertsStore } from '~/store/alerts';
 import { Button } from '../ui/button';
+import type { VariantProps } from 'class-variance-authority';
+import type { alertVariants } from '../ui/alert';
 
 export type AppAlert = {
   className?: string;
@@ -12,7 +14,7 @@ export type AppAlert = {
   Icon?: React.ElementType<LucideProps>;
   children: React.ReactNode;
   title?: string;
-  variant?: 'default' | 'destructive';
+  variant?: VariantProps<typeof alertVariants>['variant'];
 };
 
 export const AppAlert = ({ id, Icon, children, className = '', title = '', variant = 'default' }: AppAlert) => {
@@ -25,7 +27,7 @@ export const AppAlert = ({ id, Icon, children, className = '', title = '', varia
 
   return (
     <Alert variant={variant} className={cn('relative', className)}>
-      <Button variant="ghost" size="sm" className="absolute top-2 right-1" onClick={closeAlert}>
+      <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={closeAlert}>
         <X size={16} />
       </Button>
       {Icon && <Icon size={16} />}
@@ -34,4 +36,4 @@ export const AppAlert = ({ id, Icon, children, className = '', title = '', varia
       {children && <AlertDescription className="pr-8 font-light">{children}</AlertDescription>}
     </Alert>
   );
-}
+};

@@ -7,12 +7,12 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
-interface ThemeDropdownProps {
+interface UserThemeProps {
   size?: number;
   className?: string;
 }
 
-const ThemeDropdown = ({ size = 24, className = '' }: ThemeDropdownProps) => {
+const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
   const { t } = useTranslation();
   const { mode, theme, setMode, setTheme } = useThemeStore();
 
@@ -63,4 +63,4 @@ const ThemeDropdown = ({ size = 24, className = '' }: ThemeDropdownProps) => {
   );
 };
 
-export default ThemeDropdown;
+export default UserTheme;

@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import Logo from '~/modules/common/logo';
-import ThemeDropdown from '~/modules/common/theme-dropdown';
+import UserTheme from '~/modules/common/user-theme';
 import { dialog } from './dialoger/state';
-import LanguageDropdown from './language-dropdown';
+import UserLanguage from './user-language';
 
 export interface FooterLinkProps {
   id: string;
@@ -71,13 +71,13 @@ export const AppFooter = () => {
   return (
     <footer className="container flex flex-col mt-12 items-center gap-4">
       <div className="flex items-center gap-4">
-        <LanguageDropdown align="start" />
+        <UserLanguage align="start" />
         <div className="mr-1 font-light text-muted text-sm">|</div>
         <Link to="/" className="hover:scale-105 transition-transform active:translate-y-[1px]">
           <Logo height={25} />
         </Link>
         <div className="ml-1 font-light text-muted text-sm">|</div>
-        <ThemeDropdown size={18} />
+        <UserTheme size={18} />
       </div>
       <FooterLinks />
     </footer>

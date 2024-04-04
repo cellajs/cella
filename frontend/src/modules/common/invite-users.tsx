@@ -48,7 +48,7 @@ const InviteUsers = ({ organization, callback, dialog: isDialog, mode }: Props) 
   if (inviteMode === 'search')
     return (
       <>
-        <AppAlert id="invite_search" Icon={Info}>
+        <AppAlert id="invite_search" variant="plain" Icon={Info}>
           {t('common:explain.invite_search.text')}
         </AppAlert>
         <InviteSearchForm organization={organization} callback={callback} dialog={isDialog} />
@@ -57,7 +57,7 @@ const InviteUsers = ({ organization, callback, dialog: isDialog, mode }: Props) 
 
   return (
     <>
-      <AppAlert id="invite_email" Icon={Info}>
+      <AppAlert id="invite_email" variant="plain" Icon={Info}>
         {t('common:explain.invite_email.text')}
       </AppAlert>
       <InviteEmailForm organization={organization} callback={callback} dialog={isDialog} />

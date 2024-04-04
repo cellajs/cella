@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import PublicPage from '~/modules/common/public-page';
+import PublicPage from '~/modules/marketing/page';
 
 const Accessibility = () => {
   const { t } = useTranslation();

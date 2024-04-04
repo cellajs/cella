@@ -31,7 +31,7 @@ const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValu
   return (
     <FormProvider {...props}>
       {unsavedChanges && (
-        <Badge className="w-fit mb-4">
+        <Badge variant="plain" className="w-fit mb-4">
           <SquarePen size={12} className="mr-2" />
           <span className="font-light">{t('common:unsaved_changes')}</span>
         </Badge>
