@@ -10,13 +10,13 @@ import { getMe, getUserMenu } from '~/api/users';
 import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
 
+import { queryClient } from '~/lib/router';
 import { AcceptRoute, AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, PrivacyRoute, TermsRoute } from './marketing';
 import { OrganizationRoute, organizationMembersRoute, organizationSettingsRoute, projectsRoute } from './organizations';
 import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
-import { queryClient } from '~/lib/router';
 
 export const getAndSetMe = async () => {
   const user = await getMe();

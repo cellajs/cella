@@ -1,7 +1,7 @@
+import type { UseFormReturn } from 'react-hook-form';
 import type { CreateOrganizationParams } from '~/api/organizations';
 import { Button } from '../ui/button';
 import { useStepper } from '../ui/stepper';
-import type { UseFormReturn } from 'react-hook-form';
 
 interface Props {
   createOrganizationForm: UseFormReturn<CreateOrganizationParams> | null;
@@ -24,7 +24,7 @@ const Footer = ({ createOrganizationForm }: Props) => {
     <div className="w-full flex justify-end gap-2">
       {currentStep.id === 'step-1' ? (
         <Button size="sm" onClick={nextStep}>
-          {(Object.keys(createOrganizationForm?.formState || {}).length > 0) ? 'Next' : 'Skip'}
+          {Object.keys(createOrganizationForm?.formState || {}).length > 0 ? 'Next' : 'Skip'}
         </Button>
       ) : ['step-2', 'step-3', 'step-4'].includes(currentStep.id || '') ? (
         <div className="w-full flex justify-end gap-2">

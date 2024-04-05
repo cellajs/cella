@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
-import { useForm, type Control, type UseFormReturn } from 'react-hook-form';
+import { type Control, type UseFormReturn, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
@@ -9,6 +9,7 @@ import { createOrganizationJsonSchema } from 'backend/modules/organizations/sche
 import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -18,7 +19,6 @@ import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
-import { useEffect } from 'react';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;

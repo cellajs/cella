@@ -16,7 +16,6 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 
 const onError = (error: Error) => {
   if (error instanceof ApiError) {
-
     // Abort if /me, it should fail silently
     if (error.path === '/me') return;
 

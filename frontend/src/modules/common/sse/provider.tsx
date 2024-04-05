@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { type FC, createContext, createElement, useState, useEffect } from 'react';
+import { type FC, createContext, createElement, useEffect, useState } from 'react';
 
 export const SSEContext = createContext<EventSource | null>(null);
 

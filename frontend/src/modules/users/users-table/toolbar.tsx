@@ -6,6 +6,7 @@ import type { GetUsersParams } from '~/api/users';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
+import SelectRole from '~/modules/common/form-fields/select-role';
 import InviteUsers from '~/modules/common/invite-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -16,7 +17,6 @@ import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/c
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
-import SelectRole from '~/modules/common/form-fields/select-role';
 
 interface Props {
   total?: number;

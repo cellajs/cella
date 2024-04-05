@@ -1,11 +1,11 @@
+import type { VariantProps } from 'class-variance-authority';
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useKeyPress } from '~/hooks/use-key-press';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Sheet, SheetContent } from '~/modules/ui/sheet';
-import { useNavigationStore } from '~/store/navigation';
-import type { VariantProps } from 'class-variance-authority';
 import type { sheetVariants } from '~/modules/ui/sheet';
+import { useNavigationStore } from '~/store/navigation';
 
 type SheetSideType = VariantProps<typeof sheetVariants>['side'];
 
@@ -29,8 +29,7 @@ const NavSheet = () => {
 
   useEffect(() => {
     if (!activeSheet) return;
-    setSheetSide(activeSheet.mirrorOnMobile ? 'mirrorOnMobile' : 'left')
-
+    setSheetSide(activeSheet.mirrorOnMobile ? 'mirrorOnMobile' : 'left');
   }, [activeSheet]);
 
   return (

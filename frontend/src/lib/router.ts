@@ -1,7 +1,7 @@
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { createRouter } from '@tanstack/react-router';
 import { routeMasks, routeTree } from '~/routes/routeTree';
 import { queryClientConfig } from './query-client';
-import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 
 // Set up a QueryClient instance
 // https://tanstack.com/query/latest/docs/reference/QueryClient

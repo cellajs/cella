@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import CreateOrganizationForm from '../organizations/create-organization-form';
-import { Step, Stepper, type StepItem } from '../ui/stepper';
-import Footer from './footer';
-import type { CreateOrganizationParams } from '~/api/organizations';
 import type { UseFormReturn } from 'react-hook-form';
-import UpdateUserForm from '../users/update-user-form';
+import type { CreateOrganizationParams } from '~/api/organizations';
 import type { UpdateUserParams } from '~/api/users';
 import { useUserStore } from '~/store/user';
 import InviteUsers from '../common/invite-users';
+import CreateOrganizationForm from '../organizations/create-organization-form';
+import { Step, type StepItem, Stepper } from '../ui/stepper';
+import UpdateUserForm from '../users/update-user-form';
+import Footer from './footer';
 
 const steps = [
   {
@@ -50,11 +50,7 @@ const Onboarding = () => {
                         <p className="text-sm">Let's get started by creating your organization.</p>
                       </div>
                       <div>
-                        <CreateOrganizationForm
-                          setForm={setCreateOrganizationForm}
-                          withButtons={false}
-                          withDraft={false}
-                        />
+                        <CreateOrganizationForm setForm={setCreateOrganizationForm} withButtons={false} withDraft={false} />
                       </div>
                     </div>
                   </div>
@@ -71,12 +67,7 @@ const Onboarding = () => {
                         <h1 className="text-xl">Setup your profile</h1>
                       </div>
                       <div>
-                        <UpdateUserForm
-                          user={user}
-                          setForm={setUpdateUserForm}
-                          withButtons={false}
-                          withDraft={false}
-                        />
+                        <UpdateUserForm user={user} setForm={setUpdateUserForm} withButtons={false} withDraft={false} />
                       </div>
                     </div>
                   </div>
@@ -109,8 +100,7 @@ const Onboarding = () => {
                       <div className="mb-4">
                         <h1 className="text-xl">Get started</h1>
                       </div>
-                      <div>
-                      </div>
+                      <div></div>
                     </div>
                   </div>
                 </Step>

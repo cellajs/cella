@@ -6,7 +6,7 @@ export const useMounted = () => {
   const [hasMounted, setMounted] = useState(false);
   const [hasStarted, setStarted] = useState(false);
   const [hasWaited, setWaited] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
 

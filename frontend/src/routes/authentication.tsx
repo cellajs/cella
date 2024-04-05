@@ -1,5 +1,6 @@
 import { Outlet, createRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
+import { queryClient } from '~/lib/router';
 import SignIn from '~/modules/auth';
 import AcceptInvite from '~/modules/auth/accept-invite';
 import ResetPassword from '~/modules/auth/reset-password';
@@ -7,13 +8,12 @@ import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { useUserStore } from '~/store/user';
 import { getAndSetMe, rootRoute } from './routeTree';
-import { queryClient } from '~/lib/router';
 
 export const AuthRoute = createRoute({
   id: 'auth-layout',
   staticData: { pageTitle: null },
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({cause}) => {
+  beforeLoad: async ({ cause }) => {
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (storedUser) throw redirect({ to: '/', replace: true });
