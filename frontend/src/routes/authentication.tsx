@@ -13,17 +13,20 @@ export const AuthRoute = createRoute({
   id: 'auth-layout',
   staticData: { pageTitle: null },
   getParentRoute: () => rootRoute,
-  beforeLoad: async () => {
+  beforeLoad: async ({cause}) => {
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (storedUser) throw redirect({ to: '/', replace: true });
+
+    // Only check auth if entering
+    if (cause !== 'enter') return;
 
     try {
       await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
       console.info('Authenticated, go to home');
       throw redirect({ to: '/', replace: true });
     } catch (error) {
-      return console.error('Not authenticated');
+      return console.info('Not authenticated (silent check)');
     }
   },
   component: () => <Outlet />,

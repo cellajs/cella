@@ -66,7 +66,7 @@ export const IndexRoute = createRoute({
         await Promise.all([getMe(), getMenu()]);
       }
     } catch {
-      console.info('Not authenticated, redirect to sign in');
+      console.info('Not authenticated (silent check) -> redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
     }
   },

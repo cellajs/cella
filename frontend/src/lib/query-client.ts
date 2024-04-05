@@ -15,8 +15,11 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 });
 
 const onError = (error: Error) => {
-
   if (error instanceof ApiError) {
+
+    // Abort if /me, it should fail silently
+    if (error.path === '/me') return;
+
     const fallback = fallbackMessages(i18n.t);
 
     // Translate, try most specific first
@@ -35,7 +38,7 @@ const onError = (error: Error) => {
     else if (error.status === 504) useAlertsStore.getState().setDownAlert('offline');
 
     // Redirect to sign-in page if the user is not authenticated (except for /me)
-    if (error.status === 401 && error.path !== '/me') {
+    if (error.status === 401) {
       router.navigate({
         to: '/auth/sign-in',
         search: {
@@ -51,4 +54,4 @@ const onSuccess = () => {
   useAlertsStore.getState().setDownAlert(null);
 };
 
-export const queryClientConfig = { onError, onSuccess }
+export const queryClientConfig = { onError, onSuccess };
