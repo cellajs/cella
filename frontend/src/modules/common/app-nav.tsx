@@ -14,7 +14,7 @@ import { SheetAccount } from './nav-sheet/sheet-account';
 import { SheetMenu } from './nav-sheet/sheet-menu';
 import { SheetNotifications } from './nav-sheet/sheet-notifications';
 
-import useAppState from '~/hooks/use-app-state';
+import useMounted from '~/hooks/use-mounted';
 import { NavButton } from './app-nav-button';
 import { AppSearch } from './app-search';
 
@@ -37,7 +37,7 @@ export const navItems: NavItem[] = [
 const AppNav = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { hasStarted } = useAppState();
+  const { hasStarted } = useMounted();
   const isSmallScreen = useBreakpoints('max', 'lg');
   const { activeSheet, setSheet, keepMenuOpen, focusView } = useNavigationStore();
   const { theme } = useThemeStore();

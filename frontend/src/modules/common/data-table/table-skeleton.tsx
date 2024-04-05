@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
-import { Skeleton } from '../../ui/skeleton';
+import { Skeleton } from '~/modules/ui/skeleton';
+import useMountedState from '~/hooks/use-mounted';
 
 interface DataTableSkeletonProps {
   rowCount?: number;
@@ -18,19 +18,10 @@ export const DataTableSkeleton = ({
   shrinkTable = false,
 }: DataTableSkeletonProps) => {
   const renderCellHeight = cellHeight - 18;
-  const [isVisible, setIsVisible] = useState(false);
-
-  // Delay skeleton appearance to avoid flickering
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 200);
-
-    return () => clearTimeout(timer);
-  }, []);
+  const { hasStarted } = useMountedState();
 
   return (
-    <div className={`w-full space-y-3 overflow-auto transition-opacity ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`w-full space-y-3 overflow-auto transition-opacity ${hasStarted ? 'opacity-100' : 'opacity-0'}`}>
       <Table>
         <TableHeader>
           {Array.from({ length: 1 }).map((_, i) => (
