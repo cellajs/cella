@@ -1,5 +1,5 @@
 import { useNavigationStore } from '~/store/navigation';
-import { useSSE } from './useSSE';
+import { useSSE } from './use-sse';
 
 const SSE = () => {
   useSSE('update_organization', (e) => {
