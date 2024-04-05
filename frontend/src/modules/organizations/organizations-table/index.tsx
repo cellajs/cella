@@ -51,8 +51,6 @@ const OrganizationsTable = () => {
 
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-  const callback = useMutateQueryData(['organizations', query, sortColumns]);
-
   const queryResult = useInfiniteQuery({
     queryKey: ['organizations', query, sortColumns],
     initialPageParam: 0,
@@ -73,6 +71,7 @@ const OrganizationsTable = () => {
     refetchOnWindowFocus: false,
   });
 
+  const callback = useMutateQueryData(['organizations', query, sortColumns]);
   const [columns, setColumns] = useColumns(callback);
 
   const onRowsChange = async (records: Organization[], { column, indexes }: RowsChangeData<Organization>) => {

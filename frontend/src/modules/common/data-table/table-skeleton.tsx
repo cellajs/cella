@@ -20,10 +20,11 @@ export const DataTableSkeleton = ({
   const renderCellHeight = cellHeight - 18;
   const [isVisible, setIsVisible] = useState(false);
 
+  // Delay skeleton appearance to avoid flickering
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(true);
-    }, 300);
+    }, 200);
 
     return () => clearTimeout(timer);
   }, []);
