@@ -22,7 +22,7 @@ const AuthPage = ({ children }: AuthPageProps) => {
       </Suspense>
 
       <div className="mt-auto mb-auto">
-        <div className="mx-auto mb-40 mt-8 flex flex-col justify-center space-y-4 w-[280px] sm:w-[360px]">
+        <div className="mx-auto mb-40 mt-8 flex flex-col justify-center gap-4 w-[280px] sm:w-[360px]">
           {children}
 
           <Link to="/about" className="hover:opacity-90 !mt-8 active:scale-95">

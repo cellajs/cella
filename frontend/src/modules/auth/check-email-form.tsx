@@ -51,11 +51,12 @@ export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: str
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem>
+            // Custom css due to html injection by browser extensions
+            <FormItem className="gap-0">
               <FormControl>
                 <Input {...field} type="email" autoFocus placeholder={t('common:email')} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="mt-2" />
             </FormItem>
           )}
         />
