@@ -25,11 +25,11 @@ const AuthPage = ({ children }: AuthPageProps) => {
         <div className="mx-auto mb-40 mt-8 flex flex-col justify-center gap-4 w-[280px] sm:w-[360px]">
           {children}
 
-          <Link to="/about" className="hover:opacity-90 !mt-8 active:scale-95">
-            <Logo height={30} />
+          <Link to="/about" className="hover:opacity-90 p-4 active:scale-95">
+            <Logo height={34} />
           </Link>
 
-          <FooterLinks className="max-md:hidden !mt-8 scale-110" links={authFooterLinks} />
+          <FooterLinks className="max-md:hidden scale-110" links={authFooterLinks} />
         </div>
       </div>
     </div>
