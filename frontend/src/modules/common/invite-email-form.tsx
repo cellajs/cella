@@ -89,7 +89,7 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
           control={form.control}
           name="role"
           render={({ field: { value, onChange } }) => (
-            <FormItem>
+            <FormItem className="flex-row gap-4 items-center">
               <FormLabel>{t('common:role')}</FormLabel>
               <FormControl>
                 <SelectRole roles={roles} value={value} onChange={onChange} />

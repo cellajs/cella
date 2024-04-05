@@ -137,12 +137,7 @@ function Toolbar({
           columns={columns}
           selectedRows={selectedOrganizations}
           fetchRows={async (limit) => {
-            const { items } = await getOrganizations({
-              limit,
-              q: query,
-              sort,
-              order,
-            });
+            const { items } = await getOrganizations({ limit, q: query, sort, order });
             return items;
           }}
         />
