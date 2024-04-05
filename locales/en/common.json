@@ -280,5 +280,6 @@
   "invite_only.text": "Cella is currently invite-only. Can't wait? Contact us for an invite.",
   "filter": "Filter",
   "export_pdf_csv": "Export CSV or PDF",
-  "columns_view": "Change column view"
+  "columns_view": "Change column view",
+  "forgot_password": "Forgot password"
 }

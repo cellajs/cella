@@ -15,6 +15,7 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 });
 
 const onError = (error: Error) => {
+
   if (error instanceof ApiError) {
     const fallback = fallbackMessages(i18n.t);
 
@@ -33,8 +34,8 @@ const onError = (error: Error) => {
     if (error.status === 503) useAlertsStore.getState().setDownAlert('maintenance');
     else if (error.status === 504) useAlertsStore.getState().setDownAlert('offline');
 
-    // Redirect to sign-in page if the user is not authenticated
-    if (error.status === 401) {
+    // Redirect to sign-in page if the user is not authenticated (except for /me)
+    if (error.status === 401 && error.path !== '/me') {
       router.navigate({
         to: '/auth/sign-in',
         search: {

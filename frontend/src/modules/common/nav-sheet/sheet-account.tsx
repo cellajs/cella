@@ -41,8 +41,8 @@ export const SheetAccount = () => {
   };
 
   const onSignOut = () => {
-    navigate({ to: '/sign-out' });
     setSheet(null);
+    navigate({ to: '/sign-out' });
   };
 
   const bgClass = user.bannerUrl ? 'bg-background' : getColorClass(user.id);

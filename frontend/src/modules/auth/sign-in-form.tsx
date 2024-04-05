@@ -149,8 +149,8 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
   };
 
   return (
-    <Button variant="ghost" type="button" size="sm" className="w-full font-normal !mt-2" onClick={openDialog}>
-      Forgot password?
+    <Button variant="ghost" type="button" size="sm" className="w-full font-normal" onClick={openDialog}>
+      {t('common:forgot_password')}
     </Button>
   );
 };

@@ -11,7 +11,7 @@ import { queryClient } from '~/lib/router';
 
 export const AuthRoute = createRoute({
   id: 'auth-layout',
-  staticData: { pageTitle: 'Home' },
+  staticData: { pageTitle: null },
   getParentRoute: () => rootRoute,
   beforeLoad: async () => {
     // If stored user, redirect to home
@@ -19,15 +19,12 @@ export const AuthRoute = createRoute({
     if (storedUser) throw redirect({ to: '/', replace: true });
 
     try {
-      // Check if authenticated
       await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+      console.info('Authenticated, go to home');
+      throw redirect({ to: '/', replace: true });
     } catch (error) {
       return console.error('Not authenticated');
     }
-
-    // If authenticated, redirect to home
-    console.info('Authenticated, go to home');
-    throw redirect({ to: '/', replace: true });
   },
   component: () => <Outlet />,
 });
