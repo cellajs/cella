@@ -178,7 +178,7 @@ export const DataTable = <TData,>({
           )}
         </>
       ) : (
-        <DataTableSkeleton cellsWidths={['48px']} cellHeight={Number(rowHeight)} cellsCount={columns.length} />
+        <DataTableSkeleton cellsWidths={['48px', '48px']} cellHeight={Number(rowHeight)} columnCount={columns.length} />
       )}
     </div>
   );

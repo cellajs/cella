@@ -9,6 +9,7 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
+import { useDebounce } from '~/hooks/use-debounce';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
@@ -17,7 +18,6 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { useDebounce } from '~/hooks/use-debounce';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -51,8 +51,6 @@ const OrganizationsTable = () => {
 
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-  const callback = useMutateQueryData(['organizations', query, sortColumns]);
-
   const queryResult = useInfiniteQuery({
     queryKey: ['organizations', query, sortColumns],
     initialPageParam: 0,
@@ -73,6 +71,7 @@ const OrganizationsTable = () => {
     refetchOnWindowFocus: false,
   });
 
+  const callback = useMutateQueryData(['organizations', query, sortColumns]);
   const [columns, setColumns] = useColumns(callback);
 
   const onRowsChange = async (records: Organization[], { column, indexes }: RowsChangeData<Organization>) => {

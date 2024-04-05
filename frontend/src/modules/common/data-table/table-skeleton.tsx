@@ -1,29 +1,32 @@
-import { Skeleton } from '../../ui/skeleton';
+import useMountedState from '~/hooks/use-mounted';
+import { Skeleton } from '~/modules/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
 interface DataTableSkeletonProps {
   rowCount?: number;
   cellHeight?: number;
-  cellsCount?: number;
+  columnCount?: number;
   cellsWidths?: string[];
   shrinkTable?: boolean;
 }
 
 export const DataTableSkeleton = ({
-  cellsCount = 4,
+  columnCount = 4,
   cellHeight = 40,
   cellsWidths = [],
   rowCount = 20,
   shrinkTable = false,
 }: DataTableSkeletonProps) => {
   const renderCellHeight = cellHeight - 18;
+  const { hasStarted } = useMountedState();
+
   return (
-    <div className="w-full space-y-3 overflow-auto">
+    <div className={`w-full space-y-3 overflow-auto transition-opacity ${hasStarted ? 'opacity-100' : 'opacity-0'}`}>
       <Table>
         <TableHeader>
           {Array.from({ length: 1 }).map((_, i) => (
             <TableRow key={i.toString()} className="hover:bg-transparent">
-              {Array.from({ length: cellsCount }).map((_, j) => (
+              {Array.from({ length: columnCount }).map((_, j) => (
                 <TableHead
                   key={j.toString()}
                   style={{
@@ -40,7 +43,7 @@ export const DataTableSkeleton = ({
         <TableBody>
           {Array.from({ length: rowCount }).map((_, i) => (
             <TableRow key={i.toString()} className="hover:bg-transparent">
-              {Array.from({ length: cellsCount }).map((_, j) => (
+              {Array.from({ length: columnCount }).map((_, j) => (
                 <TableCell
                   key={j.toString()}
                   style={{

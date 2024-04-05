@@ -7,7 +7,7 @@ import type { User } from '~/types';
 
 const Expand = ({ row }: { row: User }) => {
   const { t } = useTranslation();
-  
+
   // Get modifiedBy user
   const { data: modifier, isLoading } = useQuery({
     queryKey: ['getUserBySlugOrId', row.modifiedBy],

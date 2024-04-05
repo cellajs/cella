@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { useMatches } from '@tanstack/react-router';
 import { config } from 'config';
+import { useEffect } from 'react';
 
 // Custom hook for setting document title
 export const useBuildDocumentTitle = () => {

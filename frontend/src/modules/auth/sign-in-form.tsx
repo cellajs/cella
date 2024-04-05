@@ -68,7 +68,7 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
           <ChevronDown size={16} className="ml-2" />
         </Button>
       </h1>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 !mt-0">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 !mt-0">
         <FormField
           control={form.control}
           name="email"
@@ -85,11 +85,12 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
           control={form.control}
           name="password"
           render={({ field }) => (
-            <FormItem>
+            // Custom css due to html injection by browser extensions
+            <FormItem className="gap-0">
               <FormControl>
                 <Input type="password" autoFocus {...field} autoComplete="current-password" placeholder={t('common:password')} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="mt-2" />
             </FormItem>
           )}
         />
@@ -148,8 +149,8 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
   };
 
   return (
-    <Button variant="ghost" type="button" size="sm" className="w-full font-normal !mt-2" onClick={openDialog}>
-      Forgot password?
+    <Button variant="ghost" type="button" size="sm" className="w-full font-normal" onClick={openDialog}>
+      {t('common:forgot_password')}
     </Button>
   );
 };

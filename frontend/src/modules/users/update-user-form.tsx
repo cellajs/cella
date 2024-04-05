@@ -16,20 +16,23 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-import { useWatch } from 'react-hook-form';
+import { type UseFormReturn, useForm, useWatch } from 'react-hook-form';
 import { checkSlug as baseCheckSlug } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
-import { queryClient } from '~/lib/query-client';
 
 interface Props {
   user: User;
   callback?: (user: User) => void;
   dialog?: boolean;
+  withDraft?: boolean;
+  setForm?: (form: UseFormReturn<FormValues>) => void;
+  withButtons?: boolean;
 }
 
 const formSchema = updateUserJsonSchema;
@@ -47,7 +50,7 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
   });
 };
 
-const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
+const UpdateUserForm = ({ user, callback, dialog: isDialog, setForm, withButtons = true, withDraft = true }: Props) => {
   const { t } = useTranslation();
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
@@ -67,7 +70,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
     },
   });
 
-  const form = useFormWithDraft<FormValues>(`update-user-${user.id}`, {
+  const formOptions = {
     resolver: zodResolver(formSchema),
     defaultValues: {
       slug: user.slug,
@@ -78,7 +81,9 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
       language: user.language,
       newsletter: user.newsletter,
     },
-  });
+  };
+
+  const form = withDraft ? useFormWithDraft<FormValues>('create-organization', formOptions) : useForm<FormValues>(formOptions);
 
   const slug = useWatch({
     control: form.control,
@@ -129,6 +134,14 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
       checkSlug(slug);
     }
   }, [slug]);
+
+  const allFields = form.watch();
+
+  useEffect(() => {
+    if (setForm) {
+      setForm(form);
+    }
+  }, [setForm, allFields]);
 
   return (
     <Form {...form}>
@@ -182,18 +195,20 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog }: Props) => {
             </FormItem>
           )}
         />
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            type="submit"
-            disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0}
-            loading={isPending || isCheckPending}
-          >
-            {t('common:save_changes')}
-          </Button>
-          <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
-            {t('common:cancel')}
-          </Button>
-        </div>
+        {withButtons && (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              type="submit"
+              disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0}
+              loading={isPending || isCheckPending}
+            >
+              {t('common:save_changes')}
+            </Button>
+            <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
+              {t('common:cancel')}
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );

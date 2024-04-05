@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
+import { type Control, type UseFormReturn, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
@@ -8,6 +9,7 @@ import { createOrganizationJsonSchema } from 'backend/modules/organizations/sche
 import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -21,23 +23,34 @@ import InputFormField from '../common/form-fields/input';
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
   dialog?: boolean;
+  withDraft?: boolean;
+  setForm?: (form: UseFormReturn<FormValues>) => void;
+  withButtons?: boolean;
 }
 
 const formSchema = createOrganizationJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callback, dialog: isDialog }) => {
+const formOptions = {
+  resolver: zodResolver(formSchema),
+  defaultValues: {
+    name: '',
+  },
+};
+
+const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
+  callback,
+  dialog: isDialog,
+  setForm,
+  withButtons = true,
+  withDraft = true,
+}) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
 
-  const form = useFormWithDraft<FormValues>('create-organization', {
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-    },
-  });
+  const form = withDraft ? useFormWithDraft<FormValues>('create-organization', formOptions) : useForm<FormValues>(formOptions);
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createOrganization,
@@ -64,7 +77,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   });
 
   const onSubmit = (values: FormValues) => {
-    create(values.name);
+    create(values);
   };
 
   const cancel = () => {
@@ -72,18 +85,29 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     if (isDialog) dialog.remove();
   };
 
+  const allFields = form.watch();
+
+  useEffect(() => {
+    if (setForm) {
+      setForm(form);
+    }
+  }, [setForm, allFields]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
-            {t('common:create')}
-          </Button>
-          <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
-            {t('common:cancel')}
-          </Button>
-        </div>
+        {/* TODO: fix this typescript issue */}
+        <InputFormField control={form.control as unknown as Control} name="name" label={t('common:name')} required />
+        {withButtons && (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+              {t('common:create')}
+            </Button>
+            <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
+              {t('common:cancel')}
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );

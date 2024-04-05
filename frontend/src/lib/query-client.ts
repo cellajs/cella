@@ -1,4 +1,3 @@
-import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import i18next from 'i18next';
 import { toast } from 'sonner';
 import { ApiError } from '~/api';
@@ -17,6 +16,9 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 
 const onError = (error: Error) => {
   if (error instanceof ApiError) {
+    // Abort if /me, it should fail silently
+    if (error.path === '/me') return;
+
     const fallback = fallbackMessages(i18n.t);
 
     // Translate, try most specific first
@@ -34,7 +36,7 @@ const onError = (error: Error) => {
     if (error.status === 503) useAlertsStore.getState().setDownAlert('maintenance');
     else if (error.status === 504) useAlertsStore.getState().setDownAlert('offline');
 
-    // Redirect to sign-in page if the user is not authenticated
+    // Redirect to sign-in page if the user is not authenticated (except for /me)
     if (error.status === 401) {
       router.navigate({
         to: '/auth/sign-in',
@@ -51,9 +53,4 @@ const onSuccess = () => {
   useAlertsStore.getState().setDownAlert(null);
 };
 
-// Set up a QueryClient instance
-// https://tanstack.com/query/latest/docs/reference/QueryClient
-export const queryClient = new QueryClient({
-  mutationCache: new MutationCache({ onError, onSuccess }),
-  queryCache: new QueryCache({ onError, onSuccess }),
-});
+export const queryClientConfig = { onError, onSuccess };

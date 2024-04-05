@@ -75,7 +75,8 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
           control={form.control}
           name="password"
           render={({ field }) => (
-            <FormItem>
+            // Custom css due to html injection by browser extensions
+            <FormItem className="gap-0">
               <FormControl>
                 <div className="relative">
                   <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
@@ -84,7 +85,7 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
                   </Suspense>
                 </div>
               </FormControl>
-              <FormMessage />
+              <FormMessage className="mt-2" />
             </FormItem>
           )}
         />

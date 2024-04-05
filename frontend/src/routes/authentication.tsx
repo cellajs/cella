@@ -1,8 +1,9 @@
 import { Outlet, createRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
+import { queryClient } from '~/lib/router';
+import SignIn from '~/modules/auth';
 import AcceptInvite from '~/modules/auth/accept-invite';
 import ResetPassword from '~/modules/auth/reset-password';
-import SignIn from '~/modules/auth';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { useUserStore } from '~/store/user';
@@ -10,23 +11,23 @@ import { getAndSetMe, rootRoute } from './routeTree';
 
 export const AuthRoute = createRoute({
   id: 'auth-layout',
-  staticData: { pageTitle: 'Home' },
+  staticData: { pageTitle: null },
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ context }) => {
+  beforeLoad: async ({ cause }) => {
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (storedUser) throw redirect({ to: '/', replace: true });
 
-    try {
-      // Check if authenticated
-      await context.queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
-    } catch (error) {
-      return console.error('Not authenticated');
-    }
+    // Only check auth if entering
+    if (cause !== 'enter') return;
 
-    // If authenticated, redirect to home
-    console.info('Authenticated, go to home');
-    throw redirect({ to: '/', replace: true });
+    try {
+      await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+      console.info('Authenticated, go to home');
+      throw redirect({ to: '/', replace: true });
+    } catch (error) {
+      return console.info('Not authenticated (silent check)');
+    }
   },
   component: () => <Outlet />,
 });

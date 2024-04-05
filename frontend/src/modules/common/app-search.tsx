@@ -4,11 +4,11 @@ import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
+import { useDebounce } from '~/hooks/use-debounce';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
-import { AvatarWrap } from './avatar-wrap';
-import { useDebounce } from '~/hooks/use-debounce';
 import { useNavigationStore } from '~/store/navigation';
+import { AvatarWrap } from './avatar-wrap';
 
 export const AppSearch = () => {
   const { t } = useTranslation();

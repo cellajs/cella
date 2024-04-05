@@ -2,13 +2,13 @@ import { useIsFetching } from '@tanstack/react-query';
 import { config } from 'config';
 import { Home } from 'lucide-react';
 import { useEffect } from 'react';
-import useAppState from '~/hooks/use-app-state';
+import useMounted from '~/hooks/use-mounted';
+import router from '~/lib/router';
 import { useNavigationStore } from '~/store/navigation';
 import Logo from './logo';
-import router from '~/lib/router';
 
 const AppNavLoader = () => {
-  const { isReady } = useAppState();
+  const { hasWaited } = useMounted();
   const { navLoading, setLoading } = useNavigationStore();
   const isFetching = useIsFetching();
 
@@ -29,12 +29,12 @@ const AppNavLoader = () => {
       <Logo
         iconOnly
         className={`${isLoading && 'animate-spin-slow'} w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0 ${
-          isReady && !isLoading && 'ease-in-out opacity-0 scale-0'
+          hasWaited && !isLoading && 'ease-in-out opacity-0 scale-0'
         }`}
       />
       <Home
         strokeWidth={config.theme.strokeWidth}
-        className={`transition-all ease-in-out group-hover:scale-110 group-hover:opacity-100 ${!isReady || isLoading ? 'opacity-0 scale-0' : ''}`}
+        className={`transition-all ease-in-out group-hover:scale-110 group-hover:opacity-100 ${!hasWaited || isLoading ? 'opacity-0 scale-0' : ''}`}
       />
     </>
   );

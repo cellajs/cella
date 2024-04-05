@@ -20,12 +20,13 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResul
       if (!searchTerm.trim()) return initialSearchResults;
 
       const lowerCaseTerm = searchTerm.toLowerCase();
-      return menuSections.reduce((acc, section) => {
-        acc[section.id] = menu[section.id as keyof UserMenu].active.filter(page => 
-          page.name.toLowerCase().includes(lowerCaseTerm)
-        );
-        return acc;
-      }, {} as Record<string, Page[]>);
+      return menuSections.reduce(
+        (acc, section) => {
+          acc[section.id] = menu[section.id as keyof UserMenu].active.filter((page) => page.name.toLowerCase().includes(lowerCaseTerm));
+          return acc;
+        },
+        {} as Record<string, Page[]>,
+      );
     };
 
     onSearchResultsChange(filterResults());
@@ -41,9 +42,7 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResul
         onChange={(e) => setSearchTerm(e.target.value)}
         className="bg-transparent border-0 px-10"
       />
-      {searchTerm && (
-        <XCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setSearchTerm('')} />
-      )}
+      {searchTerm && <XCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setSearchTerm('')} />}
     </div>
   );
 };

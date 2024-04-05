@@ -8,10 +8,10 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { checkEmail as baseCheckEmail } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
-import { config } from 'config';
 
 const formSchema = checkEmailJsonSchema;
 
@@ -51,11 +51,12 @@ export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: str
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem>
+            // Custom css due to html injection by browser extensions
+            <FormItem className="gap-0">
               <FormControl>
                 <Input {...field} type="email" autoFocus placeholder={t('common:email')} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="mt-2" />
             </FormItem>
           )}
         />

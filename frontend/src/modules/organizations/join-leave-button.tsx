@@ -7,8 +7,8 @@ import { removeMembersFromOrganization } from '~/api/organizations';
 import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
-import { organizationQueryOptions } from './organization';
 import { Button } from '../ui/button';
+import { organizationQueryOptions } from './organization';
 
 interface Props {
   organization: Organization;

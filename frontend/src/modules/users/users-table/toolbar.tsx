@@ -3,7 +3,10 @@ import { type Dispatch, type SetStateAction, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { GetUsersParams } from '~/api/users';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
+import SelectRole from '~/modules/common/form-fields/select-role';
 import InviteUsers from '~/modules/common/invite-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -14,10 +17,6 @@ import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/c
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
 import DeleteUsers from '../delete-users';
-import { TableFilterBar, FilterBarActions, FilterBarContent } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import { cn } from '~/lib/utils';
 
 interface Props {
   total?: number;
@@ -34,7 +33,7 @@ interface Props {
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<UserRow>[]>>;
 }
 
-const items = [
+const selectRoleOptions = [
   { key: 'all', value: 'All' },
   { key: 'admin', value: 'Admin' },
   { key: 'user', value: 'User' },
@@ -88,6 +87,10 @@ function Toolbar({
     );
   };
 
+  const onRoleChange = (role?: string) => {
+    setRole(role === 'all' ? undefined : (role as GetUsersParams['role']));
+  };
+
   return (
     <>
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
@@ -121,23 +124,7 @@ function Toolbar({
 
           <FilterBarContent>
             <TableSearch value={query} setQuery={setQuery} />
-            <Select
-              value={role === undefined ? 'all' : role}
-              onValueChange={(role) => {
-                setRole(role === 'all' ? undefined : (role as GetUsersParams['role']));
-              }}
-            >
-              <SelectTrigger className={cn('w-full h-10 sm:min-w-32', role !== undefined && 'text-primary')}>
-                <SelectValue placeholder={t('common:placeholder.select_role')} />
-              </SelectTrigger>
-              <SelectContent>
-                {items.map(({ key, value }) => (
-                  <SelectItem key={key} value={key}>
-                    {t(value)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectRole roles={selectRoleOptions} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />

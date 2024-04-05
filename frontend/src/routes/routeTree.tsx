@@ -10,6 +10,7 @@ import { getMe, getUserMenu } from '~/api/users';
 import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
 
+import { queryClient } from '~/lib/router';
 import { AcceptRoute, AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, PrivacyRoute, TermsRoute } from './marketing';
@@ -45,7 +46,7 @@ export const IndexRoute = createRoute({
   id: 'layout',
   staticData: { pageTitle: '' },
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ location, cause, context }) => {
+  beforeLoad: async ({ location, cause }) => {
     const lastUser = useUserStore.getState().lastUser;
 
     // If no stored user and no desired path, redirect to about
@@ -55,17 +56,17 @@ export const IndexRoute = createRoute({
       // If just entered, fetch me and menu
       if (cause === 'enter') {
         const getMe = async () => {
-          return context.queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+          return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
         };
 
         const getMenu = async () => {
-          return context.queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu });
+          return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu });
         };
 
         await Promise.all([getMe(), getMenu()]);
       }
     } catch {
-      console.info('Not authenticated, redirect to sign in');
+      console.info('Not authenticated (silent check) -> redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
     }
   },

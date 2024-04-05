@@ -2,19 +2,19 @@ import { Trash2 } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent } from '~/modules/ui/card';
 
+import { terminateMySessions as baseTerminateMySessions } from '~/api/users';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUsers from './delete-users';
-import { terminateMySessions as baseTerminateMySessions } from '~/api/users';
 
 import { useNavigate } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useMutation } from '~/hooks/use-mutations';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { ScrollArea } from '../ui/scroll-area';
-import { useMutation } from '~/hooks/use-mutations';
-import { useMemo } from 'react';
 
 const UserSettings = () => {
   const user = useUserStore((state) => state.user);

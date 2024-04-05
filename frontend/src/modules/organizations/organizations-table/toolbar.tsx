@@ -7,6 +7,7 @@ import { getOrganizations } from '~/api/organizations';
 import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
@@ -19,7 +20,6 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import type { OrganizationsSearch } from '.';
-import { TableFilterBar, FilterBarActions, FilterBarContent } from '~/modules/common/data-table/table-filter-bar';
 
 interface Props {
   total?: number;
@@ -137,12 +137,7 @@ function Toolbar({
           columns={columns}
           selectedRows={selectedOrganizations}
           fetchRows={async (limit) => {
-            const { items } = await getOrganizations({
-              limit,
-              q: query,
-              sort,
-              order,
-            });
+            const { items } = await getOrganizations({ limit, q: query, sort, order });
             return items;
           }}
         />

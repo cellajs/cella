@@ -2,9 +2,9 @@ import { deleteOrganizations as baseDeleteOrganizations } from '~/api/organizati
 import type { Organization } from '~/types';
 
 import { useMutation } from '~/hooks/use-mutations';
+import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { queryClient } from '~/lib/query-client';
 
 interface Props {
   organizations: Organization[];

@@ -14,8 +14,8 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Badge } from '../ui/badge';
-import MultipleSelector from './multi-select';
 import SelectRole from './form-fields/select-role';
+import MultipleSelector from './multi-select';
 
 interface Props {
   organization?: Organization;
@@ -106,7 +106,7 @@ const InviteSearchForm = ({ organization, callback, dialog: isDialog }: Props) =
           control={form.control}
           name="role"
           render={({ field: { value, onChange } }) => (
-            <FormItem>
+            <FormItem className="flex-row gap-4 items-center">
               <FormLabel>{t('common:role')}</FormLabel>
               <FormControl>
                 <SelectRole roles={roles} value={value} onChange={onChange} />

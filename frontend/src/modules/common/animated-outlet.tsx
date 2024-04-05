@@ -1,6 +1,6 @@
 import { Outlet } from '@tanstack/react-router';
-import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
+import { forwardRef } from 'react';
 
 // TODO: motion is not working great due to tanstack router not keeping the old route in the DOM
 const transitionProps = {

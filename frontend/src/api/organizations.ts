@@ -1,10 +1,12 @@
 import type { Member } from '~/types';
 import { ApiError, organizationsClient as client } from '.';
 
+export type CreateOrganizationParams = Parameters<(typeof client.organizations)['$post']>['0']['json'];
+
 // Create a new organization
-export const createOrganization = async (name: string) => {
+export const createOrganization = async (params: CreateOrganizationParams) => {
   const response = await client.organizations.$post({
-    json: { name },
+    json: params,
   });
 
   const json = await response.json();

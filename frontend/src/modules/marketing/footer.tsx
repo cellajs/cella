@@ -5,8 +5,8 @@ import { Github, Twitter } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import Logo from '~/modules/common/logo';
-import NewsletterForm from '~/modules/marketing/newsletter';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
+import NewsletterForm from '~/modules/marketing/newsletter';
 
 export const socials = [
   { title: 'Twitter', href: config.company.twitterUrl, icon: Twitter },

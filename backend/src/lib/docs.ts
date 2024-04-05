@@ -1,5 +1,5 @@
-import { config } from 'config';
 import { apiReference } from '@scalar/hono-api-reference';
+import { config } from 'config';
 import type { CustomHono } from '../types/common';
 
 const openAPITags = [

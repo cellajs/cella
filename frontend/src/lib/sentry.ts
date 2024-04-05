@@ -1,5 +1,5 @@
-import { config } from 'config';
 import * as Sentry from '@sentry/react';
+import { config } from 'config';
 
 export const initSentry = () => {
   // Send errors to Sentry

@@ -3,23 +3,22 @@ import { type Dispatch, type SetStateAction, useContext, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
+import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import TableCount from '~/modules/common/data-table/table-count';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import TableSearch from '~/modules/common/data-table/table-search';
+import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
+import SelectRole from '~/modules/common/form-fields/select-role';
 import InviteUsers from '~/modules/common/invite-users';
+import { OrganizationContext } from '~/modules/organizations/organization';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import type { Member } from '~/types';
 import type { MembersSearch } from '.';
-import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
-import TableCount from '~/modules/common/data-table/table-count';
-import { dialog } from '~/modules/common/dialoger/state';
-import { OrganizationContext } from '~/modules/organizations/organization';
 import RemoveMembersForm from './remove-member-form';
-import { TableFilterBar, FilterBarActions, FilterBarContent } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import { cn } from '~/lib/utils';
 
 interface Props {
   selectedMembers: Member[];
@@ -39,7 +38,7 @@ interface Props {
   order: MembersSearch['order'];
 }
 
-const items = [
+const selectRoleOptions = [
   { key: 'all', value: 'all' },
   { key: 'admin', value: 'admin' },
   { key: 'member', value: 'member' },
@@ -103,6 +102,10 @@ function Toolbar({
     );
   };
 
+  const onRoleChange = (role?: string) => {
+    setRole(role === 'all' ? undefined : (role as GetMembersParams['role']));
+  };
+
   return (
     <>
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
@@ -136,23 +139,7 @@ function Toolbar({
 
           <FilterBarContent>
             <TableSearch value={query} setQuery={setQuery} />
-            <Select
-              value={role === undefined ? 'all' : role}
-              onValueChange={(role) => {
-                setRole(role === 'all' ? undefined : (role as GetMembersParams['role']));
-              }}
-            >
-              <SelectTrigger className={cn('w-full h-10 sm:min-w-32', role !== undefined && 'text-primary')}>
-                <SelectValue placeholder={t('common:placeholder.select_role')} />
-              </SelectTrigger>
-              <SelectContent>
-                {items.map(({ key, value }) => (
-                  <SelectItem key={key} value={key}>
-                    {t(value)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectRole roles={selectRoleOptions} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>
 
@@ -164,13 +151,7 @@ function Toolbar({
           columns={columns}
           selectedRows={selectedMembers}
           fetchRows={async (limit) => {
-            const { items } = await getMembersByOrganizationIdentifier(organization.id, {
-              limit,
-              role,
-              q: query,
-              sort,
-              order,
-            });
+            const { items } = await getMembersByOrganizationIdentifier(organization.id, { limit, role, q: query, sort, order });
             return items;
           }}
         />

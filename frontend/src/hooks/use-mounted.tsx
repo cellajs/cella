@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 
-// This hook is used to check if the user has scrolled, if app has started and if it's ready
-export const useAppState = () => {
+// This hook is used to fire events when the app has scrolled, mounted (0 ms), started (+ 200ms), and waited (+ 800ms)
+export const useMounted = () => {
   const [hasScrolled, setScrolled] = useState(false);
+  const [hasMounted, setMounted] = useState(false);
   const [hasStarted, setStarted] = useState(false);
-  const [isReady, setReady] = useState(false);
+  const [hasWaited, setWaited] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+
     const scrollListener = () => {
       setScrolled(true);
       window.removeEventListener('scroll', scrollListener);
@@ -15,7 +18,7 @@ export const useAppState = () => {
     window.addEventListener('scroll', scrollListener);
 
     const startTimeout = setTimeout(() => setStarted(true), 200);
-    const readyTimeout = setTimeout(() => setReady(true), 800);
+    const readyTimeout = setTimeout(() => setWaited(true), 800);
 
     return () => {
       clearTimeout(startTimeout);
@@ -26,9 +29,10 @@ export const useAppState = () => {
 
   return {
     hasScrolled,
+    hasMounted,
     hasStarted,
-    isReady,
+    hasWaited,
   };
 };
 
-export default useAppState;
+export default useMounted;

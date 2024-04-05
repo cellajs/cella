@@ -14,7 +14,7 @@ const SignOut = () => {
 
   useEffect(() => {
     signOutUser().then(() => {
-      navigate({ to: '/', replace: true });
+      navigate({ to: '/about', replace: true });
     });
   }, []);
 
