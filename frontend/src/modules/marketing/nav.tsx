@@ -66,8 +66,15 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
               <HamburgerButton isOpen={showSheet} toggle={setShowSheet} />
             </div>
 
+<<<<<<< HEAD
             <a
               href="/about"
+=======
+            <TanstackRouterLink
+              to="/about"
+              hash=""
+              replace={location.pathname === '/about'}
+>>>>>>> 317083d (Creation of top page UI)
               className="md:ml-2 hover:opacity-90 active:scale-95 relative"
               aria-label="Go to about page"
             >
@@ -86,7 +93,11 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
                   />
                 </g>
               </svg>
+<<<<<<< HEAD
             </a>
+=======
+            </TanstackRouterLink>
+>>>>>>> 317083d (Creation of top page UI)
 
             {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{NavItems}</nav>}
           </div>
@@ -119,10 +130,14 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
               inView && showSheet ? 'opacity-1 delay-300' : 'opacity-0'
             }`}
           >
+<<<<<<< HEAD
             <div className="flex justify-between">
               <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
               <UserTheme className="absolute top-5 right-4 xs:hidden" />
             </div>
+=======
+            <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
+>>>>>>> 317083d (Creation of top page UI)
             {NavItems ?? renderNavItems()}
 
             <Button
