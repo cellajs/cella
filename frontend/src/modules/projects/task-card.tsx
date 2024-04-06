@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { Checkbox } from '../ui/checkbox';
 import type { ColumnId } from './kanban-board';
+import { useState } from 'react';
+import MDEditor from '@uiw/react-md-editor';
 
 export interface Task {
   id: UniqueIdentifier;
@@ -30,6 +32,8 @@ export interface TaskDragData {
 }
 
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
+  const [value, setValue] = useState<string | undefined>('**Hello world!!!**');
+
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: {
@@ -83,6 +87,10 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
             <span>{task.content}</span>
             <span className="ml-1 font-light opacity-50"> &#183; 2d &#183; F</span>
           </div>
+        </div>
+        <div>
+          <MDEditor value={value} onChange={(newValue) => setValue(newValue)} />
+          <MDEditor.Markdown source={value} style={{ whiteSpace: 'pre-wrap' }} />
         </div>
         <div className="flex items-center mt-1 gap-2">
           <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">

@@ -23,6 +23,7 @@
     "@hookform/resolvers": "^3.3.4",
     "@paddle/paddle-js": "^1.0.3",
     "@radix-ui/react-accordion": "^1.1.2",
+    "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-checkbox": "^1.0.4",
     "@radix-ui/react-collapsible": "^1.0.3",
@@ -83,6 +84,7 @@
     "@tiptap/react": "^2.2.2",
     "@tiptap/starter-kit": "^2.2.2",
     "@tiptap/suggestion": "^2.2.2",
+    "@uiw/react-md-editor": "^4.0.4",
     "@uppy/audio": "^1.1.4",
     "@uppy/core": "^3.8.0",
     "@uppy/dashboard": "^3.7.1",
@@ -166,7 +168,11 @@
     "vite-plugin-pwa": "^0.19.7",
     "vite-plugin-static-copy": "^1.0.2"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},

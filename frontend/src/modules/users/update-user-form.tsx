@@ -186,7 +186,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, setForm, withButtons
           control={form.control}
           name="newsletter"
           render={({ field }) => (
-            <FormItem className="flex space-x-2 space-y-0">
+            <FormItem className="flex-row">
               <FormControl>
                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>

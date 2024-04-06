@@ -64,11 +64,12 @@ const UserSettings = () => {
 
             <h6 className="font-semibold mb-4">Sessions</h6>
             <p className="font-light text-sm mb-4">
-              Here you can view and terminate your active sessions. Terminating a session will log you out from that device.
+              Here you can view and terminate your active sessions. Terminating a session will sign you out from that device.
             </p>
             {sessionsWithoutCurrent.length > 0 && (
               <Button
                 variant="destructive"
+                size="sm"
                 disabled={isPending}
                 onClick={() => {
                   terminateMySessions(sessionsWithoutCurrent.map((session) => session.id));
@@ -91,7 +92,8 @@ const UserSettings = () => {
                     </div>
                     {!session.current && (
                       <Button
-                        variant="destructive"
+                        variant="plain"
+                        size="sm"
                         className="w-auto"
                         disabled={isPending}
                         onClick={() => {
