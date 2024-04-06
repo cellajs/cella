@@ -1,15 +1,17 @@
 import { redirect } from '@tanstack/react-router';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
+// @ts-ignore
 import calendar from 'dayjs/plugin/calendar';
-import relativeTime from 'dayjs/plugin/relativeTime';
+// import relativeTime from 'dayjs/plugin/relativeTime';
 import i18next from 'i18next';
 import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { twMerge } from 'tailwind-merge';
 
-dayjs.extend(calendar);
-dayjs.extend(relativeTime);
+// TODO: SSRs do not work and I want to make sure they work at client time
+// dayjs.extend(calendar);
+// dayjs.extend(relativeTime);
 
 // Format a date to a relative time
 export function dateShort(date?: string | null | Date) {

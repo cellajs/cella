@@ -1,9 +1,8 @@
-import { Link } from '@tanstack/react-router';
+import { Link as TanstackRouterLink } from '@tanstack/react-router';
 import { config } from 'config';
 import { Github } from 'lucide-react';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
-
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import Logo from '~/modules/common/logo';
@@ -19,7 +18,12 @@ const marketingNavConfig = [
   { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 
-export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target: string) => void }) {
+type MarketingNav = {
+  NavItems?: JSX.Element;
+  onHandleMismatch?: (target: string) => void;
+};
+
+export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
   const { t } = useTranslation();
   const [showSheet, setShowSheet] = useState<boolean>(false);
 
@@ -34,9 +38,13 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
 
   const { ref, inView } = useInView();
 
+  const openInNewTab = (url: string) => {
+    window.open(url, '_blank', 'noreferrer');
+  };
+
   const renderNavItems = () => {
     return marketingNavConfig.map((item) => (
-      <Link
+      <TanstackRouterLink
         to={item.url}
         hash={item.hash}
         replace={location.pathname === '/about'}
@@ -45,12 +53,8 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
       >
         {t(item.id)}
-      </Link>
+      </TanstackRouterLink>
     ));
-  };
-
-  const openInNewTab = (url: string) => {
-    window.open(url, '_blank', 'noreferrer');
   };
 
   return (
@@ -62,7 +66,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               <HamburgerButton isOpen={showSheet} toggle={setShowSheet} />
             </div>
 
-            <Link
+            <TanstackRouterLink
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
@@ -84,7 +88,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
                   />
                 </g>
               </svg>
-            </Link>
+            </TanstackRouterLink>
 
             {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>}
           </div>
@@ -105,10 +109,6 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
             >
               <Github strokeWidth={config.theme.strokeWidth} />
             </Button>
-
-            <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
-              {t('common:sign_in')}
-            </Link>
           </div>
         </div>
       </header>
@@ -125,7 +125,8 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
               <UserTheme className="absolute top-5 right-4 xs:hidden" />
             </div>
-            {renderNavItems()}
+            {NavItems ?? renderNavItems()}
+
             <Button
               size="lg"
               className="sm:hidden"

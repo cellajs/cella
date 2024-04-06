@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link as TanstackRouterLink } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { config } from 'config';
 import { Github, Twitter } from 'lucide-react';
@@ -45,8 +45,16 @@ const legalLinks = [
   { title: 'common:accessibility', href: '/accessibility' },
 ];
 
-function FooterLinks() {
+type FooterLink = {
+  Link?: JSX.Element;
+};
+
+function FooterLinks({ Link }: FooterLink) {
   const { t } = useTranslation();
+
+  if (Link != null) {
+    return Link;
+  }
 
   return (
     <nav>
@@ -60,9 +68,10 @@ function FooterLinks() {
                 const target = link.href.startsWith('http') ? '_blank' : '_self';
                 return (
                   <li key={link.title} className="mt-4">
-                    <Link to={link.href} target={target} className="underline-offset-4 transition hover:underline">
+                    <TanstackRouterLink to={link.href} target={target} className="underline-offset-4 transition hover:underline">
                       {t(link.title)}
-                    </Link>
+                    </TanstackRouterLink>
+                    )
                   </li>
                 );
               })}
@@ -84,7 +93,13 @@ export function Credits({ className }: { className?: string }) {
   );
 }
 
-export function MarketingFooter() {
+type PublicFooter = {
+  FooterLink?: JSX.Element;
+  AboutLink?: JSX.Element;
+  LegalLinks?: JSX.Element;
+};
+
+export function MarketingFooter({ FooterLink, AboutLink, LegalLinks }: PublicFooter) {
   const { t } = useTranslation();
   const sectionClass = 'rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]';
 
@@ -97,7 +112,7 @@ export function MarketingFooter() {
       <section className={sectionClass}>
         <div className="container flex max-w-[64rem] pt-8 px-8 flex-col items-center gap-4">
           <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
-            <FooterLinks />
+            <FooterLinks Link={FooterLink} />
             <div className="">
               <div className="font-display text-sm font-semibold tracking-wider text-white/50">{t('common:request_info')}</div>
               <div className="mt-4 text-sm text-white/90">{t('common:request_info.text')}</div>
@@ -105,26 +120,29 @@ export function MarketingFooter() {
             </div>
           </div>
 
-          <Link
-            to="/about"
-            replace={location.pathname === '/about'}
-            hash=""
-            onClick={() => {
-              scrollTo(0, 0);
-            }}
-            className="mt-12 hover:opacity-90 active:scale-95"
-          >
-            <Logo textColor="white" iconColor="#793f599e" />
-          </Link>
+          {AboutLink ?? (
+            <TanstackRouterLink
+              to="/about"
+              replace={location.pathname === '/about'}
+              hash=""
+              onClick={() => {
+                scrollTo(0, 0);
+              }}
+              className="mt-12 hover:opacity-90 active:scale-95"
+            >
+              <Logo textColor="white" iconColor="#793f599e" />
+            </TanstackRouterLink>
+          )}
 
           <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-6 gap-y-4 border-t border-white/20 pt-12 text-center text-xs text-white/60">
-            {legalLinks.map((link) => (
-              <li key={link.title}>
-                <Link to={link.href} className="underline-offset-4 transition hover:underline">
-                  {t(link.title)}
-                </Link>
-              </li>
-            ))}
+            {LegalLinks ??
+              legalLinks.map((link) => (
+                <li key={link.title}>
+                  <TanstackRouterLink to={link.href} className="underline-offset-4 transition hover:underline">
+                    {t(link.title)}
+                  </TanstackRouterLink>
+                </li>
+              ))}
           </ul>
 
           <Credits className="text-white/30" />

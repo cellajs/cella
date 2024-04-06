@@ -1,9 +1,10 @@
-import { reactRenderer } from "@hono/react-renderer";
-import { useRequestContext } from "@hono/react-renderer";
-import { FC, PropsWithChildren } from "react";
+import { reactRenderer } from '@hono/react-renderer';
+import { useRequestContext } from '@hono/react-renderer';
+import { FC, PropsWithChildren } from 'react';
+import MainLayout from '@/islands/PublicPage';
 
 const HasIslands: FC<PropsWithChildren> = ({ children }) => {
-  const IMPORTING_ISLANDS_ID = "__importing_islands" as const;
+  const IMPORTING_ISLANDS_ID = '__importing_islands' as const;
   const c = useRequestContext();
   return <>{c.get(IMPORTING_ISLANDS_ID) ? children : <></>}</>;
 };
@@ -17,19 +18,21 @@ export default reactRenderer(({ children, title }) => {
         {import.meta.env.PROD ? (
           <>
             <HasIslands>
-              <script type="module" src="/static/client.js"></script>
+              <script type="module" src="/static/client.js" />
             </HasIslands>
-            <link href="/static/assets/tailwind.css" rel="stylesheet" />
+            <link href="/static/assets/index.css" rel="stylesheet" />
           </>
         ) : (
           <>
-            <script type="module" src="/app/client.ts"></script>
-            <link href="/app/tailwind.css" rel="stylesheet" />
+            <script type="module" src="/app/client.ts" />
+            <link href="/app/index.css" rel="stylesheet" />
           </>
         )}
-        {title ? <title>{title}</title> : ""}
+        {title ? <title>{title}</title> : ''}
       </head>
-      <body>{children}</body>
+      <body>
+        <MainLayout>{children}</MainLayout>
+      </body>
     </html>
   );
 });
