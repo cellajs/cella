@@ -145,6 +145,8 @@
   "notifications": "Notifications",
   "or": "Or",
   "organization": "Organization",
+  "organization_settings": "Organization settings",
+  "organization_settings.text": "Update your organization settings and preferences.",
   "organization.plural": "Organizations",
   "organization_handle": "Organization handle",
   "organization_handle.text": "A unique handle for organization URL",
