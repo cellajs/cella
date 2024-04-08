@@ -201,14 +201,14 @@ export default function KanbanBoard() {
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
-        <ResizablePanelGroup direction="horizontal" className="rounded-lg flex gap-2 p-2 border">
+        <ResizablePanelGroup direction="horizontal" className="flex gap-2 p-2">
           <SortableContext items={columnsId}>
             {columns.map((col, index) => (
               <Fragment key={col.id}>
                 <ResizablePanel key={`${col.id}-panel`}>
                   <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.columnId === col.id)} />
                 </ResizablePanel>
-                {columns.length > index + 1 && <ResizableHandle className="w-[2px]" />}
+                {columns.length > index + 1 && <ResizableHandle className="w-[2px] hover:border" />}
               </Fragment>
             ))}
           </SortableContext>

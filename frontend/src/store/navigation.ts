@@ -7,8 +7,8 @@ import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
 import type { UserMenu } from '~/types';
 
 interface NavigationState {
-  resentSearches: string[];
-  setResentSearches: (searchValue: string[]) => void;
+  recentSearches: string[];
+  setRecentSearches: (searchValue: string[]) => void;
   activeSheet: NavItem | null;
   setSheet: (activeSheet: NavItem | null) => void;
   menu: UserMenu;
@@ -33,16 +33,16 @@ export const useNavigationStore = create<NavigationState>()(
     immer(
       persist(
         (set) => ({
-          resentSearches: [] as string[],
+          recentSearches: [] as string[],
           activeSheet: null as NavItem | null,
           keepMenuOpen: false as boolean,
           navLoading: false as boolean,
           focusView: false as boolean,
           menu: initialMenuState,
           activeSections: {},
-          setResentSearches: (searchValues: string[]) => {
+          setRecentSearches: (searchValues: string[]) => {
             set((state) => {
-              state.resentSearches = searchValues;
+              state.recentSearches = searchValues;
             });
           },
           setSheet: (component) => {
@@ -78,6 +78,7 @@ export const useNavigationStore = create<NavigationState>()(
           partialize: (state) => ({
             keepMenuOpen: state.keepMenuOpen,
             activeSections: state.activeSections,
+            recentSearches: state.recentSearches,
           }),
           storage: createJSONStorage(() => localStorage),
         },

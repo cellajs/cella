@@ -328,7 +328,7 @@ const usersRoutes = app
    * Get a user by id or slug
    */
   .add(getUserByIdOrSlugRouteConfig, async (ctx) => {
-    const userIdentifier = ctx.req.param('userId').toLowerCase();
+    const userIdentifier = ctx.req.param('userIdentifier').toLowerCase();
     const user = ctx.get('user');
 
     const [targetUser] = await db

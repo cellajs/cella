@@ -46,7 +46,7 @@ export function Dialoger() {
       return (
         <Dialog key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)} modal={!dialog.container}>
           {dialog.container && (
-            <div className="fixed inset-0 z-30 bg-background/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+            <div className="fixed inset-0 z-30 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
           )}
           <DialogContent className={dialog.className} container={dialog.container}>
             {dialog.title || dialog.text ? (

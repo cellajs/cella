@@ -3,7 +3,7 @@ import { config } from 'config';
 import { useEffect } from 'react';
 
 // Custom hook for setting document title
-export const useBuildDocumentTitle = () => {
+export const useSetDocumentTitle = () => {
   const matches = useMatches();
 
   useEffect(() => {

@@ -30,7 +30,7 @@ export const updateUserParamSchema = z.object({
 });
 
 export const getUserParamSchema = z.object({
-  userId: idSchema.or(slugSchema),
+  userIdentifier: idSchema.or(slugSchema),
 });
 
 export const getUsersQuerySchema = paginationQuerySchema.merge(

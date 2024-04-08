@@ -119,7 +119,7 @@ export const updateUserConfig = createRouteConfig({
 
 export const getUserByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/users/{userId}',
+  path: '/users/{userIdentifier}',
   guard: authGuard(),
   tags: ['users'],
   summary: 'Get user by id or slug',

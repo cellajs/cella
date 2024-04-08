@@ -71,6 +71,7 @@ export const config = {
   has: {
     pwaSupport: true,
     signUp: true,
+    onboarding: true,
   },
 
   // Languages

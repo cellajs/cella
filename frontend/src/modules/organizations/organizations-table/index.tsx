@@ -38,7 +38,7 @@ const OrganizationsTable = () => {
   );
   const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
 
-  const debounceQuery = useDebounce(query, 500);
+  const debounceQuery = useDebounce(query, 300);
   // Save filters in search params
   const filters = useMemo(
     () => ({
