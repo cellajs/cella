@@ -93,7 +93,6 @@ export function BackgroundPicker({
                   checked={false}
                   value={bg}
                   style={{ background: bg }}
-                  id={bg}
                   onClick={() => setBackground(bg)}
                   aria-label={bg}
                 />
@@ -101,35 +100,36 @@ export function BackgroundPicker({
             </RadioGroup>
           </TabsContent>
 
-          <TabsContent value="gradient" className="mt-0" tabIndex={-1}>
-            <div className="mb-2 flex flex-wrap gap-1">
+          <TabsContent value="gradient" className="mt-0 mb-2 flex flex-wrap gap-1" tabIndex={-1} asChild>
+            <RadioGroup>
               {gradients.map((bg) => (
-                <Button
-                  variant="link"
-                  size="sm"
+                <RadioGroupItem
                   key={bg}
+                  aria-label={bg}
                   style={{ background: bg }}
-                  className="h-6 w-6 cursor-pointer rounded-md active:scale-105"
+                  className="h-6 w-6 cursor-pointer rounded-md active:scale-105 border-none"
+                  checked={false}
+                  value={bg}
                   onClick={() => setBackground(bg)}
-                  onKeyDown={() => {}}
                 />
               ))}
-            </div>
+            </RadioGroup>
           </TabsContent>
 
-          <TabsContent value="image" className="mt-0" tabIndex={-1}>
-            <div className="mb-2 grid grid-cols-2 gap-1">
+          <TabsContent value="image" className="mt-0 mb-2 grid grid-cols-2 gap-1" tabIndex={-1} asChild>
+            <RadioGroup>
               {images.map((bg) => (
-                <Button
-                  variant="link"
+                <RadioGroupItem
                   key={bg}
+                  aria-label={bg}
                   style={{ backgroundImage: bg }}
-                  className="h-12 w-full cursor-pointer rounded-md bg-cover bg-center active:scale-105"
+                  className="h-12 w-full cursor-pointer rounded-md bg-cover bg-center active:scale-105 border-none"
+                  checked={false}
+                  value={bg}
                   onClick={() => setBackground(bg)}
-                  onKeyDown={() => {}}
                 />
               ))}
-            </div>
+            </RadioGroup>
           </TabsContent>
         </Tabs>
 
