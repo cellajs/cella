@@ -12,7 +12,6 @@ import { dialog } from '../common/dialoger/state';
 import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
 import { AsideTab } from '~/modules/common/aside-tab';
-import { SimpleHeader } from '~/modules/common/simple-header';
 
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
@@ -44,12 +43,12 @@ const OrganizationSettings = () => {
   };
 
   return (
-    <div className="md:flex md:flex-row mx-auto max-w-[1600px]">
-      <SimpleHeader heading="common:organization_settings" className="mx-auto md:min-w-[200px] md:w-[30%]" text="common:organization_settings.text">
+    <div className="md:flex md:flex-row mx-auto max-w-[1200px] gap-4">
+      <div className="mx-auto md:min-w-[200px] md:w-[30%] flex h-auto flex-col">
         <AsideTab tabs={tabs} />
-      </SimpleHeader>
+      </div>
 
-      <div className="container mt-8 md:w-[70%] space-y-6">
+      <div className="md:w-[70%] space-y-6">
         <Card className="sm:w-full mx-auto">
           <CardContent className="pt-6">
             <h1 id="general" className="font-semibold text-lg mb-4">
