@@ -17,22 +17,22 @@ export const AppSearch = () => {
   const [value, setValue] = useState('');
 
   const debouncedValue = useDebounce(value, 500);
-  const resentSearches = useNavigationStore((state) => state.resentSearches);
+  const recentSearches = useNavigationStore((state) => state.recentSearches);
 
   const deleteItemFromList = (item: string) => {
     useNavigationStore.setState((state) => {
-      const searches = [...state.resentSearches];
+      const searches = [...state.recentSearches];
       const index = searches.indexOf(item);
       if (index === -1) return;
       searches.splice(index, 1);
-      return { ...state, resentSearches: searches };
+      return { ...state, recentSearches: searches };
     });
   };
 
-  const updateResentSearches = (newValue: string) => {
+  const updateRecentSearches = (newValue: string) => {
     if (newValue.replaceAll(' ', '') === '') return;
     useNavigationStore.setState((state) => {
-      const searches = [...state.resentSearches];
+      const searches = [...state.recentSearches];
 
       if (searches.includes(newValue)) {
         searches.splice(searches.indexOf(newValue), 1);
@@ -41,7 +41,7 @@ export const AppSearch = () => {
         searches.push(newValue);
         if (searches.length > 5) searches.shift();
       }
-      return { ...state, resentSearches: searches };
+      return { ...state, recentSearches: searches };
     });
   };
 
@@ -77,7 +77,7 @@ export const AppSearch = () => {
   };
 
   useEffect(() => {
-    updateResentSearches(debouncedValue);
+    updateRecentSearches(debouncedValue);
   }, [debouncedValue]);
 
   return (
@@ -98,10 +98,10 @@ export const AppSearch = () => {
           ) : (
             <>
               {value.replaceAll(' ', '').length > 0 && t('common:no_results_found')}
-              {resentSearches.length > 0 && (
+              {recentSearches.length > 0 && (
                 <div className="flex flex-col">
                   <span className="text-start  py-1 px-2 text-muted-foreground font-medium text-xs">History</span>
-                  {resentSearches.map((search) => (
+                  {recentSearches.map((search) => (
                     <button
                       type="button"
                       onClick={() => {
