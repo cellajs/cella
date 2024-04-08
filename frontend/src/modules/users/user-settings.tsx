@@ -8,7 +8,7 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUsers from './delete-users';
 
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -18,9 +18,9 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '~/modules/ui/tabs';
 
 const tabs = [
-  { value: 'general', label: 'common:general' },
-  { value: 'sessions', label: 'common:sessions' },
-  { value: 'delete_account', label: 'common:delete_account' },
+  { value: 'general', label: 'common:general', hash: 'general' },
+  { value: 'sessions', label: 'common:sessions', hash: 'sessions' },
+  { value: 'delete_account', label: 'common:delete_account', hash: 'delete-account' },
 ];
 
 const UserSettings = () => {
@@ -62,9 +62,11 @@ const UserSettings = () => {
       <SimpleHeader heading="common:account_settings" className="mx-auto md:min-w-[200px] md:w-[30%]" text="common:account_settings.text">
         <Tabs defaultValue="account" className="w-full" orientation="vertical">
           <TabsList variant="side">
-            {tabs.map(({ value, label }) => (
-              <TabsTrigger value={value} className="md:justify-start" variant="secondary" size="lg">
-                {t(label)}
+            {tabs.map(({ value, label, hash }) => (
+              <TabsTrigger value={value} className="text-left" variant="secondary" size="lg">
+                <Link className="flex-1" hash={hash}>
+                  {t(label)}
+                </Link>
               </TabsTrigger>
             ))}
           </TabsList>
@@ -74,12 +76,16 @@ const UserSettings = () => {
       <div className="container mt-8 md:w-[70%]">
         <Card className="mx-auto sm:w-full">
           <CardContent className="pt-6">
-            <h1 className="font-semibold text-lg mb-4">{t('common:general')}</h1>
+            <h1 id="general" className="font-semibold text-lg mb-4">
+              {t('common:general')}
+            </h1>
             <UpdateUserForm user={user} />
 
             <hr className="my-6" />
 
-            <h6 className="font-semibold mb-4">{t('common:sessions')}</h6>
+            <h6 id="sessions" className="font-semibold mb-4">
+              {t('common:sessions')}
+            </h6>
             <p className="font-light text-sm mb-4">{t('common:sessions.text')}</p>
             {sessionsWithoutCurrent.length > 0 && (
               <Button
@@ -126,7 +132,9 @@ const UserSettings = () => {
 
             <hr className="my-6" />
 
-            <p className="font-light mb-4 text-sm">{t('common:delete_account.text')}</p>
+            <p id="delete-account" className="font-light mb-4 text-sm">
+              {t('common:delete_account.text')}
+            </p>
             <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
               <Trash2 className="mr-2 h-4 w-4" />
               {t('common:delete_account')}
