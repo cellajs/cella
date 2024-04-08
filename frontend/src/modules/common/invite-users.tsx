@@ -37,7 +37,7 @@ const InviteUsers = ({ organization, callback, dialog: isDialog, mode }: Props) 
           <div className="flex flex-col p-4">
             <p className="font-light">{t('common:invite_by_email')}</p>
             <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
-              <strong>Continue</strong>
+              <strong>{t('common:continue')}</strong>
               <ChevronRight className="ml-1" size={16} />
             </div>
           </div>
@@ -48,7 +48,7 @@ const InviteUsers = ({ organization, callback, dialog: isDialog, mode }: Props) 
   if (inviteMode === 'search')
     return (
       <>
-        <AppAlert id="invite_search" variant="plain" Icon={Info}>
+        <AppAlert id="invite_search" variant="success" Icon={Info}>
           {t('common:explain.invite_search.text')}
         </AppAlert>
         <InviteSearchForm organization={organization} callback={callback} dialog={isDialog} />
@@ -57,7 +57,7 @@ const InviteUsers = ({ organization, callback, dialog: isDialog, mode }: Props) 
 
   return (
     <>
-      <AppAlert id="invite_email" variant="plain" Icon={Info}>
+      <AppAlert id="invite_email" variant="success" Icon={Info}>
         {t('common:explain.invite_email.text')}
       </AppAlert>
       <InviteEmailForm organization={organization} callback={callback} dialog={isDialog} />

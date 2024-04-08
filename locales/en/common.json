@@ -5,6 +5,7 @@
   "accessibility": "Accessibility",
   "account": "Account",
   "account_settings": "Account settings",
+  "account_settings.text": "Update your account settings and preferences.",
   "add": "Add",
   "add_member": "Add member",
   "admin": "Admin",
@@ -281,5 +282,11 @@
   "filter": "Filter",
   "export_pdf_csv": "Export CSV or PDF",
   "columns_view": "Change column view",
-  "forgot_password": "Forgot password"
+  "forgot_password": "Forgot password",
+  "sessions": "Sessions",
+  "sessions.text": "Here you can view and terminate your active sessions. Terminating a session will sign you out from that device.",
+  "session": "Session",
+  "terminate": "Terminate",
+  "delete_account.text": "Want to permanently delete your Cella account? Use the button below. Please note that this action is irreversible.",
+  "terminate_all": "Terminate all"
 }
