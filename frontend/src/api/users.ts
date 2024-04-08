@@ -67,8 +67,8 @@ export const deleteUsers = async (userIds: string[]) => {
 
 // Get a user by their slug or ID
 export const getUserBySlugOrId = async (userIdentifier: string) => {
-  const response = await client.users[':userId'].$get({
-    param: { userId: userIdentifier },
+  const response = await client.users[':userIdentifier'].$get({
+    param: { userIdentifier },
   });
 
   const json = await response.json();
