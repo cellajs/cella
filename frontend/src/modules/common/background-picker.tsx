@@ -4,6 +4,7 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
 
 type PickerType = 'solid' | 'gradient' | 'image';
@@ -83,50 +84,52 @@ export function BackgroundPicker({
             </TabsList>
           )}
 
-          <TabsContent value="solid" className="mt-0 flex flex-wrap gap-1" tabIndex={-1}>
-            {solids.map((bg) => (
-              <Button
-                variant="link"
-                size="sm"
-                key={bg}
-                aria-label={bg}
-                style={{ background: bg }}
-                className="h-6 w-6 p-0 cursor-pointer rounded-md active:scale-105"
-                onClick={() => setBackground(bg)}
-                onKeyDown={() => {}}
-              />
-            ))}
-          </TabsContent>
-
-          <TabsContent value="gradient" className="mt-0" tabIndex={-1}>
-            <div className="mb-2 flex flex-wrap gap-1">
-              {gradients.map((bg) => (
-                <Button
-                  variant="link"
-                  size="sm"
+          <TabsContent value="solid" className="mt-0 flex flex-wrap gap-1" tabIndex={-1} asChild>
+            <RadioGroup>
+              {solids.map((bg) => (
+                <RadioGroupItem
                   key={bg}
+                  className="h-6 w-6 p-0 cursor-pointer rounded-md active:scale-105 border-none"
+                  checked={false}
+                  value={bg}
                   style={{ background: bg }}
-                  className="h-6 w-6 cursor-pointer rounded-md active:scale-105"
                   onClick={() => setBackground(bg)}
-                  onKeyDown={() => {}}
+                  aria-label={bg}
                 />
               ))}
-            </div>
+            </RadioGroup>
           </TabsContent>
 
-          <TabsContent value="image" className="mt-0" tabIndex={-1}>
-            <div className="mb-2 grid grid-cols-2 gap-1">
-              {images.map((bg) => (
-                <Button
-                  variant="link"
+          <TabsContent value="gradient" className="mt-0 mb-2 flex flex-wrap gap-1" tabIndex={-1} asChild>
+            <RadioGroup>
+              {gradients.map((bg) => (
+                <RadioGroupItem
                   key={bg}
-                  style={{ backgroundImage: bg }}
-                  className="h-12 w-full cursor-pointer rounded-md bg-cover bg-center active:scale-105"
+                  aria-label={bg}
+                  style={{ background: bg }}
+                  className="h-6 w-6 cursor-pointer rounded-md active:scale-105 border-none"
+                  checked={false}
+                  value={bg}
                   onClick={() => setBackground(bg)}
-                  onKeyDown={() => {}}
                 />
               ))}
-            </div>
+            </RadioGroup>
+          </TabsContent>
+
+          <TabsContent value="image" className="mt-0 mb-2 grid grid-cols-2 gap-1" tabIndex={-1} asChild>
+            <RadioGroup>
+              {images.map((bg) => (
+                <RadioGroupItem
+                  key={bg}
+                  aria-label={bg}
+                  style={{ backgroundImage: bg }}
+                  className="h-12 w-full cursor-pointer rounded-md bg-cover bg-center active:scale-105 border-none"
+                  checked={false}
+                  value={bg}
+                  onClick={() => setBackground(bg)}
+                />
+              ))}
+            </RadioGroup>
           </TabsContent>
         </Tabs>
 
