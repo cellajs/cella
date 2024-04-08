@@ -11,6 +11,7 @@ type PartialUser = Partial<User>;
 interface UserState {
   user: User;
   lastUser: PartialUser;
+  isUserPassedOnboarding: boolean;
   clearLastUser: () => void;
   setUser: (user: User) => void;
 }
@@ -21,6 +22,7 @@ export const useUserStore = create<UserState>()(
       immer((set) => ({
         user: null as unknown as User,
         lastUser: null as unknown as PartialUser,
+        isUserPassedOnboarding: false,
         clearLastUser: () => {
           set((state) => {
             state.lastUser = null as unknown as User;
@@ -41,6 +43,7 @@ export const useUserStore = create<UserState>()(
         partialize: (state) => ({
           user: state.user,
           lastUser: state.lastUser,
+          isUserPassedOnboarding: state.isUserPassedOnboarding,
         }),
         storage: createJSONStorage(() => localStorage),
       },

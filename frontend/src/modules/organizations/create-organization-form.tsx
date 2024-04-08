@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
-import { type Control, type UseFormReturn, useForm } from 'react-hook-form';
+import { type Control, useForm, useWatch, type UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
@@ -9,7 +9,7 @@ import { createOrganizationJsonSchema } from 'backend/modules/organizations/sche
 import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -24,25 +24,20 @@ interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
   dialog?: boolean;
   withDraft?: boolean;
-  setForm?: (form: UseFormReturn<FormValues>) => void;
   withButtons?: boolean;
+  initValues?: FormValues | null;
+  onValuesChange?: (values: FormValues | null) => void;
 }
 
 const formSchema = createOrganizationJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const formOptions = {
-  resolver: zodResolver(formSchema),
-  defaultValues: {
-    name: '',
-  },
-};
-
 const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
   callback,
   dialog: isDialog,
-  setForm,
+  initValues,
+  onValuesChange,
   withButtons = true,
   withDraft = true,
 }) => {
@@ -50,7 +45,19 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
 
+  const formOptions: UseFormProps<FormValues> = useMemo(
+    () => ({
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+        name: '',
+      },
+    }),
+    [],
+  );
+
   const form = withDraft ? useFormWithDraft<FormValues>('create-organization', formOptions) : useForm<FormValues>(formOptions);
+
+  const allFields = useWatch({ control: form.control });
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createOrganization,
@@ -85,13 +92,21 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
     if (isDialog) dialog.remove();
   };
 
-  const allFields = form.watch();
+  // Set initial values
+  useEffect(() => {
+    if (initValues) {
+      for (const [key, value] of Object.entries(initValues)) {
+        form.setValue(key as keyof FormValues, value, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    if (setForm) {
-      setForm(form);
-    }
-  }, [setForm, allFields]);
+    onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
+  }, [onValuesChange, allFields]);
 
   return (
     <Form {...form}>

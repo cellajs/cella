@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
+import { useEffect, useMemo } from 'react';
 import { z } from 'zod';
 import { invite as baseInvite } from '~/api/general';
 import type { Organization } from '~/types';
@@ -15,11 +16,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Badge } from '../ui/badge';
 import SelectRole from './form-fields/select-role';
 import { MultiEmail } from './multi-email';
+import { useForm, useWatch, type UseFormProps } from 'react-hook-form';
 
 interface Props {
   organization?: Organization;
+  type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
+  withDraft?: boolean;
+  withButtons?: boolean;
+  initValues?: FormValues | null;
+  onValuesChange?: (values: FormValues | null) => void;
 }
 
 const formSchema = z.object({
@@ -29,16 +36,32 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) => {
+const InviteEmailForm = ({
+  organization,
+  type = 'system',
+  callback,
+  dialog: isDialog,
+  withDraft = true,
+  withButtons = true,
+  initValues,
+  onValuesChange,
+}: Props) => {
   const { t } = useTranslation();
 
-  const form = useFormWithDraft<FormValues>('invite-users', {
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      emails: [],
-      role: config.rolesByType[organization ? 'organization' : 'system'][config.rolesByType[organization ? 'organization' : 'system'].length - 1].key,
-    },
-  });
+  const formOptions: UseFormProps<FormValues> = useMemo(
+    () => ({
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+        emails: [],
+        role: config.rolesByType[type][config.rolesByType[type].length - 1].key,
+      },
+    }),
+    [],
+  );
+
+  const form = withDraft ? useFormWithDraft<FormValues>('invite-users', formOptions) : useForm<FormValues>(formOptions);
+
+  const allFields = useWatch({ control: form.control });
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: baseInvite,
@@ -55,7 +78,7 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
   });
 
   // TODO, make dynamic and type safe, for now it's hardcoded
-  const roles = config.rolesByType[organization ? 'organization' : 'system'];
+  const roles = config.rolesByType[type];
 
   const onSubmit = (values: FormValues) => {
     invite({
@@ -69,6 +92,22 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
     form.reset();
     isDialog && dialog.remove();
   };
+
+  // Set initial values
+  useEffect(() => {
+    if (initValues) {
+      for (const [key, value] of Object.entries(initValues)) {
+        form.setValue(key as keyof FormValues, value, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
+  }, [onValuesChange, allFields]);
 
   return (
     <Form {...form}>
@@ -98,20 +137,22 @@ const InviteEmailForm = ({ organization, callback, dialog: isDialog }: Props) =>
             </FormItem>
           )}
         />
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" loading={isPending} className="relative">
-            {!!form.getValues('emails')?.length && (
-              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
-            )}{' '}
-            <Send size={16} className="mr-2" />
-            {t('common:invite')}
-          </Button>
-          {form.formState.isDirty && (
-            <Button type="reset" variant="secondary" onClick={cancel}>
-              {t('common:cancel')}
+        {withButtons && (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button type="submit" loading={isPending} className="relative">
+              {!!form.getValues('emails')?.length && (
+                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
+              )}{' '}
+              <Send size={16} className="mr-2" />
+              {t('common:invite')}
             </Button>
-          )}
-        </div>
+            {form.formState.isDirty && (
+              <Button type="reset" variant="secondary" onClick={cancel}>
+                {t('common:cancel')}
+              </Button>
+            )}
+          </div>
+        )}
       </form>
     </Form>
   );

@@ -67,7 +67,7 @@ function Toolbar({
   const containerRef = useRef(null);
 
   const openInviteDialog = () => {
-    dialog(<InviteUsers organization={organization} dialog />, {
+    dialog(<InviteUsers organization={organization} type="organization" dialog />, {
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[100] max-w-3xl',
       container: containerRef.current,

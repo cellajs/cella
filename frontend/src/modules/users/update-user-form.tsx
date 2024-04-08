@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateUserJsonSchema } from 'backend/modules/users/schema';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { User } from '~/types';
@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-import { type UseFormReturn, useForm, useWatch } from 'react-hook-form';
+import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
 import { checkSlug as baseCheckSlug } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
@@ -31,7 +31,8 @@ interface Props {
   callback?: (user: User) => void;
   dialog?: boolean;
   withDraft?: boolean;
-  setForm?: (form: UseFormReturn<FormValues>) => void;
+  initValues?: FormValues | null;
+  onValuesChange?: (values: FormValues | null) => void;
   withButtons?: boolean;
 }
 
@@ -50,7 +51,7 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
   });
 };
 
-const UpdateUserForm = ({ user, callback, dialog: isDialog, setForm, withButtons = true, withDraft = true }: Props) => {
+const UpdateUserForm = ({ user, callback, dialog: isDialog, initValues, onValuesChange, withButtons = true, withDraft = true }: Props) => {
   const { t } = useTranslation();
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
@@ -70,25 +71,25 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, setForm, withButtons
     },
   });
 
-  const formOptions = {
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      slug: user.slug,
-      thumbnailUrl: cleanUrl(user.thumbnailUrl),
-      firstName: user.firstName,
-      lastName: user.lastName,
-      bio: user.bio,
-      language: user.language,
-      newsletter: user.newsletter,
-    },
-  };
+  const formOptions: UseFormProps<FormValues> = useMemo(
+    () => ({
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+        slug: user.slug,
+        thumbnailUrl: cleanUrl(user.thumbnailUrl),
+        firstName: user.firstName,
+        lastName: user.lastName,
+        bio: user.bio,
+        language: user.language,
+        newsletter: user.newsletter,
+      },
+    }),
+    [],
+  );
 
   const form = withDraft ? useFormWithDraft<FormValues>('create-organization', formOptions) : useForm<FormValues>(formOptions);
 
-  const slug = useWatch({
-    control: form.control,
-    name: 'slug',
-  });
+  const allFields = useWatch({ control: form.control });
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
@@ -130,18 +131,26 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, setForm, withButtons
   };
 
   useEffect(() => {
-    if (slug && slug !== user.slug) {
-      checkSlug(slug);
+    if (allFields.slug && allFields.slug !== user.slug) {
+      checkSlug(allFields.slug);
     }
-  }, [slug]);
+  }, [allFields.slug]);
 
-  const allFields = form.watch();
+  // Set initial values
+  useEffect(() => {
+    if (initValues) {
+      for (const [key, value] of Object.entries(initValues)) {
+        form.setValue(key as keyof FormValues, value, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    if (setForm) {
-      setForm(form);
-    }
-  }, [setForm, allFields]);
+    onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
+  }, [onValuesChange, allFields]);
 
   return (
     <Form {...form}>
@@ -162,7 +171,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, setForm, withButtons
           label={t('common:user_handle')}
           description={t('common:user_handle.text')}
           subComponent={
-            user.slug !== slug && (
+            user.slug !== allFields.slug && (
               <div className="absolute inset-y-1 right-1 flex justify-end">
                 <Button variant="ghost" size="sm" aria-label="Revert to current user handle" onClick={revertSlug} className="h-full">
                   <Undo size={16} className="mr-2" /> Revert to <strong className="ml-1">{user.slug}</strong>
