@@ -8,14 +8,14 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUsers from './delete-users';
 
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useMutation } from '~/hooks/use-mutations';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { ScrollArea } from '../ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '~/modules/ui/tabs';
+import { AsideTab } from '~/modules/common/aside-tab';
 
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
@@ -26,17 +26,7 @@ const tabs = [
 const UserSettings = () => {
   const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
-  const { location } = useRouterState();
-  const [activeTab, setActiveTab] = useState(tabs.find((tab) => tab.hash === location.hash.toLowerCase())?.value || tabs[0].value);
   const { t } = useTranslation();
-
-  useEffect(() => {
-    function handleHashChange() {
-      const hash = tabs.find((tab) => tab.hash === location.hash.toLowerCase())?.value || tabs[0].value;
-      setActiveTab(hash);
-    }
-    handleHashChange();
-  }, [location.hash]);
 
   const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.current), [user.sessions]);
 
@@ -70,17 +60,7 @@ const UserSettings = () => {
   return (
     <div className="md:flex md:flex-row mx-auto max-w-[1600px]">
       <SimpleHeader heading="common:account_settings" className="mx-auto md:min-w-[200px] md:w-[30%]" text="common:account_settings.text">
-        <Tabs value={activeTab} className="w-full" orientation="vertical">
-          <TabsList variant="side">
-            {tabs.map(({ value, label, hash }) => (
-              <TabsTrigger value={value} className="text-left" variant="secondary" size="lg">
-                <Link className="flex-1" hash={hash}>
-                  {t(label)}
-                </Link>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <AsideTab tabs={tabs} />
       </SimpleHeader>
 
       <div className="container mt-8 md:w-[70%] space-y-6">
