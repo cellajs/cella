@@ -67,9 +67,11 @@ const OrganizationSettings = () => {
                 }
               }}
             />
+          </CardContent>
+        </Card>
 
-            <hr className="my-6" />
-
+        <Card className="sm:w-full mx-auto">
+          <CardContent className="pt-6">
             <p id="delete-organization" className="font-light mb-4 text-sm">
               <Trans i18nKey="common:delete_organization_notice.text" values={{ name: organization.name }} />
             </p>
