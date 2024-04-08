@@ -35,7 +35,6 @@ const Footer = ({ createOrganizationFormValues, updateUserFormValues, inviteForm
   }, [currentStep?.id, createOrganizationFormValues, updateUserFormValues, inviteFormValues]);
 
   const onCompleted = () => {
-    useUserStore.setState({ isUserPassedOnboarding: true });
   };
 
   useEffect(() => {

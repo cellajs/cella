@@ -18,12 +18,12 @@ const Onboarding = () => {
   const [steps, setSteps] = useState<StepItem[]>([
     {
       id: 'step-1',
-      label: 'Step 1 Create organization',
+      label: 'Create organization',
       optional: true,
     },
     {
       id: 'step-2',
-      label: 'Step 2 Your profile',
+      label: 'Tune your profile',
       optional: true,
     },
   ]);
@@ -43,7 +43,7 @@ const Onboarding = () => {
         ...prevSteps,
         {
           id: 'step-3',
-          label: 'Step 3 Your team',
+          label: 'Invite team',
           optional: true,
         },
       ]);
