@@ -8,8 +8,8 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUsers from './delete-users';
 
-import { Link, useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useMutation } from '~/hooks/use-mutations';
@@ -26,7 +26,17 @@ const tabs = [
 const UserSettings = () => {
   const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
+  const { location } = useRouterState();
+  const [activeTab, setActiveTab] = useState(tabs.find((tab) => tab.hash === location.hash.toLowerCase())?.value || tabs[0].value);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    function handleHashChange() {
+      const hash = tabs.find((tab) => tab.hash === location.hash.toLowerCase())?.value || tabs[0].value;
+      setActiveTab(hash);
+    }
+    handleHashChange();
+  }, [location.hash]);
 
   const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.current), [user.sessions]);
 
@@ -60,7 +70,7 @@ const UserSettings = () => {
   return (
     <div className="md:flex md:flex-row mx-auto max-w-[1600px]">
       <SimpleHeader heading="common:account_settings" className="mx-auto md:min-w-[200px] md:w-[30%]" text="common:account_settings.text">
-        <Tabs defaultValue="account" className="w-full" orientation="vertical">
+        <Tabs value={activeTab} className="w-full" orientation="vertical">
           <TabsList variant="side">
             {tabs.map(({ value, label, hash }) => (
               <TabsTrigger value={value} className="text-left" variant="secondary" size="lg">
