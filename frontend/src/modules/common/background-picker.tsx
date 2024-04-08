@@ -4,6 +4,7 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
 
 type PickerType = 'solid' | 'gradient' | 'image';
@@ -83,19 +84,21 @@ export function BackgroundPicker({
             </TabsList>
           )}
 
-          <TabsContent value="solid" className="mt-0 flex flex-wrap gap-1" tabIndex={-1}>
-            {solids.map((bg) => (
-              <Button
-                variant="link"
-                size="sm"
-                key={bg}
-                aria-label={bg}
-                style={{ background: bg }}
-                className="h-6 w-6 p-0 cursor-pointer rounded-md active:scale-105"
-                onClick={() => setBackground(bg)}
-                onKeyDown={() => {}}
-              />
-            ))}
+          <TabsContent value="solid" className="mt-0 flex flex-wrap gap-1" tabIndex={-1} asChild>
+            <RadioGroup>
+              {solids.map((bg) => (
+                <RadioGroupItem
+                  key={bg}
+                  className="h-6 w-6 p-0 cursor-pointer rounded-md active:scale-105 border-none"
+                  checked={false}
+                  value={bg}
+                  style={{ background: bg }}
+                  id={bg}
+                  onClick={() => setBackground(bg)}
+                  aria-label={bg}
+                />
+              ))}
+            </RadioGroup>
           </TabsContent>
 
           <TabsContent value="gradient" className="mt-0" tabIndex={-1}>
