@@ -15,7 +15,7 @@ import { AsideTab } from '~/modules/common/aside-tab';
 
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
-  { value: 'delete_account', label: 'common:delete_organization', hash: 'delete-organization' },
+  { value: 'delete_organization', label: 'common:delete_organization', hash: 'delete-organization' },
 ];
 
 const OrganizationSettings = () => {
