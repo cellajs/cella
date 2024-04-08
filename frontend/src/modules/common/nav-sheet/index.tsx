@@ -25,7 +25,7 @@ const NavSheet = () => {
   const hideShadow = keepMenuOpen && activeSheet?.id === 'menu';
   const sheetClass = `${
     hideShadow ? 'lg:shadow-none' : ''
-  } top-16 h-[calc(100%-16)] duration-300 ease-in-out p-0 md:left-16 md:top-0 z-30 data-[state=closed]:duration-300 data-[state=open]:duration-300`;
+  } top-16 h-[calc(100%-16)] duration-300 ease-in-out p-0 md:left-16 md:top-0 z-[130] data-[state=closed]:duration-300 data-[state=open]:duration-300`;
 
   useEffect(() => {
     if (!activeSheet) return;
