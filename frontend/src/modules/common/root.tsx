@@ -2,7 +2,7 @@ import { Outlet, ScrollRestoration } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
 
-import { useBuildDocumentTitle } from '~/hooks/use-build-document-title';
+import { useSetDocumentTitle } from '~/hooks/use-set-document-title';
 import { Dialoger } from '~/modules/common/dialoger';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { Sheeter } from '~/modules/common/sheeter';
@@ -24,8 +24,8 @@ const TanStackRouterDevtools =
 const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gleap')) : () => null;
 
 function Root() {
-  // Hook to build document page title based on lowest matching routes
-  useBuildDocumentTitle();
+  // Hook to set document page title based on lowest matching routes
+  useSetDocumentTitle();
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>

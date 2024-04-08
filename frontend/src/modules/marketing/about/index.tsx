@@ -16,6 +16,7 @@ import { Hero } from './hero';
 import Integrations from './integrations';
 import Pricing from './pricing';
 import Why from './why';
+import { useSetHashOnScroll } from '~/hooks/use-set-hash-on-scroll';
 
 interface AboutSectionProps {
   title: string;
@@ -40,9 +41,21 @@ const AboutSection = ({ title, text, section, children, alternate = false }: Abo
   );
 };
 
+const sectionIds = ['hero', 'why', 'features', 'integrations', 'pricing'];
+const topSectionId = 'hero';
+
 const About = () => {
   const { t } = useTranslation();
+
+  useSetHashOnScroll({ sectionIds });
+
   useEffect(() => {
+    const locationHash = location.hash.replace('#', '');
+    if (sectionIds.includes(locationHash) && locationHash !== topSectionId) {
+      const element = document.getElementById(locationHash);
+      if (!element) return;
+      element.scrollIntoView();
+    }
     document.documentElement.classList.add('scroll-smooth');
 
     return () => {
