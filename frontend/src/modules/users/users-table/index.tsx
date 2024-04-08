@@ -80,7 +80,7 @@ const UsersTable = () => {
 
   const isFiltered = role !== undefined || !!query;
 
-  const debounceQuery = useDebounce(query, 500);
+  const debounceQuery = useDebounce(query, 300);
 
   const onResetFilters = () => {
     setQuery('');

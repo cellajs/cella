@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
+import { Loader2, History, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
@@ -15,20 +15,35 @@ export const AppSearch = () => {
   const navigate = useNavigate();
 
   const [value, setValue] = useState('');
+
   const debouncedValue = useDebounce(value, 500);
+  const resentSearches = useNavigationStore((state) => state.resentSearches);
+
+  const deleteItemFromList = (item: string) => {
+    useNavigationStore.setState((state) => {
+      const searches = [...state.resentSearches];
+      const index = searches.indexOf(item);
+      if (index === -1) return;
+      searches.splice(index, 1);
+      return { ...state, resentSearches: searches };
+    });
+  };
 
   const updateResentSearches = (newValue: string) => {
-    const store = useNavigationStore.getState();
-    const searches = store.resentSearches;
-    if (searches.includes(newValue)) {
-      searches.splice(searches.indexOf(newValue), 1);
-      searches.push(newValue);
-    } else {
-      searches.push(newValue);
-      if (searches.length > 5) searches.shift();
-    }
-    store.setResentSearches(searches);
-  }; // Add icon to show Resent Searches
+    if (newValue.replaceAll(' ', '') === '') return;
+    useNavigationStore.setState((state) => {
+      const searches = [...state.resentSearches];
+
+      if (searches.includes(newValue)) {
+        searches.splice(searches.indexOf(newValue), 1);
+        searches.push(newValue);
+      } else {
+        searches.push(newValue);
+        if (searches.length > 5) searches.shift();
+      }
+      return { ...state, resentSearches: searches };
+    });
+  };
 
   const { data, isFetching } = useQuery({
     queryKey: ['search', value],
@@ -59,15 +74,16 @@ export const AppSearch = () => {
     }
 
     dialog.remove(false);
-
-    useEffect(() => {
-      updateResentSearches(debouncedValue);
-    }, [debouncedValue]);
   };
+
+  useEffect(() => {
+    updateResentSearches(debouncedValue);
+  }, [debouncedValue]);
 
   return (
     <Command className="rounded-lg border" shouldFilter={false}>
       <CommandInput
+        value={value}
         placeholder={t('common:placeholder.search')}
         onValueChange={(value) => {
           setValue(value);
@@ -80,7 +96,37 @@ export const AppSearch = () => {
               <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
             </CommandLoading>
           ) : (
-            t('common:no_results_found')
+            <>
+              {value.replaceAll(' ', '').length > 0 && t('common:no_results_found')}
+              {resentSearches.length > 0 && (
+                <div className="flex flex-col">
+                  <span className="text-start  py-1 px-2 text-muted-foreground font-medium text-xs">History</span>
+                  {resentSearches.map((search) => (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setValue(search);
+                      }}
+                      className="relative flex justify-between cursor-pointer select-none h-11 items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                        <History className="h-5 w-5" />
+                        <span className="underline-offset-4 truncate font-medium">{search}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteItemFromList(search);
+                        }}
+                      >
+                        <X className="h-5 w-5 opacity-70 hover:opacity-100" />
+                      </button>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </CommandEmpty>
         {/* {isFetching && (

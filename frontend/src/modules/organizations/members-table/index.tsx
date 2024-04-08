@@ -89,7 +89,7 @@ const MembersTable = () => {
   const [query, setQuery] = useState<MembersSearch['q']>(search.q);
   const [role, setRole] = useState<MembersSearch['role']>(search.role);
 
-  const debounceQuery = useDebounce(query, 500);
+  const debounceQuery = useDebounce(query, 300);
   // Save filters in search params
   const filters = useMemo(
     () => ({

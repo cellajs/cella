@@ -78,6 +78,7 @@ export const useNavigationStore = create<NavigationState>()(
           partialize: (state) => ({
             keepMenuOpen: state.keepMenuOpen,
             activeSections: state.activeSections,
+            resentSearches: state.resentSearches,
           }),
           storage: createJSONStorage(() => localStorage),
         },
