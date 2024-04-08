@@ -83,16 +83,18 @@ const UserSettings = () => {
         </Tabs>
       </SimpleHeader>
 
-      <div className="container mt-8 md:w-[70%]">
+      <div className="container mt-8 md:w-[70%] space-y-6">
         <Card className="mx-auto sm:w-full">
           <CardContent className="pt-6">
             <h1 id="general" className="font-semibold text-lg mb-4">
               {t('common:general')}
             </h1>
             <UpdateUserForm user={user} />
+          </CardContent>
+        </Card>
 
-            <hr className="my-6" />
-
+        <Card className="mx-auto sm:w-full">
+          <CardContent className="pt-6">
             <h6 id="sessions" className="font-semibold mb-4">
               {t('common:sessions')}
             </h6>
@@ -139,9 +141,11 @@ const UserSettings = () => {
                   </div>
                 ))}
             </ScrollArea>
+          </CardContent>
+        </Card>
 
-            <hr className="my-6" />
-
+        <Card className="mx-auto sm:w-full">
+          <CardContent className="pt-6">
             <p id="delete-account" className="font-light mb-4 text-sm">
               {t('common:delete_account.text')}
             </p>
