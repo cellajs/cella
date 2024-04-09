@@ -28,7 +28,7 @@ export const AsideTab = ({ tabs }: AsideTabProps) => {
     <Tabs value={activeTab} className="w-full" orientation="vertical">
       <TabsList variant="side">
         {tabs.map(({ value, label, hash }) => (
-          <TabsTrigger value={value} className="justify-start" variant="secondary" asChild>
+          <TabsTrigger key={value} value={value} className="justify-start" variant="secondary" asChild>
             <Link className="flex-1" hash={hash}>
               {t(label)}
             </Link>
