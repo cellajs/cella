@@ -42,7 +42,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
           {slides?.map((slide, idx) => (
             <CarouselItem key={slide.src} onClick={() => onOpenChange(true, idx)}>
               <div className="overflow-hidden h-full">
-                <img src={slide.src} alt={`Slide ${idx}`} className={`${imageClass} w-full h-full`} />
+                <img src={`/static/screenshots/${slide.src}`} alt={`Slide ${idx}`} className={`${imageClass} w-full h-full`} />
               </div>
             </CarouselItem>
           ))}
@@ -105,7 +105,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
       {renderDeviceMockup(inView)}
 
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="min-w-full h-svh border-0 p-0 rounded-none flex flex-col mt-0 ">
+        <DialogContent className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0">
           <DialogHeader className="absolute p-3 w-full backdrop-blur-sm bg-background/50">
             <DialogTitle className="text-center font-semibold text-lg">{t('common:view_screenshot')}</DialogTitle>
           </DialogHeader>

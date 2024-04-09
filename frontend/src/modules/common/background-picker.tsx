@@ -89,7 +89,7 @@ export function BackgroundPicker({
               {solids.map((bg) => (
                 <RadioGroupItem
                   key={bg}
-                  className="h-6 w-6 p-0 cursor-pointer rounded-md active:scale-105 border-none"
+                  className="h-6 w-6 p-0 cursor-pointer rounded-md active:scale-105 border-0 focus-visible:ring-2"
                   checked={false}
                   value={bg}
                   style={{ background: bg }}

@@ -58,11 +58,7 @@ const oauthRoutes = app
 
     createSession(ctx, 'google', state, codeVerifier, redirect);
 
-    return ctx.json({}, 302, {
-      Location: url.toString(),
-    });
-    // TODO: Fix redirect
-    // return ctx.redirect(url.toString(), 302);
+    return ctx.redirect(url.toString());
   })
   .add(microsoftSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
@@ -73,11 +69,7 @@ const oauthRoutes = app
 
     createSession(ctx, 'microsoft', state, codeVerifier, redirect);
 
-    return ctx.json({}, 302, {
-      Location: url.toString(),
-    });
-    // TODO: Fix redirect
-    // return ctx.redirect(url.toString(), 302);
+    return ctx.redirect(url.toString());
   })
   .add(githubSignInCallbackRouteConfig, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
@@ -135,9 +127,7 @@ const oauthRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
 
-        return ctx.json({}, 302, {
-          Location: redirectUrl,
-        });
+        return ctx.redirect(redirectUrl);
       }
 
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
@@ -202,9 +192,7 @@ const oauthRoutes = app
 
         await setSessionCookie(ctx, existingUser.id, 'github');
 
-        return ctx.json({}, 302, {
-          Location: redirectUrl,
-        });
+        return ctx.redirect(redirectUrl);
       }
 
       const userId = nanoid();
@@ -278,9 +266,7 @@ const oauthRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
 
-        return ctx.json({}, 302, {
-          Location: redirectUrl,
-        });
+        return ctx.redirect(redirectUrl);
       }
 
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
@@ -289,9 +275,7 @@ const oauthRoutes = app
         await insertOauthAccount(existingUser.id, 'GOOGLE', user.sub);
         await setSessionCookie(ctx, existingUser.id, 'google');
 
-        return ctx.json({}, 302, {
-          Location: redirectUrl,
-        });
+        return ctx.redirect(redirectUrl);
       }
 
       const userId = nanoid();
@@ -309,9 +293,7 @@ const oauthRoutes = app
 
       await setSessionCookie(ctx, userId, 'google');
 
-      return ctx.json({}, 302, {
-        Location: config.frontendUrl + config.defaultRedirectPath,
-      });
+      return ctx.redirect(redirectUrl);
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'google' });
@@ -356,9 +338,7 @@ const oauthRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
 
-        return ctx.json({}, 302, {
-          Location: redirectUrl,
-        });
+        return ctx.redirect(redirectUrl);
       }
 
       if (!user.email) {
@@ -371,9 +351,7 @@ const oauthRoutes = app
         await insertOauthAccount(existingUser.id, 'MICROSOFT', user.sub);
         await setSessionCookie(ctx, existingUser.id, 'microsoft');
 
-        return ctx.json({}, 302, {
-          Location: redirectUrl,
-        });
+        return ctx.redirect(redirectUrl);
       }
 
       const userId = nanoid();

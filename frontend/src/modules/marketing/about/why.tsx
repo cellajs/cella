@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import DeviceMockup from '~/modules/common/device-mockup';
+import DeviceMockup from '~/modules/marketing/device-mockup';
 
 const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 
 // Slides for light and dark themes
-const lightSlides = [{ src: '/screenshots/signin-with-cella.png' }, { src: '/screenshots/app-with-cella.png' }, { src: '/screenshots/org-page.png' }];
-const darkSlides = [{ src: '/screenshots/dark/signin-with-cella.png' }, { src: '/screenshots/dark/app-with-cella.png' }];
+const lightSlides = [{ src: 'signin-with-cella.png' }, { src: 'app-with-cella.png' }, { src: 'org-page.png' }];
+const darkSlides = [{ src: 'dark/signin-with-cella.png' }, { src: 'dark/app-with-cella.png' }];
 
 const Why = () => {
   const { t } = useTranslation();

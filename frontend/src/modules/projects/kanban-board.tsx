@@ -201,7 +201,7 @@ export default function KanbanBoard() {
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
-        <ResizablePanelGroup direction="horizontal" className="flex gap-2 p-2">
+        <ResizablePanelGroup direction="horizontal" className="flex gap-2">
           <SortableContext items={columnsId}>
             {columns.map((col, index) => (
               <Fragment key={col.id}>

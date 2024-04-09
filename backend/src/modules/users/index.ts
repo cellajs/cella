@@ -139,7 +139,7 @@ const usersRoutes = app
         organizations: {
           active: organizations,
           inactive: [],
-          canCreate: user.role === 'ADMIN',
+          canCreate: true,
         },
       },
     });

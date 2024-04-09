@@ -20,11 +20,11 @@ type AccountButtonProps = {
 // Create a button for each account action
 const AccountButton: React.FC<AccountButtonProps> = ({ lucideButton: Icon, label, id, accountAction }) => {
   const { setSheet } = useNavigationStore();
-  
+
   const btnClass = `${id === 'btn-signout' ? 'text-red-600' : ''} hover:bg-accent w-full justify-start text-left focus:outline-none focus:ring`;
 
   return (
-    <Link to={accountAction} className={cn(buttonVariants({ variant: 'ghost' }), btnClass)} onClick={() => setSheet(null)}>
+    <Link to={accountAction} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)} onClick={() => setSheet(null)}>
       <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
       {label}
     </Link>

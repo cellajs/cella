@@ -323,14 +323,14 @@ const generalRoutes = app
     const user = ctx.get('user');
     return streamSSE(ctx, async (stream) => {
       streams.set(user.id, stream);
-      console.log('User connected to SSE', user.id);
+      console.info('User connected to SSE', user.id);
       stream.writeSSE({
         event: 'connected',
         data: 'connected',
       });
 
       stream.onAbort(() => {
-        console.log('User disconnected from SSE', user.id);
+        console.info('User disconnected from SSE', user.id);
         streams.delete(user.id);
         stream.close();
       });

@@ -58,12 +58,12 @@ const UserSettings = () => {
   };
 
   return (
-    <div className="md:flex md:flex-row mx-auto max-w-[1600px]">
+    <div className="container md:flex md:flex-row mx-auto max-w-[1200px] gap-4">
       <SimpleHeader heading="common:account_settings" className="mx-auto md:min-w-[200px] md:w-[30%]" text="common:account_settings.text">
         <AsideTab tabs={tabs} />
       </SimpleHeader>
 
-      <div className="container mt-8 md:w-[70%] space-y-6">
+      <div className="mt-8 md:w-[70%] space-y-6">
         <Card className="mx-auto sm:w-full">
           <CardContent className="pt-6">
             <h1 id="general" className="font-semibold text-lg mb-4">

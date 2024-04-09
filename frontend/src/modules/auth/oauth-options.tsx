@@ -82,7 +82,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
               }
             >
               <img
-                src={`/images/${option.name.toLowerCase()}-icon.svg`}
+                src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
                 alt={option.name}
                 className={`w-4 h-4 mr-2 ${option.name === 'Github' ? invertClass : ''}`}
                 loading="lazy"

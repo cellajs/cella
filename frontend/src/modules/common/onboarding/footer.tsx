@@ -1,6 +1,6 @@
 import { createOrganization, type CreateOrganizationParams } from '~/api/organizations';
-import { Button } from '../ui/button';
-import { useStepper } from '../ui/stepper';
+import { Button } from '../../ui/button';
+import { useStepper } from '../../ui/stepper';
 import { updateUser, type UpdateUserParams } from '~/api/users';
 import { useEffect, useMemo } from 'react';
 import { invite, type InviteProps } from '~/api/general';
@@ -34,8 +34,7 @@ const Footer = ({ createOrganizationFormValues, updateUserFormValues, inviteForm
     return 'Next';
   }, [currentStep?.id, createOrganizationFormValues, updateUserFormValues, inviteFormValues]);
 
-  const onCompleted = () => {
-  };
+  const onCompleted = () => {};
 
   useEffect(() => {
     if (hasCompletedAllSteps) {

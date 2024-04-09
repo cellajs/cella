@@ -10,7 +10,7 @@ export const CountryFlag = ({ countryCode, className, imgType = 'svg', width = 1
   if (typeof countryCode !== 'string') return null;
   if (countryCode.toLowerCase() === 'en') countryCode = 'gb';
 
-  const flagUrl = imgType === 'svg' ? `/flags/${countryCode.toLowerCase()}.svg` : `/flags/png/${countryCode.toLowerCase()}.png`;
+  const flagUrl = imgType === 'svg' ? `/static/flags/${countryCode.toLowerCase()}.svg` : `/static/flags/png/${countryCode.toLowerCase()}.png`;
 
   return (
     <img

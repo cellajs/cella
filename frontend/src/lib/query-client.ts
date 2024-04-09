@@ -16,8 +16,8 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 
 const onError = (error: Error) => {
   if (error instanceof ApiError) {
-    // Abort if /me, it should fail silently
-    if (error.path === '/me') return;
+    // Abort if /me or /menu, it should fail silently
+    if (error.path && ['/me', '/menu'].includes(error.path)) return;
 
     const fallback = fallbackMessages(i18n.t);
 
@@ -36,14 +36,16 @@ const onError = (error: Error) => {
     if (error.status === 503) useAlertsStore.getState().setDownAlert('maintenance');
     else if (error.status === 504) useAlertsStore.getState().setDownAlert('offline');
 
-    // Redirect to sign-in page if the user is not authenticated (except for /me)
     if (error.status === 401) {
-      router.navigate({
-        to: '/auth/sign-in',
-        search: {
-          redirect: location.pathname,
-        },
-      });
+      // Redirect to sign-in page if the user is not authenticated (except for /me)
+      const redirectOptions: { to: string; replace: boolean; search?: { redirect: string } } = { to: '/auth/sign-in', replace: true };
+
+      // If the path is not /auth/*, save the current path as a redirect
+      if (location.pathname?.length > 2 && !location.pathname.startsWith('/auth/')) {
+        redirectOptions.search = { redirect: location.pathname };
+      }
+      
+      router.navigate(redirectOptions);
     }
   }
 };

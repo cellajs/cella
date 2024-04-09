@@ -8,7 +8,7 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { systemGuard, tenantGuard } from '../../middlewares/guard';
+import { authGuard, systemGuard, tenantGuard } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
@@ -23,13 +23,14 @@ import {
 export const createOrganizationRouteConfig = createRouteConfig({
   method: 'post',
   path: '/organizations',
-  guard: systemGuard,
+  guard: authGuard(),
   tags: ['organizations'],
   summary: 'Create a new organization',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
+  // TODO: all users can create, but somehow we need to restrict it to just one and with more needing manual activation by an admin? 
+  // description: `
+  //   Permissions:
+  //     - Users with role 'ADMIN'
+  // `,
   request: {
     body: {
       required: true,

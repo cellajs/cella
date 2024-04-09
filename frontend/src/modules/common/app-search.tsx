@@ -31,6 +31,10 @@ export const AppSearch = () => {
 
   const updateRecentSearches = (newValue: string) => {
     if (newValue.replaceAll(' ', '') === '') return;
+    const hasSubstringMatch = recentSearches.some(element => element.toLowerCase().includes(newValue));
+    if(hasSubstringMatch) return;
+    
+    if (recentSearches.includes(newValue)) return;
     useNavigationStore.setState((state) => {
       const searches = [...state.recentSearches];
 
@@ -104,6 +108,7 @@ export const AppSearch = () => {
                   {recentSearches.map((search) => (
                     <button
                       type="button"
+                      key={search}
                       onClick={() => {
                         setValue(search);
                       }}
