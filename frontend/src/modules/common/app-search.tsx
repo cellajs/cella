@@ -28,7 +28,6 @@ export const AppSearch = () => {
   };
 
   const updateRecentSearches = (value: string) => {
-    console.log('updateRecentSearches', value)
     if (value.replaceAll(' ', '') === '') return;
     const hasSubstringMatch = recentSearches.some(element => element.toLowerCase().includes(value));
     if(hasSubstringMatch) return;

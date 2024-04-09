@@ -77,8 +77,8 @@ const authRoutes = app
       });
     } catch (error) {
       if (error instanceof postgres.PostgresError && error.message.startsWith('duplicate key')) {
-        // t('common:error.email_exists.text')
-        return errorResponse(ctx, 409, 'email_exists', 'warn', undefined, { email });
+        // t('common:error.email_exists')
+        return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
       }
 
       logEvent('Error signing up', { errorMessage: (error as Error).message }, 'error');
@@ -108,7 +108,8 @@ const authRoutes = app
         });
       }
 
-      return errorResponse(ctx, 400, 'invalid_verification_token', 'warn', undefined, {
+      // t('common:error.invalid_token')
+      return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
         user: token?.userId || 'na',
         type: 'verification',
       });
@@ -211,6 +212,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user || !user.emailVerified) {
+      // t('common:error.invalid_email')
       return errorResponse(ctx, 400, 'invalid_email', 'warn');
     }
 
@@ -256,7 +258,7 @@ const authRoutes = app
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
-      return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
+      return errorResponse(ctx, 400, 'invalid_token', 'warn');
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
@@ -291,6 +293,7 @@ const authRoutes = app
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
 
     if (!validPassword) {
+      // t('common:error.invalid_password')
       return errorResponse(ctx, 400, 'invalid_password', 'warn');
     }
 
@@ -344,6 +347,7 @@ const authRoutes = app
       .where(and(eq(tokensTable.id, verificationToken)));
 
     if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
+      // t('common:error.invalid_token_or_expired')
       return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
     }
 
@@ -441,6 +445,7 @@ const authRoutes = app
         // return ctx.redirect(url, 302);
       }
 
+      // t('common:error.invalid_invitation')
       return errorResponse(ctx, 400, 'invalid_invitation', 'warn', undefined, {
         type: 'invitation',
       });

@@ -115,11 +115,12 @@ const generalRoutes = app
     const organization = ctx.get('organization') as OrganizationModel | undefined;
 
     if (!organization && user.role !== 'ADMIN') {
-      return errorResponse(ctx, 403, 'invite_forbidden', 'warn');
+      return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
 
     if (role && organization && !membershipSchema.shape.role.safeParse(role).success) {
       logEvent('Invalid role', { role }, 'warn');
+      // t('common:error.invalid_role.text')
       return errorResponse(ctx, 400, 'invalid_role', 'warn');
     }
 
