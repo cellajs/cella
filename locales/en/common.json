@@ -5,7 +5,7 @@
   "accessibility": "Accessibility",
   "account": "Account",
   "account_settings": "Account settings",
-  "account_settings.text": "Update your account settings and preferences.",
+  "account_settings.text": "Update your account settings and preferences",
   "add": "Add",
   "add_member": "Add member",
   "admin": "Admin",
@@ -20,6 +20,7 @@
   "call": "Call",
   "cancel": "Cancel",
   "clear": "Clear",
+  "home.text": "An overview of your activity on Cella",
   "clear_filter": "Clear filter",
   "close": "Close",
   "confirm.delete_account": "Are you sure you want to delete your account with {{email}} email?",
@@ -290,5 +291,6 @@
   "session": "Session",
   "terminate": "Terminate",
   "delete_account.text": "Want to permanently delete your Cella account? Use the button below. Please note that this action is irreversible.",
-  "terminate_all": "Terminate all"
+  "terminate_all": "Terminate all",
+  "under_construction.text": "Cella is a work in progress. Contact us for a full demo with system admin access."
 }

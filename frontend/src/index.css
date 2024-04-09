@@ -74,7 +74,7 @@
   }
 
   body {
-    @apply bg-background text-foreground h-svh;
+    @apply bg-background text-foreground h-screen;
   }
 
   #root {

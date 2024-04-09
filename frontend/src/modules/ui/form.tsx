@@ -86,12 +86,17 @@ type FormItemContextValue = {
 
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
 
-const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => {
+// INFO: added to support targeting the entire form item (for example to hide)
+type FormItemProps = React.HTMLAttributes<HTMLDivElement> & {
+  name?: string;
+};
+
+const FormItem = React.forwardRef<HTMLDivElement, FormItemProps>(({ className, name, ...props }, ref) => {
   const id = React.useId();
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn('flex gap-2 flex-col', className)} {...props} />
+      <div ref={ref} id={`${(name || id).toLowerCase()}-form-item-container`} className={cn('flex gap-2 flex-col', className)} {...props} />
     </FormItemContext.Provider>
   );
 });

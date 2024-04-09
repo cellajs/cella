@@ -13,6 +13,7 @@ interface Props<TFieldValues extends FieldValues> {
   type?: Parameters<typeof Input>[0]['type'] | 'textarea';
   description?: string;
   placeholder?: string;
+  minimal?: boolean;
   subComponent?: React.ReactNode;
   required?: boolean;
   disabled?: boolean;
@@ -37,7 +38,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
     control={disabled ? undefined : control}
     name={name as Path<TFieldValues>}
     render={({ field: { value: formFieldValue, ...rest } }) => (
-      <FormItem>
+      <FormItem name={name?.toString()}>
         <FormLabel>
           {label}
           {required && <span className="ml-1 opacity-50">*</span>}

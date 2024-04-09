@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import DeviceMockup from '~/modules/common/device-mockup';
+import DeviceMockup from '~/modules/marketing/device-mockup';
 
 const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 

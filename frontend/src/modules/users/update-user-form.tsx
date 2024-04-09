@@ -25,6 +25,7 @@ import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
+import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 
 interface Props {
   user: User;
@@ -33,6 +34,7 @@ interface Props {
   withDraft?: boolean;
   initValues?: FormValues | null;
   onValuesChange?: (values: FormValues | null) => void;
+  hiddenFields?: string[];
   withButtons?: boolean;
 }
 
@@ -51,10 +53,16 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
   });
 };
 
-const UpdateUserForm = ({ user, callback, dialog: isDialog, initValues, onValuesChange, withButtons = true, withDraft = true }: Props) => {
+const UpdateUserForm = ({ user, callback, dialog: isDialog, initValues, onValuesChange, hiddenFields, withButtons = true, withDraft = true }: Props) => {
   const { t } = useTranslation();
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
+
+  // Hide fields if requested
+  if (hiddenFields) {
+    const fieldIds = hiddenFields.map(field => `${field}-form-item-container`);
+    useHideElementsById(fieldIds);
+  }
 
   const { mutate, isPending } = useUpdateUserMutation(user.id);
   const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
