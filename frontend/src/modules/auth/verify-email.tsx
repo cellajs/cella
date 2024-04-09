@@ -5,6 +5,7 @@ import { verifyEmail as baseVerifyEmail } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import AuthPage from './auth-page';
+import { toast } from 'sonner';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();
@@ -14,6 +15,7 @@ const VerifyEmail = () => {
   const { mutate: verifyEmail, error } = useMutation({
     mutationFn: baseVerifyEmail,
     onSuccess: () => {
+      toast.success(t('common:success.email_verified'));
       navigate({
         to: '/home',
       });

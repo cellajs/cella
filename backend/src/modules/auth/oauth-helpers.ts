@@ -16,7 +16,6 @@ type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
 export const createSession = (ctx: Context, provider: string, state: string, codeVerifier?: string, redirect?: string) => {
   setCookie(ctx, 'oauth_state', state);
 
-  console.log('Creating session:', redirect)
   if (codeVerifier) setCookie(ctx, 'oauth_code_verifier', codeVerifier);
   if (redirect) setCookie(ctx, 'oauth_redirect', redirect);
 
@@ -29,7 +28,6 @@ export const getRedirectUrl = (ctx: Context): string => {
   let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
   if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie);
 
-  console.log('Redirecting to:', redirectUrl)
   return redirectUrl;
 };
 
