@@ -158,15 +158,15 @@ const usersRoutes = app
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'update_forbidden', 'warn', 'user', { user: userId });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: userId });
     }
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
 
     if (slug && slug !== targetUser.slug) {
-      const slugExists = await checkSlugAvailable(slug);
+      const slugAvailable = await checkSlugAvailable(slug);
 
-      if (slugExists) {
+      if (!slugAvailable) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
       }
     }

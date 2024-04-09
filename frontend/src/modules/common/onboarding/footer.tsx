@@ -55,7 +55,7 @@ const Footer = ({ createOrganizationFormValues, updateUserFormValues, inviteForm
   if (hasCompletedAllSteps) {
     return (
       <>
-        <div className="h-40 flex items-center justify-center my-4 border bg-secondary text-primary rounded-md">
+        <div className="h-40 flex items-center justify-center my-4 border bg-secondary rounded-md">
           <h1 className="text-xl">Woohoo! All steps completed! 🎉</h1>
         </div>
         <div className="w-full flex justify-end gap-2">

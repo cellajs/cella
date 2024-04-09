@@ -21,7 +21,7 @@ type AccountButtonProps = {
 const AccountButton: React.FC<AccountButtonProps> = ({ lucideButton: Icon, label, id, accountAction }) => {
   const { setSheet } = useNavigationStore();
 
-  const btnClass = `${id === 'btn-signout' ? 'text-red-600' : ''} hover:bg-accent w-full justify-start text-left focus:outline-none focus:ring`;
+  const btnClass = `${id === 'btn-signout' ? 'text-red-600' : ''} hover:bg-accent w-full justify-start text-left`;
 
   return (
     <Link to={accountAction} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)} onClick={() => setSheet(null)}>
@@ -58,7 +58,7 @@ export const SheetAccount = () => {
         </div>
       </Link>
 
-      <div className="space-y-2 max-sm:mt-4">
+      <div className="flex flex-col gap-1 max-sm:mt-4">
         <AccountButton lucideButton={CircleUserRound} id="btn-profile" label={t('common:view_profile')} accountAction={`/user/${user.slug}`} />
         <AccountButton lucideButton={UserCog} id="btn-account" label={t('common:account_settings')} accountAction="/user/settings" />
         {isSystemAdmin && <AccountButton lucideButton={Wrench} id="btn-system" label={t('common:system_panel')} accountAction="/system/users" />}

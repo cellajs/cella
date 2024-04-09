@@ -78,6 +78,7 @@ const oauthRoutes = app
 
     // * verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
+      // t('common:error.invalid_state.text')
       return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'github' });
     }
 
@@ -144,6 +145,7 @@ const oauthRoutes = app
       const primaryEmail = githubUserEmails.find((email) => email.primary);
 
       if (!primaryEmail) {
+        // t('common:error.no_email_found.text')
         return errorResponse(ctx, 400, 'no_email_found', 'warn');
       }
 
@@ -224,6 +226,7 @@ const oauthRoutes = app
       });
     } catch (error) {
       if (error instanceof OAuth2RequestError) {
+        // t('common:error.invalid_credentials.text')
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'github' });
       }
 

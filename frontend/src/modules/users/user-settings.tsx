@@ -1,6 +1,6 @@
 import { Trash2 } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import { Card, CardContent } from '~/modules/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
 import { terminateMySessions as baseTerminateMySessions } from '~/api/users';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -20,11 +20,11 @@ import { AsideTab } from '~/modules/common/aside-tab';
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
   { value: 'sessions', label: 'common:sessions', hash: 'sessions' },
-  { value: 'delete_account', label: 'common:delete_account', hash: 'delete-account' },
+  { value: 'delete-account', label: 'common:delete_account', hash: 'delete-account' },
 ];
 
 const UserSettings = () => {
-  const user = useUserStore((state) => state.user);
+  const { user, clearLastUser } = useUserStore();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -46,6 +46,7 @@ const UserSettings = () => {
         dialog
         callback={() => {
           toast.success(t('common:success.delete_account'));
+          clearLastUser();
           navigate({ to: '/sign-out', replace: true });
         }}
       />,
@@ -58,27 +59,29 @@ const UserSettings = () => {
   };
 
   return (
-    <div className="container md:flex md:flex-row mx-auto max-w-[1200px] gap-4">
-      <SimpleHeader heading="common:account_settings" className="mx-auto md:min-w-[200px] md:w-[30%]" text="common:account_settings.text">
-        <AsideTab tabs={tabs} />
-      </SimpleHeader>
+    <div className="container md:flex md:flex-row mt-8 mx-auto max-w-[1200px] gap-4">
+      <div className="mx-auto md:min-w-[200px] md:w-[30%] md:mt-2">
+        <SimpleHeader className="p-3" heading="common:account_settings" text="common:account_settings.text" />
+        <AsideTab tabs={tabs} className="py-2" />
+      </div>
 
-      <div className="mt-8 md:w-[70%] space-y-6">
-        <Card className="mx-auto sm:w-full">
-          <CardContent className="pt-6">
-            <h1 id="general" className="font-semibold text-lg mb-4">
-              {t('common:general')}
-            </h1>
+      <div className="md:w-[70%] space-y-6">
+        <Card id="general" className="mx-auto sm:w-full">
+          <CardHeader>
+            <CardTitle>{t('common:general')}</CardTitle>
+          </CardHeader>
+          <CardContent>
             <UpdateUserForm user={user} />
           </CardContent>
         </Card>
 
-        <Card className="mx-auto sm:w-full">
-          <CardContent className="pt-6">
-            <h6 id="sessions" className="font-semibold mb-4">
-              {t('common:sessions')}
-            </h6>
-            <p className="font-light text-sm mb-4">{t('common:sessions.text')}</p>
+        <Card id="sessions" className="mx-auto sm:w-full">
+          <CardHeader>
+            <CardTitle>{t('common:sessions')}</CardTitle>
+
+            <CardDescription>{t('common:sessions.text')}</CardDescription>
+          </CardHeader>
+          <CardContent>
             {sessionsWithoutCurrent.length > 0 && (
               <Button
                 variant="plain"
@@ -91,7 +94,7 @@ const UserSettings = () => {
                 {t('common:terminate_all')}
               </Button>
             )}
-            <ScrollArea className="mt-4 max-h-72 overflow-auto px-2">
+            <ScrollArea className="max-h-72 overflow-auto">
               {Array.from(user.sessions)
                 .sort((a) => (a.current ? -1 : 1))
                 .map((session) => (
@@ -124,11 +127,12 @@ const UserSettings = () => {
           </CardContent>
         </Card>
 
-        <Card className="mx-auto sm:w-full">
-          <CardContent className="pt-6">
-            <p id="delete-account" className="font-light mb-4 text-sm">
-              {t('common:delete_account.text')}
-            </p>
+        <Card id="delete-account" className="mx-auto sm:w-full">
+          <CardHeader>
+            <CardTitle>{t('common:delete_account')}</CardTitle>
+            <CardDescription>{t('common:delete_account.text')}</CardDescription>
+          </CardHeader>
+          <CardContent>
             <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
               <Trash2 className="mr-2 h-4 w-4" />
               {t('common:delete_account')}

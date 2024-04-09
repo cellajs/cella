@@ -16,14 +16,16 @@ const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
 
 const AuthPage = ({ children }: AuthPageProps) => {
-  const { hasStarted } = useMountedState();
+  const { hasStarted, hasWaited } = useMountedState();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   return (
     <div className="container rich-gradient before:fixed after:fixed flex flex-col min-h-[90vh] sm:min-h-screen items-center">
       {/* Render bg animation */}
       <Suspense fallback={null}>
-        <BgAnimation />
+        <div className={`absolute left-0 top-0 w-full h-full duration-1000 transition-opacity ${hasWaited ? 'opacity-100' : 'opacity-0'}`}>
+          <BgAnimation />
+        </div>
       </Suspense>
 
       <div className="mt-auto mb-auto">

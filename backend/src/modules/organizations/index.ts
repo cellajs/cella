@@ -42,10 +42,6 @@ const organizationsRoutes = app
       .from(organizationsTable)
       .where(or(eq(organizationsTable.name, name), eq(organizationsTable.slug, slug)));
 
-    if (organization?.name === name) {
-      return errorResponse(ctx, 400, 'name_exists', 'warn', 'organization', { name });
-    }
-
     if (organization?.slug === slug) {
       slug = `${slug}-${user.slug}`;
     }
@@ -193,9 +189,10 @@ const organizationsRoutes = app
     } = ctx.req.valid('json');
 
     if (slug) {
-      const slugExists = await checkSlugAvailable(slug);
+      const slugAvailable = await checkSlugAvailable(slug);
 
-      if (slugExists && slug !== organization.slug) {
+      if (!slugAvailable && slug !== organization.slug) {
+        // t('common:error.slug_exists')
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
       }
     }

@@ -16,17 +16,19 @@ const auth =
 
     if (!sessionId) {
       removeSessionCookie(ctx);
-      return errorResponse(ctx, 401, 'unauthorized', 'warn');
+      // t('common:error.invalid_session.text')
+      return errorResponse(ctx, 401, 'no_session', 'warn');
     }
 
     const { session, user } = await luciaAuth.validateSession(sessionId);
 
     if (!session) {
       removeSessionCookie(ctx);
-      return errorResponse(ctx, 401, 'unauthorized', 'warn');
+      return errorResponse(ctx, 401, 'no_session', 'warn');
     }
 
     if (accessibleFor && !accessibleFor.includes(user.role)) {
+      // t('common:error.forbidden.text')
       return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
     }
 

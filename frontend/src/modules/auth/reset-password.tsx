@@ -15,6 +15,7 @@ import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { toast } from 'sonner';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -36,8 +37,9 @@ const ResetPassword = () => {
   const { mutate: resetPassword, isPending } = useMutation({
     mutationFn: baseResetPassword,
     onSuccess: () => {
+      toast.success(t('common:success.password_reset'));
       navigate({
-        to: '/',
+        to: '/home',
       });
     },
   });

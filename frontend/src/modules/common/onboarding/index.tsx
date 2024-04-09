@@ -10,6 +10,7 @@ import Footer from './footer';
 import useMountedState from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
 import type { InviteProps } from '~/api/general';
+import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 
 const Onboarding = () => {
   const { hasStarted } = useMountedState();
@@ -60,26 +61,24 @@ const Onboarding = () => {
       <div className="mt-auto mb-auto w-full">
         <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 p-4 sm:w-10/12 max-w-[800px]', animateClass)}>
           <Stepper initialStep={0} steps={steps} orientation="vertical">
-            {steps.map(({ label, id }, index) => {
+            {steps.map(({ label, id }) => {
               if (id === 'step-1') {
                 return (
                   <Step key={label} label={label}>
-                    <div className="flex flex-col items-center justify-center my-4 border bg-secondary text-primary rounded-md p-4">
-                      <div>
-                        <div className="mb-4">
-                          <h1 className="text-xl">Welcome to Cella</h1>
-                          <p className="text-sm">Let's get started by creating your organization.</p>
-                        </div>
-                        <div>
-                          <CreateOrganizationForm
-                            initValues={createOrganizationFormValues}
-                            onValuesChange={setCreateOrganizationFormValues}
-                            withButtons={false}
-                            withDraft={false}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <Card>
+                      <CardHeader>
+                        <CardDescription className="font-light">Let's get started by creating your organization.</CardDescription>
+                      </CardHeader>
+
+                      <CardContent>
+                        <CreateOrganizationForm
+                          initValues={createOrganizationFormValues}
+                          onValuesChange={setCreateOrganizationFormValues}
+                          withButtons={false}
+                          withDraft={false}
+                        />
+                      </CardContent>
+                    </Card>
                   </Step>
                 );
               }
@@ -87,23 +86,22 @@ const Onboarding = () => {
               if (id === 'step-2') {
                 return (
                   <Step key={label} label={label}>
-                    <div className="flex flex-col items-center justify-center my-4 border bg-secondary text-primary rounded-md p-4">
-                      <div>
-                        <div className="mb-4">
-                          <h1 className="text-xl">Hi {user.firstName}! This is you?</h1>
-                        </div>
-                        <div>
-                          <UpdateUserForm
-                            user={user}
-                            hiddenFields={['email', 'bio']}
-                            initValues={updateUserFormValues}
-                            onValuesChange={setUpdateUserFormValues}
-                            withButtons={false}
-                            withDraft={false}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <Card>
+                      <CardHeader>
+                        <CardDescription className="font-light">Hi {user.firstName}! This is you?</CardDescription>
+                      </CardHeader>
+
+                      <CardContent>
+                        <UpdateUserForm
+                          user={user}
+                          hiddenFields={['email', 'bio']}
+                          initValues={updateUserFormValues}
+                          onValuesChange={setUpdateUserFormValues}
+                          withButtons={false}
+                          withDraft={false}
+                        />
+                      </CardContent>
+                    </Card>
                   </Step>
                 );
               }
@@ -111,31 +109,36 @@ const Onboarding = () => {
               if (id === 'step-3') {
                 return (
                   <Step key={label} label={label}>
-                    <div className="flex flex-col items-center justify-center my-4 border bg-secondary text-primary rounded-md p-4">
-                      <div>
-                        <div className="mb-4">
-                          <h1 className="text-xl">Invite your team</h1>
-                        </div>
-                        <div>
-                          <InviteUsers
-                            type="organization"
-                            onValuesChange={setInviteFormValues}
-                            initValues={inviteFormValues}
-                            withButtons={false}
-                            withDraft={false}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <Card>
+                      <CardHeader>
+                        <CardDescription className="font-light">Invite your team members to Cella</CardDescription>
+                      </CardHeader>
+
+                      <CardContent>
+                        <InviteUsers
+                          type="organization"
+                          onValuesChange={setInviteFormValues}
+                          initValues={inviteFormValues}
+                          withButtons={false}
+                          withDraft={false}
+                        />
+                      </CardContent>
+                    </Card>
                   </Step>
                 );
               }
 
               return (
                 <Step key={label} label={label}>
-                  <div className="h-40 flex items-center justify-center my-4 border bg-secondary text-primary rounded-md">
-                    <h1 className="text-xl">Step {index + 1}</h1>
-                  </div>
+                  <Card>
+                      <CardHeader>
+                        <CardDescription className="font-light">Last step to explain how to actuall do something </CardDescription>
+                      </CardHeader>
+
+                      <CardContent>
+                       Content here
+                      </CardContent>
+                    </Card>
                 </Step>
               );
             })}

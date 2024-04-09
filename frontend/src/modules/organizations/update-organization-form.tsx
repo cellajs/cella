@@ -10,7 +10,7 @@ import { Loader2, Undo } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
-import { checkSlug as baseCheckSlug } from '~/api/general';
+import { checkSlugAvailable } from '~/api/general';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
@@ -50,9 +50,9 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   const { t } = useTranslation();
   const { mutate, isPending } = useUpdateOrganizationMutation(organization.id);
   const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
-    mutationFn: baseCheckSlug,
+    mutationFn: checkSlugAvailable,
     onSuccess: (isAvailable) => {
-      if (isAvailable) {
+      if (!isAvailable) {
         form.setError('slug', {
           type: 'manual',
           message: t('common:error.slug_exists'),

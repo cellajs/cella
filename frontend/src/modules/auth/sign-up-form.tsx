@@ -112,13 +112,13 @@ export const LegalNotice = () => {
   };
 
   return (
-    <p className="font-light text-sm space-x-1">
+    <p className="font-light text-sm text-center space-x-1">
       <span>{t('common:legal_notice.text')}</span>
-      <Button variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
+      <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
         {t('common:terms').toLocaleLowerCase()}
       </Button>
       <span>&</span>
-      <Button variant="link" className="p-0 h-auto" onClick={openDialog('privacy')}>
+      <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('privacy')}>
         {t('common:privacy_policy').toLocaleLowerCase()}
       </Button>
       <span>of {config.company.name}.</span>
