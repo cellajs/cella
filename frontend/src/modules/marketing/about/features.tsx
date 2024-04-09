@@ -26,7 +26,7 @@ const Feature = ({ icon, invertClass, index }: FeatureProps) => {
   return (
     <div className="bg-card relative overflow-hidden rounded-lg p-2">
       <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
-        <img src={`/features/${icon}.svg`} alt={title} className={`h-12 w-12 object-contain ${invertClass}`} loading="lazy" />
+        <img src={`/static/features/${icon}.svg`} alt={title} className={`h-12 w-12 object-contain ${invertClass}`} loading="lazy" />
         <div className="space-y-2">
           <h3 className="font-medium">{t(title)}</h3>
           <p className="text-muted-foreground text-sm">{t(text)}</p>

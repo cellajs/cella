@@ -44,7 +44,7 @@ export const InviteEmail = ({
           <Body className="m-auto bg-white font-sans">
             <Container className="mx-auto my-[40px] w-[465px] rounded border border-solid border-[#eaeaea] p-[20px]">
               <Section className="mt-[32px]">
-                <Img src={`${productionUrl}/static/logo.png`} height="37" alt={config.name} className="mx-auto my-0" />
+                <Img src={`${productionUrl}/static/logo/logo.png`} height="37" alt={config.name} className="mx-auto my-0" />
               </Section>
               <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-black">
                 <div
@@ -89,7 +89,7 @@ export const InviteEmail = ({
                   </Column>
                   <Column align="left">
                     {type === 'system' ? (
-                      <Img src={`${productionUrl}/static/logo.png`} height="37" alt={config.name} className="mx-auto my-0" />
+                      <Img src={`${productionUrl}/static/logo/logo.png`} height="37" alt={config.name} className="mx-auto my-0" />
                     ) : (
                       <Img className="rounded-full" src={orgImage} width="64" height="64" />
                     )}

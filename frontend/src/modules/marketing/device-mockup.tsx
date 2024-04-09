@@ -42,7 +42,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
           {slides?.map((slide, idx) => (
             <CarouselItem key={slide.src} onClick={() => onOpenChange(true, idx)}>
               <div className="overflow-hidden h-full">
-                <img src={slide.src} alt={`Slide ${idx}`} className={`${imageClass} w-full h-full`} />
+                <img src={`/static/screenshots/${slide.src}`} alt={`Slide ${idx}`} className={`${imageClass} w-full h-full`} />
               </div>
             </CarouselItem>
           ))}
