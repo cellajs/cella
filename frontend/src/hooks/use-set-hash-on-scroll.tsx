@@ -48,7 +48,7 @@ export const useSetHashOnScroll = ({ sectionIds = [], useRouter }: { sectionIds:
           ) {
             const hash = entry.target.id;
             if (useRouter) return navigate({ hash, replace: true });
-            window.location.hash = hash;
+            history.replaceState(null, '', `#${hash}`);
           }
         }
       }
