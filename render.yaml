@@ -88,6 +88,9 @@ services:
         name: X-Frame-Options
         value: SAMEORIGIN
     routes:
+       - type: rewrite
+        source: /static/*
+        destination: /static/*
       - type: rewrite
         source: /*
         destination: /index.html
