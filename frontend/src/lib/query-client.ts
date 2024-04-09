@@ -4,6 +4,8 @@ import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
 import { useAlertsStore } from '~/store/alerts';
 import router from './router';
+import type { User } from '~/types';
+import { useUserStore } from '~/store/user';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -45,6 +47,7 @@ const onError = (error: Error) => {
         redirectOptions.search = { redirect: location.pathname };
       }
       
+      useUserStore.setState({ user: null as unknown as User });
       router.navigate(redirectOptions);
     }
   }
