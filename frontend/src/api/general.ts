@@ -44,7 +44,7 @@ export const invite = async ({ emails, organizationIdentifier, role }: InvitePro
 };
 
 // Check if slug is available
-export const checkSlug = async (slug: string) => {
+export const checkSlugAvailable = async (slug: string) => {
   const response = await client['check-slug'][':slug'].$get({
     param: { slug },
   });

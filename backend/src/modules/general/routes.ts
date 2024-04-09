@@ -47,8 +47,8 @@ export const checkSlugRouteConfig = createRouteConfig({
   path: '/check-slug/{slug}',
   guard: authGuard(),
   tags: ['general'],
-  summary: 'Check if a slug is already in use',
-  description: 'This endpoint is used to check if a slug is already in use. It is used for organizations and users.',
+  summary: 'Check if a slug is available',
+  description: 'This endpoint is used to check if a slug is available. It is used for organizations and users.',
   request: {
     params: z.object({
       slug: z.string(),

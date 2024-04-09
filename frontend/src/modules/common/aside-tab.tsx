@@ -43,7 +43,7 @@ export const AsideTab = ({ tabs, className }: AsideTabProps) => {
       <TabsList variant="side">
         {tabs.map(({ value, label, hash }) => (
           <TabsTrigger key={value} value={value} className="justify-start" variant="secondary" asChild>
-            <Link className="flex-1" hash={hash} onClick={() => setActiveTab({ value, label, hash })}>
+            <Link className="flex-1" hash={hash} replace onClick={() => setActiveTab({ value, label, hash })}>
               {t(label)}
             </Link>
           </TabsTrigger>

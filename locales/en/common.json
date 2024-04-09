@@ -305,5 +305,7 @@
   "year": "year",
   "your_role": "Your role",
   "error.invalid_invitation": "Invitation could not be processed.",
-  "error.invalid_state.text": "Could not complete the authentication process."
+  "error.invalid_state.text": "Could not complete the authentication process.",
+  "success.password_reset": "Your password has been reset",
+  "invitation_accepted": "Invitation has successfully been accepted"
 }

@@ -17,7 +17,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
-import { checkSlug as baseCheckSlug } from '~/api/general';
+import { checkSlugAvailable } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
@@ -66,9 +66,9 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, initValues, onValues
 
   const { mutate, isPending } = useUpdateUserMutation(user.id);
   const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
-    mutationFn: baseCheckSlug,
+    mutationFn: checkSlugAvailable,
     onSuccess: (isAvailable) => {
-      if (isAvailable) {
+      if (!isAvailable) {
         form.setError('slug', {
           type: 'manual',
           message: t('common:error.slug_exists'),

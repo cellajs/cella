@@ -33,6 +33,7 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
+import { checkSlugAvailable } from './helpers/check-slug';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -68,18 +69,16 @@ const generalRoutes = app
     });
   })
   /*
-   * Check slug
+   * Check if slug is available
    */
   .add(checkSlugRouteConfig, async (ctx) => {
     const { slug } = ctx.req.valid('param');
 
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.slug, slug));
-
-    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.slug, slug));
+    const slugAvailable = await checkSlugAvailable(slug);
 
     return ctx.json({
       success: true,
-      data: !!user || !!organization,
+      data: slugAvailable,
     });
   })
   /*
@@ -95,10 +94,16 @@ const generalRoutes = app
       .where(and(eq(tokensTable.id, token)));
     if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
 
-    // Check if token has valid user
-    if (tokenRecord.email && tokenRecord.type === 'PASSWORD_RESET') {
+    // For reset token: check if token has valid user
+    if (tokenRecord.type === 'PASSWORD_RESET') {
       const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
       if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+    }
+
+     // For invitation token: check if user email is not already in the system
+     if (tokenRecord.type === 'INVITATION') {
+      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+      if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
     }
 
     return ctx.json({

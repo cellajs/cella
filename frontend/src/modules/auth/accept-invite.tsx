@@ -1,10 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { acceptInviteJsonSchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
-import { Button } from '~/modules/ui/button';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import AuthPage from './auth-page';
 import OauthOptions from './oauth-options';
 
@@ -16,6 +16,9 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { LegalNotice } from './sign-up-form';
+import { cn } from '~/lib/utils';
+import type { ApiError } from '~/api';
+import { toast } from 'sonner';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -27,18 +30,24 @@ const Accept = () => {
   const { token }: { token: string } = useParams({ strict: false });
 
   const [email, setEmail] = useState('');
+  const [error, setError] = useState<ApiError | null>(null);
 
-  const { mutate: checkToken, error } = useMutation({
+  const { mutate: checkToken } = useMutation({
     mutationFn: baseCheckToken,
     onSuccess: (email) => setEmail(email),
+    onError: (error) => setError(error)
   });
   const { mutate: acceptInvite, isPending } = useMutation({
     mutationFn: baseAcceptInvite,
     onSuccess: (path) => {
+      toast.success(t('common:invitation_accepted'));
       navigate({
         to: path,
       });
     },
+    onError: (error) => {
+      setError(error)
+    }
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -56,6 +65,7 @@ const Accept = () => {
   };
 
   useEffect(() => {
+    if (!token) return;
     checkToken(token);
   }, [token]);
 
@@ -71,7 +81,7 @@ const Accept = () => {
           )}
         </h1>
 
-        {email ? (
+        {email && !error ? (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <LegalNotice />
             <FormField
@@ -100,7 +110,16 @@ const Accept = () => {
           </form>
         ) : (
           <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
-            {error && <span className="text-muted-foreground text-sm">{t(`common:error.${error.type}.${error.resourceType}`)}</span>}
+            {/* TODO: we need a render error message component ? */}
+            {error && (
+              <>
+                <span className="text-muted-foreground text-sm">{t(`common:error.${error.type}`)}</span>
+                <Link to="/auth/sign-in" className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
+                  {t('common:sign_in')}
+                  <ArrowRight size={16} className="ml-2" />
+                </Link>
+              </>
+            )}
             {isPending && <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}
           </div>
         )}

@@ -20,11 +20,11 @@ import { AsideTab } from '~/modules/common/aside-tab';
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
   { value: 'sessions', label: 'common:sessions', hash: 'sessions' },
-  { value: 'delete_account', label: 'common:delete_account', hash: 'delete-account' },
+  { value: 'delete-account', label: 'common:delete_account', hash: 'delete-account' },
 ];
 
 const UserSettings = () => {
-  const user = useUserStore((state) => state.user);
+  const { user, clearLastUser } = useUserStore();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -46,6 +46,7 @@ const UserSettings = () => {
         dialog
         callback={() => {
           toast.success(t('common:success.delete_account'));
+          clearLastUser();
           navigate({ to: '/sign-out', replace: true });
         }}
       />,

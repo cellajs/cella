@@ -1,12 +1,12 @@
-import { config } from 'config';
-import { checkSlugRouteConfig } from '../routes';
+import { eq } from 'drizzle-orm';
+import { db } from '../../../db/db';
+
+import { organizationsTable } from '../../../db/schema/organizations';
+import { usersTable } from '../../../db/schema/users';
 
 export const checkSlugAvailable = async (slug: string) => {
-  const response = await fetch(`${config.backendUrl + checkSlugRouteConfig.route.path.replace('{slug}', slug)}`, {
-    method: checkSlugRouteConfig.route.method,
-  });
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.slug, slug));
+  const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.slug, slug));
 
-  const { data: slugExists } = (await response.json()) as { data: boolean };
-
-  return slugExists;
+  return !user && !organization;
 };

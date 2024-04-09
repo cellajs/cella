@@ -55,14 +55,14 @@ const authRoutes = app
 
     const slug = slugFromEmail(email);
 
-    const slugExists = await checkSlugAvailable(slug);
+    const slugAvailable = await checkSlugAvailable(slug);
 
     try {
       await db
         .insert(usersTable)
         .values({
           id: userId,
-          slug: slugExists ? `${slug}-${userId}` : slug,
+          slug: slugAvailable ? slug : `${slug}-${userId}`,
           firstName: slug,
           email: email.toLowerCase(),
           language: config.defaultLanguage,
@@ -383,12 +383,13 @@ const authRoutes = app
 
       const slug = slugFromEmail(token.email);
 
-      const slugExists = await checkSlugAvailable(slug);
+      const slugAvailable = await checkSlugAvailable(slug);
+
       [user] = await db
         .insert(usersTable)
         .values({
           id: userId,
-          slug: slugExists ? `${slug}-${userId}` : slug,
+          slug: slugAvailable ? slug : `${slug}-${userId}`,
           language: organization?.defaultLanguage || config.defaultLanguage,
           email: token.email,
           role: (token.role as User['role']) || 'USER',
@@ -432,7 +433,6 @@ const authRoutes = app
       if (response.status === 302 && url) {
         ctx.header('Set-Cookie', response.headers.get('Set-Cookie') ?? '', { append: true });
         setCookie(ctx, 'oauth_invite_token', verificationToken);
-
         return ctx.json({
           success: true,
           data: url,

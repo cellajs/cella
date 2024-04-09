@@ -3,7 +3,7 @@ import { Trash2 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
 import { useContext } from 'react';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ import { AsideTab } from '~/modules/common/aside-tab';
 
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
-  { value: 'delete_organization', label: 'common:delete_organization', hash: 'delete-organization' },
+  { value: 'delete-organization', label: 'common:delete_organization', hash: 'delete-organization' },
 ];
 
 const OrganizationSettings = () => {
@@ -69,15 +69,14 @@ const OrganizationSettings = () => {
           </CardContent>
         </Card>
 
-        <Card id="delete_organization">
+        <Card id="delete-organization">
           <CardHeader>
-            <CardTitle>{t('common:general')}</CardTitle>
+            <CardTitle>{t('common:delete_organization')}</CardTitle>
+            <CardDescription>
+              <Trans i18nKey="common:delete_organization_notice.text" values={{ name: organization.name }} />
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p id="delete-organization" className="font-light mb-4 text-sm">
-              <Trans i18nKey="common:delete_organization_notice.text" values={{ name: organization.name }} />
-            </p>
-
             <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
               <Trash2 className="mr-2 h-4 w-4" />
               <span>{t('common:delete_organization')}</span>

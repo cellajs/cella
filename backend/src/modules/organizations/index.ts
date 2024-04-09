@@ -189,9 +189,9 @@ const organizationsRoutes = app
     } = ctx.req.valid('json');
 
     if (slug) {
-      const slugExists = await checkSlugAvailable(slug);
+      const slugAvailable = await checkSlugAvailable(slug);
 
-      if (slugExists && slug !== organization.slug) {
+      if (!slugAvailable && slug !== organization.slug) {
         // t('common:error.slug_exists')
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
       }

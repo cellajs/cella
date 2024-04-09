@@ -29,7 +29,7 @@ const Contact = () => {
           {methods.map((method) => (
             <div key={t(method.title)} className="mb-10 text-center h-[200px] w-[160px] sm:w-[200px]">
               <div className="text-primary mx-auto mb-5 flex h-[100px] w-[100px] items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 sm:h-[130px] sm:w-[130px]">
-                <method.icon size={48} strokeWidth={config.theme.strokeWidth} />
+                <method.icon size={48} strokeWidth={1} />
               </div>
               <div className="text-center">
                 <h4 className="mb-3 text-lg font-semibold">{t(method.title)}</h4>
