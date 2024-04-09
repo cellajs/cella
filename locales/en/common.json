@@ -293,5 +293,6 @@
   "delete_account.text": "Want to permanently delete your Cella account? Use the button below. Please note that this action is irreversible.",
   "terminate_all": "Terminate all",
   "under_construction.text": "Cella is a work in progress. Contact us for a full demo with system admin access.",
-  "success.email_verified": "Email verified and signed in!"
+  "success.email_verified": "Email verified and signed in!",
+  "success.signed_out": "You have been signed out"
 }
