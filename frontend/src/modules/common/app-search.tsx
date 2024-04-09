@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Loader2, History, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
-import { useDebounce } from '~/hooks/use-debounce';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { useNavigationStore } from '~/store/navigation';
@@ -14,9 +13,8 @@ export const AppSearch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [value, setValue] = useState('');
+  const [searchValue, setSearchValue] = useState('');
 
-  const debouncedValue = useDebounce(value, 500);
   const recentSearches = useNavigationStore((state) => state.recentSearches);
 
   const deleteItemFromList = (item: string) => {
@@ -29,20 +27,21 @@ export const AppSearch = () => {
     });
   };
 
-  const updateRecentSearches = (newValue: string) => {
-    if (newValue.replaceAll(' ', '') === '') return;
-    const hasSubstringMatch = recentSearches.some(element => element.toLowerCase().includes(newValue));
+  const updateRecentSearches = (value: string) => {
+    console.log('updateRecentSearches', value)
+    if (value.replaceAll(' ', '') === '') return;
+    const hasSubstringMatch = recentSearches.some(element => element.toLowerCase().includes(value));
     if(hasSubstringMatch) return;
     
-    if (recentSearches.includes(newValue)) return;
+    if (recentSearches.includes(value)) return;
     useNavigationStore.setState((state) => {
       const searches = [...state.recentSearches];
 
-      if (searches.includes(newValue)) {
-        searches.splice(searches.indexOf(newValue), 1);
-        searches.push(newValue);
+      if (searches.includes(value)) {
+        searches.splice(searches.indexOf(value), 1);
+        searches.push(value);
       } else {
-        searches.push(newValue);
+        searches.push(value);
         if (searches.length > 5) searches.shift();
       }
       return { ...state, recentSearches: searches };
@@ -50,15 +49,18 @@ export const AppSearch = () => {
   };
 
   const { data, isFetching } = useQuery({
-    queryKey: ['search', value],
-    queryFn: () => getSuggestions(value),
-    enabled: value.length > 0,
+    queryKey: ['search', searchValue],
+    queryFn: () => getSuggestions(searchValue),
+    enabled: searchValue.length > 0,
   });
 
   const userSuggestions = data?.filter((suggestion) => suggestion.type === 'user') ?? [];
   const organizationSuggestions = data?.filter((suggestion) => suggestion.type === 'organization') ?? [];
 
   const onSelectSuggestion = (suggestion: UserSuggestion | OrganizationSuggestion) => {
+    // Update recent searches with the search value
+    updateRecentSearches(searchValue);
+
     if (suggestion.type === 'user') {
       navigate({
         to: '/user/$userIdentifier',
@@ -80,17 +82,13 @@ export const AppSearch = () => {
     dialog.remove(false);
   };
 
-  useEffect(() => {
-    updateRecentSearches(debouncedValue);
-  }, [debouncedValue]);
-
   return (
     <Command className="rounded-lg border" shouldFilter={false}>
       <CommandInput
-        value={value}
+        value={searchValue}
         placeholder={t('common:placeholder.search')}
         onValueChange={(value) => {
-          setValue(value);
+          setSearchValue(value);
         }}
       />
       <CommandList>
@@ -101,7 +99,7 @@ export const AppSearch = () => {
             </CommandLoading>
           ) : (
             <>
-              {value.replaceAll(' ', '').length > 0 && t('common:no_results_found')}
+              {searchValue.replaceAll(' ', '').length > 0 && t('common:no_results_found')}
               {recentSearches.length > 0 && (
                 <div className="flex flex-col">
                   <span className="text-start  py-1 px-2 text-muted-foreground font-medium text-xs">History</span>
@@ -110,7 +108,7 @@ export const AppSearch = () => {
                       type="button"
                       key={search}
                       onClick={() => {
-                        setValue(search);
+                        setSearchValue(search);
                       }}
                       className="relative flex justify-between cursor-pointer select-none h-11 items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                     >
