@@ -30,7 +30,11 @@ const OnboardingWelcome = ({ setWelcomeMessage }: OnboardingWelcomeProps) => {
   );
 };
 
-const Onboarding = () => {
+interface OnboardingProps {
+  isDialog: boolean;
+}
+
+const Onboarding = ({ isDialog }: OnboardingProps) => {
   const [welcomeMessage, setWelcomeMessage] = useState<boolean>(true);
   const { hasStarted } = useMountedState();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
@@ -161,9 +165,11 @@ const Onboarding = () => {
                     </Card>
                   </Step>
                 );
+
               })}
               <Footer
-                createOrganizationFormValues={createOrganizationFormValues}
+                              isDialog={isDialog}
+createOrganizationFormValues={createOrganizationFormValues}
                 updateUserFormValues={updateUserFormValues}
                 inviteFormValues={inviteFormValues}
               />

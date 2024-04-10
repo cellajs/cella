@@ -5,14 +5,16 @@ import { updateUser, type UpdateUserParams } from '~/api/users';
 import { useEffect, useMemo } from 'react';
 import { invite, type InviteProps } from '~/api/general';
 import { useUserStore } from '~/store/user';
+import { dialog } from '../dialoger/state';
 
 interface Props {
   createOrganizationFormValues: CreateOrganizationParams | null;
   updateUserFormValues: UpdateUserParams | null;
   inviteFormValues: InviteProps | null;
+  isDialog: boolean;
 }
 
-const Footer = ({ createOrganizationFormValues, updateUserFormValues, inviteFormValues }: Props) => {
+const Footer = ({ createOrganizationFormValues, updateUserFormValues, inviteFormValues, isDialog }: Props) => {
   const user = useUserStore((state) => state.user);
   const { currentStep, nextStep, prevStep, hasCompletedAllSteps, resetSteps, isLastStep } = useStepper();
 
@@ -34,7 +36,11 @@ const Footer = ({ createOrganizationFormValues, updateUserFormValues, inviteForm
     return 'Next';
   }, [currentStep?.id, createOrganizationFormValues, updateUserFormValues, inviteFormValues]);
 
-  const onCompleted = () => {};
+  const onCompleted = () => {
+    if (isDialog) {
+      dialog.remove();
+    }
+  };
 
   useEffect(() => {
     if (hasCompletedAllSteps) {
