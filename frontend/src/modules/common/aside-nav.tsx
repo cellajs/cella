@@ -1,5 +1,4 @@
-import { Link, useRouterState } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useSetHashOnScroll } from '~/hooks/use-set-hash-on-scroll';
 import { cn } from '~/lib/utils';
@@ -15,27 +14,11 @@ interface AsideNavProps {
 }
 
 export const AsideNav = ({ tabs, className }: AsideNavProps) => {
-  const { location } = useRouterState();
   const { t } = useTranslation();
 
   const sectionIds = tabs.map((tab) => tab.value);
-  const topSectionId = tabs[0].value;
 
   useSetHashOnScroll({ sectionIds });
-
-  useEffect(() => {
-    const locationHash = location.hash.replace('#', '');
-    if (sectionIds.includes(locationHash) && locationHash !== topSectionId) {
-      const element = document.getElementById(locationHash);
-      if (!element) return;
-      element.scrollIntoView();
-    }
-    document.documentElement.classList.add('scroll-smooth');
-
-    return () => {
-      document.documentElement.classList.remove('scroll-smooth');
-    };
-  }, []);
 
   return (
     <div className={cn('w-full flex flex-col gap-1', className)}>
@@ -44,6 +27,7 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
 
         return (
           <Link
+            key={value}
             className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}
             hash={hash}
             replace

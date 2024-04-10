@@ -1,67 +1,74 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 
 export const useSetHashOnScroll = ({ sectionIds = [] }: { sectionIds: string[] }) => {
   const navigate = useNavigate();
   const observer = useRef<IntersectionObserver | null>(null);
 
-  // State to store the last known Y position to determine scroll direction
-  const lastYPosition = useRef<number>(window.scrollY);
-
-  // State to track the direction of the scroll, 'down' or 'up'
-  const [scrollDirection, setScrollDirection] = useState<'down' | 'up'>('down');
-
   useEffect(() => {
-    const updateScrollDirection = () => {
-      const scrollY = window.scrollY;
-      const newDirection: 'down' | 'up' = scrollY > lastYPosition.current ? 'down' : 'up';
-      setScrollDirection(newDirection);
-      lastYPosition.current = scrollY;
-    };
+    // Initial mounting: scroll to the hash location
+    const locationHash = location.hash.replace('#', '');
 
-    window.addEventListener('scroll', updateScrollDirection);
-    return () => window.removeEventListener('scroll', updateScrollDirection);
+    if (sectionIds.includes(locationHash) && locationHash !== sectionIds[0]) {
+      const element = document.getElementById(locationHash);
+      if (!element) return;
+      element.scrollIntoView();
+    }
+    document.documentElement.classList.add('scroll-smooth');
+
+    return () => {
+      document.documentElement.classList.remove('scroll-smooth');
+    };
   }, []);
 
   useEffect(() => {
     const options = {
       root: null as Element | null,
-      rootMargin: '0px',
-      threshold: 0.5,
+      rootMargin: '-10% 0px -10% 0px',
+      threshold: 0.2,
     };
 
-    observer.current = new IntersectionObserver((entries) => {
-      for (let i = 0; i < entries.length; i++) {
-        const entry = entries[i];
-        if (entry.isIntersecting) {
-          const hashSectionIndex = location.hash ? sectionIds.indexOf(location.hash.replace('#', '')) : 0;
-          const intersectingSectionIndex = sectionIds.indexOf(entry.target.id);
+    // Ensure observer is created only once
+    if (!observer.current) {
+      observer.current = new IntersectionObserver((entries) => {
+        const intersectingEntries = entries.filter((entry) => entry.isIntersecting);
+        if (intersectingEntries.length === 0 || intersectingEntries.length > 1) return;
 
-          // Update hash only if the intersecting section aligns with the scroll direction and position.
-          if (
-            // User scrolls down and the intersecting section is above the hash location section
-            (scrollDirection === 'down' && intersectingSectionIndex > hashSectionIndex) ||
-            // User scrolls up and the intersecting section is below the hash location section AND current section is NOT the top section
-            (scrollDirection === 'up' && intersectingSectionIndex > 0 && intersectingSectionIndex < hashSectionIndex) ||
-            // User scrolls up from the second section to the top section
-            (scrollDirection === 'up' && intersectingSectionIndex === 0 && hashSectionIndex === 1)
-          ) {
-            const hash = entry.target.id;
-            return navigate({ hash, replace: true });
+        console.log('intersectingEntries', intersectingEntries);
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const currentHashIndex = location.hash ? sectionIds.indexOf(location.hash.replace('#', '')) : 0;
+            const entryIndex = sectionIds.indexOf(entry.target.id);
+
+            // Determine scroll direction based on the boundingClientRect
+            const scrollDirection: 'down' | 'up' = entry.boundingClientRect.top < 0 ? 'up' : 'down';
+
+            console.log(entry.target.id, 'scrollDirection', scrollDirection, 'entryIndex', entryIndex, 'currentHashIndex', currentHashIndex);
+
+            if (
+              // User scrolls down and the intersecting section is above the hash location section
+              (scrollDirection === 'down' && entryIndex > currentHashIndex) ||
+              // User scrolls up and the intersecting section is below the hash location section AND current section is NOT the top section
+              (scrollDirection === 'up' && entryIndex < currentHashIndex)
+            ) {
+              const hash = entry.target.id;
+              return navigate({ hash, replace: true });
+            }
           }
         }
-      }
-    }, options);
+      }, options);
+    }
 
-    // Replace forEach with a traditional for loop for observing sections
     for (let i = 0; i < sectionIds.length; i++) {
       const id = sectionIds[i];
       const section = document.getElementById(id);
       if (section) observer.current?.observe(section);
     }
 
-    return () => observer.current?.disconnect();
-  }, [scrollDirection, location]);
+    return () => {
+      observer.current?.disconnect();
+    };
+  }, [sectionIds]);
 
-  return null; // This hook does not directly render anything
+  return null;
 };
