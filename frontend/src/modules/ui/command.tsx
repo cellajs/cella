@@ -39,8 +39,8 @@ interface ZeroValSet {
 }
 
 const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & ZeroValSet>(({ className, value, setZeroValue, ...props }, ref) => (
-  <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+  <div className="flex items-center border-b px-3 relative" cmdk-input-wrapper="">
+    <Search className="mr-2 h-4 w-4 shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
     <CommandPrimitive.Input
       value={value}
       ref={ref}
@@ -53,7 +53,7 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & Zero
     {value.length > 0 && (
       <XCircle
         size={16}
-        className="absolute right-8 opacity-70 hover:opacity-100 cursor-pointer"
+        className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
         onClick={() => {
           if (setZeroValue) setZeroValue('');
         }}
@@ -113,7 +113,7 @@ const CommandLoading = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Loading>
 >((props, ref) => (
   <CommandPrimitive.Loading
-    className="overflow-hidden absolute inset-0 flex justify-center items-center bg-opacity-30 bg-[#000] z-50"
+    className="overflow-hidden absolute inset-0 flex justify-center items-center bg-opacity-30 bg-background z-50"
     ref={ref}
     {...props}
   />

@@ -9,6 +9,7 @@ export type DialogT = {
   className?: string;
   refocus?: boolean;
   autoFocus?: boolean;
+  hideClose?: boolean;
   content?: React.ReactNode;
 };
 
@@ -78,6 +79,7 @@ const dialogFunction = (content: React.ReactNode, data?: ExternalDialog) => {
     drawerOnMobile: true,
     refocus: true,
     autoFocus: true,
+    hideClose: false,
     ...data,
     id,
   });

@@ -18,10 +18,10 @@ interface MenuSectionProps {
   key: string;
   section: SectionItem;
   data: UserMenu[keyof UserMenu];
-  menutItemClick: () => void;
+  menuItemClick: () => void;
 }
 
-export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutItemClick }) => {
+export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
   const { activeSections, toggleSection } = useNavigationStore();
@@ -63,7 +63,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menutIt
       );
     }
 
-    return sectionData.active.map((item: Page) => <SheetMenuItem key={item.id} item={item} menutItemClick={menutItemClick} />);
+    return sectionData.active.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />);
   };
 
   // Render the option items to configure the section

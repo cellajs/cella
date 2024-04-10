@@ -49,6 +49,7 @@ export function Dialoger() {
             <div className="fixed inset-0 z-30 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
           )}
           <DialogContent
+            hideClose={dialog.hideClose}
             onOpenAutoFocus={(event: Event) => {
               if (!dialog.autoFocus) event.preventDefault();
             }}

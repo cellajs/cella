@@ -42,24 +42,24 @@ export const SheetMenu = memo(() => {
   const [searchResults, setSearchResults] = useState<SearchResultsType>(initialSearchResults);
 
   // Handle menu item click
-  const menutItemClick = () => {
+  const menuItemClick = () => {
     if (isSmallScreen || !keepMenuOpen) setSheet(null);
   };
 
   // Render search results
   const searchResultsListItems = useCallback(() => {
     return Object.entries(searchResults).flatMap(([_, items]) => {
-      return items.length > 0 ? items.map((item: Page) => <SheetMenuItem key={item.id} item={item} menutItemClick={menutItemClick} />) : [];
+      return items.length > 0 ? items.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />) : [];
     });
-  }, [searchResults, menutItemClick]);
+  }, [searchResults, menuItemClick]);
 
   const renderedSections = useMemo(
     () =>
       menuSections.map((section) => {
         const menuSection = menu[section.id as keyof UserMenu];
-        return <MenuSection key={section.id} section={section} data={menuSection} menutItemClick={menutItemClick} />;
+        return <MenuSection key={section.id} section={section} data={menuSection} menuItemClick={menuItemClick} />;
       }),
-    [menu, menutItemClick],
+    [menu, menuItemClick],
   );
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {

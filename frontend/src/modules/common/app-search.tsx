@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Sticky from 'react-sticky-el';
 import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { useNavigationStore } from '~/store/navigation';
 import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
@@ -32,7 +32,8 @@ export const AppSearch = () => {
   };
 
   const updateRecentSearches = (value: string) => {
-    if (value.replaceAll(' ', '') === '') return;
+    if (!value) return;
+    if (value.replaceAll(' ', '').length < 3) return;
     const hasSubstringMatch = recentSearches.some((element) => element.toLowerCase().includes(value));
     if (hasSubstringMatch) return;
     useNavigationStore.setState((state) => {
@@ -90,7 +91,7 @@ export const AppSearch = () => {
     const calculateMaxVisibleItems = () => {
       if (scrollAreaRef.current) {
         const scrollAreaHeight = scrollAreaRef.current.clientHeight;
-        const itemHeight = 44;
+        const itemHeight = 24;
         return Math.floor(scrollAreaHeight / itemHeight);
       }
       return 0;
@@ -106,6 +107,7 @@ export const AppSearch = () => {
       <CommandInput
         value={searchValue}
         setZeroValue={setSearchValue}
+        autoFocus
         placeholder={t('common:placeholder.search')}
         onValueChange={(value) => {
           setSearchValue(value);
@@ -118,35 +120,38 @@ export const AppSearch = () => {
           </CommandLoading>
         )}
         <CommandList>
-          {recentSearches.length > 0 && userSuggestions.length < 1 && organizationSuggestions.length < 1 && (
+          {userSuggestions.length < 1 && organizationSuggestions.length < 1 && (
             <>
-              {searchValue.replaceAll(' ', '').length > 0 && <div className="py-4 text-center text-sm">{t('common:no_results_found')}</div>}
-              <CommandGroup>
-                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-[#0E0E11]">History</div>
-                {recentSearches.map((search) => (
-                  <CommandItem
-                    key={search}
-                    onSelect={() => {
-                      setSearchValue(search);
-                    }}
-                    className="justify-between"
-                  >
-                    <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                      <History className="h-5 w-5" />
-                      <span className="underline-offset-4 truncate font-medium">{search}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        deleteItemFromList(search);
+              {!!searchValue.length && <CommandEmpty>{t('common:no_results_found')}</CommandEmpty>}
+              {searchValue.length === 0 && <CommandEmpty>{t('common:global_search.text')}</CommandEmpty>}
+              {!!recentSearches.length && (
+                <CommandGroup>
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-background">{t('common:history')}</div>
+                  {recentSearches.map((search) => (
+                    <CommandItem
+                      key={search}
+                      onSelect={() => {
+                        setSearchValue(search);
                       }}
+                      className="justify-between"
                     >
-                      <X className="h-5 w-5 opacity-70 hover:opacity-100" />
-                    </button>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+                      <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                        <History className="h-5 w-5" />
+                        <span className="underline-offset-4 truncate font-medium">{search}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteItemFromList(search);
+                        }}
+                      >
+                        <X className="h-5 w-5 opacity-70 hover:opacity-100" />
+                      </button>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
             </>
           )}
           {/* {isFetching && (
@@ -157,7 +162,7 @@ export const AppSearch = () => {
           {userSuggestions.length > 0 && (
             <CommandGroup>
               <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-10">
-                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-[#0E0E11]">{t('common:user.plural')}</div>
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-background">{t('common:user.plural')}</div>
               </Sticky>
               {visibleUserSuggestions.map((suggestion) => (
                 <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
@@ -172,8 +177,8 @@ export const AppSearch = () => {
           {organizationSuggestions.length > 0 && userSuggestions.length > 0 && <CommandSeparator />}
           {organizationSuggestions.length > 0 && (
             <CommandGroup>
-              <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-10">
-                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-[#0E0E11]">{t('common:organization.plural')}</div>
+              <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-20">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-background">{t('common:organization.plural')}</div>
               </Sticky>
               {visibleOrganizationSuggestions.map((suggestion) => (
                 <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>

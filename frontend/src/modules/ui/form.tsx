@@ -19,8 +19,8 @@ import { Label } from '~/modules/ui/label';
 import { Badge } from './badge';
 import { Button } from './button';
 
-type LabelDirectionContextType = 'top' | 'left';
-const LabelDirectionContext = React.createContext<LabelDirectionContextType | string>('top');
+export type LabelDirectionType = 'top' | 'left';
+const LabelDirectionContext = React.createContext<LabelDirectionType | string>('top');
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 type FormProps<TFieldValues extends FieldValues, TContext = any, TTransformedValues extends FieldValues = TFieldValues> = FormProviderProps<

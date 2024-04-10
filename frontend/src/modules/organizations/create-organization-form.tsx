@@ -15,7 +15,7 @@ import { checkSlugAvailable } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
-import { Form } from '~/modules/ui/form';
+import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
@@ -26,6 +26,7 @@ interface CreateOrganizationFormProps {
   dialog?: boolean;
   withDraft?: boolean;
   withButtons?: boolean;
+  labelDirection?: LabelDirectionType;
   initValues?: FormValues | null;
   onValuesChange?: (values: FormValues | null) => void;
 }
@@ -37,6 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
   callback,
   dialog: isDialog,
+  labelDirection = 'top',
   initValues,
   onValuesChange,
   withButtons = true,
@@ -135,7 +137,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
   }, [slug]);
 
   return (
-    <Form {...form}>
+    <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <InputFormField

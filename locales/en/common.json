@@ -310,5 +310,6 @@
   "error.invalid_state.text": "Could not complete the authentication process.",
   "success.password_reset": "Your password has been reset",
   "invitation_accepted": "Invitation has successfully been accepted",
-  "get_started": "Get started"
+  "get_started": "Get started",
+  "history": "History"
 }

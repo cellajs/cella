@@ -1,9 +1,10 @@
+import { ArrowDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { InviteProps } from '~/api/general';
 import type { CreateOrganizationParams } from '~/api/organizations';
 import type { UpdateUserParams } from '~/api/users';
-import useMountedState from '~/hooks/use-mounted';
+import useMounted from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
@@ -13,7 +14,6 @@ import { Step, type StepItem, Stepper } from '../../ui/stepper';
 import UpdateUserForm from '../../users/update-user-form';
 import InviteUsers from '../invite-users';
 import Footer from './footer';
-import { ArrowDown } from 'lucide-react';
 
 interface OnboardingWelcomeProps {
   setWelcomeMessage: (val: boolean) => void;
@@ -25,7 +25,7 @@ const OnboardingWelcome = ({ setWelcomeMessage }: OnboardingWelcomeProps) => {
   return (
     <div className="flex flex-col items-center text-center mx-auto space-y-6 p-4 max-w-[700px]">
       <h1 className="text-3xl font-bold">{t('common:onboarding_welcome')}</h1>
-      <p className="text-xl md:text-2xl leading-7 pb-8">{t('common:onboarding_welcome.text')}</p>
+      <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">{t('common:onboarding_welcome.text')}</p>
       <Button onClick={() => setWelcomeMessage(false)}>
         {t('common:get_started')}
         <div className="-rotate-90 ml-4">
@@ -42,7 +42,7 @@ interface OnboardingProps {
 
 const Onboarding = ({ isDialog }: OnboardingProps) => {
   const [welcomeMessage, setWelcomeMessage] = useState<boolean>(true);
-  const { hasStarted } = useMountedState();
+  const { hasStarted } = useMounted();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const user = useUserStore((state) => state.user);
@@ -104,6 +104,7 @@ const Onboarding = ({ isDialog }: OnboardingProps) => {
 
                         <CardContent>
                           <CreateOrganizationForm
+                            labelDirection="top"
                             initValues={createOrganizationFormValues}
                             onValuesChange={setCreateOrganizationFormValues}
                             withButtons={false}

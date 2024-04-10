@@ -1,4 +1,4 @@
-import useMountedState from '~/hooks/use-mounted';
+import useMounted from '~/hooks/use-mounted';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
@@ -18,7 +18,7 @@ export const DataTableSkeleton = ({
   shrinkTable = false,
 }: DataTableSkeletonProps) => {
   const renderCellHeight = cellHeight - 18;
-  const { hasStarted } = useMountedState();
+  const { hasStarted } = useMounted();
 
   return (
     <div className={`w-full space-y-3 overflow-auto transition-opacity ${hasStarted ? 'opacity-100' : 'opacity-0'}`}>
