@@ -12,6 +12,7 @@ import { dialog } from '../common/dialoger/state';
 import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
 import { AsideNav } from '~/modules/common/aside-nav';
+import { AsideAnchor } from '../common/aside-anchor';
 
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
@@ -49,40 +50,44 @@ const OrganizationSettings = () => {
       </div>
 
       <div className="md:w-[70%] space-y-6">
-        <Card id="general">
-          <CardHeader>
-            <CardTitle>{t('common:general')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UpdateOrganizationForm
-              organization={organization}
-              callback={(organization) => {
-                if (organizationIdentifier !== organization.slug) {
-                  navigate({
-                    to: '/$organizationIdentifier/settings',
-                    params: { organizationIdentifier: organization.slug },
-                    replace: true,
-                  });
-                }
-              }}
-            />
-          </CardContent>
-        </Card>
+        <AsideAnchor id="general">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('common:general')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UpdateOrganizationForm
+                organization={organization}
+                callback={(organization) => {
+                  if (organizationIdentifier !== organization.slug) {
+                    navigate({
+                      to: '/$organizationIdentifier/settings',
+                      params: { organizationIdentifier: organization.slug },
+                      replace: true,
+                    });
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
+        </AsideAnchor>
 
-        <Card id="delete-organization">
-          <CardHeader>
-            <CardTitle>{t('common:delete_organization')}</CardTitle>
-            <CardDescription>
-              <Trans i18nKey="common:delete_organization_notice.text" values={{ name: organization.name }} />
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              <span>{t('common:delete_organization')}</span>
-            </Button>
-          </CardContent>
-        </Card>
+        <AsideAnchor id="delete-organization">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('common:delete_organization')}</CardTitle>
+              <CardDescription>
+                <Trans i18nKey="common:delete_organization_notice.text" values={{ name: organization.name }} />
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>{t('common:delete_organization')}</span>
+              </Button>
+            </CardContent>
+          </Card>
+        </AsideAnchor>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { useSetHashOnScroll } from '~/hooks/use-set-hash-on-scroll';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { cn } from '~/lib/utils';
 import { buttonVariants } from '../ui/button';
 
@@ -18,7 +18,7 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
 
   const sectionIds = tabs.map((tab) => tab.value);
 
-  useSetHashOnScroll({ sectionIds });
+  useScrollSpy({ sectionIds });
 
   return (
     <div className={cn('w-full flex flex-col gap-1', className)}>

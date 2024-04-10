@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 
-export const useSetHashOnScroll = ({ sectionIds = [] }: { sectionIds: string[] }) => {
+export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
   const navigate = useNavigate();
   const observer = useRef<IntersectionObserver | null>(null);
 
@@ -34,7 +34,8 @@ export const useSetHashOnScroll = ({ sectionIds = [] }: { sectionIds: string[] }
         const intersectingEntries = entries.filter((entry) => entry.isIntersecting);
         if (intersectingEntries.length === 0 || intersectingEntries.length > 1) return;
 
-        console.log('intersectingEntries', intersectingEntries);
+        // TODO: how to recognize if two sections are intersecting?
+        //console.log('intersectingEntries', intersectingEntries);
         for (const entry of entries) {
           if (entry.isIntersecting) {
             const currentHashIndex = location.hash ? sectionIds.indexOf(location.hash.replace('#', '')) : 0;
@@ -43,7 +44,7 @@ export const useSetHashOnScroll = ({ sectionIds = [] }: { sectionIds: string[] }
             // Determine scroll direction based on the boundingClientRect
             const scrollDirection: 'down' | 'up' = entry.boundingClientRect.top < 0 ? 'up' : 'down';
 
-            console.log(entry.target.id, 'scrollDirection', scrollDirection, 'entryIndex', entryIndex, 'currentHashIndex', currentHashIndex);
+            // console.log(entry.target.id, 'scrollDirection', scrollDirection, 'entryIndex', entryIndex, 'currentHashIndex', currentHashIndex);
 
             if (
               // User scrolls down and the intersecting section is above the hash location section

@@ -15,7 +15,7 @@ import { Hero } from './hero';
 import Integrations from './integrations';
 import Pricing from './pricing';
 import Why from './why';
-import { useSetHashOnScroll } from '~/hooks/use-set-hash-on-scroll';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
 
 interface AboutSectionProps {
   title: string;
@@ -46,13 +46,15 @@ const About = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  useSetHashOnScroll({ sectionIds });
+  useScrollSpy({ sectionIds });
 
   // If the hash already matches but the user is not at the section, clear and re-set the hash
   const handleMismatch = (target: string) => {
     if (location.hash !== `#${target}`) return;
     navigate({ hash: '', replace: true });
-    setTimeout(() => {navigate({ hash: target, replace: true })}, 1);
+    setTimeout(() => {
+      navigate({ hash: target, replace: true });
+    }, 1);
   };
 
   return (
