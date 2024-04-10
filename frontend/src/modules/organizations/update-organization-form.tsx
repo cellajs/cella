@@ -136,6 +136,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           url={form.getValues('thumbnailUrl')}
           setUrl={setImageUrl}
         />
+        <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <InputFormField
           control={form.control}
           name="slug"
@@ -152,7 +153,6 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
             )
           }
         />
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
         <InputFormField
           control={form.control}

@@ -127,7 +127,7 @@ const Onboarding = ({ isDialog }: OnboardingProps) => {
                         <CardContent>
                           <UpdateUserForm
                             user={user}
-                            hiddenFields={['email', 'bio']}
+                            hiddenFields={['email', 'bio', 'newsletter']}
                             initValues={updateUserFormValues}
                             onValuesChange={setUpdateUserFormValues}
                             withButtons={false}
@@ -150,6 +150,7 @@ const Onboarding = ({ isDialog }: OnboardingProps) => {
                         <CardContent>
                           <InviteUsers
                             type="organization"
+                            mode="email"
                             onValuesChange={setInviteFormValues}
                             initValues={inviteFormValues}
                             withButtons={false}

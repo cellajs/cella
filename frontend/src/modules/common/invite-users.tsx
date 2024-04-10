@@ -43,7 +43,7 @@ const InviteUsers = ({
           <div className="flex flex-col p-4">
             <div className="font-light">{t('common:invite_by_name')}</div>
             <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
-              <strong>Continue</strong>
+              <strong>{t('common:continue')}</strong>
               <ChevronRight className="ml-1" size={16} />
             </div>
           </div>
