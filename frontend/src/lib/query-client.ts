@@ -3,9 +3,9 @@ import { toast } from 'sonner';
 import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
 import { useAlertsStore } from '~/store/alerts';
-import router from './router';
-import type { User } from '~/types';
 import { useUserStore } from '~/store/user';
+import type { User } from '~/types';
+import router from './router';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -46,7 +46,7 @@ const onError = (error: Error) => {
       if (location.pathname?.length > 2 && !location.pathname.startsWith('/auth/')) {
         redirectOptions.search = { redirect: location.pathname };
       }
-      
+
       useUserStore.setState({ user: null as unknown as User });
       router.navigate(redirectOptions);
     }

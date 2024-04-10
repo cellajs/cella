@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
+import useMounted from '~/hooks/use-mounted';
+import { cn } from '~/lib/utils';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/app-footer';
 import Logo from '~/modules/common/logo';
-import useMountedState from '~/hooks/use-mounted';
-import { cn } from '~/lib/utils';
 
 interface AuthPageProps {
   children?: React.ReactNode;
@@ -16,7 +16,7 @@ const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
 
 const AuthPage = ({ children }: AuthPageProps) => {
-  const { hasStarted, hasWaited } = useMountedState();
+  const { hasStarted, hasWaited } = useMounted();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   return (

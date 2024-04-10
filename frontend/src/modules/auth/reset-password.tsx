@@ -9,13 +9,13 @@ import AuthPage from './auth-page';
 
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import type { ApiError } from '~/api';
 import { resetPassword as baseResetPassword } from '~/api/authentication';
 import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { toast } from 'sonner';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 

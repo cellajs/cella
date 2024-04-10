@@ -26,7 +26,7 @@ export const createOrganizationRouteConfig = createRouteConfig({
   guard: authGuard(),
   tags: ['organizations'],
   summary: 'Create a new organization',
-  // TODO: all users can create, but somehow we need to restrict it to just one and with more needing manual activation by an admin? 
+  // TODO: all users can create, but somehow we need to restrict it to just one and with more needing manual activation by an admin?
   // description: `
   //   Permissions:
   //     - Users with role 'ADMIN'

@@ -19,13 +19,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
 import { checkSlugAvailable } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
-import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 
 interface Props {
   user: User;
@@ -53,14 +53,23 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
   });
 };
 
-const UpdateUserForm = ({ user, callback, dialog: isDialog, initValues, onValuesChange, hiddenFields, withButtons = true, withDraft = true }: Props) => {
+const UpdateUserForm = ({
+  user,
+  callback,
+  dialog: isDialog,
+  initValues,
+  onValuesChange,
+  hiddenFields,
+  withButtons = true,
+  withDraft = true,
+}: Props) => {
   const { t } = useTranslation();
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
   // Hide fields if requested
   if (hiddenFields) {
-    const fieldIds = hiddenFields.map(field => `${field}-form-item-container`);
+    const fieldIds = hiddenFields.map((field) => `${field}-form-item-container`);
     useHideElementsById(fieldIds);
   }
 

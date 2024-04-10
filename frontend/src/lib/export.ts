@@ -1,17 +1,43 @@
-import type { ReactElement } from 'react';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+import type { ReactElement } from 'react';
 import type { Theme } from '~/store/theme';
 
 dayjs.extend(localizedFormat);
 
+interface Column {
+  key: string;
+  name: ReactElement | string;
+}
+
+const formatBodyData = <R>(rows: R[], columns: Column[]): string[][] => {
+  const formatRowData = <R>(row: R, column: Column) => {
+    if (column.key === 'adminCount' || column.key === 'memberCount') {
+      const key = column.key.replace('Count', 's');
+      return (row as { counts: Record<string, string> }).counts[key];
+    }
+    const date = dayjs((row as Record<string, string>)[column.key]);
+    if (date.isValid()) {
+      return date.format('lll');
+    }
+    return (row as Record<string, string>)[column.key];
+  };
+
+  return rows.map((row) => columns.map((column) => formatRowData(row, column)));
+};
+
+const filterColumns = (column: Column) => {
+  if ('visible' in column && column.key !== 'checkbox-column') return column.visible as boolean;
+  return false;
+};
 // Export table data to CSV
 export async function exportToCsv<R>(columns: { key: string; name: ReactElement | string }[], rows: R[], fileName: string) {
   if (!rows.length) return;
 
-  const preparedColumns = columns.filter((column) => column.name);
+  const preparedColumns = columns.filter((column) => filterColumns(column));
+  console.log('preparedColumns:', preparedColumns);
   const head = [preparedColumns.map((column) => String(column.name))];
-  const body = rows.map((row) => preparedColumns.map((column) => row[column.key as keyof R]));
+  const body = formatBodyData(rows, preparedColumns);
   const content = [...head, ...body].map((cells) => cells.map(serialiseCellValue).join(',')).join('\n');
 
   downloadFile(fileName, new Blob([content], { type: 'text/csv;charset=utf-8;' }));
@@ -25,17 +51,9 @@ export async function exportToPdf<R>(
   theme: Theme,
 ) {
   // Redo type assign into the  columns
-  const preparedColumns = columns.filter((column) => (column as unknown as { visible: boolean }).visible);
+  const preparedColumns = columns.filter((column) => filterColumns(column));
   const head = [preparedColumns.map((column) => String(column.name))];
-  const body = rows.map((row) =>
-    preparedColumns.map((column) => {
-      if (column.key === 'adminCount' || column.key === 'memberCount') {
-        const key = column.key.replace('Count', 's');
-        return (row as { counts: Record<string, string> }).counts[key];
-      }
-      return row[column.key as keyof R];
-    }),
-  ) as string[][];
+  const body = formatBodyData(rows, preparedColumns);
 
   const [{ jsPDF }, autoTable] = await Promise.all([import('jspdf'), (await import('jspdf-autotable')).default]);
   const doc = new jsPDF({
@@ -44,8 +62,7 @@ export async function exportToPdf<R>(
   });
 
   // Add date of export and name of the page that is exported.
-  const currentDate = dayjs();
-  const exportDate = currentDate.format('lll');
+  const exportDate = dayjs().format('lll');
   const exportInfo = `Exported from page: ${pageName}\nExport Date: ${exportDate}`;
   doc.text(exportInfo, 10, 10);
 

@@ -48,7 +48,14 @@ export function Dialoger() {
           {dialog.container && (
             <div className="fixed inset-0 z-30 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
           )}
-          <DialogContent className={dialog.className} container={dialog.container}>
+          <DialogContent
+            hideClose={dialog.hideClose}
+            onOpenAutoFocus={(event: Event) => {
+              if (!dialog.autoFocus) event.preventDefault();
+            }}
+            className={dialog.className}
+            container={dialog.container}
+          >
             {dialog.title || dialog.text ? (
               <DialogHeader>
                 {dialog.title && <DialogTitle>{dialog.title}</DialogTitle>}

@@ -4,7 +4,6 @@ import type React from 'react';
 import { Fragment } from 'react';
 import { useThemeStore } from '~/store/theme';
 
-import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -35,7 +34,6 @@ export const navItems: NavItem[] = [
 ];
 
 const AppNav = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { hasStarted } = useMounted();
   const isSmallScreen = useBreakpoints('max', 'lg');
@@ -48,11 +46,11 @@ const AppNav = () => {
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
       dialog(<AppSearch />, {
-        className: 'sm:max-w-2xl',
-        title: t('common:search'),
-        text: t('common:global_search.text'),
+        className: 'sm:max-w-2xl p-0 border-0',
         drawerOnMobile: false,
         refocus: false,
+        hideClose: true,
+        autoFocus: !isSmallScreen,
       });
 
       if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);

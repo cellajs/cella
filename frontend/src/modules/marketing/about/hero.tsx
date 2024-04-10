@@ -26,7 +26,7 @@ export const Hero = ({ title, subtitle, text, children }: HeroProps) => {
 
   return (
     <>
-      <section id="hero" className={sectionClass}>
+      <section id="cella" className={sectionClass}>
         <header ref={ref} className={headerClass}>
           <div className="container flex max-w-[64rem] flex-col items-center gap-4 text-center">
             <Badge className="hidden sm:block">{t('common:prerelease')}</Badge>

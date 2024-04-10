@@ -1,12 +1,12 @@
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { InviteProps } from '~/api/general';
 import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { AppAlert } from './app-alert';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
-import type { InviteProps } from '~/api/general';
 
 interface Props {
   organization?: Organization;

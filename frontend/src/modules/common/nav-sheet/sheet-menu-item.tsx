@@ -4,15 +4,15 @@ import { type Page, UserRole } from '~/types';
 
 interface SheetMenuItemProps {
   item: Page;
-  menutItemClick: () => void;
+  menuItemClick: () => void;
 }
 
-export const SheetMenuItem = ({ item, menutItemClick }: SheetMenuItemProps) => {
+export const SheetMenuItem = ({ item, menuItemClick }: SheetMenuItemProps) => {
   return (
     <Link
       resetScroll={false}
       className="group mb-1 flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground"
-      onClick={menutItemClick}
+      onClick={menuItemClick}
       aria-label={item.name}
       to="/$organizationIdentifier/members"
       params={{ organizationIdentifier: item.slug }}

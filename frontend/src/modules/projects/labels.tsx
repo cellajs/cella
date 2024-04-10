@@ -1,8 +1,9 @@
 'use client';
 
-import * as React from 'react';
 import { Check, ChevronsUpDown, Edit2 } from 'lucide-react';
+import * as React from 'react';
 
+import { DialogClose } from '@radix-ui/react-dialog';
 import { cn } from '~/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import {
@@ -20,10 +21,9 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandSeparator } from '~/modules/ui/command';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { DialogClose } from '@radix-ui/react-dialog';
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 
 type Framework = Record<'value' | 'label' | 'color', string>;
 

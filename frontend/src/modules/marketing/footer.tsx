@@ -108,6 +108,7 @@ export function MarketingFooter() {
 
           <Link
             to="/about"
+            replace={location.pathname === '/about'}
             hash=""
             onClick={() => {
               scrollTo(0, 0);
