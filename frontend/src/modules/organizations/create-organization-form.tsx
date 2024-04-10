@@ -19,6 +19,7 @@ import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
+import { checkSlugAvailable } from 'backend/modules/general/helpers/check-slug';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -83,6 +84,20 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
     },
   });
 
+  const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
+    mutationFn: checkSlugAvailable,
+    onSuccess: (isAvailable) => {
+      if (!isAvailable) {
+        form.setError('slug', {
+          type: 'manual',
+          message: t('common:error.slug_exists'),
+        });
+      } else {
+        form.clearErrors('slug');
+      }
+    },
+  });
+
   const onSubmit = (values: FormValues) => {
     create(values);
   };
@@ -108,6 +123,17 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
     onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
   }, [onValuesChange, allFields]);
 
+  const slug = useWatch({
+    control: form.control,
+    name: 'slug',
+  });
+
+  useEffect(() => {
+    if (slug) {
+      checkSlug(slug);
+    }
+  }, [slug]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -115,7 +141,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
         <InputFormField control={form.control} name="slug" label={t('common:slug')} required />
         {withButtons && (
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+            <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || isCheckPending}>
               {t('common:create')}
             </Button>
             <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
