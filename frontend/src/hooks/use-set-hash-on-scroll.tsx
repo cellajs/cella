@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 
-export const useSetHashOnScroll = ({ sectionIds = [], useRouter }: { sectionIds: string[]; useRouter?: boolean }) => {
+export const useSetHashOnScroll = ({ sectionIds = [] }: { sectionIds: string[] }) => {
   const navigate = useNavigate();
   const observer = useRef<IntersectionObserver | null>(null);
 
@@ -47,8 +47,7 @@ export const useSetHashOnScroll = ({ sectionIds = [], useRouter }: { sectionIds:
             (scrollDirection === 'up' && intersectingSectionIndex === 0 && hashSectionIndex === 1)
           ) {
             const hash = entry.target.id;
-            if (useRouter) return navigate({ hash, replace: true });
-            history.replaceState(null, '', `#${hash}`);
+            return navigate({ hash, replace: true });
           }
         }
       }

@@ -34,6 +34,7 @@ export function MarketingNav() {
       <Link
         to={item.url}
         hash={item.hash}
+        replace={location.pathname === '/about'}
         key={item.id}
         onClick={() => toggleSheet(false)}
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
@@ -56,7 +57,7 @@ export function MarketingNav() {
               <HamburgerButton isOpen={showSheet} toggle={setShowSheet} />
             </div>
 
-            <Link to="/about" hash="" className="md:ml-2 hover:opacity-90 active:scale-95 relative" aria-label="Go to about page">
+            <Link to="/about" hash="" replace={location.pathname === '/about'} className="md:ml-2 hover:opacity-90 active:scale-95 relative" aria-label="Go to about page">
               <Logo height={30} />
 
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0 -right-4">

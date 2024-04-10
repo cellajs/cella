@@ -75,7 +75,7 @@ const About = () => {
               {t('common:start.github.message')}
             </a>
           </div>
-          <Link to="/about" hash="why" className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))} aria-label="Read more">
+          <Link to="/about" replace hash="why" className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))} aria-label="Read more">
             <span className="font-light">{t('about:why')}</span>
             <ArrowDown size={16} className="ml-2 animate-bounce" />
           </Link>

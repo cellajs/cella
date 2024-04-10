@@ -1,11 +1,11 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSetHashOnScroll } from '~/hooks/use-set-hash-on-scroll';
 import { cn } from '~/lib/utils';
-import { Tabs, TabsList, TabsTrigger } from '~/modules/ui/tabs';
+import { buttonVariants } from '../ui/button';
 
-interface AsideTabProps {
+interface AsideNavProps {
   className?: string;
   tabs: {
     value: string;
@@ -14,9 +14,8 @@ interface AsideTabProps {
   }[];
 }
 
-export const AsideTab = ({ tabs, className }: AsideTabProps) => {
+export const AsideNav = ({ tabs, className }: AsideNavProps) => {
   const { location } = useRouterState();
-  const [activeTab, setActiveTab] = useState(tabs.find((tab) => tab.hash === location.hash.toLowerCase()) || tabs[0]);
   const { t } = useTranslation();
 
   const sectionIds = tabs.map((tab) => tab.value);
@@ -39,16 +38,22 @@ export const AsideTab = ({ tabs, className }: AsideTabProps) => {
   }, []);
 
   return (
-    <Tabs value={activeTab.value} className={cn('w-full', className)} orientation="vertical">
-      <TabsList variant="side">
-        {tabs.map(({ value, label, hash }) => (
-          <TabsTrigger key={value} value={value} className="justify-start" variant="secondary" asChild>
-            <Link className="flex-1" hash={hash} replace onClick={() => setActiveTab({ value, label, hash })}>
-              {t(label)}
-            </Link>
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </Tabs>
+    <div className={cn('w-full flex flex-col gap-1', className)}>
+      {tabs.map(({ value, label, hash }) => {
+        const btnClass = `${value.includes('delete') && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left`;
+
+        return (
+          <Link
+            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}
+            hash={hash}
+            replace
+            activeOptions={{ exact: true, includeHash: true }}
+            activeProps={{ className: 'bg-secondary' }}
+          >
+            {t(label)}
+          </Link>
+        );
+      })}
+    </div>
   );
 };
