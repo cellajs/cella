@@ -63,7 +63,7 @@ const InviteUsers = ({
 
   if (inviteMode === 'search') {
     return (
-      <>
+      <div className="flex flex-col gap-4">
         <AppAlert id="invite_search" variant="success" Icon={Info}>
           {t('common:explain.invite_search.text')}
         </AppAlert>
@@ -77,13 +77,13 @@ const InviteUsers = ({
           initValues={initValues}
           onValuesChange={onValuesChange}
         />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <AppAlert id="invite_email" variant="success" Icon={Info}>
+    <div className="flex flex-col gap-4">
+    <AppAlert id="invite_email" variant="success" Icon={Info}>
         {t('common:explain.invite_email.text')}
       </AppAlert>
       <InviteEmailForm
@@ -96,7 +96,7 @@ const InviteUsers = ({
         initValues={initValues}
         onValuesChange={onValuesChange}
       />
-    </>
+    </div>
   );
 };
 
