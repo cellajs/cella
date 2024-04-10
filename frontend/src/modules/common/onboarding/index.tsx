@@ -11,12 +11,31 @@ import useMountedState from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
 import type { InviteProps } from '~/api/general';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
+import { Button } from '~/modules/ui/button';
+import { useTranslation } from 'react-i18next';
+
+interface OnboardingWelcomeProps {
+  setWelcomeMessage: (val: boolean) => void;
+}
+
+const OnboardingWelcome = ({ setWelcomeMessage }: OnboardingWelcomeProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex flex-col items-center text-center mx-auto space-y-6 max-w-96">
+      <h1 className="text-3xl font-extrabold">{t('common:onboarding_welcome')}</h1>
+      <p className="text-sm w-[75%]">{t('common:onboarding_welcome.text')}</p>
+      <Button onClick={() => setWelcomeMessage(false)}>Get Started</Button>
+    </div>
+  );
+};
 
 interface OnboardingProps {
   isDialog: boolean;
 }
 
 const Onboarding = ({ isDialog }: OnboardingProps) => {
+  const [welcomeMessage, setWelcomeMessage] = useState<boolean>(true);
   const { hasStarted } = useMountedState();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
@@ -63,95 +82,100 @@ const Onboarding = ({ isDialog }: OnboardingProps) => {
   return (
     <div className="flex flex-col min-h-[90vh] sm:min-h-screen items-center">
       <div className="mt-auto mb-auto w-full">
-        <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 p-4 sm:w-10/12 max-w-[800px]', animateClass)}>
-          <Stepper initialStep={0} steps={steps} orientation="vertical">
-            {steps.map(({ label, id }) => {
-              if (id === 'step-1') {
+        {welcomeMessage ? (
+          <OnboardingWelcome setWelcomeMessage={setWelcomeMessage} />
+        ) : (
+          <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 p-4 sm:w-10/12 max-w-[800px]', animateClass)}>
+            <Stepper initialStep={0} steps={steps} orientation="vertical">
+              {steps.map(({ label, id }) => {
+                if (id === 'step-1') {
+                  return (
+                    <Step key={label} label={label}>
+                      <Card>
+                        <CardHeader>
+                          <CardDescription className="font-light">Let's get started by creating your organization.</CardDescription>
+                        </CardHeader>
+
+                        <CardContent>
+                          <CreateOrganizationForm
+                            initValues={createOrganizationFormValues}
+                            onValuesChange={setCreateOrganizationFormValues}
+                            withButtons={false}
+                            withDraft={false}
+                          />
+                        </CardContent>
+                      </Card>
+                    </Step>
+                  );
+                }
+
+                if (id === 'step-2') {
+                  return (
+                    <Step key={label} label={label}>
+                      <Card>
+                        <CardHeader>
+                          <CardDescription className="font-light">Hi {user.firstName}! This is you?</CardDescription>
+                        </CardHeader>
+
+                        <CardContent>
+                          <UpdateUserForm
+                            user={user}
+                            hiddenFields={['email', 'bio']}
+                            initValues={updateUserFormValues}
+                            onValuesChange={setUpdateUserFormValues}
+                            withButtons={false}
+                            withDraft={false}
+                          />
+                        </CardContent>
+                      </Card>
+                    </Step>
+                  );
+                }
+
+                if (id === 'step-3') {
+                  return (
+                    <Step key={label} label={label}>
+                      <Card>
+                        <CardHeader>
+                          <CardDescription className="font-light">Invite your team members to Cella</CardDescription>
+                        </CardHeader>
+
+                        <CardContent>
+                          <InviteUsers
+                            type="organization"
+                            onValuesChange={setInviteFormValues}
+                            initValues={inviteFormValues}
+                            withButtons={false}
+                            withDraft={false}
+                          />
+                        </CardContent>
+                      </Card>
+                    </Step>
+                  );
+                }
+
                 return (
                   <Step key={label} label={label}>
                     <Card>
                       <CardHeader>
-                        <CardDescription className="font-light">Let's get started by creating your organization.</CardDescription>
+                        <CardDescription className="font-light">Last step to explain how to actuall do something </CardDescription>
                       </CardHeader>
 
-                      <CardContent>
-                        <CreateOrganizationForm
-                          initValues={createOrganizationFormValues}
-                          onValuesChange={setCreateOrganizationFormValues}
-                          withButtons={false}
-                          withDraft={false}
-                        />
-                      </CardContent>
+                      <CardContent>Content here</CardContent>
                     </Card>
                   </Step>
                 );
-              }
 
-              if (id === 'step-2') {
-                return (
-                  <Step key={label} label={label}>
-                    <Card>
-                      <CardHeader>
-                        <CardDescription className="font-light">Hi {user.firstName}! This is you?</CardDescription>
-                      </CardHeader>
-
-                      <CardContent>
-                        <UpdateUserForm
-                          user={user}
-                          hiddenFields={['email', 'bio']}
-                          initValues={updateUserFormValues}
-                          onValuesChange={setUpdateUserFormValues}
-                          withButtons={false}
-                          withDraft={false}
-                        />
-                      </CardContent>
-                    </Card>
-                  </Step>
-                );
-              }
-
-              if (id === 'step-3') {
-                return (
-                  <Step key={label} label={label}>
-                    <Card>
-                      <CardHeader>
-                        <CardDescription className="font-light">Invite your team members to Cella</CardDescription>
-                      </CardHeader>
-
-                      <CardContent>
-                        <InviteUsers
-                          type="organization"
-                          onValuesChange={setInviteFormValues}
-                          initValues={inviteFormValues}
-                          withButtons={false}
-                          withDraft={false}
-                        />
-                      </CardContent>
-                    </Card>
-                  </Step>
-                );
-              }
-
-              return (
-                <Step key={label} label={label}>
-                  <Card>
-                    <CardHeader>
-                      <CardDescription className="font-light">Last step to explain how to actuall do something </CardDescription>
-                    </CardHeader>
-
-                    <CardContent>Content here</CardContent>
-                  </Card>
-                </Step>
-              );
-            })}
-            <Footer
-              createOrganizationFormValues={createOrganizationFormValues}
-              updateUserFormValues={updateUserFormValues}
-              inviteFormValues={inviteFormValues}
-              isDialog={isDialog}
-            />
-          </Stepper>
-        </div>
+              })}
+              <Footer
+                              isDialog={isDialog}
+createOrganizationFormValues={createOrganizationFormValues}
+                updateUserFormValues={updateUserFormValues}
+                inviteFormValues={inviteFormValues}
+              />
+            </Stepper>
+          </div>
+        )}
       </div>
     </div>
   );

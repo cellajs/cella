@@ -21,7 +21,7 @@ type AccountButtonProps = {
 const AccountButton: React.FC<AccountButtonProps> = ({ lucideButton: Icon, label, id, accountAction }) => {
   const { setSheet } = useNavigationStore();
 
-  const btnClass = `${id === 'btn-signout' ? 'text-red-600' : ''} hover:bg-accent w-full justify-start text-left`;
+  const btnClass = `${id === 'btn-signout' && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left`;
 
   return (
     <Link to={accountAction} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)} onClick={() => setSheet(null)}>

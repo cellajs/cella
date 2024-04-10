@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import { Github } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 import { useTranslation } from 'react-i18next';
@@ -19,13 +19,18 @@ const marketingNavConfig = [
   { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 
-export function MarketingNav() {
+export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target: string) => void }) {
   const { t } = useTranslation();
   const [showSheet, setShowSheet] = useState<boolean>(false);
 
-  const toggleSheet = useCallback((isOpen: boolean) => {
+  const toggleSheet = (isOpen: boolean) => {
     setShowSheet(isOpen);
-  }, []);
+  };
+
+  const handleNavClick = (target: string, isOpen: boolean) => {
+    if (onHandleMismatch) onHandleMismatch(target);
+    setShowSheet(isOpen);
+  };
 
   const { ref, inView } = useInView();
 
@@ -34,8 +39,9 @@ export function MarketingNav() {
       <Link
         to={item.url}
         hash={item.hash}
+        replace={location.pathname === '/about'}
         key={item.id}
-        onClick={() => toggleSheet(false)}
+        onClick={() => handleNavClick(item.hash, false)}
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
       >
         {t(item.id)}
@@ -56,7 +62,13 @@ export function MarketingNav() {
               <HamburgerButton isOpen={showSheet} toggle={setShowSheet} />
             </div>
 
-            <Link to="/about" hash="" className="md:ml-2 hover:opacity-90 active:scale-95 relative" aria-label="Go to about page">
+            <Link
+              to="/about"
+              hash=""
+              replace={location.pathname === '/about'}
+              className="md:ml-2 hover:opacity-90 active:scale-95 relative"
+              aria-label="Go to about page"
+            >
               <Logo height={30} />
 
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0 -right-4">

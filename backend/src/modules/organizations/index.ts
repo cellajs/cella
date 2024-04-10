@@ -1,5 +1,4 @@
-import { type SQL, and, count, eq, ilike, or, sql } from 'drizzle-orm';
-import slugify from 'slugify';
+import { type SQL, and, count, eq, ilike, sql } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
@@ -32,18 +31,13 @@ const organizationsRoutes = app
    * Create organization
    */
   .add(createOrganizationRouteConfig, async (ctx) => {
-    const { name } = ctx.req.valid('json');
+    const { name, slug } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    let slug = slugify(name, { lower: true });
+    const slugAvailable = await checkSlugAvailable(slug);
 
-    const [organization] = await db
-      .select()
-      .from(organizationsTable)
-      .where(or(eq(organizationsTable.name, name), eq(organizationsTable.slug, slug)));
-
-    if (organization?.slug === slug) {
-      slug = `${slug}-${user.slug}`;
+    if (!slugAvailable) {
+      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
     }
 
     const [createdOrganization] = await db

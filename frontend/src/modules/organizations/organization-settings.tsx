@@ -11,7 +11,7 @@ import { OrganizationContext } from '~/modules/organizations/organization';
 import { dialog } from '../common/dialoger/state';
 import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
-import { AsideTab } from '~/modules/common/aside-tab';
+import { AsideNav } from '~/modules/common/aside-nav';
 
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
@@ -45,7 +45,7 @@ const OrganizationSettings = () => {
   return (
     <div className="md:flex md:flex-row mx-auto max-w-[1200px] gap-4">
       <div className="mx-auto md:min-w-[200px] md:w-[30%] flex h-auto flex-col">
-        <AsideTab tabs={tabs} className="pb-2" />
+        <AsideNav tabs={tabs} className="pb-2" />
       </div>
 
       <div className="md:w-[70%] space-y-6">

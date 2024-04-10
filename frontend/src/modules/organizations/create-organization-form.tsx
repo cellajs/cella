@@ -112,6 +112,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
+        <InputFormField control={form.control} name="slug" label={t('common:slug')} required />
         {withButtons && (
           <div className="flex flex-col sm:flex-row gap-2">
             <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>

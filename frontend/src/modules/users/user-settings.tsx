@@ -15,7 +15,9 @@ import { toast } from 'sonner';
 import { useMutation } from '~/hooks/use-mutations';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { ScrollArea } from '../ui/scroll-area';
-import { AsideTab } from '~/modules/common/aside-tab';
+import { AsideNav } from '~/modules/common/aside-nav';
+import { AsideAnchor } from '../common/aside-anchor';
+import Sticky from 'react-sticky-el';
 
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
@@ -59,86 +61,94 @@ const UserSettings = () => {
   };
 
   return (
-    <div className="container md:flex md:flex-row mt-8 mx-auto max-w-[1200px] gap-4">
+    <div className="container md:flex md:flex-row md:mt-8 mx-auto max-w-[1200px] gap-4">
       <div className="mx-auto md:min-w-[200px] md:w-[30%] md:mt-2">
+      <Sticky stickyClassName="z-10 max-sm:!relative">
         <SimpleHeader className="p-3" heading="common:account_settings" text="common:account_settings.text" />
-        <AsideTab tabs={tabs} className="py-2" />
+        <AsideNav tabs={tabs} className="py-2" />
+      </Sticky>
       </div>
 
       <div className="md:w-[70%] space-y-6">
-        <Card id="general" className="mx-auto sm:w-full">
-          <CardHeader>
-            <CardTitle>{t('common:general')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UpdateUserForm user={user} />
-          </CardContent>
-        </Card>
+        <AsideAnchor id="general">
+          <Card className="mx-auto sm:w-full">
+            <CardHeader>
+              <CardTitle>{t('common:general')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UpdateUserForm user={user} />
+            </CardContent>
+          </Card>
+        </AsideAnchor>
 
-        <Card id="sessions" className="mx-auto sm:w-full">
-          <CardHeader>
-            <CardTitle>{t('common:sessions')}</CardTitle>
+        <AsideAnchor id="sessions">
+          <Card className="mx-auto sm:w-full">
+            <CardHeader>
+              <CardTitle>{t('common:sessions')}</CardTitle>
 
-            <CardDescription>{t('common:sessions.text')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {sessionsWithoutCurrent.length > 0 && (
-              <Button
-                variant="plain"
-                size="sm"
-                disabled={isPending}
-                onClick={() => {
-                  terminateMySessions(sessionsWithoutCurrent.map((session) => session.id));
-                }}
-              >
-                {t('common:terminate_all')}
-              </Button>
-            )}
-            <ScrollArea className="max-h-72 overflow-auto">
-              {Array.from(user.sessions)
-                .sort((a) => (a.current ? -1 : 1))
-                .map((session) => (
-                  <div key={session.id} className="flex items-center justify-between py-2">
-                    <div>
+              <CardDescription>{t('common:sessions.text')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {sessionsWithoutCurrent.length > 0 && (
+                <Button
+                  variant="plain"
+                  size="sm"
+                  disabled={isPending}
+                  onClick={() => {
+                    terminateMySessions(sessionsWithoutCurrent.map((session) => session.id));
+                  }}
+                >
+                  {t('common:terminate_all')}
+                </Button>
+              )}
+              <ScrollArea className="max-h-72 mt-2 overflow-auto">
+                {Array.from(user.sessions)
+                  .sort((a) => (a.current ? -1 : 1))
+                  .map((session) => (
+                    <div key={session.id} className="flex items-center justify-between py-2">
                       <div>
-                        <p className="font-semibold">
-                          {t('common:session')} {session.current && '(current)'}
-                        </p>
-                        <p className="font-light text-sm">{session.type}</p>
+                        <div>
+                          <p className="font-semibold">
+                            {t('common:session')} {session.current && '(current)'}
+                          </p>
+                          <p className="font-light text-sm">{session.type}</p>
+                        </div>
+                        <p className="font-light text-sm">{session.id}</p>
                       </div>
-                      <p className="font-light text-sm">{session.id}</p>
+                      {!session.current && (
+                        <Button
+                          variant="plain"
+                          size="sm"
+                          className="w-auto"
+                          disabled={isPending}
+                          onClick={() => {
+                            terminateMySessions([session.id]);
+                          }}
+                        >
+                          {t('common:terminate')}
+                        </Button>
+                      )}
                     </div>
-                    {!session.current && (
-                      <Button
-                        variant="plain"
-                        size="sm"
-                        className="w-auto"
-                        disabled={isPending}
-                        onClick={() => {
-                          terminateMySessions([session.id]);
-                        }}
-                      >
-                        {t('common:terminate')}
-                      </Button>
-                    )}
-                  </div>
-                ))}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+                  ))}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </AsideAnchor>
 
-        <Card id="delete-account" className="mx-auto sm:w-full">
-          <CardHeader>
-            <CardTitle>{t('common:delete_account')}</CardTitle>
-            <CardDescription>{t('common:delete_account.text')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              {t('common:delete_account')}
-            </Button>
-          </CardContent>
-        </Card>
+        <AsideAnchor id="delete-account">
+          <Card className="mx-auto sm:w-full">
+            <CardHeader>
+              <CardTitle>{t('common:delete_account')}</CardTitle>
+              <CardDescription>{t('common:delete_account.text')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t('common:delete_account')}
+              </Button>
+            </CardContent>
+          </Card>
+        </AsideAnchor>
       </div>
     </div>
   );

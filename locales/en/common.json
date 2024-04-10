@@ -182,6 +182,8 @@
   "notifications": "Notifications",
   "offline_mode": "Offline mode",
   "offline_mode.text": "You appear to have no internet connection.",
+  "onboarding_welcome": "Welcome to CellaJS",
+  "onboarding_welcome.text": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Id harum deserunt doloribus",
   "options": "Options",
   "or": "Or",
   "organization": "Organization",

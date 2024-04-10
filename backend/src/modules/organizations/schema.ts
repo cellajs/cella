@@ -41,6 +41,7 @@ export type ApiOrganization = z.infer<typeof apiOrganizationSchema>;
 
 export const createOrganizationJsonSchema = z.object({
   name: nameSchema,
+  slug: validSlugSchema,
 });
 
 export const updateOrganizationJsonSchema = createInsertSchema(organizationsTable, {

@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 
 import { cn } from '~/lib/utils';
 import { MarketingFooter } from '~/modules/marketing/footer';
@@ -7,7 +7,6 @@ import { buttonVariants } from '~/modules/ui/button';
 
 import { config } from 'config';
 import { ArrowDown } from 'lucide-react';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 // import Counters from './counters';
 // import FAQ from './faq';
@@ -41,31 +40,24 @@ const AboutSection = ({ title, text, section, children, alternate = false }: Abo
   );
 };
 
-const sectionIds = ['hero', 'why', 'features', 'integrations', 'pricing'];
-const topSectionId = 'hero';
+const sectionIds = ['cella', 'why', 'features', 'integrations', 'pricing'];
 
 const About = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useSetHashOnScroll({ sectionIds });
 
-  useEffect(() => {
-    const locationHash = location.hash.replace('#', '');
-    if (sectionIds.includes(locationHash) && locationHash !== topSectionId) {
-      const element = document.getElementById(locationHash);
-      if (!element) return;
-      element.scrollIntoView();
-    }
-    document.documentElement.classList.add('scroll-smooth');
-
-    return () => {
-      document.documentElement.classList.remove('scroll-smooth');
-    };
-  }, []);
+  // If the hash already matches but the user is not at the section, clear and re-set the hash
+  const handleMismatch = (target: string) => {
+    if (location.hash !== `#${target}`) return;
+    navigate({ hash: '', replace: true });
+    setTimeout(() => {navigate({ hash: target, replace: true })}, 1);
+  };
 
   return (
     <>
-      <MarketingNav />
+      <MarketingNav onHandleMismatch={handleMismatch} />
 
       <div className="container max-w-none px-0">
         {/* Hero landing */}
@@ -75,7 +67,14 @@ const About = () => {
               {t('common:start.github.message')}
             </a>
           </div>
-          <Link to="/about" hash="why" className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))} aria-label="Read more">
+          <Link
+            to="/about"
+            replace
+            hash="why"
+            onClick={() => handleMismatch('why')}
+            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
+            aria-label="Read more"
+          >
             <span className="font-light">{t('about:why')}</span>
             <ArrowDown size={16} className="ml-2 animate-bounce" />
           </Link>
