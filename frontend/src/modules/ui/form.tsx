@@ -19,24 +19,40 @@ import { Label } from '~/modules/ui/label';
 import { Badge } from './badge';
 import { Button } from './button';
 
+type LabelDirectionContextType = 'top' | 'left';
+const LabelDirectionContext = React.createContext<LabelDirectionContextType | string>('top');
+
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+type FormProps<TFieldValues extends FieldValues, TContext = any, TTransformedValues extends FieldValues = TFieldValues> = FormProviderProps<
+  TFieldValues,
+  TContext,
+  TTransformedValues
+> & {
+  unsavedChanges?: boolean;
+  labelDirection?: string;
+};
+
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
 const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValues extends FieldValues = TFieldValues>({
   children,
   unsavedChanges,
+  labelDirection = 'top',
   ...props
-}: FormProviderProps<TFieldValues, TContext, TTransformedValues> & {
+}: FormProps<TFieldValues, TContext, TTransformedValues> & {
   unsavedChanges?: boolean;
 }) => {
   const { t } = useTranslation();
   return (
     <FormProvider {...props}>
-      {unsavedChanges && (
-        <Badge variant="plain" className="w-fit mb-4">
-          <SquarePen size={12} className="mr-2" />
-          <span className="font-light">{t('common:unsaved_changes')}</span>
-        </Badge>
-      )}
-      {children}
+      <LabelDirectionContext.Provider value={labelDirection}>
+        {unsavedChanges && (
+          <Badge variant="plain" className="w-fit mb-4">
+            <SquarePen size={12} className="mr-2" />
+            <span className="font-light">{t('common:unsaved_changes')}</span>
+          </Badge>
+        )}
+        {children}
+      </LabelDirectionContext.Provider>
     </FormProvider>
   );
 };
@@ -93,10 +109,16 @@ type FormItemProps = React.HTMLAttributes<HTMLDivElement> & {
 
 const FormItem = React.forwardRef<HTMLDivElement, FormItemProps>(({ className, name, ...props }, ref) => {
   const id = React.useId();
+  const labelDirection = React.useContext(LabelDirectionContext);
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} id={`${(name || id).toLowerCase()}-form-item-container`} className={cn('flex gap-2 flex-col', className)} {...props} />
+      <div
+        ref={ref}
+        id={`${(name || id).toLowerCase()}-form-item-container`}
+        className={cn(`${labelDirection === 'top' ? 'flex-col' : 'flex-row items-center'} flex gap-2`, className)}
+        {...props}
+      />
     </FormItemContext.Provider>
   );
 });
