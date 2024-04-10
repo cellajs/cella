@@ -12,7 +12,11 @@ import { cn } from '~/lib/utils';
 import type { InviteProps } from '~/api/general';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 
-const Onboarding = () => {
+interface OnboardingProps {
+  isDialog: boolean;
+}
+
+const Onboarding = ({ isDialog }: OnboardingProps) => {
   const { hasStarted } = useMountedState();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
@@ -131,14 +135,12 @@ const Onboarding = () => {
               return (
                 <Step key={label} label={label}>
                   <Card>
-                      <CardHeader>
-                        <CardDescription className="font-light">Last step to explain how to actuall do something </CardDescription>
-                      </CardHeader>
+                    <CardHeader>
+                      <CardDescription className="font-light">Last step to explain how to actuall do something </CardDescription>
+                    </CardHeader>
 
-                      <CardContent>
-                       Content here
-                      </CardContent>
-                    </Card>
+                    <CardContent>Content here</CardContent>
+                  </Card>
                 </Step>
               );
             })}
@@ -146,6 +148,7 @@ const Onboarding = () => {
               createOrganizationFormValues={createOrganizationFormValues}
               updateUserFormValues={updateUserFormValues}
               inviteFormValues={inviteFormValues}
+              isDialog={isDialog}
             />
           </Stepper>
         </div>
