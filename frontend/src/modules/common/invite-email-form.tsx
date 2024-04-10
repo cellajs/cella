@@ -1,12 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslation } from 'react-i18next';
 import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { invite as baseInvite } from '~/api/general';
 import type { Organization } from '~/types';
 
 import { config } from 'config';
 import { Send } from 'lucide-react';
+import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -16,7 +17,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Badge } from '../ui/badge';
 import SelectRole from './form-fields/select-role';
 import { MultiEmail } from './multi-email';
-import { useForm, useWatch, type UseFormProps } from 'react-hook-form';
 
 interface Props {
   organization?: Organization;

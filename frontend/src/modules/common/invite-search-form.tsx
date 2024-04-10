@@ -6,6 +6,8 @@ import type { Organization } from '~/types';
 
 import { config } from 'config';
 import { Loader2, Send } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { getSuggestions } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -16,8 +18,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Badge } from '../ui/badge';
 import SelectRole from './form-fields/select-role';
 import MultipleSelector from './multi-select';
-import { useEffect, useMemo } from 'react';
-import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
 
 interface Props {
   organization?: Organization;

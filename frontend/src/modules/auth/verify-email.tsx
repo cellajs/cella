@@ -1,11 +1,11 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { verifyEmail as baseVerifyEmail } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import AuthPage from './auth-page';
-import { toast } from 'sonner';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();

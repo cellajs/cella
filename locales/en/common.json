@@ -182,8 +182,8 @@
   "notifications": "Notifications",
   "offline_mode": "Offline mode",
   "offline_mode.text": "You appear to have no internet connection.",
-  "onboarding_welcome": "Welcome to CellaJS",
-  "onboarding_welcome.text": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Id harum deserunt doloribus",
+  "onboarding_welcome": "Welcome to Cella",
+  "onboarding_welcome.text": "A no-nonsense TypeScript template to build modern web apps in a matter of weeks. Ready to implement. MIT license.",
   "options": "Options",
   "or": "Or",
   "organization": "Organization",
@@ -309,5 +309,6 @@
   "error.invalid_invitation": "Invitation could not be processed.",
   "error.invalid_state.text": "Could not complete the authentication process.",
   "success.password_reset": "Your password has been reset",
-  "invitation_accepted": "Invitation has successfully been accepted"
+  "invitation_accepted": "Invitation has successfully been accepted",
+  "get_started": "Get started"
 }

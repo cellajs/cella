@@ -1,9 +1,9 @@
-import { SimpleHeader } from '~/modules/common/simple-header';
-import Onboarding from './common/onboarding';
-import { Button } from '~/modules/ui/button';
 import { config } from 'config';
-import { dialog } from '~/modules/common/dialoger/state';
 import { useTranslation } from 'react-i18next';
+import { dialog } from '~/modules/common/dialoger/state';
+import { SimpleHeader } from '~/modules/common/simple-header';
+import { Button } from '~/modules/ui/button';
+import Onboarding from './common/onboarding';
 
 const Home = () => {
   const { t } = useTranslation();

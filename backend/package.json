@@ -67,7 +67,7 @@
     "drizzle-kit": "^0.20.14",
     "tsup": "^8.0.1",
     "tsx": "^4.7.0"
-    },
+  },
   "babel": {
     "presets": ["@babel/preset-typescript"]
   },

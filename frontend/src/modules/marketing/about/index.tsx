@@ -8,6 +8,7 @@ import { buttonVariants } from '~/modules/ui/button';
 import { config } from 'config';
 import { ArrowDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
 // import Counters from './counters';
 // import FAQ from './faq';
 import Features from './features';
@@ -15,7 +16,6 @@ import { Hero } from './hero';
 import Integrations from './integrations';
 import Pricing from './pricing';
 import Why from './why';
-import { useScrollSpy } from '~/hooks/use-scroll-spy';
 
 interface AboutSectionProps {
   title: string;

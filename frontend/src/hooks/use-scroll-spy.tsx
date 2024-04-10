@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useEffect, useRef } from 'react';
 
 export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
   const navigate = useNavigate();

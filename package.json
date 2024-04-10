@@ -4,7 +4,7 @@
   "private": false,
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
-  "description": "A no-nonsense & intuitive TypeScript template to build modern web apps.",
+  "description": "Your last TypeScript template to build modern web apps. Implementation-ready. MIT licensed.",
   "keywords": ["template", "monorepo", "fullstack", "typescript", "hono", "drizzle", "shadcn", "postgres", "react", "vite", "PWA"],
   "author": "CellaJS <info@cellajs.com>",
   "homepage": "https://cellajs.com",

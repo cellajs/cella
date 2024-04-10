@@ -35,7 +35,6 @@ const OrganizationPage = () => {
   const organization = organizationQuery.data;
 
   // Animate outlet
-
   let currentMatch = null;
 
   try {

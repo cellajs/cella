@@ -1,10 +1,10 @@
-import { createOrganization, type CreateOrganizationParams } from '~/api/organizations';
+import { useEffect, useMemo } from 'react';
+import { type InviteProps, invite } from '~/api/general';
+import { type CreateOrganizationParams, createOrganization } from '~/api/organizations';
+import { type UpdateUserParams, updateUser } from '~/api/users';
+import { useUserStore } from '~/store/user';
 import { Button } from '../../ui/button';
 import { useStepper } from '../../ui/stepper';
-import { updateUser, type UpdateUserParams } from '~/api/users';
-import { useEffect, useMemo } from 'react';
-import { invite, type InviteProps } from '~/api/general';
-import { useUserStore } from '~/store/user';
 import { dialog } from '../dialoger/state';
 
 interface Props {

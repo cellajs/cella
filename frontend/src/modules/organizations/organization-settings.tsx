@@ -6,13 +6,14 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
 import { useContext } from 'react';
+import Sticky from 'react-sticky-el';
 import { toast } from 'sonner';
+import { AsideNav } from '~/modules/common/aside-nav';
 import { OrganizationContext } from '~/modules/organizations/organization';
+import { AsideAnchor } from '../common/aside-anchor';
 import { dialog } from '../common/dialoger/state';
 import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
-import { AsideNav } from '~/modules/common/aside-nav';
-import { AsideAnchor } from '../common/aside-anchor';
 
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
@@ -46,7 +47,9 @@ const OrganizationSettings = () => {
   return (
     <div className="md:flex md:flex-row mx-auto max-w-[1200px] gap-4">
       <div className="mx-auto md:min-w-[200px] md:w-[30%] flex h-auto flex-col">
-        <AsideNav tabs={tabs} className="pb-2" />
+        <Sticky topOffset={-60} stickyClassName="md:mt-[60px] z-10 max-md:!relative">
+          <AsideNav tabs={tabs} className="pb-2" />
+        </Sticky>
       </div>
 
       <div className="md:w-[70%] space-y-6">

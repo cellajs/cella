@@ -1,6 +1,6 @@
-import type { ReactElement } from 'react';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+import type { ReactElement } from 'react';
 import type { Theme } from '~/store/theme';
 
 dayjs.extend(localizedFormat);

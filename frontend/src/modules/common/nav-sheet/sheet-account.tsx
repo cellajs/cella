@@ -4,11 +4,11 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { getColorClass } from '~/lib/utils';
+import { cn } from '~/lib/utils';
+import { buttonVariants } from '~/modules/ui/button';
 import { SheetTitle } from '~/modules/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import { cn } from '~/lib/utils';
-import { buttonVariants } from '~/modules/ui/button';
 
 type AccountButtonProps = {
   lucideButton: React.ElementType<LucideProps>;

@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Loader2, History, X } from 'lucide-react';
+import { History, Loader2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Sticky from 'react-sticky-el';
 import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { useNavigationStore } from '~/store/navigation';
-import { AvatarWrap } from './avatar-wrap';
 import { ScrollArea } from '../ui/scroll-area';
-import Sticky from 'react-sticky-el';
+import { AvatarWrap } from './avatar-wrap';
 
 export const AppSearch = () => {
   const { t } = useTranslation();

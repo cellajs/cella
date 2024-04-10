@@ -10,15 +10,15 @@ import OauthOptions from './oauth-options';
 
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import type { ApiError } from '~/api';
 import { acceptInvite as baseAcceptInvite } from '~/api/authentication';
 import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
+import { cn } from '~/lib/utils';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { LegalNotice } from './sign-up-form';
-import { cn } from '~/lib/utils';
-import type { ApiError } from '~/api';
-import { toast } from 'sonner';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -35,7 +35,7 @@ const Accept = () => {
   const { mutate: checkToken } = useMutation({
     mutationFn: baseCheckToken,
     onSuccess: (email) => setEmail(email),
-    onError: (error) => setError(error)
+    onError: (error) => setError(error),
   });
   const { mutate: acceptInvite, isPending } = useMutation({
     mutationFn: baseAcceptInvite,
@@ -46,8 +46,8 @@ const Accept = () => {
       });
     },
     onError: (error) => {
-      setError(error)
-    }
+      setError(error);
+    },
   });
 
   const form = useForm<z.infer<typeof formSchema>>({

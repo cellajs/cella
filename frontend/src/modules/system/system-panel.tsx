@@ -44,9 +44,9 @@ const SystemPanel = () => {
   return (
     <>
       <SimpleHeader heading={t('common:system_panel')} text={t('common:system_panel.text')} className="container pt-4 md:pt-6">
-      <Button variant="gradient" className="w-40" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
-        WIP checkout
-      </Button>
+        <Button variant="gradient" className="w-40" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
+          WIP checkout
+        </Button>
       </SimpleHeader>
 
       <PageNav

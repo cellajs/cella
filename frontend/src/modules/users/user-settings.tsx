@@ -11,13 +11,13 @@ import DeleteUsers from './delete-users';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import Sticky from 'react-sticky-el';
 import { toast } from 'sonner';
 import { useMutation } from '~/hooks/use-mutations';
-import UpdateUserForm from '~/modules/users/update-user-form';
-import { ScrollArea } from '../ui/scroll-area';
 import { AsideNav } from '~/modules/common/aside-nav';
+import UpdateUserForm from '~/modules/users/update-user-form';
 import { AsideAnchor } from '../common/aside-anchor';
-import Sticky from 'react-sticky-el';
+import { ScrollArea } from '../ui/scroll-area';
 
 const tabs = [
   { value: 'general', label: 'common:general', hash: 'general' },
@@ -63,10 +63,10 @@ const UserSettings = () => {
   return (
     <div className="container md:flex md:flex-row md:mt-8 mx-auto max-w-[1200px] gap-4">
       <div className="mx-auto md:min-w-[200px] md:w-[30%] md:mt-2">
-      <Sticky stickyClassName="z-10 max-sm:!relative">
-        <SimpleHeader className="p-3" heading="common:account_settings" text="common:account_settings.text" />
-        <AsideNav tabs={tabs} className="py-2" />
-      </Sticky>
+        <Sticky stickyClassName="z-10 max-md:!relative">
+          <SimpleHeader className="p-3" heading="common:account_settings" text="common:account_settings.text" />
+          <AsideNav tabs={tabs} className="py-2" />
+        </Sticky>
       </div>
 
       <div className="md:w-[70%] space-y-6">

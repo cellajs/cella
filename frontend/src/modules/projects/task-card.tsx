@@ -1,8 +1,10 @@
 import type { UniqueIdentifier } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { Activity, GripVertical, Star } from 'lucide-react';
+import { useState } from 'react';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
@@ -10,8 +12,6 @@ import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { Checkbox } from '../ui/checkbox';
 import type { ColumnId } from './kanban-board';
-import { useState } from 'react';
-import MDEditor from '@uiw/react-md-editor';
 
 export interface Task {
   id: UniqueIdentifier;

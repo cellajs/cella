@@ -25,6 +25,7 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
+import { checkSlugAvailable } from './helpers/check-slug';
 import {
   checkSlugRouteConfig,
   checkTokenRouteConfig,
@@ -33,7 +34,6 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import { checkSlugAvailable } from './helpers/check-slug';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -100,8 +100,8 @@ const generalRoutes = app
       if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     }
 
-     // For invitation token: check if user email is not already in the system
-     if (tokenRecord.type === 'INVITATION') {
+    // For invitation token: check if user email is not already in the system
+    if (tokenRecord.type === 'INVITATION') {
       const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
       if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
     }
