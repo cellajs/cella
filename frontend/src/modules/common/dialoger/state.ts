@@ -8,6 +8,7 @@ export type DialogT = {
   container?: HTMLElement | null;
   className?: string;
   refocus?: boolean;
+  autoFocus?: boolean;
   content?: React.ReactNode;
 };
 
@@ -76,14 +77,13 @@ const dialogFunction = (content: React.ReactNode, data?: ExternalDialog) => {
     content,
     drawerOnMobile: true,
     refocus: true,
+    autoFocus: true,
     ...data,
     id,
   });
   return id;
 };
 
-export const basicDialog = dialogFunction;
-
-export const dialog = Object.assign(basicDialog, {
+export const dialog = Object.assign(dialogFunction, {
   remove: DialogState.remove,
 });

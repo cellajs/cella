@@ -53,6 +53,7 @@ const AppNav = () => {
         text: t('common:global_search.text'),
         drawerOnMobile: false,
         refocus: false,
+        autoFocus: !isSmallScreen,
       });
 
       if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
