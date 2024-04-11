@@ -20,7 +20,7 @@ import SelectRole from './form-fields/select-role';
 import MultipleSelector from './multi-select';
 
 interface Props {
-  organization?: Organization;
+  organization?: Organization | null;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
