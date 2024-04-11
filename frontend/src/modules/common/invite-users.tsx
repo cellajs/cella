@@ -1,36 +1,22 @@
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { InviteProps } from '~/api/general';
 import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { AppAlert } from './app-alert';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
 
-interface Props {
+interface InviteUsersProps {
   organization?: Organization;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
-  withDraft?: boolean;
-  withButtons?: boolean;
-  initValues?: InviteProps | null;
-  onValuesChange?: (values: InviteProps | null) => void;
   mode?: string;
+  children?: React.ReactNode;
 }
 
-const InviteUsers = ({
-  organization,
-  type = 'system',
-  callback,
-  dialog: isDialog,
-  mode,
-  initValues,
-  onValuesChange,
-  withButtons,
-  withDraft,
-}: Props) => {
+const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
@@ -67,35 +53,17 @@ const InviteUsers = ({
         <AppAlert id="invite_search" variant="success" Icon={Info}>
           {t('common:explain.invite_search.text')}
         </AppAlert>
-        <InviteSearchForm
-          organization={organization}
-          type={type}
-          callback={callback}
-          dialog={isDialog}
-          withButtons={withButtons}
-          withDraft={withDraft}
-          initValues={initValues}
-          onValuesChange={onValuesChange}
-        />
+        <InviteSearchForm organization={organization} type={type} callback={callback} dialog={isDialog} />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-    <AppAlert id="invite_email" variant="success" Icon={Info}>
+      <AppAlert id="invite_email" variant="success" Icon={Info}>
         {t('common:explain.invite_email.text')}
       </AppAlert>
-      <InviteEmailForm
-        organization={organization}
-        type={type}
-        callback={callback}
-        dialog={isDialog}
-        withButtons={withButtons}
-        withDraft={withDraft}
-        initValues={initValues}
-        onValuesChange={onValuesChange}
-      />
+      <InviteEmailForm organization={organization} type={type} callback={callback} dialog={isDialog} children={children} />
     </div>
   );
 };

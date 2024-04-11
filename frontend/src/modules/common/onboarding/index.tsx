@@ -1,19 +1,24 @@
 import { ArrowDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { InviteProps } from '~/api/general';
-import type { CreateOrganizationParams } from '~/api/organizations';
-import type { UpdateUserParams } from '~/api/users';
 import useMounted from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import { useUserStore } from '~/store/user';
-import CreateOrganizationForm from '../../organizations/create-organization-form';
-import { Step, type StepItem, Stepper } from '../../ui/stepper';
-import UpdateUserForm from '../../users/update-user-form';
-import InviteUsers from '../invite-users';
+import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import { Step, type StepItem, Stepper } from '~/modules/ui/stepper';
+
 import Footer from './footer';
+import UpdateUserForm from '~/modules/users/update-user-form';
+import InviteUsers from '../invite-users';
+
+
+const steps: StepItem[] = [
+  { id: 'step-1', label: 'Create organization', optional: true },
+  { id: 'step-2', label: 'Tune your profile', optional: false },
+  { id: 'step-3', label: 'Invite others', optional: true },
+];
 
 interface OnboardingWelcomeProps {
   setWelcomeMessage: (val: boolean) => void;
@@ -36,54 +41,12 @@ const OnboardingWelcome = ({ setWelcomeMessage }: OnboardingWelcomeProps) => {
   );
 };
 
-interface OnboardingProps {
-  isDialog: boolean;
-}
-
-const Onboarding = ({ isDialog }: OnboardingProps) => {
+const Onboarding = () => {
   const [welcomeMessage, setWelcomeMessage] = useState<boolean>(true);
   const { hasStarted } = useMounted();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const user = useUserStore((state) => state.user);
-  const [createOrganizationFormValues, setCreateOrganizationFormValues] = useState<CreateOrganizationParams | null>(null);
-  const [updateUserFormValues, setUpdateUserFormValues] = useState<UpdateUserParams | null>(null);
-  const [inviteFormValues, setInviteFormValues] = useState<InviteProps | null>(null);
-
-  const [steps, setSteps] = useState<StepItem[]>([
-    {
-      id: 'step-1',
-      label: 'Create organization',
-      optional: true,
-    },
-    {
-      id: 'step-2',
-      label: 'Tune your profile',
-      optional: true,
-    },
-  ]);
-
-  // Add step 3 if organization is created
-  useEffect(() => {
-    const isAlreadyExistingStep = steps.find((step) => step.id === 'step-3');
-    if (!createOrganizationFormValues) {
-      if (isAlreadyExistingStep) {
-        setSteps(steps.filter((step) => step.id !== 'step-3'));
-      }
-      return;
-    }
-
-    if (!isAlreadyExistingStep) {
-      setSteps((prevSteps) => [
-        ...prevSteps,
-        {
-          id: 'step-3',
-          label: 'Invite team',
-          optional: true,
-        },
-      ]);
-    }
-  }, [steps, createOrganizationFormValues]);
 
   return (
     <div className="flex flex-col min-h-[90vh] sm:min-h-screen items-center">
@@ -103,13 +66,9 @@ const Onboarding = ({ isDialog }: OnboardingProps) => {
                         </CardHeader>
 
                         <CardContent>
-                          <CreateOrganizationForm
-                            labelDirection="top"
-                            initValues={createOrganizationFormValues}
-                            onValuesChange={setCreateOrganizationFormValues}
-                            withButtons={false}
-                            withDraft={false}
-                          />
+                          <CreateOrganizationForm labelDirection="top">
+                            <Footer />
+                          </CreateOrganizationForm>
                         </CardContent>
                       </Card>
                     </Step>
@@ -121,18 +80,13 @@ const Onboarding = ({ isDialog }: OnboardingProps) => {
                     <Step key={label} label={label}>
                       <Card>
                         <CardHeader>
-                          <CardDescription className="font-light">Hi {user.firstName}! This is you?</CardDescription>
+                          <CardDescription className="font-light">Hi {user.firstName}, this is you?</CardDescription>
                         </CardHeader>
 
                         <CardContent>
-                          <UpdateUserForm
-                            user={user}
-                            hiddenFields={['email', 'bio', 'newsletter']}
-                            initValues={updateUserFormValues}
-                            onValuesChange={setUpdateUserFormValues}
-                            withButtons={false}
-                            withDraft={false}
-                          />
+                          <UpdateUserForm user={user} hiddenFields={['email', 'bio', 'newsletter']}>
+                            <Footer />
+                          </UpdateUserForm>
                         </CardContent>
                       </Card>
                     </Step>
@@ -144,42 +98,19 @@ const Onboarding = ({ isDialog }: OnboardingProps) => {
                     <Step key={label} label={label}>
                       <Card>
                         <CardHeader>
-                          <CardDescription className="font-light">Invite one or more team members to Cella</CardDescription>
+                          <CardDescription className="font-light">Invite one or more team members to Cella.</CardDescription>
                         </CardHeader>
 
                         <CardContent>
-                          <InviteUsers
-                            type="organization"
-                            mode="email"
-                            onValuesChange={setInviteFormValues}
-                            initValues={inviteFormValues}
-                            withButtons={false}
-                            withDraft={false}
-                          />
+                          <InviteUsers type="organization" mode="email">
+                            <Footer />
+                          </InviteUsers>
                         </CardContent>
                       </Card>
                     </Step>
                   );
                 }
-
-                return (
-                  <Step key={label} label={label}>
-                    <Card>
-                      <CardHeader>
-                        <CardDescription className="font-light">Last step to explain how to actuall do something </CardDescription>
-                      </CardHeader>
-
-                      <CardContent>Content here</CardContent>
-                    </Card>
-                  </Step>
-                );
               })}
-              <Footer
-                isDialog={isDialog}
-                createOrganizationFormValues={createOrganizationFormValues}
-                updateUserFormValues={updateUserFormValues}
-                inviteFormValues={inviteFormValues}
-              />
             </Stepper>
           </div>
         )}

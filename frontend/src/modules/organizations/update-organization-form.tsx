@@ -99,6 +99,22 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     });
   };
 
+  const languages = useWatch({
+    control: form.control,
+    name: 'languages',
+  });
+
+  const defaultLanguage = useWatch({
+    control: form.control,
+    name: 'defaultLanguage',
+  });
+
+  useEffect(() => {
+    if (languages && !languages.includes(defaultLanguage as string)) {
+      form.setValue('defaultLanguage', languages[0] as typeof defaultLanguage);
+    }
+  }, [languages, defaultLanguage]);
+
   const cancel = () => {
     form.reset();
     isDialog && dialog.remove();

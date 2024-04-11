@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
+import { type UseFormProps, useWatch } from 'react-hook-form';
 import { checkSlugAvailable } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
@@ -26,16 +26,14 @@ import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
+import { useStepper } from '../ui/stepper';
 
-interface Props {
+interface UpdateUserFormProps {
   user: User;
   callback?: (user: User) => void;
   dialog?: boolean;
-  withDraft?: boolean;
-  initValues?: FormValues | null;
-  onValuesChange?: (values: FormValues | null) => void;
   hiddenFields?: string[];
-  withButtons?: boolean;
+  children?: React.ReactNode;
 }
 
 const formSchema = updateUserJsonSchema;
@@ -57,15 +55,13 @@ const UpdateUserForm = ({
   user,
   callback,
   dialog: isDialog,
-  initValues,
-  onValuesChange,
   hiddenFields,
-  withButtons = true,
-  withDraft = true,
-}: Props) => {
+  children,
+}: UpdateUserFormProps) => {
   const { t } = useTranslation();
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
+  const { nextStep } = useStepper();
 
   // Hide fields if requested
   if (hiddenFields) {
@@ -104,7 +100,7 @@ const UpdateUserForm = ({
     [],
   );
 
-  const form = withDraft ? useFormWithDraft<FormValues>('create-organization', formOptions) : useForm<FormValues>(formOptions);
+  const form = useFormWithDraft<FormValues>('create-organization', formOptions);
 
   const allFields = useWatch({ control: form.control });
 
@@ -125,6 +121,8 @@ const UpdateUserForm = ({
 
         form.reset(data);
         callback?.(data);
+
+        nextStep?.();
 
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
         if (isDialog) {
@@ -152,22 +150,6 @@ const UpdateUserForm = ({
       checkSlug(allFields.slug);
     }
   }, [allFields.slug]);
-
-  // Set initial values
-  useEffect(() => {
-    if (initValues) {
-      for (const [key, value] of Object.entries(initValues)) {
-        form.setValue(key as keyof FormValues, value, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
-  }, [onValuesChange, allFields]);
 
   return (
     <Form {...form}>
@@ -223,7 +205,8 @@ const UpdateUserForm = ({
             </FormItem>
           )}
         />
-        {withButtons && (
+        {children}
+        {!children && (
           <div className="flex flex-col sm:flex-row gap-2">
             <Button
               type="submit"
