@@ -9,7 +9,7 @@ const Home = () => {
   const { t } = useTranslation();
 
   const showOnboarding = () => {
-    dialog(<Onboarding isDialog />, {
+    dialog(<Onboarding />, {
       drawerOnMobile: false,
       className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75',
     });

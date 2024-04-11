@@ -6,8 +6,8 @@ import type { Organization } from '~/types';
 
 import { config } from 'config';
 import { Loader2, Send } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
-import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
+import { useMemo } from 'react';
+import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { getSuggestions } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -24,10 +24,6 @@ interface Props {
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
-  withDraft?: boolean;
-  withButtons?: boolean;
-  initValues?: FormValues | null;
-  onValuesChange?: (values: FormValues | null) => void;
 }
 
 const formSchema = z.object({
@@ -37,16 +33,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteSearchForm = ({
-  organization,
-  type = 'system',
-  callback,
-  dialog: isDialog,
-  withDraft = true,
-  withButtons = true,
-  initValues,
-  onValuesChange,
-}: Props) => {
+const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -60,9 +47,7 @@ const InviteSearchForm = ({
     [],
   );
 
-  const form = withDraft ? useFormWithDraft<FormValues>('invite-users', formOptions) : useForm<FormValues>(formOptions);
-
-  const allFields = useWatch({ control: form.control });
+  const form = useFormWithDraft<FormValues>('invite-users', formOptions);
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: baseInvite,
@@ -93,22 +78,6 @@ const InviteSearchForm = ({
     form.reset();
     isDialog && dialog.remove();
   };
-
-  // Set initial values
-  useEffect(() => {
-    if (initValues) {
-      for (const [key, value] of Object.entries(initValues)) {
-        form.setValue(key as keyof FormValues, value, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
-  }, [onValuesChange, allFields]);
 
   return (
     <Form {...form}>
@@ -154,22 +123,20 @@ const InviteSearchForm = ({
             </FormItem>
           )}
         />
-        {withButtons && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="submit" loading={isPending} className="relative">
-              {!!form.getValues('emails')?.length && (
-                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
-              )}
-              <Send size={16} className="mr-2" />
-              {t('common:invite')}
-            </Button>
-            {form.formState.isDirty && (
-              <Button type="reset" variant="secondary" onClick={cancel}>
-                {t('common:cancel')}
-              </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button type="submit" loading={isPending} className="relative">
+            {!!form.getValues('emails')?.length && (
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
             )}
-          </div>
-        )}
+            <Send size={16} className="mr-2" />
+            {t('common:invite')}
+          </Button>
+          {form.formState.isDirty && (
+            <Button type="reset" variant="secondary" onClick={cancel}>
+              {t('common:cancel')}
+            </Button>
+          )}
+        </div>
       </form>
     </Form>
   );

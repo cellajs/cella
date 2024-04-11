@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
-import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
+import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import slugify from 'slugify';
@@ -10,7 +10,7 @@ import { createOrganizationJsonSchema } from 'backend/modules/organizations/sche
 import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { checkSlugAvailable } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -19,59 +19,51 @@ import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
-import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
+import { dialog } from '../common/dialoger/state';
+import { useStepper } from '../ui/stepper';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
   dialog?: boolean;
-  withDraft?: boolean;
-  withButtons?: boolean;
   labelDirection?: LabelDirectionType;
-  initValues?: FormValues | null;
-  onValuesChange?: (values: FormValues | null) => void;
+  children?: React.ReactNode;
 }
 
 const formSchema = createOrganizationJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
-  callback,
-  dialog: isDialog,
-  labelDirection = 'top',
-  initValues,
-  onValuesChange,
-  withButtons = true,
-  withDraft = true,
-}) => {
+const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callback, dialog: isDialog, labelDirection = 'top', children }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
+  const [isDeviating, setDeviating] = useState(false);
+  const { nextStep } = useStepper();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         name: '',
+        slug: '',
       },
     }),
     [],
   );
 
-  const form = withDraft ? useFormWithDraft<FormValues>('create-organization', formOptions) : useForm<FormValues>(formOptions);
-
-  const allFields = useWatch({ control: form.control });
+  const form = useFormWithDraft<FormValues>('create-organization', formOptions);
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createOrganization,
     onSuccess: (result) => {
       form.reset();
       callback?.(result);
-
       toast.success(t('common:success.create_organization'));
 
-      if (!callback) {
+      nextStep?.();
+
+      if (!callback && !nextStep) {
         setSheet(null);
         navigate({
           to: '/$organizationIdentifier/members',
@@ -110,28 +102,13 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
     if (isDialog) dialog.remove();
   };
 
-  // Set initial values
-  useEffect(() => {
-    if (initValues) {
-      for (const [key, value] of Object.entries(initValues)) {
-        form.setValue(key as keyof FormValues, value, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
-  }, [onValuesChange, allFields]);
-
   const name = useWatch({
     control: form.control,
     name: 'name',
   });
 
   useEffect(() => {
+    if (isDeviating) return;
     form.setValue('slug', slugify(name, { lower: true }));
   }, [name]);
 
@@ -153,11 +130,13 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
         <InputFormField
           control={form.control}
           name="slug"
+          onFocus={() => setDeviating(true)}
           label={t('common:organization_handle')}
           description={t('common:organization_handle.text')}
           required
         />
-        {withButtons && (
+        {children}
+        {!children && (
           <div className="flex flex-col sm:flex-row gap-2">
             <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || isCheckPending}>
               {t('common:create')}
