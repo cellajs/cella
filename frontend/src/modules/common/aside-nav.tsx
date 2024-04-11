@@ -20,7 +20,7 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
 
   const { activeHash } = useScrollSpy({ sectionIds, autoUpdateHash: true });
 
-  console.log(activeHash, 'TEST')
+  // console.log(activeHash, 'TEST')
   // TODO: perhaps move this somehow to useScrollSpy and add a stop when section is already in view
   // TODO2: add option to silently update the hash without scrolling on initial mount with sectionIds[0] (if no hash is present)
   // If the hash already matches but the user is not at the section, clear and re-set the hash
