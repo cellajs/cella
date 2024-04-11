@@ -30,7 +30,7 @@ const usersRoutes = app
   /*
    * Get current user
    */
-  .add(meRouteConfig, async (ctx) => {
+  .openapi(meRouteConfig, async (ctx) => {
     const user = ctx.get('user');
 
     const [{ memberships }] = await db
@@ -62,7 +62,7 @@ const usersRoutes = app
   /*
    * Terminate a session
    */
-  .add(terminateSessionsConfig, async (ctx) => {
+  .openapi(terminateSessionsConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
@@ -93,7 +93,7 @@ const usersRoutes = app
   /*
    * Get user menu
    */
-  .add(getUserMenuConfig, async (ctx) => {
+  .openapi(getUserMenuConfig, async (ctx) => {
     const user = ctx.get('user');
 
     const organizationsWithMemberships = await db
@@ -147,7 +147,7 @@ const usersRoutes = app
   /*
    * Update a user
    */
-  .add(updateUserConfig, async (ctx) => {
+  .openapi(updateUserConfig, async (ctx) => {
     const { userId } = ctx.req.valid('param');
     const user = ctx.get('user');
 
@@ -214,7 +214,7 @@ const usersRoutes = app
   /*
    * Get users
    */
-  .add(getUsersConfig, async (ctx) => {
+  .openapi(getUsersConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const memberships = db
@@ -288,7 +288,7 @@ const usersRoutes = app
   /*
    * Delete users
    */
-  .add(deleteUsersRouteConfig, async (ctx) => {
+  .openapi(deleteUsersRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -327,7 +327,7 @@ const usersRoutes = app
   /*
    * Get a user by id or slug
    */
-  .add(getUserByIdOrSlugRouteConfig, async (ctx) => {
+  .openapi(getUserByIdOrSlugRouteConfig, async (ctx) => {
     const userIdentifier = ctx.req.param('userIdentifier').toLowerCase();
     const user = ctx.get('user');
 

@@ -160,13 +160,13 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
 
     // REMINDER: This is customized to allow for collapsible descriptions
     return (
-      <div ref={ref} id={formDescriptionId} className={cn('text-muted-foreground font-light relative !mt-0 text-sm', className)} {...props}>
+      <div ref={ref} id={formDescriptionId} className={cn('text-muted-foreground font-light relative !-mt-2 text-sm', className)} {...props}>
         <div className="flex justify-between">
           <Button
             variant="link"
             size="sm"
             onClick={toggleCollapsed}
-            className="right-1 -top-7 absolute text-regular opacity-50 hover:opacity-100 p-2 h-auto"
+            className="right-1 -top-6 absolute text-regular opacity-50 hover:opacity-100 p-2 h-auto"
           >
             {collapsed && <HelpCircle size={16} />}
             {!collapsed && <ChevronUp size={16} />}

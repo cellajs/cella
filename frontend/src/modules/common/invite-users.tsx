@@ -43,7 +43,7 @@ const InviteUsers = ({
           <div className="flex flex-col p-4">
             <div className="font-light">{t('common:invite_by_name')}</div>
             <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
-              <strong>Continue</strong>
+              <strong>{t('common:continue')}</strong>
               <ChevronRight className="ml-1" size={16} />
             </div>
           </div>
@@ -63,7 +63,7 @@ const InviteUsers = ({
 
   if (inviteMode === 'search') {
     return (
-      <>
+      <div className="flex flex-col gap-4">
         <AppAlert id="invite_search" variant="success" Icon={Info}>
           {t('common:explain.invite_search.text')}
         </AppAlert>
@@ -77,13 +77,13 @@ const InviteUsers = ({
           initValues={initValues}
           onValuesChange={onValuesChange}
         />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <AppAlert id="invite_email" variant="success" Icon={Info}>
+    <div className="flex flex-col gap-4">
+    <AppAlert id="invite_email" variant="success" Icon={Info}>
         {t('common:explain.invite_email.text')}
       </AppAlert>
       <InviteEmailForm
@@ -96,7 +96,7 @@ const InviteUsers = ({
         initValues={initValues}
         onValuesChange={onValuesChange}
       />
-    </>
+    </div>
   );
 };
 

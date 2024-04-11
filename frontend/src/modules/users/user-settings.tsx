@@ -69,7 +69,7 @@ const UserSettings = () => {
         </Sticky>
       </div>
 
-      <div className="md:w-[70%] space-y-6">
+      <div className="md:w-[70%] flex flex-col gap-8">
         <AsideAnchor id="general">
           <Card className="mx-auto sm:w-full">
             <CardHeader>

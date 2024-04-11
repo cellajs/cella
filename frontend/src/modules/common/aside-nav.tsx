@@ -18,7 +18,18 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
 
   const sectionIds = tabs.map((tab) => tab.value);
 
-  useScrollSpy({ sectionIds });
+  const { activeHash } = useScrollSpy({ sectionIds, autoUpdateHash: true });
+
+  // console.log(activeHash, 'TEST')
+  // TODO: perhaps move this somehow to useScrollSpy and add a stop when section is already in view
+  // TODO2: add option to silently update the hash without scrolling on initial mount with sectionIds[0] (if no hash is present)
+  // If the hash already matches but the user is not at the section, clear and re-set the hash
+  const handleMismatch = (e: React.MouseEvent<'a', MouseEvent>, target: string) => {
+    e.preventDefault();
+    const element = document.getElementById(target);
+    if (!element) return;
+    element.scrollIntoView();
+  };
 
   return (
     <div className={cn('w-full flex flex-col gap-1', className)}>
@@ -28,9 +39,10 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
         return (
           <Link
             key={value}
-            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}
+            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass, activeHash === value && 'bg-secondary')}
             hash={hash}
             replace
+            onClick={(e) => handleMismatch(e, value)}
             activeOptions={{ exact: true, includeHash: true }}
             activeProps={{ className: 'bg-secondary' }}
           >

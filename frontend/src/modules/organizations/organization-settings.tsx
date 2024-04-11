@@ -52,7 +52,7 @@ const OrganizationSettings = () => {
         </Sticky>
       </div>
 
-      <div className="md:w-[70%] space-y-6">
+      <div className="md:w-[70%]  flex flex-col gap-8">
         <AsideAnchor id="general">
           <Card>
             <CardHeader>
@@ -91,6 +91,7 @@ const OrganizationSettings = () => {
             </CardContent>
           </Card>
         </AsideAnchor>
+    
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import type React from 'react';
 import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
+import slugify from 'slugify';
 
 // Change this in the future on current schema
 import { createOrganizationJsonSchema } from 'backend/modules/organizations/schema';
@@ -124,6 +125,15 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
   useEffect(() => {
     onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
   }, [onValuesChange, allFields]);
+
+  const name = useWatch({
+    control: form.control,
+    name: 'name',
+  });
+
+  useEffect(() => {
+    form.setValue('slug', slugify(name, { lower: true }));
+  }, [name]);
 
   const slug = useWatch({
     control: form.control,

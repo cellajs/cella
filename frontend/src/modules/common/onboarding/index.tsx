@@ -127,7 +127,7 @@ const Onboarding = ({ isDialog }: OnboardingProps) => {
                         <CardContent>
                           <UpdateUserForm
                             user={user}
-                            hiddenFields={['email', 'bio']}
+                            hiddenFields={['email', 'bio', 'newsletter']}
                             initValues={updateUserFormValues}
                             onValuesChange={setUpdateUserFormValues}
                             withButtons={false}
@@ -144,12 +144,13 @@ const Onboarding = ({ isDialog }: OnboardingProps) => {
                     <Step key={label} label={label}>
                       <Card>
                         <CardHeader>
-                          <CardDescription className="font-light">Invite your team members to Cella</CardDescription>
+                          <CardDescription className="font-light">Invite one or more team members to Cella</CardDescription>
                         </CardHeader>
 
                         <CardContent>
                           <InviteUsers
                             type="organization"
+                            mode="email"
                             onValuesChange={setInviteFormValues}
                             initValues={inviteFormValues}
                             withButtons={false}

@@ -35,7 +35,6 @@ export async function exportToCsv<R>(columns: { key: string; name: ReactElement 
   if (!rows.length) return;
 
   const preparedColumns = columns.filter((column) => filterColumns(column));
-  console.log('preparedColumns:', preparedColumns);
   const head = [preparedColumns.map((column) => String(column.name))];
   const body = formatBodyData(rows, preparedColumns);
   const content = [...head, ...body].map((cells) => cells.map(serialiseCellValue).join(',')).join('\n');

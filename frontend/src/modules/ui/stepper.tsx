@@ -185,9 +185,9 @@ interface StepperProps extends StepOptions {
 }
 
 const VARIABLE_SIZES = {
-  sm: '32px',
-  md: '36px',
-  lg: '40px',
+  sm: '36px',
+  md: '40px',
+  lg: '44px',
 };
 
 const Stepper = React.forwardRef<HTMLDivElement, StepperProps>((props, ref: React.Ref<HTMLDivElement>) => {
@@ -438,22 +438,29 @@ type VerticalStepProps = StepSharedProps & {
   children?: React.ReactNode;
 };
 
-const verticalStepVariants = cva('flex flex-col relative transition-all duration-200', {
-  variants: {
-    variant: {
-      circle: cn(
-        'pb-[var(--step-gap)] gap-[var(--step-gap)]',
-        "[&:not(:last-child)]:after:content-[''] [&:not(:last-child)]:after:w-[2px] [&:not(:last-child)]:after:bg-border",
-        '[&:not(:last-child)]:after:inset-x-[calc(var(--step-icon-size)/2)]',
-        '[&:not(:last-child)]:after:absolute',
-        '[&:not(:last-child)]:after:top-[calc(var(--step-icon-size)+var(--step-gap))]',
-        '[&:not(:last-child)]:after:bottom-[var(--step-gap)]',
-        '[&:not(:last-child)]:after:transition-all [&:not(:last-child)]:after:duration-200',
-      ),
-      line: 'flex-1 border-t-0 mb-4',
+const verticalStepVariants = cva(
+  [
+    'flex flex-col relative transition-all duration-200',
+    'data-[completed=true]:[&:not(:last-child)]:after:bg-blue-500',
+    'data-[invalid=true]:[&:not(:last-child)]:after:bg-destructive',
+  ],
+  {
+    variants: {
+      variant: {
+        circle: cn(
+          '[&:not(:last-child)]:pb-[var(--step-gap)] [&:not(:last-child)]:gap-[var(--step-gap)]',
+          "[&:not(:last-child)]:after:content-[''] [&:not(:last-child)]:after:w-[2px] [&:not(:last-child)]:after:bg-border",
+          '[&:not(:last-child)]:after:inset-x-[calc(var(--step-icon-size)/2)]',
+          '[&:not(:last-child)]:after:absolute',
+          '[&:not(:last-child)]:after:top-[calc(var(--step-icon-size)+var(--step-gap))]',
+          '[&:not(:last-child)]:after:bottom-[var(--step-gap)]',
+          '[&:not(:last-child)]:after:transition-all [&:not(:last-child)]:after:duration-200',
+        ),
+        line: 'flex-1 border-t-0 mb-4',
+      },
     },
   },
-});
+);
 
 const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props, ref) => {
   const {
@@ -491,6 +498,8 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
   const localIsLoading = isLoading || state === 'loading';
   const localIsError = isError || state === 'error';
 
+  const isLastStep = index === steps.length - 1;
+
   const active = variant === 'line' ? isCompletedStep || isCurrentStep : isCompletedStep;
   const checkIcon = checkIconProp || checkIconContext;
   const errorIcon = errorIconProp || errorIconContext;
@@ -517,8 +526,6 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
         verticalStepVariants({
           variant: variant?.includes('circle') ? 'circle' : 'line',
         }),
-        'data-[completed=true]:[&:not(:last-child)]:after:bg-blue-500',
-        'data-[invalid=true]:[&:not(:last-child)]:after:bg-destructive',
         styles?.['vertical-step'],
       )}
       data-optional={steps[index || 0]?.optional}
@@ -565,7 +572,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
         }}
         className={cn(
           'stepper__vertical-step-content',
-          'min-h-4',
+          !isLastStep && 'min-h-4',
           variant !== 'line' && 'ps-[--step-icon-size]',
           variant === 'line' && orientation === 'vertical' && 'min-h-0',
           styles?.['vertical-step-content'],

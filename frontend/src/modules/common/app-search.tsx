@@ -126,7 +126,7 @@ export const AppSearch = () => {
               {searchValue.length === 0 && <CommandEmpty>{t('common:global_search.text')}</CommandEmpty>}
               {!!recentSearches.length && (
                 <CommandGroup>
-                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-background">{t('common:history')}</div>
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
                   {recentSearches.map((search) => (
                     <CommandItem
                       key={search}
@@ -162,7 +162,7 @@ export const AppSearch = () => {
           {userSuggestions.length > 0 && (
             <CommandGroup>
               <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-10">
-                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-background">{t('common:user.plural')}</div>
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:user.plural')}</div>
               </Sticky>
               {visibleUserSuggestions.map((suggestion) => (
                 <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
@@ -178,7 +178,7 @@ export const AppSearch = () => {
           {organizationSuggestions.length > 0 && (
             <CommandGroup>
               <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-20">
-                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-background">{t('common:organization.plural')}</div>
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:organization.plural')}</div>
               </Sticky>
               {visibleOrganizationSuggestions.map((suggestion) => (
                 <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>

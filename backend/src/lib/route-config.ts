@@ -3,14 +3,12 @@ import type { MiddlewareHandler } from 'hono';
 import type { NonEmptyArray } from '../types/common';
 
 export type RouteOptions = Parameters<typeof createRoute>[0] & {
-  guard: NonEmptyArray<MiddlewareHandler | 'public'>;
-  middlewares?: MiddlewareHandler[];
+  guard: MiddlewareHandler | NonEmptyArray<MiddlewareHandler>;
 };
 
 export type RouteConfig = {
   route: ReturnType<typeof createRoute>;
   guard: RouteOptions['guard'];
-  middlewares?: RouteOptions['middlewares'];
 };
 
 export type Route<
@@ -18,7 +16,7 @@ export type Route<
   R extends Omit<RouteOptions, 'path'> & {
     path: P;
   },
-> = ReturnType<typeof createRoute<P, Omit<R, 'guard' | 'middlewares'>>>;
+> = ReturnType<typeof createRoute<P, Omit<R, 'guard'>>>;
 
 export const createRouteConfig = <
   P extends string,
@@ -26,15 +24,15 @@ export const createRouteConfig = <
     path: P;
   },
 >({
-  middlewares,
   guard,
   ...routeConfig
-}: R): {
-  route: Route<P, R>;
-  guard: RouteConfig['guard'];
-  middlewares: RouteConfig['middlewares'];
-} => ({
-  route: createRoute(routeConfig),
-  guard,
-  middlewares,
-});
+}: R): Route<P, R> => {
+  const initGuard = Array.isArray(guard) ? guard : [guard];
+  const initMiddleware = routeConfig.middleware ? (Array.isArray(routeConfig.middleware) ? routeConfig.middleware : [routeConfig.middleware]) : [];
+  const middleware = [...initGuard, ...initMiddleware];
+
+  return createRoute({
+    ...routeConfig,
+    middleware,
+  });
+};

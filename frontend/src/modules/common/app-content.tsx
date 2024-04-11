@@ -35,7 +35,7 @@ export const AppContent = () => {
   return (
     <div ref={clickContentRef} id="app-content" className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding}`}>
       <div
-        className={`flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-screen transition duration-300 ease-in-out ${
+        className={`flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-[120vh] transition duration-300 ease-in-out ${
           !focusView && 'mt-16 md:ml-16'
         } md:mt-0`}
       >

@@ -96,7 +96,7 @@ export const inviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/invite',
   guard: tenantGuard(['ADMIN']),
-  middlewares: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
+  middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
   summary: 'Invite a new member(user) to organization or system',
   description: `

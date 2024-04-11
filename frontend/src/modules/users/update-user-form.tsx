@@ -181,6 +181,10 @@ const UpdateUserForm = ({
           url={form.getValues('thumbnailUrl')}
           setUrl={setImageUrl}
         />
+        <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
+          <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
+          <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
+        </div>
         <InputFormField
           control={form.control}
           name="slug"
@@ -198,8 +202,6 @@ const UpdateUserForm = ({
           }
         />
         <InputFormField control={form.control} value={user.email} name="email" label={t('common:email')} type="email" disabled required />
-        <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
-        <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
         <InputFormField control={form.control} name="bio" label={t('common:bio')} type="textarea" />
         <LanguageFormField
           control={form.control}
@@ -212,7 +214,7 @@ const UpdateUserForm = ({
           control={form.control}
           name="newsletter"
           render={({ field }) => (
-            <FormItem className="flex-row">
+            <FormItem className="flex-row" name="newsletter">
               <FormControl>
                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
