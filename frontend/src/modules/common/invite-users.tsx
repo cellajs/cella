@@ -8,7 +8,7 @@ import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
 
 interface InviteUsersProps {
-  organization?: Organization;
+  organization?: Organization | null;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
@@ -63,7 +63,9 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
       <AppAlert id="invite_email" variant="success" Icon={Info}>
         {t('common:explain.invite_email.text')}
       </AppAlert>
-      <InviteEmailForm organization={organization} type={type} callback={callback} dialog={isDialog} children={children} />
+      <InviteEmailForm organization={organization} type={type} callback={callback} dialog={isDialog}>
+        {children}
+      </InviteEmailForm>
     </div>
   );
 };

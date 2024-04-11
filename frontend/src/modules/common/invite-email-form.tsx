@@ -20,7 +20,7 @@ import { MultiEmail } from './multi-email';
 import { useStepper } from '../ui/stepper';
 
 interface Props {
-  organization?: Organization;
+  organization?: Organization | null;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;

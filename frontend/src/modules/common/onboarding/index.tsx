@@ -9,9 +9,10 @@ import { useUserStore } from '~/store/user';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Step, type StepItem, Stepper } from '~/modules/ui/stepper';
 
-import Footer from './footer';
+import StepperFooter from './footer';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import InviteUsers from '../invite-users';
+import type { Organization } from '~/types';
 
 
 const steps: StepItem[] = [
@@ -43,6 +44,7 @@ const OnboardingWelcome = ({ setWelcomeMessage }: OnboardingWelcomeProps) => {
 
 const Onboarding = () => {
   const [welcomeMessage, setWelcomeMessage] = useState<boolean>(true);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const { hasStarted } = useMounted();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
@@ -56,61 +58,37 @@ const Onboarding = () => {
         ) : (
           <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 p-4 sm:w-10/12 max-w-[800px]', animateClass)}>
             <Stepper initialStep={0} steps={steps} orientation="vertical">
-              {steps.map(({ label, id }) => {
-                if (id === 'step-1') {
-                  return (
-                    <Step key={label} label={label}>
-                      <Card>
-                        <CardHeader>
-                          <CardDescription className="font-light">Let's get started by creating your organization.</CardDescription>
-                        </CardHeader>
+              {steps.map(({ label, id }) => (
+                <Step key={label} label={label}>
+                  <Card>
+                    <CardHeader>
+                      <CardDescription className="font-light">
+                        {id === 'step-1' && 'Let\'s get started by creating your organization.'}
+                        {id === 'step-2' && `Hi ${user.firstName}, this is you?`}
+                        {id === 'step-3' && `Invite one or more team members of ${organization?.name} to Cella.`}
+                      </CardDescription>
+                    </CardHeader>
 
-                        <CardContent>
-                          <CreateOrganizationForm labelDirection="top">
-                            <Footer />
-                          </CreateOrganizationForm>
-                        </CardContent>
-                      </Card>
-                    </Step>
-                  );
-                }
-
-                if (id === 'step-2') {
-                  return (
-                    <Step key={label} label={label}>
-                      <Card>
-                        <CardHeader>
-                          <CardDescription className="font-light">Hi {user.firstName}, this is you?</CardDescription>
-                        </CardHeader>
-
-                        <CardContent>
-                          <UpdateUserForm user={user} hiddenFields={['email', 'bio', 'newsletter']}>
-                            <Footer />
-                          </UpdateUserForm>
-                        </CardContent>
-                      </Card>
-                    </Step>
-                  );
-                }
-
-                if (id === 'step-3') {
-                  return (
-                    <Step key={label} label={label}>
-                      <Card>
-                        <CardHeader>
-                          <CardDescription className="font-light">Invite one or more team members to Cella.</CardDescription>
-                        </CardHeader>
-
-                        <CardContent>
-                          <InviteUsers type="organization" mode="email">
-                            <Footer />
-                          </InviteUsers>
-                        </CardContent>
-                      </Card>
-                    </Step>
-                  );
-                }
-              })}
+                    <CardContent>
+                      {id === 'step-1' && (
+                        <CreateOrganizationForm callback={(organization) => setOrganization(organization)} labelDirection="top">
+                          <StepperFooter />
+                        </CreateOrganizationForm>
+                      )}
+                      {id === 'step-2' && (
+                        <UpdateUserForm user={user} hiddenFields={['email', 'bio', 'newsletter']}>
+                          <StepperFooter organization={organization} />
+                        </UpdateUserForm>
+                      )}
+                      {id === 'step-3' && (
+                        <InviteUsers organization={organization} type="organization" mode="email">
+                          <StepperFooter organization={organization} />
+                        </InviteUsers>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Step>
+              ))}
             </Stepper>
           </div>
         )}
