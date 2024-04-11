@@ -65,3 +65,5 @@ export const nameSchema = z
   .min(2)
   .max(200)
   .refine((s) => /^[a-z ,.'-]+$/i.test(s), "Name may only contain letters, spaces and these characters: ,.'-");
+
+export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');
