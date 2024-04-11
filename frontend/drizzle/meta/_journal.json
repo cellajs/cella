@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1712736309445,
+      "tag": "0000_purple_speed_demon",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1712739803973,
+      "tag": "0001_abandoned_gargoyle",
+      "breakpoints": true
+    }
+  ]
+}

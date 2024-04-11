@@ -1,23 +1,18 @@
-import type { UniqueIdentifier } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Activity, GripVertical, Star } from 'lucide-react';
+import { Activity, GripVertical, Star, Trash } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
+import { useElectric, type Task } from '../common/root/electric';
 import { Checkbox } from '../ui/checkbox';
-import type { ColumnId } from './kanban-board';
-
-export interface Task {
-  id: UniqueIdentifier;
-  columnId: ColumnId;
-  content: string;
-}
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface TaskCardProps {
   task: Task;
@@ -33,6 +28,10 @@ export interface TaskDragData {
 
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>('**Hello world!!!**');
+  const { t } = useTranslation();
+
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -67,6 +66,10 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     bio: 'sdfsd sdfs sd fsafsf asdfad fafd; asdf asf safd sfdsfs fsd sdfdsg .fdg dfg dfgd fgdfgdfg',
   };
 
+  const onDelete = () => {
+    db.tasks.delete({ where: { id: task.id } });
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -76,16 +79,29 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
       })}
     >
       <CardHeader className="p-2 pr-4 space-between flex flex-col border-b border-secondary relative">
-        <div className="flex items-start gap-2">
+        <div className="flex gap-2 items-center">
           <div className="group mt-[2px]">
             <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
             <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
             {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
             {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
           </div>
+          <h3 className="font-semibold">{task.name}</h3>
           <div className="">
-            <span>{task.content}</span>
-            <span className="ml-1 font-light opacity-50"> &#183; 2d &#183; F</span>
+            <span>{task.description}</span>
+            <span className="font-light opacity-50">2d &#183; F</span>
+          </div>
+          <div className="ml-auto">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8" onClick={onDelete}>
+                  <Trash size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={13}>
+                {t('Delete task')}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
         <div>

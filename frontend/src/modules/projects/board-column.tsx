@@ -1,50 +1,56 @@
-import { type UniqueIdentifier, useDndContext } from '@dnd-kit/core';
+import { useDndContext, type UniqueIdentifier } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
-import { ChevronDown, Footprints, GripVertical, Maximize2, Plus, Settings } from 'lucide-react';
+import { ChevronDown, Footprints, GripVertical, Maximize2, Plus, Settings, Trash } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { dialog } from '../common/dialoger/state';
+import { useElectric, type Project, type Task } from '../common/root/electric';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import { type Task, TaskCard } from './task-card';
+import CreateTaskForm from './create-task-form';
+import { TaskCard } from './task-card';
 
 export interface Column {
   id: UniqueIdentifier;
-  title: string;
+  name: string;
 }
 
 export type ColumnType = 'Column';
 
 export interface ColumnDragData {
   type: ColumnType;
-  column: Column;
+  column: Project;
 }
 
 interface BoardColumnProps {
-  column: Column;
+  project: Project;
   tasks: Task[];
   isOverlay?: boolean;
 }
 
-export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
+export function BoardColumn({ project, tasks, isOverlay }: BoardColumnProps) {
   const { t } = useTranslation();
+
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
 
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
   }, [tasks]);
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: column.id,
+    id: project.id,
     data: {
       type: 'Column',
-      column,
+      column: project,
     } satisfies ColumnDragData,
     attributes: {
-      roleDescription: `Column: ${column.title}`,
+      roleDescription: `Column: ${project.name}`,
     },
   });
 
@@ -66,6 +72,17 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   // TODO
   const [background, setBackground] = useState('#ff75c3');
 
+  const createTask = () => {
+    dialog(<CreateTaskForm project={project} dialog />, {
+      className: 'md:max-w-xl',
+      title: t('common:create_task'),
+    });
+  };
+
+  const onDelete = () => {
+    db.projects.delete({ where: { id: project.id } });
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -76,13 +93,13 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     >
       <CardHeader className="p-3 font-semibold border-b flex flex-row gap-2 space-between items-center">
         <Button variant={'ghost'} {...attributes} {...listeners} className=" py-1 px-0 text-primary/50 -ml-1 h-auto cursor-grab relative">
-          <span className="sr-only">{`Move column: ${column.title}`}</span>
+          <span className="sr-only">{`Move column: ${project.name}`}</span>
           <GripVertical size={16} />
         </Button>
 
         <BackgroundPicker background={background} setBackground={setBackground} className="p-2 h-8 w-8" options={['solid']} />
 
-        <div> {column.title}</div>
+        <div> {project.name}</div>
 
         <div className="grow" />
 
@@ -119,7 +136,18 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           </TooltipContent>
         </Tooltip>
 
-        <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8" onClick={onDelete}>
+              <Trash size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" sideOffset={13}>
+            {t('Delete project')}
+          </TooltipContent>
+        </Tooltip>
+
+        <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8" onClick={createTask}>
           <Plus size={16} className="mr-1" />
           Story
         </Button>

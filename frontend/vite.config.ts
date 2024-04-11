@@ -22,6 +22,9 @@ export default defineConfig(() => {
     build: {
       sourcemap: true,
     },
+    optimizeDeps: {
+      exclude: ['wa-sqlite'],
+    },
     plugins: [
       react(),
       config.sentSentrySourceMaps
