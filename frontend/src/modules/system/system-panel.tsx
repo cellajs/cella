@@ -1,22 +1,16 @@
 import { type Paddle, initializePaddle } from '@paddle/paddle-js';
-import { useMatches } from '@tanstack/react-router';
+import { Outlet } from '@tanstack/react-router';
 import { config } from 'config';
-import { AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageNav } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { OrganizationsTableRoute, UsersTableRoute } from '~/routes/system';
-import { AnimatedOutlet } from '../common/animated-outlet';
 import { FocusViewContainer } from '../common/focus-view';
 import { Button } from '../ui/button';
 
 const SystemPanel = () => {
   const { t } = useTranslation();
-
-  // Animate outlet
-  const matches = useMatches();
-  const currentMatch = matches.length ? matches[matches.length - 1] : null;
 
   // Create a local state to store Paddle instance
   const [paddle, setPaddle] = useState<Paddle>();
@@ -57,9 +51,7 @@ const SystemPanel = () => {
       />
 
       <FocusViewContainer className="container mt-4">
-        <AnimatePresence mode="popLayout">
-          <AnimatedOutlet key={currentMatch ? currentMatch.pathname : null} />
-        </AnimatePresence>
+          <Outlet />
       </FocusViewContainer>
     </>
   );

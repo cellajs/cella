@@ -25,7 +25,7 @@ export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
     const options = {
       root: null as Element | null,
       rootMargin: '-10% 0px -10% 0px',
-      threshold: 0.2,
+      threshold: 0,
     };
 
     // Ensure observer is created only once

@@ -1,13 +1,11 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { useMatches, useParams } from '@tanstack/react-router';
-import { AnimatePresence } from 'framer-motion';
+import { Outlet, useParams } from '@tanstack/react-router';
 import { createContext } from 'react';
 import { getOrganizationBySlugOrId } from '~/api/organizations';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
 import type { Organization } from '~/types';
-import { AnimatedOutlet } from '../common/animated-outlet';
 import { FocusViewContainer } from '../common/focus-view';
 import JoinLeaveButton from './join-leave-button';
 
@@ -34,16 +32,6 @@ const OrganizationPage = () => {
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(organizationIdentifier));
   const organization = organizationQuery.data;
 
-  // Animate outlet
-  let currentMatch = null;
-
-  try {
-    const matches = useMatches();
-    currentMatch = matches.length ? matches[matches.length - 1] : null;
-  } catch (e) {
-    console.error(e);
-  }
-
   return (
     <OrganizationContext.Provider value={{ organization }}>
       <PageHeader
@@ -60,9 +48,7 @@ const OrganizationPage = () => {
       />
       <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
       <FocusViewContainer className="container min-h-screen mt-4">
-        <AnimatePresence mode="popLayout">
-          <AnimatedOutlet key={currentMatch ? currentMatch.pathname : null} />
-        </AnimatePresence>
+          <Outlet />
       </FocusViewContainer>
     </OrganizationContext.Provider>
   );
