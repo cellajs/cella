@@ -86,15 +86,17 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     if (value) task.content = value;
   }, [value]);
 
-  // Get the textarea element
+  // Textarea autofocus cursor on the end of the value
   useEffect(() => {
-    const editorTextAria = document.getElementById(task.id as string);
-    if (!editorTextAria) return;
-    const textAreaElement = editorTextAria as HTMLTextAreaElement;
-    if (value) textAreaElement.value = value;
-    textAreaElement.focus();
-    textAreaElement.setSelectionRange(textAreaElement.value.length, textAreaElement.value.length);
-  }, [task.id]);
+    if (isOpen) {
+      const editorTextAria = document.getElementById(task.id as string);
+      if (!editorTextAria) return;
+      const textAreaElement = editorTextAria as HTMLTextAreaElement;
+      if (value) textAreaElement.value = value;
+      textAreaElement.focus();
+      textAreaElement.setSelectionRange(textAreaElement.value.length, textAreaElement.value.length);
+    }
+  }, [task.id, isOpen]);
 
   return (
     <Card
