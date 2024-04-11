@@ -46,7 +46,7 @@ const generalRoutes = app
   /*
    * Get upload token
    */
-  .add(getUploadTokenRouteConfig, async (ctx) => {
+  .openapi(getUploadTokenRouteConfig, async (ctx) => {
     const isPublic = ctx.req.query('public');
     const user = ctx.get('user');
     // TODO: validate query param organization?
@@ -71,7 +71,7 @@ const generalRoutes = app
   /*
    * Check if slug is available
    */
-  .add(checkSlugRouteConfig, async (ctx) => {
+  .openapi(checkSlugRouteConfig, async (ctx) => {
     const { slug } = ctx.req.valid('param');
 
     const slugAvailable = await checkSlugAvailable(slug);
@@ -84,7 +84,7 @@ const generalRoutes = app
   /*
    * Check token (token validation)
    */
-  .add(checkTokenRouteConfig, async (ctx) => {
+  .openapi(checkTokenRouteConfig, async (ctx) => {
     const token = ctx.req.valid('param').token;
 
     // Check if token exists
@@ -114,7 +114,7 @@ const generalRoutes = app
   /*
    * Invite users to the system or members to an organization
    */
-  .add(inviteRouteConfig, async (ctx) => {
+  .openapi(inviteRouteConfig, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
     const organization = ctx.get('organization') as OrganizationModel | undefined;
@@ -254,7 +254,7 @@ const generalRoutes = app
   /*
    * Paddle webhook
    */
-  .add(paddleWebhookRouteConfig, async (ctx) => {
+  .openapi(paddleWebhookRouteConfig, async (ctx) => {
     const signature = ctx.req.header('paddle-signature');
     const rawRequestBody = String(ctx.req.raw.body);
 
@@ -285,7 +285,7 @@ const generalRoutes = app
   /*
    * Get suggestions
    */
-  .add(suggestionsConfig, async (ctx) => {
+  .openapi(suggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
     const result = [];
 

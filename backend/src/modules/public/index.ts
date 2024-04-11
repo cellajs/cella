@@ -13,7 +13,7 @@ const publicRoutes = app
   /*
    * Get public counts
    */
-  .add(getPublicCountsRouteConfig, async (ctx) => {
+  .openapi(getPublicCountsRouteConfig, async (ctx) => {
     const [organizationsResult, usersResult] = await Promise.all([
       db
         .select({

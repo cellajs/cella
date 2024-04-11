@@ -30,7 +30,7 @@ const organizationsRoutes = app
   /*
    * Create organization
    */
-  .add(createOrganizationRouteConfig, async (ctx) => {
+  .openapi(createOrganizationRouteConfig, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = ctx.get('user');
 
@@ -88,7 +88,7 @@ const organizationsRoutes = app
   /*
    * Get an organization
    */
-  .add(getOrganizationsRouteConfig, async (ctx) => {
+  .openapi(getOrganizationsRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -158,7 +158,7 @@ const organizationsRoutes = app
   /*
    * Update an organization
    */
-  .add(updateOrganizationRouteConfig, async (ctx) => {
+  .openapi(updateOrganizationRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -260,7 +260,7 @@ const organizationsRoutes = app
   /*
    * Update user in organization
    */
-  .add(updateUserInOrganizationRouteConfig, async (ctx) => {
+  .openapi(updateUserInOrganizationRouteConfig, async (ctx) => {
     const { userId } = ctx.req.valid('param');
     const { role } = ctx.req.valid('json');
     const user = ctx.get('user');
@@ -333,7 +333,7 @@ const organizationsRoutes = app
   /*
    * Delete organizations
    */
-  .add(deleteOrganizationsRouteConfig, async (ctx) => {
+  .openapi(deleteOrganizationsRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -386,7 +386,7 @@ const organizationsRoutes = app
   /*
    * Get organization by id or slug
    */
-  .add(getOrganizationByIdOrSlugRouteConfig, async (ctx) => {
+  .openapi(getOrganizationByIdOrSlugRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -424,7 +424,7 @@ const organizationsRoutes = app
   /*
    * Get users by organization id
    */
-  .add(getUsersByOrganizationIdRouteConfig, async (ctx) => {
+  .openapi(getUsersByOrganizationIdRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 
@@ -507,7 +507,7 @@ const organizationsRoutes = app
   /*
    * Delete users from organization
    */
-  .add(deleteUsersFromOrganizationRouteConfig, async (ctx) => {
+  .openapi(deleteUsersFromOrganizationRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 

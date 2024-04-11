@@ -36,7 +36,7 @@ const oauthRoutes = app
   /*
    * Github sign in
    */
-  .add(githubSignInRouteConfig, async (ctx) => {
+  .openapi(githubSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
@@ -49,7 +49,7 @@ const oauthRoutes = app
   /*
    * Google sign in
    */
-  .add(googleSignInRouteConfig, async (ctx) => {
+  .openapi(googleSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
@@ -60,7 +60,7 @@ const oauthRoutes = app
 
     return ctx.redirect(url.toString());
   })
-  .add(microsoftSignInRouteConfig, async (ctx) => {
+  .openapi(microsoftSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
@@ -71,7 +71,7 @@ const oauthRoutes = app
 
     return ctx.redirect(url.toString());
   })
-  .add(githubSignInCallbackRouteConfig, async (ctx) => {
+  .openapi(githubSignInCallbackRouteConfig, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
 
     const stateCookie = getCookie(ctx, 'oauth_state');
@@ -235,7 +235,7 @@ const oauthRoutes = app
       throw error;
     }
   })
-  .add(googleSignInCallbackRouteConfig, async (ctx) => {
+  .openapi(googleSignInCallbackRouteConfig, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     const storedState = getCookie(ctx, 'oauth_state');
@@ -309,7 +309,7 @@ const oauthRoutes = app
     }
   })
 
-  .add(microsoftSignInCallbackRouteConfig, async (ctx) => {
+  .openapi(microsoftSignInCallbackRouteConfig, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     const storedState = getCookie(ctx, 'oauth_state');

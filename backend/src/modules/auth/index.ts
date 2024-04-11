@@ -47,7 +47,7 @@ const authRoutes = app
   /*
    * Sign up with email and password
    */
-  .add(signUpRouteConfig, async (ctx) => {
+  .openapi(signUpRouteConfig, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
     const hashedPassword = await new Argon2id().hash(password);
@@ -89,7 +89,7 @@ const authRoutes = app
   /*
    * Verify email
    */
-  .add(verifyEmailRouteConfig, async (ctx) => {
+  .openapi(verifyEmailRouteConfig, async (ctx) => {
     const { resend } = ctx.req.valid('query');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -149,7 +149,7 @@ const authRoutes = app
   /*
    * Send verification email
    */
-  .add(sendVerificationEmailRouteConfig, async (ctx) => {
+  .openapi(sendVerificationEmailRouteConfig, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -191,7 +191,7 @@ const authRoutes = app
   /*
    * Check if email exists
    */
-  .add(checkEmailRouteConfig, async (ctx) => {
+  .openapi(checkEmailRouteConfig, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -206,7 +206,7 @@ const authRoutes = app
   /*
    * Request reset password email with token
    */
-  .add(resetPasswordRouteConfig, async (ctx) => {
+  .openapi(resetPasswordRouteConfig, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -250,7 +250,7 @@ const authRoutes = app
   /*
    * Reset password with token
    */
-  .add(resetPasswordCallbackRouteConfig, async (ctx) => {
+  .openapi(resetPasswordCallbackRouteConfig, async (ctx) => {
     const { password } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -281,7 +281,7 @@ const authRoutes = app
   /*
    * Sign in with email and password
    */
-  .add(signInRouteConfig, async (ctx) => {
+  .openapi(signInRouteConfig, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -314,7 +314,7 @@ const authRoutes = app
   /*
    * Sign out
    */
-  .add(signOutRouteConfig, async (ctx) => {
+  .openapi(signOutRouteConfig, async (ctx) => {
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
 
@@ -337,7 +337,7 @@ const authRoutes = app
   /*
    * Accept invite token
    */
-  .add(acceptInviteRouteConfig, async (ctx) => {
+  .openapi(acceptInviteRouteConfig, async (ctx) => {
     const { password, oauth } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -421,9 +421,9 @@ const authRoutes = app
 
     if (oauth === 'github') {
       const response = await fetch(
-        `${config.backendUrl + githubSignInRouteConfig.route.path}${organization ? `?redirect=${organization.slug}` : ''}`,
+        `${config.backendUrl + githubSignInRouteConfig.path}${organization ? `?redirect=${organization.slug}` : ''}`,
         {
-          method: githubSignInRouteConfig.route.method,
+          method: githubSignInRouteConfig.method,
           redirect: 'manual',
         },
       );
