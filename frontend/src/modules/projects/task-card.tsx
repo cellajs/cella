@@ -70,7 +70,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     setLabelBoxOpen(false);
   };
 
-  const toggleEditor = () => {
+  const toggleEditorState = () => {
     if (toggleTaskClick) toggleTaskClick(task.id);
   };
 
@@ -96,7 +96,6 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     textAreaElement.setSelectionRange(textAreaElement.value.length, textAreaElement.value.length);
   }, [task.id]);
 
-  console.log('isLabelBoxOpen:', isLabelBoxOpen);
   return (
     <Card
       ref={setNodeRef}
@@ -107,7 +106,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     >
       <CardHeader className="p-2 pr-4 space-between flex flex-col border-b border-secondary relative">
         {!isOpen && (
-          <Button onClick={toggleEditor} size={'auto'} variant="secondary" className="w-full flex justify-start bg-transparent">
+          <Button onClick={toggleEditorState} size={'auto'} variant="secondary" className="w-full flex justify-start bg-transparent">
             <div className="flex items-center gap-2">
               <div className="group mt-[2px]">
                 <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
@@ -142,7 +141,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
                 <span className="sr-only">Move task</span>
                 <GripVertical size={16} />
               </Button>
-              <Button onClick={toggleEditor} variant="plain" size="sm" className="rounded text-[12px] p-1 h-6">
+              <Button onClick={toggleEditorState} variant="plain" size="sm" className="rounded text-[12px] p-1 h-6">
                 Collapse
               </Button>
             </div>
