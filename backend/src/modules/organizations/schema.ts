@@ -5,6 +5,7 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { idSchema, imageUrlSchema, nameSchema, organizationParamSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
 import { apiUserSchema } from '../users/schema';
+import { checkValidUrl } from '../../lib/utils';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
 
@@ -51,6 +52,9 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
   languages: z.array(z.string()).min(1).optional(),
   emailDomains: z.array(z.string()).optional(),
   authStrategies: z.array(z.string()).optional(),
+  websiteUrl: z.string().refine((url) => checkValidUrl(url), {
+    message: 'URL must start with https',
+  }),
   thumbnailUrl: imageUrlSchema,
   bannerUrl: imageUrlSchema,
   logoUrl: imageUrlSchema,
