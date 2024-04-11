@@ -181,7 +181,7 @@ const UpdateUserForm = ({
           url={form.getValues('thumbnailUrl')}
           setUrl={setImageUrl}
         />
-        <div className="grid sm:grid-cols-2 gap-8">
+        <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
           <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
           <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
         </div>
