@@ -554,6 +554,9 @@ importers:
       react-sticky-el:
         specifier: ^2.1.0
         version: 2.1.0(react-dom@18.2.0)(react@18.2.0)
+      slugify:
+        specifier: 1.6.6
+        version: 1.6.6
       sonner:
         specifier: ^1.4.41
         version: 1.4.41(react-dom@18.2.0)(react@18.2.0)
@@ -689,7 +692,7 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.0.1(typescript@5.3.3)
+        version: 8.0.1(postcss@8.4.38)(typescript@5.3.3)
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
@@ -17772,7 +17775,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
       - ts-node
-    dev: false
 
   /tsup@8.0.1(postcss@8.4.38)(typescript@5.4.4):
     resolution: {integrity: sha512-hvW7gUSG96j53ZTSlT4j/KL0q1Q2l6TqGBFc6/mu/L46IoNWqLLUzLRLP1R8Q7xrJTmkDxxDoojV5uCVs1sVOg==}
@@ -17841,7 +17843,7 @@ packages:
       execa: 5.1.1
       globby: 11.1.0
       joycon: 3.1.1
-      postcss-load-config: 4.0.2(postcss@8.4.33)
+      postcss-load-config: 4.0.2(postcss@8.4.38)
       resolve-from: 5.0.0
       rollup: 4.9.6
       source-map: 0.8.0-beta.0
@@ -17851,6 +17853,7 @@ packages:
     transitivePeerDependencies:
       - supports-color
       - ts-node
+    dev: false
 
   /tsx@4.7.0:
     resolution: {integrity: sha512-I+t79RYPlEYlHn9a+KzwrvEwhJg35h/1zHsLC2JXvhC2mdynMv6Zxzvhv5EMV6VF5qJlLlkSnMVvdZV3PSIGcg==}
@@ -18777,6 +18780,7 @@ packages:
 
   /workbox-google-analytics@7.0.0:
     resolution: {integrity: sha512-MEYM1JTn/qiC3DbpvP2BVhyIH+dV/5BjHk756u9VbwuAhu0QHyKscTnisQuz21lfRpOwiS9z4XdqeVAKol0bzg==}
+    deprecated: It is not compatible with newer versions of GA starting with v4, as long as you are using GAv3 it should be ok, but the package is not longer being maintained
     dependencies:
       workbox-background-sync: 7.0.0
       workbox-core: 7.0.0
