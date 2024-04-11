@@ -1,17 +1,17 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { Button } from '../../ui/button';
 import { useStepper } from '../../ui/stepper';
+import { dialog } from '~/modules/common/dialoger/state';
 
 const Footer = () => {
-  const { currentStep, prevStep, isLastStep, isOptionalStep } = useStepper();
+  const { currentStep, nextStep, isLastStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
+
+  useEffect(() => {
+    if (activeStep > 0 && hasCompletedAllSteps) dialog.remove();
+  }, [hasCompletedAllSteps, activeStep]);
 
   const buttonText = useMemo(() => {
-
-    if (isOptionalStep) {
-      return 'Skip';
-    }
-
     if (isLastStep) {
       return 'Finish';
     }
@@ -21,9 +21,9 @@ const Footer = () => {
 
   return (
     <div className="w-full flex justify-end gap-2">
-      {currentStep?.id !== 'step-1' && (
-        <Button onClick={prevStep} size="sm" variant="secondary">
-          Previous
+      {isOptionalStep && (
+        <Button onClick={nextStep} size="sm" variant="secondary">
+          Skip
         </Button>
       )}
       <Button size="sm">{buttonText}</Button>

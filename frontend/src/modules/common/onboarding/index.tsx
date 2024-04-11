@@ -1,5 +1,5 @@
 import { ArrowDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
@@ -7,18 +7,17 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import { useUserStore } from '~/store/user';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import { Step, type StepItem, Stepper, useStepper } from '~/modules/ui/stepper';
+import { Step, type StepItem, Stepper } from '~/modules/ui/stepper';
 
 import Footer from './footer';
-import { dialog } from '~/modules/common/dialoger/state';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import InviteUsers from '../invite-users';
 
 
 const steps: StepItem[] = [
-  { id: 'step-1', label: 'Create organization', optional: false },
+  { id: 'step-1', label: 'Create organization', optional: true },
   { id: 'step-2', label: 'Tune your profile', optional: false },
-  { id: 'step-3', label: 'Invite team', optional: true },
+  { id: 'step-3', label: 'Invite others', optional: true },
 ];
 
 interface OnboardingWelcomeProps {
@@ -47,16 +46,7 @@ const Onboarding = () => {
   const { hasStarted } = useMounted();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
-  const { hasCompletedAllSteps, activeStep } = useStepper();
-
   const user = useUserStore((state) => state.user);
-
-  useEffect(() => {
-    if (!hasCompletedAllSteps) return;
-
-    // Use activeStep to close the stepper if number is beyond the last step
-    if (activeStep > 3) dialog.remove();
-  }, [hasCompletedAllSteps, activeStep]);
 
   return (
     <div className="flex flex-col min-h-[90vh] sm:min-h-screen items-center">
