@@ -1,5 +1,3 @@
-'use client';
-
 import { Check, ChevronsUpDown, Edit2 } from 'lucide-react';
 import * as React from 'react';
 
@@ -24,6 +22,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import { PopoverPortal } from '@radix-ui/react-popover';
+import { CommandList } from 'cmdk';
+import { ScrollArea } from '../ui/scroll-area';
 
 type Framework = Record<'value' | 'label' | 'color', string>;
 
@@ -66,13 +67,16 @@ const badgeStyle = (color: string) => ({
   color,
 });
 
-export function FancyBox() {
+export interface LabelBoxData {
+  boxOpen: boolean;
+}
+export function LabelBox({ boxOpen }: LabelBoxData) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [frameworks, setFrameworks] = React.useState<Framework[]>(FRAMEWORKS);
   const [openCombobox, setOpenCombobox] = React.useState(false);
   const [openDialog, setOpenDialog] = React.useState(false);
   const [inputValue, setInputValue] = React.useState<string>('');
-  const [selectedValues, setSelectedValues] = React.useState<Framework[]>([FRAMEWORKS[0]]);
+  const [selectedValues, setSelectedValues] = React.useState<Framework[]>(FRAMEWORKS);
 
   const createFramework = (name: string) => {
     const newFramework = {
@@ -105,87 +109,109 @@ export function FancyBox() {
     inputRef.current?.blur(); // HACK: otherwise, would scroll automatically to the bottom of page
     setOpenCombobox(value);
   };
-
   return (
-    <div className="max-w-[200px]">
+    <>
       <Popover open={openCombobox} onOpenChange={onComboboxOpenChange}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-[200px] justify-between text-foreground">
-            <span className="truncate">
-              {selectedValues.length === 0 && 'Select labels'}
-              {selectedValues.length === 1 && selectedValues[0].label}
-              {selectedValues.length === 2 && selectedValues.map(({ label }) => label).join(', ')}
-              {selectedValues.length > 2 && `${selectedValues.length} labels selected`}
-            </span>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
-          <Command loop>
-            <CommandInput ref={inputRef} placeholder="Search framework..." value={inputValue} onValueChange={setInputValue} />
-            <CommandGroup className="max-h-[145px] overflow-auto">
-              {frameworks.map((framework) => {
-                const isActive = selectedValues.includes(framework);
-                return (
-                  <CommandItem key={framework.value} value={framework.value} onSelect={() => toggleFramework(framework)}>
-                    <Check className={cn('mr-2 h-4 w-4', isActive ? 'opacity-100' : 'opacity-0')} />
-                    <div className="flex-1">{framework.label}</div>
-                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: framework.color }} />
+        {boxOpen && (
+          <PopoverTrigger asChild>
+            <Button
+              size={'xs'}
+              variant="outlineGhost"
+              role="combobox"
+              aria-expanded={openCombobox}
+              className="w-[200px] justify-between text-foreground"
+            >
+              <span className="truncate">
+                {selectedValues.length === 0 && 'Select labels'}
+                {selectedValues.length === 1 && selectedValues[0].label}
+                {selectedValues.length === 2 && selectedValues.map(({ label }) => label).join(', ')}
+                {selectedValues.length > 2 && `${selectedValues.length} labels selected`}
+              </span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+        )}
+        <PopoverPortal>
+          <PopoverContent className="w-[200px] p-0">
+            <Command>
+              <CommandInput
+                ref={inputRef}
+                placeholder="Search framework..."
+                value={inputValue}
+                setZeroValue={setInputValue}
+                onValueChange={setInputValue}
+              />
+              <CommandGroup>
+                <ScrollArea className="h-[150px] overflow-y-auto">
+                  {frameworks.map((framework) => {
+                    const isActive = selectedValues.includes(framework);
+                    return (
+                      <CommandList>
+                        <CommandItem className="mr-1" key={framework.value} value={framework.value} onSelect={() => toggleFramework(framework)}>
+                          <Check className={cn('mr-2 h-4 w-4', isActive ? 'opacity-100' : 'opacity-0')} />
+                          <div className="flex-1">{framework.label}</div>
+                          <div className="h-4 w-4 rounded-full" style={{ backgroundColor: framework.color }} />
+                        </CommandItem>
+                      </CommandList>
+                    );
+                  })}
+                </ScrollArea>
+                <CommandItemCreate onSelect={() => createFramework(inputValue)} {...{ inputValue, frameworks }} />
+              </CommandGroup>
+              <CommandSeparator alwaysRender />
+              <CommandGroup>
+                <CommandList>
+                  <CommandItem
+                    value={`:${inputValue}:`} // HACK: that way, the edit button will always be shown
+                    className="text-xs text-muted-foreground"
+                    onSelect={() => setOpenDialog(true)}
+                  >
+                    <div className={cn('mr-2 h-4 w-4')} />
+                    <Edit2 className="mr-2 h-2.5 w-2.5" />
+                    Edit Labels
                   </CommandItem>
-                );
-              })}
-              <CommandItemCreate onSelect={() => createFramework(inputValue)} {...{ inputValue, frameworks }} />
-            </CommandGroup>
-            <CommandSeparator alwaysRender />
-            <CommandGroup>
-              <CommandItem
-                value={`:${inputValue}:`} // HACK: that way, the edit button will always be shown
-                className="text-xs text-muted-foreground"
-                onSelect={() => setOpenDialog(true)}
-              >
-                <div className={cn('mr-2 h-4 w-4')} />
-                <Edit2 className="mr-2 h-2.5 w-2.5" />
-                Edit Labels
-              </CommandItem>
-            </CommandGroup>
-          </Command>
-        </PopoverContent>
+                </CommandList>
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </PopoverPortal>
       </Popover>
+
       <Dialog
         open={openDialog}
         onOpenChange={(open: boolean | ((prevState: boolean) => boolean)) => {
-          if (!open) {
-            setOpenCombobox(true);
-          }
+          if (!open) setOpenCombobox(true);
           setOpenDialog(open);
         }}
       >
-        <DialogContent className="max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-[70vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Edit Labels</DialogTitle>
             <DialogDescription>Change the label names or delete the labels. Create a label through the combobox though.</DialogDescription>
           </DialogHeader>
-          <div className="overflow-scroll -mx-6 px-6 flex-1 py-2">
-            {frameworks.map((framework) => {
-              return (
-                <DialogListItem
-                  key={framework.value}
-                  onDelete={() => deleteFramework(framework)}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const target = e.target as typeof e.target & Record<'name' | 'color', { value: string }>;
-                    const newFramework = {
-                      value: target.name.value.toLowerCase(),
-                      label: target.name.value,
-                      color: target.color.value,
-                    };
-                    updateFramework(framework, newFramework);
-                  }}
-                  {...framework}
-                />
-              );
-            })}
-          </div>
+          <ScrollArea className="h-[25vh] overflow-auto">
+            <div className=" -mx-3.5 px-6 flex-1 py-2">
+              {frameworks.map((framework) => {
+                return (
+                  <DialogListItem
+                    key={framework.value}
+                    onDelete={() => deleteFramework(framework)}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const target = e.target as typeof e.target & Record<'name' | 'color', { value: string }>;
+                      const newFramework = {
+                        value: target.name.value.toLowerCase(),
+                        label: target.name.value,
+                        color: target.color.value,
+                      };
+                      updateFramework(framework, newFramework);
+                    }}
+                    {...framework}
+                  />
+                );
+              })}
+            </div>
+          </ScrollArea>
           <DialogFooter className="bg-opacity-40">
             <DialogClose asChild>
               <Button variant="outline">Close</Button>
@@ -193,14 +219,16 @@ export function FancyBox() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="relative mt-3 h-24 -mb-24 overflow-y-auto">
-        {selectedValues.map(({ label, value, color }) => (
-          <Badge key={value} variant="outline" style={badgeStyle(color)} className="mr-2 mb-2">
-            {label}
-          </Badge>
-        ))}
-      </div>
-    </div>
+      {!boxOpen && (
+        <div className="relative flex align-center justify-start overflow-y-auto gap-1 ">
+          {selectedValues.map(({ label, value, color }) => (
+            <Badge key={value} variant="outline" style={badgeStyle(color)}>
+              {label}
+            </Badge>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -289,7 +317,7 @@ const DialogListItem = ({
         </div>
         <AccordionContent>
           <form
-            className="flex items-end gap-4"
+            className="flex ml-1 items-end gap-4"
             onSubmit={(e) => {
               onSubmit(e);
               setAccordionValue('');

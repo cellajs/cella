@@ -32,6 +32,16 @@ interface BoardColumnProps {
 
 export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const { t } = useTranslation();
+  const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(tasks.map((el) => el.id));
+
+  const toggleTaskVisibility = (taskId: UniqueIdentifier) => {
+    setFoldedTasks((prevIds) => {
+      if (prevIds.includes(taskId)) {
+        return prevIds.filter((id) => id !== taskId);
+      }
+      return [...prevIds, taskId];
+    });
+  };
 
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
@@ -136,7 +146,9 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           </Button>
           <SortableContext items={tasksIds}>
             {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <div key={task.id}>
+                <TaskCard isOpen={!foldedTasks.includes(task.id)} toggleTaskClick={toggleTaskVisibility} task={task} />
+              </div>
             ))}
           </SortableContext>
           <Button
