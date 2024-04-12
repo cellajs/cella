@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Activity, GripVertical, Star, UnfoldVertical, FoldVertical } from 'lucide-react';
+import { Activity, GripVertical, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -36,7 +36,6 @@ export interface TaskDragData {
 
 export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.content);
-  const [isLabelBoxOpen, setLabelBoxOpen] = useState<boolean>(false);
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -62,13 +61,6 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
       },
     },
   });
-
-  const openLabelBox = () => {
-    setLabelBoxOpen(true);
-  };
-  const closeLabelBox = () => {
-    setLabelBoxOpen(false);
-  };
 
   const toggleEditorState = () => {
     if (toggleTaskClick) toggleTaskClick(task.id);
@@ -136,7 +128,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
           </>
         )}
 
-        <div className={`flex items-center justify-${isOpen ? 'between' : 'end'} mt-1 gap-2`}>
+        <div className="flex items-center justify-between mt-1 gap-2">
           {isOpen && (
             <div className="flex gap-2">
               <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
@@ -149,6 +141,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
             </div>
           )}
 
+          <LabelBox boxOpen={isOpen} />
           <div className="flex  gap-2">
             <HoverCard>
               <HoverCardTrigger>
@@ -172,19 +165,6 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
               Start
             </Button>
           </div>
-        </div>
-        <div className="flex gap-1">
-          <LabelBox boxOpen={isLabelBoxOpen} />
-          {isLabelBoxOpen && (
-            <Button onClick={closeLabelBox} size={'xs'} variant="outlineGhost">
-              <FoldVertical className="h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          )}
-          {!isLabelBoxOpen && (
-            <Button onClick={openLabelBox} variant="outlineGhost" size={'xs'}>
-              <UnfoldVertical className="h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          )}
         </div>
       </CardHeader>
       {isOpen && <CardContent className="px-3 pt-3 pb-6 text-left whitespace-pre-wrap">collapsed info here</CardContent>}

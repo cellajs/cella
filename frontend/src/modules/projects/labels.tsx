@@ -26,9 +26,9 @@ import { PopoverPortal } from '@radix-ui/react-popover';
 import { CommandList } from 'cmdk';
 import { ScrollArea } from '../ui/scroll-area';
 
-type Framework = Record<'value' | 'label' | 'color', string>;
+type LabelType = Record<'value' | 'label' | 'color', string>;
 
-const FRAMEWORKS = [
+const Labels = [
   {
     value: 'next.js',
     label: 'Next.js',
@@ -59,7 +59,7 @@ const FRAMEWORKS = [
     label: 'WordPress',
     color: '#8b5cf6',
   },
-] satisfies Framework[];
+] satisfies LabelType[];
 
 const badgeStyle = (color: string) => ({
   borderColor: `${color}20`,
@@ -68,41 +68,42 @@ const badgeStyle = (color: string) => ({
 });
 
 export interface LabelBoxData {
-  boxOpen: boolean;
+  boxOpen?: boolean;
 }
-export function LabelBox({ boxOpen }: LabelBoxData) {
+export function LabelBox({ boxOpen = false }: LabelBoxData) {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [frameworks, setFrameworks] = React.useState<Framework[]>(FRAMEWORKS);
+  const [labels, setLabels] = React.useState<LabelType[]>(Labels);
   const [openCombobox, setOpenCombobox] = React.useState(false);
   const [openDialog, setOpenDialog] = React.useState(false);
   const [inputValue, setInputValue] = React.useState<string>('');
-  const [selectedValues, setSelectedValues] = React.useState<Framework[]>(FRAMEWORKS);
+  const [selectedValues, setSelectedValues] = React.useState<LabelType[]>(Labels);
+  const [accordionValue, setAccordionValue] = React.useState<string>('');
 
-  const createFramework = (name: string) => {
-    const newFramework = {
+  const createLabel = (name: string) => {
+    const newLabel = {
       value: name.toLowerCase(),
       label: name,
       color: '#ffffff',
     };
-    setFrameworks((prev) => [...prev, newFramework]);
-    setSelectedValues((prev) => [...prev, newFramework]);
+    setLabels((prev) => [...prev, newLabel]);
+    setSelectedValues((prev) => [...prev, newLabel]);
   };
 
-  const toggleFramework = (framework: Framework) => {
-    setSelectedValues((currentFrameworks) =>
-      !currentFrameworks.includes(framework) ? [...currentFrameworks, framework] : currentFrameworks.filter((l) => l.value !== framework.value),
+  const toggleLabel = (label: LabelType) => {
+    setSelectedValues((currentLabels) =>
+      !currentLabels.includes(label) ? [...currentLabels, label] : currentLabels.filter((l) => l.value !== label.value),
     );
     inputRef?.current?.focus();
   };
 
-  const updateFramework = (framework: Framework, newFramework: Framework) => {
-    setFrameworks((prev) => prev.map((f) => (f.value === framework.value ? newFramework : f)));
-    setSelectedValues((prev) => prev.map((f) => (f.value === framework.value ? newFramework : f)));
+  const updateLabel = (Label: LabelType, newLabel: LabelType) => {
+    setLabels((prev) => prev.map((f) => (f.value === Label.value ? newLabel : f)));
+    setSelectedValues((prev) => prev.map((f) => (f.value === Label.value ? newLabel : f)));
   };
 
-  const deleteFramework = (framework: Framework) => {
-    setFrameworks((prev) => prev.filter((f) => f.value !== framework.value));
-    setSelectedValues((prev) => prev.filter((f) => f.value !== framework.value));
+  const deleteLabel = (Label: LabelType) => {
+    setLabels((prev) => prev.filter((f) => f.value !== Label.value));
+    setSelectedValues((prev) => prev.filter((f) => f.value !== Label.value));
   };
 
   const onComboboxOpenChange = (value: boolean) => {
@@ -136,27 +137,27 @@ export function LabelBox({ boxOpen }: LabelBoxData) {
             <Command>
               <CommandInput
                 ref={inputRef}
-                placeholder="Search framework..."
+                placeholder="Search label..."
                 value={inputValue}
                 setZeroValue={setInputValue}
                 onValueChange={setInputValue}
               />
               <CommandGroup>
                 <ScrollArea className="h-[150px] overflow-y-auto">
-                  {frameworks.map((framework) => {
-                    const isActive = selectedValues.includes(framework);
+                  {labels.map((label) => {
+                    const isActive = selectedValues.includes(label);
                     return (
                       <CommandList>
-                        <CommandItem className="mr-1" key={framework.value} value={framework.value} onSelect={() => toggleFramework(framework)}>
+                        <CommandItem className="mr-1" key={label.value} value={label.value} onSelect={() => toggleLabel(label)}>
                           <Check className={cn('mr-2 h-4 w-4', isActive ? 'opacity-100' : 'opacity-0')} />
-                          <div className="flex-1">{framework.label}</div>
-                          <div className="h-4 w-4 rounded-full" style={{ backgroundColor: framework.color }} />
+                          <div className="flex-1">{label.label}</div>
+                          <div className="h-4 w-4 rounded-full" style={{ backgroundColor: label.color }} />
                         </CommandItem>
                       </CommandList>
                     );
                   })}
                 </ScrollArea>
-                <CommandItemCreate onSelect={() => createFramework(inputValue)} {...{ inputValue, frameworks }} />
+                <CommandItemCreate onSelect={() => createLabel(inputValue)} {...{ inputValue, labels }} />
               </CommandGroup>
               <CommandSeparator alwaysRender />
               <CommandGroup>
@@ -179,8 +180,7 @@ export function LabelBox({ boxOpen }: LabelBoxData) {
 
       <Dialog
         open={openDialog}
-        onOpenChange={(open: boolean | ((prevState: boolean) => boolean)) => {
-          if (!open) setOpenCombobox(true);
+        onOpenChange={(open: boolean) => {
           setOpenDialog(open);
         }}
       >
@@ -191,25 +191,24 @@ export function LabelBox({ boxOpen }: LabelBoxData) {
           </DialogHeader>
           <ScrollArea className="h-[25vh] overflow-auto">
             <div className=" -mx-3.5 px-6 flex-1 py-2">
-              {frameworks.map((framework) => {
-                return (
-                  <DialogListItem
-                    key={framework.value}
-                    onDelete={() => deleteFramework(framework)}
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const target = e.target as typeof e.target & Record<'name' | 'color', { value: string }>;
-                      const newFramework = {
-                        value: target.name.value.toLowerCase(),
-                        label: target.name.value,
-                        color: target.color.value,
-                      };
-                      updateFramework(framework, newFramework);
-                    }}
-                    {...framework}
-                  />
-                );
-              })}
+              {labels.map((label) => (
+                <DialogListItem
+                  onDelete={() => deleteLabel(label)}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const target = e.target as typeof e.target & Record<'name' | 'color', { value: string }>;
+                    const newLabel = {
+                      value: target.name.value.toLowerCase(),
+                      label: target.name.value,
+                      color: target.color.value,
+                    };
+                    updateLabel(label, newLabel);
+                  }}
+                  accordionValue={accordionValue}
+                  setAccordionValue={setAccordionValue}
+                  {...label}
+                />
+              ))}
             </div>
           </ScrollArea>
           <DialogFooter className="bg-opacity-40">
@@ -222,9 +221,17 @@ export function LabelBox({ boxOpen }: LabelBoxData) {
       {!boxOpen && (
         <div className="relative flex align-center justify-start overflow-y-auto gap-1 ">
           {selectedValues.map(({ label, value, color }) => (
-            <Badge key={value} variant="outline" style={badgeStyle(color)}>
-              {label}
-            </Badge>
+            <button
+              type="button"
+              onClick={() => {
+                setOpenDialog(true);
+                setAccordionValue(value);
+              }}
+            >
+              <Badge key={value} variant="outline" style={badgeStyle(color)}>
+                {label}
+              </Badge>
+            </button>
           ))}
         </div>
       )}
@@ -234,25 +241,27 @@ export function LabelBox({ boxOpen }: LabelBoxData) {
 
 const CommandItemCreate = ({
   inputValue,
-  frameworks,
+  labels,
   onSelect,
 }: {
   inputValue: string;
-  frameworks: Framework[];
+  labels: LabelType[];
   onSelect: () => void;
 }) => {
-  const hasNoFramework = !frameworks.map(({ value }) => value).includes(`${inputValue.toLowerCase()}`);
-
-  const render = inputValue !== '' && hasNoFramework;
-
+  const hasNoLabel = !labels.some((label) => label.value === inputValue.toLowerCase());
+  const render = inputValue !== '' && hasNoLabel;
   if (!render) return null;
 
   // BUG: whenever a space is appended, the Create-Button will not be shown.
   return (
-    <CommandItem key={`${inputValue}`} value={`${inputValue}`} className="text-xs text-muted-foreground" onSelect={onSelect}>
-      <div className={cn('mr-2 h-4 w-4')} />
-      Create new label &quot;{inputValue}&quot;
-    </CommandItem>
+    <>
+      {inputValue && hasNoLabel && (
+        <CommandItem key={inputValue} value={inputValue} className="text-xs text-muted-foreground" onSelect={onSelect}>
+          <div className={cn('mr-2 h-4 w-4')} />
+          Create new label &quot;{inputValue}&quot;
+        </CommandItem>
+      )}
+    </>
   );
 };
 
@@ -262,21 +271,22 @@ const DialogListItem = ({
   color,
   onSubmit,
   onDelete,
-}: Framework & {
+  accordionValue,
+  setAccordionValue,
+}: LabelType & {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   onDelete: () => void;
+  accordionValue: string;
+  setAccordionValue: (newValue: string) => void;
 }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [accordionValue, setAccordionValue] = React.useState<string>('');
   const [inputValue, setInputValue] = React.useState<string>(label);
   const [colorValue, setColorValue] = React.useState<string>(color);
   const disabled = label === inputValue && color === colorValue;
 
   React.useEffect(() => {
-    if (accordionValue !== '') {
-      inputRef.current?.focus();
-    }
-  }, [accordionValue]);
+    if (accordionValue === value) inputRef.current?.focus();
+  }, [accordionValue, value]);
 
   return (
     <Accordion key={value} type="single" collapsible value={accordionValue} onValueChange={setAccordionValue}>
