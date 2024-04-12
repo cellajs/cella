@@ -3,20 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { cn } from '~/lib/utils';
 import { buttonVariants } from '../ui/button';
+import type { LucideProps } from 'lucide-react';
 
 interface AsideNavProps {
   className?: string;
   tabs: {
-    value: string;
+    id: string;
     label: string;
-    hash?: string;
+    icon?: React.ElementType<LucideProps>;
   }[];
 }
 
 export const AsideNav = ({ tabs, className }: AsideNavProps) => {
   const { t } = useTranslation();
 
-  const sectionIds = tabs.map((tab) => tab.value);
+  const sectionIds = tabs.map((tab) => tab.id);
 
   const { activeHash } = useScrollSpy({ sectionIds, autoUpdateHash: true });
 
@@ -33,20 +34,20 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
 
   return (
     <div className={cn('w-full flex flex-col gap-1', className)}>
-      {tabs.map(({ value, label, hash }) => {
-        const btnClass = `${value.includes('delete') && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left`;
-
+      {tabs.map(({ id, label, icon }) => {
+        const btnClass = `${id.includes('delete') && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left`;
+        const Icon = icon;
         return (
           <Link
-            key={value}
-            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass, activeHash === value && 'bg-secondary')}
-            hash={hash}
+            key={id}
+            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass, activeHash === id && 'bg-secondary')}
+            hash={id}
             replace
-            onClick={(e) => handleMismatch(e, value)}
+            onClick={(e) => handleMismatch(e, id)}
             activeOptions={{ exact: true, includeHash: true }}
             activeProps={{ className: 'bg-secondary' }}
           >
-            {t(label)}
+            {Icon && <Icon className="mr-2 w-5 h-5" />} {t(label)}
           </Link>
         );
       })}

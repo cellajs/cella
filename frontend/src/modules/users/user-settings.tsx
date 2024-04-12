@@ -20,9 +20,9 @@ import { AsideAnchor } from '../common/aside-anchor';
 import { ScrollArea } from '../ui/scroll-area';
 
 const tabs = [
-  { value: 'general', label: 'common:general', hash: 'general' },
-  { value: 'sessions', label: 'common:sessions', hash: 'sessions' },
-  { value: 'delete-account', label: 'common:delete_account', hash: 'delete-account' },
+  { id: 'general', label: 'common:general' },
+  { id: 'sessions', label: 'common:sessions' },
+  { id: 'delete-account', label: 'common:delete_account' },
 ];
 
 const UserSettings = () => {
