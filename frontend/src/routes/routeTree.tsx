@@ -12,7 +12,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 
 import { queryClient } from '~/lib/router';
 import { AcceptRoute, AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
-import { HomeAliasRoute, HomeRoute } from './home';
+import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, PrivacyRoute, TermsRoute } from './marketing';
 import { OrganizationRoute, organizationMembersRoute, organizationSettingsRoute, projectsRoute } from './organizations';
 import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
@@ -85,6 +85,7 @@ export const routeTree = rootRoute.addChildren([
   IndexRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,
+    WelcomeRoute,
     SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute]),
     UserProfileRoute,
     UserSettingsRoute,

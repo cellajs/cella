@@ -11,9 +11,8 @@ import { Step, type StepItem, Stepper } from '~/modules/ui/stepper';
 
 import StepperFooter from './footer';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import InviteUsers from '../invite-users';
+import InviteUsers from '../../common/invite-users';
 import type { Organization } from '~/types';
-
 
 const steps: StepItem[] = [
   { id: 'step-1', label: 'Create organization', optional: true },
@@ -63,7 +62,7 @@ const Onboarding = () => {
                   <Card>
                     <CardHeader>
                       <CardDescription className="font-light">
-                        {id === 'step-1' && 'Let\'s get started by creating your organization.'}
+                        {id === 'step-1' && "Let's get started by creating your organization."}
                         {id === 'step-2' && `Hi ${user.firstName}, this is you?`}
                         {id === 'step-3' && `Invite one or more team members of ${organization?.name} to Cella.`}
                       </CardDescription>
