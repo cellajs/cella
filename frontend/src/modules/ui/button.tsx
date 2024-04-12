@@ -14,7 +14,6 @@ const buttonVariants = cva(
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/80',
         success: 'bg-success text-primary-foreground hover:bg-success/80',
         outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-        outlineGhost: 'border border-input bg-background opacity-80 hover:opacity-100 hover:text-accent-foreground',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent/50',
         link: 'text-primary underline-offset-4 hover:underline',
@@ -22,11 +21,14 @@ const buttonVariants = cva(
         cell: 'text-regular underline-offset-4 hover:underline !ring-offset-transparent !ring-transparent opacity-75 hover:opacity-100',
         plain: 'text-primary bg-primary/5 border border-primary/30 hover:bg-primary/10 hover:border-primary/50',
         glow: 'outline-glow-button bg-background !rounded-full relative active:bk-background',
+        outlineGhost: 'border border-input bg-background opacity-80 hover:opacity-100 hover:text-accent-foreground',
         gradient:
           'before:bg-primary before:rounded-md after:rounded-md z-0 bg-transparent relative text-primary-foreground gradient-button hover:before:bg-primary/80',
+        none: ' bg-transparent border-none',
       },
       size: {
         default: 'h-10 px-4 py-2',
+        micro: 'h-6 px-2 rounded-md',
         xs: 'h-8 px-2 rounded-md',
         sm: 'h-9 rounded-md px-3',
         lg: 'h-11 rounded-md px-4',

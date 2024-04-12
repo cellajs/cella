@@ -141,7 +141,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
             </div>
           )}
 
-          <LabelBox boxOpen={isOpen} />
+          <LabelBox />
           <div className="flex  gap-2">
             <HoverCard>
               <HoverCardTrigger>
