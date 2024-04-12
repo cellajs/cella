@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 const StepperFooter = ({ organization }: { organization?: Organization | null }) => {
   const navigate = useNavigate();
-  const { nextStep, isLastStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
+  const { nextStep, prevStep, isLastStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
 
   useEffect(() => {
     if (activeStep === 0 || !hasCompletedAllSteps) return
@@ -22,7 +22,7 @@ const StepperFooter = ({ organization }: { organization?: Organization | null })
   return (
     <div className="w-full flex justify-end gap-2">
       {activeStep === 1 && !organization && (
-        <Button onClick={nextStep} size="sm" variant="secondary">
+        <Button onClick={prevStep} size="sm" variant="secondary">
           <ArrowLeft size={16} className="mr-2" />
           Previous
         </Button>
