@@ -109,14 +109,20 @@ export const LabelBox = () => {
     <>
       <Popover open={isOpenEditLabel} onOpenChange={onComboboxOpenChange}>
         <PopoverTrigger asChild>
-          <div className="relative flex align-center justify-start overflow-y-auto gap-1 ">
-            {selectedLabels.map(({ label, value, color }) => (
-              <button type="button" onClick={() => setOpenEditLabel(true)}>
-                <Badge key={value} variant="outline" style={badgeStyle(color)}>
-                  {label}
-                </Badge>
-              </button>
-            ))}
+          <div className="relative flex align-center justify-start overflow-hidden gap-1 ">
+            {!isOpenEditLabel &&
+              selectedLabels.map(({ label, value, color }) => (
+                <button type="button" onClick={() => setOpenEditLabel(true)}>
+                  <Badge key={value} variant="outline" style={badgeStyle(color)}>
+                    {label}
+                  </Badge>
+                </button>
+              ))}
+            {!isOpenEditLabel && selectedLabels.length < 1 && (
+              <Button size={'micro'} className="text-muted" variant="none" onClick={() => setOpenEditLabel(true)}>
+                No labels yet
+              </Button>
+            )}
           </div>
         </PopoverTrigger>
         <PopoverPortal>
@@ -203,9 +209,9 @@ type LabelsItem = LabelType & {
 
 const LabelsListItem = ({ value, label, color, accordionValue, setAccordionValue, onSubmit, onDelete, onSelect, isActive }: LabelsItem) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [inputValue, setInputValue] = React.useState<string>(label);
-  const [colorValue, setColorValue] = React.useState<string>(color);
-  const disabled = label === inputValue && color === colorValue;
+  const [newLabelName, setNewLabelName] = React.useState<string>(label);
+  const [newColorValue, setNewColorValue] = React.useState<string>(color);
+  const disabled = label === newLabelName && color === newColorValue;
 
   React.useEffect(() => {
     if (accordionValue === value) inputRef.current?.focus();
@@ -244,8 +250,8 @@ const LabelsListItem = ({ value, label, color, accordionValue, setAccordionValue
                 <Input
                   ref={inputRef}
                   id="name"
-                  value={inputValue}
-                  onChange={(e: { target: { value: React.SetStateAction<string> } }) => setInputValue(e.target.value)}
+                  value={newLabelName}
+                  onChange={(e: { target: { value: React.SetStateAction<string> } }) => setNewLabelName(e.target.value)}
                   className="h-7"
                 />
               </div>
@@ -254,8 +260,8 @@ const LabelsListItem = ({ value, label, color, accordionValue, setAccordionValue
                 <Input
                   id="color"
                   type="color"
-                  value={colorValue}
-                  onChange={(e: { target: { value: React.SetStateAction<string> } }) => setColorValue(e.target.value)}
+                  value={newColorValue}
+                  onChange={(e: { target: { value: React.SetStateAction<string> } }) => setNewColorValue(e.target.value)}
                   className="h-7 px-2 py-1"
                 />
               </div>
