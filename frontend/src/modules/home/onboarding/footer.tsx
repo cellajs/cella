@@ -6,13 +6,16 @@ import { dialog } from '~/modules/common/dialoger/state';
 import type { Organization } from '~/types';
 import { ArrowLeft, Redo } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
+import { toast } from 'sonner';
 
 const StepperFooter = ({ organization }: { organization?: Organization | null }) => {
   const navigate = useNavigate();
   const { nextStep, isLastStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
 
   useEffect(() => {
-    if (activeStep > 0 && hasCompletedAllSteps) dialog.remove();
+    if (activeStep === 0 || !hasCompletedAllSteps) return
+    toast.success('You are good to go!');
+    dialog.remove();
     navigate({ to: '/home', replace: true })
   }, [hasCompletedAllSteps, activeStep]);
 
