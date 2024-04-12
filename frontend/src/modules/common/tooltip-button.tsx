@@ -5,9 +5,20 @@ interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof Toolt
   children: React.ReactNode;
   toolTipContent: string;
   disabled?: boolean;
+  side?: 'top' | 'bottom' | 'left' | 'right';
+  sideOffset?: number;
+  hideWhenDetached?: boolean;
 }
 
-export const TooltipButton = ({ children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, ...props }: TooltipButtonProps) => {
+export const TooltipButton = ({
+  children,
+  toolTipContent,
+  disabled,
+  side = 'bottom',
+  sideOffset = 8,
+  hideWhenDetached,
+  ...props
+}: TooltipButtonProps) => {
   if (disabled) {
     return <>{children}</>;
   }
@@ -15,7 +26,7 @@ export const TooltipButton = ({ children, toolTipContent, disabled, side = 'bott
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side={side} {...props} sideOffset={sideOffset}>
+      <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
         {toolTipContent}
       </TooltipContent>
     </Tooltip>
