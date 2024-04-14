@@ -3,16 +3,16 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
+import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
-import { useUserStore } from '~/store/user';
-import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Step, type StepItem, Stepper } from '~/modules/ui/stepper';
+import { useUserStore } from '~/store/user';
 
-import StepperFooter from './footer';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import InviteUsers from '../../common/invite-users';
 import type { Organization } from '~/types';
+import InviteUsers from '../../common/invite-users';
+import StepperFooter from './footer';
 
 const steps: StepItem[] = [
   { id: 'step-1', label: 'Create organization', optional: true },

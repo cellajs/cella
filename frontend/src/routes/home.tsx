@@ -24,5 +24,3 @@ export const WelcomeRoute = createRoute({
   getParentRoute: () => IndexRoute,
   component: () => <Welcome />,
 });
-
-

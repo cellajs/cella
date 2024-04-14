@@ -10,8 +10,8 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
-import type { ColumnId } from './kanban-board';
 import { Checkbox } from '../ui/checkbox';
+import type { ColumnId } from './kanban-board';
 import { LabelBox } from './labels';
 
 export interface Task {

@@ -1,9 +1,9 @@
+import { ArrowDown } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '~/modules/ui/button';
 import { Badge } from '~/modules/ui/badge';
-import { ArrowDown } from 'lucide-react';
+import { Button } from '~/modules/ui/button';
 
 interface ExpandableListProps {
   items: unknown[];

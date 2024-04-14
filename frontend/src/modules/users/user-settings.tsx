@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 
 import { terminateMySessions as baseTerminateMySessions } from '~/api/users';
 import { dialog } from '~/modules/common/dialoger/state';
+import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUsers from './delete-users';
-import { ExpandableList } from '~/modules/common/expandable-list';
 
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
@@ -29,7 +29,7 @@ type Session = {
   id: string;
   type: string;
   current: boolean;
-}
+};
 
 interface SessionTileProps {
   session: Session;

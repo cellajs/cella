@@ -51,7 +51,7 @@ const SystemPanel = () => {
       />
 
       <FocusViewContainer className="container mt-4">
-          <Outlet />
+        <Outlet />
       </FocusViewContainer>
     </>
   );

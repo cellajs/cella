@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
 import slugify from 'slugify';
+import type { z } from 'zod';
 
 // Change this in the future on current schema
 import { createOrganizationJsonSchema } from 'backend/modules/organizations/schema';
@@ -19,8 +19,8 @@ import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
-import InputFormField from '../common/form-fields/input';
 import { dialog } from '../common/dialoger/state';
+import InputFormField from '../common/form-fields/input';
 import { useStepper } from '../ui/stepper';
 
 interface CreateOrganizationFormProps {

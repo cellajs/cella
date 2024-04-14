@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { config } from 'config';
+import { useEffect } from 'react';
 
 // This hook is used to show a confirmation dialog when the user tries to leave the page with unsaved changes
 export const useBeforeUnload = (isChanged: boolean) => {

@@ -1,22 +1,22 @@
 import { useEffect } from 'react';
 
-import { Button } from '../../ui/button';
-import { useStepper } from '../../ui/stepper';
+import { useNavigate } from '@tanstack/react-router';
+import { ArrowLeft, Redo } from 'lucide-react';
+import { toast } from 'sonner';
 import { dialog } from '~/modules/common/dialoger/state';
 import type { Organization } from '~/types';
-import { ArrowLeft, Redo } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { Button } from '../../ui/button';
+import { useStepper } from '../../ui/stepper';
 
 const StepperFooter = ({ organization }: { organization?: Organization | null }) => {
   const navigate = useNavigate();
   const { nextStep, prevStep, isLastStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
 
   useEffect(() => {
-    if (activeStep === 0 || !hasCompletedAllSteps) return
+    if (activeStep === 0 || !hasCompletedAllSteps) return;
     toast.success('You are good to go!');
     dialog.remove();
-    navigate({ to: '/home', replace: true })
+    navigate({ to: '/home', replace: true });
   }, [hasCompletedAllSteps, activeStep]);
 
   return (
