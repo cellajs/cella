@@ -2,13 +2,15 @@ import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
 import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
-import { usersTable } from '../../db/schema/users';
-import { setCookie } from './helpers/cookies';
+import { type InsertUserModel, usersTable } from '../../db/schema/users';
+import { setCookie, setSessionCookie } from './helpers/cookies';
 
 import { config } from 'config';
 import slugify from 'slugify';
 import { db } from '../../db/db';
 import { logEvent } from '../../middlewares/logger/log-event';
+import type { User } from 'lucia';
+import { sendVerificationEmail } from './helpers/verify-email';
 
 type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
 
@@ -55,8 +57,44 @@ export const slugFromEmail = (email: string) => {
 };
 
 export const splitFullName = (name: string) => {
-  const parts = name.split(' ');
-  const firstName = parts.shift();
-  const lastName = parts.join(' ');
-  return { firstName, lastName: lastName || '' };
+  const [firstName, lastName] = name.split(' ');
+  return { firstName: firstName || '', lastName: lastName || '' };
+};
+
+export const handleExistingUser = async (
+  ctx: Context,
+  existingUser: User,
+  providerId: ProviderId,
+  {
+    providerUser,
+    isEmailVerified,
+    redirectUrl,
+  }: {
+    providerUser: Pick<InsertUserModel, 'thumbnailUrl' | 'bio' | 'firstName' | 'lastName' | 'id' | 'email'>;
+    isEmailVerified: boolean;
+    redirectUrl: string;
+  },
+) => {
+  await insertOauthAccount(existingUser.id, providerId, providerUser.id);
+
+  await db
+    .update(usersTable)
+    .set({
+      thumbnailUrl: existingUser.thumbnailUrl || providerUser.thumbnailUrl,
+      bio: existingUser.bio || providerUser.bio,
+      emailVerified: isEmailVerified,
+      firstName: existingUser.firstName || providerUser.firstName,
+      lastName: existingUser.lastName || providerUser.lastName,
+    })
+    .where(eq(usersTable.id, existingUser.id));
+
+  if (!isEmailVerified) {
+    sendVerificationEmail(providerUser.email.toLowerCase());
+
+    return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
+  }
+
+  await setSessionCookie(ctx, existingUser.id, providerId.toLowerCase());
+
+  return ctx.redirect(redirectUrl);
 };

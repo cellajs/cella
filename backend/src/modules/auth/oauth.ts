@@ -15,7 +15,16 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { setSessionCookie } from './helpers/cookies';
 import { sendVerificationEmail } from './helpers/verify-email';
-import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, insertOauthAccount, slugFromEmail, splitFullName } from './oauth-helpers';
+import {
+  createSession,
+  findOauthAccount,
+  findUserByEmail,
+  getRedirectUrl,
+  handleExistingUser,
+  insertOauthAccount,
+  slugFromEmail,
+  splitFullName,
+} from './oauth-helpers';
 import {
   githubSignInCallbackRouteConfig,
   githubSignInRouteConfig,
@@ -156,7 +165,8 @@ const oauthRoutes = app
 
       deleteCookie(ctx, 'oauth_invite_token');
 
-      let userEmail = primaryEmail.email.toLowerCase();
+      const githubUserEmail = primaryEmail.email.toLowerCase();
+      let userEmail = githubUserEmail;
 
       if (inviteToken) {
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
@@ -171,30 +181,18 @@ const oauthRoutes = app
       const [existingUser] = await findUserByEmail(userEmail);
 
       if (existingUser) {
-        await insertOauthAccount(existingUser.id, 'GITHUB', String(githubUser.id));
-
-        const emailVerified = existingUser.emailVerified || !!inviteToken || primaryEmail.verified;
-
-        await db
-          .update(usersTable)
-          .set({
-            thumbnailUrl: existingUser.thumbnailUrl || githubUser.avatar_url,
-            bio: existingUser.bio || githubUser.bio,
-            emailVerified,
-            firstName: existingUser.firstName || firstName,
-            lastName: existingUser.lastName || lastName,
-          })
-          .where(eq(usersTable.id, existingUser.id));
-
-        if (!emailVerified) {
-          sendVerificationEmail(primaryEmail.email.toLowerCase());
-
-          return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
-        }
-
-        await setSessionCookie(ctx, existingUser.id, 'github');
-
-        return ctx.redirect(redirectUrl);
+        return await handleExistingUser(ctx, existingUser, 'GITHUB', {
+          providerUser: {
+            id: String(githubUser.id),
+            email: githubUserEmail,
+            bio: githubUser.bio,
+            thumbnailUrl: githubUser.avatar_url,
+            firstName,
+            lastName,
+          },
+          redirectUrl,
+          isEmailVerified: existingUser.emailVerified || !!inviteToken || primaryEmail.verified,
+        });
       }
 
       const userId = nanoid();
@@ -275,10 +273,18 @@ const oauthRoutes = app
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
 
       if (existingUser) {
-        await insertOauthAccount(existingUser.id, 'GOOGLE', user.sub);
-        await setSessionCookie(ctx, existingUser.id, 'google');
-
-        return ctx.redirect(redirectUrl);
+        return await handleExistingUser(ctx, existingUser, 'GOOGLE', {
+          providerUser: {
+            id: user.sub,
+            email: user.email,
+            thumbnailUrl: user.picture,
+            firstName: user.given_name,
+            lastName: user.family_name,
+          },
+          redirectUrl,
+          // TODO: invite token
+          isEmailVerified: existingUser.emailVerified || user.email_verified,
+        });
       }
 
       const userId = nanoid();
@@ -351,10 +357,18 @@ const oauthRoutes = app
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
 
       if (existingUser) {
-        await insertOauthAccount(existingUser.id, 'MICROSOFT', user.sub);
-        await setSessionCookie(ctx, existingUser.id, 'microsoft');
-
-        return ctx.redirect(redirectUrl);
+        return await handleExistingUser(ctx, existingUser, 'MICROSOFT', {
+          providerUser: {
+            id: user.sub,
+            email: user.email,
+            thumbnailUrl: user.picture,
+            firstName: user.given_name,
+            lastName: user.family_name,
+          },
+          redirectUrl,
+          // TODO: invite token and email verification
+          isEmailVerified: existingUser.emailVerified
+        });
       }
 
       const userId = nanoid();
