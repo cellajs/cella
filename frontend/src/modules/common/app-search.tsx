@@ -154,11 +154,6 @@ export const AppSearch = () => {
               )}
             </>
           )}
-          {/* {isFetching && (
-          <CommandLoading>
-            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-          </CommandLoading>
-        )} */}
           {userSuggestions.length > 0 && (
             <CommandGroup>
               <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-10">
