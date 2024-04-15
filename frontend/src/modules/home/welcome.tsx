@@ -1,28 +1,26 @@
-import { Suspense, lazy, useEffect } from 'react';
-import useMounted from '~/hooks/use-mounted';
-import { dialog } from '~/modules/common/dialoger/state';
+import { Suspense, lazy, useState } from 'react';
+import type { OnboardingStates } from '~/modules/home/onboarding';
+import { Dialog, DialogContent } from '~/modules/ui/dialog';
+import { OnboardingCompleted } from './onboarding/completed';
 
 const Onboarding = lazy(() => import('~/modules/home/onboarding'));
 
 const Welcome = () => {
-  const { hasMounted } = useMounted();
-  const showOnboarding = () => {
-    dialog(
-      <Suspense>
-        <Onboarding />
-      </Suspense>,
-      {
-        drawerOnMobile: false,
-        className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75',
-      },
-    );
-  };
+  const [onboarding, setOnboarding] = useState<OnboardingStates>('start');
 
-  useEffect(() => {
-    if (hasMounted) showOnboarding();
-  }, [hasMounted]);
+  return (
+    <>
+      <Dialog open={onboarding !== 'completed'} defaultOpen={true}>
+        <DialogContent className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75">
+          <Suspense>
+            <Onboarding onboarding={onboarding} setOnboarding={setOnboarding} />
+          </Suspense>
+        </DialogContent>
+      </Dialog>
 
-  return <></>;
+      {onboarding === 'completed' && <OnboardingCompleted />}
+    </>
+  );
 };
 
 export default Welcome;
