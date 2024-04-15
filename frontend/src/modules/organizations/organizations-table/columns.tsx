@@ -84,7 +84,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
           },
           {
             key: 'memberCount',
-            name: t('common:member.plural'),
+            name: t('common:members'),
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
@@ -98,7 +98,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
           },
           {
             key: 'adminCount',
-            name: t('common:admin.plural'),
+            name: t('common:admins'),
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,

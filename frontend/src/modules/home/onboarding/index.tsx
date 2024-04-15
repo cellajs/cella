@@ -3,16 +3,16 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
+import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
-import { useUserStore } from '~/store/user';
-import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Step, type StepItem, Stepper } from '~/modules/ui/stepper';
+import { useUserStore } from '~/store/user';
 
-import StepperFooter from './footer';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import InviteUsers from '../../common/invite-users';
 import type { Organization } from '~/types';
+import InviteUsers from '../../common/invite-users';
+import StepperFooter from './footer';
 
 const steps: StepItem[] = [
   { id: 'step-1', label: 'Create organization', optional: true },
@@ -31,7 +31,7 @@ const OnboardingWelcome = ({ setWelcomeMessage }: OnboardingWelcomeProps) => {
     <div className="flex flex-col items-center text-center mx-auto space-y-6 p-4 max-w-[700px]">
       <h1 className="text-3xl font-bold">{t('common:onboarding_welcome')}</h1>
       <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">{t('common:onboarding_welcome.text')}</p>
-      <Button onClick={() => setWelcomeMessage(false)}>
+      <Button onClick={() => setWelcomeMessage(false)} className="max-sm:w-full">
         {t('common:get_started')}
         <div className="-rotate-90 ml-4">
           <ArrowDown size={16} className="animate-bounce" />
@@ -45,6 +45,7 @@ const Onboarding = () => {
   const [welcomeMessage, setWelcomeMessage] = useState<boolean>(true);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const { hasStarted } = useMounted();
+  const { t } = useTranslation();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const user = useUserStore((state) => state.user);
@@ -62,9 +63,9 @@ const Onboarding = () => {
                   <Card>
                     <CardHeader>
                       <CardDescription className="font-light">
-                        {id === 'step-1' && "Let's get started by creating your organization."}
-                        {id === 'step-2' && `Hi ${user.firstName}, this is you?`}
-                        {id === 'step-3' && `Invite one or more team members of ${organization?.name} to Cella.`}
+                        {id === 'step-1' && t('common:onboarding_step1')}
+                        {id === 'step-2' && t('common:onboarding_step2', { name: user.firstName })}
+                        {id === 'step-3' && t('common:onboarding_step3', { organizationName: organization?.name })}
                       </CardDescription>
                     </CardHeader>
 

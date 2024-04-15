@@ -3,7 +3,15 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
-import { imageUrlSchema, validUrlSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
+import {
+  imageUrlSchema,
+  nameSchema,
+  organizationParamSchema,
+  paginationQuerySchema,
+  validSlugSchema,
+  validUrlSchema,
+} from '../../lib/common-schemas';
+
 import { apiUserSchema } from '../users/schema';
 
 export const membershipSchema = createSelectSchema(membershipsTable);

@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import Sticky from 'react-sticky-el';
 import { toast } from 'sonner';
 import { Button } from '~/modules/ui/button';
-import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 import { useNavigationStore } from '~/store/navigation';
 import type { Page, UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
@@ -13,6 +12,7 @@ import { MenuArchiveToggle } from './menu-archive-toggle';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
+import { TooltipButton } from '../tooltip-button';
 
 interface MenuSectionProps {
   key: string;
@@ -77,51 +77,35 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   };
 
   return (
-    <div className="mt-2">
+    <>
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
             <div>
-              <span>{t(section.id)}</span>
-              {!isSectionVisible && (
-                <span className="ml-2 inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>
-              )}
+              <span>{t(section.label)}</span>
+              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>}
             </div>
 
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
           {!!(isSectionVisible && data.active.length) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className="w-12 transition duration-300 px-3 ease-in-out }"
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => toggleOptionsView(!optionsView)}
-                >
-                  <Settings2 size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipPortal>
-                <TooltipContent side="bottom" sideOffset={10}>
-                  {t('common:options')}
-                </TooltipContent>
-              </TooltipPortal>
-            </Tooltip>
+            <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10} portal>
+              <Button
+                className="w-12 transition duration-300 px-3 ease-in-out }"
+                variant="secondary"
+                size="icon"
+                onClick={() => toggleOptionsView(!optionsView)}
+              >
+                <Settings2 size={16} />
+              </Button>
+            </TooltipButton>
           )}
           {isSectionVisible && data.canCreate && section.createForm && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
-                  <Plus size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipPortal>
-                <TooltipContent sideOffset={22} side="right">
-                  {t('common:create')}
-                </TooltipContent>
-              </TooltipPortal>
-            </Tooltip>
+            <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
+              <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
+                <Plus size={16} />
+              </Button>
+            </TooltipButton>
           )}
         </div>
       </Sticky>
@@ -146,6 +130,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
           )}
         </ul>
       </div>
-    </div>
+    </>
   );
 };

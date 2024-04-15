@@ -9,8 +9,8 @@ import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { type Task, TaskCard } from './task-card';
+import { TooltipButton } from '../common/tooltip-button';
 
 export interface Column {
   id: UniqueIdentifier;
@@ -96,38 +96,23 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 
         <div className="grow" />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-              <Footprints size={16} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={13}>
-            {t('Show velocity')}
-          </TooltipContent>
-        </Tooltip>
+        <TooltipButton side="bottom" sideOffset={13} toolTipContent={t('Show velocity')}>
+          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+            <Footprints size={16} />
+          </Button>
+        </TooltipButton>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-              <Maximize2 size={16} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={13}>
-            {t('Project view')}
-          </TooltipContent>
-        </Tooltip>
+        <TooltipButton side="bottom" sideOffset={13} toolTipContent={t('Project view')}>
+          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+            <Maximize2 size={16} />
+          </Button>
+        </TooltipButton>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-              <Settings size={16} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={13}>
-            {t('Project settings')}
-          </TooltipContent>
-        </Tooltip>
+        <TooltipButton side="bottom" sideOffset={13} toolTipContent={t('Project settings')}>
+          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+            <Settings size={16} />
+          </Button>
+        </TooltipButton>
 
         <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8">
           <Plus size={16} className="mr-1" />

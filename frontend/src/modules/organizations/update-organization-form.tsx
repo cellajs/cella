@@ -10,7 +10,6 @@ import { Loader2, Undo } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
-import { checkSlugAvailable } from '~/api/general';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
@@ -21,6 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import AvatarFormField from '../common/form-fields/avatar';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
+import { SlugFormField } from '../common/form-fields/slug';
 
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
@@ -49,19 +49,6 @@ export const useUpdateOrganizationMutation = (organizationIdentifier: string) =>
 const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   const { mutate, isPending } = useUpdateOrganizationMutation(organization.id);
-  const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
-    mutationFn: checkSlugAvailable,
-    onSuccess: (isAvailable) => {
-      if (!isAvailable) {
-        form.setError('slug', {
-          type: 'manual',
-          message: t('common:error.slug_exists'),
-        });
-      } else {
-        form.clearErrors('slug');
-      }
-    },
-  });
 
   const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, {
     resolver: zodResolver(formSchema),
@@ -129,12 +116,6 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   };
 
   useEffect(() => {
-    if (slug && slug !== organization.slug) {
-      checkSlug(slug);
-    }
-  }, [slug]);
-
-  useEffect(() => {
     if (form.formState.isSubmitSuccessful) {
       form.reset(form.getValues());
     }
@@ -153,12 +134,14 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           setUrl={setImageUrl}
         />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
-        <InputFormField
+        <SlugFormField
           control={form.control}
           name="slug"
           label={t('common:organization_handle')}
           required
           description={t('common:organization_handle.text')}
+          errorMessage={t('common:error.slug_exists')}
+          previousSlug={organization.slug}
           subComponent={
             organization.slug !== slug && (
               <div className="absolute inset-y-1 right-1 flex justify-end">
@@ -182,7 +165,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <LanguageFormField
           control={form.control}
           name="languages"
-          label={t('common:language.plural')}
+          label={t('common:languages')}
           mode="multiple"
           placeholder={t('common:placeholder.select_languages')}
           emptyIndicator={t('common:empty_languages')}
@@ -229,7 +212,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           )}
         />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || isCheckPending}>
+          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}
           </Button>
           <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>

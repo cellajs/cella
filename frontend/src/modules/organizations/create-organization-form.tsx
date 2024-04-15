@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
 import slugify from 'slugify';
+import type { z } from 'zod';
 
 // Change this in the future on current schema
 import { createOrganizationJsonSchema } from 'backend/modules/organizations/schema';
@@ -12,16 +12,16 @@ import { createOrganization } from '~/api/organizations';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { checkSlugAvailable } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
-import InputFormField from '../common/form-fields/input';
 import { dialog } from '../common/dialoger/state';
+import InputFormField from '../common/form-fields/input';
 import { useStepper } from '../ui/stepper';
+import { SlugFormField } from '../common/form-fields/slug';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -79,20 +79,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     },
   });
 
-  const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
-    mutationFn: checkSlugAvailable,
-    onSuccess: (isAvailable) => {
-      if (!isAvailable) {
-        form.setError('slug', {
-          type: 'manual',
-          message: t('common:error.slug_exists'),
-        });
-      } else {
-        form.clearErrors('slug');
-      }
-    },
-  });
-
   const onSubmit = (values: FormValues) => {
     create(values);
   };
@@ -112,33 +98,23 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     form.setValue('slug', slugify(name, { lower: true }));
   }, [name]);
 
-  const slug = useWatch({
-    control: form.control,
-    name: 'slug',
-  });
-
-  useEffect(() => {
-    if (slug) {
-      checkSlug(slug);
-    }
-  }, [slug]);
-
   return (
     <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
-        <InputFormField
+        <SlugFormField
           control={form.control}
           name="slug"
           onFocus={() => setDeviating(true)}
           label={t('common:organization_handle')}
-          description={t('common:organization_handle.text')}
           required
+          description={t('common:organization_handle.text')}
+          errorMessage={t('common:error.slug_exists')}
         />
         {children}
         {!children && (
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || isCheckPending}>
+            <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
               {t('common:create')}
             </Button>
             <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>

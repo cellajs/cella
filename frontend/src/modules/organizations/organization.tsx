@@ -14,9 +14,9 @@ interface OrganizationContextValue {
 }
 
 const organizationTabs: PageNavTab[] = [
-  { id: 'members', label: 'member.plural', path: '/$organizationIdentifier/members' },
-  { id: 'projects', label: 'project.plural', path: '/$organizationIdentifier/projects' },
-  { id: 'settings', label: 'settings', path: '/$organizationIdentifier/settings' },
+  { id: 'members', label: 'common:members', path: '/$organizationIdentifier/members' },
+  { id: 'projects', label: 'app:projects', path: '/$organizationIdentifier/projects' },
+  { id: 'settings', label: 'common:settings', path: '/$organizationIdentifier/settings' },
 ];
 
 export const OrganizationContext = createContext({} as OrganizationContextValue);
@@ -48,7 +48,7 @@ const OrganizationPage = () => {
       />
       <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
       <FocusViewContainer className="container min-h-screen mt-4">
-          <Outlet />
+        <Outlet />
       </FocusViewContainer>
     </OrganizationContext.Provider>
   );
