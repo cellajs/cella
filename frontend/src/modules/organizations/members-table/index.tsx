@@ -4,7 +4,8 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Member } from '~/types';
 
-import { type GetMembersParams, getMembersByOrganizationIdentifier, updateUserInOrganization } from '~/api/organizations';
+import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
+import { updateUserInOrganization } from '~/api/membership';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';

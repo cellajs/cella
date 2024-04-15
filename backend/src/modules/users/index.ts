@@ -9,7 +9,7 @@ import { usersTable } from '../../db/schema/users';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import { CustomHono, type MenuItem } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
@@ -106,7 +106,9 @@ const usersRoutes = app
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
-    const organizations = await Promise.all(
+    const organizations: MenuItem[] = [];
+    const inactiveOrganizations: MenuItem[] = [];
+    await Promise.all(
       organizationsWithMemberships.map(async ({ organization, membership }) => {
         const [{ admins }] = await db
           .select({
@@ -121,8 +123,7 @@ const usersRoutes = app
           })
           .from(membershipsTable)
           .where(eq(membershipsTable.organizationId, organization.id));
-
-        return {
+        const result = {
           ...organization,
           userRole: membership?.role || null,
           counts: {
@@ -130,6 +131,11 @@ const usersRoutes = app
             admins,
           },
         };
+        if (membership.inactive) {
+          inactiveOrganizations.push(result);
+        } else {
+          organizations.push(result);
+        }
       }),
     );
 
@@ -138,7 +144,7 @@ const usersRoutes = app
       data: {
         organizations: {
           active: organizations,
-          inactive: [],
+          inactive: inactiveOrganizations,
           canCreate: true,
         },
         workspaces: {

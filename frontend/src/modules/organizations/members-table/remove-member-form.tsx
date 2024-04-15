@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { removeMembersFromOrganization as baseRemoveMembersFromOrganization } from '~/api/organizations';
+import { removeMembersFromOrganization as baseRemoveMembersFromOrganization } from '~/api/membership';
 import type { Member, Organization } from '~/types';
 
 import { useMutation } from '~/hooks/use-mutations';
@@ -30,7 +30,7 @@ const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }
   const onRemoveMember = () => {
     removeMembersFromOrganization({
       organizationIdentifier: organization.id,
-      userIds: members.map((member) => member.id),
+      ids: members.map((member) => member.id),
     });
   };
 
