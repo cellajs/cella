@@ -10,12 +10,14 @@ import CreateOrganizationForm from '../../organizations/create-organization-form
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
+import type { LucideProps } from 'lucide-react';
 
 export type SectionItem = {
   id: string;
   type: string;
   label: string;
   createForm?: React.ReactNode;
+  icon?: React.ElementType<LucideProps>;
 };
 
 // Here you declare the menu sections
