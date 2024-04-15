@@ -316,6 +316,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                     </CommandLoading>
                   </div>
                 )}
+
                 {inputValue.length > 0 && <CommandEmpty>{t('common:no_results_found')}</CommandEmpty>}
                 <CommandGroup>
                   {inputValue.length === 0 ? (
