@@ -1,7 +1,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { getOrganizations, updateUserInOrganization } from '~/api/organizations';
+import { getOrganizations } from '~/api/organizations';
+import { updateUserInOrganization } from '~/api/membership';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { Bird } from 'lucide-react';

@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, primaryKey, timestamp, varchar, boolean } from 'drizzle-orm/pg-core';
 import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 
@@ -23,6 +23,8 @@ export const membershipsTable = pgTable(
     modifiedBy: varchar('modified_by').references(() => usersTable.id, {
       onDelete: 'set null',
     }),
+    inactive: boolean('inactive').default(false),
+    muted: boolean('muted').default(false),
   },
   (table) => {
     return {

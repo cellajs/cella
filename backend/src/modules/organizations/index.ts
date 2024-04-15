@@ -11,16 +11,13 @@ import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import {
   createOrganizationRouteConfig,
   deleteOrganizationsRouteConfig,
-  deleteUsersFromOrganizationRouteConfig,
   getOrganizationByIdOrSlugRouteConfig,
   getOrganizationsRouteConfig,
   getUsersByOrganizationIdRouteConfig,
   updateOrganizationRouteConfig,
-  updateUserInOrganizationRouteConfig,
 } from './routes';
 
 const app = new CustomHono();
@@ -257,79 +254,7 @@ const organizationsRoutes = app
       },
     });
   })
-  /*
-   * Update user in organization
-   */
-  .openapi(updateUserInOrganizationRouteConfig, async (ctx) => {
-    const { userId } = ctx.req.valid('param');
-    const { role } = ctx.req.valid('json');
-    const user = ctx.get('user');
-    const organization = ctx.get('organization');
 
-    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-
-    if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: userId });
-    }
-
-    let [membership] = await db
-      .update(membershipsTable)
-      .set({ role, modifiedBy: user.id, modifiedAt: new Date() })
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)))
-      .returning();
-
-    if (!membership) {
-      if (targetUser.id === user.id) {
-        [membership] = await db
-          .insert(membershipsTable)
-          .values({
-            userId: user.id,
-            organizationId: organization.id,
-            role,
-          })
-          .returning();
-
-        sendSSE(targetUser.id, 'new_membership', {
-          ...organization,
-          userRole: role,
-        });
-      } else {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
-          user: targetUser.id,
-          organization: organization.id,
-        });
-      }
-    } else {
-      sendSSE(targetUser.id, 'update_organization', {
-        ...organization,
-        userRole: role,
-      });
-    }
-
-    const [{ memberships }] = await db
-      .select({
-        memberships: count(),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.organizationId, organization.id));
-
-    logEvent('User updated in organization', {
-      user: targetUser.id,
-      organization: organization.id,
-    });
-
-    return ctx.json({
-      success: true,
-      data: {
-        ...transformDatabaseUser(targetUser),
-        sessions: [],
-        organizationRole: membership.role,
-        counts: {
-          memberships,
-        },
-      },
-    });
-  })
   /*
    * Delete organizations
    */
@@ -503,42 +428,7 @@ const organizationsRoutes = app
         total,
       },
     });
-  })
-  /*
-   * Delete users from organization
-   */
-  .openapi(deleteUsersFromOrganizationRouteConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
-    const organization = ctx.get('organization');
-
-    const usersIds = Array.isArray(ids) ? ids : [ids];
-
-    await Promise.all(
-      usersIds.map(async (id) => {
-        const [targetMembership] = await db
-          .delete(membershipsTable)
-          .where(and(eq(membershipsTable.userId, id), eq(membershipsTable.organizationId, organization.id)))
-          .returning();
-
-        if (!targetMembership) {
-          return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
-            user: id,
-            organization: organization.id,
-          });
-        }
-
-        logEvent('Member deleted', { user: id, organization: organization.id });
-
-        sendSSE(id, 'remove_membership', organization);
-      }),
-    );
-
-    return ctx.json({
-      success: true,
-      data: undefined,
-    });
   });
-
 export default organizationsRoutes;
 
 export type OrganizationsRoutes = typeof organizationsRoutes;

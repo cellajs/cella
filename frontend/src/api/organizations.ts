@@ -1,6 +1,4 @@
-import type { Member } from '~/types';
 import { ApiError, organizationsClient as client } from '.';
-
 export type CreateOrganizationParams = Parameters<(typeof client.organizations)['$post']>['0']['json'];
 
 // Create a new organization
@@ -77,18 +75,6 @@ export const getOrganizationBySlugOrId = async (organizationIdentifier: string) 
   return json.data;
 };
 
-// Update a user's role in an organization
-export const updateUserInOrganization = async (organizationIdentifier: string, userId: string, role: Member['organizationRole']) => {
-  const response = await client.organizations[':organizationIdentifier'].members[':userId'].$put({
-    param: { organizationIdentifier, userId },
-    json: { role },
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return json.data;
-};
-
 // Delete organizations
 export const deleteOrganizations = async (organizationIds: string[]) => {
   const response = await client.organizations.$delete({
@@ -135,24 +121,6 @@ export const getMembersByOrganizationIdentifier = async (
       },
     },
   );
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return json.data;
-};
-
-// Remove members from an organization
-export const removeMembersFromOrganization = async ({
-  organizationIdentifier,
-  userIds,
-}: {
-  organizationIdentifier: string;
-  userIds: string[];
-}) => {
-  const response = await client.organizations[':organizationIdentifier'].members.$delete({
-    param: { organizationIdentifier },
-    query: { ids: userIds },
-  });
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);

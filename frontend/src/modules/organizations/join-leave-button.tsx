@@ -3,7 +3,7 @@ import { UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { invite as baseInvite } from '~/api/general';
-import { removeMembersFromOrganization } from '~/api/organizations';
+import { removeMembersFromOrganization } from '~/api/membership';
 import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
@@ -46,7 +46,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
   const onLeave = () => {
     leave({
       organizationIdentifier: organization.slug,
-      userIds: [user.id],
+      ids: [user.id],
     });
   };
 
