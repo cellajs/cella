@@ -26,7 +26,7 @@ import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { useStepper } from '../ui/stepper';
-import { SlugField } from '../common/form-fields/slug-field';
+import { SlugFormField } from '../common/form-fields/slug';
 
 interface UpdateUserFormProps {
   user: User;
@@ -142,7 +142,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
           <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
           <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
         </div>
-        <SlugField
+        <SlugFormField
           control={form.control}
           name="slug"
           required

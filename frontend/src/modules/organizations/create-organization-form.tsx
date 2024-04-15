@@ -21,7 +21,7 @@ import type { Organization } from '~/types';
 import InputFormField from '../common/form-fields/input';
 import { dialog } from '../common/dialoger/state';
 import { useStepper } from '../ui/stepper';
-import { SlugField } from '../common/form-fields/slug-field';
+import { SlugFormField } from '../common/form-fields/slug';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -102,7 +102,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
-        <SlugField
+        <SlugFormField
           control={form.control}
           name="slug"
           onFocus={() => setDeviating(true)}

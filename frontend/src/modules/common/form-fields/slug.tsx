@@ -18,7 +18,7 @@ interface SlugFieldProps {
   previousSlug?: string;
 }
 
-export const SlugField = ({
+export const SlugFormField = ({
   control,
   name,
   onFocus,

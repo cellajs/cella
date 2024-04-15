@@ -20,7 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import AvatarFormField from '../common/form-fields/avatar';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
-import { SlugField } from '../common/form-fields/slug-field';
+import { SlugFormField } from '../common/form-fields/slug';
 
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
@@ -134,7 +134,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           setUrl={setImageUrl}
         />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
-        <SlugField
+        <SlugFormField
           control={form.control}
           name="slug"
           label={t('common:organization_handle')}
