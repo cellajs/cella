@@ -76,14 +76,14 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   };
 
   return (
-    <div className="mt-2">
+    <>
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
             <div>
               <span>{t(section.id)}</span>
               {!isSectionVisible && (
-                <span className="ml-2 inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>
+                <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>
               )}
             </div>
 
@@ -120,6 +120,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
           {!!(data.inactive.length || data.active.length) && <MenuArchiveToggle archiveToggleClick={archiveToggleClick} />}
         </ul>
       </div>
-    </div>
+    </>
   );
 };

@@ -141,6 +141,16 @@ const usersRoutes = app
           inactive: [],
           canCreate: true,
         },
+        workspaces: {
+          active: [],
+          inactive: [],
+          canCreate: false,
+        },
+        projects: {
+          active: [],
+          inactive: [],
+          canCreate: false,
+        },
       },
     });
   })

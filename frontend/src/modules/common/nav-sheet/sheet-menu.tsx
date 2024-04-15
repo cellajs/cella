@@ -18,7 +18,11 @@ export type SectionItem = {
 };
 
 // Here you declare the menu sections
-export const menuSections: SectionItem[] = [{ id: 'organizations', type: 'organization', createForm: <CreateOrganizationForm dialog /> }];
+export const menuSections: SectionItem[] = [
+  { id: 'organizations', type: 'organization', createForm: <CreateOrganizationForm dialog /> },
+  { id: 'workspaces', type: 'workspace' },
+  { id: 'projects', type: 'project' },
+];
 
 // Set search results to empty array for each menu type
 export const initialSearchResults = menuSections.reduce(
@@ -80,7 +84,7 @@ export const SheetMenu = memo(() => {
         </div>
       )}
 
-      {!searchTerm && renderedSections}
+      {!searchTerm && <div className="mt-2">{renderedSections}</div>}
 
       {!searchTerm && (
         <div className="my-4 flex items-center justify-center space-x-2">

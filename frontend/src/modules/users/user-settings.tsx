@@ -152,7 +152,7 @@ const UserSettings = () => {
               <div className="flex flex-col mt-4 gap-2">
                 <ExpandableList
                   items={sessions}
-                  renderItem={(session) => <SessionTile session={session} terminateMySessions={terminateMySessions} isPending={isPending} />}
+                  renderItem={(session) => <SessionTile session={session} key={session.id} terminateMySessions={terminateMySessions} isPending={isPending} />}
                   initialDisplayCount={3}
                   expandText="common:more_sessions"
                 />
