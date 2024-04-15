@@ -20,19 +20,38 @@ import { AsideNav } from '~/modules/common/aside-nav';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
-import { sendResetPasswordEmail } from '~/api/authentication';
+import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl, sendResetPasswordEmail } from '~/api/authentication';
+import { config } from 'config';
+import { useThemeStore } from '~/store/theme';
 
-const tabs = [
-  { id: 'general', label: 'common:general' },
-  { id: 'sessions', label: 'common:sessions' },
-  { id: 'reset-password', label: 'common:reset_password' },
-  { id: 'delete-account', label: 'common:delete_account' },
-];
 type Session = {
   id: string;
   type: string;
   current: boolean;
 };
+
+const tabs = [
+  { id: 'general', label: 'common:general' },
+  { id: 'sessions', label: 'common:sessions' },
+  { id: 'oauth', label: 'common:oauth' },
+  { id: 'reset-password', label: 'common:reset_password' },
+  { id: 'delete-account', label: 'common:delete_account' },
+];
+
+const oauthOptions = [
+  {
+    name: 'Github',
+    url: githubSignInUrl,
+  },
+  {
+    name: 'Google',
+    url: googleSignInUrl,
+  },
+  {
+    name: 'Microsoft',
+    url: microsoftSignInUrl,
+  },
+];
 
 interface SessionTileProps {
   session: Session;
@@ -77,6 +96,7 @@ const SessionTile = ({ session, terminateMySessions, isPending }: SessionTilePro
 const UserSettings = () => {
   const { user, clearLastUser } = useUserStore();
   const navigate = useNavigate();
+  const { mode } = useThemeStore();
   const { t } = useTranslation();
 
   const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.current), [user.sessions]);
@@ -111,6 +131,7 @@ const UserSettings = () => {
   };
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
+  const invertClass = mode === 'dark' ? 'invert' : '';
 
   return (
     <div className="container md:flex md:flex-row md:mt-8 mx-auto max-w-[1200px] gap-4">
@@ -157,10 +178,47 @@ const UserSettings = () => {
               <div className="flex flex-col mt-4 gap-2">
                 <ExpandableList
                   items={sessions}
-                  renderItem={(session) => <SessionTile session={session} key={session.id} terminateMySessions={terminateMySessions} isPending={isPending} />}
+                  renderItem={(session) => (
+                    <SessionTile session={session} key={session.id} terminateMySessions={terminateMySessions} isPending={isPending} />
+                  )}
                   initialDisplayCount={3}
                   expandText="common:more_sessions"
                 />
+              </div>
+            </CardContent>
+          </Card>
+        </AsideAnchor>
+
+        <AsideAnchor id="oauth">
+          <Card className="mx-auto sm:w-full">
+            <CardHeader>
+              <CardTitle>{t('common:oauth')}</CardTitle>
+              <CardDescription>{t('common:oauth.text')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col space-y-2">
+                {oauthOptions.map((option) => {
+                  if (!config.oauthOptions.includes(option.name)) return null;
+
+                  return (
+                    <Button
+                      key={option.name}
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        window.location.href = `${option.url}?redirect=${window.location.href}`;
+                      }}
+                    >
+                      <img
+                        src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
+                        alt={option.name}
+                        className={`w-4 h-4 mr-2 ${option.name === 'Github' ? invertClass : ''}`}
+                        loading="lazy"
+                      />
+                      Add {option.name} account
+                    </Button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
