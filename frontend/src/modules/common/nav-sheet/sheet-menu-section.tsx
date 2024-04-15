@@ -24,6 +24,7 @@ interface MenuSectionProps {
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
+  const [isArchivedShown, setArchivedShown] = useState(true);
   const { activeSections, toggleSection } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
@@ -41,7 +42,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
 
   // TODO implement archiveToggleClick
   const archiveToggleClick = () => {
-    console.log('archiveToggleClick');
+    setArchivedShown(!isArchivedShown);
   };
 
   // Render the menu items for each section
@@ -131,7 +132,18 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
       >
         <ul className="overflow-hidden">
           {optionsView ? renderSectionOptions(data) : renderSectionItems(data)}
-          {!!(data.inactive.length || data.active.length) && <MenuArchiveToggle archiveToggleClick={archiveToggleClick} />}
+          {!!(data.inactive.length || data.active.length) && (
+            <>
+              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.inactive.length} showInactiveList={isArchivedShown} />
+              {isArchivedShown && (
+                <>
+                  {data.inactive.map((item) => (
+                    <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />
+                  ))}
+                </>
+              )}
+            </>
+          )}
         </ul>
       </div>
     </div>
