@@ -8,9 +8,10 @@ import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUsers from './delete-users';
+import { Send } from 'lucide-react';
 
 import { useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sticky from 'react-sticky-el';
 import { toast } from 'sonner';
@@ -19,10 +20,12 @@ import { AsideNav } from '~/modules/common/aside-nav';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
+import { sendResetPasswordEmail } from '~/api/authentication';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
   { id: 'sessions', label: 'common:sessions' },
+  { id: 'reset-password', label: 'common:reset_password' },
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 type Session = {
@@ -107,6 +110,8 @@ const UserSettings = () => {
     );
   };
 
+  const [disabledResetPassword, setDisabledResetPassword] = useState(false);
+
   return (
     <div className="container md:flex md:flex-row md:mt-8 mx-auto max-w-[1200px] gap-4">
       <div className="mx-auto md:min-w-[200px] md:w-[30%] md:mt-2">
@@ -157,6 +162,35 @@ const UserSettings = () => {
                   expandText="common:more_sessions"
                 />
               </div>
+            </CardContent>
+          </Card>
+        </AsideAnchor>
+
+        <AsideAnchor id="reset-password">
+          <Card className="mx-auto sm:w-full">
+            <CardHeader>
+              <CardTitle>{t('common:reset_password')}</CardTitle>
+              {/* TODO: create identifier for this text */}
+              <CardDescription>Reset your password by sending a reset link to your email address.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                className="w-full sm:w-auto"
+                disabled={disabledResetPassword}
+                onClick={() => {
+                  sendResetPasswordEmail(user.email);
+                  setDisabledResetPassword(true);
+
+                  setTimeout(() => {
+                    setDisabledResetPassword(false);
+                  }, 60000);
+                }}
+              >
+                <Send size={16} className="mr-2" />
+                {t('common:send_reset_link')}
+              </Button>
+              {/* TODO: create identifier for this text */}
+              {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">Wait 1 minute before sending another reset link.</p>}
             </CardContent>
           </Card>
         </AsideAnchor>
