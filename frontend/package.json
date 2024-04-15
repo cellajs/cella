@@ -121,6 +121,7 @@
     "nanoid": "^5.0.4",
     "react": "^18.2.0",
     "react-colorful": "^5.6.1",
+    "react-confetti-explosion": "^2.1.2",
     "react-data-grid": "7.0.0-beta.43",
     "react-day-picker": "^8.10.0",
     "react-dom": "^18.2.0",
@@ -168,7 +169,11 @@
     "vite-plugin-pwa": "^0.19.7",
     "vite-plugin-static-copy": "^1.0.2"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},

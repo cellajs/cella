@@ -1,23 +1,30 @@
 import { useEffect } from 'react';
 
-import { useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Redo } from 'lucide-react';
-import { toast } from 'sonner';
-import { dialog } from '~/modules/common/dialoger/state';
 import type { Organization } from '~/types';
 import { Button } from '../../ui/button';
 import { useStepper } from '../../ui/stepper';
 
-const StepperFooter = ({ organization }: { organization?: Organization | null }) => {
-  const navigate = useNavigate();
+interface StepperFooterProps {
+  organization?: Organization | null;
+  setOnboardingCompleted?: (val: boolean) => void;
+}
+
+const StepperFooter = ({ organization, setOnboardingCompleted }: StepperFooterProps) => {
   const { nextStep, prevStep, isLastStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
 
   useEffect(() => {
     if (activeStep === 0 || !hasCompletedAllSteps) return;
-    toast.success('You are good to go!');
-    dialog.remove();
-    navigate({ to: '/home', replace: true });
+    if (setOnboardingCompleted) {
+      setOnboardingCompleted(true);
+    }
   }, [hasCompletedAllSteps, activeStep]);
+
+  const handleComplete = () => {
+    if (setOnboardingCompleted) {
+      setOnboardingCompleted(true);
+    }
+  };
 
   return (
     <div className="w-full flex justify-end gap-2">
@@ -33,7 +40,9 @@ const StepperFooter = ({ organization }: { organization?: Organization | null })
           Skip
         </Button>
       )}
-      <Button size="sm">{isLastStep ? 'Finish' : 'Continue'}</Button>
+      <Button onClick={handleComplete} size="sm">
+        {isLastStep ? 'Finish' : 'Continue'}
+      </Button>
     </div>
   );
 };
