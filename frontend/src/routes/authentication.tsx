@@ -13,6 +13,13 @@ export const AuthRoute = createRoute({
   id: 'auth-layout',
   staticData: { pageTitle: null },
   getParentRoute: () => rootRoute,
+  component: () => <Outlet />,
+});
+
+export const SignInRoute = createRoute({
+  path: '/auth/sign-in',
+  staticData: { pageTitle: 'Sign in' },
+  getParentRoute: () => AuthRoute,
   beforeLoad: async ({ cause }) => {
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
@@ -29,13 +36,6 @@ export const AuthRoute = createRoute({
       return console.info('Not authenticated (silent check)');
     }
   },
-  component: () => <Outlet />,
-});
-
-export const SignInRoute = createRoute({
-  path: '/auth/sign-in',
-  staticData: { pageTitle: 'Sign in' },
-  getParentRoute: () => AuthRoute,
   component: () => <SignIn />,
   validateSearch: z.object({ redirect: z.string().optional() }),
 });
