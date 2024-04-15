@@ -21,6 +21,9 @@ interface MenuSectionProps {
   menuItemClick: () => void;
 }
 
+type MenuList = UserMenu[keyof UserMenu]['inactive' | 'active'];
+
+
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
@@ -45,12 +48,12 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   };
 
   // Render the menu items for each section
-  const renderSectionItems = (sectionData: UserMenu[keyof UserMenu]) => {
-    if (sectionData.active.length === 0 && !sectionData.canCreate) {
+  const renderItems = (list: MenuList, canCreate: boolean) => {
+    if (list.length === 0 && !canCreate) {
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
 
-    if (sectionData.active.length === 0 && sectionData.canCreate && section.createForm) {
+    if (list.length === 0 && canCreate && section.createForm) {
       return (
         <div className="flex items-center">
           <Button className="w-full" variant="ghost" onClick={createDialog}>
@@ -63,16 +66,16 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
       );
     }
 
-    return sectionData.active.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />);
+    return list.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />);
   };
 
   // Render the option items to configure the section
-  const renderSectionOptions = (sectionData: UserMenu[keyof UserMenu]) => {
-    if (sectionData.active.length === 0) {
+  const renderOptions = (list: MenuList) => {
+    if (list.length === 0) {
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
 
-    return sectionData.active.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} />);
+    return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} />);
   };
 
   return (
@@ -115,17 +118,11 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         } grid-rows-[0fr] ease-in-outss duration-300`}
       >
         <ul className="overflow-hidden">
-          {optionsView ? renderSectionOptions(data) : renderSectionItems(data)}
+          {optionsView ? renderOptions(data.active) : renderItems(data.active, data.canCreate)}
           {!!(data.inactive.length || data.active.length) && (
             <>
               <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.inactive.length} isArchivedVisible={isArchivedVisible} />
-              {isArchivedVisible && (
-                <>
-                  {data.inactive.map((item) => (
-                    <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />
-                  ))}
-                </>
-              )}
+              {isArchivedVisible && (optionsView ? renderOptions(data.inactive) : renderItems(data.inactive, data.canCreate))}
             </>
           )}
         </ul>

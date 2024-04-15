@@ -24,7 +24,7 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel }: PageHea
     <div className="relative">
       <PageCover type={type} id={id} url={bannerUrl} />
 
-      <div className="absolute flex bottom-0 w-full bg-background/50 backdrop-blur-sm" ref={scrollToRef}>
+      <div className="absolute flex bottom-0 w-full bg-background/50 backdrop-blur-sm p-1" ref={scrollToRef}>
         <div className="flex items-stretch">
           <AvatarWrap className="m-2" type={type} id={id} name={title} url={thumbnailUrl} />
           <div className="my-auto">
