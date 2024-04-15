@@ -24,7 +24,7 @@ interface MenuSectionProps {
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
-  const [isArchivedShown, setArchivedShown] = useState(false);
+  const [isArchivedVisible, setArchivedVisible] = useState(false);
   const { activeSections, toggleSection } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
@@ -41,7 +41,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   };
 
   const archiveToggleClick = () => {
-    setArchivedShown(!isArchivedShown);
+    setArchivedVisible(!isArchivedVisible);
   };
 
   // Render the menu items for each section
@@ -118,8 +118,8 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
           {optionsView ? renderSectionOptions(data) : renderSectionItems(data)}
           {!!(data.inactive.length || data.active.length) && (
             <>
-              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.inactive.length} showInactiveList={isArchivedShown} />
-              {isArchivedShown && (
+              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.inactive.length} isArchivedVisible={isArchivedVisible} />
+              {isArchivedVisible && (
                 <>
                   {data.inactive.map((item) => (
                     <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />

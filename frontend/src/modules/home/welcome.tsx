@@ -1,20 +1,23 @@
-import { Suspense, lazy, useState } from 'react';
+import { useState } from 'react';
 import type { OnboardingStates } from '~/modules/home/onboarding';
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
 import { OnboardingCompleted } from './onboarding/completed';
-
-const Onboarding = lazy(() => import('~/modules/home/onboarding'));
+import { useNavigate } from '@tanstack/react-router';
+import Onboarding  from '~/modules/home/onboarding';
 
 const Welcome = () => {
+  const navigate = useNavigate();
   const [onboarding, setOnboarding] = useState<OnboardingStates>('start');
+
+  const onOpenChange = () => {
+    navigate({ to: '/home', replace: true});
+  };
 
   return (
     <>
-      <Dialog open={onboarding !== 'completed'} defaultOpen={true}>
-        <DialogContent className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75">
-          <Suspense>
+      <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
+        <DialogContent className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto">
             <Onboarding onboarding={onboarding} setOnboarding={setOnboarding} />
-          </Suspense>
         </DialogContent>
       </Dialog>
 
