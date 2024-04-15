@@ -1,5 +1,5 @@
 import { ArrowDown } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
@@ -8,11 +8,14 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import { Step, type StepItem, Stepper } from '~/modules/ui/stepper';
 import { useUserStore } from '~/store/user';
-
+import ConfettiExplosion from 'react-confetti-explosion';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import type { Organization } from '~/types';
 import InviteUsers from '../../common/invite-users';
 import StepperFooter from './footer';
+import { dialog } from '~/modules/common/dialoger/state';
+import { toast } from 'sonner';
+import { useNavigate } from '@tanstack/react-router';
 
 const steps: StepItem[] = [
   { id: 'step-1', label: 'Create organization', optional: true },
@@ -41,9 +44,56 @@ const OnboardingWelcome = ({ setWelcomeMessage }: OnboardingWelcomeProps) => {
   );
 };
 
+const OnboardingCompleted = () => {
+  const [isExploding, _] = useState(true);
+  const [closeCountDown, setCloseCountDown] = useState<number>(5);
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fadeTimer = setTimeout(() => {
+      const timer = setInterval(() => {
+        setCloseCountDown((prev) => {
+          if (prev > 0) {
+            return prev - 1;
+          }
+          return prev;
+        });
+      }, 1000);
+
+      setTimeout(() => {
+        dialog.remove();
+        navigate({ to: '/home', replace: true });
+        toast.success(t('common:success.onboarding_toast'));
+        clearInterval(timer);
+      }, 5000);
+    }, 500);
+
+    return () => {
+      clearTimeout(fadeTimer);
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center text-center mx-auto space-y-6 p-4 max-w-[700px]">
+      <h1 className="text-3xl font-bold">{t('success.onboarding_header')}</h1>
+      <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">{t('success.onboarding.text')}</p>
+      {closeCountDown ? (
+        <p>
+          {t('success.onboarding_dialog_close')}
+          <span className="text-2xl font-bold ml-2">{closeCountDown}</span>
+        </p>
+      ) : null}
+      {isExploding && <ConfettiExplosion zIndex={10000} duration={5000} force={0.8} particleCount={250} height={'150vh'} width={1500} />}
+    </div>
+  );
+};
+
 const Onboarding = () => {
   const [welcomeMessage, setWelcomeMessage] = useState<boolean>(true);
   const [organization, setOrganization] = useState<Organization | null>(null);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(false);
+
   const { hasStarted } = useMounted();
   const { t } = useTranslation();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
@@ -55,6 +105,8 @@ const Onboarding = () => {
       <div className="mt-auto mb-auto w-full">
         {welcomeMessage ? (
           <OnboardingWelcome setWelcomeMessage={setWelcomeMessage} />
+        ) : onboardingCompleted ? (
+          <OnboardingCompleted />
         ) : (
           <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 p-4 sm:w-10/12 max-w-[800px]', animateClass)}>
             <Stepper initialStep={0} steps={steps} orientation="vertical">
@@ -82,7 +134,7 @@ const Onboarding = () => {
                       )}
                       {id === 'step-3' && (
                         <InviteUsers organization={organization} type="organization" mode="email">
-                          <StepperFooter organization={organization} />
+                          <StepperFooter organization={organization} setOnboardingCompleted={setOnboardingCompleted} />
                         </InviteUsers>
                       )}
                     </CardContent>
