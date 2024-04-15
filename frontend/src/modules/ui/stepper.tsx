@@ -441,7 +441,7 @@ type VerticalStepProps = StepSharedProps & {
 const verticalStepVariants = cva(
   [
     'flex flex-col relative transition-all duration-200',
-    'data-[completed=true]:[&:not(:last-child)]:after:bg-blue-500',
+    'data-[completed=true]:[&:not(:last-child)]:after:bg-primary',
     'data-[invalid=true]:[&:not(:last-child)]:after:bg-destructive',
   ],
   {
@@ -541,7 +541,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
         className={cn(
           'stepper__vertical-step-container',
           'flex items-center',
-          variant === 'line' && 'border-s-[3px] data-[active=true]:border-blue-500 py-2 ps-3',
+          variant === 'line' && 'border-s-[3px] data-[active=true]:border-primary py-2 ps-3',
           styles?.['vertical-step-container'],
         )}
       >
@@ -572,7 +572,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
         }}
         className={cn(
           'stepper__vertical-step-content',
-          !isLastStep && 'min-h-4',
+          !isLastStep && 'min-h-4 max-sm:pl-0 z-[1]', // EDIT: add max-sm
           variant !== 'line' && 'ps-[--step-icon-size]',
           variant === 'line' && orientation === 'vertical' && 'min-h-0',
           styles?.['vertical-step-content'],
@@ -634,13 +634,13 @@ const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>((props,
         '[&:not(:last-child)]:flex-1',
         '[&:not(:last-child)]:after:transition-all [&:not(:last-child)]:after:duration-200',
         "[&:not(:last-child)]:after:content-[''] [&:not(:last-child)]:after:h-[2px] [&:not(:last-child)]:after:bg-border",
-        'data-[completed=true]:[&:not(:last-child)]:after:bg-blue-500',
+        'data-[completed=true]:[&:not(:last-child)]:after:bg-primary',
         'data-[invalid=true]:[&:not(:last-child)]:after:bg-destructive',
         variant === 'circle-alt' &&
           'justify-start flex-col flex-1 [&:not(:last-child)]:after:relative [&:not(:last-child)]:after:order-[-1] [&:not(:last-child)]:after:start-[50%] [&:not(:last-child)]:after:end-[50%] [&:not(:last-child)]:after:top-[calc(var(--step-icon-size)/2)] [&:not(:last-child)]:after:w-[calc((100%-var(--step-icon-size))-(var(--step-gap)))]',
         variant === 'circle' &&
           '[&:not(:last-child)]:after:flex-1 [&:not(:last-child)]:after:ms-[var(--step-gap)] [&:not(:last-child)]:after:me-[var(--step-gap)]',
-        variant === 'line' && 'flex-col flex-1 border-t-[3px] data-[active=true]:border-blue-500',
+        variant === 'line' && 'flex-col flex-1 border-t-[3px] data-[active=true]:border-primary',
         styles?.['horizontal-step'],
       )}
       data-optional={steps[index || 0]?.optional}
@@ -714,8 +714,8 @@ const StepButtonContainer = ({
         'w-[var(--step-icon-size)] h-[var(--step-icon-size)]',
         'border-2 flex rounded-full justify-center items-center',
         'data-[clickable=true]:pointer-events-auto',
-        'data-[active=true]:bg-blue-500 data-[active=true]:border-blue-500 data-[active=true]:text-primary-foreground dark:data-[active=true]:text-primary',
-        'data-[current=true]:border-blue-500 data-[current=true]:bg-secondary',
+        'data-[active=true]:bg-primary data-[active=true]:border-primary data-[active=true]:text-primary-foreground dark:data-[active=true]:text-primary-foreground',
+        'data-[current=true]:border-primary data-[current=true]:bg-secondary',
         'data-[invalid=true]:!bg-destructive data-[invalid=true]:!border-destructive data-[invalid=true]:!text-primary-foreground dark:data-[invalid=true]:!text-primary',
         styles?.['step-button-container'],
       )}

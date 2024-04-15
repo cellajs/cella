@@ -14,11 +14,16 @@ import { MenuSection } from './sheet-menu-section';
 export type SectionItem = {
   id: string;
   type: string;
+  label: string;
   createForm?: React.ReactNode;
 };
 
 // Here you declare the menu sections
-export const menuSections: SectionItem[] = [{ id: 'organizations', type: 'organization', createForm: <CreateOrganizationForm dialog /> }];
+export const menuSections: SectionItem[] = [
+  { id: 'organizations', type: 'organization', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
+  { id: 'workspaces', type: 'workspace', label: 'app:workspaces' },
+  { id: 'projects', type: 'project', label: 'app:projects' },
+];
 
 // Set search results to empty array for each menu type
 export const initialSearchResults = menuSections.reduce(
@@ -80,7 +85,7 @@ export const SheetMenu = memo(() => {
         </div>
       )}
 
-      {!searchTerm && renderedSections}
+      {!searchTerm && <div className="mt-2">{renderedSections}</div>}
 
       {!searchTerm && (
         <div className="my-4 flex items-center justify-center space-x-2">

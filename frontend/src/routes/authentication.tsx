@@ -13,13 +13,21 @@ export const AuthRoute = createRoute({
   id: 'auth-layout',
   staticData: { pageTitle: null },
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ cause }) => {
+  component: () => <Outlet />,
+});
+
+export const SignInRoute = createRoute({
+  path: '/auth/sign-in',
+  staticData: { pageTitle: 'Sign in' },
+  getParentRoute: () => AuthRoute,
+  beforeLoad: async ({ cause, search }) => {
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (storedUser) throw redirect({ to: '/', replace: true });
 
+    console.info('cause', cause);
     // Only check auth if entering
-    if (cause !== 'enter') return;
+    if (cause !== 'enter' || search.fromRoot) return;
 
     try {
       await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
@@ -29,15 +37,8 @@ export const AuthRoute = createRoute({
       return console.info('Not authenticated (silent check)');
     }
   },
-  component: () => <Outlet />,
-});
-
-export const SignInRoute = createRoute({
-  path: '/auth/sign-in',
-  staticData: { pageTitle: 'Sign in' },
-  getParentRoute: () => AuthRoute,
   component: () => <SignIn />,
-  validateSearch: z.object({ redirect: z.string().optional() }),
+  validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional() }),
 });
 
 export const AcceptRoute = createRoute({

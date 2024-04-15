@@ -93,7 +93,7 @@ export const DataTable = <TData,>({
   onCellClick,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
-  const [initial, setInitial] = useState(false);
+  const [initialDone, setInitialDone] = useState(false);
   const { ref: measureRef, inView } = useInView({
     triggerOnce: false,
     threshold: 0,
@@ -112,13 +112,13 @@ export const DataTable = <TData,>({
 
   useEffect(() => {
     if (error || !isLoading) {
-      setInitial(true);
+      setInitialDone(true);
     }
   }, [isLoading, error]);
 
   return (
     <div className="w-full h-full">
-      {initial ? ( // Only render if initial data load is complete
+      {initialDone ? ( // Render skeleton only on initial load
         <>
           {error && rows.length === 0 ? (
             <ErrorMessage error={error as Error} />

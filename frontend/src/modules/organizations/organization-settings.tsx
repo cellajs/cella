@@ -16,8 +16,8 @@ import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
 
 const tabs = [
-  { value: 'general', label: 'common:general', hash: 'general' },
-  { value: 'delete-organization', label: 'common:delete_organization', hash: 'delete-organization' },
+  { id: 'general', label: 'common:general' },
+  { id: 'delete-organization', label: 'common:delete_organization' },
 ];
 
 const OrganizationSettings = () => {
@@ -91,7 +91,6 @@ const OrganizationSettings = () => {
             </CardContent>
           </Card>
         </AsideAnchor>
-    
       </div>
     </div>
   );

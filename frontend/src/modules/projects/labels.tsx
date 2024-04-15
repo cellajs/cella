@@ -1,34 +1,19 @@
-import { Check, ChevronsUpDown, Edit2 } from 'lucide-react';
+import { Check } from 'lucide-react';
 import * as React from 'react';
 
-import { DialogClose } from '@radix-ui/react-dialog';
-import { cn } from '~/lib/utils';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '~/modules/ui/alert-dialog';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandSeparator } from '~/modules/ui/command';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { Input } from '~/modules/ui/input';
-import { Label } from '~/modules/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { PopoverPortal } from '@radix-ui/react-popover';
 import { CommandList } from 'cmdk';
+import { cn } from '~/lib/utils';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
+import { Command, CommandInput, CommandItem, CommandSeparator } from '~/modules/ui/command';
+import { Input } from '~/modules/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '../ui/scroll-area';
 
-type Framework = Record<'value' | 'label' | 'color', string>;
+type LabelType = Record<'value' | 'label' | 'color', string>;
 
-const FRAMEWORKS = [
+const Labels = [
   {
     value: 'next.js',
     label: 'Next.js',
@@ -59,7 +44,7 @@ const FRAMEWORKS = [
     label: 'WordPress',
     color: '#8b5cf6',
   },
-] satisfies Framework[];
+] satisfies LabelType[];
 
 const badgeStyle = (color: string) => ({
   borderColor: `${color}20`,
@@ -67,288 +52,235 @@ const badgeStyle = (color: string) => ({
   color,
 });
 
-export interface LabelBoxData {
-  boxOpen: boolean;
-}
-export function LabelBox({ boxOpen }: LabelBoxData) {
+export const LabelBox = () => {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [frameworks, setFrameworks] = React.useState<Framework[]>(FRAMEWORKS);
-  const [openCombobox, setOpenCombobox] = React.useState(false);
-  const [openDialog, setOpenDialog] = React.useState(false);
-  const [inputValue, setInputValue] = React.useState<string>('');
-  const [selectedValues, setSelectedValues] = React.useState<Framework[]>(FRAMEWORKS);
+  const [labels, setLabels] = React.useState<LabelType[]>(Labels);
+  const [isOpenEditLabel, setOpenEditLabel] = React.useState(false);
+  const [searchValue, setSearchValue] = React.useState<string>('');
+  const [selectedLabels, setSelectedLabels] = React.useState<LabelType[]>([Labels[0], Labels[1], Labels[2]]);
+  const [editedValue, setEditedValue] = React.useState<string>('');
 
-  const createFramework = (name: string) => {
-    const newFramework = {
+  const createLabel = (name: string) => {
+    const newLabel = {
       value: name.toLowerCase(),
       label: name,
       color: '#ffffff',
     };
-    setFrameworks((prev) => [...prev, newFramework]);
-    setSelectedValues((prev) => [...prev, newFramework]);
+    setLabels((prev) => [...prev, newLabel]);
+    setSelectedLabels((prev) => [...prev, newLabel]);
   };
 
-  const toggleFramework = (framework: Framework) => {
-    setSelectedValues((currentFrameworks) =>
-      !currentFrameworks.includes(framework) ? [...currentFrameworks, framework] : currentFrameworks.filter((l) => l.value !== framework.value),
+  const toggleLabel = (label: LabelType) => {
+    setSelectedLabels((currentLabels) =>
+      !currentLabels.includes(label) ? [...currentLabels, label] : currentLabels.filter((l) => l.value !== label.value),
     );
     inputRef?.current?.focus();
   };
 
-  const updateFramework = (framework: Framework, newFramework: Framework) => {
-    setFrameworks((prev) => prev.map((f) => (f.value === framework.value ? newFramework : f)));
-    setSelectedValues((prev) => prev.map((f) => (f.value === framework.value ? newFramework : f)));
+  const updateLabel = (label: LabelType, newLabel: LabelType) => {
+    setLabels((prev) => prev.map((f) => (f.value === label.value ? newLabel : f)));
+    setSelectedLabels((prev) => prev.map((f) => (f.value === label.value ? newLabel : f)));
   };
 
-  const deleteFramework = (framework: Framework) => {
-    setFrameworks((prev) => prev.filter((f) => f.value !== framework.value));
-    setSelectedValues((prev) => prev.filter((f) => f.value !== framework.value));
+  const deleteLabel = (label: LabelType) => {
+    setLabels((prev) => prev.filter((f) => f.value !== label.value));
+    setSelectedLabels((prev) => prev.filter((f) => f.value !== label.value));
   };
 
   const onComboboxOpenChange = (value: boolean) => {
     inputRef.current?.blur(); // HACK: otherwise, would scroll automatically to the bottom of page
-    setOpenCombobox(value);
+    setOpenEditLabel(value);
   };
+
+  const submitLabelItemClick = (event: React.FormEvent<HTMLFormElement>, label: LabelType) => {
+    event.preventDefault();
+    const target = event.target as typeof event.target & Record<'name' | 'color', { value: string }>;
+    const newLabel = {
+      value: target.name.value.toLowerCase(),
+      label: target.name.value,
+      color: target.color.value,
+    };
+    updateLabel(label, newLabel);
+  };
+
   return (
     <>
-      <Popover open={openCombobox} onOpenChange={onComboboxOpenChange}>
-        {boxOpen && (
-          <PopoverTrigger asChild>
-            <Button
-              size={'xs'}
-              variant="outlineGhost"
-              role="combobox"
-              aria-expanded={openCombobox}
-              className="w-[200px] justify-between text-foreground"
-            >
-              <span className="truncate">
-                {selectedValues.length === 0 && 'Select labels'}
-                {selectedValues.length === 1 && selectedValues[0].label}
-                {selectedValues.length === 2 && selectedValues.map(({ label }) => label).join(', ')}
-                {selectedValues.length > 2 && `${selectedValues.length} labels selected`}
-              </span>
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-        )}
+      <Popover open={isOpenEditLabel} onOpenChange={onComboboxOpenChange}>
+        <PopoverTrigger asChild>
+          <div className="relative w-full min-h-[22px] flex align-center justify-start overflow-hidden gap-1">
+            {!isOpenEditLabel &&
+              selectedLabels.map(({ label, value, color }) => (
+                <button type="button" onClick={() => setOpenEditLabel(true)}>
+                  <Badge key={value} variant="outline" style={badgeStyle(color)}>
+                    {label}
+                  </Badge>
+                </button>
+              ))}
+            {!isOpenEditLabel && selectedLabels.length < 1 && (
+              <Button size={'micro'} className="text-muted" variant="none" onClick={() => setOpenEditLabel(true)}>
+                No labels yet
+              </Button>
+            )}
+          </div>
+        </PopoverTrigger>
         <PopoverPortal>
-          <PopoverContent className="w-[200px] p-0">
+          <PopoverContent className="w-full p-0">
             <Command>
               <CommandInput
                 ref={inputRef}
-                placeholder="Search framework..."
-                value={inputValue}
-                setZeroValue={setInputValue}
-                onValueChange={setInputValue}
+                placeholder="Search label..."
+                value={searchValue}
+                setZeroValue={setSearchValue}
+                onValueChange={setSearchValue}
               />
-              <CommandGroup>
-                <ScrollArea className="h-[150px] overflow-y-auto">
-                  {frameworks.map((framework) => {
-                    const isActive = selectedValues.includes(framework);
-                    return (
-                      <CommandList>
-                        <CommandItem className="mr-1" key={framework.value} value={framework.value} onSelect={() => toggleFramework(framework)}>
-                          <Check className={cn('mr-2 h-4 w-4', isActive ? 'opacity-100' : 'opacity-0')} />
-                          <div className="flex-1">{framework.label}</div>
-                          <div className="h-4 w-4 rounded-full" style={{ backgroundColor: framework.color }} />
-                        </CommandItem>
-                      </CommandList>
-                    );
-                  })}
-                </ScrollArea>
-                <CommandItemCreate onSelect={() => createFramework(inputValue)} {...{ inputValue, frameworks }} />
-              </CommandGroup>
-              <CommandSeparator alwaysRender />
-              <CommandGroup>
+              <div className="pt-2.5 pb-2.5 pl-0.5 pr-0.5">
                 <CommandList>
-                  <CommandItem
-                    value={`:${inputValue}:`} // HACK: that way, the edit button will always be shown
-                    className="text-xs text-muted-foreground"
-                    onSelect={() => setOpenDialog(true)}
-                  >
-                    <div className={cn('mr-2 h-4 w-4')} />
-                    <Edit2 className="mr-2 h-2.5 w-2.5" />
-                    Edit Labels
-                  </CommandItem>
+                  <ScrollArea className="h-[200px] overflow-y-auto pl-2 pr-3">
+                    <div className="flex-1 min-w-[375px]">
+                      {labels
+                        .filter((label) => label.value.includes(searchValue.toLowerCase()))
+                        .map((label) => {
+                          const isActive = selectedLabels.includes(label);
+                          return (
+                            <>
+                              <LabelsListItem
+                                editedValue={editedValue}
+                                setEditedValue={setEditedValue}
+                                onSelect={() => toggleLabel(label)}
+                                isActive={isActive}
+                                onDelete={() => deleteLabel(label)}
+                                onSubmit={(e) => submitLabelItemClick(e, label)}
+                                {...label}
+                              />
+                              <CommandSeparator />
+                            </>
+                          );
+                        })}
+                    </div>
+                  </ScrollArea>
+                  <CreateLabel setDefaultSearch={setSearchValue} onSelect={() => createLabel(searchValue)} {...{ searchValue, labels }} />
                 </CommandList>
-              </CommandGroup>
+              </div>
             </Command>
           </PopoverContent>
         </PopoverPortal>
       </Popover>
-
-      <Dialog
-        open={openDialog}
-        onOpenChange={(open: boolean | ((prevState: boolean) => boolean)) => {
-          if (!open) setOpenCombobox(true);
-          setOpenDialog(open);
-        }}
-      >
-        <DialogContent className="max-w-[70vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Edit Labels</DialogTitle>
-            <DialogDescription>Change the label names or delete the labels. Create a label through the combobox though.</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="h-[25vh] overflow-auto">
-            <div className=" -mx-3.5 px-6 flex-1 py-2">
-              {frameworks.map((framework) => {
-                return (
-                  <DialogListItem
-                    key={framework.value}
-                    onDelete={() => deleteFramework(framework)}
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const target = e.target as typeof e.target & Record<'name' | 'color', { value: string }>;
-                      const newFramework = {
-                        value: target.name.value.toLowerCase(),
-                        label: target.name.value,
-                        color: target.color.value,
-                      };
-                      updateFramework(framework, newFramework);
-                    }}
-                    {...framework}
-                  />
-                );
-              })}
-            </div>
-          </ScrollArea>
-          <DialogFooter className="bg-opacity-40">
-            <DialogClose asChild>
-              <Button variant="outline">Close</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      {!boxOpen && (
-        <div className="relative flex align-center justify-start overflow-y-auto gap-1 ">
-          {selectedValues.map(({ label, value, color }) => (
-            <Badge key={value} variant="outline" style={badgeStyle(color)}>
-              {label}
-            </Badge>
-          ))}
-        </div>
-      )}
     </>
   );
-}
+};
 
-const CommandItemCreate = ({
-  inputValue,
-  frameworks,
-  onSelect,
-}: {
-  inputValue: string;
-  frameworks: Framework[];
+type CreateLabelType = {
+  searchValue: string;
+  labels: LabelType[];
   onSelect: () => void;
-}) => {
-  const hasNoFramework = !frameworks.map(({ value }) => value).includes(`${inputValue.toLowerCase()}`);
+  setDefaultSearch: (value: '') => void;
+};
 
-  const render = inputValue !== '' && hasNoFramework;
-
+const CreateLabel = ({ searchValue, setDefaultSearch, labels, onSelect }: CreateLabelType) => {
+  const hasNoLabel = !labels.some((label) => label.value === searchValue.toLowerCase());
+  const render = searchValue !== '' && hasNoLabel;
   if (!render) return null;
 
   // BUG: whenever a space is appended, the Create-Button will not be shown.
   return (
-    <CommandItem key={`${inputValue}`} value={`${inputValue}`} className="text-xs text-muted-foreground" onSelect={onSelect}>
-      <div className={cn('mr-2 h-4 w-4')} />
-      Create new label &quot;{inputValue}&quot;
-    </CommandItem>
+    <>
+      {searchValue && hasNoLabel && (
+        <CommandItem
+          key={searchValue}
+          value={searchValue}
+          className="aria-selected:bg-transparent mt-2 text-xs text-muted-foreground"
+          onSelect={onSelect}
+        >
+          <Button onClick={() => setDefaultSearch('')} className="w-full" variant={'outlineGhost'} size={'xs'}>
+            Create new label &quot;{searchValue}&quot;
+          </Button>
+        </CommandItem>
+      )}
+    </>
   );
 };
 
-const DialogListItem = ({
-  value,
-  label,
-  color,
-  onSubmit,
-  onDelete,
-}: Framework & {
+type LabelsItem = LabelType & {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   onDelete: () => void;
-}) => {
+  isActive: boolean;
+  onSelect: () => void;
+  editedValue: string;
+  setEditedValue: (newValue: string) => void;
+};
+
+const LabelsListItem = ({ value, label, color, editedValue, setEditedValue, onSubmit, onDelete, onSelect, isActive }: LabelsItem) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [accordionValue, setAccordionValue] = React.useState<string>('');
-  const [inputValue, setInputValue] = React.useState<string>(label);
-  const [colorValue, setColorValue] = React.useState<string>(color);
-  const disabled = label === inputValue && color === colorValue;
+  const [newLabelName, setNewLabelName] = React.useState<string>(label);
+  const [newColorValue, setNewColorValue] = React.useState<string>(color);
+  const disabled = label === newLabelName && color === newColorValue;
 
   React.useEffect(() => {
-    if (accordionValue !== '') {
-      inputRef.current?.focus();
-    }
-  }, [accordionValue]);
+    if (editedValue === value) inputRef.current?.focus();
+  }, [editedValue, value]);
+
+  const handleEditClick = () => {
+    setEditedValue(value);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedValue('');
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onSubmit(e);
+    setEditedValue('');
+  };
 
   return (
-    <Accordion key={value} type="single" collapsible value={accordionValue} onValueChange={setAccordionValue}>
-      <AccordionItem value={value}>
+    <div className="py-3 text-sm font-medium transition-all">
+      {editedValue !== value ? (
         <div className="flex justify-between items-center">
-          <div>
-            <Badge variant="outline" style={badgeStyle(color)}>
-              {label}
-            </Badge>
+          <div className="flex items-center">
+            <Check className={cn('h-4 w-4', isActive ? 'opacity-100' : 'opacity-0')} />
+            <Button size={'micro'} variant={'none'} onClick={onSelect}>
+              <Badge className="h-8 px-2 rounded-[12px]" variant="outline" style={badgeStyle(color)}>
+                {label}
+              </Badge>
+            </Button>
           </div>
-          <div className="flex items-center gap-4">
-            <AccordionTrigger>Edit</AccordionTrigger>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                {/* REMINDER: size="xs" */}
-                <Button variant="destructive" size="xs">
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    You are about to delete the label{' '}
-                    <Badge variant="outline" style={badgeStyle(color)}>
-                      {label}
-                    </Badge>{' '}
-                    .
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleEditClick} variant="outlineGhost" size="xs">
+              Edit
+            </Button>
+            <Button onClick={onDelete} variant="destructive" size="xs">
+              Delete
+            </Button>
           </div>
         </div>
-        <AccordionContent>
-          <form
-            className="flex ml-1 items-end gap-4"
-            onSubmit={(e) => {
-              onSubmit(e);
-              setAccordionValue('');
-            }}
-          >
-            <div className="w-full gap-3 grid">
-              <Label htmlFor="name">Label name</Label>
-              <Input
-                ref={inputRef}
-                id="name"
-                value={inputValue}
-                onChange={(e: { target: { value: React.SetStateAction<string> } }) => setInputValue(e.target.value)}
-                className="h-8"
-              />
-            </div>
-            <div className="gap-3 grid">
-              <Label htmlFor="color">Color</Label>
-              <Input
-                id="color"
-                type="color"
-                value={colorValue}
-                onChange={(e: { target: { value: React.SetStateAction<string> } }) => setColorValue(e.target.value)}
-                className="h-8 px-2 py-1"
-              />
-            </div>
-            <Button type="submit" disabled={disabled} size="xs">
+      ) : (
+        <form className="flex ml-1 gap-2" onSubmit={handleSubmit}>
+          <Input
+            ref={inputRef}
+            id="name"
+            value={newLabelName}
+            onChange={(e: { target: { value: React.SetStateAction<string> } }) => setNewLabelName(e.target.value)}
+            className="h-8"
+          />
+          <Input
+            id="color"
+            type="color"
+            value={newColorValue}
+            style={{ padding: '0', cursor: 'pointer' }}
+            onChange={(e: { target: { value: React.SetStateAction<string> } }) => setNewColorValue(e.target.value)}
+            className="h-8 w-14"
+          />
+          <div className="gap-1.5 flex">
+            <Button variant="outlineGhost" type="submit" disabled={disabled} size="xs">
               Save
             </Button>
-          </form>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+            <Button variant="outlineGhost" onClick={handleCancelEdit} size="xs">
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 };

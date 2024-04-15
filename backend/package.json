@@ -68,9 +68,7 @@
     "tsx": "^4.7.0"
   },
   "babel": {
-    "presets": [
-      "@babel/preset-typescript"
-    ]
+    "presets": ["@babel/preset-typescript"]
   },
   "exports": {
     "./*": "./src/*.ts"

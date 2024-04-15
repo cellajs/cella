@@ -420,13 +420,10 @@ const authRoutes = app
     }
 
     if (oauth === 'github') {
-      const response = await fetch(
-        `${config.backendUrl + githubSignInRouteConfig.path}${organization ? `?redirect=${organization.slug}` : ''}`,
-        {
-          method: githubSignInRouteConfig.method,
-          redirect: 'manual',
-        },
-      );
+      const response = await fetch(`${config.backendUrl + githubSignInRouteConfig.path}${organization ? `?redirect=${organization.slug}` : ''}`, {
+        method: githubSignInRouteConfig.method,
+        redirect: 'manual',
+      });
 
       const url = response.headers.get('Location');
 

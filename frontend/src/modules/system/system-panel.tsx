@@ -45,13 +45,13 @@ const SystemPanel = () => {
 
       <PageNav
         tabs={[
-          { id: 'users', label: 'user.plural', path: UsersTableRoute.fullPath },
-          { id: 'organizations', label: 'organization.plural', path: OrganizationsTableRoute.fullPath },
+          { id: 'users', label: 'users', path: UsersTableRoute.fullPath },
+          { id: 'organizations', label: 'organizations', path: OrganizationsTableRoute.fullPath },
         ]}
       />
 
       <FocusViewContainer className="container mt-4">
-          <Outlet />
+        <Outlet />
       </FocusViewContainer>
     </>
   );

@@ -1,5 +1,3 @@
-import { z } from '@hono/zod-openapi';
-
 import {
   errorResponses,
   successResponseWithDataSchema,
@@ -15,9 +13,7 @@ import {
   createOrganizationJsonSchema,
   getOrganizationsQuerySchema,
   getUsersByOrganizationQuerySchema,
-  organizationWithUserParamSchema,
   updateOrganizationJsonSchema,
-  updateUserInOrganizationJsonSchema,
 } from './schema';
 
 export const createOrganizationRouteConfig = createRouteConfig({
@@ -188,67 +184,6 @@ export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithPaginationSchema(apiOrganizationUserSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const updateUserInOrganizationRouteConfig = createRouteConfig({
-  method: 'put',
-  path: '/organizations/{organizationIdentifier}/members/{userId}',
-  guard: tenantGuard(['ADMIN']),
-  tags: ['organizations'],
-  summary: 'Update member(user) in organization',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the organization and have role 'ADMIN' in the organization
-  `,
-  request: {
-    params: organizationWithUserParamSchema,
-    body: {
-      content: {
-        'application/json': {
-          schema: updateUserInOrganizationJsonSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Member was updated in organization',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(apiOrganizationUserSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const deleteUsersFromOrganizationRouteConfig = createRouteConfig({
-  method: 'delete',
-  path: '/organizations/{organizationIdentifier}/members',
-  guard: tenantGuard(['ADMIN']),
-  tags: ['organizations'],
-  summary: 'Delete members(users) from organization',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the organization and have role 'ADMIN' in the organization
-  `,
-  request: {
-    query: deleteByIdsQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Success',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
         },
       },
     },

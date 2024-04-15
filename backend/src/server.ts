@@ -7,6 +7,8 @@ import generalRoutes from './modules/general';
 import organizationsRoutes from './modules/organizations';
 import publicRoutes from './modules/public';
 import usersRoutes from './modules/users';
+import membershipRoutes from './modules/memberships';
+
 import { CustomHono } from './types/common';
 
 // Set default hook to catch validation errors
@@ -33,4 +35,10 @@ app.onError((err, ctx) => {
 });
 
 // Add routes for each module
-app.route('/', authRoutes).route('/', usersRoutes).route('/', organizationsRoutes).route('/', generalRoutes).route('/', publicRoutes);
+app
+  .route('/', authRoutes)
+  .route('/', usersRoutes)
+  .route('/', organizationsRoutes)
+  .route('/', generalRoutes)
+  .route('/', publicRoutes)
+  .route('/', membershipRoutes);

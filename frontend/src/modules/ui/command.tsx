@@ -77,7 +77,9 @@ const CommandEmpty = React.forwardRef<React.ElementRef<typeof CommandPrimitive.E
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName;
 
 const CommandGroup = React.forwardRef<React.ElementRef<typeof CommandPrimitive.Group>, React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>>(
-  ({ className, ...props }, ref) => <CommandPrimitive.Group ref={ref} className={cn('overflow-hidden p-2 text-foreground', className)} {...props} />,
+  ({ className, ...props }, ref) => (
+    <CommandPrimitive.Group ref={ref} className={cn('overflow-hidden pt-2 pb-2 text-foreground', className)} {...props} />
+  ),
 );
 
 CommandGroup.displayName = CommandPrimitive.Group.displayName;
