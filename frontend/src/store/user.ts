@@ -37,7 +37,7 @@ export const useUserStore = create<UserState>()(
         },
       })),
       {
-        version: 1,
+        version: 2,
         name: `${config.slug}-user`,
         partialize: (state) => ({
           user: state.user,
