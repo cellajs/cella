@@ -88,7 +88,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
           {!!(isSectionVisible && data.active.length) && (
-            <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10} portal>
+            <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
               <Button
                 className="w-12 transition duration-300 px-3 ease-in-out }"
                 variant="secondary"
