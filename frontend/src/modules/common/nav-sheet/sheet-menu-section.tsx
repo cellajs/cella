@@ -81,10 +81,8 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
             <div>
-              <span>{t(section.id)}</span>
-              {!isSectionVisible && (
-                <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>
-              )}
+              <span>{t(section.label)}</span>
+              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>}
             </div>
 
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />

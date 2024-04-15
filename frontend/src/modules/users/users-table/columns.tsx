@@ -138,7 +138,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
           },
           {
             key: 'membershipCount',
-            name: t('common:membership.plural'),
+            name: t('common:memberships'),
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,

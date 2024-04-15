@@ -165,7 +165,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <LanguageFormField
           control={form.control}
           name="languages"
-          label={t('common:language.plural')}
+          label={t('common:languages')}
           mode="multiple"
           placeholder={t('common:placeholder.select_languages')}
           emptyIndicator={t('common:empty_languages')}

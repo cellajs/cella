@@ -14,14 +14,15 @@ import { MenuSection } from './sheet-menu-section';
 export type SectionItem = {
   id: string;
   type: string;
+  label: string;
   createForm?: React.ReactNode;
 };
 
 // Here you declare the menu sections
 export const menuSections: SectionItem[] = [
-  { id: 'organizations', type: 'organization', createForm: <CreateOrganizationForm dialog /> },
-  { id: 'workspaces', type: 'workspace' },
-  { id: 'projects', type: 'project' },
+  { id: 'organizations', type: 'organization', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
+  { id: 'workspaces', type: 'workspace', label: 'app:workspaces' },
+  { id: 'projects', type: 'project', label: 'app:projects' },
 ];
 
 // Set search results to empty array for each menu type
