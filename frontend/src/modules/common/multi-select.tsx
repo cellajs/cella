@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { Search, X, XCircle } from 'lucide-react';
 import * as React from 'react';
 
 import { Command as CommandPrimitive, useCommandState } from 'cmdk';
@@ -326,13 +326,18 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         shouldFilter={commandProps?.shouldFilter !== undefined ? commandProps.shouldFilter : !onSearch} // When onSearch is provided, we don't want to filter the options. You can still override it.
         filter={commandFilter()}
       >
-        <div
+        <button
+          type="button"
           className={cn(
-            'group rounded-md border border-input px-3 py-2 text-sm ring-offset-background bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+            'group rounded-md border border-input px-3 py-2 text-sm ring-offset-background bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text',
             className,
           )}
+          onClick={() => {
+            if (inputRef?.current) inputRef.current.focus();
+          }}
         >
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap items-center gap-1">
+            <Search className="mr-2 h-4 w-4 shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
             {selected.map((option) => {
               return (
                 <Badge
@@ -368,30 +373,38 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 </Badge>
               );
             })}
-            {/* Avoid having the "Search" Icon */}
-            <CommandPrimitive.Input
-              {...inputProps}
-              ref={inputRef}
-              value={inputValue}
-              disabled={disabled}
-              onValueChange={(value) => {
-                setInputValue(value);
-                inputProps?.onValueChange?.(value);
-              }}
-              onBlur={(event) => {
-                setOpen(false);
-                inputProps?.onBlur?.(event);
-              }}
-              onFocus={(event) => {
-                setOpen(true);
-                triggerSearchOnFocus && onSearch?.(debouncedSearchTerm);
-                inputProps?.onFocus?.(event);
-              }}
-              placeholder={hidePlaceholderWhenSelected && selected.length !== 0 ? '' : placeholder}
-              className={cn('ml-2 flex-1 bg-transparent outline-none placeholder:text-muted-foreground', inputProps?.className)}
-            />
+            <div>
+              <CommandPrimitive.Input
+                {...inputProps}
+                ref={inputRef}
+                value={inputValue}
+                disabled={disabled}
+                onValueChange={(value) => {
+                  setInputValue(value);
+                  inputProps?.onValueChange?.(value);
+                }}
+                onBlur={(event) => {
+                  setOpen(false);
+                  inputProps?.onBlur?.(event);
+                }}
+                onFocus={(event) => {
+                  setOpen(true);
+                  triggerSearchOnFocus && onSearch?.(debouncedSearchTerm);
+                  inputProps?.onFocus?.(event);
+                }}
+                placeholder={hidePlaceholderWhenSelected && selected.length !== 0 ? '' : placeholder}
+                className={cn('ml-2 flex-1 bg-transparent outline-none placeholder:text-muted-foreground', inputProps?.className)}
+              />
+              {inputValue.length > 0 && (
+                <XCircle
+                  size={16}
+                  className="absolute right-7  opacity-70 hover:opacity-100 -translate-y-[110%] cursor-pointer"
+                  onClick={() => setInputValue('')}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        </button>
         <div className="relative mt-2">
           {open && (
             <CommandList className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
