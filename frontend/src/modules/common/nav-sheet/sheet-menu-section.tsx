@@ -24,6 +24,7 @@ interface MenuSectionProps {
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
+  const [isArchivedShown, setArchivedShown] = useState(true);
   const { activeSections, toggleSection } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
@@ -41,7 +42,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
 
   // TODO implement archiveToggleClick
   const archiveToggleClick = () => {
-    console.log('archiveToggleClick');
+    setArchivedShown(!isArchivedShown);
   };
 
   // Render the menu items for each section
@@ -76,15 +77,13 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   };
 
   return (
-    <div className="mt-2">
+    <>
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
             <div>
-              <span>{t(section.id)}</span>
-              {!isSectionVisible && (
-                <span className="ml-2 inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>
-              )}
+              <span>{t(section.label)}</span>
+              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>}
             </div>
 
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
@@ -117,9 +116,20 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
       >
         <ul className="overflow-hidden">
           {optionsView ? renderSectionOptions(data) : renderSectionItems(data)}
-          {!!(data.inactive.length || data.active.length) && <MenuArchiveToggle archiveToggleClick={archiveToggleClick} />}
+          {!!(data.inactive.length || data.active.length) && (
+            <>
+              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.inactive.length} showInactiveList={isArchivedShown} />
+              {isArchivedShown && (
+                <>
+                  {data.inactive.map((item) => (
+                    <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />
+                  ))}
+                </>
+              )}
+            </>
+          )}
         </ul>
       </div>
-    </div>
+    </>
   );
 };

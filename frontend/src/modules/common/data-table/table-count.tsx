@@ -23,7 +23,7 @@ const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps
             </Button>
           )}
           <div className="w-max ml-2">
-            {new Intl.NumberFormat('de-DE').format(count)} {count === 1 ? t(`common:${type}`) : t(`common:${type}.plural`)}
+            {new Intl.NumberFormat('de-DE').format(count)} {count === 1 ? t(`common:${type}`).toLowerCase() : t(`common:${type}s`).toLowerCase()}
             {isFiltered && ' '}
             {isFiltered && t('common:found')}
           </div>

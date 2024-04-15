@@ -34,7 +34,7 @@ const OnboardingWelcome = ({ setWelcomeMessage }: OnboardingWelcomeProps) => {
     <div className="flex flex-col items-center text-center mx-auto space-y-6 p-4 max-w-[700px]">
       <h1 className="text-3xl font-bold">{t('common:onboarding_welcome')}</h1>
       <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">{t('common:onboarding_welcome.text')}</p>
-      <Button onClick={() => setWelcomeMessage(false)}>
+      <Button onClick={() => setWelcomeMessage(false)} className="max-sm:w-full">
         {t('common:get_started')}
         <div className="-rotate-90 ml-4">
           <ArrowDown size={16} className="animate-bounce" />
@@ -64,7 +64,7 @@ const OnboardingCompleted = () => {
       setTimeout(() => {
         dialog.remove();
         navigate({ to: '/home', replace: true });
-        toast.success(t('common:success.onboarding'));
+        toast.success(t('common:success.onboarding_toast'));
         clearInterval(timer);
       }, 5000);
     }, 500);
@@ -76,13 +76,12 @@ const OnboardingCompleted = () => {
 
   return (
     <div className="flex flex-col items-center text-center mx-auto space-y-6 p-4 max-w-[700px]">
-      <h1 className="text-3xl font-bold">Great! Lets go.</h1>
-      <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">
-        Have a look at the main menu to view a demo project and to create your own project.
-      </p>
+      <h1 className="text-3xl font-bold">{t('success.onboarding_header')}</h1>
+      <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">{t('success.onboarding.text')}</p>
       {closeCountDown ? (
         <p>
-          Dialog will close in <span className="text-2xl font-bold ml-2">{closeCountDown}</span>
+          {t('success.onboarding_dialog_close')}
+          <span className="text-2xl font-bold ml-2">{closeCountDown}</span>
         </p>
       ) : null}
       {isExploding && <ConfettiExplosion zIndex={10000} duration={5000} force={0.8} particleCount={250} height={'150vh'} width={1500} />}
@@ -96,6 +95,7 @@ const Onboarding = () => {
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(false);
 
   const { hasStarted } = useMounted();
+  const { t } = useTranslation();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const user = useUserStore((state) => state.user);
@@ -115,9 +115,9 @@ const Onboarding = () => {
                   <Card>
                     <CardHeader>
                       <CardDescription className="font-light">
-                        {id === 'step-1' && "Let's get started by creating your organization."}
-                        {id === 'step-2' && `Hi ${user.firstName}, this is you?`}
-                        {id === 'step-3' && `Invite one or more team members of ${organization?.name} to Cella.`}
+                        {id === 'step-1' && t('common:onboarding_step1')}
+                        {id === 'step-2' && t('common:onboarding_step2', { name: user.firstName })}
+                        {id === 'step-3' && t('common:onboarding_step3', { organizationName: organization?.name })}
                       </CardDescription>
                     </CardHeader>
 

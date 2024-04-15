@@ -8,7 +8,7 @@ const Home = () => {
 
   return (
     <>
-      <SimpleHeader heading="common:home" text="common:home.text" className="container pt-4 md:pt-6" />
+      <SimpleHeader heading={t('common:home')} text={t('common:home.text')} className="container pt-4 md:pt-6" />
       <div className="container">
         <div className="flex flex-wrap mt-8 justify-center">{t('common:under_construction.text')}</div>
 

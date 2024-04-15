@@ -27,15 +27,15 @@ const StepperFooter = ({ organization, setOnboardingCompleted }: StepperFooterPr
   };
 
   return (
-    <div className="w-full flex justify-end gap-2">
+    <div className="w-full flex justify-end gap-2 max-sm:justify-stretch">
       {activeStep === 1 && !organization && (
-        <Button onClick={prevStep} size="sm" variant="secondary">
+        <Button onClick={prevStep} size="sm" variant="secondary" className="max-sm:w-full">
           <ArrowLeft size={16} className="mr-2" />
           Previous
         </Button>
       )}
       {isOptionalStep && (
-        <Button onClick={nextStep} size="sm" variant="secondary">
+        <Button onClick={nextStep} size="sm" variant="secondary" className="max-sm:w-full">
           <Redo size={16} className="mr-2" />
           Skip
         </Button>

@@ -3,15 +3,8 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
-import {
-  idSchema,
-  imageUrlSchema,
-  nameSchema,
-  organizationParamSchema,
-  paginationQuerySchema,
-  validSlugSchema,
-  validUrlSchema,
-} from '../../lib/common-schemas';
+import { imageUrlSchema, nameSchema, paginationQuerySchema, validSlugSchema, validUrlSchema } from '../../lib/common-schemas';
+
 import { apiUserSchema } from '../users/schema';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
@@ -20,8 +13,6 @@ export const apiOrganizationUserSchema = z.object({
   ...apiUserSchema.shape,
   organizationRole: membershipSchema.shape.role,
 });
-
-export type ApiOrganizationUser = z.infer<typeof apiOrganizationUserSchema>;
 
 export const apiOrganizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
@@ -44,8 +35,6 @@ export const apiOrganizationSchema = z.object({
 //   authStrategies: z.array(z.string()).nullable(),
 //   userRole: membershipSchema.shape.role,
 // });
-
-export type ApiOrganization = z.infer<typeof apiOrganizationSchema>;
 
 export const createOrganizationJsonSchema = z.object({
   name: nameSchema,
@@ -84,12 +73,6 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
     chatSupport: true,
   })
   .partial();
-
-export const organizationWithUserParamSchema = organizationParamSchema.setKey('userId', idSchema);
-
-export const updateUserInOrganizationJsonSchema = z.object({
-  role: membershipSchema.shape.role,
-});
 
 export const userMenuSchema = z.object({
   organizations: z.object({
