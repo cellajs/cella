@@ -16,7 +16,7 @@ const StepperFooter = ({ organization }: { organization?: Organization | null })
 
   useEffect(() => {
     if (activeStep === 0 || !hasCompletedAllSteps) return;
-    toast.success(t('common:onboarding_stepperFooter_success'));
+    toast.success(t('common:success.onboarding'));
     dialog.remove();
     navigate({ to: '/home', replace: true });
   }, [hasCompletedAllSteps, activeStep]);
