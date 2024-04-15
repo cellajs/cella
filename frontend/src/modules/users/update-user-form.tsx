@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateUserJsonSchema } from 'backend/modules/users/schema';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { User } from '~/types';
@@ -17,7 +17,6 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 import { type UseFormProps, useWatch } from 'react-hook-form';
-import { checkSlugAvailable } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
@@ -27,6 +26,7 @@ import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { useStepper } from '../ui/stepper';
+import { SlugFormField } from '../common/form-fields/slug';
 
 interface UpdateUserFormProps {
   user: User;
@@ -64,19 +64,6 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
   }
 
   const { mutate, isPending } = useUpdateUserMutation(user.id);
-  const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
-    mutationFn: checkSlugAvailable,
-    onSuccess: (isAvailable) => {
-      if (!isAvailable) {
-        form.setError('slug', {
-          type: 'manual',
-          message: t('common:error.slug_exists'),
-        });
-      } else {
-        form.clearErrors('slug');
-      }
-    },
-  });
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -139,12 +126,6 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
     form.resetField('slug');
   };
 
-  useEffect(() => {
-    if (allFields.slug && allFields.slug !== user.slug) {
-      checkSlug(allFields.slug);
-    }
-  }, [allFields.slug]);
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
@@ -161,12 +142,14 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
           <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
           <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
         </div>
-        <InputFormField
+        <SlugFormField
           control={form.control}
           name="slug"
           required
           label={t('common:user_handle')}
           description={t('common:user_handle.text')}
+          errorMessage={t('common:error.slug_exists')}
+          previousSlug={user.slug}
           subComponent={
             user.slug !== allFields.slug && (
               <div className="absolute inset-y-1 right-1 flex justify-end">
@@ -202,11 +185,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
         {children}
         {!children && (
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              type="submit"
-              disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0}
-              loading={isPending || isCheckPending}
-            >
+            <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending}>
               {t('common:save_changes')}
             </Button>
             <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
