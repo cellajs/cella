@@ -45,6 +45,7 @@ const Onboarding = () => {
   const [welcomeMessage, setWelcomeMessage] = useState<boolean>(true);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const { hasStarted } = useMounted();
+  const { t } = useTranslation();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const user = useUserStore((state) => state.user);
@@ -62,9 +63,9 @@ const Onboarding = () => {
                   <Card>
                     <CardHeader>
                       <CardDescription className="font-light">
-                        {id === 'step-1' && "Let's get started by creating your organization."}
-                        {id === 'step-2' && `Hi ${user.firstName}, this is you?`}
-                        {id === 'step-3' && `Invite one or more team members of ${organization?.name} to Cella.`}
+                        {id === 'step-1' && t('common:onboarding_step1')}
+                        {id === 'step-2' && t('common:onboarding_step2', { name: user.firstName })}
+                        {id === 'step-3' && t('common:onboarding_step3', { organizationName: organization?.name })}
                       </CardDescription>
                     </CardHeader>
 
