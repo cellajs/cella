@@ -45,7 +45,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
 
   const onLeave = () => {
     leave({
-      organizationIdentifier: organization.slug,
+      organizationIdentifier: organization.id,
       ids: [user.id],
     });
   };
