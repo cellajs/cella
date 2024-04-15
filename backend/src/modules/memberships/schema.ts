@@ -26,7 +26,7 @@ export const deleteMembersQuerySchema = z.object({
 });
 
 export const updateMembershipJsonSchema = z.object({
-  role: membershipSchema.shape.role,
+  role: membershipSchema.shape.role.optional(),
   organizationIdentifier: z.string(),
   muted: z.boolean().optional(),
   inactive: z.boolean().optional(),

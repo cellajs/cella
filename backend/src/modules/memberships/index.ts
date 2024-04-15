@@ -61,7 +61,11 @@ const membershipRoutes = app
 
     let [membership] = await db
       .update(membershipsTable)
-      .set({ role, inactive, muted, modifiedBy: user.id, modifiedAt: new Date() })
+      .set(
+        role
+          ? { role, inactive, muted, modifiedBy: user.id, modifiedAt: new Date() }
+          : { inactive, muted, modifiedBy: user.id, modifiedAt: new Date() },
+      )
       .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)))
       .returning();
 

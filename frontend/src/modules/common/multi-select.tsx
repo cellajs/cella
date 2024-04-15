@@ -308,7 +308,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         {isShowResults && (
           <div className="relative">
             <CommandList className="absolute mt-2 top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
-              <ScrollArea className={`h-[${inputValue.length > 0 ? '20vh' : '40px'}] pr-3 pl-3 overflow-y-auto`}>
+              <ScrollArea className={'h-[20vh] pr-3 pl-3 overflow-y-auto flex items-center'}>
                 {isLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-opacity-20 bg-[#000] z-20">
                     <CommandLoading>
@@ -317,8 +317,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                   </div>
                 )}
 
-                {inputValue.length > 0 && <CommandEmpty>{t('common:no_results_found')}</CommandEmpty>}
                 <CommandGroup>
+                  {selectable.length < 1 && inputValue.length > 0 && (
+                    <CommandEmpty className="text-center">{t('common:no_results_found')}</CommandEmpty>
+                  )}
                   {inputValue.length === 0 ? (
                     <CommandEmpty>{t('common:invite_members_search.text')}</CommandEmpty>
                   ) : (

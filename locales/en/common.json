@@ -254,6 +254,7 @@
   "start.github.message": "Get started on Github",
   "subject": "Subject",
   "subscription": "Subscription",
+  "success.archived_organization": "Organization has been archived.",
   "success.create_newsletter": "Newsletter has been sent.",
   "success.create_organization": "Organization has been created",
   "success.delete_account": "Account deleted",

@@ -24,7 +24,7 @@ interface MenuSectionProps {
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
-  const [isArchivedShown, setArchivedShown] = useState(true);
+  const [isArchivedShown, setArchivedShown] = useState(false);
   const { activeSections, toggleSection } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
@@ -40,7 +40,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     setOptionsView(value);
   };
 
-  // TODO implement archiveToggleClick
   const archiveToggleClick = () => {
     setArchivedShown(!isArchivedShown);
   };
@@ -100,6 +99,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
               </Button>
             </TooltipButton>
           )}
+
           {isSectionVisible && data.canCreate && section.createForm && (
             <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
               <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>

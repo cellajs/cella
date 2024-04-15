@@ -9,12 +9,18 @@ export const removeMembersFromOrganization = async (query: { organizationIdentif
   return json.data;
 };
 
-export const updateUserInOrganization = async (organizationIdentifier: string, id: string, role: Member['organizationRole']) => {
+export const updateUserInOrganization = async (
+  organizationIdentifier: string,
+  id: string,
+  role?: Member['organizationRole'],
+  archive?: boolean,
+  muted?: boolean,
+) => {
   const response = await client.memberships[':id'].$put({
     param: {
       id,
     },
-    json: { role, organizationIdentifier },
+    json: { role, organizationIdentifier, inactive: archive, muted },
   });
 
   const json = await response.json();

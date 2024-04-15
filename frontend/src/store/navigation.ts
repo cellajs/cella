@@ -20,6 +20,7 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   setFocusView: (status: boolean) => void;
+  addToInactive: (itemId: string) => void;
 }
 
 // Build the initial menu (for menu sheet)
@@ -69,6 +70,17 @@ export const useNavigationStore = create<NavigationState>()(
           toggleSection: (section) => {
             set((state) => {
               state.activeSections[section] = !state.activeSections[section];
+            });
+          },
+          addToInactive: (itemId) => {
+            set((state) => {
+              const sectionKey = Object.keys(state.menu).find((key) => state.menu[key as keyof UserMenu].active.find((item) => item.id === itemId));
+              if (sectionKey) {
+                const itemIndex = state.menu[sectionKey as keyof UserMenu].active.findIndex((item) => item.id === itemId);
+                const item = state.menu[sectionKey as keyof UserMenu].active[itemIndex];
+                state.menu[sectionKey as keyof UserMenu].active.splice(itemIndex, 1);
+                state.menu[sectionKey as keyof UserMenu].inactive.push(item);
+              }
             });
           },
         }),
