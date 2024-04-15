@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { cn } from '~/lib/utils';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
-import { useTranslation } from 'react-i18next';
+
 import { AvatarWrap } from './avatar-wrap';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -27,8 +27,6 @@ interface MultipleSelectorProps {
   options?: Option[];
   placeholder?: string;
   createPlaceholder?: string;
-  /** Loading component. */
-  loadingIndicator?: React.ReactNode;
   /** Empty component. */
   emptyIndicator?: React.ReactNode;
   /** Debounce time for async search. Only work with `onSearch`. */
@@ -51,6 +49,8 @@ interface MultipleSelectorProps {
   /** Group the options base on provided key. */
   className?: string;
   badgeClassName?: string;
+  emptyValue?: string;
+  basicSignValue?: string;
   /**
    * First item selected is a default behavior by cmdk. That is why the default is true.
    * This is a workaround solution by add a dummy item.
@@ -109,16 +109,17 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       triggerSearchOnFocus = false,
       commandProps,
       inputProps,
+      emptyValue,
+      basicSignValue,
     }: MultipleSelectorProps,
     ref: React.Ref<MultipleSelectorRef>,
   ) => {
-    const { t } = useTranslation();
     const inputRef = React.useRef<HTMLInputElement>(null);
     const [isShowResults, setShowResults] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
 
     const [selected, setSelected] = React.useState<Option[]>(value || []);
-    const [options, setOptions] = React.useState<Option[]>([]);
+    const [options, setOptions] = React.useState<Option[]>(arrayDefaultOptions || []);
     const [inputValue, setInputValue] = React.useState('');
     const debouncedSearchTerm = useDebounce(inputValue, delay || 500);
 
@@ -299,7 +300,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 <XCircle
                   size={16}
                   className="absolute right-8 opacity-70 hover:opacity-100 -translate-y-[120%] cursor-pointer"
-                  onClick={() => setInputValue('')}
+                  onClick={() => {
+                    setInputValue('');
+                    setOptions(arrayDefaultOptions);
+                  }}
                 />
               )}
             </div>
@@ -318,13 +322,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 )}
 
                 <CommandGroup>
-                  {selectable.length < 1 && inputValue.length > 0 && (
-                    <CommandEmpty className="text-center">{t('common:no_results_found')}</CommandEmpty>
-                  )}
-                  {inputValue.length === 0 ? (
-                    <CommandEmpty>{t('common:invite_members_search.text')}</CommandEmpty>
-                  ) : (
-                    selectable.map((option) => (
+                  {selectable.length < 1 && inputValue.length > 0 && <CommandEmpty>{emptyValue}</CommandEmpty>}
+                  {inputValue.length === 0 && <CommandEmpty>{basicSignValue}</CommandEmpty>}
+                  <>
+                    {selectable.map((option) => (
                       <CommandItem
                         key={option.label}
                         onSelect={() => onItemSelect(option)}
@@ -338,8 +339,8 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                           <span className="group-hover:underline underline-offset-4 truncate font-medium">{option.label}</span>
                         </div>
                       </CommandItem>
-                    ))
-                  )}
+                    ))}
+                  </>
                 </CommandGroup>
               </ScrollArea>
             </CommandList>

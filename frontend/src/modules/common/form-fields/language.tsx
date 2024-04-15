@@ -54,16 +54,26 @@ const LanguageFormField = ({
               </SelectContent>
             </Select>
           ) : (
-            <MultipleSelector
-              value={config.languages.filter((language) => value?.includes(language.value))}
-              onChange={(value) => {
-                onChange(value.map((language) => language.value));
-              }}
-              hidePlaceholderWhenSelected
-              defaultOptions={config.languages}
-              placeholder={placeholder}
-              emptyIndicator={emptyIndicator}
-            />
+            <>
+              <MultipleSelector
+                value={config.languages.filter((language) => value?.includes(language.value))}
+                onChange={(value) => {
+                  onChange(value.map((language) => language.value));
+                }}
+                onSearch={async (query) => {
+                  const languages = [];
+                  for (const el of config.languages) {
+                    if (el.label.toLowerCase().includes(query.toLowerCase())) languages.push(el);
+                  }
+
+                  return languages;
+                }}
+                hidePlaceholderWhenSelected
+                defaultOptions={config.languages}
+                placeholder={placeholder}
+                emptyValue={emptyIndicator}
+              />
+            </>
           )}
         </FormControl>
         <FormMessage />
