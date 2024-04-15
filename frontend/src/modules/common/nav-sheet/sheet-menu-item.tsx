@@ -11,7 +11,7 @@ export const SheetMenuItem = ({ item, menuItemClick }: SheetMenuItemProps) => {
   return (
     <Link
       resetScroll={false}
-      className="group mb-1 flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground"
+      className="group mb-1 sm:max-w-[18rem] flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground"
       onClick={menuItemClick}
       aria-label={item.name}
       to="/$organizationIdentifier/members"

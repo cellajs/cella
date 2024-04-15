@@ -12,7 +12,7 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="group mb-1 flex h-14 w-full cursor-pointer items-start justify-start rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground">
+    <div className="group mb-1 flex sm:max-w-[18rem] h-14 w-full cursor-pointer items-start justify-start rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground">
       <AvatarWrap className="m-2" type="organization" id={item.id} name={item.name} url={item.thumbnailUrl} />
       <div className="truncate grow p-2 pl-2 text-left">
         <div className="truncate text-foreground/50 leading-5">{item.name}</div>

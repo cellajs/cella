@@ -21,13 +21,12 @@ export const SignInRoute = createRoute({
   staticData: { pageTitle: 'Sign in' },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ cause, search }) => {
+    // Only check auth if entering
+    if (cause !== 'enter' || search.fromRoot) return;
+
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (storedUser) throw redirect({ to: '/', replace: true });
-
-    console.info('cause', cause);
-    // Only check auth if entering
-    if (cause !== 'enter' || search.fromRoot) return;
 
     try {
       await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
