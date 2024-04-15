@@ -298,7 +298,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
               {inputValue.length > 0 && (
                 <XCircle
                   size={16}
-                  className="absolute right-8 opacity-70 hover:opacity-100 -translate-y-[110%] cursor-pointer"
+                  className="absolute right-8 opacity-70 hover:opacity-100 -translate-y-[120%] cursor-pointer"
                   onClick={() => setInputValue('')}
                 />
               )}
@@ -306,8 +306,8 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
           </div>
         </button>
         {isShowResults && (
-          <div className="relative mt-2">
-            <CommandList className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
+          <div className="relative">
+            <CommandList className="absolute mt-2 top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
               <ScrollArea className={`h-[${inputValue.length > 0 ? '20vh' : '40px'}] pr-3 pl-3 overflow-y-auto`}>
                 {isLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-opacity-20 bg-[#000] z-20">
@@ -316,7 +316,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                     </CommandLoading>
                   </div>
                 )}
-                {!isLoading && inputValue.length > 0 && <CommandEmpty>{t('common:no_results_found')}</CommandEmpty>}
+                {inputValue.length > 0 && <CommandEmpty>{t('common:no_results_found')}</CommandEmpty>}
                 <CommandGroup>
                   {inputValue.length === 0 ? (
                     <CommandEmpty>{t('common:invite_members_search.text')}</CommandEmpty>
