@@ -48,7 +48,7 @@ const OrganizationPage = () => {
       />
       <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
       <FocusViewContainer className="container min-h-screen mt-4">
-          <Outlet />
+        <Outlet />
       </FocusViewContainer>
     </OrganizationContext.Provider>
   );

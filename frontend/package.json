@@ -168,11 +168,7 @@
     "vite-plugin-pwa": "^0.19.7",
     "vite-plugin-static-copy": "^1.0.2"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not op_mini all"
-  ],
+  "browserslist": [">0.2%", "not dead", "not op_mini all"],
   "postcss": {
     "plugins": {
       "postcss-import": {},

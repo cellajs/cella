@@ -1,15 +1,15 @@
 import { Check } from 'lucide-react';
 import * as React from 'react';
 
+import { PopoverPortal } from '@radix-ui/react-popover';
+import { CommandList } from 'cmdk';
 import { cn } from '~/lib/utils';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandInput, CommandItem, CommandSeparator } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { PopoverPortal } from '@radix-ui/react-popover';
 import { ScrollArea } from '../ui/scroll-area';
-import { CommandList } from 'cmdk';
 
 type LabelType = Record<'value' | 'label' | 'color', string>;
 

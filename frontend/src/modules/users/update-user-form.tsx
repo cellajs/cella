@@ -51,13 +51,7 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
   });
 };
 
-const UpdateUserForm = ({
-  user,
-  callback,
-  dialog: isDialog,
-  hiddenFields,
-  children,
-}: UpdateUserFormProps) => {
+const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;

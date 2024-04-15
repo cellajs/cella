@@ -49,7 +49,8 @@ export const useScrollSpy = ({ sectionIds = [], autoUpdateHash }: { sectionIds: 
           const index = currentIntersectingIds.indexOf(id);
 
           if (entry.isIntersecting) {
-            if (entry.target.id === sectionIds[sectionIds.length - 1] && entry.intersectionRatio === 1) return setActiveHash(sectionIds[sectionIds.length - 1]);
+            if (entry.target.id === sectionIds[sectionIds.length - 1] && entry.intersectionRatio === 1)
+              return setActiveHash(sectionIds[sectionIds.length - 1]);
             // Is intersecting and not yet in array
             if (index === -1) {
               // console.log('entering', entry.target.id, index, intersectingIdsRef.current);
@@ -115,8 +116,7 @@ export const useScrollSpy = ({ sectionIds = [], autoUpdateHash }: { sectionIds: 
         //   // User scrolls up and the main intersecting section is below the hash location section AND current section is NOT the top section
         //   (scrollDirectionRef.current === 'up' && mainSectionIndex < currentHashIndex)
         // ) {
-       //   return navigate({ search: {section: mainSection}, replace: true });
-        
+        //   return navigate({ search: {section: mainSection}, replace: true });
       }, options);
     }
 
