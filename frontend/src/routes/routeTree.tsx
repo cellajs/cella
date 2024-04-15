@@ -52,22 +52,22 @@ export const IndexRoute = createRoute({
     // If no stored user and no desired path, redirect to about
     if (location.pathname === '/' && !lastUser) throw redirect({ to: '/about', replace: true });
 
+    if (cause !== 'enter') return;
+
+    // If just entered, fetch me and menu
     try {
-      // If just entered, fetch me and menu
-      if (cause === 'enter') {
-        const getMe = async () => {
-          return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
-        };
+      const getMe = async () => {
+        return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+      };
 
-        const getMenu = async () => {
-          return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu });
-        };
+      const getMenu = async () => {
+        return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu });
+      };
 
-        await Promise.all([getMe(), getMenu()]);
-      }
+      await Promise.all([getMe(), getMenu()]);
     } catch {
       console.info('Not authenticated (silent check) -> redirect to sign in');
-      throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
+      throw redirect({ to: '/auth/sign-in', replace: true, search: { fromRoot: true, redirect: location.pathname } });
     }
   },
   component: () => <App />,
