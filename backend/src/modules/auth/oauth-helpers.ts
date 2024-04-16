@@ -11,8 +11,7 @@ import { db } from '../../db/db';
 import { logEvent } from '../../middlewares/logger/log-event';
 import type { User } from 'lucia';
 import { sendVerificationEmail } from './helpers/verify-email';
-
-type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
+import type { ProviderId } from '../../types/common';
 
 // * Create a session before redirecting to the oauth provider
 export const createSession = (ctx: Context, provider: string, state: string, codeVerifier?: string, redirect?: string) => {

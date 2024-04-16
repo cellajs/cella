@@ -2,7 +2,6 @@ import { render } from '@react-email/render';
 import { and, eq } from 'drizzle-orm';
 import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
-import postgres from 'postgres';
 import { VerificationEmail } from '../../../../email/emails/email-verification';
 import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
 
@@ -39,6 +38,7 @@ import {
   signUpRouteConfig,
   verifyEmailRouteConfig,
 } from './routes';
+import { handleCreateUser } from './helpers/user';
 
 const app = new CustomHono();
 
@@ -55,36 +55,16 @@ const authRoutes = app
 
     const slug = slugFromEmail(email);
 
-    const slugAvailable = await checkSlugAvailable(slug);
-
-    try {
-      await db
-        .insert(usersTable)
-        .values({
-          id: userId,
-          slug: slugAvailable ? slug : `${slug}-${userId}`,
-          firstName: slug,
-          email: email.toLowerCase(),
-          language: config.defaultLanguage,
-          hashedPassword,
-        })
-        .returning();
-
-      await sendVerificationEmail(email);
-
-      return ctx.json({
-        success: true,
-      });
-    } catch (error) {
-      if (error instanceof postgres.PostgresError && error.message.startsWith('duplicate key')) {
-        // t('common:error.email_exists')
-        return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
-      }
-
-      logEvent('Error signing up', { errorMessage: (error as Error).message }, 'error');
-
-      throw error;
-    }
+    return await handleCreateUser(ctx, {
+      id: userId,
+      slug,
+      firstName: slug,
+      email: email.toLowerCase(),
+      language: config.defaultLanguage,
+      hashedPassword,
+    }, {
+      isEmailVerified: false,
+    });
   })
   /*
    * Verify email
