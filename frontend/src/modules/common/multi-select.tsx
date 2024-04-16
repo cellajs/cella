@@ -121,7 +121,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     const [selected, setSelected] = React.useState<Option[]>(value || []);
     const [options, setOptions] = React.useState<Option[]>(arrayDefaultOptions || []);
     const [inputValue, setInputValue] = React.useState('');
-    const debouncedSearchTerm = useDebounce(inputValue, delay || 500);
+    const debouncedSearchTerm = useDebounce(inputValue, delay || 300);
 
     React.useImperativeHandle(
       ref,
@@ -181,10 +181,6 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       event.preventDefault();
       event.stopPropagation();
     };
-
-    useEffect(() => {
-      if (value) setSelected(value);
-    }, [value]);
 
     useEffect(() => {
       /** If `onSearch` is provided, do not trigger options updated. */
@@ -284,7 +280,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 </button>
               </Badge>
             ))}
-            <div>
+            <div className="relative flex-grow">
               <CommandPrimitive.Input
                 {...inputProps}
                 ref={inputRef}
@@ -294,15 +290,15 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 onBlur={onInputBlur}
                 onFocus={onInputFocus}
                 placeholder={hidePlaceholderWhenSelected && selected.length !== 0 ? '' : placeholder}
-                className={cn('ml-2 h-6 flex-1 bg-transparent outline-none placeholder:text-muted-foreground', inputProps?.className)}
+                className={cn('ml-2 h-6 w-full flex-1 bg-transparent outline-none placeholder:text-muted-foreground', inputProps?.className)}
               />
               {inputValue.length > 0 && (
                 <XCircle
                   size={16}
-                  className="absolute right-8 opacity-70 hover:opacity-100 -translate-y-[120%] cursor-pointer"
+                  className="absolute -right-1 opacity-70 hover:opacity-100 -translate-y-[120%] cursor-pointer"
                   onClick={() => {
                     setInputValue('');
-                    setOptions(arrayDefaultOptions);
+                    setOptions(arrayDefaultOptions); // Set options to default options
                   }}
                 />
               )}

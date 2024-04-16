@@ -236,6 +236,7 @@
   "schedule_call.text": "Schedule a call",
   "search": "Search",
   "search_users": "Search users by name",
+  "search_language": "Search language supported by Cella",
   "select": "Select",
   "select_language": "Select language",
   "selected": "Selected",

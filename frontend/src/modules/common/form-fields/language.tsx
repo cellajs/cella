@@ -4,6 +4,7 @@ import MultipleSelector from '~/modules/common/multi-select';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import CountryFlag from '../country-flag';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   control: Control;
@@ -27,59 +28,63 @@ const LanguageFormField = ({
   disabledItemFunction,
   emptyIndicator,
   required,
-}: Props) => (
-  <FormField
-    control={control}
-    name={name}
-    render={({ field: { value, onChange } }) => (
-      <FormItem>
-        <FormLabel>
-          {label}
-          {required && <span className="ml-1 opacity-50">*</span>}
-        </FormLabel>
-        {description && <FormDescription>{description}</FormDescription>}
-        <FormControl>
-          {mode === 'single' ? (
-            <Select onValueChange={onChange} value={value || ''}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
-              <SelectContent>
-                {config.languages.map((language: { value: string; label: string }) => (
-                  <SelectItem key={language.value} value={language.value} disabled={disabledItemFunction?.(language.value)}>
-                    <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
-                    {language.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <>
-              <MultipleSelector
-                value={config.languages.filter((language) => value?.includes(language.value))}
-                onChange={(value) => {
-                  onChange(value.map((language) => language.value));
-                }}
-                onSearch={async (query) => {
-                  const languages = [];
-                  for (const el of config.languages) {
-                    if (el.label.toLowerCase().includes(query.toLowerCase())) languages.push(el);
-                  }
+}: Props) => {
+  const { t } = useTranslation();
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field: { value, onChange } }) => (
+        <FormItem>
+          <FormLabel>
+            {label}
+            {required && <span className="ml-1 opacity-50">*</span>}
+          </FormLabel>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormControl>
+            {mode === 'single' ? (
+              <Select onValueChange={onChange} value={value || ''}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={placeholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  {config.languages.map((language: { value: string; label: string }) => (
+                    <SelectItem key={language.value} value={language.value} disabled={disabledItemFunction?.(language.value)}>
+                      <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
+                      {language.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <>
+                <MultipleSelector
+                  value={config.languages.filter((language) => value?.includes(language.value))}
+                  onChange={(value) => {
+                    onChange(value.map((language) => language.value));
+                  }}
+                  onSearch={async (query) => {
+                    const languages = [];
+                    for (const el of config.languages) {
+                      if (el.label.toLowerCase().includes(query.toLowerCase())) languages.push(el);
+                    }
 
-                  return languages;
-                }}
-                hidePlaceholderWhenSelected
-                defaultOptions={config.languages}
-                placeholder={placeholder}
-                emptyValue={emptyIndicator}
-              />
-            </>
-          )}
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-    )}
-  />
-);
+                    return languages;
+                  }}
+                  basicSignValue={t('common:search_language')}
+                  hidePlaceholderWhenSelected
+                  defaultOptions={config.languages}
+                  placeholder={placeholder}
+                  emptyValue={emptyIndicator}
+                />
+              </>
+            )}
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
 
 export default LanguageFormField;
