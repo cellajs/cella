@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
-import { imageUrlSchema, nameSchema, paginationQuerySchema, validSlugSchema, validUrlSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema, validSlugSchema, validUrlSchema } from '../../lib/common-schemas';
 
 import { apiUserSchema } from '../users/schema';
 
@@ -76,23 +76,19 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
 
 const menuItemSchema = z.array(
   z.object({
-    slug: z.string(),
-    id: z.string(),
+    slug: slugSchema,
+    id: idSchema,
     createdAt: z.string(),
     modifiedAt: z.string().nullable(),
-    name: z.string(),
-    thumbnailUrl: z.string().nullable(),
+    name: nameSchema,
+    thumbnailUrl: imageUrlSchema.nullable(),
     archived: z.boolean(),
     muted: z.boolean(),
     role: membershipSchema.shape.role.nullable(),
-    counts: z.object({
-      members: z.number(),
-      admins: z.number(),
-    }),
   }),
 );
 
-const finalSchema = z.object({ info: menuItemSchema, canCreate: z.boolean() });
+const finalSchema = z.object({ items: menuItemSchema, canCreate: z.boolean() });
 
 export const userMenuSchema = z.object({
   organizations: finalSchema,

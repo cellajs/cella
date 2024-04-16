@@ -19,6 +19,7 @@ const tenant =
     if (!organizationIdentifier) {
       return await next();
     }
+    
 
     const [organization] = await db
       .select()

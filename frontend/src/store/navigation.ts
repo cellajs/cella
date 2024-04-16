@@ -23,41 +23,10 @@ interface NavigationState {
   addToInactive: (itemId: string) => void;
 }
 
-interface MenuSection {
-  name: string;
-  role: 'ADMIN' | 'MEMBER' | null;
-  id: string;
-  slug: string;
-  thumbnailUrl: string | null;
-  createdAt: string;
-  modifiedAt: string | null;
-  counts: {
-    members: number;
-    admins: number;
-  };
-  muted: boolean;
-  archived: boolean;
-}
-
-interface ItemMenu {
-  organizations: {
-    info: MenuSection[];
-    canCreate: boolean;
-  };
-  workspaces: {
-    info: MenuSection[];
-    canCreate: boolean;
-  };
-  projects: {
-    info: MenuSection[];
-    canCreate: boolean;
-  };
-}
-
-const initialMenuState: ItemMenu = menuSections.reduce<ItemMenu>((acc, section) => {
-  acc[section.id as keyof ItemMenu] = { info: [], canCreate: false };
+const initialMenuState: UserMenu = menuSections.reduce<UserMenu>((acc, section) => {
+  acc[section.id as keyof UserMenu] = { items: [], canCreate: false };
   return acc;
-}, {} as ItemMenu);
+}, {} as UserMenu);
 
 export const useNavigationStore = create<NavigationState>()(
   devtools(
@@ -104,19 +73,11 @@ export const useNavigationStore = create<NavigationState>()(
           },
           addToInactive: (itemId: string) => {
             set((state) => {
-              state.menu = Object.keys(state.menu).reduce((acc, key) => {
-                acc[key as keyof ItemMenu] = {
-                  ...state.menu[key as keyof ItemMenu],
-                  info: state.menu[key as keyof ItemMenu].info.map((item) => {
-                    if (item.id !== itemId) return item;
-                    return {
-                      ...item,
-                      archived: true,
-                    };
-                  }),
-                };
-                return acc;
-              }, {} as ItemMenu);
+              for (const sectionKey of Object.keys(state.menu)) {
+                const section = state.menu[sectionKey as keyof UserMenu];
+                const itemIndex = section.items.findIndex((item) => item.id === itemId);
+                if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = true;
+              }
             });
           },
         }),

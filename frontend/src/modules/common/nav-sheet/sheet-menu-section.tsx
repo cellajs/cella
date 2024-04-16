@@ -21,7 +21,7 @@ interface MenuSectionProps {
   menuItemClick: () => void;
 }
 
-type MenuList = UserMenu[keyof UserMenu]['info'];
+type MenuList = UserMenu[keyof UserMenu]['items'];
 
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
@@ -30,8 +30,8 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   const { activeSections, toggleSection } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
-  const unarchiveCounts = data.info.filter((item) => !item.archived).length;
-  const archivedCounts = data.info.filter((item) => item.archived).length;
+  const archived = data.items.filter((item) => item.archived);
+  const unarchive = data.items.filter((item) => !item.archived);
 
   const createDialog = () => {
     dialog(section.createForm, {
@@ -46,7 +46,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   };
 
   const archiveToggleClick = () => {
-    setArchivedVisible(!isArchivedVisible);
+    if (archived.length > 0) setArchivedVisible(!isArchivedVisible);
   };
 
   // Render the menu items for each section
@@ -67,7 +67,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         </div>
       );
     }
-
     return list.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />);
   };
 
@@ -76,7 +75,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     if (list.length === 0) {
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
-
     return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} />);
   };
 
@@ -90,12 +88,12 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
                 {section.icon && <section.icon className="mr-2 w-5 h-5" />}
                 {t(section.label)}
               </span>
-              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{unarchiveCounts}</span>}
+              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{unarchive.length}</span>}
             </div>
 
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
-          {!!(isSectionVisible && unarchiveCounts) && (
+          {!!(isSectionVisible && unarchive.length) && (
             <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
               <Button
                 className="w-12 transition duration-300 px-3 ease-in-out }"
@@ -123,24 +121,11 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         } grid-rows-[0fr] ease-in-outss duration-300`}
       >
         <ul className="overflow-hidden">
-          {optionsView
-            ? renderOptions(data.info.filter((item) => !item.archived))
-            : renderItems(
-                data.info.filter((item) => !item.archived),
-                data.canCreate,
-                false,
-              )}
-          {!!(unarchiveCounts || archivedCounts) && (
+          {optionsView ? renderOptions(unarchive) : renderItems(unarchive, data.canCreate, false)}
+          {!!(unarchive.length || archived.length) && (
             <>
-              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archivedCounts} isArchivedVisible={isArchivedVisible} />
-              {isArchivedVisible &&
-                (optionsView
-                  ? renderOptions(data.info.filter((item) => item.archived))
-                  : renderItems(
-                      data.info.filter((item) => item.archived),
-                      data.canCreate,
-                      true,
-                    ))}
+              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archived.length} isArchivedVisible={isArchivedVisible} />
+              {isArchivedVisible && (optionsView ? renderOptions(archived) : renderItems(archived, data.canCreate, true))}
             </>
           )}
         </ul>

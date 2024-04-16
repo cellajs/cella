@@ -15,7 +15,7 @@ interface SheetMenuItemProps {
 export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const navigation = useNavigationStore((state) => state.addToInactive);
+  const addToInactive = useNavigationStore((state) => state.addToInactive);
   return (
     <div className="group mb-1 flex sm:max-w-[18rem] h-14 w-full cursor-pointer items-start justify-start rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground">
       <AvatarWrap className="m-2" type="organization" id={item.id} name={item.name} url={item.thumbnailUrl} />
@@ -28,10 +28,9 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
             className="p-0 font-light text-xs h-4 leading-3"
             aria-label="Toggle archive"
             onClick={() => {
-              navigation(item.id);
               updateUserInOrganization(item.id, user.id, item.role ? item.role : undefined, true)
                 .then(() => {
-                  navigation(item.id);
+                  addToInactive(item.id);
                   toast.success(t('common:success.archived_organization'));
                 })
                 .catch(() => {

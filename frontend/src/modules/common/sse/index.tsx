@@ -5,15 +5,10 @@ const SSE = () => {
   useSSE('update_organization', (e) => {
     try {
       const organization = JSON.parse(e.data);
-      useNavigationStore.setState((state) => ({
-        menu: {
-          ...state.menu,
-          organizations: {
-            ...state.menu.organizations,
-            info: state.menu.organizations.info.map((org) => (org.id === organization.id ? organization : org)),
-          },
-        },
-      }));
+      useNavigationStore.setState((state) => {
+        state.menu.organizations.items = state.menu.organizations.items.map((org) => (org.id === organization.id ? organization : org));
+        return state;
+      });
     } catch (error) {
       console.error('Error parsing update_organization event', error);
     }
@@ -22,15 +17,10 @@ const SSE = () => {
   useSSE('remove_organization', (e) => {
     try {
       const organization = JSON.parse(e.data);
-      useNavigationStore.setState((state) => ({
-        menu: {
-          ...state.menu,
-          organizations: {
-            ...state.menu.organizations,
-            info: state.menu.organizations.info.filter((org) => org.id !== organization.id),
-          },
-        },
-      }));
+      useNavigationStore.setState((state) => {
+        state.menu.organizations.items = state.menu.organizations.items.filter((org) => org.id !== organization.id);
+        return state;
+      });
     } catch (error) {
       console.error('Error parsing remove_organization event', error);
     }
@@ -39,15 +29,10 @@ const SSE = () => {
   useSSE('new_membership', (e) => {
     try {
       const organization = JSON.parse(e.data);
-      useNavigationStore.setState((state) => ({
-        menu: {
-          ...state.menu,
-          organizations: {
-            ...state.menu.organizations,
-            info: [organization, ...state.menu.organizations.info],
-          },
-        },
-      }));
+      useNavigationStore.setState((state) => {
+        state.menu.organizations.items = [...state.menu.organizations.items, organization];
+        return state;
+      });
     } catch (error) {
       console.error('Error parsing new_membership event', error);
     }
@@ -56,15 +41,10 @@ const SSE = () => {
   useSSE('remove_membership', (e) => {
     try {
       const organization = JSON.parse(e.data);
-      useNavigationStore.setState((state) => ({
-        menu: {
-          ...state.menu,
-          organizations: {
-            ...state.menu.organizations,
-            info: state.menu.organizations.info.filter((org) => org.id !== organization.id),
-          },
-        },
-      }));
+      useNavigationStore.setState((state) => {
+        state.menu.organizations.items = state.menu.organizations.items.filter((org) => org.id !== organization.id);
+        return state;
+      });
     } catch (error) {
       console.error('Error parsing remove_membership event', error);
     }

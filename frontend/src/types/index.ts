@@ -1,5 +1,5 @@
 import type { InferResponseType } from 'hono/client';
-import type { organizationsClient, usersClient } from '~/api';
+import type { organizationsClient, usersClient, workspaceClient } from '~/api';
 
 export enum UploadType {
   Personal,
@@ -27,6 +27,8 @@ export interface Page {
 export type User = Extract<InferResponseType<(typeof usersClient.me)['$get']>, { data: unknown }>['data'];
 
 export type Organization = Extract<InferResponseType<(typeof organizationsClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
+
+export type Workspace = Extract<InferResponseType<(typeof workspaceClient.workspaces)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Member = Extract<
   InferResponseType<(typeof organizationsClient.organizations)[':organizationIdentifier']['members']['$get']>,
