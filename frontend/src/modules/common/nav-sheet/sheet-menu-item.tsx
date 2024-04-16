@@ -1,17 +1,22 @@
 import { Link } from '@tanstack/react-router';
+import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { type Page, UserRole } from '~/types';
 
 interface SheetMenuItemProps {
   item: Page;
   menuItemClick: () => void;
+  className?: string;
 }
 
-export const SheetMenuItem = ({ item, menuItemClick }: SheetMenuItemProps) => {
+export const SheetMenuItem = ({ item, menuItemClick, className }: SheetMenuItemProps) => {
   return (
     <Link
       resetScroll={false}
-      className="group mb-1 sm:max-w-[18rem] flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground"
+      className={cn(
+        'group mb-1 sm:max-w-[18rem] font-light flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground',
+        className,
+      )}
       onClick={menuItemClick}
       aria-label={item.name}
       to="/$organizationIdentifier/members"

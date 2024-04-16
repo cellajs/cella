@@ -1,28 +1,29 @@
-import { Suspense, lazy, useEffect } from 'react';
-import useMounted from '~/hooks/use-mounted';
-import { dialog } from '~/modules/common/dialoger/state';
-
-const Onboarding = lazy(() => import('~/modules/home/onboarding'));
+import { useState } from 'react';
+import type { OnboardingStates } from '~/modules/home/onboarding';
+import { Dialog, DialogContent } from '~/modules/ui/dialog';
+import { OnboardingCompleted } from './onboarding/completed';
+import { useNavigate } from '@tanstack/react-router';
+import Onboarding  from '~/modules/home/onboarding';
 
 const Welcome = () => {
-  const { hasMounted } = useMounted();
-  const showOnboarding = () => {
-    dialog(
-      <Suspense>
-        <Onboarding />
-      </Suspense>,
-      {
-        drawerOnMobile: false,
-        className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75',
-      },
-    );
+  const navigate = useNavigate();
+  const [onboarding, setOnboarding] = useState<OnboardingStates>('start');
+
+  const onOpenChange = () => {
+    navigate({ to: '/home', replace: true});
   };
 
-  useEffect(() => {
-    if (hasMounted) showOnboarding();
-  }, [hasMounted]);
+  return (
+    <>
+      <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
+        <DialogContent className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto">
+            <Onboarding onboarding={onboarding} setOnboarding={setOnboarding} />
+        </DialogContent>
+      </Dialog>
 
-  return <></>;
+      {onboarding === 'completed' && <OnboardingCompleted />}
+    </>
+  );
 };
 
 export default Welcome;
