@@ -50,21 +50,27 @@ const authRoutes = app
   .openapi(signUpRouteConfig, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
+    // * hash password
     const hashedPassword = await new Argon2id().hash(password);
     const userId = nanoid();
 
     const slug = slugFromEmail(email);
 
-    return await handleCreateUser(ctx, {
-      id: userId,
-      slug,
-      firstName: slug,
-      email: email.toLowerCase(),
-      language: config.defaultLanguage,
-      hashedPassword,
-    }, {
-      isEmailVerified: false,
-    });
+    // * create user and send verification email
+    return await handleCreateUser(
+      ctx,
+      {
+        id: userId,
+        slug,
+        firstName: slug,
+        email: email.toLowerCase(),
+        language: config.defaultLanguage,
+        hashedPassword,
+      },
+      {
+        isEmailVerified: false,
+      },
+    );
   })
   /*
    * Verify email
@@ -151,6 +157,7 @@ const authRoutes = app
 
     const emailLanguage = user?.language || config.defaultLanguage;
 
+    // * generating email html
     const emailHtml = render(
       VerificationEmail({
         i18n: i18n.cloneInstance({
@@ -209,6 +216,7 @@ const authRoutes = app
 
     const emailLanguage = user?.language || config.defaultLanguage;
 
+    // * generating email html
     const emailHtml = render(
       ResetPasswordEmail({
         i18n: i18n.cloneInstance({
@@ -237,18 +245,24 @@ const authRoutes = app
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
+    // * If the token is not found or expired
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
       return errorResponse(ctx, 400, 'invalid_token', 'warn');
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
+    // * If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
     }
 
     await auth.invalidateUserSessions(user.id);
+
+    // * hash password
     const hashedPassword = await new Argon2id().hash(password);
+
+    // * update user password
     await db.update(usersTable).set({ hashedPassword }).where(eq(usersTable.id, user.id));
 
     await setSessionCookie(ctx, user.id, 'password_reset');
@@ -266,6 +280,7 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
+    // * If the user is not found or signed up with oauth
     if (!user || !user.hashedPassword) {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     }
@@ -326,6 +341,7 @@ const authRoutes = app
       .from(tokensTable)
       .where(and(eq(tokensTable.id, verificationToken)));
 
+    // * If the token is not found or expired
     if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
       // t('common:error.invalid_token_or_expired')
       return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
@@ -333,6 +349,7 @@ const authRoutes = app
 
     let organization: OrganizationModel | undefined;
 
+    // * If the token has an organization id we will check if the organization exists
     if (token.organizationId) {
       [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, token.organizationId));
 
@@ -345,6 +362,7 @@ const authRoutes = app
 
     let user: User;
 
+    // * If the token has a user id we will check if the user exists
     if (token.userId) {
       [user] = await db
         .select()
@@ -357,7 +375,9 @@ const authRoutes = app
           type: 'invitation',
         });
       }
-    } else if (password || oauth) {
+    }
+    // * Else we will create a new user
+    else if (password || oauth) {
       const hashedPassword = password ? await new Argon2id().hash(password) : undefined;
       const userId = nanoid();
 
@@ -387,18 +407,17 @@ const authRoutes = app
       });
     }
 
+    // * If the organization exists we will add the user to the organization
     if (organization) {
-      await db
-        .insert(membershipsTable)
-        .values({
-          organizationId: organization.id,
-          userId: user.id,
-          role: (token.role as MembershipModel['role']) || 'MEMBER',
-          createdBy: user.id,
-        })
-        .returning();
+      await db.insert(membershipsTable).values({
+        organizationId: organization.id,
+        userId: user.id,
+        role: (token.role as MembershipModel['role']) || 'MEMBER',
+        createdBy: user.id,
+      });
     }
 
+    // * If the oauth is github we will redirect to github sign in
     if (oauth === 'github') {
       const response = await fetch(`${config.backendUrl + githubSignInRouteConfig.path}${organization ? `?redirect=${organization.slug}` : ''}`, {
         method: githubSignInRouteConfig.method,
