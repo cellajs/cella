@@ -74,12 +74,30 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
   })
   .partial();
 
-export const userMenuSchema = z.object({
-  organizations: z.object({
-    active: z.array(apiOrganizationSchema),
-    inactive: z.array(apiOrganizationSchema),
-    canCreate: z.boolean(),
+const menuItemSchema = z.array(
+  z.object({
+    slug: z.string(),
+    id: z.string(),
+    createdAt: z.string(),
+    modifiedAt: z.string().nullable(),
+    name: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    archived: z.boolean(),
+    muted: z.boolean(),
+    role: membershipSchema.shape.role.nullable(),
+    counts: z.object({
+      members: z.number(),
+      admins: z.number(),
+    }),
   }),
+);
+
+const finalSchema = z.object({ info: menuItemSchema, canCreate: z.boolean() });
+
+export const userMenuSchema = z.object({
+  organizations: finalSchema,
+  workspaces: finalSchema,
+  projects: finalSchema,
 });
 
 export const getUsersByOrganizationQuerySchema = paginationQuerySchema.extend({

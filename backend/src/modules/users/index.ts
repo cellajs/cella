@@ -106,9 +106,7 @@ const usersRoutes = app
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
-    const organizations: MenuItem[] = [];
-    const inactiveOrganizations: MenuItem[] = [];
-    await Promise.all(
+    const organizations: MenuItem[] = await Promise.all(
       organizationsWithMemberships.map(async ({ organization, membership }) => {
         const [{ admins }] = await db
           .select({
@@ -123,40 +121,30 @@ const usersRoutes = app
           })
           .from(membershipsTable)
           .where(eq(membershipsTable.organizationId, organization.id));
-        const result = {
-          ...organization,
-          userRole: membership?.role || null,
+        return {
+          slug: organization.slug,
+          id: organization.id,
+          createdAt: organization.createdAt,
+          modifiedAt: organization.modifiedAt,
+          name: organization.name,
+          thumbnailUrl: organization.thumbnailUrl,
+          archived: membership.inactive || false,
+          muted: membership.muted || false,
+          role: membership?.role || null,
           counts: {
             members,
             admins,
           },
         };
-        if (membership.inactive) {
-          inactiveOrganizations.push(result);
-        } else {
-          organizations.push(result);
-        }
       }),
     );
 
     return ctx.json({
       success: true,
       data: {
-        organizations: {
-          active: organizations,
-          inactive: inactiveOrganizations,
-          canCreate: true,
-        },
-        workspaces: {
-          active: [],
-          inactive: [],
-          canCreate: false,
-        },
-        projects: {
-          active: [],
-          inactive: [],
-          canCreate: false,
-        },
+        organizations: { info: organizations, canCreate: true },
+        workspaces: { info: [], canCreate: false },
+        projects: { info: [], canCreate: false },
       },
     });
   })

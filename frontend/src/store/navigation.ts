@@ -23,11 +23,41 @@ interface NavigationState {
   addToInactive: (itemId: string) => void;
 }
 
-// Build the initial menu (for menu sheet)
-const initialMenuState = menuSections.reduce<UserMenu>((acc, section) => {
-  acc[section.id as keyof UserMenu] = { active: [], inactive: [], canCreate: false };
+interface MenuSection {
+  name: string;
+  role: 'ADMIN' | 'MEMBER' | null;
+  id: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  createdAt: string;
+  modifiedAt: string | null;
+  counts: {
+    members: number;
+    admins: number;
+  };
+  muted: boolean;
+  archived: boolean;
+}
+
+interface ItemMenu {
+  organizations: {
+    info: MenuSection[];
+    canCreate: boolean;
+  };
+  workspaces: {
+    info: MenuSection[];
+    canCreate: boolean;
+  };
+  projects: {
+    info: MenuSection[];
+    canCreate: boolean;
+  };
+}
+
+const initialMenuState: ItemMenu = menuSections.reduce<ItemMenu>((acc, section) => {
+  acc[section.id as keyof ItemMenu] = { info: [], canCreate: false };
   return acc;
-}, {} as UserMenu);
+}, {} as ItemMenu);
 
 export const useNavigationStore = create<NavigationState>()(
   devtools(
@@ -72,15 +102,21 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = !state.activeSections[section];
             });
           },
-          addToInactive: (itemId) => {
+          addToInactive: (itemId: string) => {
             set((state) => {
-              const sectionKey = Object.keys(state.menu).find((key) => state.menu[key as keyof UserMenu].active.find((item) => item.id === itemId));
-              if (sectionKey) {
-                const itemIndex = state.menu[sectionKey as keyof UserMenu].active.findIndex((item) => item.id === itemId);
-                const item = state.menu[sectionKey as keyof UserMenu].active[itemIndex];
-                state.menu[sectionKey as keyof UserMenu].active.splice(itemIndex, 1);
-                state.menu[sectionKey as keyof UserMenu].inactive.push(item);
-              }
+              state.menu = Object.keys(state.menu).reduce((acc, key) => {
+                acc[key as keyof ItemMenu] = {
+                  ...state.menu[key as keyof ItemMenu],
+                  info: state.menu[key as keyof ItemMenu].info.map((item) => {
+                    if (item.id !== itemId) return item;
+                    return {
+                      ...item,
+                      archived: true,
+                    };
+                  }),
+                };
+                return acc;
+              }, {} as ItemMenu);
             });
           },
         }),

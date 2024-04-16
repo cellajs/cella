@@ -28,7 +28,8 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
             className="p-0 font-light text-xs h-4 leading-3"
             aria-label="Toggle archive"
             onClick={() => {
-              updateUserInOrganization(item.id, user.id, item.userRole ? item.userRole : undefined, true)
+              navigation(item.id);
+              updateUserInOrganization(item.id, user.id, item.role ? item.role : undefined, true)
                 .then(() => {
                   navigation(item.id);
                   toast.success(t('common:success.archived_organization'));

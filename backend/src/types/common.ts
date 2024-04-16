@@ -20,7 +20,7 @@ export type Env = {
 // biome-ignore lint/complexity/noBannedTypes: <explanation>
 export class CustomHono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> extends OpenAPIHono<E, S, BasePath> {}
 
-export type MenuItem = {
+export type MenuItem2 = {
   userRole: 'ADMIN' | 'MEMBER';
   counts: { members: number; admins: number };
   name: string;
@@ -46,4 +46,20 @@ export type MenuItem = {
   authStrategies: string[] | null;
   chatSupport: boolean;
   createdBy: string | null;
+};
+
+export type MenuItem = {
+  slug: string;
+  id: string;
+  createdAt: Date;
+  modifiedAt: Date | null;
+  name: string;
+  thumbnailUrl: string | null;
+  archived: boolean;
+  muted: boolean;
+  role: 'ADMIN' | 'MEMBER' | null;
+  counts: {
+    members: number;
+    admins: number;
+  };
 };

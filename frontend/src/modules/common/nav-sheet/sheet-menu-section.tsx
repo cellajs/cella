@@ -21,8 +21,7 @@ interface MenuSectionProps {
   menuItemClick: () => void;
 }
 
-type MenuList = UserMenu[keyof UserMenu]['inactive' | 'active'];
-
+type MenuList = UserMenu[keyof UserMenu]['info'];
 
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
@@ -30,6 +29,9 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   const [isArchivedVisible, setArchivedVisible] = useState(false);
   const { activeSections, toggleSection } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
+
+  const unarchiveCounts = data.info.filter((item) => !item.archived).length;
+  const archivedCounts = data.info.filter((item) => item.archived).length;
 
   const createDialog = () => {
     dialog(section.createForm, {
@@ -48,12 +50,12 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   };
 
   // Render the menu items for each section
-  const renderItems = (list: MenuList, canCreate: boolean) => {
-    if (list.length === 0 && !canCreate) {
+  const renderItems = (list: MenuList, canCreate: boolean, archived: boolean) => {
+    if (!canCreate) {
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
 
-    if (list.length === 0 && canCreate && section.createForm) {
+    if (!archived && list.length < 1 && canCreate && section.createForm) {
       return (
         <div className="flex items-center">
           <Button className="w-full" variant="ghost" onClick={createDialog}>
@@ -88,12 +90,12 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
                 {section.icon && <section.icon className="mr-2 w-5 h-5" />}
                 {t(section.label)}
               </span>
-              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>}
+              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{unarchiveCounts}</span>}
             </div>
 
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
-          {!!(isSectionVisible && data.active.length) && (
+          {!!(isSectionVisible && unarchiveCounts) && (
             <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
               <Button
                 className="w-12 transition duration-300 px-3 ease-in-out }"
@@ -121,11 +123,24 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         } grid-rows-[0fr] ease-in-outss duration-300`}
       >
         <ul className="overflow-hidden">
-          {optionsView ? renderOptions(data.active) : renderItems(data.active, data.canCreate)}
-          {!!(data.inactive.length || data.active.length) && (
+          {optionsView
+            ? renderOptions(data.info.filter((item) => !item.archived))
+            : renderItems(
+                data.info.filter((item) => !item.archived),
+                data.canCreate,
+                false,
+              )}
+          {!!(unarchiveCounts || archivedCounts) && (
             <>
-              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.inactive.length} isArchivedVisible={isArchivedVisible} />
-              {isArchivedVisible && (optionsView ? renderOptions(data.inactive) : renderItems(data.inactive, data.canCreate))}
+              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archivedCounts} isArchivedVisible={isArchivedVisible} />
+              {isArchivedVisible &&
+                (optionsView
+                  ? renderOptions(data.info.filter((item) => item.archived))
+                  : renderItems(
+                      data.info.filter((item) => item.archived),
+                      data.canCreate,
+                      true,
+                    ))}
             </>
           )}
         </ul>
