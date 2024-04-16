@@ -1,4 +1,3 @@
-import { config } from 'config';
 import type { Control } from 'react-hook-form';
 import MultipleSelector from '~/modules/common/multi-select';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
@@ -29,7 +28,10 @@ const DomainsFormField = ({
     <FormField
       control={control}
       name={name}
-      render={({ field: { value, onChange } }) => (
+      render={({ field: { value, onChange } }) => {
+        const defaultValue = value ? value.map((val: string) => ({ label: val, value: val })) : [];
+
+        return (
         <FormItem>
           <FormLabel>
             {label}
@@ -40,9 +42,9 @@ const DomainsFormField = ({
           
               <>
                 <MultipleSelector
-                  value={config.languages.filter((language) => value?.includes(language.value))}
+                  value={defaultValue}
                   onChange={(value) => {
-                    onChange(value.map((language) => language.value));
+                    onChange(value.map((domain) => domain.value));
                   }}
                   creatable
                   createPlaceholder={t('common:add_domain')}
@@ -55,7 +57,7 @@ const DomainsFormField = ({
           </FormControl>
           <FormMessage />
         </FormItem>
-      )}
+      )}}
     />
   );
 };

@@ -23,7 +23,6 @@ interface MenuSectionProps {
 
 type MenuList = UserMenu[keyof UserMenu]['inactive' | 'active'];
 
-
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
@@ -115,17 +114,21 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
           )}
         </div>
       </Sticky>
-      <div
-        className={`grid transition-[grid-template-rows] ${
-          isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-        } grid-rows-[0fr] ease-in-outss duration-300`}
-      >
+      <div className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}>
         <ul className="overflow-hidden">
           {optionsView ? renderOptions(data.active) : renderItems(data.active, data.canCreate)}
           {!!(data.inactive.length || data.active.length) && (
             <>
               <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.inactive.length} isArchivedVisible={isArchivedVisible} />
-              {isArchivedVisible && (optionsView ? renderOptions(data.inactive) : renderItems(data.inactive, data.canCreate))}
+              <div
+                className={`grid transition-[grid-template-rows] ${
+                  isArchivedVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                } ease-in-out delay-75 duration-300`}
+              >
+                <ul className="overflow-hidden">
+                  {optionsView ? renderOptions(data.inactive) : renderItems(data.inactive, data.canCreate)}
+                </ul>
+              </div>
             </>
           )}
         </ul>

@@ -58,6 +58,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       name: organization.name,
       shortName: organization.shortName,
       websiteUrl: organization.websiteUrl,
+      emailDomains: organization.emailDomains,
       thumbnailUrl: cleanUrl(organization.thumbnailUrl),
       notificationEmail: organization.notificationEmail,
       timezone: organization.timezone,

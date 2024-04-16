@@ -45,11 +45,26 @@ export const slugSchema = z.string();
 export const validSlugSchema = z
   .string()
   .min(2)
-  .max(200)
+  .max(100)
   .refine(
     (s) => /^[a-z0-9]+(-[a-z0-9]+)*$/i.test(s),
     'Slug may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.',
-  );
+  )
+  .transform((str) => str.toLowerCase().trim());
+
+export const validDomainsSchema = z
+  .array(
+    z
+      .string()
+      .min(4)
+      .max(100)
+      .refine(
+        (s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'),
+        'Domain must not contain @, no special chars and at least one dot (.) in between.',
+      )
+      .transform((str) => str.toLowerCase().trim()),
+  )
+  .optional();
 
 export const organizationParamSchema = z.object({
   organizationIdentifier: slugSchema.or(idSchema),
@@ -63,7 +78,7 @@ export const imageUrlSchema = z
 export const nameSchema = z
   .string()
   .min(2)
-  .max(200)
+  .max(100)
   .refine((s) => /^[a-z ,.'-]+$/i.test(s), "Name may only contain letters, spaces and these characters: ,.'-");
 
 export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');
