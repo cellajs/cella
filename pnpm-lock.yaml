@@ -291,8 +291,8 @@ importers:
         specifier: ^5.29.0
         version: 5.29.0(react@18.2.0)
       '@tanstack/react-router':
-        specifier: 1.26.19
-        version: 1.26.19(react-dom@18.2.0)(react@18.2.0)
+        specifier: 1.28.1
+        version: 1.28.1(react-dom@18.2.0)(react@18.2.0)
       '@tanstack/router-devtools':
         specifier: ^1.26.9
         version: 1.26.9(csstype@3.1.3)(react-dom@18.2.0)(react@18.2.0)
@@ -689,7 +689,7 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.0.1(postcss@8.4.38)(typescript@5.3.3)
+        version: 8.0.1(typescript@5.3.3)
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
@@ -9053,21 +9053,6 @@ packages:
       react: 18.2.0
     dev: false
 
-  /@tanstack/react-router@1.26.19(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-dMesjJ+TYP/QmM8o1u64nNMrGcIzmyv2qk9+Iqa7Ndso0bQMKGz2oTHCOVPU04fglpBV2EqxzLZVxdkFIQ8ppA==}
-    engines: {node: '>=12'}
-    peerDependencies:
-      react: '>=16.8'
-      react-dom: '>=16.8'
-    dependencies:
-      '@tanstack/history': 1.26.10
-      '@tanstack/react-store': 0.2.1(react-dom@18.2.0)(react@18.2.0)
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-      tiny-invariant: 1.3.1
-      tiny-warning: 1.0.3
-    dev: false
-
   /@tanstack/react-router@1.26.9(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-7UlNKRpk71Uh6ZsN4OQkZSXJw8u7n7gKKipmxWB9iPsvczymOoJ78JYgR26y3awpqXvbEjdCb7hbxSxZt2xfbA==}
     engines: {node: '>=12'}
@@ -9076,6 +9061,21 @@ packages:
       react-dom: '>=16.8'
     dependencies:
       '@tanstack/history': 1.26.3
+      '@tanstack/react-store': 0.2.1(react-dom@18.2.0)(react@18.2.0)
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      tiny-invariant: 1.3.1
+      tiny-warning: 1.0.3
+    dev: false
+
+  /@tanstack/react-router@1.28.1(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-KJpIPeCCosjujzjWLPy0m0cW/qu3d413M8Mxp9KAfdggR3HaXmSFwXxONRnxZubqVi+fuYQZ4e+AePnt+Prhgw==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
+    dependencies:
+      '@tanstack/history': 1.26.10
       '@tanstack/react-store': 0.2.1(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -18004,6 +18004,7 @@ packages:
     transitivePeerDependencies:
       - supports-color
       - ts-node
+    dev: false
 
   /tsup@8.0.1(postcss@8.4.38)(typescript@5.4.4):
     resolution: {integrity: sha512-hvW7gUSG96j53ZTSlT4j/KL0q1Q2l6TqGBFc6/mu/L46IoNWqLLUzLRLP1R8Q7xrJTmkDxxDoojV5uCVs1sVOg==}
@@ -18072,7 +18073,7 @@ packages:
       execa: 5.1.1
       globby: 11.1.0
       joycon: 3.1.1
-      postcss-load-config: 4.0.2(postcss@8.4.38)
+      postcss-load-config: 4.0.2(postcss@8.4.33)
       resolve-from: 5.0.0
       rollup: 4.9.6
       source-map: 0.8.0-beta.0
@@ -18082,7 +18083,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
       - ts-node
-    dev: false
 
   /tsx@4.7.0:
     resolution: {integrity: sha512-I+t79RYPlEYlHn9a+KzwrvEwhJg35h/1zHsLC2JXvhC2mdynMv6Zxzvhv5EMV6VF5qJlLlkSnMVvdZV3PSIGcg==}
@@ -19009,7 +19009,6 @@ packages:
 
   /workbox-google-analytics@7.0.0:
     resolution: {integrity: sha512-MEYM1JTn/qiC3DbpvP2BVhyIH+dV/5BjHk756u9VbwuAhu0QHyKscTnisQuz21lfRpOwiS9z4XdqeVAKol0bzg==}
-    deprecated: It is not compatible with newer versions of GA starting with v4, as long as you are using GAv3 it should be ok, but the package is not longer being maintained
     dependencies:
       workbox-background-sync: 7.0.0
       workbox-core: 7.0.0

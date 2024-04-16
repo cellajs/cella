@@ -63,14 +63,6 @@ const LanguageFormField = ({
                   onChange={(value) => {
                     onChange(value.map((language) => language.value));
                   }}
-                  onSearch={async (query) => {
-                    const languages = [];
-                    for (const el of config.languages) {
-                      if (el.label.toLowerCase().includes(query.toLowerCase())) languages.push(el);
-                    }
-
-                    return languages;
-                  }}
                   basicSignValue={t('common:search_language')}
                   hidePlaceholderWhenSelected
                   defaultOptions={config.languages}
