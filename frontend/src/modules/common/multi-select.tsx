@@ -124,6 +124,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       commandProps,
       inputProps,
       emptyValue,
+      createPlaceholder,
       basicSignValue,
       itemComponent,
     }: MultipleSelectorProps,
@@ -247,6 +248,48 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       return undefined;
     }, [creatable, commandProps?.filter]);
 
+    const CreatableItem = () => {
+      if (!creatable) return undefined;
+
+      const Item = (
+        <CommandItem
+          value={inputValue}
+          className="cursor-pointer"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onSelect={(value: string) => {
+            if (selected.length >= maxSelected) {
+              onMaxSelected?.(selected.length);
+              return;
+            }
+            setInputValue('');
+            const newOptions = [...selected, { value, label: value }];
+            setSelected(newOptions);
+            onChange?.(newOptions);
+          }}
+        >
+          <>
+            <span className="mr-1">{createPlaceholder || 'Create'}</span>
+            <strong>{inputValue}</strong>
+          </>
+        </CommandItem>
+      );
+
+      // For normal creatable
+      if (!onSearch && inputValue.length > 0) {
+        return Item;
+      }
+
+      // For async search creatable. avoid showing creatable item before loading at first.
+      if (onSearch && debouncedSearchTerm.length > 0 && !isLoading) {
+        return Item;
+      }
+
+      return undefined;
+    };
+
     return (
       <Command
         {...commandProps}
@@ -269,9 +312,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
           }}
         >
           <div className="flex flex-wrap items-center gap-1">
-            {onSearch && !selected.length && <Search className="h-4 w-4 shrink-0" style={{ opacity: value ? 1 : 0.5 }} />}
+            {onSearch && !selected.length && <Search className="h-4 w-4 shrink-0" style={{ opacity: inputValue ? 1 : 0.5 }} />}
             {selected.map((option) => (
               <Badge
+                variant="secondary"
                 key={option.value}
                 className={cn(
                   'data-[disabled]:bg-muted-foreground data-[disabled]:text-muted data-[disabled]:hover:bg-muted-foreground',
@@ -308,12 +352,18 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 {...inputProps}
                 ref={inputRef}
                 value={inputValue}
+                aria-autocomplete='none'
+                autoComplete='off'
                 disabled={disabled}
                 onValueChange={(value) => onValueChange(value)}
                 onBlur={onInputBlur}
                 onFocus={onInputFocus}
                 placeholder={hidePlaceholderWhenSelected && selected.length !== 0 ? '' : placeholder}
-                className={cn('ml-2 h-6 w-full flex-1 bg-transparent outline-none placeholder:text-muted-foreground', inputProps?.className)}
+                className={cn(
+                  'h-5 w-full flex-1 bg-transparent outline-none placeholder:text-muted-foreground',
+                  inputProps?.className,
+                  selected.length && 'ml-2 ',
+                )}
               />
               {inputValue.length > 0 && (
                 <XCircle
@@ -330,15 +380,22 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         </button>
         {isShowResults && (
           <div className="relative">
-            <CommandList className="absolute mt-2 top-0 z-10 w-full !h-auto rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
+            <CommandList
+              className={cn(
+                'absolute mt-2 top-0 z-10 w-full !h-auto rounded-md bg-popover text-popover-foreground shadow-md outline-none animate-in',
+                (inputValue.length || selectable.length || basicSignValue) && 'border',
+              )}
+            >
               {isLoading && (
                 <CommandEmpty>
                   <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
                 </CommandEmpty>
               )}
 
+              {CreatableItem()}
+
               {selectable.length < 1 && inputValue.length > 0 && !isLoading && <CommandEmpty>{emptyValue}</CommandEmpty>}
-              {inputValue.length === 0 && <CommandEmpty>{basicSignValue}</CommandEmpty>}
+              {inputValue.length === 0 && basicSignValue && <CommandEmpty>{basicSignValue}</CommandEmpty>}
               {inputValue.length > 0 && emptyIndicator && <CommandEmpty>{emptyIndicator}</CommandEmpty>}
 
               {!!selectable.length && (

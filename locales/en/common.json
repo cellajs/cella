@@ -316,5 +316,9 @@
   "success.password_reset": "Your password has been reset",
   "invitation_accepted": "Invitation has successfully been accepted",
   "get_started": "Get started",
-  "history": "History"
+  "history": "History",
+  "placeholder.email_domains": "Type email domains",
+  "email_domains": "Email domains",
+  "email_domains.text": "Enforce members to have an organizational email domain.",
+  "add_domain": "Add domain"
 }
