@@ -1,7 +1,7 @@
 import { Loader2, Search, X, XCircle } from 'lucide-react';
 import * as React from 'react';
 
-import { CommandLoading, Command as CommandPrimitive } from 'cmdk';
+import { Command as CommandPrimitive } from 'cmdk';
 import { useEffect } from 'react';
 import { cn } from '~/lib/utils';
 import { Badge } from '~/modules/ui/badge';
@@ -14,6 +14,7 @@ export interface Option {
   value: string;
   label: string;
   disable?: boolean;
+  selected?: boolean;
   /** fixed option that can't be removed. */
   fixed?: boolean;
   /** Group the options by providing key. */
@@ -41,6 +42,8 @@ interface MultipleSelectorProps {
   onChange?: (options: Option[]) => void;
   /** Limit the maximum number of selected options. */
   maxSelected?: number;
+  /** EDIT: Limit the minimum number of selected options. */
+  minSelected?: number;
   /** When the number of selected options exceeds the limit, the onMaxSelected will be called. */
   onMaxSelected?: (maxLimit: number) => void;
   /** Hide the placeholder when there are options selected. */
@@ -64,6 +67,8 @@ interface MultipleSelectorProps {
   commandProps?: React.ComponentPropsWithoutRef<typeof Command>;
   /** Props of `CommandInput` */
   inputProps?: Omit<React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>, 'value' | 'placeholder' | 'disabled'>;
+  /** Custom item component. */
+  itemComponent?: (item: Option) => React.ReactNode;
 }
 
 export interface MultipleSelectorRef {
@@ -75,7 +80,7 @@ export function useDebounce<T>(value: T, delay?: number): T {
   const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay || 500);
+    const timer = setTimeout(() => setDebouncedValue(value), delay || 200);
 
     return () => {
       clearTimeout(timer);
@@ -87,6 +92,14 @@ export function useDebounce<T>(value: T, delay?: number): T {
 
 function removePickedOption(option: Option[], picked: Option[]) {
   return option.filter((val) => !picked.find((p) => p.value === val.value));
+}
+
+function highlightPickedOption(option: Option[], picked: Option[]) {
+  return option.map((val) => {
+    const isPicked = picked.find((p) => p.value === val.value);
+    val.selected = !!isPicked;
+    return val;
+  });
 }
 
 const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorProps>(
@@ -105,12 +118,14 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       disabled,
       className,
       badgeClassName,
+      emptyIndicator,
       creatable = false,
       triggerSearchOnFocus = false,
       commandProps,
       inputProps,
       emptyValue,
       basicSignValue,
+      itemComponent,
     }: MultipleSelectorProps,
     ref: React.Ref<MultipleSelectorRef>,
   ) => {
@@ -121,7 +136,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     const [selected, setSelected] = React.useState<Option[]>(value || []);
     const [options, setOptions] = React.useState<Option[]>(arrayDefaultOptions || []);
     const [inputValue, setInputValue] = React.useState('');
-    const debouncedSearchTerm = useDebounce(inputValue, delay || 300);
+    const debouncedSearchTerm = useDebounce(inputValue, delay || 200);
 
     React.useImperativeHandle(
       ref,
@@ -167,6 +182,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     };
 
     const onItemSelect = (option: Option) => {
+      if (option.selected) {
+        handleUnselect(option);
+        return;
+      }
       if (selected.length >= maxSelected) {
         onMaxSelected?.(selected.length);
         return;
@@ -207,7 +226,11 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       void exec();
     }, [debouncedSearchTerm, isShowResults]);
 
-    const selectable = React.useMemo<Option[]>(() => removePickedOption(options, selected), [options, selected]);
+    const selectable = React.useMemo<Option[]>(() => {
+      //EDIT: only filter options in search mode
+      if (!onSearch) return highlightPickedOption(options, selected);
+      return removePickedOption(options, selected);
+    }, [options, selected]);
 
     /** Avoid Creatable Selector freezing or lagging when paste a long string. */
     const commandFilter = React.useCallback(() => {
@@ -246,7 +269,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
           }}
         >
           <div className="flex flex-wrap items-center gap-1">
-            <Search className="h-4 w-4 shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
+            {onSearch && !selected.length && <Search className="h-4 w-4 shrink-0" style={{ opacity: value ? 1 : 0.5 }} />}
             {selected.map((option) => (
               <Badge
                 key={option.value}
@@ -307,20 +330,20 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         </button>
         {isShowResults && (
           <div className="relative">
-            <CommandList className="absolute mt-2 top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
-              <ScrollArea className={'h-[20vh] pr-3 pl-3 overflow-y-auto flex items-center'}>
-                {isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-opacity-20 bg-[#000] z-20">
-                    <CommandLoading>
-                      <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-                    </CommandLoading>
-                  </div>
-                )}
+            <CommandList className="absolute mt-2 top-0 z-10 w-full !h-auto rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
+              {isLoading && (
+                <CommandEmpty>
+                  <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                </CommandEmpty>
+              )}
 
-                <CommandGroup>
-                  {selectable.length < 1 && inputValue.length > 0 && <CommandEmpty>{emptyValue}</CommandEmpty>}
-                  {inputValue.length === 0 && <CommandEmpty>{basicSignValue}</CommandEmpty>}
-                  <>
+              {selectable.length < 1 && inputValue.length > 0 && !isLoading && <CommandEmpty>{emptyValue}</CommandEmpty>}
+              {inputValue.length === 0 && <CommandEmpty>{basicSignValue}</CommandEmpty>}
+              {inputValue.length > 0 && emptyIndicator && <CommandEmpty>{emptyIndicator}</CommandEmpty>}
+
+              {!!selectable.length && (
+                <ScrollArea className="max-h-[30vh]">
+                  <CommandGroup className="px-1">
                     {selectable.map((option) => (
                       <CommandItem
                         key={option.label}
@@ -328,17 +351,21 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                         value={option.value}
                         disabled={option.disable}
                         onMouseDown={onMouseDown}
-                        className={cn('cursor-pointer', option.disable && 'cursor-default text-muted-foreground')}
+                        className={cn('cursor-pointer', option.disable && 'cursor-default text-muted-foreground', option.selected && 'font-semibold')}
                       >
-                        <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                          <AvatarWrap type="user" className="h-8 w-8" id={option.label} name={option.value} />
-                          <span className="group-hover:underline underline-offset-4 truncate font-medium">{option.label}</span>
-                        </div>
+                        {itemComponent ? (
+                          itemComponent(option)
+                        ) : (
+                          <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                            <AvatarWrap type="user" className="h-8 w-8" id={option.label} name={option.value} />
+                            <span className="group-hover:underline underline-offset-4 truncate font-medium">{option.label}</span>
+                          </div>
+                        )}
                       </CommandItem>
                     ))}
-                  </>
-                </CommandGroup>
-              </ScrollArea>
+                  </CommandGroup>
+                </ScrollArea>
+              )}
             </CommandList>
           </div>
         )}

@@ -176,7 +176,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="defaultLanguage"
           label={t('common:default_language')}
           description={t('common:default_language.text')}
-          placeholder={t('common:select_language')}
+          placeholder={t('common:placeholder.select_language')}
           disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
           required
         />

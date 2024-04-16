@@ -63,9 +63,15 @@ const LanguageFormField = ({
                   onChange={(value) => {
                     onChange(value.map((language) => language.value));
                   }}
-                  basicSignValue={t('common:search_language')}
+                  basicSignValue={t('common:placeholder.select_languages')}
                   hidePlaceholderWhenSelected
                   defaultOptions={config.languages}
+                  itemComponent={(item) => (
+                    <div className="h-8 flex items-center px-1">
+                      <CountryFlag countryCode={item.value} imgType="png" className="mr-2" />
+                      {item.label}
+                    </div>
+                  )}
                   placeholder={placeholder}
                   emptyValue={emptyIndicator}
                 />
