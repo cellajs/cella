@@ -20,7 +20,7 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   setFocusView: (status: boolean) => void;
-  addToInactive: (itemId: string) => void;
+  archiveStateToggle: (itemId: string, active: boolean) => void;
 }
 
 const initialMenuState: UserMenu = menuSections.reduce<UserMenu>((acc, section) => {
@@ -71,12 +71,12 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = !state.activeSections[section];
             });
           },
-          addToInactive: (itemId: string) => {
+          archiveStateToggle: (itemId: string, active: boolean) => {
             set((state) => {
               for (const sectionKey of Object.keys(state.menu)) {
                 const section = state.menu[sectionKey as keyof UserMenu];
                 const itemIndex = section.items.findIndex((item) => item.id === itemId);
-                if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = true;
+                if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = active;
               }
             });
           },

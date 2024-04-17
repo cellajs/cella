@@ -21,6 +21,8 @@ export interface Page {
   slug: string;
   name: string;
   thumbnailUrl: string | null;
+  archived: boolean;
+  muted: boolean;
   role: keyof typeof UserRole | null;
 }
 
