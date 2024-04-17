@@ -93,7 +93,7 @@ const generalRoutes = app
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, token)));
-    if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
+    if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn');
 
     // For reset token: check if token has valid user
     if (tokenRecord.type === 'PASSWORD_RESET') {
@@ -305,7 +305,8 @@ const generalRoutes = app
         .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
         .limit(10);
 
-        usersResult.push(...users.map((user) => ({ ...user, type: 'user' as ResourceType })));
+      const userType = 'user' satisfies ResourceType;
+      usersResult.push(...users.map((user) => ({ ...user, type: userType })));
     }
 
     if (type === 'organization' || !type) {
@@ -320,7 +321,8 @@ const generalRoutes = app
         .where(ilike(organizationsTable.name, `%${q}%`))
         .limit(10);
 
-        organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as ResourceType })));
+      const organizationType = 'organization' satisfies ResourceType;
+      organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: organizationType })));
     }
 
     if (type === 'workspace' || !type) {
@@ -335,7 +337,8 @@ const generalRoutes = app
         .where(ilike(workspacesTable.name, `%${q}%`))
         .limit(10);
 
-        workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'workspace' as ResourceType })));
+      const workspaceType = 'workspace' satisfies ResourceType;
+      workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: workspaceType })));
     }
 
     return ctx.json({

@@ -4,12 +4,18 @@ export const passwordSchema = z.string().min(8).max(100);
 
 export const cookieSchema = z.string();
 
+export const resourceTypeSchema = z.literal('organization').or(z.literal('workspace')).or(z.literal('project')).or(z.literal('user'));
+
+export const idSchema = z.string();
+
+export const slugSchema = z.string();
+
 export const errorSchema = z.object({
   message: z.string(),
   type: z.string(),
   status: z.number(),
   severity: z.string(),
-  resourceType: z.string().optional(),
+  resourceType: resourceTypeSchema.optional(),
   logId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
@@ -37,10 +43,6 @@ export const paginationQuerySchema = z.object({
 export const deleteByIdsQuerySchema = z.object({
   ids: z.union([z.string(), z.array(z.string())]),
 });
-
-export const idSchema = z.string();
-
-export const slugSchema = z.string();
 
 export const validSlugSchema = z
   .string()

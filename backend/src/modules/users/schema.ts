@@ -2,7 +2,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { usersTable } from '../../db/schema/users';
-import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, resourceTypeSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 import { membershipSchema } from '../memberships/schema';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
@@ -50,7 +50,7 @@ export const menuItemSchema = z.array(
     archived: z.boolean(),
     muted: z.boolean(),
     role: membershipSchema.shape.role.nullable(),
-    type: z.literal('organization').or(z.literal('workspace')).or(z.literal('project')),
+    type: resourceTypeSchema,
   }),
 );
 

@@ -28,7 +28,7 @@ const membershipRoutes = app
           .where(and(eq(membershipsTable.userId, id), eq(membershipsTable.organizationId, resourceIdentifier)))
           .returning();
         if (!targetMembership) {
-          return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
+          return errorResponse(ctx, 404, 'not_found', 'warn', undefined, {
             user: id,
             resource: resourceIdentifier,
           });
@@ -85,7 +85,7 @@ const membershipRoutes = app
           userRole: role,
         });
       } else {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
+        return errorResponse(ctx, 404, 'not_found', 'warn', undefined, {
           user: targetUser.id,
           organization: organization.id,
         });

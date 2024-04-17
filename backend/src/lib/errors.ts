@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import { logEvent, logtail } from '../middlewares/logger/log-event';
 import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
+import type { ResourceType } from '../types/common';
 
 export type HttpStatus = 400 | 401 | 403 | 404 | 409 | 429 | 500;
 
@@ -23,7 +24,7 @@ export const createError = (
   status: HttpStatus,
   type: string,
   severity: Severity = 'info',
-  resourceType?: string,
+  resourceType?: ResourceType,
   eventData?: EventData,
   err?: Error,
 ) => {
@@ -64,7 +65,7 @@ export const errorResponse = (
   status: HttpStatus,
   type: string,
   severity: Severity = 'info',
-  resourceType?: string,
+  resourceType?: ResourceType,
   eventData?: EventData,
   err?: Error,
 ) => {

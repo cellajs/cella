@@ -81,7 +81,7 @@ const usersRoutes = app
           }
           await auth.invalidateSession(id);
         } catch (error) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', 'session', { session: id }));
+          errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
         }
       }),
     );

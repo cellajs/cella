@@ -4,6 +4,7 @@ import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, publicGuard, tenantGuard } from '../../middlewares/guard';
 import { rateLimiter } from '../../middlewares/rate-limiter';
 import { inviteJsonSchema, suggestionsSchema } from './schema';
+import { resourceTypeSchema } from '../../lib/common-schemas';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
@@ -162,7 +163,7 @@ export const suggestionsConfig = createRouteConfig({
   request: {
     query: z.object({
       q: z.string().optional().openapi({ description: 'Search by user/org name or user email' }),
-      type: z.enum(['user', 'organization', 'workspace', 'project']).optional().openapi({ description: 'Type of suggestions' }),
+      type: resourceTypeSchema.optional().openapi({ description: 'Type of suggestions' }),
     }),
   },
   responses: {
