@@ -90,11 +90,6 @@ const membershipRoutes = app
           organization: organization.id,
         });
       }
-    } else {
-      sendSSE(targetUser.id, 'update_organization', {
-        ...organization,
-        userRole: role,
-      });
     }
 
     const [{ memberships }] = await db

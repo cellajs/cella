@@ -35,6 +35,7 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
 
   const itemMuteStateHandle = () => {
     const itemMuteStatus = !isItemMuted;
+
     updateUserInOrganization(item.id, user.id, item.role ? item.role : undefined, isItemArchived, itemMuteStatus)
       .then(() => {
         toast.success(itemMuteStatus ? t('common:success.mute_organization') : t('common:success.unmute_organization'));
