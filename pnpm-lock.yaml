@@ -169,8 +169,8 @@ importers:
   blog:
     dependencies:
       '@hono/react-renderer':
-        specifier: ^0.1.1
-        version: 0.1.1(hono@4.2.3)
+        specifier: ^0.2.0
+        version: 0.2.0(hono@4.2.3)
       '@hono/vite-ssg':
         specifier: ^0.1.0
         version: 0.1.0(hono@4.2.3)
@@ -4939,8 +4939,8 @@ packages:
     resolution: {integrity: sha512-GW1Iomhmm1o4Z+X57xGby8A35Cu9UZLL7pSMdqDBkD99U5cywff8F+8hLk5aBTzNubnsFAvWQ/fZjNwPsEn9lA==}
     engines: {node: '>=18.14.1'}
 
-  /@hono/react-renderer@0.1.1(hono@4.2.3):
-    resolution: {integrity: sha512-nUisu4r/2xs1gzXk9LqPp9dBfUygbbF0Bp4K/FtFRJt6fv9b/ADMzpYajySMl2HxmZhYuX4vsMXFAxsSB/cVLw==}
+  /@hono/react-renderer@0.2.0(hono@4.2.3):
+    resolution: {integrity: sha512-DGobhlEOfnD3iziSLnZIjY32IBGJay64E/QbphjKx32ldawNe3YVT/88GhtmqowPia+GJrtdrSP9BSCl6r3JPw==}
     engines: {node: '>=18'}
     peerDependencies:
       hono: '*'

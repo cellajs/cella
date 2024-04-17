@@ -47,7 +47,7 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
       <TanstackRouterLink
         to={item.url}
         hash={item.hash}
-        replace={location.pathname === '/about'}
+        replace={false}
         key={item.id}
         onClick={() => handleNavClick(item.hash, false)}
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
@@ -66,10 +66,8 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
               <HamburgerButton isOpen={showSheet} toggle={setShowSheet} />
             </div>
 
-            <TanstackRouterLink
-              to="/about"
-              hash=""
-              replace={location.pathname === '/about'}
+            <a
+              href="/about"
               className="md:ml-2 hover:opacity-90 active:scale-95 relative"
               aria-label="Go to about page"
             >
@@ -88,9 +86,9 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
                   />
                 </g>
               </svg>
-            </TanstackRouterLink>
+            </a>
 
-            {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>}
+            {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{NavItems}</nav>}
           </div>
 
           <div className={`gap-2 px-2 flex transition-all duration-300 ease-in-out ${showSheet ? 'translate-x-2 opacity-0' : 'delay-700'}`}>

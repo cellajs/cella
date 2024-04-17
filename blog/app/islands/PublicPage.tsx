@@ -1,10 +1,10 @@
 import { ReactNode, FC } from 'react';
-import PublicPage from 'frontend/src/modules/common/public-page';
 import RenderNavItems from './NavItems';
 import { config } from 'config';
 import { Github, Twitter } from 'lucide-react';
 import { useTranslation } from 'frontend/node_modules/react-i18next';
 import Logo from 'frontend/src/modules/common/logo';
+import MarketingPage from "frontend/src/modules/marketing/page"
 
 type Props = {
   children: ReactNode;
@@ -101,9 +101,9 @@ function PublicFooter() {
 
 const MainLayout: FC<Props> = ({ children }) => {
   return (
-    <PublicPage title="Blog" Link={<RenderNavItems />} AboutLink={<AbountFooter />} LegalLinks={<PublicFooter />} FooterLink={<FooterLinks />}>
+    <MarketingPage title="Blog" Link={<RenderNavItems />} AboutLink={<AbountFooter />} LegalLinks={<PublicFooter />} FooterLink={<FooterLinks />}>
       {children}
-    </PublicPage>
+    </MarketingPage>
   );
 };
 

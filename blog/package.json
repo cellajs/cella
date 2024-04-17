@@ -8,7 +8,7 @@
     "deploy": "$npm_execpath run build && wrangler pages deploy ./dist"
   },
   "dependencies": {
-    "@hono/react-renderer": "^0.1.1",
+    "@hono/react-renderer": "^0.2.0",
     "@hono/vite-ssg": "^0.1.0",
     "@mdx-js/rollup": "^3.0.1",
     "@radix-ui/react-slot": "^1.0.2",
