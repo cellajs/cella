@@ -67,6 +67,15 @@ class Observer {
       }
     }
   };
+
+  updateTitle = (id: number | string, title: string) => {
+    this.dialogs.map((dialog) => {
+      if (dialog.id === id && 'container' in dialog && dialog.container) {
+        const h2Element = dialog.container.querySelector('h2');
+        if (h2Element) h2Element.innerText = title;
+      }
+    });
+  };
 }
 
 export const DialogState = new Observer();
@@ -88,4 +97,5 @@ const dialogFunction = (content: React.ReactNode, data?: ExternalDialog) => {
 
 export const dialog = Object.assign(dialogFunction, {
   remove: DialogState.remove,
+  updateTitle: DialogState.updateTitle,
 });

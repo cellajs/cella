@@ -1,11 +1,12 @@
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { AppAlert } from './app-alert';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
+import { dialog } from './dialoger/state';
 
 interface InviteUsersProps {
   organization?: Organization | null;
@@ -20,6 +21,10 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
+
+  useEffect(() => {
+    if (inviteMode) dialog.updateTitle('user-invite', inviteMode === 'email' ? t('common:invite_title_email') : t('common:invite_title_search'));
+  }, [inviteMode]);
 
   if (!inviteMode)
     return (
