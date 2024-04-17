@@ -19,7 +19,7 @@ export const SheetMenuItem = ({ item, menuItemClick, className }: SheetMenuItemP
       )}
       onClick={menuItemClick}
       aria-label={item.name}
-      to={`/${item.type === 'organization' ? '' : item.type}/$organizationIdentifier/members`}
+      to={`${item.type === 'organization' ? '/$organizationIdentifier/members' : ''}`}
       params={{ organizationIdentifier: item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
