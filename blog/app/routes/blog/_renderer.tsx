@@ -1,7 +1,6 @@
 import { reactRenderer } from '@hono/react-renderer';
 
 export default reactRenderer(({ children, frontmatter, Layout }) => {
-  console.log('frontmatter', frontmatter);
   const _title = `${frontmatter?.title} | blog`;
   return (
     <Layout>

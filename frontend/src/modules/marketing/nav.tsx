@@ -67,6 +67,7 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
             </div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
             <a
               href="/about"
 =======
@@ -75,6 +76,10 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
               hash=""
               replace={location.pathname === '/about'}
 >>>>>>> 317083d (Creation of top page UI)
+=======
+            <a
+              href="/about"
+>>>>>>> 505a045 (wip)
               className="md:ml-2 hover:opacity-90 active:scale-95 relative"
               aria-label="Go to about page"
             >
@@ -94,10 +99,14 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
                 </g>
               </svg>
 <<<<<<< HEAD
+<<<<<<< HEAD
             </a>
 =======
             </TanstackRouterLink>
 >>>>>>> 317083d (Creation of top page UI)
+=======
+            </a>
+>>>>>>> 505a045 (wip)
 
             {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{NavItems}</nav>}
           </div>
