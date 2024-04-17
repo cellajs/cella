@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { acceptInviteJsonSchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
@@ -19,6 +18,7 @@ import { cn } from '~/lib/utils';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { LegalNotice } from './sign-up-form';
+import { acceptInviteJsonSchema } from 'backend/modules/general/schema';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 

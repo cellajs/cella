@@ -9,7 +9,6 @@ import { errorResponse } from '../../../lib/errors';
 import { logEvent } from '../../../middlewares/logger/log-event';
 import type { ProviderId } from '../../../types/common';
 import { insertOauthAccount } from '../oauth-helpers';
-import { setSessionCookie } from './cookies';
 
 // * Handle creating a user
 export const handleCreateUser = async (
@@ -46,36 +45,12 @@ export const handleCreateUser = async (
     // * If a provider is passed, insert the oauth account
     if (options?.provider) {
       await insertOauthAccount(data.id, options.provider.id, options.provider.userId);
-      await setSessionCookie(ctx, data.id, options.provider.id.toLowerCase());
+      // await setSessionCookie(ctx, data.id, options.provider.id.toLowerCase());
     }
 
     // * If the email is not verified, send a verification email
     if (!options?.isEmailVerified) {
       sendVerificationEmail(data.email);
-
-      if (options?.provider) {
-        return ctx.json(
-          {
-            success: true,
-          },
-          302,
-          {
-            Location: `${config.frontendUrl}/auth/verify-email`,
-          },
-        );
-      }
-    }
-
-    if (options?.provider) {
-      return ctx.json(
-        {
-          success: true,
-        },
-        302,
-        {
-          Location: config.frontendUrl + options.redirectUrl || config.defaultRedirectPath,
-        },
-      );
     }
 
     return ctx.json({
@@ -84,7 +59,6 @@ export const handleCreateUser = async (
   } catch (error) {
     // * If the email already exists, return an error
     if (error instanceof PostgresError && error.message.startsWith('duplicate key')) {
-      // t('common:error.email_exists')
       return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
     }
 

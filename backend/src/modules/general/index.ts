@@ -8,7 +8,7 @@ import { env } from 'env';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';
-import { TimeSpan, createDate } from 'oslo';
+import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 
 import { db } from '../../db/db';
 
@@ -27,6 +27,7 @@ import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
+  acceptInviteRouteConfig,
   checkSlugRouteConfig,
   checkTokenRouteConfig,
   getUploadTokenRouteConfig,
@@ -93,23 +94,33 @@ const generalRoutes = app
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, token)));
-    if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
+
+    console.log('tokenRecord', tokenRecord);
+
+    // if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
+
+    // const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // For reset token: check if token has valid user
-    if (tokenRecord.type === 'PASSWORD_RESET') {
-      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
-      if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
-    }
+    // if (tokenRecord.type === 'PASSWORD_RESET') {
+    //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    //   if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+    // }
 
-    // For invitation token: check if user email is not already in the system
-    if (tokenRecord.type === 'INVITATION' && !tokenRecord.organizationId) {
-      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
-      if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
-    }
+    // For system invitation token: check if user email is not already in the system
+    // if (tokenRecord.type === 'SYSTEM_INVITATION') {
+    //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
+    // }
 
     return ctx.json({
       success: true,
-      data: tokenRecord.email,
+      data: {
+        type: tokenRecord.type,
+        // TODO: review
+        email: tokenRecord.email || '',
+      },
     });
   })
   /*
@@ -190,7 +201,7 @@ const generalRoutes = app
       const token = generateId(40);
       await db.insert(tokensTable).values({
         id: token,
-        type: 'INVITATION',
+        type: organization ? 'ORGANIZATION_INVITATION' : 'SYSTEM_INVITATION',
         userId: targetUser?.id,
         email: email.toLowerCase(),
         role: role || 'USER',
@@ -209,7 +220,7 @@ const generalRoutes = app
             InviteEmail({
               i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
               username: email.toLowerCase(),
-              inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
+              inviteUrl: `${config.frontendUrl}/accept-invite/${token}`,
               invitedBy: user.name,
               type: 'system',
               replyTo: user.email,
@@ -230,7 +241,7 @@ const generalRoutes = app
             userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
             username: targetUser?.name || email.toLowerCase() || '',
             invitedBy: user.name,
-            inviteUrl: `${config.frontendUrl}/${organization.slug}/accept-invite/${token}`,
+            inviteUrl: `${config.frontendUrl}/accept-invite/${token}`,
             replyTo: user.email,
           }),
         );
@@ -250,6 +261,90 @@ const generalRoutes = app
     return ctx.json({
       success: true,
       data: undefined,
+    });
+  })
+  /*
+   * Accept invite token
+   */
+  .openapi(acceptInviteRouteConfig, async (ctx) => {
+    const verificationToken = ctx.req.valid('param').token;
+    const [token] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.id, verificationToken)));
+    await db.delete(tokensTable).where(and(eq(tokensTable.id, verificationToken)));
+
+    if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
+      return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
+    }
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, token.email));
+
+    if (!user) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', {
+        email: token.email,
+      });
+    }
+
+    if (token.type === 'SYSTEM_INVITATION') {
+      if (token.role === 'ADMIN') {
+        await db.update(usersTable).set({ role: 'ADMIN' }).where(eq(usersTable.id, user.id));
+      }
+
+      return ctx.json({
+        success: true,
+      });
+    }
+
+    if (token.type === 'ORGANIZATION_INVITATION') {
+      if (!token.organizationId) {
+        return errorResponse(ctx, 400, 'invalid_token', 'warn');
+      }
+
+      const [organization] = await db
+        .select()
+        .from(organizationsTable)
+        .where(and(eq(organizationsTable.id, token.organizationId)));
+
+      if (!organization) {
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', {
+          organizationId: token.organizationId,
+        });
+      }
+
+      const [existingMembership] = await db
+        .select()
+        .from(membershipsTable)
+        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+
+      if (existingMembership) {
+        if (existingMembership.role !== token.role) {
+          await db
+            .update(membershipsTable)
+            .set({ role: token.role as MembershipModel['role'] })
+            .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+        }
+
+        return ctx.json({
+          success: true,
+        });
+      }
+
+      await db.insert(membershipsTable).values({
+        organizationId: organization.id,
+        userId: user.id,
+        role: token.role as MembershipModel['role'],
+        createdBy: user.id,
+      });
+
+      sendSSE(user.id, 'new_membership', {
+        ...organization,
+        userRole: token.role,
+      });
+    }
+
+    return ctx.json({
+      success: true,
     });
   })
   /*
