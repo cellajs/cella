@@ -5,11 +5,11 @@ import { authGuard, systemGuard } from '../../middlewares/guard';
 import tenant from '../../middlewares/guard/tenant';
 
 import {
-  apiWorkspacesSchema,
   apiWorkspaceUserSchema,
+  apiWorkspacesSchema,
   createWorkspaceJsonSchema,
-  getWorkspacesQuerySchema,
   getUsersByProjectQuerySchema,
+  getWorkspacesQuerySchema,
 } from './schema';
 
 export const createWorkspaceRouteConfig = createRouteConfig({
@@ -41,13 +41,13 @@ export const createWorkspaceRouteConfig = createRouteConfig({
   },
 });
 
-export const getWorkspaceRouteConfig = createRouteConfig({
+export const getWorkspacesRouteConfig = createRouteConfig({
   method: 'get',
   path: '/workspaces',
   guard: systemGuard,
   tags: ['workspaces'],
-  summary: 'Get workspace',
-  description: `Receives workspace.
+  summary: 'Get workspaces',
+  description: `Receive a list of your workspaces.
   `,
   request: {
     query: getWorkspacesQuerySchema,
@@ -67,7 +67,7 @@ export const getWorkspaceRouteConfig = createRouteConfig({
 
 export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/workspaces/{workspaceIdentifier}',
+  path: '/workspaces/{resourceIdentifier}',
   guard: tenant(),
   tags: ['workspaces'],
   summary: 'Get workspace by id or slug',
@@ -94,10 +94,10 @@ export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
 
 export const getUsersByWorkspaceIdRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/workspaces/{workspaceIdentifier}/members',
+  path: '/workspaces/{resourceIdentifier}/members',
   guard: tenant(),
   tags: ['workspaces'],
-  summary: 'Get members(users) of workspace',
+  summary: 'Get members of workspace',
   description: `
     Permissions:
       - Users with role 'ADMIN'

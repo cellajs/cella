@@ -29,7 +29,7 @@ const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }
 
   const onRemoveMember = () => {
     removeMembersFromOrganization({
-      organizationIdentifier: organization.id,
+      resourceIdentifier: organization.id,
       ids: members.map((member) => member.id),
     });
   };

@@ -16,12 +16,12 @@ const MembersTable = lazy(() => import('~/modules/organizations/members-table'))
 const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export const OrganizationRoute = createRoute({
-  path: '$organizationIdentifier',
+  path: '$resourceIdentifier',
   staticData: { pageTitle: 'Organization' },
   beforeLoad: ({ location }) => noDirectAccess(location, '/members'),
   getParentRoute: () => IndexRoute,
-  loader: async ({ params: { organizationIdentifier } }) => {
-    queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
+  loader: async ({ params: { resourceIdentifier } }) => {
+    queryClient.ensureQueryData(organizationQueryOptions(resourceIdentifier));
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
@@ -37,8 +37,8 @@ export const OrganizationMembersRoute = createRoute({
   getParentRoute: () => OrganizationRoute,
   validateSearch: membersSearchSchema,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
-    const membersInfiniteQueryOptions = membersQueryOptions(organizationIdentifier, { q, sort, order, role });
+  loader: async ({ params: { resourceIdentifier }, deps: { q, sort, order, role } }) => {
+    const membersInfiniteQueryOptions = membersQueryOptions(resourceIdentifier, { q, sort, order, role });
     const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
     if (!cachedMembers) {
       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);

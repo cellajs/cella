@@ -68,9 +68,9 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       if (!callback && !nextStep) {
         setSheet(null);
         // navigate({
-        //   to: '/$organizationIdentifier/members',
+        //   to: '/$resourceIdentifier/members',
         //   params: {
-        //     organizationIdentifier: result.slug,
+        //     resourceIdentifier: result.slug,
         //   },
         // });
       }
@@ -111,16 +111,16 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
             <SelectValue placeholder={'Select organization'} />
           </SelectTrigger>
           <SelectContent className="h-[30vh]">
-              {menu.organizations.items.map((organization) => (
-                <SelectItem
-                  onClick={() => handleOrganizationSelect(organization.id)}
-                  className="cursor-pointer"
-                  key={organization.id}
-                  value={organization.id}
-                >
-                  {organization.name}
-                </SelectItem>
-              ))}
+            {menu.organizations.items.map((organization) => (
+              <SelectItem
+                onClick={() => handleOrganizationSelect(organization.id)}
+                className="cursor-pointer"
+                key={organization.id}
+                value={organization.id}
+              >
+                {organization.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <InputFormField control={form.control} name="name" label={t('common:name')} required />

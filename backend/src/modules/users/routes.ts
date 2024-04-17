@@ -151,7 +151,7 @@ export const getUserMenuConfig = createRouteConfig({
   tags: ['users'],
   summary: 'Get the menu of a current user',
   description: `
-    Receive all organizations of which the current user is a member.
+    Receive all resources of which the current user is a member.
   `,
   responses: {
     200: {

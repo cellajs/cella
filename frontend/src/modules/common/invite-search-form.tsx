@@ -70,7 +70,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
     invite({
       emails: values.emails,
       role: values.role,
-      organizationIdentifier: organization?.id,
+      resourceIdentifier: organization?.id,
     });
   };
 

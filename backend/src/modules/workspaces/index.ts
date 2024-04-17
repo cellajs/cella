@@ -10,7 +10,7 @@ import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { createWorkspaceRouteConfig, getWorkspaceByIdOrSlugRouteConfig, getWorkspaceRouteConfig, getUsersByWorkspaceIdRouteConfig } from './routes';
+import { createWorkspaceRouteConfig, getWorkspaceByIdOrSlugRouteConfig, getWorkspacesRouteConfig, getUsersByWorkspaceIdRouteConfig } from './routes';
 
 const app = new CustomHono();
 
@@ -66,9 +66,9 @@ const workspacesRoutes = app
     });
   })
   /*
-   * Get an workspace
+   * Get workspaces
    */
-  .openapi(getWorkspaceRouteConfig, async (ctx) => {
+  .openapi(getWorkspacesRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = ctx.get('user');
 

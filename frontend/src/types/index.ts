@@ -34,7 +34,7 @@ export type Organization = Extract<InferResponseType<(typeof organizationsClient
 export type Workspace = Extract<InferResponseType<(typeof workspaceClient.workspaces)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Member = Extract<
-  InferResponseType<(typeof organizationsClient.organizations)[':organizationIdentifier']['members']['$get']>,
+  InferResponseType<(typeof organizationsClient.organizations)[':resourceIdentifier']['members']['$get']>,
   { data: unknown }
 >['data']['items'][number];
 
