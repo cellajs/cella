@@ -52,5 +52,8 @@
     "turbo": "^1.13.0",
     "zod": "^3.22.4",
     "typescript": "^5.4.4"
+  },
+  "msw": {
+    "workerDirectory": ["public"]
   }
 }
