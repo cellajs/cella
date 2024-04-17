@@ -34,6 +34,7 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
+import { checkRole } from './helpers/check-role';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -101,7 +102,7 @@ const generalRoutes = app
     }
 
     // For invitation token: check if user email is not already in the system
-    if (tokenRecord.type === 'INVITATION') {
+    if (tokenRecord.type === 'INVITATION' && !tokenRecord.organizationId) {
       const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
       if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
     }
@@ -121,6 +122,12 @@ const generalRoutes = app
 
     if (!organization && user.role !== 'ADMIN') {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
+    }
+
+    if (organization && !checkRole(membershipSchema, role)) {
+      logEvent('Invalid role', { role }, 'warn');
+      // t('common:error.invalid_role.text')
+      return errorResponse(ctx, 400, 'invalid_role', 'warn');
     }
 
     if (role && organization && !membershipSchema.shape.role.safeParse(role).success) {
@@ -228,7 +235,7 @@ const generalRoutes = app
             userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
             username: targetUser?.name || email.toLowerCase() || '',
             invitedBy: user.name,
-            inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
+            inviteUrl: `${config.frontendUrl}/${organization.slug}/accept-invite/${token}`,
             replyTo: user.email,
           }),
         );

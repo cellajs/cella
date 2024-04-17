@@ -10,6 +10,8 @@ import Organization, { organizationQueryOptions } from '~/modules/organizations/
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import Projects from '~/modules/projects';
 import { IndexRoute } from './routeTree';
+import AcceptInvite from '~/modules/organizations/accept-invite';
+import { z } from 'zod';
 
 // Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
@@ -65,4 +67,12 @@ export const organizationSettingsRoute = createRoute({
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,
   component: () => <OrganizationSettings />,
+});
+
+export const AcceptInviteRoute = createRoute({
+  path: '/accept-invite/$token',
+  staticData: { pageTitle: 'Accept invite' },
+  getParentRoute: () => OrganizationRoute,
+  component: () => <AcceptInvite />,
+  validateSearch: z.object({ redirect: z.string().optional() }),
 });
