@@ -9,12 +9,13 @@ import type { WorkspacesRoutes } from 'backend/modules/workspaces/index';
 
 import { config } from 'config';
 import { hc } from 'hono/client';
+import type { ResourceType } from '~/types';
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
   status: string | number;
   type?: string;
-  resourceType?: string;
+  resourceType?: ResourceType;
   severity?: string;
   logId?: string;
   path?: string;
@@ -46,16 +47,7 @@ const clientConfig = {
     }),
 };
 
-// Create a Hono client to make requests to the backend
-// export const client = hc<AppRoute>(config.backendUrl, {
-//   fetch: (input: RequestInfo | URL, init?: RequestInit) =>
-//     fetch(input, {
-//       ...init,
-//       credentials: 'include',
-//     }),
-// });
-
-// Create a Hono clients to make requests to the backend
+// Create Hono clients to make requests to the backend
 export const authClient = hc<AuthRoutes>(config.backendUrl, clientConfig);
 export const usersClient = hc<UsersRoutes>(config.backendUrl, clientConfig);
 export const organizationsClient = hc<OrganizationsRoutes>(config.backendUrl, clientConfig);

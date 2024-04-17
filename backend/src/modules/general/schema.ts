@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { idSchema, slugSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/common-schemas';
 import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 
@@ -13,4 +13,22 @@ export const inviteJsonSchema = z.object({
 export const apiPublicCountsSchema = z.object({
   organizations: z.number(),
   users: z.number(),
+});
+
+const suggestionSchema = z.object({
+  slug: slugSchema,
+  id: idSchema,
+  name: nameSchema,
+  thumbnailUrl: imageUrlSchema.nullable(),
+});
+
+export const userSuggestionSchema = suggestionSchema.extend({ email: z.string(), type: z.literal('user')})
+export const organizationSuggestionSchema = suggestionSchema.extend({ type: z.literal('organization')})
+export const workspaceSuggestionSchema = suggestionSchema.extend({ type: z.literal('workspace')})
+
+export const suggestionsSchema = z.object({
+  users: z.array(userSuggestionSchema),
+  organizations: z.array(organizationSuggestionSchema),
+  workspaces: z.array(workspaceSuggestionSchema),
+  total: z.number(),
 });

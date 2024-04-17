@@ -8,7 +8,7 @@ import type { WorkspaceModel } from '../db/schema/workspaces';
 import type { errorResponseSchema } from '../lib/common-schemas';
 
 
-export type ResourceType = 'workspace' | 'organization' | 'project'
+export type ResourceType = 'workspace' | 'organization' | 'project' | 'user';
 
 export type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
 

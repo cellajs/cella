@@ -71,6 +71,13 @@
       "when": 1713343804528,
       "tag": "0009_strong_wrecking_crew",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1713370177912,
+      "tag": "0010_spotty_hellcat",
+      "breakpoints": true
     }
   ]
 }

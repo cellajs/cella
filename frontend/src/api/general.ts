@@ -1,5 +1,4 @@
-import type { InferResponseType } from 'hono';
-import { UploadType, type Member, type UploadParams, type User } from '~/types';
+import { UploadType, type Member, type UploadParams, type User, type ResourceType } from '~/types';
 import { ApiError, generalClient as client } from '.';
 
 // Get upload token to securely upload files with imado: https://imado.eu
@@ -65,28 +64,13 @@ export const checkToken = async (token: string) => {
   return json.data;
 };
 
-type SuggestionsResponse = Extract<InferResponseType<typeof client.suggestions.$get>, { data: unknown }>['data'];
-
-export type UserSuggestion = Extract<SuggestionsResponse[0], { type: 'user' }>;
-export type OrganizationSuggestion = Extract<SuggestionsResponse[0], { type: 'organization' }>;
-export type WorkspaceSuggestion = Extract<SuggestionsResponse[0], { type: 'workspace' }>;
-
-type Suggestions<T extends 'user' | 'organization' | 'workspace'> = T extends 'user'
-  ? UserSuggestion[]
-  : T extends 'organization'
-    ? OrganizationSuggestion[]
-    : WorkspaceSuggestion[];
-
 // Get suggestions
-export const getSuggestions = async <T extends 'user' | 'organization' | 'workspace'>(query: string, type?: T): Promise<Suggestions<T>> => {
+export const getSuggestions = async (query: string, type?: ResourceType | undefined ) => {
   const response = await client.suggestions.$get({
     query: { q: query, type },
   });
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
-
-  const data = json.data as SuggestionsResponse;
-
-  return data as Suggestions<T>;
+  return json.data;
 };

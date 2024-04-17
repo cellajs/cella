@@ -206,7 +206,7 @@ const oauthRoutes = app
           id: userId,
           slug: slugify(githubUser.login, { lower: true }),
           email: primaryEmail.email.toLowerCase(),
-          name: githubUser.name,
+          name: githubUser.name || githubUser.login,
           thumbnailUrl: githubUser.avatar_url,
           bio: githubUser.bio,
           emailVerified: primaryEmail.verified,

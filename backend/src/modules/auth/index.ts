@@ -62,7 +62,7 @@ const authRoutes = app
       {
         id: userId,
         slug,
-        firstName: slug,
+        name: slug,
         email: email.toLowerCase(),
         language: config.defaultLanguage,
         hashedPassword,
@@ -390,6 +390,7 @@ const authRoutes = app
         .values({
           id: userId,
           slug: slugAvailable ? slug : `${slug}-${userId}`,
+          name: slug,
           language: organization?.defaultLanguage || config.defaultLanguage,
           email: token.email,
           role: (token.role as User['role']) || 'USER',

@@ -2,7 +2,7 @@ import { Archive, BellOff, GripVertical, ArchiveRestore, Bell } from 'lucide-rea
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { updateUserInOrganization } from '~/api/membership';
+import { updateMembership } from '~/api/memberships';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -22,7 +22,7 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
 
   const itemArchiveStateHandle = () => {
     const itemArchiveStatus = !isItemArchived;
-    updateUserInOrganization(item.id, user.id, item.role ? item.role : undefined, itemArchiveStatus)
+    updateMembership(item.id, user.id, item.role ? item.role : undefined, itemArchiveStatus)
       .then(() => {
         archiveStateToggle(item.id, itemArchiveStatus);
         toast.success(itemArchiveStatus ? t('common:success.archived_organization') : t('common:success.restore_organization'));
@@ -36,7 +36,7 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
   const itemMuteStateHandle = () => {
     const itemMuteStatus = !isItemMuted;
 
-    updateUserInOrganization(item.id, user.id, item.role ? item.role : undefined, isItemArchived, itemMuteStatus)
+    updateMembership(item.id, user.id, item.role ? item.role : undefined, isItemArchived, itemMuteStatus)
       .then(() => {
         toast.success(itemMuteStatus ? t('common:success.mute_organization') : t('common:success.unmute_organization'));
         setItemMuted(itemMuteStatus);

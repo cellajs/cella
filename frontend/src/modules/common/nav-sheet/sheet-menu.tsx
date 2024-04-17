@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import type { Page, UserMenu } from '~/types';
+import type { Page, ResourceType, UserMenu } from '~/types';
 
 import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
@@ -15,7 +15,7 @@ import type { LucideProps } from 'lucide-react';
 
 export type SectionItem = {
   id: string;
-  type: 'organization' | 'workspace' | 'project';
+  type: ResourceType;
   label: string;
   createForm?: React.ReactNode;
   icon?: React.ElementType<LucideProps>;

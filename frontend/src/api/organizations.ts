@@ -94,7 +94,7 @@ export type GetMembersParams = Partial<
 >;
 
 // Get a list of members in an organization
-export const getMembersByOrganizationIdentifier = async (
+export const getOrganizationMembers = async (
   resourceIdentifier: string,
   { q, sort = 'id', order = 'asc', role, page = 0, limit = 50 }: GetMembersParams = {},
   signal?: AbortSignal,

@@ -9,7 +9,7 @@ export const removeMembersFromOrganization = async (query: { resourceIdentifier:
   return json.data;
 };
 
-export const updateUserInOrganization = async (
+export const updateMembership = async (
   resourceIdentifier: string,
   id: string,
   role?: Member['organizationRole'],

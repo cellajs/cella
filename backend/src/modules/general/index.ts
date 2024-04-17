@@ -22,7 +22,7 @@ import { i18n } from '../../lib/i18n';
 import { sendSSE } from '../../lib/sse';
 import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import { CustomHono, type ResourceType } from '../../types/common';
 import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 import { checkSlugAvailable } from './helpers/check-slug';
@@ -288,7 +288,9 @@ const generalRoutes = app
    */
   .openapi(suggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
-    const result = [];
+    const usersResult = [];
+    const workspacesResult = [];
+    const organizationsResult = [];
 
     if (type === 'user' || !type) {
       const users = await db
@@ -303,7 +305,7 @@ const generalRoutes = app
         .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
         .limit(10);
 
-      result.push(...users.map((user) => ({ ...user, type: 'user' as const })));
+        usersResult.push(...users.map((user) => ({ ...user, type: 'user' as ResourceType })));
     }
 
     if (type === 'organization' || !type) {
@@ -318,7 +320,7 @@ const generalRoutes = app
         .where(ilike(organizationsTable.name, `%${q}%`))
         .limit(10);
 
-      result.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as const })));
+        organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as ResourceType })));
     }
 
     if (type === 'workspace' || !type) {
@@ -333,12 +335,17 @@ const generalRoutes = app
         .where(ilike(workspacesTable.name, `%${q}%`))
         .limit(10);
 
-      result.push(...workspaces.map((workspace) => ({ ...workspace, type: 'workspace' as const })));
+        workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'workspace' as ResourceType })));
     }
 
     return ctx.json({
       success: true,
-      data: result,
+      data: {
+        users: usersResult,
+        organizations: organizationsResult,
+        workspaces: workspacesResult,
+        total: usersResult.length + workspacesResult.length + organizationsResult.length,
+      },
     });
   })
   .get('/sse', auth(), async (ctx) => {

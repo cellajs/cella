@@ -4,8 +4,8 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Member } from '~/types';
 
-import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
-import { updateUserInOrganization } from '~/api/membership';
+import { type GetMembersParams, getOrganizationMembers } from '~/api/organizations';
+import { updateMembership } from '~/api/memberships';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
@@ -33,7 +33,7 @@ export const membersQueryOptions = (resourceIdentifier: string, { q, sort: initi
     queryKey: ['members', resourceIdentifier, q, sort, order, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getMembersByOrganizationIdentifier(
+      const fetchedData = await getOrganizationMembers(
         resourceIdentifier,
         {
           page: pageParam,
@@ -63,7 +63,7 @@ export const useUpdateUserInOrganizationMutation = (resourceIdentifier: string) 
     }
   >({
     mutationKey: ['members', 'update', resourceIdentifier],
-    mutationFn: (params) => updateUserInOrganization(resourceIdentifier, params.id, params.role),
+    mutationFn: (params) => updateMembership(resourceIdentifier, params.id, params.role),
     onSuccess: (member) => {
       queryClient.setQueryData(['users', resourceIdentifier], member);
     },

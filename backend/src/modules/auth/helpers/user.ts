@@ -39,6 +39,7 @@ export const handleCreateUser = async (
       slug: slugAvailable ? data.slug : `${data.slug}-${data.id}`,
       firstName: data.firstName,
       email: data.email.toLowerCase(),
+      name: data.name,
       language: config.defaultLanguage,
       hashedPassword: data.hashedPassword,
     });

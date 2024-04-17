@@ -27,6 +27,7 @@ export const usersSeed = async () => {
       id: nanoid(),
       email,
       emailVerified: true,
+      name: 'Admin User',
       language: config.defaultLanguage,
       slug: 'admin-user',
       role: 'ADMIN',

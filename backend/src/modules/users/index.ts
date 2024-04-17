@@ -196,7 +196,7 @@ const usersRoutes = app
         thumbnailUrl,
         slug,
         role,
-        name: [firstName, lastName].filter(Boolean).join(' ') || null,
+        name: [firstName, lastName].filter(Boolean).join(' ') || slug,
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })

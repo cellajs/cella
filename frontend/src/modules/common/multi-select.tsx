@@ -301,8 +301,8 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         shouldFilter={commandProps?.shouldFilter !== undefined ? commandProps.shouldFilter : !onSearch} // When onSearch is provided, we don't want to filter the options. You can still override it.
         filter={commandFilter()}
       >
-        <button
-          type="button"
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+        <div
           className={cn(
             'group rounded-md border border-input px-3 py-2 text-sm ring-offset-background bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text',
             className,
@@ -377,7 +377,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
               )}
             </div>
           </div>
-        </button>
+        </div>
         {isShowResults && (
           <div className="relative">
             <CommandList

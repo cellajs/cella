@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { removeMembersFromOrganization as baseRemoveMembersFromOrganization } from '~/api/membership';
+import { removeMembersFromOrganization as baseRemoveMembersFromOrganization } from '~/api/memberships';
 import type { Member, Organization } from '~/types';
 
 import { useMutation } from '~/hooks/use-mutations';

@@ -2,10 +2,11 @@ import type { AvatarProps } from '@radix-ui/react-avatar';
 import { memo, useMemo } from 'react';
 import { cn, getColorClass } from '~/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
+import type { ResourceType } from '~/types';
 
 export interface AvatarWrapProps extends AvatarProps {
   id?: string;
-  type: 'user' | 'organization';
+  type: ResourceType;
   name?: string | null;
   url?: string | null;
   className?: string;

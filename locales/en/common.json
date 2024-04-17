@@ -152,6 +152,8 @@
   "last_seen_at": "Last seen",
   "leave": "Leave",
   "leave_focus_view": "Leave focus",
+  "oauth": "Auth providers",
+  "oauth.text": "Connect your account with an auth provider.",
   "leave_message.text": "Leave a message",
   "left_focus.text": "Normal view restored",
   "legal_notice.text": "By signing up with a new account, you agree to the",

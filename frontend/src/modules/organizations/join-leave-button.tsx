@@ -3,7 +3,7 @@ import { UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { invite as baseInvite } from '~/api/general';
-import { removeMembersFromOrganization } from '~/api/membership';
+import { removeMembersFromOrganization } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';

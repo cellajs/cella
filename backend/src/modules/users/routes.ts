@@ -9,8 +9,7 @@ import {
 import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, systemGuard } from '../../middlewares/guard';
-import { userMenuSchema } from '../organizations/schema';
-import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
+import { userMenuSchema, apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
 
 export const meRouteConfig = createRouteConfig({
   method: 'get',

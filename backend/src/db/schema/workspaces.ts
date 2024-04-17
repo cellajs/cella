@@ -8,7 +8,7 @@ export const workspacesTable = pgTable(
   'workspaces',
   {
     id: varchar('id').primaryKey().$defaultFn(nanoid),
-    name: varchar('name').notNull().unique(),
+    name: varchar('name').notNull(),
     slug: varchar('slug').unique().notNull(),
     thumbnailUrl: varchar('thumbnail_url'),
     bannerUrl: varchar('banner_url'),

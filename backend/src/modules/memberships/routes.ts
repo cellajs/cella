@@ -3,7 +3,8 @@ import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
 import { tenantGuard } from '../../middlewares/guard';
-import { apiOrganizationUserSchema, deleteMembersQuerySchema, membershipUserParamSchema, updateMembershipJsonSchema } from './schema';
+import { deleteMembersQuerySchema, membershipUserParamSchema, updateMembershipJsonSchema } from './schema';
+import { apiOrganizationUserSchema } from '../organizations/schema';
 
 export const updateMembershipRouteConfig = createRouteConfig({
   method: 'put',

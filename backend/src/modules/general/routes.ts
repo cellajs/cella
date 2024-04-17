@@ -3,9 +3,7 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithoutDa
 import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, publicGuard, tenantGuard } from '../../middlewares/guard';
 import { rateLimiter } from '../../middlewares/rate-limiter';
-import { apiOrganizationSchema } from '../organizations/schema';
-import { apiUserSchema } from '../users/schema';
-import { inviteJsonSchema } from './schema';
+import { inviteJsonSchema, suggestionsSchema } from './schema';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
@@ -164,7 +162,7 @@ export const suggestionsConfig = createRouteConfig({
   request: {
     query: z.object({
       q: z.string().optional().openapi({ description: 'Search by user/org name or user email' }),
-      type: z.enum(['user', 'organization', 'workspace']).optional().openapi({ description: 'Type of suggestions' }),
+      type: z.enum(['user', 'organization', 'workspace', 'project']).optional().openapi({ description: 'Type of suggestions' }),
     }),
   },
   responses: {
@@ -172,43 +170,7 @@ export const suggestionsConfig = createRouteConfig({
       description: 'Suggestions',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(
-            z.array(
-              z.union([
-                apiUserSchema
-                  .pick({
-                    id: true,
-                    slug: true,
-                    name: true,
-                    email: true,
-                    thumbnailUrl: true,
-                  })
-                  .extend({
-                    type: z.literal('user'),
-                  }),
-                apiOrganizationSchema
-                  .pick({
-                    id: true,
-                    slug: true,
-                    name: true,
-                    thumbnailUrl: true,
-                  })
-                  .extend({
-                    type: z.literal('organization'),
-                  }),
-                apiOrganizationSchema
-                  .pick({
-                    id: true,
-                    slug: true,
-                    name: true,
-                    thumbnailUrl: true,
-                  })
-                  .extend({
-                    type: z.literal('workspace'),
-                  }),
-              ]),
-            ),
-          ),
+          schema: successResponseWithDataSchema(suggestionsSchema),
         },
       },
     },

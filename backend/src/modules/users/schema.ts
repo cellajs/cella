@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { usersTable } from '../../db/schema/users';
 import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
+import { membershipSchema } from '../memberships/schema';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
@@ -23,8 +24,6 @@ export const apiUserSchema = createSelectSchema(usersTable, {
   )
   .setKey('sessions', z.array(z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string() })));
 
-export type ApiUser = z.infer<typeof apiUserSchema>;
-
 export const updateUserParamSchema = z.object({
   userId: idSchema,
 });
@@ -39,6 +38,30 @@ export const getUsersQuerySchema = paginationQuerySchema.merge(
     role: z.enum(['admin', 'user']).default('user').optional(),
   }),
 );
+
+export const menuItemSchema = z.array(
+  z.object({
+    slug: slugSchema,
+    id: idSchema,
+    createdAt: z.string(),
+    modifiedAt: z.string().nullable(),
+    name: nameSchema,
+    thumbnailUrl: imageUrlSchema.nullable(),
+    archived: z.boolean(),
+    muted: z.boolean(),
+    role: membershipSchema.shape.role.nullable(),
+    type: z.literal('organization').or(z.literal('workspace')).or(z.literal('project')),
+  }),
+);
+
+const menuSectionSchema = z.object({ items: menuItemSchema, canCreate: z.boolean() });
+
+export const userMenuSchema = z.object({
+  organizations: menuSectionSchema,
+  workspaces: menuSectionSchema,
+  projects: menuSectionSchema,
+});
+
 
 export const updateUserJsonSchema = createInsertSchema(usersTable, {
   email: z.string().email(),
