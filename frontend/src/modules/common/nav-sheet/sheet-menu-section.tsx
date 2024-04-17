@@ -36,7 +36,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   const createDialog = () => {
     dialog(section.createForm, {
       className: 'md:max-w-xl',
-      title: t('common:create_organization'),
+      title: section.id === 'workspaces' ? t('common:create_workspace') : t('common:create_organization'),
     });
   };
 

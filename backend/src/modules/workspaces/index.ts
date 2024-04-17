@@ -1,6 +1,6 @@
 import { type SQL, and, count, eq, ilike } from 'drizzle-orm';
 import { db } from '../../db/db';
-import { type WorkspaceMembershipModel, workspaceMembershipsTable } from '../../db/schema/workspaceMembership';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { usersTable } from '../../db/schema/users';
 
@@ -21,7 +21,7 @@ const workspacesRoutes = app
    * Create workspace
    */
   .openapi(createWorkspaceRouteConfig, async (ctx) => {
-    const { name, slug } = ctx.req.valid('json');
+    const { name, slug, organizationId } = ctx.req.valid('json');
     const user = ctx.get('user');
 
     const slugAvailable = await checkSlugAvailable(slug);
@@ -45,12 +45,11 @@ const workspacesRoutes = app
     logEvent('Workspace created', { workspace: createdWorkspace.id });
 
     await db
-      .insert(workspaceMembershipsTable)
-      .values({
-        userId: user.id,
+      .update(membershipsTable)
+      .set({
         workspaceId: createdWorkspace.id,
-        role: 'ADMIN',
       })
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organizationId)))
       .returning();
 
     logEvent('User added to workspace', {
@@ -58,7 +57,7 @@ const workspacesRoutes = app
       workspace: createdWorkspace.id,
     });
 
-    sendSSE(user.id, 'new_membership', {
+    sendSSE(user.id, 'new_workspace_membership', {
       ...createdWorkspace,
       role: 'ADMIN',
     });
@@ -86,11 +85,11 @@ const workspacesRoutes = app
 
     const membershipRoles = db
       .select({
-        workspaceId: workspaceMembershipsTable.workspaceId,
-        role: workspaceMembershipsTable.role,
+        workspaceId: membershipsTable.workspaceId,
+        role: membershipsTable.role,
       })
-      .from(workspaceMembershipsTable)
-      .where(eq(workspaceMembershipsTable.userId, user.id))
+      .from(membershipsTable)
+      .where(eq(membershipsTable.userId, user.id))
       .as('membership_roles');
 
     const orderColumn = getOrderColumn(
@@ -137,8 +136,8 @@ const workspacesRoutes = app
 
     const [membership] = await db
       .select()
-      .from(workspaceMembershipsTable)
-      .where(and(eq(workspaceMembershipsTable.userId, user.id), eq(workspaceMembershipsTable.workspaceId, workspace.id)));
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.workspaceId, workspace.id)));
 
     return ctx.json({
       success: true,
@@ -159,26 +158,26 @@ const workspacesRoutes = app
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
-    const membersFilters = [eq(workspaceMembershipsTable.workspaceId, workspace.id)];
+    const membersFilters = [eq(membershipsTable.workspaceId, workspace.id)];
 
-    if (role) membersFilters.push(eq(workspaceMembershipsTable.role, role.toUpperCase() as WorkspaceMembershipModel['role']));
+    if (role) membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
 
     const roles = db
       .select({
-        userId: workspaceMembershipsTable.userId,
-        role: workspaceMembershipsTable.role,
+        userId: membershipsTable.userId,
+        role: membershipsTable.role,
       })
-      .from(workspaceMembershipsTable)
+      .from(membershipsTable)
       .where(and(...membersFilters))
       .as('roles');
 
     const membershipCount = db
       .select({
-        userId: workspaceMembershipsTable.userId,
+        userId: membershipsTable.userId,
         memberships: count().as('memberships'),
       })
-      .from(workspaceMembershipsTable)
-      .groupBy(workspaceMembershipsTable.userId)
+      .from(membershipsTable)
+      .groupBy(membershipsTable.userId)
       .as('membership_count');
 
     const orderColumn = getOrderColumn(

@@ -2,8 +2,8 @@ import { config } from 'config';
 import { relations } from 'drizzle-orm';
 import { boolean, index, json, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
-import { workspaceMembershipsTable } from './workspaceMembership';
 import { usersTable } from './users';
+import { membershipsTable } from './memberships';
 
 export const workspacesTable = pgTable(
   'workspaces',
@@ -47,7 +47,7 @@ export const workspacesTable = pgTable(
 );
 
 export const workspaceTableRelations = relations(workspacesTable, ({ many }) => ({
-  users: many(workspaceMembershipsTable),
+  users: many(membershipsTable),
 }));
 
 export type WorkspaceModel = typeof workspacesTable.$inferSelect;

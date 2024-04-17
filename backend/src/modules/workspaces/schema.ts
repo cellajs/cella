@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
-import { nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
+import { idSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
 
 import { apiUserSchema } from '../users/schema';
 
@@ -27,6 +27,7 @@ export const apiWorkspacesSchema = z.object({
 export const createWorkspaceJsonSchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
+  organizationId: idSchema,
 });
 
 export const getUsersByProjectQuerySchema = paginationQuerySchema.extend({

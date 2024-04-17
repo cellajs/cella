@@ -1,54 +1,53 @@
 import { useNavigationStore } from '~/store/navigation';
 import { useSSE } from './use-sse';
 
+type EntityType = 'organizations' | 'workspaces';
 const SSE = () => {
-  useSSE('update_organization', (e) => {
+  const updateEntity = (e: MessageEvent<string>, entityType: EntityType) => {
     try {
-      const organization = JSON.parse(e.data);
+      const entity = JSON.parse(e.data);
       useNavigationStore.setState((state) => {
-        state.menu.organizations.items = state.menu.organizations.items.map((org) => (org.id === organization.id ? organization : org));
+        state.menu[entityType].items = state.menu[entityType].items.map((item) => (item.id === entity.id ? entity : item));
         return state;
       });
     } catch (error) {
-      console.error('Error parsing update_organization event', error);
+      console.error(`Error parsing ${entityType} event`, error);
     }
-  });
+  };
 
-  useSSE('remove_organization', (e) => {
+  const addEntity = (e: MessageEvent<string>, entityType: EntityType) => {
     try {
-      const organization = JSON.parse(e.data);
+      const entity = JSON.parse(e.data);
       useNavigationStore.setState((state) => {
-        state.menu.organizations.items = state.menu.organizations.items.filter((org) => org.id !== organization.id);
+        state.menu[entityType].items = [entity, ...state.menu[entityType].items];
         return state;
       });
     } catch (error) {
-      console.error('Error parsing remove_organization event', error);
+      console.error(`Error parsing new_${entityType} event`, error);
     }
-  });
+  };
 
-  useSSE('new_membership', (e) => {
+  const removeEntity = (e: MessageEvent<string>, entityType: EntityType) => {
     try {
-      const organization = JSON.parse(e.data);
+      const entity = JSON.parse(e.data);
       useNavigationStore.setState((state) => {
-        state.menu.organizations.items = [...state.menu.organizations.items, organization];
+        state.menu[entityType].items = state.menu[entityType].items.filter((item) => item.id !== entity.id);
         return state;
       });
     } catch (error) {
-      console.error('Error parsing new_membership event', error);
+      console.error(`Error parsing remove_${entityType} event`, error);
     }
-  });
+  };
 
-  useSSE('remove_membership', (e) => {
-    try {
-      const organization = JSON.parse(e.data);
-      useNavigationStore.setState((state) => {
-        state.menu.organizations.items = state.menu.organizations.items.filter((org) => org.id !== organization.id);
-        return state;
-      });
-    } catch (error) {
-      console.error('Error parsing remove_membership event', error);
-    }
-  });
+  useSSE('update_organization', (e) => updateEntity(e, 'organizations'));
+  useSSE('remove_organization', (e) => removeEntity(e, 'organizations'));
+  useSSE('new_organization_membership', (e) => addEntity(e, 'organizations'));
+  useSSE('remove_organization_membership', (e) => removeEntity(e, 'organizations'));
+
+  useSSE('update_workspace', (e) => updateEntity(e, 'workspaces'));
+  useSSE('remove_workspace', (e) => removeEntity(e, 'workspaces'));
+  useSSE('new_workspace_membership', (e) => addEntity(e, 'workspaces'));
+  useSSE('remove_workspace_membership', (e) => removeEntity(e, 'workspaces'));
 
   return null;
 };

@@ -2,7 +2,7 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithPagin
 import { workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, systemGuard } from '../../middlewares/guard';
-import tenantWorkspace from '../../middlewares/guard/tenantWorkspace';
+import tenant from '../../middlewares/guard/tenant';
 
 import {
   apiWorkspacesSchema,
@@ -68,7 +68,7 @@ export const getWorkspaceRouteConfig = createRouteConfig({
 export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/workspaces/{workspaceIdentifier}',
-  guard: tenantWorkspace(),
+  guard: tenant(),
   tags: ['workspaces'],
   summary: 'Get workspace by id or slug',
   description: `
@@ -95,7 +95,7 @@ export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
 export const getUsersByWorkspaceIdRouteConfig = createRouteConfig({
   method: 'get',
   path: '/workspaces/{workspaceIdentifier}/members',
-  guard: tenantWorkspace(),
+  guard: tenant(),
   tags: ['workspaces'],
   summary: 'Get members(users) of workspace',
   description: `

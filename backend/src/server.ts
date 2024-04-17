@@ -8,6 +8,7 @@ import organizationsRoutes from './modules/organizations';
 import publicRoutes from './modules/public';
 import usersRoutes from './modules/users';
 import membershipRoutes from './modules/memberships';
+import workspaceRoutes from './modules/workspaces';
 
 import { CustomHono } from './types/common';
 
@@ -41,4 +42,5 @@ app
   .route('/', organizationsRoutes)
   .route('/', generalRoutes)
   .route('/', publicRoutes)
-  .route('/', membershipRoutes);
+  .route('/', membershipRoutes)
+  .route('/', workspaceRoutes);

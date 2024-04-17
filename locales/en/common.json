@@ -197,7 +197,7 @@
   "organization_handle": "Organization handle",
   "workspace_handle": "Workspace handle",
   "organization_handle.text": "A unique handle for organization URL",
-  "workspace_handle.text": "A unique handle for organization URL",
+  "workspace_handle.text": "A unique handle for workspace URL",
   "organization_logo": "Organization logo",
   "organization_settings": "Organization settings",
   "organization_settings.text": "Update your organization settings and preferences.",

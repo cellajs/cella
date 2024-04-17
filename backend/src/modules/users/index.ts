@@ -22,6 +22,7 @@ import {
   terminateSessionsConfig,
   updateUserConfig,
 } from './routes';
+import { workspacesTable } from '../../db/schema/workspaces';
 
 const app = new CustomHono();
 
@@ -106,6 +107,16 @@ const usersRoutes = app
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
+    const workspaceWithMemberships = await db
+      .select({
+        workspace: workspacesTable,
+        membership: membershipsTable,
+      })
+      .from(workspacesTable)
+      .where(eq(membershipsTable.userId, user.id))
+      .orderBy(desc(workspacesTable.createdAt))
+      .innerJoin(membershipsTable, eq(membershipsTable.workspaceId, workspacesTable.id));
+
     const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
       return {
         slug: organization.slug,
@@ -120,11 +131,25 @@ const usersRoutes = app
       };
     });
 
+    const workspaces = workspaceWithMemberships.map(({ workspace, membership }) => {
+      return {
+        slug: workspace.slug,
+        id: workspace.id,
+        createdAt: workspace.createdAt,
+        modifiedAt: workspace.modifiedAt,
+        name: workspace.name,
+        thumbnailUrl: workspace.thumbnailUrl,
+        archived: membership.inactive || false,
+        muted: membership.muted || false,
+        role: membership?.role || null,
+      };
+    });
+
     return ctx.json({
       success: true,
       data: {
         organizations: { items: organizations, canCreate: true },
-        workspaces: { items: [], canCreate: true },
+        workspaces: { items: workspaces, canCreate: true },
         projects: { items: [], canCreate: false },
       },
     });

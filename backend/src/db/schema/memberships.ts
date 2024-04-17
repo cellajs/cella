@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm';
 import { pgTable, primaryKey, timestamp, varchar, boolean } from 'drizzle-orm/pg-core';
 import { organizationsTable } from './organizations';
 import { usersTable } from './users';
+import { workspacesTable } from './workspaces';
 
 const roleEnum = ['MEMBER', 'ADMIN'] as const;
 
@@ -11,6 +12,7 @@ export const membershipsTable = pgTable(
     organizationId: varchar('organization_id')
       .notNull()
       .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+    workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
     userId: varchar('user_id')
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
@@ -43,6 +45,10 @@ export const membershipsTableRelations = relations(membershipsTable, ({ one }) =
   organization: one(organizationsTable, {
     fields: [membershipsTable.organizationId],
     references: [organizationsTable.id],
+  }),
+  workspace: one(workspacesTable, {
+    fields: [membershipsTable.workspaceId],
+    references: [workspacesTable.id],
   }),
 }));
 
