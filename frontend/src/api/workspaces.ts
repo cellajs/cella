@@ -64,16 +64,16 @@ export const createWorkspace = async (params: CreateWorkspaceParams) => {
 //   return json.data;
 // };
 
-// // Get an organization by its slug or ID
-// export const getOrganizationBySlugOrId = async (organizationIdentifier: string) => {
-//   const response = await client.organizations[':organizationIdentifier'].$get({
-//     param: { organizationIdentifier },
-//   });
+// Get an workspace by its slug or ID
+export const getWorkspaceBySlugOrId = async (workspaceIdentifier: string) => {
+  const response = await client.workspaces[':workspaceIdentifier'].$get({
+    param: { workspaceIdentifier },
+  });
 
-//   const json = await response.json();
-//   if ('error' in json) throw new ApiError(json.error);
-//   return json.data;
-// };
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return json.data;
+};
 
 // // Delete organizations
 // export const deleteOrganizations = async (organizationIds: string[]) => {

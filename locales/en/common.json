@@ -71,7 +71,7 @@
   "error.forbidden": "Forbidden",
   "error.forbidden.text": "Not allowed to perform this action",
   "error.forbidden_action": "Forbidden: Not allowed to perform this action",
-  "error.gleap_not_initialized": "Chat support unavailable: please use 'Contact' link.",
+  "error.gleap_not_initialized": "No chat support: please click 'Contact' on page bottom",
   "error.image_upload_failed": "Image upload failed. Try again later",
   "error.invalid_credentials": "Invalid credentials",
   "error.invalid_credentials.text": "The credentials used during the authentication are invalid.",

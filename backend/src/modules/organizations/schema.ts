@@ -85,6 +85,7 @@ const menuItemSchema = z.array(
     archived: z.boolean(),
     muted: z.boolean(),
     role: membershipSchema.shape.role.nullable(),
+    type: z.enum(['organization', 'workspace', 'project']),
   }),
 );
 

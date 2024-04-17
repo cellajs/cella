@@ -12,9 +12,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 interface ErrorNoticeProps {
   error?: ErrorType;
   resetErrorBoundary?: () => void;
+  isRootLevel?: boolean;
 }
 
-const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) => {
+const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, isRootLevel }) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const dateNow = new Date().toUTCString();
@@ -111,7 +112,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) 
             )}
           </CardFooter>
         </Card>
-        <AppFooter />
+        {isRootLevel && <AppFooter />}
       </div>
     </div>
   );

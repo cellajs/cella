@@ -15,7 +15,7 @@ import type { LucideProps } from 'lucide-react';
 
 export type SectionItem = {
   id: string;
-  type: string;
+  type: 'organization' | 'workspace' | 'project';
   label: string;
   createForm?: React.ReactNode;
   icon?: React.ElementType<LucideProps>;

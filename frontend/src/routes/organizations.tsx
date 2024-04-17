@@ -8,7 +8,6 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
-import Projects from '~/modules/projects';
 import { IndexRoute } from './routeTree';
 
 // Lazy-loaded components
@@ -32,7 +31,7 @@ export const OrganizationRoute = createRoute({
   ),
 });
 
-export const organizationMembersRoute = createRoute({
+export const OrganizationMembersRoute = createRoute({
   path: '/members',
   staticData: { pageTitle: 'Members' },
   getParentRoute: () => OrganizationRoute,
@@ -52,15 +51,7 @@ export const organizationMembersRoute = createRoute({
   ),
 });
 
-// INFO: This is a proof of concept development
-export const projectsRoute = createRoute({
-  path: '/projects',
-  staticData: { pageTitle: 'Projects' },
-  getParentRoute: () => OrganizationRoute,
-  component: () => <Projects />,
-});
-
-export const organizationSettingsRoute = createRoute({
+export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,

@@ -128,6 +128,7 @@ const usersRoutes = app
         archived: membership.inactive || false,
         muted: membership.muted || false,
         role: membership?.role || null,
+        type: 'organization',
       };
     });
 
@@ -142,6 +143,7 @@ const usersRoutes = app
         archived: membership.inactive || false,
         muted: membership.muted || false,
         role: membership?.role || null,
+        type: 'workspace',
       };
     });
 

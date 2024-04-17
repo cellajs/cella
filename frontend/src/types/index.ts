@@ -17,6 +17,7 @@ export enum UserRole {
 }
 
 export interface Page {
+  type: 'organization' | 'workspace' | 'project';
   id: string;
   slug: string;
   name: string;

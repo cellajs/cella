@@ -16,7 +16,7 @@ import { useDebounce } from '~/hooks/use-debounce';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import { OrganizationContext } from '~/modules/organizations/organization';
-import { organizationMembersRoute } from '~/routes/organizations';
+import { OrganizationMembersRoute } from '~/routes/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
@@ -76,7 +76,7 @@ const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
   const [columns, setColumns] = useColumns();
   const search = useSearch({
-    from: organizationMembersRoute.id,
+    from: OrganizationMembersRoute.id,
   });
   const { mutate: mutateMember } = useUpdateUserInOrganizationMutation(organization.slug);
 
