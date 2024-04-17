@@ -35,7 +35,7 @@ const LanguageFormField = ({
       control={control}
       name={name}
       render={({ field: { value, onChange } }) => (
-        <FormItem>
+        <FormItem name={name}>
           <FormLabel>
             {label}
             {required && <span className="ml-1 opacity-50">*</span>}
@@ -63,17 +63,15 @@ const LanguageFormField = ({
                   onChange={(value) => {
                     onChange(value.map((language) => language.value));
                   }}
-                  onSearch={async (query) => {
-                    const languages = [];
-                    for (const el of config.languages) {
-                      if (el.label.toLowerCase().includes(query.toLowerCase())) languages.push(el);
-                    }
-
-                    return languages;
-                  }}
-                  basicSignValue={t('common:search_language')}
+                  basicSignValue={t('common:placeholder.select_languages')}
                   hidePlaceholderWhenSelected
                   defaultOptions={config.languages}
+                  itemComponent={(item) => (
+                    <div className="h-8 flex items-center px-1">
+                      <CountryFlag countryCode={item.value} imgType="png" className="mr-2" />
+                      {item.label}
+                    </div>
+                  )}
                   placeholder={placeholder}
                   emptyValue={emptyIndicator}
                 />

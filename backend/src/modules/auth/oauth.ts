@@ -8,23 +8,12 @@ import slugify from 'slugify';
 import { db } from '../../db/db';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { tokensTable } from '../../db/schema/tokens';
-import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { setSessionCookie } from './helpers/cookies';
-import { sendVerificationEmail } from './helpers/verify-email';
-import {
-  createSession,
-  findOauthAccount,
-  findUserByEmail,
-  getRedirectUrl,
-  handleExistingUser,
-  insertOauthAccount,
-  slugFromEmail,
-  splitFullName,
-} from './oauth-helpers';
+import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './oauth-helpers';
 import {
   githubSignInCallbackRouteConfig,
   githubSignInRouteConfig,
@@ -33,6 +22,7 @@ import {
   microsoftSignInCallbackRouteConfig,
   microsoftSignInRouteConfig,
 } from './routes';
+import { handleCreateUser } from './helpers/user';
 
 const app = new CustomHono();
 
@@ -69,6 +59,9 @@ const oauthRoutes = app
 
     return ctx.redirect(url.toString());
   })
+  /*
+   * Microsoft sign in
+   */
   .openapi(microsoftSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
@@ -80,6 +73,9 @@ const oauthRoutes = app
 
     return ctx.redirect(url.toString());
   })
+  /*
+   * Github sign in callback
+   */
   .openapi(githubSignInCallbackRouteConfig, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
 
@@ -95,6 +91,8 @@ const oauthRoutes = app
 
     try {
       const { accessToken } = await githubAuth.validateAuthorizationCode(code);
+
+      // * Get user info from github
       const githubUserResponse = await fetch('https://api.github.com/user', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -133,6 +131,7 @@ const oauthRoutes = app
         twitter_username?: string | null;
       } = await githubUserResponse.json();
 
+      // * Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount('GITHUB', String(githubUser.id));
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
@@ -140,6 +139,7 @@ const oauthRoutes = app
         return ctx.redirect(redirectUrl);
       }
 
+      // * Get user emails from github
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -161,6 +161,7 @@ const oauthRoutes = app
       const slug = slugify(githubUser.login, { lower: true });
       const { firstName, lastName } = splitFullName(githubUser.name || slug);
 
+      // * Check if user has an invite token
       const inviteToken = getCookie(ctx, 'oauth_invite_token');
 
       deleteCookie(ctx, 'oauth_invite_token');
@@ -171,6 +172,7 @@ const oauthRoutes = app
       if (inviteToken) {
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
 
+        // * If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
           return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, { strategy: 'github', type: 'invitation' });
         }
@@ -178,8 +180,8 @@ const oauthRoutes = app
         userEmail = token.email;
       }
 
+      // * Check if user already exists
       const [existingUser] = await findUserByEmail(userEmail);
-
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'GITHUB', {
           providerUser: {
@@ -197,32 +199,32 @@ const oauthRoutes = app
 
       const userId = nanoid();
 
-      await db.insert(usersTable).values({
-        id: userId,
-        slug: slugify(githubUser.login, { lower: true }),
-        email: primaryEmail.email.toLowerCase(),
-        name: githubUser.name,
-        thumbnailUrl: githubUser.avatar_url,
-        bio: githubUser.bio,
-        emailVerified: primaryEmail.verified,
-        language: config.defaultLanguage,
-        firstName,
-        lastName,
-      });
-      await insertOauthAccount(userId, 'GITHUB', String(githubUser.id));
-
-      if (!primaryEmail.verified) {
-        sendVerificationEmail(primaryEmail.email.toLowerCase());
-
-        return ctx.redirect(`${config.frontendUrl}/auth/verify-email`, 302);
-      }
-
-      await setSessionCookie(ctx, userId, 'github');
-
-      return ctx.json({}, 302, {
-        Location: config.frontendUrl + config.defaultRedirectPath,
-      });
+      // * Create new user and oauth account
+      return await handleCreateUser(
+        ctx,
+        {
+          id: userId,
+          slug: slugify(githubUser.login, { lower: true }),
+          email: primaryEmail.email.toLowerCase(),
+          name: githubUser.name,
+          thumbnailUrl: githubUser.avatar_url,
+          bio: githubUser.bio,
+          emailVerified: primaryEmail.verified,
+          language: config.defaultLanguage,
+          firstName,
+          lastName,
+        },
+        {
+          provider: {
+            id: 'GITHUB',
+            userId: String(githubUser.id),
+          },
+          isEmailVerified: primaryEmail.verified,
+          redirectUrl,
+        },
+      );
     } catch (error) {
+      // * Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
         // t('common:error.invalid_credentials.text')
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'github' });
@@ -233,6 +235,9 @@ const oauthRoutes = app
       throw error;
     }
   })
+  /*
+   * Google sign in callback
+   */
   .openapi(googleSignInCallbackRouteConfig, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
@@ -248,6 +253,8 @@ const oauthRoutes = app
 
     try {
       const { accessToken } = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
+
+      // * Get user info from google
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -262,16 +269,16 @@ const oauthRoutes = app
         locale: string;
       } = await response.json();
 
+      // * Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount('GOOGLE', user.sub);
-
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
 
         return ctx.redirect(redirectUrl);
       }
 
+      // * Check if user already exists
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
-
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'GOOGLE', {
           providerUser: {
@@ -288,22 +295,31 @@ const oauthRoutes = app
       }
 
       const userId = nanoid();
-      await db.insert(usersTable).values({
-        id: userId,
-        slug: slugFromEmail(user.email),
-        email: user.email.toLowerCase(),
-        name: user.given_name,
-        language: config.defaultLanguage,
-        thumbnailUrl: user.picture,
-        firstName: user.given_name,
-        lastName: user.family_name,
-      });
-      await insertOauthAccount(userId, 'GOOGLE', user.sub);
 
-      await setSessionCookie(ctx, userId, 'google');
-
-      return ctx.redirect(redirectUrl);
+      // * Create new user and oauth account
+      return await handleCreateUser(
+        ctx,
+        {
+          id: userId,
+          slug: slugFromEmail(user.email),
+          email: user.email.toLowerCase(),
+          name: user.given_name,
+          language: config.defaultLanguage,
+          thumbnailUrl: user.picture,
+          firstName: user.given_name,
+          lastName: user.family_name,
+        },
+        {
+          provider: {
+            id: 'GOOGLE',
+            userId: user.sub,
+          },
+          isEmailVerified: user.email_verified,
+          redirectUrl,
+        },
+      );
     } catch (error) {
+      // * Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'google' });
       }
@@ -314,7 +330,9 @@ const oauthRoutes = app
       throw error;
     }
   })
-
+  /*
+   * Microsoft sign in callback
+   */
   .openapi(microsoftSignInCallbackRouteConfig, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
@@ -330,6 +348,8 @@ const oauthRoutes = app
 
     try {
       const { accessToken } = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
+
+      // * Get user info from microsoft
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -342,8 +362,8 @@ const oauthRoutes = app
         email: string | undefined;
       } = await response.json();
 
+      // * Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount('MICROSOFT', user.sub);
-
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
 
@@ -354,8 +374,8 @@ const oauthRoutes = app
         return errorResponse(ctx, 400, 'no_email_found', 'warn', undefined);
       }
 
+      // * Check if user already exists
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
-
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'MICROSOFT', {
           providerUser: {
@@ -367,28 +387,36 @@ const oauthRoutes = app
           },
           redirectUrl,
           // TODO: invite token and email verification
-          isEmailVerified: existingUser.emailVerified
+          isEmailVerified: existingUser.emailVerified,
         });
       }
 
       const userId = nanoid();
-      await db.insert(usersTable).values({
-        id: userId,
-        slug: slugFromEmail(user.email),
-        language: config.defaultLanguage,
-        email: user.email.toLowerCase(),
-        name: user.given_name,
-        thumbnailUrl: user.picture,
-        firstName: user.given_name,
-        lastName: user.family_name,
-      });
-      await insertOauthAccount(userId, 'MICROSOFT', user.sub);
-      await setSessionCookie(ctx, userId, 'microsoft');
 
-      return ctx.json({}, 302, {
-        Location: config.frontendUrl + config.defaultRedirectPath,
-      });
+      // * Create new user and oauth account
+      return await handleCreateUser(
+        ctx,
+        {
+          id: userId,
+          slug: slugFromEmail(user.email),
+          language: config.defaultLanguage,
+          email: user.email.toLowerCase(),
+          name: user.given_name,
+          thumbnailUrl: user.picture,
+          firstName: user.given_name,
+          lastName: user.family_name,
+        },
+        {
+          provider: {
+            id: 'MICROSOFT',
+            userId: user.sub,
+          },
+          isEmailVerified: false,
+          redirectUrl,
+        },
+      );
     } catch (error) {
+      // * Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'microsoft' });
       }

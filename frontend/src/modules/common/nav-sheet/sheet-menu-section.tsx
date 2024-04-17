@@ -115,11 +115,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
           )}
         </div>
       </Sticky>
-      <div
-        className={`grid transition-[grid-template-rows] ${
-          isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-        } grid-rows-[0fr] ease-in-outss duration-300`}
-      >
+      <div className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}>
         <ul className="overflow-hidden">
           {optionsView ? renderOptions(unarchive) : renderItems(unarchive, data.canCreate, false)}
           {!!(unarchive.length || archived.length) && (

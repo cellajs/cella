@@ -21,6 +21,7 @@ import AvatarFormField from '../common/form-fields/avatar';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
+import DomainsFormField from '../common/form-fields/domains';
 
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
@@ -57,6 +58,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       name: organization.name,
       shortName: organization.shortName,
       websiteUrl: organization.websiteUrl,
+      emailDomains: organization.emailDomains,
       thumbnailUrl: cleanUrl(organization.thumbnailUrl),
       notificationEmail: organization.notificationEmail,
       timezone: organization.timezone,
@@ -153,6 +155,13 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           }
         />
         <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
+        <DomainsFormField
+          control={form.control}
+          name="emailDomains"
+          label={t('common:email_domains')}
+          description={t('common:email_domains.text')}
+          placeholder={t('common:placeholder.email_domains')}
+        />
         <InputFormField
           control={form.control}
           type="email"
@@ -176,7 +185,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="defaultLanguage"
           label={t('common:default_language')}
           description={t('common:default_language.text')}
-          placeholder={t('common:select_language')}
+          placeholder={t('common:placeholder.select_language')}
           disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
           required
         />
@@ -184,7 +193,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           control={form.control}
           name="timezone"
           render={({ field: { value, onChange } }) => (
-            <FormItem>
+            <FormItem name="timezone">
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
@@ -200,7 +209,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           control={form.control}
           name="country"
           render={({ field: { value, onChange } }) => (
-            <FormItem>
+            <FormItem name="country">
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>

@@ -11,8 +11,7 @@ import { db } from '../../db/db';
 import { logEvent } from '../../middlewares/logger/log-event';
 import type { User } from 'lucia';
 import { sendVerificationEmail } from './helpers/verify-email';
-
-type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
+import type { ProviderId } from '../../types/common';
 
 // * Create a session before redirecting to the oauth provider
 export const createSession = (ctx: Context, provider: string, state: string, codeVerifier?: string, redirect?: string) => {
@@ -51,16 +50,19 @@ export const findUserByEmail = async (email: string) => {
   return db.select().from(usersTable).where(eq(usersTable.email, email));
 };
 
+// * Create a slug from email
 export const slugFromEmail = (email: string) => {
   const [alias] = email.split('@');
   return slugify(alias, { lower: true });
 };
 
+// * Split full name into first and last name
 export const splitFullName = (name: string) => {
   const [firstName, lastName] = name.split(' ');
   return { firstName: firstName || '', lastName: lastName || '' };
 };
 
+// * Handle existing user
 export const handleExistingUser = async (
   ctx: Context,
   existingUser: User,
@@ -77,6 +79,7 @@ export const handleExistingUser = async (
 ) => {
   await insertOauthAccount(existingUser.id, providerId, providerUser.id);
 
+  // * Update user with provider data if not already present
   await db
     .update(usersTable)
     .set({
@@ -88,6 +91,7 @@ export const handleExistingUser = async (
     })
     .where(eq(usersTable.id, existingUser.id));
 
+  // * Send verification email if not verified and redirect to verify page
   if (!isEmailVerified) {
     sendVerificationEmail(providerUser.email.toLowerCase());
 
