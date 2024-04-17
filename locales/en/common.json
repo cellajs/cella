@@ -284,7 +284,7 @@
   "terms_of_use": "Terms of use",
   "timezone": "Timezone",
   "title": "Title",
-  "under_construction.text": "Cella is a work in progress. Contact us for a full demo with system admin access.",
+  "under_construction.text": "Cella is a work in progress. This site shows how we are building a task board app with cella as a template. Currently, the development of both cella and the task board app are happening in the same repo. These developments and the code will be split once cella is stable and ready for releases with automated tested and with proper versioning (currently its prerelease). Contact us for a full demo with system admin access.",
   "unknown": "Unknown",
   "unknown_inviter": "Unknown inviter",
   "unknown_name": "Unknown name",
