@@ -4,7 +4,6 @@ import { type MembershipModel, membershipsTable } from '../../db/schema/membersh
 import { workspacesTable } from '../../db/schema/workspaces';
 import { usersTable } from '../../db/schema/users';
 
-import { config } from 'config';
 import { errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSE } from '../../lib/sse';
@@ -34,11 +33,7 @@ const workspacesRoutes = app
       .insert(workspacesTable)
       .values({
         name,
-        shortName: name,
         slug,
-        languages: [config.defaultLanguage],
-        defaultLanguage: config.defaultLanguage,
-        createdBy: user.id,
       })
       .returning();
 

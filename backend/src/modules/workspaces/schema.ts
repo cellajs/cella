@@ -18,9 +18,6 @@ export const apiWorkspacesSchema = z.object({
   ...createSelectSchema(workspacesTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  languages: z.array(z.string()),
-  emailDomains: z.array(z.string()).nullable(),
-  authStrategies: z.array(z.string()).nullable(),
   role: membershipSchema.shape.role.nullable(),
 });
 
