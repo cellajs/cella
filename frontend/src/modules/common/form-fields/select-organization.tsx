@@ -1,4 +1,4 @@
-// import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
@@ -16,6 +16,7 @@ interface SelectOrganizationProps {
 
 const SelectOrganizationFormField = ({ control, name, label, value, onChange, required }: SelectOrganizationProps) => {
   const { menu } = useNavigationStore();
+  const { t } = useTranslation();
 
   return (
     <FormField
@@ -30,7 +31,7 @@ const SelectOrganizationFormField = ({ control, name, label, value, onChange, re
           <FormControl>
             <Select onValueChange={onChange} value={value} required>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={'Select organization'} />
+                <SelectValue placeholder={t('common:select_organization')} />
               </SelectTrigger>
               <SelectContent className="h-[30vh]">
                 {menu.organizations.items.map((organization) => (
