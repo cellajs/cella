@@ -1,5 +1,5 @@
 import type { InferResponseType } from 'hono';
-import { type Member, type UploadParams, UploadType, type User } from '~/types';
+import { UploadType, type Member, type UploadParams, type User } from '~/types';
 import { ApiError, generalClient as client } from '.';
 
 // Get upload token to securely upload files with imado: https://imado.eu
@@ -30,12 +30,12 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
 export interface InviteProps {
   emails: string[];
   role?: Member['organizationRole'] | User['role'];
-  organizationIdentifier?: string;
+  resourceIdentifier?: string;
 }
 
-export const invite = async ({ emails, organizationIdentifier, role }: InviteProps) => {
+export const invite = async ({ emails, resourceIdentifier, role }: InviteProps) => {
   const response = await client.invite.$post({
-    json: { emails, organizationIdentifier, role },
+    json: { emails, resourceIdentifier, role },
   });
 
   const json = await response.json();

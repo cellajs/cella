@@ -52,7 +52,7 @@ export const createOrganizationRouteConfig = createRouteConfig({
 
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/organizations/{organizationIdentifier}',
+  path: '/organizations/{resourceIdentifier}',
   guard: tenantGuard(['ADMIN']),
   tags: ['organizations'],
   summary: 'Update organization',
@@ -138,7 +138,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{organizationIdentifier}',
+  path: '/organizations/{resourceIdentifier}',
   guard: tenantGuard(),
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
@@ -165,10 +165,10 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
 
 export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{organizationIdentifier}/members',
+  path: '/organizations/{resourceIdentifier}/members',
   guard: tenantGuard(),
   tags: ['organizations'],
-  summary: 'Get members(users) of organization',
+  summary: 'Get members of organization',
   description: `
     Permissions:
       - Users with role 'ADMIN'

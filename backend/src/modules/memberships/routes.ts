@@ -43,7 +43,7 @@ export const deleteMembershipRouteConfig = createRouteConfig({
   path: '/memberships',
   guard: tenantGuard(['ADMIN']),
   tags: ['memberships'],
-  summary: 'Delete members(users) from organization',
+  summary: 'Delete memberships',
   description: `
     Permissions:
       - Users with role 'ADMIN'

@@ -7,6 +7,9 @@ import type { OrganizationModel } from '../db/schema/organizations';
 import type { WorkspaceModel } from '../db/schema/workspaces';
 import type { errorResponseSchema } from '../lib/common-schemas';
 
+
+export type ResourceType = 'workspace' | 'organization' | 'project'
+
 export type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
 
 export type NonEmptyArray<T> = readonly [T, ...T[]];

@@ -36,12 +36,12 @@ const formSchema = updateOrganizationJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const useUpdateOrganizationMutation = (organizationIdentifier: string) => {
+export const useUpdateOrganizationMutation = (resourceIdentifier: string) => {
   return useMutation<Organization, DefaultError, UpdateOrganizationParams>({
-    mutationKey: ['organizations', 'update', organizationIdentifier],
-    mutationFn: (params) => updateOrganization(organizationIdentifier, params),
+    mutationKey: ['organizations', 'update', resourceIdentifier],
+    mutationFn: (params) => updateOrganization(resourceIdentifier, params),
     onSuccess: (organization) => {
-      queryClient.setQueryData(['organizations', organizationIdentifier], organization);
+      queryClient.setQueryData(['organizations', resourceIdentifier], organization);
     },
     gcTime: 1000 * 10,
   });

@@ -72,10 +72,10 @@ export const AppSearch = () => {
       });
     } else if (suggestion.type === 'organization') {
       navigate({
-        to: '/$organizationIdentifier/members',
+        to: '/$resourceIdentifier/members',
         resetScroll: false,
         params: {
-          organizationIdentifier: suggestion.slug,
+          resourceIdentifier: suggestion.slug,
         },
       });
     }

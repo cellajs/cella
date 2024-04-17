@@ -9,7 +9,7 @@ import { usersTable } from '../../db/schema/users';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import { CustomHono, type ResourceType } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
@@ -128,7 +128,7 @@ const usersRoutes = app
         archived: membership.inactive || false,
         muted: membership.muted || false,
         role: membership?.role || null,
-        type: 'organization',
+        type: 'organization' as ResourceType,
       };
     });
 
@@ -143,7 +143,7 @@ const usersRoutes = app
         archived: membership.inactive || false,
         muted: membership.muted || false,
         role: membership?.role || null,
-        type: 'workspace',
+        type: 'workspace' as ResourceType,
       };
     });
 

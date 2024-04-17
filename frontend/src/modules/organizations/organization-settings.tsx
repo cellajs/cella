@@ -24,7 +24,7 @@ const OrganizationSettings = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { organization } = useContext(OrganizationContext);
-  const { organizationIdentifier }: { organizationIdentifier: string } = useParams({ strict: false });
+  const { resourceIdentifier }: { resourceIdentifier: string } = useParams({ strict: false });
 
   const openDeleteDialog = () => {
     dialog(
@@ -62,10 +62,10 @@ const OrganizationSettings = () => {
               <UpdateOrganizationForm
                 organization={organization}
                 callback={(organization) => {
-                  if (organizationIdentifier !== organization.slug) {
+                  if (resourceIdentifier !== organization.slug) {
                     navigate({
-                      to: '/$organizationIdentifier/settings',
-                      params: { organizationIdentifier: organization.slug },
+                      to: '/$resourceIdentifier/settings',
+                      params: { resourceIdentifier: organization.slug },
                       replace: true,
                     });
                   }

@@ -39,13 +39,13 @@ const JoinLeaveButton = ({ organization }: Props) => {
     invite({
       emails: [user.email],
       role: 'MEMBER',
-      organizationIdentifier: organization.slug,
+      resourceIdentifier: organization.slug,
     });
   };
 
   const onLeave = () => {
     leave({
-      organizationIdentifier: organization.id,
+      resourceIdentifier: organization.id,
       ids: [user.id],
     });
   };

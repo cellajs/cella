@@ -17,12 +17,12 @@ import { IndexRoute } from './routeTree';
 // const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export const WorkspaceRoute = createRoute({
-  path: 'workspace/$workspaceIdentifier',
+  path: 'workspace/$resourceIdentifier',
   staticData: { pageTitle: 'Workspace' },
   beforeLoad: ({ location }) => noDirectAccess(location, '/projects'),
   getParentRoute: () => IndexRoute,
-  loader: async ({ params: { workspaceIdentifier } }) => {
-    queryClient.ensureQueryData(workspaceQueryOptions(workspaceIdentifier));
+  loader: async ({ params: { resourceIdentifier } }) => {
+    queryClient.ensureQueryData(workspaceQueryOptions(resourceIdentifier));
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
@@ -45,8 +45,8 @@ export const WorkspaceProjectsRoute = createRoute({
 //   getParentRoute: () => WorkspaceRoute,
 //   validateSearch: membersSearchSchema,
 //   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-//   loader: async ({ params: { workspaceIdentifier }, deps: { q, sort, order, role } }) => {
-//     const membersInfiniteQueryOptions = membersQueryOptions(workspaceIdentifier, { q, sort, order, role });
+//   loader: async ({ params: { resourceIdentifier }, deps: { q, sort, order, role } }) => {
+//     const membersInfiniteQueryOptions = membersQueryOptions(resourceIdentifier, { q, sort, order, role });
 //     const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
 //     if (!cachedMembers) {
 //       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
@@ -58,7 +58,6 @@ export const WorkspaceProjectsRoute = createRoute({
 //     </Suspense>
 //   ),
 // });
-
 
 // export const WorkspaceSettingsRoute = createRoute({
 //   path: '/settings',

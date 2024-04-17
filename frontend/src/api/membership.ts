@@ -1,7 +1,7 @@
 import type { Member } from '~/types';
 import { ApiError, membershipClient as client } from '.';
 
-export const removeMembersFromOrganization = async (query: { organizationIdentifier: string; ids: string[] }) => {
+export const removeMembersFromOrganization = async (query: { resourceIdentifier: string; ids: string[] }) => {
   const response = await client.memberships.$delete({ query });
 
   const json = await response.json();
@@ -10,7 +10,7 @@ export const removeMembersFromOrganization = async (query: { organizationIdentif
 };
 
 export const updateUserInOrganization = async (
-  organizationIdentifier: string,
+  resourceIdentifier: string,
   id: string,
   role?: Member['organizationRole'],
   archive?: boolean,
@@ -20,7 +20,7 @@ export const updateUserInOrganization = async (
     param: {
       id,
     },
-    json: { role, organizationIdentifier, inactive: archive, muted },
+    json: { role, resourceIdentifier, inactive: archive, muted },
   });
 
   const json = await response.json();
