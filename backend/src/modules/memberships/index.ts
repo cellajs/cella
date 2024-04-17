@@ -36,7 +36,7 @@ const membershipRoutes = app
 
         logEvent('Member deleted', { user: id, organization: organizationIdentifier });
 
-        sendSSE(id, 'remove_membership', { id: organizationIdentifier });
+        sendSSE(id, 'remove_organization_membership', { id: organizationIdentifier });
       }),
     );
 
@@ -80,7 +80,7 @@ const membershipRoutes = app
           })
           .returning();
 
-        sendSSE(targetUser.id, 'new_membership', {
+        sendSSE(targetUser.id, 'new_organization_membership', {
           ...organization,
           userRole: role,
         });

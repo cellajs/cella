@@ -7,6 +7,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
+import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
@@ -23,7 +24,7 @@ export type SectionItem = {
 // Here you declare the menu sections
 export const menuSections: SectionItem[] = [
   { id: 'organizations', type: 'organization', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
-  { id: 'workspaces', type: 'workspace', label: 'app:workspaces' },
+  { id: 'workspaces', type: 'workspace', label: 'app:workspaces', createForm: <CreateWorkspaceForm dialog /> },
   { id: 'projects', type: 'project', label: 'app:projects' },
 ];
 

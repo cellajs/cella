@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
-import { imageUrlSchema, nameSchema, paginationQuerySchema, validDomainsSchema, validSlugSchema, validUrlSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema, validDomainsSchema, validSlugSchema, validUrlSchema } from '../../lib/common-schemas';
 
 import { apiUserSchema } from '../users/schema';
 
@@ -74,12 +74,26 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
   })
   .partial();
 
-export const userMenuSchema = z.object({
-  organizations: z.object({
-    active: z.array(apiOrganizationSchema),
-    inactive: z.array(apiOrganizationSchema),
-    canCreate: z.boolean(),
+const menuItemSchema = z.array(
+  z.object({
+    slug: slugSchema,
+    id: idSchema,
+    createdAt: z.string(),
+    modifiedAt: z.string().nullable(),
+    name: nameSchema,
+    thumbnailUrl: imageUrlSchema.nullable(),
+    archived: z.boolean(),
+    muted: z.boolean(),
+    role: membershipSchema.shape.role.nullable(),
   }),
+);
+
+const finalSchema = z.object({ items: menuItemSchema, canCreate: z.boolean() });
+
+export const userMenuSchema = z.object({
+  organizations: finalSchema,
+  workspaces: finalSchema,
+  projects: finalSchema,
 });
 
 export const getUsersByOrganizationQuerySchema = paginationQuerySchema.extend({

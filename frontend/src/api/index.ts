@@ -5,6 +5,8 @@ import type { OrganizationsRoutes } from 'backend/modules/organizations/index';
 import type { PublicRoutes } from 'backend/modules/public/index';
 import type { UsersRoutes } from 'backend/modules/users/index';
 import type { MembershipRoutes } from 'backend/modules/memberships/index';
+import type { WorkspacesRoutes } from 'backend/modules/workspaces/index';
+
 import { config } from 'config';
 import { hc } from 'hono/client';
 
@@ -60,3 +62,4 @@ export const organizationsClient = hc<OrganizationsRoutes>(config.backendUrl, cl
 export const membershipClient = hc<MembershipRoutes>(config.backendUrl, clientConfig);
 export const generalClient = hc<GeneralRoutes>(config.backendUrl, clientConfig);
 export const publicClient = hc<PublicRoutes>(config.backendUrl, clientConfig);
+export const workspaceClient = hc<WorkspacesRoutes>(config.backendUrl, clientConfig);

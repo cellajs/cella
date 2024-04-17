@@ -21,7 +21,7 @@ interface MenuSectionProps {
   menuItemClick: () => void;
 }
 
-type MenuList = UserMenu[keyof UserMenu]['inactive' | 'active'];
+type MenuList = UserMenu[keyof UserMenu]['items'];
 
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
@@ -30,10 +30,13 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   const { activeSections, toggleSection } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
+  const archived = data.items.filter((item) => item.archived);
+  const unarchive = data.items.filter((item) => !item.archived);
+
   const createDialog = () => {
     dialog(section.createForm, {
       className: 'md:max-w-xl',
-      title: t('common:create_organization'),
+      title: section.id === 'workspaces' ? t('common:create_workspace') : t('common:create_organization'),
     });
   };
 
@@ -43,16 +46,16 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   };
 
   const archiveToggleClick = () => {
-    setArchivedVisible(!isArchivedVisible);
+    if (archived.length > 0) setArchivedVisible(!isArchivedVisible);
   };
 
   // Render the menu items for each section
-  const renderItems = (list: MenuList, canCreate: boolean) => {
-    if (list.length === 0 && !canCreate) {
+  const renderItems = (list: MenuList, canCreate: boolean, archived: boolean) => {
+    if (!canCreate) {
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
 
-    if (list.length === 0 && canCreate && section.createForm) {
+    if (!archived && list.length < 1 && canCreate && section.createForm) {
       return (
         <div className="flex items-center">
           <Button className="w-full" variant="ghost" onClick={createDialog}>
@@ -64,7 +67,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         </div>
       );
     }
-
     return list.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />);
   };
 
@@ -73,7 +75,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     if (list.length === 0) {
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
-
     return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} />);
   };
 
@@ -87,12 +88,12 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
                 {section.icon && <section.icon className="mr-2 w-5 h-5" />}
                 {t(section.label)}
               </span>
-              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.active.length}</span>}
+              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{unarchive.length}</span>}
             </div>
 
             <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
-          {!!(isSectionVisible && data.active.length) && (
+          {!!(isSectionVisible && unarchive.length) && (
             <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
               <Button
                 className="w-12 transition duration-300 px-3 ease-in-out }"
@@ -116,19 +117,11 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
       </Sticky>
       <div className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}>
         <ul className="overflow-hidden">
-          {optionsView ? renderOptions(data.active) : renderItems(data.active, data.canCreate)}
-          {!!(data.inactive.length || data.active.length) && (
+          {optionsView ? renderOptions(unarchive) : renderItems(unarchive, data.canCreate, false)}
+          {!!(unarchive.length || archived.length) && (
             <>
-              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.inactive.length} isArchivedVisible={isArchivedVisible} />
-              <div
-                className={`grid transition-[grid-template-rows] ${
-                  isArchivedVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                } ease-in-out delay-75 duration-300`}
-              >
-                <ul className="overflow-hidden">
-                  {optionsView ? renderOptions(data.inactive) : renderItems(data.inactive, data.canCreate)}
-                </ul>
-              </div>
+              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archived.length} isArchivedVisible={isArchivedVisible} />
+              {isArchivedVisible && (optionsView ? renderOptions(archived) : renderItems(archived, data.canCreate, true))}
             </>
           )}
         </ul>

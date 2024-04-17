@@ -65,7 +65,7 @@ const organizationsRoutes = app
       organization: createdOrganization.id,
     });
 
-    sendSSE(user.id, 'new_membership', {
+    sendSSE(user.id, 'new_organization_membership', {
       ...createdOrganization,
       userRole: 'ADMIN',
     });

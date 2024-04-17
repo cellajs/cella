@@ -70,6 +70,10 @@ export const organizationParamSchema = z.object({
   organizationIdentifier: slugSchema.or(idSchema),
 });
 
+export const workspaceParamSchema = z.object({
+  workspaceIdentifier: slugSchema.or(idSchema),
+});
+
 export const imageUrlSchema = z
   .string()
   .url()

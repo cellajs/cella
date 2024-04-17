@@ -9,7 +9,7 @@ import { usersTable } from '../../db/schema/users';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono, type MenuItem } from '../../types/common';
+import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
@@ -22,6 +22,7 @@ import {
   terminateSessionsConfig,
   updateUserConfig,
 } from './routes';
+import { workspacesTable } from '../../db/schema/workspaces';
 
 const app = new CustomHono();
 
@@ -106,57 +107,50 @@ const usersRoutes = app
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
-    const organizations: MenuItem[] = [];
-    const inactiveOrganizations: MenuItem[] = [];
-    await Promise.all(
-      organizationsWithMemberships.map(async ({ organization, membership }) => {
-        const [{ admins }] = await db
-          .select({
-            admins: count(),
-          })
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.role, 'ADMIN'), eq(membershipsTable.organizationId, organization.id)));
+    const workspaceWithMemberships = await db
+      .select({
+        workspace: workspacesTable,
+        membership: membershipsTable,
+      })
+      .from(workspacesTable)
+      .where(eq(membershipsTable.userId, user.id))
+      .orderBy(desc(workspacesTable.createdAt))
+      .innerJoin(membershipsTable, eq(membershipsTable.workspaceId, workspacesTable.id));
 
-        const [{ members }] = await db
-          .select({
-            members: count(),
-          })
-          .from(membershipsTable)
-          .where(eq(membershipsTable.organizationId, organization.id));
-        const result = {
-          ...organization,
-          userRole: membership?.role || null,
-          counts: {
-            members,
-            admins,
-          },
-        };
-        if (membership.inactive) {
-          inactiveOrganizations.push(result);
-        } else {
-          organizations.push(result);
-        }
-      }),
-    );
+    const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
+      return {
+        slug: organization.slug,
+        id: organization.id,
+        createdAt: organization.createdAt,
+        modifiedAt: organization.modifiedAt,
+        name: organization.name,
+        thumbnailUrl: organization.thumbnailUrl,
+        archived: membership.inactive || false,
+        muted: membership.muted || false,
+        role: membership?.role || null,
+      };
+    });
+
+    const workspaces = workspaceWithMemberships.map(({ workspace, membership }) => {
+      return {
+        slug: workspace.slug,
+        id: workspace.id,
+        createdAt: workspace.createdAt,
+        modifiedAt: workspace.modifiedAt,
+        name: workspace.name,
+        thumbnailUrl: workspace.thumbnailUrl,
+        archived: membership.inactive || false,
+        muted: membership.muted || false,
+        role: membership?.role || null,
+      };
+    });
 
     return ctx.json({
       success: true,
       data: {
-        organizations: {
-          active: organizations,
-          inactive: inactiveOrganizations,
-          canCreate: true,
-        },
-        workspaces: {
-          active: [],
-          inactive: [],
-          canCreate: false,
-        },
-        projects: {
-          active: [],
-          inactive: [],
-          canCreate: false,
-        },
+        organizations: { items: organizations, canCreate: true },
+        workspaces: { items: workspaces, canCreate: true },
+        projects: { items: [], canCreate: false },
       },
     });
   })

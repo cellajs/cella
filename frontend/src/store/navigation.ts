@@ -23,9 +23,8 @@ interface NavigationState {
   addToInactive: (itemId: string) => void;
 }
 
-// Build the initial menu (for menu sheet)
-const initialMenuState = menuSections.reduce<UserMenu>((acc, section) => {
-  acc[section.id as keyof UserMenu] = { active: [], inactive: [], canCreate: false };
+const initialMenuState: UserMenu = menuSections.reduce<UserMenu>((acc, section) => {
+  acc[section.id as keyof UserMenu] = { items: [], canCreate: false };
   return acc;
 }, {} as UserMenu);
 
@@ -72,14 +71,12 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = !state.activeSections[section];
             });
           },
-          addToInactive: (itemId) => {
+          addToInactive: (itemId: string) => {
             set((state) => {
-              const sectionKey = Object.keys(state.menu).find((key) => state.menu[key as keyof UserMenu].active.find((item) => item.id === itemId));
-              if (sectionKey) {
-                const itemIndex = state.menu[sectionKey as keyof UserMenu].active.findIndex((item) => item.id === itemId);
-                const item = state.menu[sectionKey as keyof UserMenu].active[itemIndex];
-                state.menu[sectionKey as keyof UserMenu].active.splice(itemIndex, 1);
-                state.menu[sectionKey as keyof UserMenu].inactive.push(item);
+              for (const sectionKey of Object.keys(state.menu)) {
+                const section = state.menu[sectionKey as keyof UserMenu];
+                const itemIndex = section.items.findIndex((item) => item.id === itemId);
+                if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = true;
               }
             });
           },

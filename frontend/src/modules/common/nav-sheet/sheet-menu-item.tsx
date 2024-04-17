@@ -26,9 +26,9 @@ export const SheetMenuItem = ({ item, menuItemClick, className }: SheetMenuItemP
       <AvatarWrap className="m-2" type="organization" id={item.id} name={item.name} url={item.thumbnailUrl} />
       <div className="truncate p-2 pl-0 flex flex-col justify-center text-left">
         <div className="max-sm:pt-2 truncate leading-5">{item.name}</div>
-        {item.userRole && (
+        {item.role && (
           <div className="max-sm:hidden text-muted-foreground text-sm font-light opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-100">
-            {UserRole[item.userRole]}
+            {UserRole[item.role]}
           </div>
         )}
       </div>
