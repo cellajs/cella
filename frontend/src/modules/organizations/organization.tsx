@@ -15,7 +15,6 @@ interface OrganizationContextValue {
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$organizationIdentifier/members' },
-  { id: 'projects', label: 'app:projects', path: '/$organizationIdentifier/projects' },
   { id: 'settings', label: 'common:settings', path: '/$organizationIdentifier/settings' },
 ];
 

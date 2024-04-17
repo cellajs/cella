@@ -54,7 +54,7 @@ const Onboarding = ({onboarding = 'start', setOnboarding}: OnboardingProps) => {
 
                     <CardContent>
                       {id === 'step-1' && (
-                        <CreateOrganizationForm callback={(organization) => setOrganization(organization)} labelDirection="top">
+                        <CreateOrganizationForm callback={(organization) => setOrganization(organization)}>
                           <StepperFooter setOnboarding={setOnboarding} />
                         </CreateOrganizationForm>
                       )}

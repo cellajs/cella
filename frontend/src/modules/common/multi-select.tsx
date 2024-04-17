@@ -311,7 +311,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
             if (inputRef?.current) inputRef.current.focus();
           }}
         >
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1 -my-0.5">
             {onSearch && !selected.length && <Search className="h-4 w-4 shrink-0" style={{ opacity: inputValue ? 1 : 0.5 }} />}
             {selected.map((option) => (
               <Badge
@@ -360,7 +360,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 onFocus={onInputFocus}
                 placeholder={hidePlaceholderWhenSelected && selected.length !== 0 ? '' : placeholder}
                 className={cn(
-                  'h-5 w-full flex-1 bg-transparent outline-none placeholder:text-muted-foreground',
+                  'h-6 w-full flex-1 bg-transparent outline-none placeholder:text-muted-foreground',
                   inputProps?.className,
                   selected.length && 'ml-2 ',
                 )}
