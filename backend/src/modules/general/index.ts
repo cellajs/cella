@@ -125,34 +125,27 @@ const generalRoutes = app
     }
 
     if (organization && !checkRole(membershipSchema, role)) {
-      logEvent('Invalid role', { role }, 'warn');
-      // t('common:error.invalid_role.text')
       return errorResponse(ctx, 400, 'invalid_role', 'warn');
     }
 
-    if (role && organization && !membershipSchema.shape.role.safeParse(role).success) {
-      logEvent('Invalid role', { role }, 'warn');
-      // t('common:error.invalid_role.text')
-      return errorResponse(ctx, 400, 'invalid_role', 'warn');
-    }
-
-    if (role && !organization && !apiUserSchema.shape.role.safeParse(role).success) {
-      logEvent('Invalid role', { role }, 'warn');
+    if (!organization && !checkRole(apiUserSchema, role)) {
       return errorResponse(ctx, 400, 'invalid_role', 'warn');
     }
 
     for (const email of emails) {
       const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
 
+      // Check if it's invitation to organization
       if (targetUser && organization) {
+        // Check if user is already member of organization
         const [existingMembership] = await db
           .select()
           .from(membershipsTable)
           .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
-
         if (existingMembership) {
           logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
 
+          // Update role if different
           if (role && existingMembership.role !== role) {
             await db
               .update(membershipsTable)
@@ -171,8 +164,8 @@ const generalRoutes = app
           continue;
         }
 
+        // Check if user is trying to invite themselves
         if (user.id === targetUser.id) {
-          console.log('User is trying to invite themselves');
           await db
             .insert(membershipsTable)
             .values({
@@ -211,6 +204,7 @@ const generalRoutes = app
 
       if (!organization) {
         if (!targetUser) {
+          // Send invitation email in system level
           emailHtml = render(
             InviteEmail({
               i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
@@ -227,6 +221,7 @@ const generalRoutes = app
           continue;
         }
       } else {
+        // Send invitation email in organization level
         emailHtml = render(
           InviteEmail({
             i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
@@ -241,16 +236,15 @@ const generalRoutes = app
         );
         logEvent('User invited to organization', { organization: organization?.id });
       }
-      try {
-        emailSender.send(
+      emailSender
+        .send(
           config.senderIsReceiver ? user.email : email.toLowerCase(),
           organization ? `Invitation to ${organization.name} on Cella` : 'Invitation to Cella',
           emailHtml,
-        );
-      } catch (error) {
-        const errorMessage = (error as Error).message;
-        logEvent('Error sending email', { errorMessage }, 'error');
-      }
+        )
+        .catch((error) => {
+          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+        });
     }
 
     return ctx.json({
