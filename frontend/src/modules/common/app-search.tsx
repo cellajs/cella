@@ -4,7 +4,7 @@ import { History, Loader2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sticky from 'react-sticky-el';
-import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
+import { type OrganizationSuggestion, type UserSuggestion, type WorkspaceSuggestion, getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { useNavigationStore } from '~/store/navigation';
@@ -58,8 +58,9 @@ export const AppSearch = () => {
 
   const userSuggestions = data?.filter((suggestion) => suggestion.type === 'user') ?? [];
   const organizationSuggestions = data?.filter((suggestion) => suggestion.type === 'organization') ?? [];
+  const workspaceSuggestions = data?.filter((suggestion) => suggestion.type === 'workspace') ?? [];
 
-  const onSelectSuggestion = (suggestion: UserSuggestion | OrganizationSuggestion) => {
+  const onSelectSuggestion = (suggestion: UserSuggestion | OrganizationSuggestion | WorkspaceSuggestion) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
     if (suggestion.type === 'user') {
@@ -76,6 +77,15 @@ export const AppSearch = () => {
         resetScroll: false,
         params: {
           organizationIdentifier: suggestion.slug,
+        },
+      });
+    } else if (suggestion.type === 'workspace') {
+      // Add workspace navigation
+      navigate({
+        to: '',
+        resetScroll: false,
+        params: {
+          workspaceIdentifier: suggestion.slug,
         },
       });
     }
@@ -101,6 +111,7 @@ export const AppSearch = () => {
 
   const visibleUserSuggestions = userSuggestions.slice(0, maxVisibleItemsRef.current);
   const visibleOrganizationSuggestions = organizationSuggestions.slice(0, maxVisibleItemsRef.current);
+  const visibleWorkspaceSuggestions = workspaceSuggestions.slice(0, maxVisibleItemsRef.current);
 
   return (
     <Command className="rounded-lg border" shouldFilter={false}>
@@ -176,6 +187,22 @@ export const AppSearch = () => {
                 <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:organizations')}</div>
               </Sticky>
               {visibleOrganizationSuggestions.map((suggestion) => (
+                <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
+                  <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                    <AvatarWrap type="organization" className="h-8 w-8" id={suggestion.id} name={suggestion.name} url={suggestion.thumbnailUrl} />
+                    <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {organizationSuggestions.length > 0 && workspaceSuggestions.length > 0 && <CommandSeparator />}
+          {workspaceSuggestions.length > 0 && (
+            <CommandGroup>
+              <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-20">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:workspaces')}</div>
+              </Sticky>
+              {visibleWorkspaceSuggestions.map((suggestion) => (
                 <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
                   <div className="flex space-x-2 items-center outline-0 ring-0 group">
                     <AvatarWrap type="organization" className="h-8 w-8" id={suggestion.id} name={suggestion.name} url={suggestion.thumbnailUrl} />

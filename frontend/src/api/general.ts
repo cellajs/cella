@@ -69,11 +69,16 @@ type SuggestionsResponse = Extract<InferResponseType<typeof client.suggestions.$
 
 export type UserSuggestion = Extract<SuggestionsResponse[0], { type: 'user' }>;
 export type OrganizationSuggestion = Extract<SuggestionsResponse[0], { type: 'organization' }>;
+export type WorkspaceSuggestion = Extract<SuggestionsResponse[0], { type: 'workspace' }>;
 
-type Suggestions<T extends 'user' | 'organization'> = T extends 'user' ? UserSuggestion[] : OrganizationSuggestion[];
+type Suggestions<T extends 'user' | 'organization' | 'workspace'> = T extends 'user'
+  ? UserSuggestion[]
+  : T extends 'organization'
+    ? OrganizationSuggestion[]
+    : WorkspaceSuggestion[];
 
 // Get suggestions
-export const getSuggestions = async <T extends 'user' | 'organization'>(query: string, type?: T): Promise<Suggestions<T>> => {
+export const getSuggestions = async <T extends 'user' | 'organization' | 'workspace'>(query: string, type?: T): Promise<Suggestions<T>> => {
   const response = await client.suggestions.$get({
     query: { q: query, type },
   });

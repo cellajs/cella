@@ -164,7 +164,7 @@ export const suggestionsConfig = createRouteConfig({
   request: {
     query: z.object({
       q: z.string().optional().openapi({ description: 'Search by user/org name or user email' }),
-      type: z.enum(['user', 'organization']).optional().openapi({ description: 'Type of suggestions' }),
+      type: z.enum(['user', 'organization', 'workspace']).optional().openapi({ description: 'Type of suggestions' }),
     }),
   },
   responses: {
@@ -195,6 +195,16 @@ export const suggestionsConfig = createRouteConfig({
                   })
                   .extend({
                     type: z.literal('organization'),
+                  }),
+                apiOrganizationSchema
+                  .pick({
+                    id: true,
+                    slug: true,
+                    name: true,
+                    thumbnailUrl: true,
+                  })
+                  .extend({
+                    type: z.literal('workspace'),
                   }),
               ]),
             ),

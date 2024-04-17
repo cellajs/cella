@@ -34,6 +34,7 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
+import { workspacesTable } from '../../db/schema/workspaces';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -318,6 +319,21 @@ const generalRoutes = app
         .limit(10);
 
       result.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as const })));
+    }
+
+    if (type === 'workspace' || !type) {
+      const workspaces = await db
+        .select({
+          id: workspacesTable.id,
+          slug: workspacesTable.slug,
+          name: workspacesTable.name,
+          thumbnailUrl: workspacesTable.thumbnailUrl,
+        })
+        .from(workspacesTable)
+        .where(ilike(workspacesTable.name, `%${q}%`))
+        .limit(10);
+
+      result.push(...workspaces.map((workspace) => ({ ...workspace, type: 'workspace' as const })));
     }
 
     return ctx.json({

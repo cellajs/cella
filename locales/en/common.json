@@ -260,6 +260,7 @@
   "start.github.message": "Get started on Github",
   "subject": "Subject",
   "subscription": "Subscription",
+  "workspaces": "Workspaces",
   "success.mute_organization": "Organization has been muted.",
   "success.unmute_organization": "Organization has been unmuted.",
   "success.archived_organization": "Organization has been archived.",
