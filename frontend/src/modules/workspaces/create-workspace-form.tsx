@@ -23,7 +23,6 @@ import InputFormField from '../common/form-fields/input';
 import { useStepper } from '../ui/stepper';
 import { SlugFormField } from '../common/form-fields/slug';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { ScrollArea } from '../ui/scroll-area';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -38,7 +37,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog, labelDirection = 'top', children }) => {
   const { t } = useTranslation();
-  // const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
   const [isDeviating, setDeviating] = useState(false);
   const [selectedOrganization, setSelectedOrganization] = useState('');
@@ -112,8 +110,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
           <SelectTrigger className="w-full">
             <SelectValue placeholder={'Select organization'} />
           </SelectTrigger>
-          <SelectContent>
-            <ScrollArea className={'h-[20vh] pr-3 pl-3 overflow-y-auto flex items-center'}>
+          <SelectContent className="h-[30vh]">
               {menu.organizations.items.map((organization) => (
                 <SelectItem
                   onClick={() => handleOrganizationSelect(organization.id)}
@@ -124,7 +121,6 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
                   {organization.name}
                 </SelectItem>
               ))}
-            </ScrollArea>
           </SelectContent>
         </Select>
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
