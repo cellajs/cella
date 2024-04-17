@@ -122,7 +122,13 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
           {!!(unarchive.length || archived.length) && (
             <>
               <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archived.length} isArchivedVisible={isArchivedVisible} />
-              {isArchivedVisible && (optionsView ? renderOptions(archived) : renderItems(archived, data.canCreate, true))}
+              <div
+                className={`grid transition-[grid-template-rows] ${
+                  isArchivedVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                } ease-in-out duration-300`}
+              >
+                <ul className="overflow-hidden">{optionsView ? renderOptions(archived) : renderItems(archived, data.canCreate, true)}</ul>
+              </div>
             </>
           )}
         </ul>
