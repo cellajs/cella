@@ -18,8 +18,9 @@ const workspacesRoutes = app
    * Create workspace
    */
   .openapi(createWorkspaceRouteConfig, async (ctx) => {
-    const { name, slug, organizationId } = ctx.req.valid('json');
+    const { name, slug } = ctx.req.valid('json');
     const user = ctx.get('user');
+    const organization = ctx.get('organization');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -30,6 +31,7 @@ const workspacesRoutes = app
     const [createdWorkspace] = await db
       .insert(workspacesTable)
       .values({
+        organizationId: organization.id,
         name,
         slug,
       })
@@ -37,13 +39,12 @@ const workspacesRoutes = app
 
     logEvent('Workspace created', { workspace: createdWorkspace.id });
 
-    await db
-      .update(membershipsTable)
-      .set({
-        workspaceId: createdWorkspace.id,
-      })
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organizationId)))
-      .returning();
+    await db.insert(membershipsTable).values({
+      userId: user.id,
+      workspaceId: createdWorkspace.id,
+      type: 'WORKSPACE',
+      role: 'ADMIN',
+    });
 
     logEvent('User added to workspace', {
       user: user.id,
@@ -63,7 +64,7 @@ const workspacesRoutes = app
       },
     });
   })
-  
+
   /*
    * Get workspace by id or slug
    */
@@ -83,8 +84,8 @@ const workspacesRoutes = app
         role: membership?.role || null,
       },
     });
-  })
-  
+  });
+
 export default workspacesRoutes;
 
 export type WorkspacesRoutes = typeof workspacesRoutes;

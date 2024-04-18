@@ -57,8 +57,7 @@ const organizationsRoutes = app
         userId: user.id,
         organizationId: createdOrganization.id,
         role: 'ADMIN',
-      })
-      .returning();
+      });
 
     logEvent('User added to organization', {
       user: user.id,

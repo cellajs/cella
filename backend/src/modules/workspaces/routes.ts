@@ -1,7 +1,7 @@
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
-import { workspaceParamSchema } from '../../lib/common-schemas';
+import { organizationParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { authGuard } from '../../middlewares/guard';
+import { tenantGuard } from '../../middlewares/guard';
 import tenant from '../../middlewares/guard/tenant';
 
 import {
@@ -11,11 +11,14 @@ import {
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/workspaces',
-  guard: authGuard(),
+  path: '/organizations/{idOrSlug}/workspaces',
+  guard: tenantGuard(['ADMIN']),
   tags: ['workspaces'],
   summary: 'Create a new workspace',
   request: {
+    request: {
+      params: organizationParamSchema,
+    },
     body: {
       required: true,
       content: {
