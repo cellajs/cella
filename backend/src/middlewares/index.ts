@@ -7,8 +7,16 @@ import { CustomHono } from '../types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
 import { rateLimiter } from './rate-limiter';
+import { isbot } from 'isbot';
+import { errorResponse } from '../lib/errors';
 
 const app = new CustomHono();
+
+// Prevent crawlers from causing log spam
+app.use(async (ctx, next) => {
+  if (!isbot(ctx.req.header('user-agent'))) await next();
+  return errorResponse(ctx, 403, 'user_maybe_bot', 'warn');
+});
 
 // Secure headers
 app.use('*', secureHeaders());
@@ -48,5 +56,4 @@ app.use(
 
 // Rate limiter
 app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));
-
 export default app;
