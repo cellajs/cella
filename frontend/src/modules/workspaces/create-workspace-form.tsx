@@ -67,9 +67,9 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       if (!callback && !nextStep) {
         setSheet(null);
         // navigate({
-        //   to: '/$resourceIdentifier/members',
+        //   to: '/$idOrSlug/members',
         //   params: {
-        //     resourceIdentifier: result.slug,
+        //     idOrSlug: result.slug,
         //   },
         // });
       }

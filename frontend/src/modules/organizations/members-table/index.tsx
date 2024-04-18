@@ -25,16 +25,16 @@ const LIMIT = 40;
 
 export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
-export const membersQueryOptions = (resourceIdentifier: string, { q, sort: initialSort, order: initialOrder, role }: GetMembersParams) => {
+export const membersQueryOptions = (idOrSlug: string, { q, sort: initialSort, order: initialOrder, role }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['members', resourceIdentifier, q, sort, order, role],
+    queryKey: ['members', idOrSlug, q, sort, order, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
       const fetchedData = await getOrganizationMembers(
-        resourceIdentifier,
+        idOrSlug,
         {
           page: pageParam,
           q,
@@ -53,7 +53,7 @@ export const membersQueryOptions = (resourceIdentifier: string, { q, sort: initi
   });
 };
 
-export const useUpdateUserInOrganizationMutation = (resourceIdentifier: string) => {
+export const useUpdateUserInOrganizationMutation = (idOrSlug: string) => {
   return useMutation<
     Member,
     DefaultError,
@@ -62,10 +62,10 @@ export const useUpdateUserInOrganizationMutation = (resourceIdentifier: string) 
       role: Member['organizationRole'];
     }
   >({
-    mutationKey: ['members', 'update', resourceIdentifier],
-    mutationFn: (params) => updateMembership(resourceIdentifier, params.id, params.role),
+    mutationKey: ['members', 'update', idOrSlug],
+    mutationFn: (params) => updateMembership(idOrSlug, params.id, params.role),
     onSuccess: (member) => {
-      queryClient.setQueryData(['users', resourceIdentifier], member);
+      queryClient.setQueryData(['users', idOrSlug], member);
     },
     gcTime: 1000 * 10,
   });

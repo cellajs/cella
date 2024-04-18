@@ -14,21 +14,21 @@ interface OrganizationContextValue {
 }
 
 const organizationTabs: PageNavTab[] = [
-  { id: 'members', label: 'common:members', path: '/$resourceIdentifier/members' },
-  { id: 'settings', label: 'common:settings', path: '/$resourceIdentifier/settings' },
+  { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
+  { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
 ];
 
 export const OrganizationContext = createContext({} as OrganizationContextValue);
 
-export const organizationQueryOptions = (resourceIdentifier: string) =>
+export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
-    queryKey: ['organizations', resourceIdentifier],
-    queryFn: () => getOrganizationBySlugOrId(resourceIdentifier),
+    queryKey: ['organizations', idOrSlug],
+    queryFn: () => getOrganizationBySlugOrId(idOrSlug),
   });
 
 const OrganizationPage = () => {
-  const { resourceIdentifier } = useParams({ from: OrganizationRoute.id });
-  const organizationQuery = useSuspenseQuery(organizationQueryOptions(resourceIdentifier));
+  const { idOrSlug } = useParams({ from: OrganizationRoute.id });
+  const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
 
   return (

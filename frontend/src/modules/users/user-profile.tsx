@@ -12,17 +12,17 @@ interface UserContextValue {
   user: User;
 }
 
-export const userQueryOptions = (userIdentifier: string) =>
+export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({
-    queryKey: ['users', userIdentifier],
-    queryFn: () => getUserBySlugOrId(userIdentifier),
+    queryKey: ['users', idOrSlug],
+    queryFn: () => getUserBySlugOrId(idOrSlug),
   });
 
 export const UserContext = createContext({} as UserContextValue);
 
 export const UserProfile = () => {
-  const { userIdentifier } = useParams({ from: UserProfileRoute.id });
-  const userQuery = useSuspenseQuery(userQueryOptions(userIdentifier));
+  const { idOrSlug } = useParams({ from: UserProfileRoute.id });
+  const userQuery = useSuspenseQuery(userQueryOptions(idOrSlug));
   const user = userQuery.data;
 
   return (

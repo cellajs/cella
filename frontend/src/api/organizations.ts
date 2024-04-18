@@ -12,12 +12,12 @@ export const createOrganization = async (params: CreateOrganizationParams) => {
   return json.data;
 };
 
-export type UpdateOrganizationParams = Parameters<(typeof client.organizations)[':resourceIdentifier']['$put']>['0']['json'];
+export type UpdateOrganizationParams = Parameters<(typeof client.organizations)[':idOrSlug']['$put']>['0']['json'];
 
 // Update an organization
-export const updateOrganization = async (resourceIdentifier: string, params: UpdateOrganizationParams) => {
-  const response = await client.organizations[':resourceIdentifier'].$put({
-    param: { resourceIdentifier },
+export const updateOrganization = async (idOrSlug: string, params: UpdateOrganizationParams) => {
+  const response = await client.organizations[':idOrSlug'].$put({
+    param: { idOrSlug },
     json: params,
   });
 
@@ -65,9 +65,9 @@ export const getOrganizations = async (
 };
 
 // Get an organization by its slug or ID
-export const getOrganizationBySlugOrId = async (resourceIdentifier: string) => {
-  const response = await client.organizations[':resourceIdentifier'].$get({
-    param: { resourceIdentifier },
+export const getOrganizationBySlugOrId = async (idOrSlug: string) => {
+  const response = await client.organizations[':idOrSlug'].$get({
+    param: { idOrSlug },
   });
 
   const json = await response.json();
@@ -87,7 +87,7 @@ export const deleteOrganizations = async (organizationIds: string[]) => {
 };
 
 export type GetMembersParams = Partial<
-  Omit<Parameters<(typeof client.organizations)[':resourceIdentifier']['members']['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client.organizations)[':idOrSlug']['members']['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
     page: number;
   }
@@ -95,13 +95,13 @@ export type GetMembersParams = Partial<
 
 // Get a list of members in an organization
 export const getOrganizationMembers = async (
-  resourceIdentifier: string,
+  idOrSlug: string,
   { q, sort = 'id', order = 'asc', role, page = 0, limit = 50 }: GetMembersParams = {},
   signal?: AbortSignal,
 ) => {
-  const response = await client.organizations[':resourceIdentifier'].members.$get(
+  const response = await client.organizations[':idOrSlug'].members.$get(
     {
-      param: { resourceIdentifier },
+      param: { idOrSlug },
       query: {
         q,
         sort,

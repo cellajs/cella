@@ -78,18 +78,18 @@ export const AppSearch = () => {
     updateRecentSearches(searchValue);
     if (suggestion.type === 'user') {
       navigate({
-        to: '/user/$userIdentifier',
+        to: '/user/$idOrSlug',
         resetScroll: false,
         params: {
-          userIdentifier: suggestion.slug,
+          idOrSlug: suggestion.slug,
         },
       });
     } else {
       navigate({
-        to: '/$resourceIdentifier/members',
+        to: '/$idOrSlug/members',
         resetScroll: false,
         params: {
-          resourceIdentifier: suggestion.slug,
+          idOrSlug: suggestion.slug,
         },
       });
     }

@@ -11,15 +11,15 @@ interface WorkspaceContextValue {
 
 export const WorkspaceContext = createContext({} as WorkspaceContextValue);
 
-export const workspaceQueryOptions = (resourceIdentifier: string) =>
+export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({
-    queryKey: ['workspaces', resourceIdentifier],
-    queryFn: () => getWorkspaceBySlugOrId(resourceIdentifier),
+    queryKey: ['workspaces', idOrSlug],
+    queryFn: () => getWorkspaceBySlugOrId(idOrSlug),
   });
 
 const WorkspacePage = () => {
-  const { resourceIdentifier } = useParams({ from: WorkspaceRoute.id });
-  const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(resourceIdentifier));
+  const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
+  const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
 
   return (

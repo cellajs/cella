@@ -9,25 +9,25 @@ import { logEvent } from '../logger/log-event';
 
 // tenant() is checking if the user has membership in the organization and if the user has the required role
 const tenant =
-  (accessibleFor?: MembershipModel['role'][]): MiddlewareHandler<Env, ':resourceIdentifier?'> =>
+  (accessibleFor?: MembershipModel['role'][]): MiddlewareHandler<Env, ':idOrSlug?'> =>
   async (ctx, next) => {
     // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
     const body = ctx.req.header('content-type') === 'application/json' ? ((await ctx.req.raw.clone().json()) as any) : undefined;
-    const resourceIdentifier = (ctx.req.param('resourceIdentifier') || body?.resourceIdentifier)?.toLowerCase();
+    const idOrSlug = (ctx.req.param('idOrSlug') || body?.idOrSlug)?.toLowerCase();
     const user = ctx.get('user');
 
-    if (!resourceIdentifier) {
+    if (!idOrSlug) {
       return await next();
     }
 
     const [organization] = await db
       .select()
       .from(organizationsTable)
-      .where(or(eq(organizationsTable.id, resourceIdentifier), eq(organizationsTable.slug, resourceIdentifier)));
+      .where(or(eq(organizationsTable.id, idOrSlug), eq(organizationsTable.slug, idOrSlug)));
 
     if (!organization) {
       // t('common:error.resource_not_found.text', { resource: 'organization' })
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: resourceIdentifier });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: idOrSlug });
     }
 
     const [membership] = await db
