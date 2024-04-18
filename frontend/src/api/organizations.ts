@@ -76,9 +76,9 @@ export const getOrganizationBySlugOrId = async (idOrSlug: string) => {
 };
 
 // Delete organizations
-export const deleteOrganizations = async (organizationIds: string[]) => {
+export const deleteOrganizations = async (ids: string[]) => {
   const response = await client.organizations.$delete({
-    query: { ids: organizationIds },
+    query: { ids },
   });
 
   const json = await response.json();
