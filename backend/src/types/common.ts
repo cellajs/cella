@@ -25,15 +25,3 @@ export type Env = {
 
 // biome-ignore lint/complexity/noBannedTypes: <explanation>
 export class CustomHono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> extends OpenAPIHono<E, S, BasePath> {}
-
-// export type MenuItem = {
-//   slug: string;
-//   id: string;
-//   createdAt: Date;
-//   modifiedAt: Date | null;
-//   name: string;
-//   thumbnailUrl: string | null;
-//   archived: boolean;
-//   muted: boolean;
-//   role: 'ADMIN' | 'MEMBER' | null;
-// };
