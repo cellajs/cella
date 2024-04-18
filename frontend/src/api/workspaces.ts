@@ -12,20 +12,6 @@ export const createWorkspace = async (params: CreateWorkspaceParams) => {
   return json.data;
 };
 
-export type UpdateWorkspaceParams = Parameters<(typeof client.workspaces)[':idOrSlug']['$put']>['0']['json'];
-
-// Update a workspace
-export const updateWorkspace = async (idOrSlug: string, params: UpdateWorkspaceParams) => {
-  const response = await client.workspaces[':idOrSlug'].$put({
-    param: { idOrSlug },
-    json: params,
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return json.data;
-};
-
 // Get an workspace by its slug or ID
 export const getWorkspaceBySlugOrId = async (idOrSlug: string) => {
   const response = await client.workspaces[':idOrSlug'].$get({
@@ -37,13 +23,27 @@ export const getWorkspaceBySlugOrId = async (idOrSlug: string) => {
   return json.data;
 };
 
-// Delete workspaces
-export const deleteWorkspaces = async (ids: string[]) => {
-  const response = await client.workspaces.$delete({
-    query: { ids },
-  });
+// export type UpdateWorkspaceParams = Parameters<(typeof client.workspaces)[':idOrSlug']['$put']>['0']['json'];
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
-};
+// TODO: Update a workspace
+// export const updateWorkspace = async (idOrSlug: string, params: UpdateWorkspaceParams) => {
+//   const response = await client.workspaces[':idOrSlug'].$put({
+//     param: { idOrSlug },
+//     json: params,
+//   });
+
+//   const json = await response.json();
+//   if ('error' in json) throw new ApiError(json.error);
+//   return json.data;
+// };
+
+// TODO: Delete workspaces
+// export const deleteWorkspaces = async (ids: string[]) => {
+//   const response = await client.workspaces.$delete({
+//     query: { ids },
+//   });
+
+//   const json = await response.json();
+//   if ('error' in json) throw new ApiError(json.error);
+//   return;
+// };

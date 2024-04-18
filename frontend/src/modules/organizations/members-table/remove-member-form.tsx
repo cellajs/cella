@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { removeMembersFromOrganization as baseRemoveMembersFromOrganization } from '~/api/memberships';
+import { removeMembersFromResource as baseremoveMembersFromResource } from '~/api/memberships';
 import type { Member, Organization } from '~/types';
 
 import { useMutation } from '~/hooks/use-mutations';
@@ -16,8 +16,8 @@ interface Props {
 const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
 
-  const { mutate: removeMembersFromOrganization, isPending } = useMutation({
-    mutationFn: baseRemoveMembersFromOrganization,
+  const { mutate: removeMembersFromResource, isPending } = useMutation({
+    mutationFn: baseremoveMembersFromResource,
     onSuccess: () => {
       callback?.(members);
 
@@ -28,7 +28,7 @@ const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }
   });
 
   const onRemoveMember = () => {
-    removeMembersFromOrganization({
+    removeMembersFromResource({
       idOrSlug: organization.id,
       ids: members.map((member) => member.id),
     });

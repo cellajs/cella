@@ -18,6 +18,17 @@ export const getUserMenu = async () => {
   return json.data;
 };
 
+// Get a user by slug or ID
+export const getUserBySlugOrId = async (idOrSlug: string) => {
+  const response = await client.users[':idOrSlug'].$get({
+    param: { idOrSlug },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return json.data;
+};
+
 export type GetUsersParams = Partial<
   Omit<Parameters<(typeof client.users)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
@@ -63,17 +74,6 @@ export const deleteUsers = async (userIds: string[]) => {
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
   return;
-};
-
-// Get a user by their slug or ID
-export const getUserBySlugOrId = async (idOrSlug: string) => {
-  const response = await client.users[':idOrSlug'].$get({
-    param: { idOrSlug },
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return json.data;
 };
 
 export type UpdateUserParams = Parameters<(typeof client.users)[':userId']['$put']>['0']['json'];

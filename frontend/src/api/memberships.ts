@@ -1,7 +1,7 @@
 import type { Member } from '~/types';
 import { ApiError, membershipClient as client } from '.';
 
-export const removeMembersFromOrganization = async (query: { idOrSlug: string; ids: string[] }) => {
+export const removeMembersFromResource = async (query: { idOrSlug: string; ids: string[] }) => {
   const response = await client.memberships.$delete({ query });
 
   const json = await response.json();

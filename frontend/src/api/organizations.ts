@@ -12,26 +12,16 @@ export const createOrganization = async (params: CreateOrganizationParams) => {
   return json.data;
 };
 
-export type UpdateOrganizationParams = Parameters<(typeof client.organizations)[':idOrSlug']['$put']>['0']['json'];
-
-// Update an organization
-export const updateOrganization = async (idOrSlug: string, params: UpdateOrganizationParams) => {
-  const response = await client.organizations[':idOrSlug'].$put({
+// Get an organization by slug or ID
+export const getOrganizationBySlugOrId = async (idOrSlug: string) => {
+  const response = await client.organizations[':idOrSlug'].$get({
     param: { idOrSlug },
-    json: params,
   });
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
-
-export type GetOrganizationsParams = Partial<
-  Omit<Parameters<(typeof client.organizations)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit: number;
-    page: number;
-  }
->;
 
 // Get a list of organizations
 export const getOrganizations = async (
@@ -64,16 +54,26 @@ export const getOrganizations = async (
   return json.data;
 };
 
-// Get an organization by its slug or ID
-export const getOrganizationBySlugOrId = async (idOrSlug: string) => {
-  const response = await client.organizations[':idOrSlug'].$get({
+export type UpdateOrganizationParams = Parameters<(typeof client.organizations)[':idOrSlug']['$put']>['0']['json'];
+
+// Update an organization
+export const updateOrganization = async (idOrSlug: string, params: UpdateOrganizationParams) => {
+  const response = await client.organizations[':idOrSlug'].$put({
     param: { idOrSlug },
+    json: params,
   });
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
+
+export type GetOrganizationsParams = Partial<
+  Omit<Parameters<(typeof client.organizations)['$get']>['0']['query'], 'limit' | 'offset'> & {
+    limit: number;
+    page: number;
+  }
+>;
 
 // Delete organizations
 export const deleteOrganizations = async (ids: string[]) => {
