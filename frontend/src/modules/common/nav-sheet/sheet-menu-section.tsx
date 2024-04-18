@@ -125,7 +125,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   }, [data]);
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
+    <>
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
@@ -164,21 +164,23 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
       </Sticky>
       <div className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}>
         <ul className="overflow-hidden">
-          {optionsView ? renderOptions(unarchive) : renderItems(unarchive, data.canCreate, false)}
-          {!!(unarchive.length || archived.length) && (
-            <>
-              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archived.length} isArchivedVisible={isArchivedVisible} />
-              <div
-                className={`grid transition-[grid-template-rows] ${
-                  isArchivedVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                } ease-in-out duration-300`}
-              >
-                <ul className="overflow-hidden">{optionsView ? renderOptions(archived) : renderItems(archived, data.canCreate, true)}</ul>
-              </div>
-            </>
-          )}
+          <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
+            {optionsView ? renderOptions(unarchive) : renderItems(unarchive, data.canCreate, false)}
+            {!!(unarchive.length || archived.length) && (
+              <>
+                <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archived.length} isArchivedVisible={isArchivedVisible} />
+                <div
+                  className={`grid transition-[grid-template-rows] ${
+                    isArchivedVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                  } ease-in-out duration-300`}
+                >
+                  <ul className="overflow-hidden">{optionsView ? renderOptions(archived) : renderItems(archived, data.canCreate, true)}</ul>
+                </div>
+              </>
+            )}
+          </DndContext>
         </ul>
       </div>
-    </DndContext>
+    </>
   );
 };
