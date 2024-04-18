@@ -8,11 +8,11 @@ import UserSettings from '~/modules/users/user-settings';
 import { IndexRoute } from './routeTree';
 
 export const UserProfileRoute = createRoute({
-  path: '/user/$userIdentifier',
+  path: '/user/$idOrSlug',
   staticData: { pageTitle: 'Profile' },
   getParentRoute: () => IndexRoute,
-  loader: async ({ params: { userIdentifier } }) => {
-    queryClient.ensureQueryData(userQueryOptions(userIdentifier));
+  loader: async ({ params: { idOrSlug } }) => {
+    queryClient.ensureQueryData(userQueryOptions(idOrSlug));
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (

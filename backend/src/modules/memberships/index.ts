@@ -18,25 +18,25 @@ const membershipRoutes = app
    * Delete users from organization
    */
   .openapi(deleteMembershipRouteConfig, async (ctx) => {
-    const { ids, resourceIdentifier } = ctx.req.valid('query');
+    const { ids, idOrSlug } = ctx.req.valid('query');
     const usersIds = Array.isArray(ids) ? ids : [ids];
 
     await Promise.all(
       usersIds.map(async (id) => {
         const [targetMembership] = await db
           .delete(membershipsTable)
-          .where(and(eq(membershipsTable.userId, id), eq(membershipsTable.organizationId, resourceIdentifier)))
+          .where(and(eq(membershipsTable.userId, id), eq(membershipsTable.organizationId, idOrSlug)))
           .returning();
         if (!targetMembership) {
           return errorResponse(ctx, 404, 'not_found', 'warn', undefined, {
             user: id,
-            resource: resourceIdentifier,
+            resource: idOrSlug,
           });
         }
 
-        logEvent('Member deleted', { user: id, organization: resourceIdentifier });
+        logEvent('Member deleted', { user: id, organization: idOrSlug });
 
-        sendSSE(id, 'remove_organization_membership', { id: resourceIdentifier });
+        sendSSE(id, 'remove_organization_membership', { id: idOrSlug });
       }),
     );
 

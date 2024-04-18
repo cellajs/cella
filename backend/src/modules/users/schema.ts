@@ -2,7 +2,15 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { usersTable } from '../../db/schema/users';
-import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, resourceTypeSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
+import {
+  idSchema,
+  imageUrlSchema,
+  nameSchema,
+  paginationQuerySchema,
+  resourceTypeSchema,
+  slugSchema,
+  validSlugSchema,
+} from '../../lib/common-schemas';
 import { membershipSchema } from '../memberships/schema';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
@@ -29,7 +37,7 @@ export const updateUserParamSchema = z.object({
 });
 
 export const getUserParamSchema = z.object({
-  userIdentifier: idSchema.or(slugSchema),
+  idOrSlug: idSchema.or(slugSchema),
 });
 
 export const getUsersQuerySchema = paginationQuerySchema.merge(
@@ -61,7 +69,6 @@ export const userMenuSchema = z.object({
   workspaces: menuSectionSchema,
   projects: menuSectionSchema,
 });
-
 
 export const updateUserJsonSchema = createInsertSchema(usersTable, {
   email: z.string().email(),

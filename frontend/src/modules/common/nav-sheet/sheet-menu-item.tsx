@@ -20,8 +20,8 @@ export const SheetMenuItem = ({ item, menuItemClick, className, searchResults }:
       )}
       onClick={menuItemClick}
       aria-label={item.name}
-      to={`${item.type === 'organization' ? '' : `/${item.type}`}/$resourceIdentifier`}
-      params={{ resourceIdentifier: item.slug }}
+      to={`${item.type === 'organization' ? '' : `/${item.type}`}/$idOrSlug`}
+      params={{ idOrSlug: item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
       <AvatarWrap className="m-2" type="organization" id={item.id} name={item.name} url={item.thumbnailUrl} />

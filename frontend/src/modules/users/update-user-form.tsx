@@ -40,10 +40,10 @@ const formSchema = updateUserJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const useUpdateUserMutation = (userIdentifier: string) => {
+export const useUpdateUserMutation = (idOrSlug: string) => {
   return useMutation<User, DefaultError, UpdateUserParams>({
-    mutationKey: ['me', 'update', userIdentifier],
-    mutationFn: (params) => updateUser(userIdentifier, params),
+    mutationKey: ['me', 'update', idOrSlug],
+    mutationFn: (params) => updateUser(idOrSlug, params),
     onSuccess: (user) => {
       queryClient.setQueryData(['users', user.id], user);
     },

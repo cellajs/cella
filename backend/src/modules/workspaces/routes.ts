@@ -67,7 +67,7 @@ export const getWorkspacesRouteConfig = createRouteConfig({
 
 export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/workspaces/{resourceIdentifier}',
+  path: '/workspaces/{idOrSlug}',
   guard: tenant(),
   tags: ['workspaces'],
   summary: 'Get workspace by id or slug',
@@ -94,7 +94,7 @@ export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
 
 export const getUsersByWorkspaceIdRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/workspaces/{resourceIdentifier}/members',
+  path: '/workspaces/{idOrSlug}/members',
   guard: tenant(),
   tags: ['workspaces'],
   summary: 'Get members of workspace',

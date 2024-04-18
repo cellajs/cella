@@ -5,7 +5,7 @@ import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 
 export const inviteJsonSchema = z.object({
-  resourceIdentifier: slugSchema.or(idSchema).optional(),
+  idOrSlug: slugSchema.or(idSchema).optional(),
   emails: apiUserSchema.shape.email.array().min(1),
   role: z.union([apiUserSchema.shape.role, membershipSchema.shape.role]).optional(),
 });
@@ -22,9 +22,9 @@ const suggestionSchema = z.object({
   thumbnailUrl: imageUrlSchema.nullable(),
 });
 
-export const userSuggestionSchema = suggestionSchema.extend({ email: z.string(), type: z.literal('user')})
-export const organizationSuggestionSchema = suggestionSchema.extend({ type: z.literal('organization')})
-export const workspaceSuggestionSchema = suggestionSchema.extend({ type: z.literal('workspace')})
+export const userSuggestionSchema = suggestionSchema.extend({ email: z.string(), type: z.literal('user') });
+export const organizationSuggestionSchema = suggestionSchema.extend({ type: z.literal('organization') });
+export const workspaceSuggestionSchema = suggestionSchema.extend({ type: z.literal('workspace') });
 
 export const suggestionsSchema = z.object({
   users: z.array(userSuggestionSchema),

@@ -5,24 +5,25 @@ import { InviteEmail } from '../../../../email/emails/invite';
 import { render } from '@react-email/render';
 import { config } from 'config';
 import { env } from 'env';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
+import { streamSSE, type SSEStreamingApi } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
-import { type User, generateId } from 'lucia';
+import { generateId, type User } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
 
 import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
-import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { membershipsTable, type MembershipModel } from '../../db/schema/memberships';
+import { organizationsTable, type OrganizationModel } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
+import { workspacesTable } from '../../db/schema/workspaces';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { sendSSE } from '../../lib/sse';
 import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono, type ResourceType } from '../../types/common';
+import { CustomHono, type PageResourceType } from '../../types/common';
 import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 import { checkSlugAvailable } from './helpers/check-slug';
@@ -34,7 +35,6 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import { workspacesTable } from '../../db/schema/workspaces';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -305,7 +305,7 @@ const generalRoutes = app
         .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
         .limit(10);
 
-      const userType = 'user' satisfies ResourceType;
+      const userType = 'user' satisfies PageResourceType;
       usersResult.push(...users.map((user) => ({ ...user, type: userType })));
     }
 
@@ -321,7 +321,7 @@ const generalRoutes = app
         .where(ilike(organizationsTable.name, `%${q}%`))
         .limit(10);
 
-      const organizationType = 'organization' satisfies ResourceType;
+      const organizationType = 'organization' satisfies PageResourceType;
       organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: organizationType })));
     }
 
@@ -337,7 +337,7 @@ const generalRoutes = app
         .where(ilike(workspacesTable.name, `%${q}%`))
         .limit(10);
 
-      const workspaceType = 'workspace' satisfies ResourceType;
+      const workspaceType = 'workspace' satisfies PageResourceType;
       workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: workspaceType })));
     }
 

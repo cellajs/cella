@@ -16,10 +16,10 @@ export enum UserRole {
   MEMBER = 'Member',
 }
 
-export type ResourceType = 'organization' | 'workspace' | 'project' | 'user';
+export type PageResourceType = 'organization' | 'workspace' | 'project' | 'user';
 
 export interface Page {
-  type: ResourceType;
+  type: PageResourceType;
   id: string;
   slug: string;
   name: string;
@@ -36,7 +36,7 @@ export type Organization = Extract<InferResponseType<(typeof organizationsClient
 export type Workspace = Extract<InferResponseType<(typeof workspaceClient.workspaces)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Member = Extract<
-  InferResponseType<(typeof organizationsClient.organizations)[':resourceIdentifier']['members']['$get']>,
+  InferResponseType<(typeof organizationsClient.organizations)[':idOrSlug']['members']['$get']>,
   { data: unknown }
 >['data']['items'][number];
 

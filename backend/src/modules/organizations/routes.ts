@@ -52,7 +52,7 @@ export const createOrganizationRouteConfig = createRouteConfig({
 
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/organizations/{resourceIdentifier}',
+  path: '/organizations/{idOrSlug}',
   guard: tenantGuard(['ADMIN']),
   tags: ['organizations'],
   summary: 'Update organization',
@@ -138,7 +138,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{resourceIdentifier}',
+  path: '/organizations/{idOrSlug}',
   guard: tenantGuard(),
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
@@ -165,7 +165,7 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
 
 export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{resourceIdentifier}/members',
+  path: '/organizations/{idOrSlug}/members',
   guard: tenantGuard(),
   tags: ['organizations'],
   summary: 'Get members of organization',

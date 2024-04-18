@@ -74,7 +74,7 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
     invite({
       emails: values.emails,
       role: values.role,
-      resourceIdentifier: organization?.id,
+      idOrSlug: organization?.id,
     });
   };
 

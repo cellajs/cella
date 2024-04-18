@@ -12,14 +12,14 @@ import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
 import type { userSuggestionSchema, organizationSuggestionSchema, workspaceSuggestionSchema } from 'backend/modules/general/schema';
 import type { z } from 'zod';
-import type { ResourceType } from '~/types';
+import type { PageResourceType } from '~/types';
 
 type SuggestionType = z.infer<typeof userSuggestionSchema> | z.infer<typeof organizationSuggestionSchema> | z.infer<typeof workspaceSuggestionSchema>;
 
 interface SuggestionSection {
   id: 'users' | 'organizations' | 'workspaces';
   label: string;
-  type: ResourceType;
+  type: PageResourceType;
 }
 
 const suggestionSections: SuggestionSection[] = [
@@ -78,18 +78,18 @@ export const AppSearch = () => {
     updateRecentSearches(searchValue);
     if (suggestion.type === 'user') {
       navigate({
-        to: '/user/$userIdentifier',
+        to: '/user/$idOrSlug',
         resetScroll: false,
         params: {
-          userIdentifier: suggestion.slug,
+          idOrSlug: suggestion.slug,
         },
       });
     } else {
       navigate({
-        to: '/$resourceIdentifier/members',
+        to: '/$idOrSlug/members',
         resetScroll: false,
         params: {
-          resourceIdentifier: suggestion.slug,
+          idOrSlug: suggestion.slug,
         },
       });
     }
