@@ -1,21 +1,21 @@
 import type { ErrorType } from 'backend/lib/errors';
 import type { AuthRoutes } from 'backend/modules/auth/index';
 import type { GeneralRoutes } from 'backend/modules/general/index';
+import type { MembershipRoutes } from 'backend/modules/memberships/index';
 import type { OrganizationsRoutes } from 'backend/modules/organizations/index';
 import type { PublicRoutes } from 'backend/modules/public/index';
 import type { UsersRoutes } from 'backend/modules/users/index';
-import type { MembershipRoutes } from 'backend/modules/memberships/index';
 import type { WorkspacesRoutes } from 'backend/modules/workspaces/index';
 
 import { config } from 'config';
 import { hc } from 'hono/client';
-import type { ResourceType } from '~/types';
+import type { PageResourceType } from '~/types';
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
   status: string | number;
   type?: string;
-  resourceType?: ResourceType;
+  resourceType?: PageResourceType;
   severity?: string;
   logId?: string;
   path?: string;

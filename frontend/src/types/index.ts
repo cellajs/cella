@@ -16,10 +16,10 @@ export enum UserRole {
   MEMBER = 'Member',
 }
 
-export type ResourceType = 'organization' | 'workspace' | 'project' | 'user';
+export type PageResourceType = 'organization' | 'workspace' | 'project' | 'user';
 
 export interface Page {
-  type: ResourceType;
+  type: PageResourceType;
   id: string;
   slug: string;
   name: string;

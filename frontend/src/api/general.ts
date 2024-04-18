@@ -1,4 +1,4 @@
-import { UploadType, type Member, type ResourceType, type UploadParams, type User } from '~/types';
+import { UploadType, type Member, type PageResourceType, type UploadParams, type User } from '~/types';
 import { ApiError, generalClient as client } from '.';
 
 // Get upload token to securely upload files with imado: https://imado.eu
@@ -65,7 +65,7 @@ export const checkToken = async (token: string) => {
 };
 
 // Get suggestions
-export const getSuggestions = async (query: string, type?: ResourceType | undefined) => {
+export const getSuggestions = async (query: string, type?: PageResourceType | undefined) => {
   const response = await client.suggestions.$get({
     query: { q: query, type },
   });

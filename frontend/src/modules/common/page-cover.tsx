@@ -7,14 +7,14 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { useUpdateUserMutation } from '~/modules/users/update-user-form';
-import { type ResourceType, UploadType } from '~/types';
+import { type PageResourceType, UploadType } from '~/types';
 
 // Lazy load the upload component
 const UploadUppy = lazy(() => import('~/modules/common/upload/upload-uppy'));
 
 export interface PageCoverProps {
   id: string;
-  type: ResourceType;
+  type: PageResourceType;
   url?: string | null;
 }
 
