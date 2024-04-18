@@ -57,7 +57,9 @@ export const SheetMenu = memo(() => {
   // Render search results
   const searchResultsListItems = useCallback(() => {
     return Object.entries(searchResults).flatMap(([_, items]) => {
-      return items.length > 0 ? items.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />) : [];
+      return items.length > 0
+        ? items.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} searchResults={true} />)
+        : [];
     });
   }, [searchResults, menuItemClick]);
 
