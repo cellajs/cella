@@ -11,19 +11,18 @@ import './lib/i18n';
 const root = document.getElementById('root');
 
 async function enableMocking() {
-  if (process.env.NODE_ENV !== 'development') return;
-  const { worker } = await import('./mocks/browser');
-
-  // Ignore requests that not /mock/kanban
-  worker.events.on('request:start', ({ request }) => {
-    const urlObject = new URL(request.url);
-    if (!urlObject.pathname.includes('/mock/')) return;
-  });
-  // `worker.start()` returns a Promise that resolves
-  // once the Service Worker is up and ready to intercept requests.
-  return worker.start({
-    onUnhandledRequest: 'bypass',
-  });
+  // if (process.env.NODE_ENV !== 'development') return;
+  // const { worker } = await import('./mocks/browser');
+  // // Ignore requests that not /mock/kanban
+  // worker.events.on('request:start', ({ request }) => {
+  //   const urlObject = new URL(request.url);
+  //   if (!urlObject.pathname.includes('/mock/')) return;
+  // });
+  // // `worker.start()` returns a Promise that resolves
+  // // once the Service Worker is up and ready to intercept requests.
+  // return worker.start({
+  //   onUnhandledRequest: 'bypass',
+  // });
 }
 
 if (!root) {
