@@ -17,7 +17,6 @@ async function enableMocking() {
   const { worker } = await import('./mocks/browser');
   // Ignore requests that not /mock/kanban
   worker.events.on('request:start', ({ request }) => {
-    console.log(request.url);
     const urlObject = new URL(request.url);
     if (!urlObject.pathname.startsWith('/mock/')) return;
   });

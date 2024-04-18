@@ -87,7 +87,11 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   // Render the menu items for each section
   const renderItems = (list: MenuList, canCreate: boolean, archived: boolean) => {
     if (!canCreate) {
-      return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
+      return (
+        <li className="py-2 text-muted-foreground text-sm text-light text-center">
+          {t('common:no_section_yet', { section: t(section.type.toLowerCase()).toLowerCase() })}
+        </li>
+      );
     }
 
     if (!archived && list.length < 1 && canCreate && section.createForm) {
@@ -108,7 +112,11 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   // Render the option items to configure the section
   const renderOptions = (list: MenuList) => {
     if (list.length === 0) {
-      return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
+      return (
+        <li className="py-2 text-muted-foreground text-sm text-light text-center">
+          {t('common:no_section_yet', { section: t(section.type.toLowerCase()).toLowerCase() })}
+        </li>
+      );
     }
     if (list[0].archived) return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} />);
     return (

@@ -24,9 +24,7 @@ const WorkspacePage = () => {
 
   return (
     <WorkspaceContext.Provider value={{ workspace }}>
-      <div className="container min-h-screen mt-4">
         <Outlet />
-      </div>
     </WorkspaceContext.Provider>
   );
 };

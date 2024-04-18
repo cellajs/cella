@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
-import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { ScrollArea } from '~/modules/ui/scroll-area';
 import { type Task, TaskCard } from './task-card';
 import { TooltipButton } from '../common/tooltip-button';
 
@@ -63,7 +63,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('h-[80vh] max-w-full bg-card flex flex-col flex-shrink-0 snap-center', {
+  const variants = cva('h-full max-w-full bg-card flex flex-col flex-shrink-0 snap-center', {
     variants: {
       dragging: {
         default: 'border-2 border-transparent',
@@ -153,7 +153,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   const dndContext = useDndContext();
 
-  const variations = cva('px-2 md:px-0 flex lg:justify-center pb-4', {
+  const variations = cva('h-[calc(100vh-64px-64px)] md:h-[calc(100vh-80px)]', {
     variants: {
       dragging: {
         default: 'snap-x snap-mandatory',
@@ -162,14 +162,5 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
     },
   });
 
-  return (
-    <ScrollArea
-      className={variations({
-        dragging: dndContext.active ? 'active' : 'default',
-      })}
-    >
-      <div className="flex gap-2 items-center flex-row justify-center">{children}</div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
-  );
+  return <div className={variations({ dragging: dndContext.active ? 'active' : 'default' })}>{children}</div>;
 }
