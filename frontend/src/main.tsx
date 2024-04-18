@@ -16,12 +16,18 @@ async function enableMocking() {
   // Ignore requests that not /mock/kanban
   worker.events.on('request:start', ({ request }) => {
     const urlObject = new URL(request.url);
-    if (!urlObject.pathname.includes('/mock/')) return;
+    if (!urlObject.pathname.startsWith('/mock/')) return;
   });
   // `worker.start()` returns a Promise that resolves
   // once the Service Worker is up and ready to intercept requests.
   return worker.start({
     onUnhandledRequest: 'bypass',
+    serviceWorker: {
+      options: {
+        // Establish scope of the pages that the worker can control.
+        scope: '/mock',
+      },
+    },
   });
 }
 
