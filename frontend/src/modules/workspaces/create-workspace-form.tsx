@@ -20,9 +20,9 @@ import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
-import { useStepper } from '../ui/stepper';
 import { SlugFormField } from '../common/form-fields/slug';
 import SelectOrganizationFormField from '../common/form-fields/select-organization';
+import { useNavigate } from '@tanstack/react-router';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -37,10 +37,11 @@ type FormValues = z.infer<typeof formSchema>;
 
 const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog, labelDirection = 'top', children }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
   const [isDeviating, setDeviating] = useState(false);
   const [selectedOrganization, setSelectedOrganization] = useState('');
-  const { nextStep } = useStepper();
+
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -62,17 +63,11 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       callback?.(result);
       toast.success(t('common:success.create_workspace'));
 
-      nextStep?.();
-
-      if (!callback && !nextStep) {
-        setSheet(null);
-        // navigate({
-        //   to: '/$idOrSlug/members',
-        //   params: {
-        //     idOrSlug: result.slug,
-        //   },
-        // });
-      }
+      setSheet(null);
+      navigate({
+        to: '/workspace/$idOrSlug/projects',
+        params: { idOrSlug: result.slug },
+      });
 
       if (isDialog) dialog.remove();
     },
