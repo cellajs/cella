@@ -43,4 +43,6 @@ app
   .route('/', generalRoutes)
   .route('/', publicRoutes)
   .route('/', membershipRoutes)
+
+  // App-specific routes go here
   .route('/', workspaceRoutes);

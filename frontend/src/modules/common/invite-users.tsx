@@ -1,5 +1,5 @@
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
@@ -13,7 +13,7 @@ interface InviteUsersProps {
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
-  mode?: string;
+  mode?: string | null;
   children?: React.ReactNode;
 }
 
@@ -22,13 +22,28 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
 
   const [inviteMode, setInviteMode] = useState(mode);
 
-  useEffect(() => {
-    if (inviteMode) dialog.updateTitle('user-invite', inviteMode === 'email' ? t('common:invite_title_email') : t('common:invite_title_search'));
-  }, [inviteMode]);
+  const updateMode = (mode: string[]) => {
+    mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
+
+    dialog.updateTitle(
+      'user-invite',
+      mode[0] ? (
+        <div className="flex items-center gap-2">
+          <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
+            {t('common:invite')}
+          </button>
+          <ChevronRight className="opacity-50" size={16} />
+          <span>{mode[0] === 'search' ? t('common:invite_search') : t('common:invite_email')}</span>
+        </div>
+      ) : (
+        t('common:invite')
+      ),
+    );
+  };
 
   if (!inviteMode)
     return (
-      <ToggleGroup type="multiple" onValueChange={(values) => setInviteMode(values[0])} className="gap-4 max-sm:flex-col">
+      <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
         <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
           <Search size={48} strokeWidth={1} />
           <div className="flex flex-col p-4">

@@ -6,6 +6,7 @@ import { DialogState, type DialogT, type DialogToRemove } from './state';
 
 export function Dialoger() {
   const [dialogs, setDialogs] = useState<DialogT[]>([]);
+  const [updatedTitle, setTitle] = useState<React.ReactNode | string | null>(null);
   const isMobile = useBreakpoints('max', 'sm');
   const prevFocusedElement = useRef<HTMLElement | null>(null);
 
@@ -26,10 +27,18 @@ export function Dialoger() {
     }
   }, []);
 
+  const setUpdatedTitle = useCallback((dialog: DialogT) => {
+    setTitle(dialog.titleContent);
+  }, []);
+
   useEffect(() => {
     return DialogState.subscribe((dialog) => {
       if ((dialog as DialogToRemove).remove) {
         removeDialog(dialog as DialogT);
+        return;
+      }
+      if ((dialog as DialogT).titleContent) {
+        setUpdatedTitle(dialog as DialogT);
         return;
       }
       prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
@@ -58,7 +67,7 @@ export function Dialoger() {
           >
             {dialog.title || dialog.text ? (
               <DialogHeader>
-                {dialog.title && <DialogTitle>{dialog.title}</DialogTitle>}
+                {dialog.title && <DialogTitle>{updatedTitle || dialog.title}</DialogTitle>}
                 {dialog.text && <DialogDescription>{dialog.text}</DialogDescription>}
               </DialogHeader>
             ) : null}
@@ -73,7 +82,7 @@ export function Dialoger() {
         <DrawerContent className={dialog.className}>
           {dialog.title || dialog.text ? (
             <DrawerHeader className="text-left">
-              {dialog.title && <DrawerTitle>{dialog.title}</DrawerTitle>}
+              {dialog.title && <DrawerTitle>{updatedTitle || dialog.title}</DrawerTitle>}
               {dialog.text && <DrawerDescription>{dialog.text}</DrawerDescription>}
             </DrawerHeader>
           ) : null}

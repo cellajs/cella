@@ -1,3 +1,5 @@
+import type React from "react";
+
 let dialogsCounter = 1;
 
 export type DialogT = {
@@ -11,6 +13,7 @@ export type DialogT = {
   autoFocus?: boolean;
   hideClose?: boolean;
   content?: React.ReactNode;
+  titleContent?: string | React.ReactNode;
 };
 
 export type DialogToRemove = {
@@ -61,6 +64,7 @@ class Observer {
       return;
     }
 
+    // Remove all dialogs
     for (const dialog of this.dialogs) {
       for (const subscriber of this.subscribers) {
         subscriber({ id: dialog.id, remove: true, refocus });
@@ -68,13 +72,15 @@ class Observer {
     }
   };
 
-  updateTitle = (id: number | string, title: string) => {
-    this.dialogs.map((dialog) => {
-      if (dialog.id === id && 'container' in dialog && dialog.container) {
-        const h2Element = dialog.container.querySelector('h2');
-        if (h2Element) h2Element.innerText = title;
-      }
-    });
+  // Update dialog title
+  updateTitle = (id: number | string, titleContent: string | React.ReactNode) => {
+    if (!id) return;
+
+    for (const subscriber of this.subscribers) {
+      subscriber({ id, titleContent });
+    }
+
+    return;
   };
 }
 
