@@ -115,10 +115,10 @@ export const getOrganizationsRouteConfig = createRouteConfig({
   path: '/organizations',
   guard: systemGuard,
   tags: ['organizations'],
-  summary: 'Get organizations',
+  summary: 'Get list of organizations',
   description: `
-    If user has role 'ADMIN', then he receives all organizations.
-    If user has role 'USER', then he receives only organizations, where he is a member.
+    System role 'ADMIN' receives all organizations.
+    System role 'USER' receives only organizations with membership.
   `,
   request: {
     query: getOrganizationsQuerySchema,

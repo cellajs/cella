@@ -5,7 +5,7 @@ import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 
 export const inviteJsonSchema = z.object({
-  idOrSlug: slugSchema.or(idSchema).optional(),
+  idOrSlug: idSchema.or(slugSchema).optional(),
   emails: apiUserSchema.shape.email.array().min(1),
   role: z.union([apiUserSchema.shape.role, membershipSchema.shape.role]).optional(),
 });

@@ -46,8 +46,12 @@ export const getWorkspacesRouteConfig = createRouteConfig({
   path: '/workspaces',
   guard: systemGuard,
   tags: ['workspaces'],
-  summary: 'Get workspaces',
-  description: `Receive a list of your workspaces.
+  summary: 'Get list of workspaces',
+  description: `
+    System role 'ADMIN' receives all workspaces.
+    System role 'USER' receives only workspaces with membership.
+    Organization role 'ADMIN' receives all workspaces.
+    Organization role 'USER' receives only workspaces with membership.
   `,
   request: {
     query: getWorkspacesQuerySchema,
@@ -73,8 +77,8 @@ export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
   summary: 'Get workspace by id or slug',
   description: `
     Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are part of the workspace
+      - Users with system or organization role 'ADMIN'
+      - Users who are part of the workspace
   `,
   request: {
     params: workspaceParamSchema,
@@ -101,7 +105,7 @@ export const getUsersByWorkspaceIdRouteConfig = createRouteConfig({
   description: `
     Permissions:
       - Users with role 'ADMIN'
-      - Users, who are part of the workspace
+      - Users who are part of the workspace
   `,
   request: {
     params: workspaceParamSchema,

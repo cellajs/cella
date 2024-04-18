@@ -66,7 +66,7 @@ const workspacesRoutes = app
     });
   })
   /*
-   * Get workspaces
+   * Get list of workspaces
    */
   .openapi(getWorkspacesRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');

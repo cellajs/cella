@@ -69,11 +69,11 @@ export const validDomainsSchema = z
   .optional();
 
 export const organizationParamSchema = z.object({
-  idOrSlug: slugSchema.or(idSchema),
+  idOrSlug: idSchema.or(slugSchema),
 });
 
 export const workspaceParamSchema = z.object({
-  idOrSlug: slugSchema.or(idSchema),
+  idOrSlug: idSchema.or(slugSchema),
 });
 
 export const imageUrlSchema = z
