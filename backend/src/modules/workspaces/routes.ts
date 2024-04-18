@@ -4,14 +4,11 @@ import { createRouteConfig } from '../../lib/route-config';
 import { tenantGuard } from '../../middlewares/guard';
 import tenant from '../../middlewares/guard/tenant';
 
-import {
-  apiWorkspacesSchema,
-  createWorkspaceJsonSchema,
-} from './schema';
+import { apiWorkspacesSchema, createWorkspaceJsonSchema } from './schema';
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/organizations/{idOrSlug}/workspaces',
+  path: '/workspaces',
   guard: tenantGuard(['ADMIN']),
   tags: ['workspaces'],
   summary: 'Create a new workspace',

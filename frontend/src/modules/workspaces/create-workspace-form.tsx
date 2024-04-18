@@ -89,7 +89,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
   const handleOrganizationSelect = (organizationId: string) => {
     setSelectedOrganization(organizationId);
-    form.setValue('organizationId', organizationId);
+    form.setValue('idOrSlug', organizationId);
   };
 
   useEffect(() => {
