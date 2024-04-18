@@ -10,7 +10,6 @@ import './lib/i18n';
 
 const root = document.getElementById('root');
 
-
 // Enable mocking in development
 // https://mswjs.io/docs/getting-started/integrate/node
 async function enableMocking() {
@@ -29,7 +28,7 @@ async function enableMocking() {
     serviceWorker: {
       options: {
         // Establish scope of the pages that the worker can control.
-        scope: '/mock',
+        scope: '/workspace',
       },
     },
   });
