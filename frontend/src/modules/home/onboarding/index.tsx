@@ -13,19 +13,19 @@ import StepperFooter from './footer';
 import { OnboardingStart } from './start';
 
 const steps: StepItem[] = [
-  { id: 'step-1', label: 'Create organization', optional: true },
-  { id: 'step-2', label: 'Tune your profile', optional: false },
+  { id: 'step-1', label: 'Tune your profile', optional: false },
+  { id: 'step-2', label: 'Create organization', optional: true },
   { id: 'step-3', label: 'Invite others', optional: true },
 ];
 
 export type OnboardingStates = 'start' | 'stepper' | 'completed';
 
 interface OnboardingProps {
-  onboarding: OnboardingStates,
+  onboarding: OnboardingStates;
   setOnboarding: (value: OnboardingStates) => void;
 }
 
-const Onboarding = ({onboarding = 'start', setOnboarding}: OnboardingProps) => {
+const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) => {
   const [organization, setOrganization] = useState<Organization | null>(null);
 
   const { hasStarted } = useMounted();
@@ -46,22 +46,22 @@ const Onboarding = ({onboarding = 'start', setOnboarding}: OnboardingProps) => {
                   <Card>
                     <CardHeader>
                       <CardDescription className="font-light">
-                        {id === 'step-1' && t('common:onboarding_step1')}
-                        {id === 'step-2' && t('common:onboarding_step2', { name: user.firstName })}
+                        {id === 'step-1' && t('common:onboarding_step1', { name: user.firstName })}
+                        {id === 'step-2' && t('common:onboarding_step2')}
                         {id === 'step-3' && t('common:onboarding_step3', { organizationName: organization?.name })}
                       </CardDescription>
                     </CardHeader>
 
                     <CardContent>
                       {id === 'step-1' && (
-                        <CreateOrganizationForm callback={(organization) => setOrganization(organization)}>
-                          <StepperFooter setOnboarding={setOnboarding} />
-                        </CreateOrganizationForm>
-                      )}
-                      {id === 'step-2' && (
                         <UpdateUserForm user={user} hiddenFields={['email', 'bio', 'newsletter']}>
                           <StepperFooter setOnboarding={setOnboarding} />
                         </UpdateUserForm>
+                      )}
+                      {id === 'step-2' && (
+                        <CreateOrganizationForm callback={(organization) => setOrganization(organization)}>
+                          <StepperFooter setOnboarding={setOnboarding} />
+                        </CreateOrganizationForm>
                       )}
                       {id === 'step-3' && (
                         <InviteUsers organization={organization} type="organization" mode="email">
