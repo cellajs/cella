@@ -19,7 +19,7 @@ const SSE = () => {
     try {
       const entity = JSON.parse(e.data);
       useNavigationStore.setState((state) => {
-        state.menu[entityType].items = [...state.menu[entityType].items, entity];
+        state.menu[entityType].items = [entity, ...state.menu[entityType].items];
         return state;
       });
     } catch (error) {

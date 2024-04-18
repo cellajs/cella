@@ -1,6 +1,6 @@
 import { ChevronDown, Plus, Settings2 } from 'lucide-react';
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sticky from 'react-sticky-el';
 import { toast } from 'sonner';
@@ -13,6 +13,9 @@ import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
 import { TooltipButton } from '../tooltip-button';
+import { closestCorners, DndContext, type DragEndEvent, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { coordinateGetter } from '~/modules/projects/keyboard-preset';
 
 interface MenuSectionProps {
   key: string;
@@ -22,16 +25,48 @@ interface MenuSectionProps {
 }
 
 type MenuList = UserMenu[keyof UserMenu]['items'];
-
+type MenuItem = MenuList[0];
+const sortById = (a: MenuItem, b: MenuItem, order: string[]) => {
+  const indexA = order.indexOf(a.id);
+  const indexB = order.indexOf(b.id);
+  if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
+  return indexA - indexB;
+};
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
-  const { activeSections, toggleSection } = useNavigationStore();
+  const { activeSections, toggleSection, activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
+  const [unarchive, setUnarchive] = useState<MenuList>(
+    data.items.filter((item) => !item.archived).sort((a, b) => sortById(a, b, activeItemsOrder[section.id as keyof UserMenu])),
+  );
+
   const archived = data.items.filter((item) => item.archived);
-  const unarchive = data.items.filter((item) => !item.archived);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: coordinateGetter,
+    }),
+  );
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    if (active.id === over.id) return;
+
+    const startIndex = unarchive.findIndex((el) => el.id === active.id);
+    const endIndex = unarchive.findIndex((el) => el.id === over.id);
+
+    const newItemOrder = arrayMove(unarchive, startIndex, endIndex);
+    const itemsIds = newItemOrder.map((el) => el.id);
+
+    setActiveItemsOrder(section.id as keyof UserMenu, itemsIds);
+    setUnarchive(newItemOrder);
+  };
 
   const createDialog = () => {
     dialog(section.createForm, {
@@ -75,11 +110,22 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     if (list.length === 0) {
       return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_section_yet', { section: section.type })}</li>;
     }
-    return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} />);
+    if (list[0].archived) return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} />);
+    return (
+      <SortableContext items={list} strategy={verticalListSortingStrategy}>
+        {list.map((item: Page) => (
+          <SheetMenuItemOptions key={item.id} item={item} />
+        ))}
+      </SortableContext>
+    );
   };
 
+  useEffect(() => {
+    setUnarchive(data.items.filter((item) => !item.archived).sort((a, b) => sortById(a, b, activeItemsOrder[section.id as keyof UserMenu])));
+  }, [data]);
+
   return (
-    <>
+    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
@@ -133,6 +179,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
           )}
         </ul>
       </div>
-    </>
+    </DndContext>
   );
 };

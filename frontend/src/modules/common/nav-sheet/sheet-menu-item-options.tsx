@@ -1,3 +1,4 @@
+import { useSortable } from '@dnd-kit/sortable';
 import { Archive, BellOff, GripVertical, ArchiveRestore, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { Page } from '~/types';
+import { CSS } from '@dnd-kit/utilities';
 
 interface SheetMenuItemProps {
   item: Page;
@@ -19,6 +21,12 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
   const [isItemMuted, setItemMuted] = useState(item.muted);
   const user = useUserStore((state) => state.user);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
+
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
+  const style = {
+    transition,
+    transform: CSS.Transform.toString(transform),
+  };
 
   const itemArchiveStateHandle = () => {
     const itemArchiveStatus = !isItemArchived;
@@ -48,7 +56,8 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
 
   return (
     <div
-      className={`group mb-1 flex sm:max-w-[18rem] h-14 w-full cursor-pointer items-start justify-start rounded p-0 transition duration-300 focus:outline-none 
+      style={style}
+      className={`group mb-1 flex sm:max-w-[18rem] h-14 w-full cursor-pointer items-start justify-start rounded p-0 transition duration-300 focus:outline-none
       ${!isItemArchived ? 'ring-1' : ''} ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`}
     >
       <AvatarWrap className="m-2" type={item.type} id={item.id} name={item.name} url={item.thumbnailUrl} />
@@ -90,7 +99,7 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
         </div>
       </div>
       {!isItemArchived && (
-        <div className="p-2 cursor-grab">
+        <div ref={setNodeRef} {...listeners} {...attributes} className="p-2 cursor-grab">
           <GripVertical size={16} className="mt-3 mr-1 opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
         </div>
       )}
