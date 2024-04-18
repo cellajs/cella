@@ -22,7 +22,7 @@ import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { useStepper } from '../ui/stepper';
 import { SlugFormField } from '../common/form-fields/slug';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import SelectOrganizationFormField from '../common/form-fields/select-organization';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -41,7 +41,6 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   const [isDeviating, setDeviating] = useState(false);
   const [selectedOrganization, setSelectedOrganization] = useState('');
   const { nextStep } = useStepper();
-  const { menu } = useNavigationStore();
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -106,23 +105,14 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   return (
     <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Select onValueChange={handleOrganizationSelect} value={selectedOrganization}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={'Select organization'} />
-          </SelectTrigger>
-          <SelectContent className="h-[30vh]">
-            {menu.organizations.items.map((organization) => (
-              <SelectItem
-                onClick={() => handleOrganizationSelect(organization.id)}
-                className="cursor-pointer"
-                key={organization.id}
-                value={organization.id}
-              >
-                {organization.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SelectOrganizationFormField
+          control={form.control}
+          label={t('common:organization')}
+          name="organizationId"
+          value={selectedOrganization}
+          onChange={handleOrganizationSelect}
+          required
+        />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
