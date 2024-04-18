@@ -22,9 +22,9 @@ const suggestionSchema = z.object({
   thumbnailUrl: imageUrlSchema.nullable(),
 });
 
-export const userSuggestionSchema = suggestionSchema.extend({ email: z.string(), type: z.literal('user') });
-export const organizationSuggestionSchema = suggestionSchema.extend({ type: z.literal('organization') });
-export const workspaceSuggestionSchema = suggestionSchema.extend({ type: z.literal('workspace') });
+export const userSuggestionSchema = suggestionSchema.extend({ email: z.string(), type: z.literal('USER') });
+export const organizationSuggestionSchema = suggestionSchema.extend({ type: z.literal('ORGANIZATION') });
+export const workspaceSuggestionSchema = suggestionSchema.extend({ type: z.literal('WORKSPACE') });
 
 export const suggestionsSchema = z.object({
   users: z.array(userSuggestionSchema),

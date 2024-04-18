@@ -10,11 +10,15 @@ import './lib/i18n';
 
 const root = document.getElementById('root');
 
+
+// Enable mocking in development
+// https://mswjs.io/docs/getting-started/integrate/node
 async function enableMocking() {
   if (process.env.NODE_ENV !== 'development') return;
   const { worker } = await import('./mocks/browser');
   // Ignore requests that not /mock/kanban
   worker.events.on('request:start', ({ request }) => {
+    console.log(request.url);
     const urlObject = new URL(request.url);
     if (!urlObject.pathname.startsWith('/mock/')) return;
   });

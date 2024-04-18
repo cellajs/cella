@@ -18,7 +18,7 @@ const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, so
 export const OrganizationRoute = createRoute({
   path: '$idOrSlug',
   staticData: { pageTitle: 'Organization' },
-  beforeLoad: ({ location }) => noDirectAccess(location, '/members'),
+  beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
   getParentRoute: () => IndexRoute,
   loader: async ({ params: { idOrSlug } }) => {
     queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));

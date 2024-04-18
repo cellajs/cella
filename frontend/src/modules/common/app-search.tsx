@@ -76,23 +76,14 @@ export const AppSearch = () => {
   const onSelectSuggestion = (suggestion: SuggestionType) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
-    if (suggestion.type === 'user') {
-      navigate({
-        to: '/user/$idOrSlug',
-        resetScroll: false,
-        params: {
-          idOrSlug: suggestion.slug,
-        },
-      });
-    } else {
-      navigate({
-        to: '/$idOrSlug/members',
-        resetScroll: false,
-        params: {
-          idOrSlug: suggestion.slug,
-        },
-      });
-    }
+
+    navigate({
+      to: suggestion.type === 'ORGANIZATION' ? '/$idOrSlug' : `/${suggestion.type.toLowerCase()}/$idOrSlug`,
+      resetScroll: false,
+      params: {
+        idOrSlug: suggestion.slug,
+      },
+    });
 
     dialog.remove(false);
   };

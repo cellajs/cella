@@ -128,7 +128,7 @@ const usersRoutes = app
         archived: membership.inactive || false,
         muted: membership.muted || false,
         role: membership?.role || null,
-        type: 'organization' as PageResourceType,
+        type: 'ORGANIZATION' as PageResourceType,
       };
     });
 
@@ -143,7 +143,7 @@ const usersRoutes = app
         archived: membership.inactive || false,
         muted: membership.muted || false,
         role: membership?.role || null,
-        type: 'workspace' as PageResourceType,
+        type: 'WORKSPACE' as PageResourceType,
       };
     });
 

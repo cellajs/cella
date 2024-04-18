@@ -305,7 +305,7 @@ const generalRoutes = app
         .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
         .limit(10);
 
-      usersResult.push(...users.map((user) => ({ ...user, type: 'user' as const })));
+      usersResult.push(...users.map((user) => ({ ...user, type: 'USER' as const })));
     }
 
     if (type === 'ORGANIZATION' || !type) {
@@ -320,7 +320,7 @@ const generalRoutes = app
         .where(ilike(organizationsTable.name, `%${q}%`))
         .limit(10);
 
-      organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as const })));
+      organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: 'ORGANIZATION' as const })));
     }
 
     if (type === 'WORKSPACE' || !type) {
@@ -335,7 +335,7 @@ const generalRoutes = app
         .where(ilike(workspacesTable.name, `%${q}%`))
         .limit(10);
 
-      workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'workspace' as const })));
+      workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'WORKSPACE' as const })));
     }
 
     return ctx.json({

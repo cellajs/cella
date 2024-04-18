@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { type Page, UserRole } from '~/types';
@@ -11,6 +12,7 @@ interface SheetMenuItemProps {
 }
 
 export const SheetMenuItem = ({ item, menuItemClick, className, searchResults }: SheetMenuItemProps) => {
+  const { t } = useTranslation();
   return (
     <Link
       resetScroll={false}
@@ -20,7 +22,7 @@ export const SheetMenuItem = ({ item, menuItemClick, className, searchResults }:
       )}
       onClick={menuItemClick}
       aria-label={item.name}
-      to={`${item.type === 'ORGANIZATION' ? '' : `/${item.type}`}/$idOrSlug`}
+      to={item.type === 'ORGANIZATION' ? '/$idOrSlug' : `/${item.type.toLowerCase()}/$idOrSlug`}
       params={{ idOrSlug: item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
@@ -28,7 +30,7 @@ export const SheetMenuItem = ({ item, menuItemClick, className, searchResults }:
       <div className="truncate p-2 pl-0 flex flex-col justify-center text-left">
         <div className="max-sm:pt-2 truncate leading-5">{item.name}</div>
         <div className="max-sm:hidden text-muted-foreground text-sm font-light">
-          {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{item.type}</span>}
+          {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(item.type.toLowerCase())}</span>}
           {item.role && <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">{UserRole[item.role]}</span>}
         </div>
       </div>

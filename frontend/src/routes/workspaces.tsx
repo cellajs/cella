@@ -19,7 +19,9 @@ import { IndexRoute } from './routeTree';
 export const WorkspaceRoute = createRoute({
   path: 'workspace/$idOrSlug',
   staticData: { pageTitle: 'Workspace' },
-  beforeLoad: ({ location }) => noDirectAccess(location, '/projects'),
+  beforeLoad: ({ location, params }) => {
+    noDirectAccess(location.pathname, params.idOrSlug, '/projects')
+  },
   getParentRoute: () => IndexRoute,
   loader: async ({ params: { idOrSlug } }) => {
     queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
