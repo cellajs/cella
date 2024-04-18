@@ -14,6 +14,7 @@ export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount, isArchive
   return (
     <Button
       onClick={archiveToggleClick}
+      disabled={inactiveCount < 1}
       variant="secondary"
       className="w-full group mb-1 cursor-pointer bg-background p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground"
     >
@@ -25,7 +26,7 @@ export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount, isArchive
         {!isArchivedVisible && <span className="inline-block px-2 py-1 font-light text-xs text-muted-foreground">{inactiveCount}</span>}
       </div>
       <div className="px-4">
-        <ChevronDown size={16} className={`transition-transform opacity-50 ${isArchivedVisible ? 'rotate-180' : 'rotate-0'}`} />
+        {!!inactiveCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${isArchivedVisible ? 'rotate-180' : 'rotate-0'}`} />}
       </div>
     </Button>
   );
