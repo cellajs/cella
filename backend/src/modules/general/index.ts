@@ -23,7 +23,7 @@ import { i18n } from '../../lib/i18n';
 import { sendSSE } from '../../lib/sse';
 import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono, type PageResourceType } from '../../types/common';
+import { CustomHono } from '../../types/common';
 import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 import { checkSlugAvailable } from './helpers/check-slug';
@@ -147,7 +147,7 @@ const generalRoutes = app
         if (existingMembership) {
           logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
 
-          if (role && existingMembership.role !== role) {
+          if (role && existingMembership.role !== role && existingMembership.organizationId) {
             await db
               .update(membershipsTable)
               .set({ role: role as MembershipModel['role'] })
@@ -305,8 +305,7 @@ const generalRoutes = app
         .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
         .limit(10);
 
-      const userType = 'user' satisfies PageResourceType;
-      usersResult.push(...users.map((user) => ({ ...user, type: userType })));
+      usersResult.push(...users.map((user) => ({ ...user, type: 'user' as const })));
     }
 
     if (type === 'organization' || !type) {
@@ -321,8 +320,7 @@ const generalRoutes = app
         .where(ilike(organizationsTable.name, `%${q}%`))
         .limit(10);
 
-      const organizationType = 'organization' satisfies PageResourceType;
-      organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: organizationType })));
+      organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as const })));
     }
 
     if (type === 'workspace' || !type) {
@@ -337,8 +335,7 @@ const generalRoutes = app
         .where(ilike(workspacesTable.name, `%${q}%`))
         .limit(10);
 
-      const workspaceType = 'workspace' satisfies PageResourceType;
-      workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: workspaceType })));
+      workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'workspace' as const })));
     }
 
     return ctx.json({

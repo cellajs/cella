@@ -1,4 +1,5 @@
 import { ApiError, workspaceClient as client } from '.';
+
 export type CreateWorkspaceParams = Parameters<(typeof client.workspaces)['$post']>['0']['json'];
 
 // Create a new workspace

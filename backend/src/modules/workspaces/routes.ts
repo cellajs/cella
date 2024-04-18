@@ -2,19 +2,19 @@ import { errorResponses, successResponseWithDataSchema } from '../../lib/common-
 import { organizationParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { tenantGuard } from '../../middlewares/guard';
-import tenant from '../../middlewares/guard/tenant';
 
-import {
-  apiWorkspacesSchema,
-  createWorkspaceJsonSchema,
-} from './schema';
+import { apiWorkspacesSchema, createWorkspaceJsonSchema } from './schema';
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/organizations/{idOrSlug}/workspaces',
+  path: '/workspaces',
   guard: tenantGuard(['ADMIN']),
   tags: ['workspaces'],
   summary: 'Create a new workspace',
+  description: `
+    Permissions:
+      - Users with system or organization role 'ADMIN'
+  `,
   request: {
     request: {
       params: organizationParamSchema,
@@ -44,7 +44,7 @@ export const createWorkspaceRouteConfig = createRouteConfig({
 export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/workspaces/{idOrSlug}',
-  guard: tenant(),
+  guard: tenantGuard(),
   tags: ['workspaces'],
   summary: 'Get workspace by id or slug',
   description: `
