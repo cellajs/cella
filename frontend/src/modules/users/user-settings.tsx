@@ -117,7 +117,7 @@ const UserSettings = () => {
         users={[user]}
         dialog
         callback={() => {
-          toast.success(t('common:success.delete_account'));
+          toast.success(t('common:success.action_entity', { entity: 'Account', action: 'deleted' }));
           clearLastUser();
           navigate({ to: '/sign-out', replace: true });
         }}

@@ -27,7 +27,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
 
   const mutateOptions = {
     onSuccess: () => {
-      toast.success(t('common:success.upload_cover'));
+      toast.success(t('common:success.action_entity', { entity: 'Cover', action: 'saved' }));
     },
     onError: () => {
       toast.error(t('common:error.image_upload_failed'));

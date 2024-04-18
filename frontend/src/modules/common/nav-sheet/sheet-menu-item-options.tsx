@@ -25,7 +25,11 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
     updateMembership(item.id, user.id, item.role ? item.role : undefined, itemArchiveStatus)
       .then(() => {
         archiveStateToggle(item.id, itemArchiveStatus);
-        toast.success(itemArchiveStatus ? t('common:success.archived_organization') : t('common:success.restore_organization'));
+        toast.success(
+          itemArchiveStatus
+            ? t('common:success.action_entity', { entity: 'Organization', action: 'archived' })
+            : t('common:success.action_entity', { entity: 'Organization', action: 'restored.' }),
+        );
         setItemArchived(itemArchiveStatus);
       })
       .catch(() => {
@@ -38,7 +42,11 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
 
     updateMembership(item.id, user.id, item.role ? item.role : undefined, isItemArchived, itemMuteStatus)
       .then(() => {
-        toast.success(itemMuteStatus ? t('common:success.mute_organization') : t('common:success.unmute_organization'));
+        toast.success(
+          itemMuteStatus
+            ? t('common:action_entity', { entity: 'Organization', action: 'muted' })
+            : t('common:success.action_entity', { entity: 'Organization', action: 'unmuted' }),
+        );
         setItemMuted(itemMuteStatus);
       })
       .catch(() => {

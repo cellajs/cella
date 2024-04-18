@@ -83,7 +83,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         if (isDialog) {
           dialog.remove();
         }
-        toast.success(t('common:success.update_organization'));
+        toast.success(t('common:success.action_entity', { entity: 'Organization', action: 'updated' }));
       },
     });
   };

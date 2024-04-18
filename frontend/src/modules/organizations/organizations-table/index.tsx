@@ -82,7 +82,7 @@ const OrganizationsTable = () => {
       if (column.key === 'userRole' && organization.userRole) {
         updateMembership(organization.id, user.id, organization.userRole)
           .then(() => {
-            toast.success(t('common:success.your_role_updated'));
+            toast.success(t('common:success.action_entity', { entity: 'Your role', action: 'updated' }));
           })
           .catch(() => {
             toast.error(t('common:error.error'));

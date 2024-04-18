@@ -37,7 +37,7 @@ const ResetPassword = () => {
   const { mutate: resetPassword, isPending } = useMutation({
     mutationFn: baseResetPassword,
     onSuccess: () => {
-      toast.success(t('common:success.password_reset'));
+      toast.success(t('common:success.action_entity', { entity: 'Your password', action: 'reset' }));
       navigate({
         to: '/home',
       });

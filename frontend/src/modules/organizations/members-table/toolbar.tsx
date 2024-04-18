@@ -84,7 +84,7 @@ function Toolbar({
         dialog
         callback={(members) => {
           callback(members, 'delete');
-          toast.success(t('common:success.delete_members'));
+          toast.success(t('common:success.action_entities', { entity: 'Members', action: 'removed' }));
         }}
         members={selectedMembers}
       />,

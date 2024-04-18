@@ -61,7 +61,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     onSuccess: (result) => {
       form.reset();
       callback?.(result);
-      toast.success(t('common:success.create_workspace'));
+      toast.success(t('common:success.action_entity', { entity: 'Workspace', action: 'created' }));
 
       nextStep?.();
 

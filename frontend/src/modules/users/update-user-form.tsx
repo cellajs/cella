@@ -95,7 +95,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
       onSuccess: (data) => {
         if (isSelf) {
           setUser(data);
-          toast.success(t('common:success.you_updated'));
+          toast.success(t('common:success.action_entity', { entity: 'Your profile', action: 'updated' }));
         } else {
           toast.success(t('common:success.updated_user'));
         }

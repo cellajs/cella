@@ -50,7 +50,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
     mutationFn: baseSendNewsletter,
     onSuccess: () => {
       form.reset();
-      toast.success(t('common:success.create_newsletter'));
+      toast.success(t('common:success.action_entity', { entity: 'Newsletter', action: 'sent' }));
 
       if (isSheet) {
         sheet.remove();
