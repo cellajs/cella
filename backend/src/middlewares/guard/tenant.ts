@@ -15,7 +15,7 @@ const tenant =
     // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
     const body = ctx.req.header('content-type') === 'application/json' ? ((await ctx.req.raw.clone().json()) as any) : undefined;
     const idOrSlug = (ctx.req.param('idOrSlug') || body?.idOrSlug)?.toLowerCase();
-    const type = ctx.req.path.split('/')[1] === 'workspaces' ? 'workspace' : 'organization';
+    const type = ctx.req.path.split('/')[1] === 'workspaces' ? 'WORKSPACE' : 'ORGANIZATION';
     const user = ctx.get('user');
 
     if (!idOrSlug || !type || !user) {
@@ -24,7 +24,7 @@ const tenant =
 
     let entity: OrganizationModel | WorkspaceModel;
 
-    if (type === 'workspace') {
+    if (type === 'WORKSPACE') {
       [entity] = await db
         .select()
         .from(workspacesTable)

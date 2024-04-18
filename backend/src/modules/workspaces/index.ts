@@ -25,7 +25,7 @@ const workspacesRoutes = app
     const slugAvailable = await checkSlugAvailable(slug);
 
     if (!slugAvailable) {
-      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'workspace', { slug });
+      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
     }
 
     const [createdWorkspace] = await db

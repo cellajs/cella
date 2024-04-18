@@ -4,7 +4,7 @@ export const passwordSchema = z.string().min(8).max(100);
 
 export const cookieSchema = z.string();
 
-export const resourceTypeSchema = z.literal('organization').or(z.literal('workspace')).or(z.literal('project')).or(z.literal('user'));
+export const resourceTypeSchema = z.enum(['ORGANIZATION', 'WORKSPACE', 'PROJECT', 'USER']);
 
 export const idSchema = z.string();
 

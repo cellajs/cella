@@ -132,7 +132,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
         <AvatarFormField
           control={form.control}
           label={t('common:profile_picture')}
-          type="user"
+          type="USER"
           name="thumbnailUrl"
           entity={user}
           url={form.getValues('thumbnailUrl')}

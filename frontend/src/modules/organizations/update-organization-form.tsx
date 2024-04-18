@@ -129,7 +129,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <AvatarFormField
           control={form.control}
           label={t('common:organization_logo')}
-          type="organization"
+          type="ORGANIZATION"
           name="thumbnailUrl"
           entity={organization}
           url={form.getValues('thumbnailUrl')}

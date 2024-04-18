@@ -1,3 +1,4 @@
+import type { PageResourceType } from 'backend/types/common';
 import type { InferResponseType } from 'hono/client';
 import type { organizationsClient, usersClient, workspaceClient } from '~/api';
 
@@ -16,8 +17,6 @@ export enum UserRole {
   MEMBER = 'Member',
 }
 
-export type PageResourceType = 'organization' | 'workspace' | 'project' | 'user';
-
 export interface Page {
   type: PageResourceType;
   id: string;
@@ -33,7 +32,7 @@ export type User = Extract<InferResponseType<(typeof usersClient.me)['$get']>, {
 
 export type Organization = Extract<InferResponseType<(typeof organizationsClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
 
-export type Workspace = Extract<InferResponseType<(typeof workspaceClient.workspaces)['$get']>, { data: unknown }>['data']['items'][number];
+export type Workspace = Extract<InferResponseType<(typeof workspaceClient.workspaces)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 
 export type Member = Extract<
   InferResponseType<(typeof organizationsClient.organizations)[':idOrSlug']['members']['$get']>,

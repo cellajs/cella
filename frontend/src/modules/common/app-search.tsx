@@ -12,7 +12,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
 import type { userSuggestionSchema, organizationSuggestionSchema, workspaceSuggestionSchema } from 'backend/modules/general/schema';
 import type { z } from 'zod';
-import type { PageResourceType } from '~/types';
+import type { PageResourceType } from 'backend/types/common';
 
 type SuggestionType = z.infer<typeof userSuggestionSchema> | z.infer<typeof organizationSuggestionSchema> | z.infer<typeof workspaceSuggestionSchema>;
 
@@ -23,9 +23,9 @@ interface SuggestionSection {
 }
 
 const suggestionSections: SuggestionSection[] = [
-  { id: 'users', label: 'common:users', type: 'user' },
-  { id: 'organizations', label: 'common:organizations', type: 'organization' },
-  { id: 'workspaces', label: 'common:workspaces', type: 'workspace' },
+  { id: 'users', label: 'common:users', type: 'USER' },
+  { id: 'organizations', label: 'common:organizations', type: 'ORGANIZATION' },
+  { id: 'workspaces', label: 'common:workspaces', type: 'WORKSPACE' },
 ];
 
 export const AppSearch = () => {

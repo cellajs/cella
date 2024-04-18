@@ -5,9 +5,9 @@ import type { z } from 'zod';
 import type { Schema } from 'hono';
 import type { OrganizationModel } from '../db/schema/organizations';
 import type { WorkspaceModel } from '../db/schema/workspaces';
-import type { errorResponseSchema } from '../lib/common-schemas';
+import type { errorResponseSchema, resourceTypeSchema } from '../lib/common-schemas';
 
-export type PageResourceType = 'workspace' | 'organization' | 'project' | 'user';
+export type PageResourceType = z.infer<typeof resourceTypeSchema>;
 
 export type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
 

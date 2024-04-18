@@ -20,11 +20,11 @@ export const SheetMenuItem = ({ item, menuItemClick, className, searchResults }:
       )}
       onClick={menuItemClick}
       aria-label={item.name}
-      to={`${item.type === 'organization' ? '' : `/${item.type}`}/$idOrSlug`}
+      to={`${item.type === 'ORGANIZATION' ? '' : `/${item.type}`}/$idOrSlug`}
       params={{ idOrSlug: item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
-      <AvatarWrap className="m-2" type="organization" id={item.id} name={item.name} url={item.thumbnailUrl} />
+      <AvatarWrap className="m-2" type="ORGANIZATION" id={item.id} name={item.name} url={item.thumbnailUrl} />
       <div className="truncate p-2 pl-0 flex flex-col justify-center text-left">
         <div className="max-sm:pt-2 truncate leading-5">{item.name}</div>
         <div className="max-sm:hidden text-muted-foreground text-sm font-light">

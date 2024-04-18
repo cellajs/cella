@@ -98,7 +98,7 @@ const generalRoutes = app
     // For reset token: check if token has valid user
     if (tokenRecord.type === 'PASSWORD_RESET') {
       const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
-      if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+      if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
     }
 
     // For invitation token: check if user email is not already in the system
@@ -292,7 +292,7 @@ const generalRoutes = app
     const workspacesResult = [];
     const organizationsResult = [];
 
-    if (type === 'user' || !type) {
+    if (type === 'USER' || !type) {
       const users = await db
         .select({
           id: usersTable.id,
@@ -308,7 +308,7 @@ const generalRoutes = app
       usersResult.push(...users.map((user) => ({ ...user, type: 'user' as const })));
     }
 
-    if (type === 'organization' || !type) {
+    if (type === 'ORGANIZATION' || !type) {
       const organizations = await db
         .select({
           id: organizationsTable.id,
@@ -323,7 +323,7 @@ const generalRoutes = app
       organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as const })));
     }
 
-    if (type === 'workspace' || !type) {
+    if (type === 'WORKSPACE' || !type) {
       const workspaces = await db
         .select({
           id: workspacesTable.id,

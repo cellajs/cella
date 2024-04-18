@@ -92,7 +92,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
                   value={value.map((v) => ({ label: v, value: v }))}
                   onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
-                    const data = await getSuggestions(query, 'user');
+                    const data = await getSuggestions(query, 'USER');
 
                     return data.users.map((u) => ({
                       label: u.name || u.email,

@@ -166,11 +166,11 @@ const usersRoutes = app
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: userId });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: userId });
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: userId });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'USER', { user: userId });
     }
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
@@ -179,7 +179,7 @@ const usersRoutes = app
       const slugAvailable = await checkSlugAvailable(slug);
 
       if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
       }
     }
 
@@ -313,11 +313,11 @@ const usersRoutes = app
         const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
 
         if (!targetUser) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', 'user', { user: id }));
+          errors.push(createError(ctx, 404, 'not_found', 'warn', 'USER', { user: id }));
         }
 
         if (user.role !== 'ADMIN' && user.id !== id) {
-          errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'user', { user: id }));
+          errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'USER', { user: id }));
         }
 
         await db.delete(usersTable).where(eq(usersTable.id, id));
@@ -349,11 +349,11 @@ const usersRoutes = app
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: idOrSlug });
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'USER', { user: targetUser.id });
     }
 
     const [{ memberships }] = await db

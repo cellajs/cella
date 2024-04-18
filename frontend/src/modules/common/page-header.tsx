@@ -3,7 +3,7 @@ import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Breadcrumb, BreadcrumbItem } from '~/modules/ui/breadcrumb';
 import { PageCover } from './page-cover';
-import type { PageResourceType } from '~/types';
+import type { PageResourceType } from 'backend/types/common';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {

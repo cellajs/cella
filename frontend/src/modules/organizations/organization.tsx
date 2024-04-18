@@ -36,7 +36,7 @@ const OrganizationPage = () => {
       <PageHeader
         id={organization.id}
         title={organization.name}
-        type="organization"
+        type="ORGANIZATION"
         thumbnailUrl={organization.thumbnailUrl}
         bannerUrl={organization.bannerUrl}
         panel={

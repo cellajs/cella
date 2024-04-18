@@ -352,8 +352,8 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 {...inputProps}
                 ref={inputRef}
                 value={inputValue}
-                aria-autocomplete='none'
-                autoComplete='off'
+                aria-autocomplete="none"
+                autoComplete="off"
                 disabled={disabled}
                 onValueChange={(value) => onValueChange(value)}
                 onBlur={onInputBlur}
@@ -414,7 +414,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                           itemComponent(option)
                         ) : (
                           <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                            <AvatarWrap type="user" className="h-8 w-8" id={option.label} name={option.value} />
+                            <AvatarWrap type="USER" className="h-8 w-8" id={option.label} name={option.value} />
                             <span className="group-hover:underline underline-offset-4 truncate font-medium">{option.label}</span>
                           </div>
                         )}

@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import type { Page, PageResourceType, UserMenu } from '~/types';
+import type { Page, UserMenu } from '~/types';
 
 import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
@@ -12,6 +12,7 @@ import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
 import type { LucideProps } from 'lucide-react';
+import type { PageResourceType } from 'backend/types/common';
 
 export type SectionItem = {
   id: string;
@@ -23,9 +24,9 @@ export type SectionItem = {
 
 // Here you declare the menu sections
 export const menuSections: SectionItem[] = [
-  { id: 'organizations', type: 'organization', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
-  { id: 'workspaces', type: 'workspace', label: 'app:workspaces', createForm: <CreateWorkspaceForm dialog /> },
-  { id: 'projects', type: 'project', label: 'app:projects' },
+  { id: 'organizations', type: 'ORGANIZATION', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
+  { id: 'workspaces', type: 'WORKSPACE', label: 'app:workspaces', createForm: <CreateWorkspaceForm dialog /> },
+  { id: 'projects', type: 'PROJECT', label: 'app:projects' },
 ];
 
 // Set search results to empty array for each menu type

@@ -57,7 +57,7 @@ const membershipRoutes = app
 
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
 
-    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: id });
+    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: id });
 
     let [membership] = await db
       .update(membershipsTable)

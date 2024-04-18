@@ -145,11 +145,11 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
           <div className="flex  gap-2">
             <HoverCard>
               <HoverCardTrigger>
-                <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
+                <AvatarWrap type="USER" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
               </HoverCardTrigger>
               <HoverCardContent className="w-80">
                 <div className="flex justify-between space-x-4">
-                  <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                  <AvatarWrap type="USER" id={user.id} name={user.name} url={user.thumbnailUrl} />
                   <div className="space-y-1">
                     <h4 className="text-sm font-semibold">{user.name}</h4>
                     <p className="text-sm">{user.bio}</p>

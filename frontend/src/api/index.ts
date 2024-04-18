@@ -6,10 +6,10 @@ import type { OrganizationsRoutes } from 'backend/modules/organizations/index';
 import type { PublicRoutes } from 'backend/modules/public/index';
 import type { UsersRoutes } from 'backend/modules/users/index';
 import type { WorkspacesRoutes } from 'backend/modules/workspaces/index';
+import type { PageResourceType } from 'backend/types/common';
 
 import { config } from 'config';
 import { hc } from 'hono/client';
-import type { PageResourceType } from '~/types';
 
 // Custom error class to handle API errors
 export class ApiError extends Error {

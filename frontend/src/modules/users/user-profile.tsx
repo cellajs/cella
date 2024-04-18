@@ -27,7 +27,7 @@ export const UserProfile = () => {
 
   return (
     <UserContext.Provider value={{ user }}>
-      <PageHeader id={user.id} title={user.name} type="user" thumbnailUrl={user.thumbnailUrl} bannerUrl={user.bannerUrl} />
+      <PageHeader id={user.id} title={user.name} type="USER" thumbnailUrl={user.thumbnailUrl} bannerUrl={user.bannerUrl} />
       <div className="container min-h-screen mt-4">
         <code>{JSON.stringify(user, null, 2)}</code>
       </div>
