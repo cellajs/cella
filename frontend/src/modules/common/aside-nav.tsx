@@ -27,7 +27,7 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
   // If the hash already matches but the user is not at the section, clear and re-set the hash
   const handleMismatch = (e: React.MouseEvent<'a', MouseEvent>, target: string) => {
     e.preventDefault();
-    const element = document.getElementById(target);
+    const element = document.getElementById(`${target}-anchor`);
     if (!element) return;
     element.scrollIntoView();
   };
