@@ -12,12 +12,6 @@ import { errorResponse } from '../lib/errors';
 
 const app = new CustomHono();
 
-// Prevent crawlers from causing log spam
-app.use(async (ctx, next) => {
-  if (!isbot(ctx.req.header('user-agent'))) await next();
-  return errorResponse(ctx, 403, 'user_maybe_bot', 'warn');
-});
-
 // Secure headers
 app.use('*', secureHeaders());
 
@@ -31,6 +25,12 @@ app.use(
 
 // Health check for render.com
 app.get('/ping', (c) => c.text('pong'));
+
+// Prevent crawlers from causing log spam
+app.use(async (ctx, next) => {
+  if (!isbot(ctx.req.header('user-agent'))) await next();
+  return errorResponse(ctx, 403, 'user_maybe_bot', 'warn');
+});
 
 // Logger
 app.use('*', logger(logEvent as unknown as Parameters<typeof logger>[0]));
