@@ -159,6 +159,7 @@ const generalRoutes = app
             sendSSE(targetUser.id, 'update_organization', {
               ...organization,
               userRole: role,
+              type: 'ORGANIZATION',
             });
           }
 

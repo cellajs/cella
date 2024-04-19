@@ -65,6 +65,7 @@ const organizationsRoutes = app
     sendSSE(user.id, 'new_organization_membership', {
       ...createdOrganization,
       userRole: 'ADMIN',
+      type: 'ORGANIZATION',
     });
 
     return ctx.json({
@@ -220,6 +221,7 @@ const organizationsRoutes = app
       sendSSE(user.id, 'update_organization', {
         ...updatedOrganization,
         userRole: membership.role,
+        type: 'ORGANIZATION',
       });
     }
 

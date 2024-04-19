@@ -61,16 +61,17 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       callback?.(result);
       toast.success(t('common:success.create_organization'));
 
+      // If in stepper
       nextStep?.();
 
-      if (!callback && !nextStep) {
-        setSheet(null);
+      if (!callback && !children) {
         navigate({
-          to: '/$idOrSlug/members',
+          to: '/$idOrSlug',
           params: {
             idOrSlug: result.slug,
           },
         });
+        setSheet(null);
       }
 
       if (isDialog) {

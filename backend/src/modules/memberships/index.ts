@@ -83,6 +83,7 @@ const membershipRoutes = app
         sendSSE(targetUser.id, 'new_organization_membership', {
           ...organization,
           userRole: role,
+          type: 'ORGANIZATION',
         });
       } else {
         return errorResponse(ctx, 404, 'not_found', 'warn', undefined, {

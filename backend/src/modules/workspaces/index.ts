@@ -54,6 +54,7 @@ const workspacesRoutes = app
     sendSSE(user.id, 'new_workspace_membership', {
       ...createdWorkspace,
       role: 'ADMIN',
+      type: 'WORKSPACE',
     });
 
     return ctx.json({

@@ -37,7 +37,6 @@ export const AppContent = () => {
   const matches = useMatches();
 
   useEffect(() => {
-    console.log(matches, 'test')
     const hide = matches.find((match) => match.staticData.hideFooter);
     if (!hide !== showFooter) setShowFooter(!showFooter);
   }, [matches]);
