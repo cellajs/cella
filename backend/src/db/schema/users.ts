@@ -11,7 +11,7 @@ export const usersTable = pgTable(
     id: varchar('id').primaryKey(),
     hashedPassword: varchar('hashed_password'),
     slug: varchar('slug').unique().notNull(),
-    name: varchar('name'),
+    name: varchar('name').notNull(),
     firstName: varchar('first_name'),
     lastName: varchar('last_name'),
     email: varchar('email').notNull().unique(),

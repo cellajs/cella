@@ -5,7 +5,7 @@ import { invite as baseInvite } from '~/api/general';
 import type { Organization } from '~/types';
 
 import { config } from 'config';
-import { Loader2, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -70,7 +70,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
     invite({
       emails: values.emails,
       role: values.role,
-      organizationIdentifier: organization?.id,
+      idOrSlug: organization?.id,
     });
   };
 
@@ -92,18 +92,18 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
                   value={value.map((v) => ({ label: v, value: v }))}
                   onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
-                    const users = await getSuggestions(query, 'user');
+                    const data = await getSuggestions(query, 'USER');
 
-                    return users.map((u) => ({
+                    return data.users.map((u) => ({
                       label: u.name || u.email,
                       value: u.email,
                     }));
                   }}
+                  basicSignValue={t('common:invite_members_search.text')}
                   hidePlaceholderWhenSelected
-                  loadingIndicator={<Loader2 className="animate-spin mx-auto my-3" size={16} />}
                   defaultOptions={[]}
                   placeholder={t('common:search_users')}
-                  emptyIndicator={<div className="block w-full text-center p-1">{t('common:no_users_found')}</div>}
+                  emptyValue={t('common:no_users_found')}
                 />
               </FormControl>
               <FormMessage />

@@ -9,8 +9,7 @@ import {
 import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, systemGuard } from '../../middlewares/guard';
-import { userMenuSchema } from '../organizations/schema';
-import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
+import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema, userMenuSchema } from './schema';
 
 export const meRouteConfig = createRouteConfig({
   method: 'get',
@@ -119,7 +118,7 @@ export const updateUserConfig = createRouteConfig({
 
 export const getUserByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/users/{userIdentifier}',
+  path: '/users/{idOrSlug}',
   guard: authGuard(),
   tags: ['users'],
   summary: 'Get user by id or slug',
@@ -151,7 +150,7 @@ export const getUserMenuConfig = createRouteConfig({
   tags: ['users'],
   summary: 'Get the menu of a current user',
   description: `
-    Receive all organizations of which the current user is a member.
+    Receive all resources of which the current user is a member.
   `,
   responses: {
     200: {

@@ -1,6 +1,6 @@
-import { Outlet } from '@tanstack/react-router';
+import { Outlet, useMatches } from '@tanstack/react-router';
 import { Info } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AppAlert } from '~/modules/common/app-alert';
@@ -13,6 +13,7 @@ export const AppContent = () => {
   const isLargeScreen = useBreakpoints('min', 'lg');
 
   const clickContentRef = useRef<HTMLDivElement>(null);
+  const [showFooter, setShowFooter] = useState(true);
 
   // Move content to the right when the menu is open
   const addPadding = keepMenuOpen && activeSheet?.id === 'menu' ? 'lg:pl-80' : 'pl-0';
@@ -32,10 +33,19 @@ export const AppContent = () => {
     };
   }, [keepMenuOpen, activeSheet, isLargeScreen]);
 
+  // Custom hook for setting document title
+  const matches = useMatches();
+
+  useEffect(() => {
+    console.log(matches, 'test')
+    const hide = matches.find((match) => match.staticData.hideFooter);
+    if (!hide !== showFooter) setShowFooter(!showFooter);
+  }, [matches]);
+
   return (
     <div ref={clickContentRef} id="app-content" className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding}`}>
       <div
-        className={`flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-[130vh] transition duration-300 ease-in-out ${
+        className={`flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-[100vh] transition duration-300 ease-in-out ${
           !focusView && 'mt-16 md:ml-16'
         } md:mt-0`}
       >
@@ -48,7 +58,7 @@ export const AppContent = () => {
 
           <Outlet />
         </main>
-        <AppFooter />
+        {showFooter && <AppFooter />}
       </div>
     </div>
   );

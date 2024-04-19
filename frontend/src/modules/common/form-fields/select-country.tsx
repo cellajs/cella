@@ -11,7 +11,7 @@ const SelectCountry = ({ onChange, value }: { onChange: (value: string) => void;
       <SelectTrigger className="w-full">
         <SelectValue placeholder={t('common:placeholder.select_country')} />
       </SelectTrigger>
-      <SelectContent className="h-[300px]">
+      <SelectContent className="h-[30vh]">
         {countries.map((country) => (
           <SelectItem key={country.code} value={country.name}>
             <CountryFlag countryCode={country.code} imgType="png" className="mr-2" />

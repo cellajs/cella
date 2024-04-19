@@ -4,8 +4,8 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Member } from '~/types';
 
-import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
-import { updateUserInOrganization } from '~/api/membership';
+import { type GetMembersParams, getOrganizationMembers } from '~/api/organizations';
+import { updateMembership } from '~/api/memberships';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
@@ -16,7 +16,7 @@ import { useDebounce } from '~/hooks/use-debounce';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import { OrganizationContext } from '~/modules/organizations/organization';
-import { organizationMembersRoute } from '~/routes/organizations';
+import { OrganizationMembersRoute } from '~/routes/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
@@ -25,16 +25,16 @@ const LIMIT = 40;
 
 export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
-export const membersQueryOptions = (organizationIdentifier: string, { q, sort: initialSort, order: initialOrder, role }: GetMembersParams) => {
+export const membersQueryOptions = (idOrSlug: string, { q, sort: initialSort, order: initialOrder, role }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['members', organizationIdentifier, q, sort, order, role],
+    queryKey: ['members', idOrSlug, q, sort, order, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getMembersByOrganizationIdentifier(
-        organizationIdentifier,
+      const fetchedData = await getOrganizationMembers(
+        idOrSlug,
         {
           page: pageParam,
           q,
@@ -53,7 +53,7 @@ export const membersQueryOptions = (organizationIdentifier: string, { q, sort: i
   });
 };
 
-export const useUpdateUserInOrganizationMutation = (organizationIdentifier: string) => {
+export const useUpdateUserInOrganizationMutation = (idOrSlug: string) => {
   return useMutation<
     Member,
     DefaultError,
@@ -62,10 +62,10 @@ export const useUpdateUserInOrganizationMutation = (organizationIdentifier: stri
       role: Member['organizationRole'];
     }
   >({
-    mutationKey: ['members', 'update', organizationIdentifier],
-    mutationFn: (params) => updateUserInOrganization(organizationIdentifier, params.id, params.role),
+    mutationKey: ['members', 'update', idOrSlug],
+    mutationFn: (params) => updateMembership(idOrSlug, params.id, params.role),
     onSuccess: (member) => {
-      queryClient.setQueryData(['users', organizationIdentifier], member);
+      queryClient.setQueryData(['users', idOrSlug], member);
     },
     gcTime: 1000 * 10,
   });
@@ -76,7 +76,7 @@ const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
   const [columns, setColumns] = useColumns();
   const search = useSearch({
-    from: organizationMembersRoute.id,
+    from: OrganizationMembersRoute.id,
   });
   const { mutate: mutateMember } = useUpdateUserInOrganizationMutation(organization.slug);
 

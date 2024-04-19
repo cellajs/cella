@@ -3,7 +3,7 @@ import { UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { invite as baseInvite } from '~/api/general';
-import { removeMembersFromOrganization } from '~/api/membership';
+import { removeMembersFromResource } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
@@ -28,7 +28,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
   });
 
   const { mutate: leave } = useMutation({
-    mutationFn: removeMembersFromOrganization,
+    mutationFn: removeMembersFromResource,
     onSuccess: () => {
       organizationQuery.refetch();
       toast.success(t('common:success.you_left_organization'));
@@ -39,13 +39,13 @@ const JoinLeaveButton = ({ organization }: Props) => {
     invite({
       emails: [user.email],
       role: 'MEMBER',
-      organizationIdentifier: organization.slug,
+      idOrSlug: organization.slug,
     });
   };
 
   const onLeave = () => {
     leave({
-      organizationIdentifier: organization.slug,
+      idOrSlug: organization.id,
       ids: [user.id],
     });
   };

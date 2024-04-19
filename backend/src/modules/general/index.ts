@@ -5,18 +5,19 @@ import { InviteEmail } from '../../../../email/emails/invite';
 import { render } from '@react-email/render';
 import { config } from 'config';
 import { env } from 'env';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
+import { streamSSE, type SSEStreamingApi } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
-import { type User, generateId } from 'lucia';
+import { generateId, type User } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
 
 import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
-import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { membershipsTable, type MembershipModel } from '../../db/schema/memberships';
+import { organizationsTable, type OrganizationModel } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
+import { workspacesTable } from '../../db/schema/workspaces';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { sendSSE } from '../../lib/sse';
@@ -92,12 +93,12 @@ const generalRoutes = app
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, token)));
-    if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
+    if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn');
 
     // For reset token: check if token has valid user
     if (tokenRecord.type === 'PASSWORD_RESET') {
       const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
-      if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+      if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
     }
 
     // For invitation token: check if user email is not already in the system
@@ -146,7 +147,7 @@ const generalRoutes = app
         if (existingMembership) {
           logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
 
-          if (role && existingMembership.role !== role) {
+          if (role && existingMembership.role !== role && existingMembership.organizationId) {
             await db
               .update(membershipsTable)
               .set({ role: role as MembershipModel['role'] })
@@ -287,9 +288,11 @@ const generalRoutes = app
    */
   .openapi(suggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
-    const result = [];
+    const usersResult = [];
+    const workspacesResult = [];
+    const organizationsResult = [];
 
-    if (type === 'user' || !type) {
+    if (type === 'USER' || !type) {
       const users = await db
         .select({
           id: usersTable.id,
@@ -302,10 +305,10 @@ const generalRoutes = app
         .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
         .limit(10);
 
-      result.push(...users.map((user) => ({ ...user, type: 'user' as const })));
+      usersResult.push(...users.map((user) => ({ ...user, type: 'USER' as const })));
     }
 
-    if (type === 'organization' || !type) {
+    if (type === 'ORGANIZATION' || !type) {
       const organizations = await db
         .select({
           id: organizationsTable.id,
@@ -317,12 +320,32 @@ const generalRoutes = app
         .where(ilike(organizationsTable.name, `%${q}%`))
         .limit(10);
 
-      result.push(...organizations.map((organization) => ({ ...organization, type: 'organization' as const })));
+      organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: 'ORGANIZATION' as const })));
+    }
+
+    if (type === 'WORKSPACE' || !type) {
+      const workspaces = await db
+        .select({
+          id: workspacesTable.id,
+          slug: workspacesTable.slug,
+          name: workspacesTable.name,
+          thumbnailUrl: workspacesTable.thumbnailUrl,
+        })
+        .from(workspacesTable)
+        .where(ilike(workspacesTable.name, `%${q}%`))
+        .limit(10);
+
+      workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'WORKSPACE' as const })));
     }
 
     return ctx.json({
       success: true,
-      data: result,
+      data: {
+        users: usersResult,
+        organizations: organizationsResult,
+        workspaces: workspacesResult,
+        total: usersResult.length + workspacesResult.length + organizationsResult.length,
+      },
     });
   })
   .get('/sse', auth(), async (ctx) => {

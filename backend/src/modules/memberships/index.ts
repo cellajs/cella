@@ -18,25 +18,25 @@ const membershipRoutes = app
    * Delete users from organization
    */
   .openapi(deleteMembershipRouteConfig, async (ctx) => {
-    const { ids, organizationIdentifier } = ctx.req.valid('query');
+    const { ids, idOrSlug } = ctx.req.valid('query');
     const usersIds = Array.isArray(ids) ? ids : [ids];
 
     await Promise.all(
       usersIds.map(async (id) => {
         const [targetMembership] = await db
           .delete(membershipsTable)
-          .where(and(eq(membershipsTable.userId, id), eq(membershipsTable.organizationId, organizationIdentifier)))
+          .where(and(eq(membershipsTable.userId, id), eq(membershipsTable.organizationId, idOrSlug)))
           .returning();
         if (!targetMembership) {
-          return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
+          return errorResponse(ctx, 404, 'not_found', 'warn', undefined, {
             user: id,
-            organization: organizationIdentifier,
+            resource: idOrSlug,
           });
         }
 
-        logEvent('Member deleted', { user: id, organization: organizationIdentifier });
+        logEvent('Member deleted', { user: id, organization: idOrSlug });
 
-        sendSSE(id, 'remove_membership', { id: organizationIdentifier });
+        sendSSE(id, 'remove_organization_membership', { id: idOrSlug });
       }),
     );
 
@@ -57,11 +57,15 @@ const membershipRoutes = app
 
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
 
-    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: id });
+    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: id });
 
     let [membership] = await db
       .update(membershipsTable)
-      .set({ role, inactive, muted, modifiedBy: user.id, modifiedAt: new Date() })
+      .set(
+        role
+          ? { role, inactive, muted, modifiedBy: user.id, modifiedAt: new Date() }
+          : { inactive, muted, modifiedBy: user.id, modifiedAt: new Date() },
+      )
       .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)))
       .returning();
 
@@ -76,21 +80,16 @@ const membershipRoutes = app
           })
           .returning();
 
-        sendSSE(targetUser.id, 'new_membership', {
+        sendSSE(targetUser.id, 'new_organization_membership', {
           ...organization,
           userRole: role,
         });
       } else {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
+        return errorResponse(ctx, 404, 'not_found', 'warn', undefined, {
           user: targetUser.id,
           organization: organization.id,
         });
       }
-    } else {
-      sendSSE(targetUser.id, 'update_organization', {
-        ...organization,
-        userRole: role,
-      });
     }
 
     const [{ memberships }] = await db

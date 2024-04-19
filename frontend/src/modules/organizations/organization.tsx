@@ -14,22 +14,21 @@ interface OrganizationContextValue {
 }
 
 const organizationTabs: PageNavTab[] = [
-  { id: 'members', label: 'common:members', path: '/$organizationIdentifier/members' },
-  { id: 'projects', label: 'app:projects', path: '/$organizationIdentifier/projects' },
-  { id: 'settings', label: 'common:settings', path: '/$organizationIdentifier/settings' },
+  { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
+  { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
 ];
 
 export const OrganizationContext = createContext({} as OrganizationContextValue);
 
-export const organizationQueryOptions = (organizationIdentifier: string) =>
+export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
-    queryKey: ['organizations', organizationIdentifier],
-    queryFn: () => getOrganizationBySlugOrId(organizationIdentifier),
+    queryKey: ['organizations', idOrSlug],
+    queryFn: () => getOrganizationBySlugOrId(idOrSlug),
   });
 
 const OrganizationPage = () => {
-  const { organizationIdentifier } = useParams({ from: OrganizationRoute.id });
-  const organizationQuery = useSuspenseQuery(organizationQueryOptions(organizationIdentifier));
+  const { idOrSlug } = useParams({ from: OrganizationRoute.id });
+  const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
 
   return (
@@ -37,7 +36,7 @@ const OrganizationPage = () => {
       <PageHeader
         id={organization.id}
         title={organization.name}
-        type="organization"
+        type="ORGANIZATION"
         thumbnailUrl={organization.thumbnailUrl}
         bannerUrl={organization.bannerUrl}
         panel={

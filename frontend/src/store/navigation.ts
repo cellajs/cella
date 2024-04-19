@@ -9,6 +9,8 @@ import type { UserMenu } from '~/types';
 interface NavigationState {
   recentSearches: string[];
   setRecentSearches: (searchValue: string[]) => void;
+  activeItemsOrder: Record<keyof UserMenu, string[]>;
+  setActiveItemsOrder: (sectionName: keyof UserMenu, itemIds: string[]) => void;
   activeSheet: NavItem | null;
   setSheet: (activeSheet: NavItem | null) => void;
   menu: UserMenu;
@@ -20,11 +22,11 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   setFocusView: (status: boolean) => void;
+  archiveStateToggle: (itemId: string, active: boolean) => void;
 }
 
-// Build the initial menu (for menu sheet)
-const initialMenuState = menuSections.reduce<UserMenu>((acc, section) => {
-  acc[section.id as keyof UserMenu] = { active: [], inactive: [], canCreate: false };
+const initialMenuState: UserMenu = menuSections.reduce<UserMenu>((acc, section) => {
+  acc[section.id as keyof UserMenu] = { items: [], canCreate: false };
   return acc;
 }, {} as UserMenu);
 
@@ -38,6 +40,11 @@ export const useNavigationStore = create<NavigationState>()(
           keepMenuOpen: false as boolean,
           navLoading: false as boolean,
           focusView: false as boolean,
+          activeItemsOrder: {
+            organizations: [],
+            workspaces: [],
+            projects: [],
+          },
           menu: initialMenuState,
           activeSections: {},
           setRecentSearches: (searchValues: string[]) => {
@@ -71,6 +78,20 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = !state.activeSections[section];
             });
           },
+          archiveStateToggle: (itemId: string, active: boolean) => {
+            set((state) => {
+              for (const sectionKey of Object.keys(state.menu)) {
+                const section = state.menu[sectionKey as keyof UserMenu];
+                const itemIndex = section.items.findIndex((item) => item.id === itemId);
+                if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = active;
+              }
+            });
+          },
+          setActiveItemsOrder: (sectionName: keyof UserMenu, itemIds: string[]) => {
+            set((state) => {
+              state.activeItemsOrder[sectionName] = itemIds;
+            });
+          },
         }),
         {
           version: 1,
@@ -79,6 +100,7 @@ export const useNavigationStore = create<NavigationState>()(
             keepMenuOpen: state.keepMenuOpen,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
+            activeItemsOrder: state.activeItemsOrder,
           }),
           storage: createJSONStorage(() => localStorage),
         },

@@ -40,10 +40,10 @@ const formSchema = updateUserJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const useUpdateUserMutation = (userIdentifier: string) => {
+export const useUpdateUserMutation = (idOrSlug: string) => {
   return useMutation<User, DefaultError, UpdateUserParams>({
-    mutationKey: ['me', 'update', userIdentifier],
-    mutationFn: (params) => updateUser(userIdentifier, params),
+    mutationKey: ['me', 'update', idOrSlug],
+    mutationFn: (params) => updateUser(idOrSlug, params),
     onSuccess: (user) => {
       queryClient.setQueryData(['users', user.id], user);
     },
@@ -132,7 +132,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
         <AvatarFormField
           control={form.control}
           label={t('common:profile_picture')}
-          type="user"
+          type="USER"
           name="thumbnailUrl"
           entity={user}
           url={form.getValues('thumbnailUrl')}

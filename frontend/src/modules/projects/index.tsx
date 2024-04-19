@@ -1,12 +1,12 @@
-import { Suspense, lazy } from 'react';
-
-const KanbanBoard = lazy(() => import('./kanban-board'));
+import KanbanBoard from '~/modules/projects/kanban-board';
+import KanbanHeader from '~/modules/projects/kanban-header';
 
 const Projects = () => {
   return (
-    <Suspense>
+    <div className="flex flex-col gap-2 p-2 md:p-4">
+      <KanbanHeader />
       <KanbanBoard />
-    </Suspense>
+    </div>
   );
 };
 

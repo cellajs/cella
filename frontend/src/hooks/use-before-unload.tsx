@@ -7,15 +7,15 @@ export const useBeforeUnload = (isChanged: boolean) => {
     const message = 'You have unsaved changes. Are you sure you want to leave?';
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isChanged && config.mode === 'development') {
+        return console.info('Beforeunload warning is triggered but not shown in dev mode.');
+      }
+
       if (isChanged) {
         e.preventDefault();
         e.returnValue = message;
       }
     };
-
-    if (config.mode === 'development') {
-      return console.info('Beforeunload warning is triggered but not shown in dev mode.');
-    }
 
     window.addEventListener('beforeunload', handleBeforeUnload);
 

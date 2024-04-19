@@ -1,3 +1,4 @@
+import type { PageResourceType } from 'backend/types/common';
 import { Upload } from 'lucide-react';
 import { Suspense, lazy, memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,13 +15,13 @@ const UploadUppy = lazy(() => import('~/modules/common/upload/upload-uppy'));
 
 export interface PageCoverProps {
   id: string;
-  type: 'user' | 'organization';
+  type: PageResourceType;
   url?: string | null;
 }
 
 const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   const { t } = useTranslation();
-  const bannerHeight = url ? 'h-[20vw] min-h-[160px] md:min-h-[210px]' : 'h-28'; // : 'h-14';
+  const bannerHeight = url ? 'h-[20vw] min-h-[160px] md:min-h-[210px]' : 'h-32'; // : 'h-14';
   const bannerClass = url ? 'bg-background' : getColorClass(id);
   const { mutate: mutateOrganization } = useUpdateOrganizationMutation(id);
   const { mutate: mutateUser } = useUpdateUserMutation(id);
@@ -35,7 +36,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   };
 
   const setUrl = (url: string) => {
-    if (type === 'organization') mutateOrganization({ bannerUrl: url }, mutateOptions);
+    if (type === 'ORGANIZATION') mutateOrganization({ bannerUrl: url }, mutateOptions);
     else mutateUser({ bannerUrl: url }, mutateOptions);
   };
 
@@ -73,7 +74,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
 
   return (
     <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={url ? { backgroundImage: `url(${url})` } : {}}>
-      <Button variant="secondary" size="sm" className="absolute top-2 right-2" onClick={openUploadDialog}>
+      <Button variant="secondary" size="sm" className="absolute top-3 right-3" onClick={openUploadDialog}>
         <Upload size={16} />
         <span className="ml-1">{t('common:upload_cover')}</span>
       </Button>

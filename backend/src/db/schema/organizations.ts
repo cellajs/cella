@@ -9,8 +9,8 @@ export const organizationsTable = pgTable(
   'organizations',
   {
     id: varchar('id').primaryKey().$defaultFn(nanoid),
-    name: varchar('name').notNull().unique(),
-    shortName: varchar('short_name').unique(),
+    name: varchar('name').notNull(),
+    shortName: varchar('short_name'),
     slug: varchar('slug').unique().notNull(),
     country: varchar('country'),
     timezone: varchar('timezone'),

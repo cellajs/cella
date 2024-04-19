@@ -21,6 +21,7 @@ import AvatarFormField from '../common/form-fields/avatar';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
+import DomainsFormField from '../common/form-fields/domains';
 
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
@@ -35,12 +36,12 @@ const formSchema = updateOrganizationJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const useUpdateOrganizationMutation = (organizationIdentifier: string) => {
+export const useUpdateOrganizationMutation = (idOrSlug: string) => {
   return useMutation<Organization, DefaultError, UpdateOrganizationParams>({
-    mutationKey: ['organizations', 'update', organizationIdentifier],
-    mutationFn: (params) => updateOrganization(organizationIdentifier, params),
+    mutationKey: ['organizations', 'update', idOrSlug],
+    mutationFn: (params) => updateOrganization(idOrSlug, params),
     onSuccess: (organization) => {
-      queryClient.setQueryData(['organizations', organizationIdentifier], organization);
+      queryClient.setQueryData(['organizations', idOrSlug], organization);
     },
     gcTime: 1000 * 10,
   });
@@ -57,6 +58,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       name: organization.name,
       shortName: organization.shortName,
       websiteUrl: organization.websiteUrl,
+      emailDomains: organization.emailDomains,
       thumbnailUrl: cleanUrl(organization.thumbnailUrl),
       notificationEmail: organization.notificationEmail,
       timezone: organization.timezone,
@@ -127,7 +129,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <AvatarFormField
           control={form.control}
           label={t('common:organization_logo')}
-          type="organization"
+          type="ORGANIZATION"
           name="thumbnailUrl"
           entity={organization}
           url={form.getValues('thumbnailUrl')}
@@ -153,6 +155,13 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           }
         />
         <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
+        <DomainsFormField
+          control={form.control}
+          name="emailDomains"
+          label={t('common:email_domains')}
+          description={t('common:email_domains.text')}
+          placeholder={t('common:placeholder.email_domains')}
+        />
         <InputFormField
           control={form.control}
           type="email"
@@ -176,7 +185,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="defaultLanguage"
           label={t('common:default_language')}
           description={t('common:default_language.text')}
-          placeholder={t('common:select_language')}
+          placeholder={t('common:placeholder.select_language')}
           disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
           required
         />
@@ -184,7 +193,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           control={form.control}
           name="timezone"
           render={({ field: { value, onChange } }) => (
-            <FormItem>
+            <FormItem name="timezone">
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
@@ -200,7 +209,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           control={form.control}
           name="country"
           render={({ field: { value, onChange } }) => (
-            <FormItem>
+            <FormItem name="country">
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>

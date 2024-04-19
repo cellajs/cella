@@ -10,6 +10,29 @@ import './lib/i18n';
 
 const root = document.getElementById('root');
 
+// Enable mocking in development
+// https://mswjs.io/docs/getting-started/integrate/node
+async function enableMocking() {
+  if (process.env.NODE_ENV !== 'development') return;
+  const { worker } = await import('./mocks/browser');
+  // Ignore requests that not /mock/kanban
+  worker.events.on('request:start', ({ request }) => {
+    const urlObject = new URL(request.url);
+    if (!urlObject.pathname.startsWith('/mock/')) return;
+  });
+  // `worker.start()` returns a Promise that resolves
+  // once the Service Worker is up and ready to intercept requests.
+  return worker.start({
+    onUnhandledRequest: 'bypass',
+    serviceWorker: {
+      options: {
+        // Establish scope of the pages that the worker can control.
+        scope: '/workspace',
+      },
+    },
+  });
+}
+
 if (!root) {
   throw new Error('Root element not found');
 }
@@ -25,11 +48,13 @@ renderAscii();
 // Initialize Sentry
 initSentry();
 
-ReactDOM.createRoot(root).render(
-  <StrictMode>
-    <ThemeManager />
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  </StrictMode>,
-);
+enableMocking().then(() => {
+  ReactDOM.createRoot(root).render(
+    <StrictMode>
+      <ThemeManager />
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </StrictMode>,
+  );
+});

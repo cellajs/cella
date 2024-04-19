@@ -130,7 +130,7 @@ export const LabelBox = () => {
                 ref={inputRef}
                 placeholder="Search label..."
                 value={searchValue}
-                setZeroValue={setSearchValue}
+                clearValue={setSearchValue}
                 onValueChange={setSearchValue}
               />
               <div className="pt-2.5 pb-2.5 pl-0.5 pr-0.5">

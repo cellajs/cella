@@ -4,27 +4,21 @@ import { ArrowLeft, Redo } from 'lucide-react';
 import type { Organization } from '~/types';
 import { Button } from '../../ui/button';
 import { useStepper } from '../../ui/stepper';
+import type { OnboardingStates } from '.';
 
 interface StepperFooterProps {
   organization?: Organization | null;
-  setOnboardingCompleted?: (val: boolean) => void;
+  setOnboarding: (value: OnboardingStates) => void;
 }
 
-const StepperFooter = ({ organization, setOnboardingCompleted }: StepperFooterProps) => {
+const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
   const { nextStep, prevStep, isLastStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
 
   useEffect(() => {
+    console.log('activeStep', activeStep, 'hasCompletedAllSteps', hasCompletedAllSteps);
     if (activeStep === 0 || !hasCompletedAllSteps) return;
-    if (setOnboardingCompleted) {
-      setOnboardingCompleted(true);
-    }
+    setOnboarding('completed');
   }, [hasCompletedAllSteps, activeStep]);
-
-  const handleComplete = () => {
-    if (setOnboardingCompleted) {
-      setOnboardingCompleted(true);
-    }
-  };
 
   return (
     <div className="w-full flex justify-end gap-2 max-sm:justify-stretch">
@@ -40,9 +34,16 @@ const StepperFooter = ({ organization, setOnboardingCompleted }: StepperFooterPr
           Skip
         </Button>
       )}
-      <Button onClick={handleComplete} size="sm">
-        {isLastStep ? 'Finish' : 'Continue'}
-      </Button>
+      {!isLastStep && (
+        <Button onClick={nextStep} size="sm" className="max-sm:w-full">
+          Continue
+        </Button>
+      )}
+      {isLastStep && (
+        <Button onClick={() => setOnboarding('completed')} size="sm" className="max-sm:w-full">
+          Finish
+        </Button>
+      )}
     </div>
   );
 };

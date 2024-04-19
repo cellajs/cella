@@ -1,3 +1,5 @@
+import type React from "react";
+
 let dialogsCounter = 1;
 
 export type DialogT = {
@@ -11,6 +13,7 @@ export type DialogT = {
   autoFocus?: boolean;
   hideClose?: boolean;
   content?: React.ReactNode;
+  titleContent?: string | React.ReactNode;
 };
 
 export type DialogToRemove = {
@@ -61,11 +64,23 @@ class Observer {
       return;
     }
 
+    // Remove all dialogs
     for (const dialog of this.dialogs) {
       for (const subscriber of this.subscribers) {
         subscriber({ id: dialog.id, remove: true, refocus });
       }
     }
+  };
+
+  // Update dialog title
+  updateTitle = (id: number | string, titleContent: string | React.ReactNode) => {
+    if (!id) return;
+
+    for (const subscriber of this.subscribers) {
+      subscriber({ id, titleContent });
+    }
+
+    return;
   };
 }
 
@@ -88,4 +103,5 @@ const dialogFunction = (content: React.ReactNode, data?: ExternalDialog) => {
 
 export const dialog = Object.assign(dialogFunction, {
   remove: DialogState.remove,
+  updateTitle: DialogState.updateTitle,
 });
