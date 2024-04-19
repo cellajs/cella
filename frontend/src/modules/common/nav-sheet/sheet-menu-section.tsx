@@ -100,7 +100,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
           <Button className="w-full" variant="ghost" onClick={createDialog}>
             <Plus size={14} />
             <span className="ml-1 text-sm text-light">
-              {t('common:create_your_first')} {section.type}
+              {t('common:create_your_first')} {t(section.type.toLowerCase()).toLowerCase()}
             </span>
           </Button>
         </div>

@@ -23,8 +23,9 @@ const tenant =
     }
 
     let entity: OrganizationModel | WorkspaceModel;
+    let organizationById = null;
 
-    if (type === 'WORKSPACE') {
+    if (type === 'WORKSPACE' && ctx.req.method !== 'POST') {
       [entity] = await db
         .select()
         .from(workspacesTable)
@@ -33,27 +34,33 @@ const tenant =
       if (entity) {
         ctx.set('workspace', entity);
       }
-    } else {
-      [entity] = await db
-        .select()
-        .from(organizationsTable)
-        .where(or(eq(organizationsTable.id, idOrSlug), eq(organizationsTable.slug, idOrSlug)));
 
-      if (entity) {
-        ctx.set('organization', entity);
+      if (!entity) {
+        // t('common:error.resource_not_found.text', { resource: 'organization' })
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'WORKSPACE', { idOrSlug });
       }
+
+      organizationById = entity.organizationId;
+    }
+    const [organization] = await db
+      .select()
+      .from(organizationsTable)
+      .where(or(eq(organizationsTable.id, organizationById || idOrSlug), eq(organizationsTable.slug, organizationById || idOrSlug)));
+
+    if (organization) {
+      ctx.set('organization', organization);
     }
 
-    if (!entity) {
+    if (!organization) {
       // t('common:error.resource_not_found.text', { resource: 'organization' })
-      return errorResponse(ctx, 404, 'not_found', 'warn', type, { idOrSlug });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { idOrSlug });
     }
 
     const [membership] = await db
       .select()
       .from(membershipsTable)
       .where(
-        and(eq(membershipsTable.userId, user.id), or(eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.workspaceId, entity.id))),
+        and(eq(membershipsTable.userId, user.id), or(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.workspaceId, organization.id))),
       );
 
     if ((!membership || (accessibleFor && !accessibleFor.includes(membership.role))) && user.role !== 'ADMIN') {

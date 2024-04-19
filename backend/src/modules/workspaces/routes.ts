@@ -8,7 +8,7 @@ import { apiWorkspacesSchema, createWorkspaceJsonSchema } from './schema';
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
   path: '/workspaces',
-  guard: tenantGuard(['ADMIN']),
+  guard: tenantGuard(),
   tags: ['workspaces'],
   summary: 'Create a new workspace',
   description: `

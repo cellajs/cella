@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
-import { Form, type LabelDirectionType } from '~/modules/ui/form';
+import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types';
 import { dialog } from '../common/dialoger/state';
@@ -27,15 +27,13 @@ import { useNavigate } from '@tanstack/react-router';
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
   dialog?: boolean;
-  labelDirection?: LabelDirectionType;
-  children?: React.ReactNode;
 }
 
 const formSchema = createWorkspaceJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog, labelDirection = 'top', children }) => {
+const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
@@ -98,16 +96,8 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   }, [name]);
 
   return (
-    <Form {...form} labelDirection={labelDirection}>
+    <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <SelectOrganizationFormField
-          control={form.control}
-          label={t('common:organization')}
-          name="organizationId"
-          value={selectedOrganization}
-          onChange={handleOrganizationSelect}
-          required
-        />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
@@ -118,8 +108,15 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
           description={t('common:workspace_handle.text')}
           errorMessage={t('common:error.slug_exists')}
         />
-        {children}
-        {!children && (
+        <SelectOrganizationFormField
+          control={form.control}
+          label={t('common:organization')}
+          name="organizationId"
+          value={selectedOrganization}
+          onChange={handleOrganizationSelect}
+          required
+        />
+
           <div className="flex flex-col sm:flex-row gap-2">
             <Button type="submit" disabled={!form.formState.isDirty || selectedOrganization === ''} loading={isPending}>
               {t('common:create')}
@@ -128,7 +125,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
               {t('common:cancel')}
             </Button>
           </div>
-        )}
+    
       </form>
     </Form>
   );
