@@ -6,9 +6,9 @@ import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
 import type { Organization } from '~/types';
 
-import { Loader2, Undo } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
-import { useWatch } from 'react-hook-form';
+import { UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -51,7 +51,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   const { t } = useTranslation();
   const { mutate, isPending } = useUpdateOrganizationMutation(organization.id);
 
-  const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, {
+  const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
     defaultValues: {
       slug: organization.slug,
@@ -66,12 +66,9 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       defaultLanguage: organization.defaultLanguage,
       languages: organization.languages || [],
     },
-  });
+  };
 
-  const slug = useWatch({
-    control: form.control,
-    name: 'slug',
-  });
+  const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, formOptions);
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
@@ -104,24 +101,15 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     }
   }, [languages, defaultLanguage]);
 
-  const cancel = () => {
-    form.reset();
-    isDialog && dialog.remove();
-  };
-
   const setImageUrl = (url: string) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
-  const revertSlug = () => {
-    form.resetField('slug');
-  };
-
-  useEffect(() => {
-    if (form.formState.isSubmitSuccessful) {
-      form.reset(form.getValues());
-    }
-  }, [form.formState.isSubmitSuccessful]);
+  // useEffect(() => {
+  //   if (form.formState.isSubmitSuccessful) {
+  //     form.reset(form.getValues());
+  //   }
+  // }, [form.formState.isSubmitSuccessful]);
 
   return (
     <Form {...form}>
@@ -138,21 +126,9 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          name="slug"
           label={t('common:organization_handle')}
-          required
           description={t('common:organization_handle.text')}
-          errorMessage={t('common:error.slug_exists')}
           previousSlug={organization.slug}
-          subComponent={
-            organization.slug !== slug && (
-              <div className="absolute inset-y-1 right-1 flex justify-end">
-                <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
-                  <Undo size={16} className="mr-2" /> {t('common:revert_to')} <strong className="ml-1">{organization.slug}</strong>
-                </Button>
-              </div>
-            )
-          }
         />
         <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
         <DomainsFormField
@@ -224,7 +200,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}
           </Button>
-          <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
+          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
             {t('common:cancel')}
           </Button>
         </div>

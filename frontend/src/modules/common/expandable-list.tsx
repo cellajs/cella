@@ -1,4 +1,4 @@
-import { ArrowDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,7 +30,7 @@ export const ExpandableList = ({ items, renderItem, initialDisplayCount, alwaysS
         <Button variant="ghost" className="w-full mt-4 group" onClick={handleLoadMore}>
           <Badge className="mr-2 aspect-square py-0 px-1">{items.length - initialDisplayCount}</Badge>
           {t(expandText)}
-          <ArrowDown className="opacity-50 group-hover:opacity-100 transition-opacity ml-2" size={16} />
+          <ChevronDown className="opacity-50 group-hover:opacity-100 transition-opacity ml-2" size={16} />
         </Button>
       )}
     </>
