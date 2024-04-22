@@ -4,7 +4,6 @@ import { Suspense, lazy } from 'react';
 
 import { useSetDocumentTitle } from '~/hooks/use-set-document-title';
 import { Dialoger } from '~/modules/common/dialoger';
-import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
@@ -20,6 +19,9 @@ const TanStackRouterDevtools =
         })),
       );
 
+// Lazy load reload prompt for PWA
+const ReloadPrompt = config.has.pwa ? lazy(() => import('~/modules/common/reload-prompt')) : () => null;
+
 // Lazy load gleap chat support
 const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gleap')) : () => null;
 
@@ -34,7 +36,11 @@ function Root() {
       <Toaster richColors />
       <Dialoger />
       <Sheeter />
-      <ReloadPrompt />
+      {config.has.pwa && (
+        <Suspense fallback={null}>
+          <ReloadPrompt />
+        </Suspense>
+      )}
       <Suspense fallback={null}>
         <TanStackRouterDevtools />
       </Suspense>
