@@ -123,7 +123,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           >
             <div className="flex justify-between">
               <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
-              <UserTheme className="items-start mt-1 max-xs" />
+              <UserTheme className="absolute top-5 right-4 xs:hidden" />
             </div>
             {renderNavItems()}
             <Button

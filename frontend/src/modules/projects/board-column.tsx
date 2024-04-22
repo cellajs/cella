@@ -139,7 +139,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   const dndContext = useDndContext();
 
-  const variations = cva('h-[calc(100vh-64px-64px)] md:h-[calc(100vh-80px)]', {
+  const variations = cva('h-[calc(100vh-64px-64px)] md:h-[calc(100vh-88px)]', {
     variants: {
       dragging: {
         default: 'snap-x snap-mandatory',

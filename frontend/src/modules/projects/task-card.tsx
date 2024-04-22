@@ -8,11 +8,12 @@ import { useEffect, useState } from 'react';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader } from '~/modules/ui/card';
+import { Card, CardContent } from '~/modules/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { Checkbox } from '../ui/checkbox';
 import type { ColumnId } from './kanban-board';
 import { LabelBox } from './labels';
+import './style.css';
 
 export interface Task {
   id: UniqueIdentifier;
@@ -98,35 +99,40 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
       })}
     >
-      <CardHeader className="p-2 pr-4 space-between flex flex-col border-b border-secondary relative">
-        {!isOpen && (
-          <Button onClick={toggleEditorState} size={'auto'} variant="secondary" className="w-full flex justify-start bg-transparent">
-            <div className="flex items-center gap-2">
-              <div className="group mt-[2px]">
-                <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
-                <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
-                {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
-                {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
-              </div>
-              <MDEditor.Markdown source={task.content} style={{ textAlign: 'start', background: 'transparent', whiteSpace: 'pre-wrap' }} />
+      <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
+        <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
+            <div className="group">
+              <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
+              <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
+              {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
+              {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
             </div>
-          </Button>
-        )}
-        {isOpen && (
-          <>
-            <MDEditor
-              textareaProps={{ id: task.id as string }}
-              value={value}
-              preview={'edit'}
-              onChange={(newValue) => setValue(newValue)}
-              autoFocus={true}
-              hideToolbar={true}
-              visibleDragbar={false}
-              height={'auto'}
-              style={{ background: 'transparent', boxShadow: 'none' }}
-            />
-          </>
-        )}
+
+            <div>pt</div>
+          </div>
+          {!isOpen && (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+            <div onClick={toggleEditorState}>
+              <MDEditor.Markdown source={task.content} className="prose" />
+            </div>
+          )}
+          {isOpen && (
+            <>
+              <MDEditor
+                textareaProps={{ id: task.id as string }}
+                value={value}
+                preview={'edit'}
+                onChange={(newValue) => setValue(newValue)}
+                autoFocus={true}
+                hideToolbar={true}
+                visibleDragbar={false}
+                height={'auto'}
+                style={{ background: 'transparent', boxShadow: 'none', padding: '0' }}
+              />
+            </>
+          )}
+        </div>
 
         <div className="flex items-center justify-between mt-1 gap-2">
           {isOpen && (
@@ -166,8 +172,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
             </Button>
           </div>
         </div>
-      </CardHeader>
-      {isOpen && <CardContent className="px-3 pt-3 pb-6 text-left whitespace-pre-wrap">collapsed info here</CardContent>}
+      </CardContent>
     </Card>
   );
 }

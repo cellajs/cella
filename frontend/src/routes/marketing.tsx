@@ -21,7 +21,7 @@ export const ContactRoute = createRoute({
 
 export const LegalRoute = createRoute({
   path: '/legal',
-  staticData: { pageTitle: 'Legal information' },
+  staticData: { pageTitle: 'Legal' },
   getParentRoute: () => rootRoute,
   component: () => <LegalsMenu />,
 });
