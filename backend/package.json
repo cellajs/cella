@@ -45,6 +45,7 @@
     "env": "workspace:*",
     "hono": "4.2.3",
     "i18next": "^23.10.0",
+    "isbot": "^5.1.4",
     "jsonwebtoken": "^9.0.2",
     "locales": "workspace:*",
     "lucia": "^3.1.1",

@@ -60,6 +60,7 @@ function Toolbar({
 
   const openInviteDialog = () => {
     dialog(<InviteUsers mode="email" dialog />, {
+      id: 'user-invite',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[100] max-w-3xl',
       container: containerRef.current,

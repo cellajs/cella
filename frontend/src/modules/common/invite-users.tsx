@@ -6,13 +6,14 @@ import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { AppAlert } from './app-alert';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
+import { dialog } from './dialoger/state';
 
 interface InviteUsersProps {
   organization?: Organization | null;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
-  mode?: string;
+  mode?: string | null;
   children?: React.ReactNode;
 }
 
@@ -21,9 +22,28 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
 
   const [inviteMode, setInviteMode] = useState(mode);
 
+  const updateMode = (mode: string[]) => {
+    mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
+
+    dialog.updateTitle(
+      'user-invite',
+      mode[0] ? (
+        <div className="flex items-center gap-2">
+          <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
+            {t('common:invite')}
+          </button>
+          <ChevronRight className="opacity-50" size={16} />
+          <span>{mode[0] === 'search' ? t('common:invite_search') : t('common:invite_email')}</span>
+        </div>
+      ) : (
+        t('common:invite')
+      ),
+    );
+  };
+
   if (!inviteMode)
     return (
-      <ToggleGroup type="multiple" onValueChange={(values) => setInviteMode(values[0])} className="gap-4 max-sm:flex-col">
+      <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
         <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
           <Search size={48} strokeWidth={1} />
           <div className="flex flex-col p-4">

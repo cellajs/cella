@@ -1,3 +1,4 @@
+import type { PageResourceType } from 'backend/types/common';
 import { Upload } from 'lucide-react';
 import { Suspense, lazy, memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,7 @@ const UploadUppy = lazy(() => import('~/modules/common/upload/upload-uppy'));
 
 export interface PageCoverProps {
   id: string;
-  type: 'user' | 'organization';
+  type: PageResourceType;
   url?: string | null;
 }
 
@@ -35,7 +36,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   };
 
   const setUrl = (url: string) => {
-    if (type === 'organization') mutateOrganization({ bannerUrl: url }, mutateOptions);
+    if (type === 'ORGANIZATION') mutateOrganization({ bannerUrl: url }, mutateOptions);
     else mutateUser({ bannerUrl: url }, mutateOptions);
   };
 

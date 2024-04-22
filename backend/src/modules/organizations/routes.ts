@@ -52,7 +52,7 @@ export const createOrganizationRouteConfig = createRouteConfig({
 
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/organizations/{organizationIdentifier}',
+  path: '/organizations/{idOrSlug}',
   guard: tenantGuard(['ADMIN']),
   tags: ['organizations'],
   summary: 'Update organization',
@@ -115,10 +115,10 @@ export const getOrganizationsRouteConfig = createRouteConfig({
   path: '/organizations',
   guard: systemGuard,
   tags: ['organizations'],
-  summary: 'Get organizations',
+  summary: 'Get list of organizations',
   description: `
-    If user has role 'ADMIN', then he receives all organizations.
-    If user has role 'USER', then he receives only organizations, where he is a member.
+    System role 'ADMIN' receives all organizations.
+    System role 'USER' receives only organizations with membership.
   `,
   request: {
     query: getOrganizationsQuerySchema,
@@ -138,7 +138,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{organizationIdentifier}',
+  path: '/organizations/{idOrSlug}',
   guard: tenantGuard(),
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
@@ -165,10 +165,10 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
 
 export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{organizationIdentifier}/members',
+  path: '/organizations/{idOrSlug}/members',
   guard: tenantGuard(),
   tags: ['organizations'],
-  summary: 'Get members(users) of organization',
+  summary: 'Get members of organization',
   description: `
     Permissions:
       - Users with role 'ADMIN'

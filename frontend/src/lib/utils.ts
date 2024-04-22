@@ -1,4 +1,4 @@
-import { type ParsedLocation, redirect } from '@tanstack/react-router';
+import { redirect } from '@tanstack/react-router';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
@@ -92,13 +92,8 @@ export const translationExists = (key: string) => {
   return i18next.t(key) !== key;
 };
 
-const containsTwoOrMoreSlashes = (str: string): boolean => {
-  return /\/.*\//.test(str);
-};
-
 // Prevent direct access to a parent route, always redirect to a child
-// biome-ignore lint/complexity/noBannedTypes: <explanation>
-export const noDirectAccess = (location: ParsedLocation<{}>, redirectLocation: string) => {
-  if (containsTwoOrMoreSlashes(location.pathname)) return;
-  throw redirect({ to: location.pathname + redirectLocation, replace: true });
+export const noDirectAccess = (pathname: string, param: string, redirectLocation: string) => {
+  if (!pathname.endsWith(param)) return;
+  throw redirect({ to: pathname + redirectLocation, replace: true });
 };

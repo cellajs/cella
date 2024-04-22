@@ -74,7 +74,7 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
     invite({
       emails: values.emails,
       role: values.role,
-      organizationIdentifier: organization?.id,
+      idOrSlug: organization?.id,
     });
   };
 
@@ -92,7 +92,7 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
           render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
-                <MultiEmail placeholder={t('common:add_email')} emails={value} onChange={onChange} autoComplete='off' />
+                <MultiEmail placeholder={t('common:add_email')} emails={value} onChange={onChange} autoComplete="off" />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -27,6 +27,7 @@ export const usersSeed = async () => {
       id: nanoid(),
       email,
       emailVerified: true,
+      name: 'Admin User',
       language: config.defaultLanguage,
       slug: 'admin-user',
       role: 'ADMIN',
@@ -114,6 +115,7 @@ export const organizationsAndMembersSeed = async () => {
     // Create 100 memberships for each organization
     const memberships: InsertMembershipModel[] = users.map((user) => {
       return {
+        id: nanoid(),
         userId: user.id,
         organizationId: organization.id,
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),

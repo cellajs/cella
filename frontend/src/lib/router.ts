@@ -29,6 +29,7 @@ declare module '@tanstack/react-router' {
   // Required pageTitle in static data
   interface StaticDataRouteOption {
     pageTitle: string | null;
+    hideFooter?: boolean;
   }
 }
 

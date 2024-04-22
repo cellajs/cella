@@ -12,22 +12,22 @@ interface UserContextValue {
   user: User;
 }
 
-export const userQueryOptions = (userIdentifier: string) =>
+export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({
-    queryKey: ['users', userIdentifier],
-    queryFn: () => getUserBySlugOrId(userIdentifier),
+    queryKey: ['users', idOrSlug],
+    queryFn: () => getUserBySlugOrId(idOrSlug),
   });
 
 export const UserContext = createContext({} as UserContextValue);
 
 export const UserProfile = () => {
-  const { userIdentifier } = useParams({ from: UserProfileRoute.id });
-  const userQuery = useSuspenseQuery(userQueryOptions(userIdentifier));
+  const { idOrSlug } = useParams({ from: UserProfileRoute.id });
+  const userQuery = useSuspenseQuery(userQueryOptions(idOrSlug));
   const user = userQuery.data;
 
   return (
     <UserContext.Provider value={{ user }}>
-      <PageHeader id={user.id} title={user.name} type="user" thumbnailUrl={user.thumbnailUrl} bannerUrl={user.bannerUrl} />
+      <PageHeader id={user.id} title={user.name} type="USER" thumbnailUrl={user.thumbnailUrl} bannerUrl={user.bannerUrl} />
       <div className="container min-h-screen mt-4">
         <code>{JSON.stringify(user, null, 2)}</code>
       </div>

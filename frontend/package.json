@@ -44,9 +44,9 @@
     "@radix-ui/react-toggle-group": "^1.0.4",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@sentry/react": "^7.106.1",
-    "@tanstack/react-query": "^5.29.0",
+    "@tanstack/react-query": "^5.29.2",
     "@tanstack/react-router": "1.28.1",
-    "@tanstack/router-devtools": "^1.26.9",
+    "@tanstack/router-devtools": "^1.28.1",
     "@tippyjs/react": "^4.2.6",
     "@tiptap/core": "^2.2.2",
     "@tiptap/extension-bullet-list": "^2.2.2",
@@ -146,6 +146,7 @@
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@redux-devtools/extension": "^3.3.0",
     "@rollup/plugin-terser": "^0.4.4",
     "@sentry/vite-plugin": "^2.14.3",
@@ -158,6 +159,7 @@
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
+    "msw": "^2.2.13",
     "postcss": "^8.4.33",
     "postcss-import": "^16.0.1",
     "postcss-preset-env": "^9.3.0",
@@ -169,11 +171,7 @@
     "vite-plugin-pwa": "^0.19.7",
     "vite-plugin-static-copy": "^1.0.2"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not op_mini all"
-  ],
+  "browserslist": [">0.2%", "not dead", "not op_mini all"],
   "postcss": {
     "plugins": {
       "postcss-import": {},

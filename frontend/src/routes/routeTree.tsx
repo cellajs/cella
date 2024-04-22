@@ -14,7 +14,8 @@ import { queryClient } from '~/lib/router';
 import { AcceptRoute, AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, PrivacyRoute, TermsRoute } from './marketing';
-import { OrganizationRoute, organizationMembersRoute, organizationSettingsRoute, projectsRoute } from './organizations';
+import { OrganizationRoute, OrganizationMembersRoute, OrganizationSettingsRoute } from './organizations';
+import { WorkspaceRoute, WorkspaceProjectsRoute } from './workspaces'; //WorkspaceMembersRoute, WorkspaceSettingsRoute,
 import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import AcceptInvite from '~/modules/common/accept-invite';
@@ -109,7 +110,8 @@ export const routeTree = rootRoute.addChildren([
     SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute]),
     UserProfileRoute,
     UserSettingsRoute,
-    OrganizationRoute.addChildren([organizationMembersRoute, organizationSettingsRoute, projectsRoute]),
+    WorkspaceRoute.addChildren([WorkspaceProjectsRoute]), // WorkspaceMembersRoute, WorkspaceSettingsRoute
+    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),
   ]),
 ]);
 

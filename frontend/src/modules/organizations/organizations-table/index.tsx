@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { getOrganizations } from '~/api/organizations';
-import { updateUserInOrganization } from '~/api/membership';
+import { updateMembership } from '~/api/memberships';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { Bird } from 'lucide-react';
@@ -80,7 +80,7 @@ const OrganizationsTable = () => {
     for (const index of indexes) {
       const organization = records[index];
       if (column.key === 'userRole' && organization.userRole) {
-        updateUserInOrganization(organization.id, user.id, organization.userRole)
+        updateMembership(organization.id, user.id, organization.userRole)
           .then(() => {
             toast.success(t('common:success.your_role_updated'));
           })

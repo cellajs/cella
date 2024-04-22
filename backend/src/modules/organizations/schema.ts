@@ -4,7 +4,6 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { imageUrlSchema, nameSchema, paginationQuerySchema, validDomainsSchema, validSlugSchema, validUrlSchema } from '../../lib/common-schemas';
-
 import { apiUserSchema } from '../users/schema';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
@@ -73,14 +72,6 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
     chatSupport: true,
   })
   .partial();
-
-export const userMenuSchema = z.object({
-  organizations: z.object({
-    active: z.array(apiOrganizationSchema),
-    inactive: z.array(apiOrganizationSchema),
-    canCreate: z.boolean(),
-  }),
-});
 
 export const getUsersByOrganizationQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'email', 'organizationRole', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),

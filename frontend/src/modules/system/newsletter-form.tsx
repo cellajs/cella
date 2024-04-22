@@ -99,7 +99,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
             <Send size={16} className="mr-2" />
             {t('common:send')}
           </Button>
-          <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
+          <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'invisible'} aria-label="Cancel" onClick={cancel}>
             {t('common:cancel')}
           </Button>
         </div>

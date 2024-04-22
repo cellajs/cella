@@ -8,7 +8,6 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
-import Projects from '~/modules/projects';
 import { IndexRoute } from './routeTree';
 import AcceptInvite from '~/modules/organizations/accept-invite';
 import { z } from 'zod';
@@ -19,12 +18,12 @@ const MembersTable = lazy(() => import('~/modules/organizations/members-table'))
 const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export const OrganizationRoute = createRoute({
-  path: '$organizationIdentifier',
+  path: '$idOrSlug',
   staticData: { pageTitle: 'Organization' },
-  beforeLoad: ({ location }) => noDirectAccess(location, '/members'),
+  beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
   getParentRoute: () => IndexRoute,
-  loader: async ({ params: { organizationIdentifier } }) => {
-    queryClient.ensureQueryData(organizationQueryOptions(organizationIdentifier));
+  loader: async ({ params: { idOrSlug } }) => {
+    queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
@@ -34,14 +33,14 @@ export const OrganizationRoute = createRoute({
   ),
 });
 
-export const organizationMembersRoute = createRoute({
+export const OrganizationMembersRoute = createRoute({
   path: '/members',
   staticData: { pageTitle: 'Members' },
   getParentRoute: () => OrganizationRoute,
   validateSearch: membersSearchSchema,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ params: { organizationIdentifier }, deps: { q, sort, order, role } }) => {
-    const membersInfiniteQueryOptions = membersQueryOptions(organizationIdentifier, { q, sort, order, role });
+  loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
+    const membersInfiniteQueryOptions = membersQueryOptions(idOrSlug, { q, sort, order, role });
     const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
     if (!cachedMembers) {
       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
@@ -54,15 +53,7 @@ export const organizationMembersRoute = createRoute({
   ),
 });
 
-// INFO: This is a proof of concept development
-export const projectsRoute = createRoute({
-  path: '/projects',
-  staticData: { pageTitle: 'Projects' },
-  getParentRoute: () => OrganizationRoute,
-  component: () => <Projects />,
-});
-
-export const organizationSettingsRoute = createRoute({
+export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,

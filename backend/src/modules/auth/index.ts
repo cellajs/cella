@@ -57,7 +57,7 @@ const authRoutes = app
       {
         id: userId,
         slug,
-        firstName: slug,
+        name: slug,
         email: email.toLowerCase(),
         language: config.defaultLanguage,
         hashedPassword,
@@ -136,7 +136,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
     }
 
     // * creating email verification token
@@ -249,7 +249,7 @@ const authRoutes = app
 
     // * If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { userId: token.userId });
     }
 
     await auth.invalidateUserSessions(user.id);
@@ -277,7 +277,7 @@ const authRoutes = app
 
     // * If the user is not found or signed up with oauth
     if (!user || !user.hashedPassword) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
     }
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);

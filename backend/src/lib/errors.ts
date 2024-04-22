@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { z } from 'zod';
 import { logEvent, logtail } from '../middlewares/logger/log-event';
+import type { PageResourceType } from '../types/common';
 import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
 
@@ -23,7 +24,7 @@ export const createError = (
   status: HttpStatus,
   type: string,
   severity: Severity = 'info',
-  resourceType?: string,
+  resourceType?: PageResourceType,
   eventData?: EventData,
   err?: Error,
 ) => {
@@ -64,7 +65,7 @@ export const errorResponse = (
   status: HttpStatus,
   type: string,
   severity: Severity = 'info',
-  resourceType?: string,
+  resourceType?: PageResourceType,
   eventData?: EventData,
   err?: Error,
 ) => {

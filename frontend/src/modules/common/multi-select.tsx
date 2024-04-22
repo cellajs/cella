@@ -301,8 +301,8 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         shouldFilter={commandProps?.shouldFilter !== undefined ? commandProps.shouldFilter : !onSearch} // When onSearch is provided, we don't want to filter the options. You can still override it.
         filter={commandFilter()}
       >
-        <button
-          type="button"
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+        <div
           className={cn(
             'group rounded-md border border-input px-3 py-2 text-sm ring-offset-background bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text',
             className,
@@ -311,7 +311,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
             if (inputRef?.current) inputRef.current.focus();
           }}
         >
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1 -my-0.5">
             {onSearch && !selected.length && <Search className="h-4 w-4 shrink-0" style={{ opacity: inputValue ? 1 : 0.5 }} />}
             {selected.map((option) => (
               <Badge
@@ -352,15 +352,15 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 {...inputProps}
                 ref={inputRef}
                 value={inputValue}
-                aria-autocomplete='none'
-                autoComplete='off'
+                aria-autocomplete="none"
+                autoComplete="off"
                 disabled={disabled}
                 onValueChange={(value) => onValueChange(value)}
                 onBlur={onInputBlur}
                 onFocus={onInputFocus}
                 placeholder={hidePlaceholderWhenSelected && selected.length !== 0 ? '' : placeholder}
                 className={cn(
-                  'h-5 w-full flex-1 bg-transparent outline-none placeholder:text-muted-foreground',
+                  'h-6 w-full flex-1 bg-transparent outline-none placeholder:text-muted-foreground',
                   inputProps?.className,
                   selected.length && 'ml-2 ',
                 )}
@@ -377,7 +377,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
               )}
             </div>
           </div>
-        </button>
+        </div>
         {isShowResults && (
           <div className="relative">
             <CommandList
@@ -414,7 +414,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                           itemComponent(option)
                         ) : (
                           <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                            <AvatarWrap type="user" className="h-8 w-8" id={option.label} name={option.value} />
+                            <AvatarWrap type="USER" className="h-8 w-8" id={option.label} name={option.value} />
                             <span className="group-hover:underline underline-offset-4 truncate font-medium">{option.label}</span>
                           </div>
                         )}
