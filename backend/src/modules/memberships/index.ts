@@ -105,6 +105,14 @@ const membershipRoutes = app
       organization: organization.id,
     });
 
+    sendSSE(targetUser.id, 'update_organization', {
+      ...organization,
+      muted,
+      archived: inactive,
+      userRole: role,
+      type: 'ORGANIZATION',
+    });
+
     return ctx.json({
       success: true,
       data: {
