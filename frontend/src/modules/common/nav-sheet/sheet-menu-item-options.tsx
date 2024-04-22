@@ -21,7 +21,6 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
   const [isItemMuted, setItemMuted] = useState(item.muted);
   const user = useUserStore((state) => state.user);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
-
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
   const style = {
     transition,
@@ -30,7 +29,8 @@ export const SheetMenuItemOptions = ({ item }: SheetMenuItemProps) => {
 
   const itemArchiveStateHandle = () => {
     const itemArchiveStatus = !isItemArchived;
-    updateMembership(item.id, user.id, item.role ? item.role : undefined, itemArchiveStatus)
+
+    updateMembership(item.id, user.id, item.role ? item.role : undefined, itemArchiveStatus, isItemMuted)
       .then(() => {
         archiveStateToggle(item.id, itemArchiveStatus);
         toast.success(itemArchiveStatus ? t('common:success.archived_organization') : t('common:success.restore_organization'));

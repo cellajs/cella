@@ -88,7 +88,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
                   <Send size={16} className="mr-2" />
                   {t('common:send')}
                 </Button>
-                <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
+                <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'invisible'}>
                   {t('common:cancel')}
                 </Button>
               </div>

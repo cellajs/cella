@@ -9,12 +9,10 @@ interface SelectOrganizationProps {
   control: Control<any>;
   name: string;
   label: string;
-  value: string;
-  onChange: (organizationId: string) => void;
   required?: boolean;
 }
 
-const SelectOrganizationFormField = ({ control, name, label, value, onChange, required }: SelectOrganizationProps) => {
+const SelectOrganizationFormField = ({ control, name, label, required }: SelectOrganizationProps) => {
   const { menu } = useNavigationStore();
   const { t } = useTranslation();
 
@@ -22,7 +20,7 @@ const SelectOrganizationFormField = ({ control, name, label, value, onChange, re
     <FormField
       control={control}
       name={name}
-      render={() => (
+      render={({ field: { value, onChange } }) => (
         <FormItem name={name}>
           <FormLabel>
             {label}
