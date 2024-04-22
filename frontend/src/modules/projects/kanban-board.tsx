@@ -22,6 +22,7 @@ import type { Column } from './board-column';
 import { coordinateGetter } from './keyboard-preset';
 import { type Task, TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
+import { stopMocking, enableMocking } from '~/mocks/browser';
 
 const defaultCols = [
   {
@@ -132,14 +133,16 @@ export default function KanbanBoard() {
   };
 
   useEffect(() => {
-    fetch('/mock/kanban')
-      .then((response) => response.json())
-      .then((data) => {
-        setTasks(data);
-      })
-      .catch((error) => console.error('Error fetching  MSW data:', error));
+    enableMocking().then(() => {
+      fetch('/mock/kanban')
+        .then((response) => response.json())
+        .then((data) => {
+          setTasks(data);
+          stopMocking();
+        })
+        .catch((error) => console.error('Error fetching  MSW data:', error));
+    });
   }, []);
-
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
