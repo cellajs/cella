@@ -40,7 +40,8 @@ export const WorkspaceProjectsRoute = createRoute({
     <Suspense>
       <Projects />
     </Suspense>
-  ),});
+  ),
+});
 
 // export const WorkspaceMembersRoute = createRoute({
 //   path: '/members',
