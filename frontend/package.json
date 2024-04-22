@@ -106,7 +106,7 @@
     "embla-carousel-autoplay": "8.0.2",
     "embla-carousel-react": "8.0.2",
     "gleap": "^13.5.14",
-    "hono": "4.2.3",
+    "hono": "4.2.6",
     "i18next": "^23.11.1",
     "i18next-browser-languagedetector": "^7.2.1",
     "i18next-http-backend": "^2.5.0",
@@ -171,7 +171,11 @@
     "vite-plugin-pwa": "^0.19.7",
     "vite-plugin-static-copy": "^1.0.2"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},

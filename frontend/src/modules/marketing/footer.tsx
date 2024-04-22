@@ -41,8 +41,7 @@ const footerSections = [
 ];
 
 const legalLinks = [
-  { title: 'common:terms', href: '/terms' },
-  { title: 'common:privacy', href: '/privacy' },
+  { title: 'common:legal_information', href: '/legal' },
   { title: 'common:accessibility', href: '/accessibility' },
 ];
 

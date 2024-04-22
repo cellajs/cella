@@ -13,7 +13,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { queryClient } from '~/lib/router';
 import { AcceptRoute, AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
-import { AboutRoute, AccessibilityRoute, ContactRoute, PrivacyRoute, TermsRoute } from './marketing';
+import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
 import { OrganizationRoute, OrganizationMembersRoute, OrganizationSettingsRoute } from './organizations';
 import { WorkspaceRoute, WorkspaceProjectsRoute } from './workspaces'; //WorkspaceMembersRoute, WorkspaceSettingsRoute,
 import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
@@ -97,8 +97,7 @@ export const acceptInviteRoute = createRoute({
 export const routeTree = rootRoute.addChildren([
   AboutRoute,
   ContactRoute,
-  TermsRoute,
-  PrivacyRoute,
+  LegalRoute,
   AccessibilityRoute,
   ErrorNoticeRoute,
   SignOutRoute,
