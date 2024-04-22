@@ -27,8 +27,7 @@ export const FooterLink = ({ id, href }: FooterLinkProps) => {
 // Default footer links
 const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'about', href: '/about' },
-  { id: 'terms', href: '/terms' },
-  { id: 'privacy', href: '/privacy' },
+  { id: 'legal_information', href: '/legal' },
 ];
 
 interface FooterLinksProps {

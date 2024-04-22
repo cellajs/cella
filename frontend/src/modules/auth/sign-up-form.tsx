@@ -14,8 +14,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { PrivacyText } from '../marketing/privacy';
-import { TermsText } from '../marketing/terms';
+import { LegalText } from '../marketing/legals';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -101,8 +100,8 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
 export const LegalNotice = () => {
   const { t } = useTranslation();
 
-  const openDialog = (mode: string) => () => {
-    const dialogComponent = mode === 'terms' ? <TermsText /> : <PrivacyText />;
+  const openDialog = (mode: 'terms' | 'privacy') => () => {
+    const dialogComponent = <LegalText textFor={mode} />;
     const dialogTitle = mode;
 
     dialog(dialogComponent, {
