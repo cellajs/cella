@@ -2,15 +2,15 @@ import { type UniqueIdentifier, useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
-import { ChevronDown, Footprints, GripVertical, Maximize2, Plus, Settings } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { ChevronDown, GripVertical, Plus } from 'lucide-react';
+import { type RefObject, useMemo, useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { type Task, TaskCard } from './task-card';
-import { TooltipButton } from '../common/tooltip-button';
+import ToolTipButtons from './tooltip-buttons';
+import { useMeasure } from '~/hooks/use-measure';
 
 export interface Column {
   id: UniqueIdentifier;
@@ -31,8 +31,10 @@ interface BoardColumnProps {
 }
 
 export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
-  const { t } = useTranslation();
   const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(tasks.map((el) => el.id));
+  const { ref, bounds } = useMeasure();
+
+  const neededWidth = 375;
 
   const toggleTaskVisibility = (taskId: UniqueIdentifier) => {
     setFoldedTasks((prevIds) => {
@@ -84,7 +86,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
       })}
     >
-      <CardHeader className="p-3 font-semibold border-b flex flex-row gap-2 space-between items-center">
+      <CardHeader ref={ref as RefObject<HTMLDivElement>} className="p-3 font-semibold border-b flex flex-row gap-2 space-between items-center">
         <Button variant={'ghost'} {...attributes} {...listeners} className=" py-1 px-0 text-primary/50 -ml-1 h-auto cursor-grab relative">
           <span className="sr-only">{`Move column: ${column.title}`}</span>
           <GripVertical size={16} />
@@ -96,23 +98,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 
         <div className="grow" />
 
-        <TooltipButton side="bottom" sideOffset={13} toolTipContent={t('Show velocity')}>
-          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-            <Footprints size={16} />
-          </Button>
-        </TooltipButton>
-
-        <TooltipButton side="bottom" sideOffset={13} toolTipContent={t('Project view')}>
-          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-            <Maximize2 size={16} />
-          </Button>
-        </TooltipButton>
-
-        <TooltipButton side="bottom" sideOffset={13} toolTipContent={t('Project settings')}>
-          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-            <Settings size={16} />
-          </Button>
-        </TooltipButton>
+        <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} />
 
         <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8">
           <Plus size={16} className="mr-1" />
