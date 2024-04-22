@@ -47,7 +47,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
 
   const isValidSlug = (value: string) => {
     const regex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    return regex.test(value) && !value.startsWith('-') && !value.endsWith('-');
+    return regex.test(value) && !value.startsWith('-') && !value.endsWith('-') && value.replaceAll(' ', '') !== '';
   };
 
   useEffect(() => {
