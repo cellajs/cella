@@ -41,8 +41,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
 
   useEffect(() => {
     if (!previousSlug || slug === previousSlug) return;
-
-    checkSlug(slug);
+    if (slug.replaceAll(' ', '') !== '') checkSlug(slug);
   }, [slug]);
 
   const isValidSlug = (value: string) => {

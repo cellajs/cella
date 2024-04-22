@@ -9,12 +9,11 @@ import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
 import { createWorkspace } from '~/api/workspaces';
 
 // import { useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
-import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types';
 import { dialog } from '../common/dialoger/state';
@@ -22,6 +21,8 @@ import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import SelectOrganizationFormField from '../common/form-fields/select-organization';
 import { useNavigate } from '@tanstack/react-router';
+import { SquarePen } from 'lucide-react';
+import { Form } from '../ui/form';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -75,6 +76,20 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   const onSubmit = (values: FormValues) => {
     create(values);
   };
+
+  useEffect(() => {
+    if (form.unsavedChanges) {
+      dialog.updateTitle(
+        'creation',
+        <div className="flex flex-row">
+          <span className="mr-2">Create workspace</span>
+          <SquarePen size={20} />
+        </div>,
+      );
+      return;
+    }
+    dialog.updateTitle('creation', 'Create workspace');
+  }, [form.unsavedChanges]);
 
   return (
     <Form {...form}>
