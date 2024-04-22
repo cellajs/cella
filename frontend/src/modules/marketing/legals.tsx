@@ -31,7 +31,7 @@ export const LegalsMenu = () => {
   const { t } = useTranslation();
   return (
     <PublicPage title={t('common:legal_information')}>
-      <div className="container md:flex md:flex-row md:mt-8 mx-auto max-w-[1200px] gap-4">
+      <div className="container md:flex md:flex-row md:mt-8 mx-auto gap-4">
         <div className="mx-auto md:min-w-[200px] md:w-[30%] md:mt-2">
           <Sticky stickyClassName="z-10 max-md:!relative">
             <SimpleHeader className="p-3" heading={t('common:legal_heading')} text={t('common:legal_text')} />

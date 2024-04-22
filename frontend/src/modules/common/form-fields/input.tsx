@@ -19,6 +19,7 @@ interface Props<TFieldValues extends FieldValues> {
   required?: boolean;
   disabled?: boolean;
   icon?: ReactNode;
+  inputClassName?: string;
 }
 
 const InputFormField = <TFieldValues extends FieldValues>({
@@ -35,6 +36,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
   required,
   disabled,
   icon,
+  inputClassName,
 }: Props<TFieldValues>) => (
   <FormField
     control={disabled ? undefined : control}
@@ -61,6 +63,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
               />
             ) : (
               <Input
+                className={inputClassName}
                 type={type}
                 onFocus={onFocus}
                 placeholder={placeholder}

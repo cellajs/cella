@@ -8,7 +8,7 @@ import type { Organization } from '~/types';
 
 import { Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
-import { UseFormProps, useWatch } from 'react-hook-form';
+import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
