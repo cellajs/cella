@@ -22,6 +22,7 @@ import { useStepper } from '../ui/stepper';
 import { SlugFormField } from '../common/form-fields/slug';
 import { SquarePen } from 'lucide-react';
 import { type LabelDirectionType, Form } from '../ui/form';
+import { Badge } from '../ui/badge';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -85,15 +86,16 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   useEffect(() => {
     if (form.unsavedChanges) {
       dialog.updateTitle(
-        'creation',
-        <div className="flex flex-row">
-          <span className="mr-2">Create organization</span>
-          <SquarePen size={20} />
-        </div>,
+        '1',
+        <Badge variant="plain" className="w-fit">
+          <SquarePen size={12} className="mr-2" />
+          <span className="font-light">{t('common:unsaved_changes')}</span>
+        </Badge>,
+        true,
       );
       return;
     }
-    dialog.updateTitle('creation', 'Create organization');
+    dialog.setDefaultTitle('1');
   }, [form.unsavedChanges]);
 
   const onSubmit = (values: FormValues) => {

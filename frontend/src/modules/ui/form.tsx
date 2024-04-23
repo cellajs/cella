@@ -11,12 +11,10 @@ import {
   useFormContext,
 } from 'react-hook-form';
 
-import { ChevronUp, HelpCircle, SquarePen } from 'lucide-react';
+import { ChevronUp, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Label } from '~/modules/ui/label';
-import { Badge } from './badge';
 import { Button } from './button';
 
 export type LabelDirectionType = 'top' | 'left';
@@ -41,18 +39,9 @@ const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValu
 }: FormProps<TFieldValues, TContext, TTransformedValues> & {
   unsavedChanges?: boolean;
 }) => {
-  const { t } = useTranslation();
   return (
     <FormProvider {...props}>
-      <LabelDirectionContext.Provider value={labelDirection}>
-        {unsavedChanges && (
-          <Badge variant="plain" className="w-fit mb-4">
-            <SquarePen size={12} className="mr-2" />
-            <span className="font-light">{t('common:unsaved_changes')}</span>
-          </Badge>
-        )}
-        {children}
-      </LabelDirectionContext.Provider>
+      <LabelDirectionContext.Provider value={labelDirection}>{children}</LabelDirectionContext.Provider>
     </FormProvider>
   );
 };

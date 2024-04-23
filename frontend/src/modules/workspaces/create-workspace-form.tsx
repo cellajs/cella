@@ -23,6 +23,7 @@ import SelectOrganizationFormField from '../common/form-fields/select-organizati
 import { useNavigate } from '@tanstack/react-router';
 import { SquarePen } from 'lucide-react';
 import { Form } from '../ui/form';
+import { Badge } from '../ui/badge';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -52,7 +53,6 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>('create-workspace', formOptions);
-
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
@@ -80,15 +80,16 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   useEffect(() => {
     if (form.unsavedChanges) {
       dialog.updateTitle(
-        'creation',
-        <div className="flex flex-row">
-          <span className="mr-2">Create workspace</span>
-          <SquarePen size={20} />
-        </div>,
+        '1',
+        <Badge variant="plain" className="w-fit">
+          <SquarePen size={12} className="mr-2" />
+          <span className="font-light">{t('common:unsaved_changes')}</span>
+        </Badge>,
+        true,
       );
       return;
     }
-    dialog.updateTitle('creation', 'Create workspace');
+    dialog.setDefaultTitle('1');
   }, [form.unsavedChanges]);
 
   return (
