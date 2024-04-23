@@ -9,12 +9,11 @@ import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
 import { createWorkspace } from '~/api/workspaces';
 
 // import { useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
-import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types';
 import { dialog } from '../common/dialoger/state';
@@ -22,6 +21,9 @@ import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import SelectOrganizationFormField from '../common/form-fields/select-organization';
 import { useNavigate } from '@tanstack/react-router';
+import { SquarePen } from 'lucide-react';
+import { Form } from '../ui/form';
+import { Badge } from '../ui/badge';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -51,7 +53,6 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>('create-workspace', formOptions);
-
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
@@ -75,6 +76,21 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   const onSubmit = (values: FormValues) => {
     create(values);
   };
+
+  useEffect(() => {
+    if (form.unsavedChanges) {
+      dialog.updateTitle(
+        '1',
+        <Badge variant="plain" className="w-fit">
+          <SquarePen size={12} className="mr-2" />
+          <span className="font-light">{t('common:unsaved_changes')}</span>
+        </Badge>,
+        true,
+      );
+      return;
+    }
+    dialog.setDefaultTitle('1');
+  }, [form.unsavedChanges]);
 
   return (
     <Form {...form}>

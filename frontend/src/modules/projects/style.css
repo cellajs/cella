@@ -1,0 +1,12 @@
+.w-md-editor-text-pre > code,
+.w-md-editor-text,
+.wmde-markdown {
+  padding: 0;
+  min-height: auto !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  white-space: inherit !important;
+  word-break: inherit !important;
+  white-space: pre-wrap !important;
+  background:  none !important;
+}

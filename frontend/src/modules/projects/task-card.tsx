@@ -8,11 +8,13 @@ import { useEffect, useState } from 'react';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader } from '~/modules/ui/card';
+import { Card, CardContent } from '~/modules/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { Checkbox } from '../ui/checkbox';
 import type { ColumnId } from './kanban-board';
 import { LabelBox } from './labels';
+import './style.css';
+import { useThemeStore } from '~/store/theme';
 
 export interface Task {
   id: UniqueIdentifier;
@@ -22,7 +24,7 @@ export interface Task {
 
 interface TaskCardProps {
   task: Task;
-  isOpen?: boolean;
+  isViewState?: boolean;
   toggleTaskClick?: (id: UniqueIdentifier) => void;
   isOverlay?: boolean;
 }
@@ -34,9 +36,9 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.content);
-
+  const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: {
@@ -53,7 +55,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('rounded-none border-0 text-sm border-b', {
+  const variants = cva('rounded-none border-0 text-sm bg-transparent', {
     variants: {
       dragging: {
         over: 'ring-2 opacity-30',
@@ -78,9 +80,9 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     if (value) task.content = value;
   }, [value]);
 
-  // Textarea autofocus cursor on the end of the value
+  // Textarea autofocus cursor on the end of the vaxlue
   useEffect(() => {
-    if (isOpen) {
+    if (!isViewState) {
       const editorTextAria = document.getElementById(task.id as string);
       if (!editorTextAria) return;
       const textAreaElement = editorTextAria as HTMLTextAreaElement;
@@ -88,7 +90,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
       textAreaElement.focus();
       textAreaElement.setSelectionRange(textAreaElement.value.length, textAreaElement.value.length);
     }
-  }, [task.id, isOpen]);
+  }, [task.id, isViewState]);
 
   return (
     <Card
@@ -98,45 +100,50 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
       })}
     >
-      <CardHeader className="p-2 pr-4 space-between flex flex-col border-b border-secondary relative">
-        {!isOpen && (
-          <Button onClick={toggleEditorState} size={'auto'} variant="secondary" className="w-full flex justify-start bg-transparent">
-            <div className="flex items-center gap-2">
-              <div className="group mt-[2px]">
-                <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
-                <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
-                {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
-                {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
-              </div>
-              <MDEditor.Markdown source={task.content} style={{ textAlign: 'start', background: 'transparent', whiteSpace: 'pre-wrap' }} />
+      <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
+        <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
+            <div className="group mt-[2px]">
+              <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
+              <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
+              {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
+              {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
             </div>
-          </Button>
-        )}
-        {isOpen && (
-          <>
-            <MDEditor
-              textareaProps={{ id: task.id as string }}
-              value={value}
-              preview={'edit'}
-              onChange={(newValue) => setValue(newValue)}
-              autoFocus={true}
-              hideToolbar={true}
-              visibleDragbar={false}
-              height={'auto'}
-              style={{ background: 'transparent', boxShadow: 'none' }}
-            />
-          </>
-        )}
+
+            <div>pt</div>
+          </div>
+          {isViewState && (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+            <div onClick={toggleEditorState}>
+              <MDEditor.Markdown source={task.content} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose" />
+            </div>
+          )}
+          {!isViewState && (
+            <div data-color-mode="dark">
+              <MDEditor
+                textareaProps={{ id: task.id as string }}
+                value={value}
+                preview={'edit'}
+                onChange={(newValue) => setValue(newValue)}
+                autoFocus={true}
+                hideToolbar={true}
+                visibleDragbar={false}
+                height={'auto'}
+                style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', boxShadow: 'none', padding: '0' }}
+              />
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-between mt-1 gap-2">
-          {isOpen && (
+          {!isViewState && (
             <div className="flex gap-2">
               <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
                 <span className="sr-only">Move task</span>
                 <GripVertical size={16} />
               </Button>
               <Button onClick={toggleEditorState} variant="plain" size="sm" className="rounded text-[12px] p-1 h-6">
-                Collapse
+                Save
               </Button>
             </div>
           )}
@@ -166,8 +173,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
             </Button>
           </div>
         </div>
-      </CardHeader>
-      {isOpen && <CardContent className="px-3 pt-3 pb-6 text-left whitespace-pre-wrap">collapsed info here</CardContent>}
+      </CardContent>
     </Card>
   );
 }
