@@ -4,11 +4,11 @@ import { type InsertUserModel, usersTable } from '../../../db/schema/users';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { sendVerificationEmail } from './verify-email';
 import type { Context } from 'hono';
-import { PostgresError } from 'postgres';
 import { errorResponse } from '../../../lib/errors';
 import { logEvent } from '../../../middlewares/logger/log-event';
 import type { ProviderId } from '../../../types/common';
 import { insertOauthAccount } from '../oauth-helpers';
+import { setSessionCookie } from './cookies';
 
 // * Handle creating a user
 export const handleCreateUser = async (
@@ -33,7 +33,7 @@ export const handleCreateUser = async (
 
   try {
     // * Insert the user into the database
-    await db.insert(usersTable).values({
+    const [user] = await db.insert(usersTable).values({
       id: data.id,
       slug: slugAvailable ? data.slug : `${data.slug}-${data.id}`,
       firstName: data.firstName,
@@ -41,7 +41,7 @@ export const handleCreateUser = async (
       name: data.name,
       language: config.defaultLanguage,
       hashedPassword: data.hashedPassword,
-    });
+    }).returning();
 
     // * If a provider is passed, insert the oauth account
     if (options?.provider) {
@@ -52,6 +52,8 @@ export const handleCreateUser = async (
     // * If the email is not verified, send a verification email
     if (!options?.isEmailVerified) {
       sendVerificationEmail(data.email);
+    } else {
+      await setSessionCookie(ctx, user.id, 'password');
     }
 
     return ctx.json({
@@ -59,7 +61,7 @@ export const handleCreateUser = async (
     });
   } catch (error) {
     // * If the email already exists, return an error
-    if (error instanceof PostgresError && error.message.startsWith('duplicate key')) {
+    if (error instanceof Error && error.message.startsWith('duplicate key')) {
       return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
     }
 

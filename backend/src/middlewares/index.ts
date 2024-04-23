@@ -7,8 +7,6 @@ import { CustomHono } from '../types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
 import { rateLimiter } from './rate-limiter';
-import { isbot } from 'isbot';
-import { errorResponse } from '../lib/errors';
 
 const app = new CustomHono();
 
@@ -26,11 +24,12 @@ app.use(
 // Health check for render.com
 app.get('/ping', (c) => c.text('pong'));
 
+// TODO - Add a middleware to check if the user is a bot
 // Prevent crawlers from causing log spam
-app.use(async (ctx, next) => {
-  if (!isbot(ctx.req.header('user-agent'))) await next();
-  return errorResponse(ctx, 403, 'user_maybe_bot', 'warn');
-});
+// app.use(async (ctx, next) => {
+//   if (!isbot(ctx.req.header('user-agent'))) await next();
+//   return errorResponse(ctx, 403, 'user_maybe_bot', 'warn');
+// });
 
 // Logger
 app.use('*', logger(logEvent as unknown as Parameters<typeof logger>[0]));

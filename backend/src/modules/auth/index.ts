@@ -34,8 +34,12 @@ import {
   verifyEmailRouteConfig,
 } from './routes';
 import { handleCreateUser } from './helpers/user';
+import { checkTokenRouteConfig } from '../general/routes';
 
 const app = new CustomHono();
+
+type CheckTokenResponse = Zod.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']> | undefined;
+type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
 // * Authentication endpoints
 const authRoutes = app
@@ -43,13 +47,23 @@ const authRoutes = app
    * Sign up with email and password
    */
   .openapi(signUpRouteConfig, async (ctx) => {
-    const { email, password } = ctx.req.valid('json');
+    const { email, password, token } = ctx.req.valid('json');
+
+    let tokenData: TokenData | undefined;
+    if (token) {
+      const response = await fetch(`${config.backendUrl + checkTokenRouteConfig.path.replace('{token}', token)}`);
+
+      const data = (await response.json()) as CheckTokenResponse;
+      tokenData = data?.data;
+    }
 
     // * hash password
     const hashedPassword = await new Argon2id().hash(password);
     const userId = nanoid();
 
     const slug = slugFromEmail(email);
+
+    const isEmailVerified = tokenData?.email === email;
 
     // * create user and send verification email
     return await handleCreateUser(
@@ -63,7 +77,7 @@ const authRoutes = app
         hashedPassword,
       },
       {
-        isEmailVerified: false,
+        isEmailVerified,
       },
     );
   })
@@ -271,7 +285,15 @@ const authRoutes = app
    * Sign in with email and password
    */
   .openapi(signInRouteConfig, async (ctx) => {
-    const { email, password } = ctx.req.valid('json');
+    const { email, password, token } = ctx.req.valid('json');
+
+    let tokenData: TokenData | undefined;
+    if (token) {
+      const response = await fetch(`${config.backendUrl + checkTokenRouteConfig.path.replace('{token}', token)}`);
+
+      const data = (await response.json()) as CheckTokenResponse;
+      tokenData = data?.data;
+    }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
@@ -283,18 +305,22 @@ const authRoutes = app
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
 
     if (!validPassword) {
-      // t('common:error.invalid_password')
       return errorResponse(ctx, 400, 'invalid_password', 'warn');
     }
 
+    const isEmailVerified = user.emailVerified || tokenData?.email === user.email;
+
     // * send verify email first
-    if (!user.emailVerified) {
+    if (!isEmailVerified) {
       sendVerificationEmail(email);
 
-      return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
+      // return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
+      // return ctx.json({}, 302, {
+      //   Location: `${config.frontendUrl}/auth/verify-email`,
+      // });
+    } else {
+      await setSessionCookie(ctx, user.id, 'password');
     }
-
-    await setSessionCookie(ctx, user.id, 'password');
 
     return ctx.json({
       success: true,

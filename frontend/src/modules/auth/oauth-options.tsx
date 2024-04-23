@@ -1,11 +1,12 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
-import { acceptInvite, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
+import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/authentication';
 import { useThemeStore } from '~/store/theme';
 import type { Step } from '.';
+import { acceptInvite } from '~/api/general';
 
 const oauthOptions = [
   {
@@ -74,8 +75,10 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
               onClick={
                 token
                   ? () =>
-                      option.acceptInvite(token).then((url) => {
-                        window.location.href = url;
+                      option.acceptInvite(token).then(() => {
+                        // TODO: we need to handle the redirect here
+                        // window.location.href = url;
+                        window.location.href = '/home';
                       })
                   : () => {
                       window.location.href = option.url + redirectQuery;

@@ -17,11 +17,16 @@ import type { ApiError } from '~/api';
 
 export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error';
 
+export type TokenData = Awaited<ReturnType<typeof checkToken>> & {
+  token: string;
+};
+
 const SignIn = () => {
   const { t } = useTranslation();
   const { lastUser } = useUserStore();
   const [step, setStep] = useState<Step>('check');
   const [email, setEmail] = useState('');
+  const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
   const { token } = useSearch({
@@ -32,16 +37,18 @@ const SignIn = () => {
     if (token) {
       checkToken(token)
         .then((data) => {
-          console.log('data', data);
+          setTokenData({
+            ...data,
+            token,
+          });
+          setEmail(data.email);
         })
-        .catch((error) => {
-          setError(error);
-        });
+        .catch(setError);
     }
   }, [token]);
 
   useEffect(() => {
-    if (lastUser?.email) handleCheckEmail('signIn', lastUser.email);
+    if (lastUser?.email && !token) handleCheckEmail('signIn', lastUser.email);
   }, [lastUser]);
 
   const handleCheckEmail = (step: string, email: string) => {
@@ -57,9 +64,9 @@ const SignIn = () => {
     <AuthPage>
       {!error ? (
         <>
-          {step === 'check' && <CheckEmailForm setStep={handleCheckEmail} />}
-          {step === 'signIn' && <SignInForm email={email} setStep={handleSetStep} />}
-          {step === 'signUp' && <SignUpForm email={email} setStep={handleSetStep} />}
+          {step === 'check' && <CheckEmailForm tokenData={tokenData} setStep={handleCheckEmail} />}
+          {step === 'signIn' && <SignInForm tokenData={tokenData} email={email} setStep={handleSetStep} />}
+          {step === 'signUp' && <SignUpForm tokenData={tokenData} email={email} setStep={handleSetStep} />}
           {step === 'inviteOnly' && (
             <>
               <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>

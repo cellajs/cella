@@ -11,7 +11,7 @@ import { Input } from '~/modules/ui/input';
 
 import { t } from 'i18next';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
@@ -19,10 +19,11 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
+import type { TokenData } from '.';
 
 const formSchema = signInJsonSchema;
 
-export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: string) => void }) => {
+export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: string) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setUser, lastUser, clearLastUser } = useUserStore();
@@ -34,10 +35,25 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
   const { mutate: signIn, isPending } = useMutation({
     mutationFn: baseSignIn,
     onSuccess: (result) => {
+      if (!result.emailVerified) {
+        navigate({
+          to: '/auth/verify-email',
+          replace: true,
+        });
+
+        return;
+      }
+
       setUser(result as User);
 
+      const to = tokenData ? '/auth/accept-invite/$token' : redirect || '/';
+
       navigate({
-        to: redirect || '/',
+        to,
+        replace: true,
+        params: {
+          token: tokenData?.token,
+        },
       });
     },
   });
@@ -51,7 +67,10 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    signIn(values);
+    signIn({
+      ...values,
+      token: tokenData?.token,
+    });
   };
 
   const cancel = () => {
@@ -59,14 +78,22 @@ export const SignInForm = ({ email, setStep }: { email: string; setStep: (step: 
     setStep('check');
   };
 
+  useEffect(() => {
+    if (tokenData?.email) {
+      form.setValue('email', tokenData.email);
+    }
+  }, [tokenData]);
+
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
-        <Button variant="ghost" onClick={cancel} className="font-light mt-2 text-xl">
-          {email}
-          <ChevronDown size={16} className="ml-2" />
-        </Button>
+        {tokenData ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
+        {!tokenData && (
+          <Button variant="ghost" onClick={cancel} className="font-light mt-2 text-xl">
+            {email}
+            <ChevronDown size={16} className="ml-2" />
+          </Button>
+        )}
       </h1>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 !mt-0">
         <FormField

@@ -96,8 +96,6 @@ const generalRoutes = app
       .from(tokensTable)
       .where(and(eq(tokensTable.id, token)));
 
-    console.log('tokenRecord', tokenRecord);
-
     // if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
 
     // const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
@@ -222,7 +220,7 @@ const generalRoutes = app
             InviteEmail({
               i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
               username: email.toLowerCase(),
-              inviteUrl: `${config.frontendUrl}/accept-invite/${token}`,
+              inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
               invitedBy: user.name,
               type: 'system',
               replyTo: user.email,
@@ -243,7 +241,7 @@ const generalRoutes = app
             userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
             username: targetUser?.name || email.toLowerCase() || '',
             invitedBy: user.name,
-            inviteUrl: `${config.frontendUrl}/accept-invite/${token}`,
+            inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
             replyTo: user.email,
           }),
         );
@@ -274,7 +272,7 @@ const generalRoutes = app
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, verificationToken)));
-    await db.delete(tokensTable).where(and(eq(tokensTable.id, verificationToken)));
+    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
     if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
       return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
