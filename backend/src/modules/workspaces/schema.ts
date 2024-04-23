@@ -30,9 +30,11 @@ export const createWorkspaceJsonSchema = z.object({
 export const updateWorkspaceJsonSchema = createInsertSchema(workspacesTable, {
   slug: validSlugSchema,
   name: nameSchema,
+  organizationId: idSchema,
 })
   .pick({
     slug: true,
     name: true,
+    organizationId: true,
   })
   .partial();

@@ -16,6 +16,7 @@ import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import { updateWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
 import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
+import SelectOrganizationFormField from '../common/form-fields/select-organization';
 
 interface Props {
   workspace: Workspace;
@@ -48,6 +49,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog }: Props) =
     defaultValues: {
       slug: workspace.slug,
       name: workspace.name,
+      organizationId: workspace.organizationId,
     },
   };
 
@@ -76,6 +78,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog }: Props) =
           description={t('common:workspace_handle.text')}
           previousSlug={workspace.slug}
         />
+        <SelectOrganizationFormField control={form.control} label={t('common:organization')} name="organizationId" required />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}

@@ -94,7 +94,7 @@ const workspacesRoutes = app
     const user = ctx.get('user');
     const workspace = ctx.get('workspace');
 
-    const { name, slug } = ctx.req.valid('json');
+    const { name, slug, organizationId } = ctx.req.valid('json');
 
     if (slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -109,6 +109,7 @@ const workspacesRoutes = app
       .set({
         name,
         slug,
+        organizationId,
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })
@@ -119,6 +120,17 @@ const workspacesRoutes = app
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.workspaceId, workspace.id)));
+
+    if (membership.organizationId !== organizationId) {
+      await db
+        .update(membershipsTable)
+        .set({
+          organizationId,
+          modifiedAt: new Date(),
+          modifiedBy: user.id,
+        })
+        .where(and(eq(membershipsTable.workspaceId, workspace.id), eq(membershipsTable.userId, user.id)));
+    }
 
     if (membership) {
       sendSSE(user.id, 'update_workspace', {
@@ -137,7 +149,9 @@ const workspacesRoutes = app
         role: membership?.role || null,
       },
     });
-  }) /*
+  })
+
+  /*
    * Delete workspaces
    */
   .openapi(deleteOrganizationsRouteConfig, async (ctx) => {
