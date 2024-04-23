@@ -14,6 +14,7 @@ import { Checkbox } from '../ui/checkbox';
 import type { ColumnId } from './kanban-board';
 import { LabelBox } from './labels';
 import './style.css';
+import { useThemeStore } from '~/store/theme';
 
 export interface Task {
   id: UniqueIdentifier;
@@ -23,7 +24,7 @@ export interface Task {
 
 interface TaskCardProps {
   task: Task;
-  isOpen?: boolean;
+  isViewState?: boolean;
   toggleTaskClick?: (id: UniqueIdentifier) => void;
   isOverlay?: boolean;
 }
@@ -35,9 +36,9 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.content);
-
+  const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: {
@@ -81,7 +82,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
 
   // Textarea autofocus cursor on the end of the vaxlue
   useEffect(() => {
-    if (isOpen) {
+    if (!isViewState) {
       const editorTextAria = document.getElementById(task.id as string);
       if (!editorTextAria) return;
       const textAreaElement = editorTextAria as HTMLTextAreaElement;
@@ -89,7 +90,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
       textAreaElement.focus();
       textAreaElement.setSelectionRange(textAreaElement.value.length, textAreaElement.value.length);
     }
-  }, [task.id, isOpen]);
+  }, [task.id, isViewState]);
 
   return (
     <Card
@@ -111,39 +112,38 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
 
             <div>pt</div>
           </div>
-          {!isOpen && (
+          {isViewState && (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <div onClick={toggleEditorState}>
-              <MDEditor.Markdown data-color-mode="light" source={task.content} className="prose" />
+              <MDEditor.Markdown source={task.content} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose" />
             </div>
           )}
-          {isOpen && (
-            <div data-color-mode="light">
+          {!isViewState && (
+            <div data-color-mode="dark">
               <MDEditor
                 textareaProps={{ id: task.id as string }}
                 value={value}
-                data-color-mode="light"
                 preview={'edit'}
                 onChange={(newValue) => setValue(newValue)}
                 autoFocus={true}
                 hideToolbar={true}
                 visibleDragbar={false}
                 height={'auto'}
-                style={{ background: 'transparent', boxShadow: 'none', padding: '0' }}
+                style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', boxShadow: 'none', padding: '0' }}
               />
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-between mt-1 gap-2">
-          {isOpen && (
+          {!isViewState && (
             <div className="flex gap-2">
               <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
                 <span className="sr-only">Move task</span>
                 <GripVertical size={16} />
               </Button>
               <Button onClick={toggleEditorState} variant="plain" size="sm" className="rounded text-[12px] p-1 h-6">
-                Collapse
+                Save
               </Button>
             </div>
           )}

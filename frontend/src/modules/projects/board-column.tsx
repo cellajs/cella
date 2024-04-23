@@ -118,7 +118,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           <SortableContext items={tasksIds}>
             {tasks.map((task) => (
               <div key={task.id}>
-                <TaskCard isOpen={!foldedTasks.includes(task.id)} toggleTaskClick={toggleTaskVisibility} task={task} />
+                <TaskCard isViewState={!foldedTasks.includes(task.id)} toggleTaskClick={toggleTaskVisibility} task={task} />
               </div>
             ))}
           </SortableContext>
