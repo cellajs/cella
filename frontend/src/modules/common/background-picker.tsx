@@ -72,7 +72,7 @@ export function BackgroundPicker({
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64">
+      <PopoverContent className="w-64" align="start">
         <Tabs defaultValue={defaultTab} className="w-full">
           {options.length > 1 && (
             <TabsList className="mb-4 w-full">

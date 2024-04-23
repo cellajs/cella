@@ -119,7 +119,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: Task
             </div>
           )}
           {!isViewState && (
-            <div data-color-mode="dark">
+            <div className="flex flex-col gap-2" data-color-mode="dark">
               <MDEditor
                 textareaProps={{ id: task.id as string }}
                 value={value}
@@ -131,25 +131,28 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: Task
                 height={'auto'}
                 style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', boxShadow: 'none', padding: '0' }}
               />
+
+              <div className="flex gap-2">
+                <Button onClick={toggleEditorState} size="sm" className="rounded text-[12px] p-1 h-6">
+                  Save
+                </Button>
+
+                <Button onClick={toggleEditorState} variant="secondary" size="sm" className="rounded text-[12px] p-1 h-6">
+                  Cancel
+                </Button>
+              </div>
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-between mt-1 gap-2">
-          {!isViewState && (
-            <div className="flex gap-2">
-              <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
-                <span className="sr-only">Move task</span>
-                <GripVertical size={16} />
-              </Button>
-              <Button onClick={toggleEditorState} variant="plain" size="sm" className="rounded text-[12px] p-1 h-6">
-                Save
-              </Button>
-            </div>
-          )}
+          <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
+            <span className="sr-only">Move task</span>
+            <GripVertical size={16} />
+          </Button>
 
           <LabelBox />
-          <div className="flex  gap-2">
+          <div className="flex gap-2">
             <HoverCard>
               <HoverCardTrigger>
                 <AvatarWrap type="USER" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
