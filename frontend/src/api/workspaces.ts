@@ -24,27 +24,27 @@ export const getWorkspaceBySlugOrId = async (idOrSlug: string) => {
   return json.data;
 };
 
-// export type UpdateWorkspaceParams = Parameters<(typeof client.workspaces)[':idOrSlug']['$put']>['0']['json'];
+export type UpdateWorkspaceParams = Parameters<(typeof client.workspaces)[':idOrSlug']['$put']>['0']['json'];
 
-// TODO: Update a workspace
-// export const updateWorkspace = async (idOrSlug: string, params: UpdateWorkspaceParams) => {
-//   const response = await client.workspaces[':idOrSlug'].$put({
-//     param: { idOrSlug },
-//     json: params,
-//   });
+// Update a workspace
+export const updateWorkspace = async (idOrSlug: string, params: UpdateWorkspaceParams) => {
+  const response = await client.workspaces[':idOrSlug'].$put({
+    param: { idOrSlug },
+    json: params,
+  });
 
-//   const json = await response.json();
-//   if ('error' in json) throw new ApiError(json.error);
-//   return json.data;
-// };
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return json.data;
+};
 
-// TODO: Delete workspaces
-// export const deleteWorkspaces = async (ids: string[]) => {
-//   const response = await client.workspaces.$delete({
-//     query: { ids },
-//   });
+// Delete workspaces
+export const deleteWorkspaces = async (ids: string[]) => {
+  const response = await client.workspaces.$delete({
+    query: { ids },
+  });
 
-//   const json = await response.json();
-//   if ('error' in json) throw new ApiError(json.error);
-//   return;
-// };
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return;
+};

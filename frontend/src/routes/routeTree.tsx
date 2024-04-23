@@ -15,7 +15,7 @@ import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRo
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
 import { OrganizationRoute, OrganizationMembersRoute, OrganizationSettingsRoute } from './organizations';
-import { WorkspaceRoute, WorkspaceProjectsRoute } from './workspaces'; //WorkspaceMembersRoute, WorkspaceSettingsRoute,
+import { WorkspaceRoute, WorkspaceProjectsRoute } from './workspaces'; //WorkspaceMembersRoute,
 import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import AcceptInvite from '~/modules/common/accept-invite';
@@ -111,7 +111,7 @@ export const routeTree = rootRoute.addChildren([
     SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute]),
     UserProfileRoute,
     UserSettingsRoute,
-    WorkspaceRoute.addChildren([WorkspaceProjectsRoute]), // WorkspaceMembersRoute, WorkspaceSettingsRoute
+    WorkspaceRoute.addChildren([WorkspaceProjectsRoute]), // WorkspaceMembersRoute,
     OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),
   ]),
 ]);

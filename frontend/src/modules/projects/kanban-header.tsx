@@ -17,7 +17,7 @@ function KanbanHeader() {
       className: 'sm:max-w-[64rem]',
       title: t('app:workspace_settings'),
       text: t('app:workspace_settings.text'),
-      id: 'newsletter-form',
+      id: 'workspace_settings',
     });
   };
 
