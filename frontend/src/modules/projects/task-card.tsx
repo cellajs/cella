@@ -54,7 +54,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('rounded-none border-0 text-sm border-b', {
+  const variants = cva('rounded-none border-0 text-sm bg-transparent', {
     variants: {
       dragging: {
         over: 'ring-2 opacity-30',
@@ -79,7 +79,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     if (value) task.content = value;
   }, [value]);
 
-  // Textarea autofocus cursor on the end of the value
+  // Textarea autofocus cursor on the end of the vaxlue
   useEffect(() => {
     if (isOpen) {
       const editorTextAria = document.getElementById(task.id as string);
@@ -102,7 +102,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
       <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
         <div className="flex gap-2">
           <div className="flex flex-col gap-2">
-            <div className="group">
+            <div className="group mt-[2px]">
               <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
               <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
               {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
@@ -114,7 +114,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
           {!isOpen && (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <div onClick={toggleEditorState}>
-              <MDEditor.Markdown source={task.content} className="prose" />
+              <MDEditor.Markdown data-color-mode="light" source={task.content} className="prose" />
             </div>
           )}
           {isOpen && (
@@ -122,6 +122,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
               <MDEditor
                 textareaProps={{ id: task.id as string }}
                 value={value}
+                data-color-mode="light"
                 preview={'edit'}
                 onChange={(newValue) => setValue(newValue)}
                 autoFocus={true}

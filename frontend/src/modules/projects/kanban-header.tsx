@@ -15,8 +15,8 @@ function KanbanHeader() {
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings />, {
       className: 'sm:max-w-[64rem]',
-      title: t('common:newsletter'),
-      text: t('common:newsletter.text'),
+      title: t('app:workspace_settings'),
+      text: t('app:workspace_settings.text'),
       id: 'newsletter-form',
     });
   };
@@ -30,7 +30,7 @@ function KanbanHeader() {
             dialog(<CreateProjectForm />, {
               //callback={(project) => callback([project], 'create')} dialog
               className: 'md:max-w-xl',
-              title: t('common:create_project'),
+              title: t('app:create_project'),
             });
           }}
         >
@@ -40,11 +40,11 @@ function KanbanHeader() {
 
         <Button variant="outline" onClick={openSettingsSheet}>
           <Settings size={16} />
-          <span className="ml-1 max-xs:hidden">{t('common:settings')}</span>
+          <span className="ml-1 max-sm:hidden">{t('common:settings')}</span>
         </Button>
 
         <BoardSearch />
-        <WorkspaceView className="max-lg:hidden" />
+        <WorkspaceView className="max-sm:hidden" />
         <FocusView iconOnly />
       </div>
     </>
