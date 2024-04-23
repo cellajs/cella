@@ -22,6 +22,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const form = useFormContext();
   const { t } = useTranslation();
   const [isDeviating, setDeviating] = useState(false);
+  const [isSlugAvailable, setSlugAvailable] = useState(false);
 
   const { mutate: checkSlug } = useMutation({
     mutationFn: checkSlugAvailable,
@@ -44,6 +45,16 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     checkSlug(slug);
   }, [slug]);
 
+  const isValidSlug = (value: string) => {
+    const regex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    return regex.test(value) && !value.startsWith('-') && !value.endsWith('-');
+  };
+
+  useEffect(() => {
+    if (isValidSlug(slug)) checkSlugAvailable(slug).then((response) => setSlugAvailable(response));
+    setSlugAvailable(false);
+  }, [slug]);
+
   // In create forms, auto-generate from name
   useEffect(() => {
     if (previousSlug || isDeviating) return;
@@ -60,6 +71,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     <InputFormField
       control={control}
       name="slug"
+      inputClassName={isSlugAvailable ? 'ring-2 ring-green-500 focus-visible:ring-2 focus-visible:ring-green-500' : ''}
       onFocus={() => setDeviating(true)}
       label={label}
       description={description}
