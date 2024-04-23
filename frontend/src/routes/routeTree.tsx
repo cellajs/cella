@@ -11,13 +11,14 @@ import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
 
 import { queryClient } from '~/lib/router';
-import { AcceptRoute, AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
+import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
 import { OrganizationRoute, OrganizationMembersRoute, OrganizationSettingsRoute } from './organizations';
 import { WorkspaceRoute, WorkspaceProjectsRoute } from './workspaces'; //WorkspaceMembersRoute,
 import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
+import AcceptInvite from '~/modules/common/accept-invite';
 
 export const getAndSetMe = async () => {
   const user = await getMe();
@@ -74,6 +75,25 @@ export const IndexRoute = createRoute({
   component: () => <App />,
 });
 
+export const acceptInviteRoute = createRoute({
+  path: '/auth/accept-invite/$token',
+  staticData: { pageTitle: 'Accept Invite' },
+  getParentRoute: () => AuthRoute,
+  beforeLoad: async ({ params }) => {
+    try {
+      await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+    } catch {
+      console.info('Not authenticated (silent check) -> redirect to sign in');
+      throw redirect({
+        to: '/auth/sign-in',
+        replace: true,
+        search: { fromRoot: true, token: params.token },
+      });
+    }
+  },
+  component: () => <AcceptInvite />,
+});
+
 export const routeTree = rootRoute.addChildren([
   AboutRoute,
   ContactRoute,
@@ -81,7 +101,9 @@ export const routeTree = rootRoute.addChildren([
   AccessibilityRoute,
   ErrorNoticeRoute,
   SignOutRoute,
-  AuthRoute.addChildren([SignInRoute, AcceptRoute, ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken])]),
+  AuthRoute.addChildren([SignInRoute, 
+    // AcceptRoute, 
+    ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken]), acceptInviteRoute]),
   IndexRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,

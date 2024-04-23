@@ -4,19 +4,10 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithoutDa
 import { cookieSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { publicGuard } from '../../middlewares/guard';
-import { rateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { apiUserSchema } from '../users/schema';
-import {
-  acceptInviteJsonSchema,
-  checkEmailJsonSchema,
-  emailExistsJsonSchema,
-  resetPasswordJsonSchema,
-  signInJsonSchema,
-  signUpJsonSchema,
-} from './schema';
-
-const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');
+import { checkEmailJsonSchema, emailExistsJsonSchema, resetPasswordJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
+import { authRateLimiter } from '../../middlewares/rate-limiter';
 
 export const signUpRouteConfig = createRouteConfig({
   method: 'post',
@@ -400,44 +391,6 @@ export const signOutRouteConfig = createRouteConfig({
           schema: successResponseWithoutDataSchema,
         },
       },
-    },
-    ...errorResponses,
-  },
-});
-
-export const acceptInviteRouteConfig = createRouteConfig({
-  method: 'post',
-  path: '/accept-invite/{token}',
-  guard: publicGuard,
-  middleware: [authRateLimiter],
-  tags: ['auth'],
-  summary: 'Accept invitation',
-  request: {
-    params: z.object({
-      token: z.string(),
-    }),
-    body: {
-      content: {
-        'application/json': {
-          schema: acceptInviteJsonSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Invitation was accepted',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(z.string()),
-        },
-      },
-    },
-    302: {
-      description: 'Redirect to github',
-      headers: z.object({
-        Location: z.string(),
-      }),
     },
     ...errorResponses,
   },

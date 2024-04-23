@@ -75,3 +75,23 @@ export const getSuggestions = async (query: string, type?: PageResourceType | un
   if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
+
+// Accept an invitation
+export const acceptInvite = async ({
+  token,
+  password,
+  oauth,
+}: {
+  token: string;
+  password?: string;
+  oauth?: 'github' | 'google' | 'microsoft';
+}) => {
+  const response = await client['accept-invite'][':token'].$post({
+    param: { token },
+    json: { password, oauth },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return json.success;
+};
