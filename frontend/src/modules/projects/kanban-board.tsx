@@ -153,7 +153,7 @@ export default function KanbanBoard() {
                 <ResizablePanel key={`${col.id}-panel`}>
                   <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.columnId === col.id)} />
                 </ResizablePanel>
-                {columns.length > index + 1 && <ResizableHandle className="w-[2px] hover:border" />}
+                {columns.length > index + 1 && <ResizableHandle className="w-[2px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />}
               </Fragment>
             ))}
           </SortableContext>

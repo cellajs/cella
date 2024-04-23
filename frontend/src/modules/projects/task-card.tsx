@@ -118,7 +118,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
             </div>
           )}
           {isOpen && (
-            <>
+            <div data-color-mode="light">
               <MDEditor
                 textareaProps={{ id: task.id as string }}
                 value={value}
@@ -131,7 +131,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
                 height={'auto'}
                 style={{ background: 'transparent', boxShadow: 'none', padding: '0' }}
               />
-            </>
+            </div>
           )}
         </div>
 
