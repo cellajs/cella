@@ -9,7 +9,6 @@ import { tokensTable } from '../../db/schema/tokens';
 export const tokensSchema = createSelectSchema(tokensTable);
 
 export const inviteJsonSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema).optional(),
   emails: apiUserSchema.shape.email.array().min(1),
   role: z.union([apiUserSchema.shape.role, membershipSchema.shape.role]).optional(),
 });

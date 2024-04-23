@@ -2,14 +2,14 @@ import { z } from '@hono/zod-openapi';
 
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
-import { tenantGuard } from '../../middlewares/guard';
+import { anyTenantGuard, publicGuard } from '../../middlewares/guard';
 import { deleteMembersQuerySchema, membershipUserParamSchema, updateMembershipJsonSchema } from './schema';
 import { apiOrganizationUserSchema } from '../organizations/schema';
 
 export const updateMembershipRouteConfig = createRouteConfig({
   method: 'put',
   path: '/memberships/{id}',
-  guard: tenantGuard(['ADMIN']),
+  guard: anyTenantGuard('id', ['ADMIN']),
   tags: ['memberships'],
   summary: 'Update role, muted, or archived status',
   description: `
@@ -42,7 +42,9 @@ export const updateMembershipRouteConfig = createRouteConfig({
 export const deleteMembershipRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/memberships',
-  guard: tenantGuard(['ADMIN']),
+  // TODO: Implement guard
+  // guard: anyTenantGuard(['ADMIN']),
+  guard: publicGuard,
   tags: ['memberships'],
   summary: 'Delete memberships',
   description: `

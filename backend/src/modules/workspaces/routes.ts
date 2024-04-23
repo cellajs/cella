@@ -1,14 +1,16 @@
 import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, organizationParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { systemGuard, tenantGuard } from '../../middlewares/guard';
+import { publicGuard, systemGuard, workspaceTenantGuard } from '../../middlewares/guard';
 
 import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchema } from './schema';
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
   path: '/workspaces',
-  guard: tenantGuard(),
+  // TODO: Implement guard
+  // guard: workspaceTenantGuard(),
+  guard: publicGuard,
   tags: ['workspaces'],
   summary: 'Create a new workspace',
   description: `
@@ -16,9 +18,6 @@ export const createWorkspaceRouteConfig = createRouteConfig({
       - Users with system or organization role 'ADMIN'
   `,
   request: {
-    request: {
-      params: organizationParamSchema,
-    },
     body: {
       required: true,
       content: {
@@ -44,7 +43,7 @@ export const createWorkspaceRouteConfig = createRouteConfig({
 export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/workspaces/{idOrSlug}',
-  guard: tenantGuard(),
+  guard: workspaceTenantGuard('idOrSlug'),
   tags: ['workspaces'],
   summary: 'Get workspace by id or slug',
   description: `
@@ -71,7 +70,7 @@ export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
 export const updateWorkspaceRouteConfig = createRouteConfig({
   method: 'put',
   path: '/workspaces/{idOrSlug}',
-  guard: tenantGuard(['ADMIN']),
+  guard: workspaceTenantGuard('idOrSlug', ['ADMIN']),
   tags: ['workspaces'],
   summary: 'Update workspace',
   description: `

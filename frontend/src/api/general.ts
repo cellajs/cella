@@ -33,9 +33,10 @@ export interface InviteProps {
   idOrSlug?: string;
 }
 
+// TODO: fix it
 export const invite = async ({ emails, idOrSlug, role }: InviteProps) => {
   const response = await client.invite.$post({
-    json: { emails, idOrSlug, role },
+    json: { emails, role },
   });
 
   const json = await response.json();

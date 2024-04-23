@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
-import { authGuard, publicGuard, tenantGuard } from '../../middlewares/guard';
+import { authGuard, publicGuard } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import { acceptInviteJsonSchema, inviteJsonSchema, suggestionsSchema, tokensSchema } from './schema';
 import { resourceTypeSchema } from '../../lib/common-schemas';
@@ -99,7 +99,9 @@ export const checkTokenRouteConfig = createRouteConfig({
 export const inviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/invite',
-  guard: tenantGuard(['ADMIN']),
+  // TODO: Implement guard
+  // guard: tenantGuard(['ADMIN']),
+  guard: publicGuard,
   middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
   summary: 'Invite a new member(user) to organization or system',

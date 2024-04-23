@@ -8,68 +8,80 @@ import type { Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 import { type WorkspaceModel, workspacesTable } from '../../db/schema/workspaces';
 
+function isOrganization(entity: OrganizationModel | WorkspaceModel): entity is OrganizationModel {
+  return !('organizationId' in entity);
+}
+
+function isWorkspace(entity: OrganizationModel | WorkspaceModel): entity is WorkspaceModel {
+  return 'organizationId' in entity;
+}
+
+export const getOrganization = async (idOrSlug: string) => {
+  const [organization] = await db
+    .select()
+    .from(organizationsTable)
+    .where(or(eq(organizationsTable.id, idOrSlug), eq(organizationsTable.slug, idOrSlug)));
+
+  return organization;
+};
+
+export const getWorkspace = async (idOrSlug: string) => {
+  const [workspace] = await db
+    .select()
+    .from(workspacesTable)
+    .where(or(eq(workspacesTable.id, idOrSlug), eq(workspacesTable.slug, idOrSlug)));
+
+  return workspace;
+};
+
 // tenant() is checking if the user has membership in the organization and if the user has the required role
 const tenant =
-  (accessibleFor?: MembershipModel['role'][]): MiddlewareHandler<Env, ':idOrSlug?'> =>
-  async (ctx, next) => {
-    // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    const body = ctx.req.header('content-type') === 'application/json' ? ((await ctx.req.raw.clone().json()) as any) : undefined;
-    const idOrSlug = (ctx.req.param('idOrSlug') || body?.idOrSlug)?.toLowerCase();
-    const type = ctx.req.path.split('/')[1] === 'workspaces' ? 'WORKSPACE' : 'ORGANIZATION';
-    const user = ctx.get('user');
+  // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
+    (paramName: string, type: 'ORGANIZATION' | 'WORKSPACE' | 'ANY', accessibleFor?: MembershipModel['role'][]): MiddlewareHandler<Env, any> =>
+    async (ctx, next) => {
+      // const body = ctx.req.header('content-type') === 'application/json' ? ((await ctx.req.raw.clone().json()) as any) : undefined;
+      const idOrSlug = ctx.req.param(paramName)?.toLowerCase();
+      const user = ctx.get('user');
 
-    if (!idOrSlug || !type || !user) {
-      return await next();
-    }
+      if (!idOrSlug || !user) {
+        return await next();
+      }
 
-    let entity: OrganizationModel | WorkspaceModel;
-    let organizationById = null;
+      let entity: OrganizationModel | WorkspaceModel;
 
-    if (type === 'WORKSPACE' && ctx.req.method !== 'POST') {
-      [entity] = await db
-        .select()
-        .from(workspacesTable)
-        .where(or(eq(workspacesTable.id, idOrSlug), eq(workspacesTable.slug, idOrSlug)));
-
-      if (entity) {
-        ctx.set('workspace', entity);
+      if (type === 'WORKSPACE') {
+        entity = await getWorkspace(idOrSlug);
+      } else if (type === 'ORGANIZATION') {
+        entity = await getOrganization(idOrSlug);
+      } else {
+        entity = (await getOrganization(idOrSlug)) || (await getWorkspace(idOrSlug));
       }
 
       if (!entity) {
-        // t('common:error.resource_not_found.text', { resource: 'organization' })
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'WORKSPACE', { idOrSlug });
+        const resourceType = type === 'ANY' ? 'UNKNOWN' : type;
+        return errorResponse(ctx, 404, 'not_found', 'warn', resourceType, { idOrSlug });
       }
 
-      organizationById = entity.organizationId;
-    }
-    const [organization] = await db
-      .select()
-      .from(organizationsTable)
-      .where(or(eq(organizationsTable.id, organizationById || idOrSlug), eq(organizationsTable.slug, organizationById || idOrSlug)));
+      if (isWorkspace(entity)) {
+        ctx.set('workspace', entity);
+      } else if (isOrganization(entity)) {
+        ctx.set('organization', entity);
+      }
 
-    if (organization) {
-      ctx.set('organization', organization);
-    }
+      const [membership] = await db
+        .select()
+        .from(membershipsTable)
+        .where(
+          and(eq(membershipsTable.userId, user.id), or(eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.workspaceId, entity.id))),
+        );
 
-    if (!organization) {
-      // t('common:error.resource_not_found.text', { resource: 'organization' })
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { idOrSlug });
-    }
+      if ((!membership || (accessibleFor && !accessibleFor.includes(membership.role))) && user.role !== 'ADMIN') {
+        return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id, idOrSlug, type });
+      }
 
-    const [membership] = await db
-      .select()
-      .from(membershipsTable)
-      .where(
-        and(eq(membershipsTable.userId, user.id), or(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.workspaceId, organization.id))),
-      );
+      logEvent(`User authenticated in ${type}`, { user: user.id, idOrSlug, type });
 
-    if ((!membership || (accessibleFor && !accessibleFor.includes(membership.role))) && user.role !== 'ADMIN') {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id, idOrSlug, type });
-    }
-
-    logEvent(`User authenticated in ${type}`, { user: user.id, idOrSlug, type });
-
-    await next();
-  };
+      await next();
+    };
 
 export default tenant;
