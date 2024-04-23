@@ -62,10 +62,3 @@ export const WorkspaceProjectsRoute = createRoute({
 //     </Suspense>
 //   ),
 // });
-
-// export const WorkspaceSettingsRoute = createRoute({
-//   path: '/settings',
-//   staticData: { pageTitle: 'Settings' },
-//   getParentRoute: () => WorkspaceRoute,
-//   component: () => <WorkspaceSettings />,
-// });

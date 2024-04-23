@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { createSelectSchema } from 'drizzle-zod';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { idSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
@@ -26,3 +26,13 @@ export const createWorkspaceJsonSchema = z.object({
   slug: validSlugSchema,
   idOrSlug: idSchema.or(validSlugSchema),
 });
+
+export const updateWorkspaceJsonSchema = createInsertSchema(workspacesTable, {
+  slug: validSlugSchema,
+  name: nameSchema,
+})
+  .pick({
+    slug: true,
+    name: true,
+  })
+  .partial();

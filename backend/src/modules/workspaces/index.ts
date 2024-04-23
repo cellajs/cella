@@ -3,12 +3,12 @@ import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
 
-import { errorResponse } from '../../lib/errors';
+import { createError, errorResponse, type ErrorType } from '../../lib/errors';
 import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { createWorkspaceRouteConfig, getWorkspaceByIdOrSlugRouteConfig } from './routes';
+import { createWorkspaceRouteConfig, getWorkspaceByIdOrSlugRouteConfig, updateWorkspaceRouteConfig, deleteOrganizationsRouteConfig } from './routes';
 
 const app = new CustomHono();
 
@@ -84,6 +84,108 @@ const workspacesRoutes = app
         ...workspace,
         role: membership?.role || null,
       },
+    });
+  })
+
+  /*
+   * Update workspace
+   */
+  .openapi(updateWorkspaceRouteConfig, async (ctx) => {
+    const user = ctx.get('user');
+    const workspace = ctx.get('workspace');
+
+    const { name, slug } = ctx.req.valid('json');
+
+    if (slug) {
+      const slugAvailable = await checkSlugAvailable(slug);
+
+      if (!slugAvailable && slug !== workspace.slug) {
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
+      }
+    }
+
+    const [updatedWorkspace] = await db
+      .update(workspacesTable)
+      .set({
+        name,
+        slug,
+        modifiedAt: new Date(),
+        modifiedBy: user.id,
+      })
+      .where(eq(workspacesTable.id, workspace.id))
+      .returning();
+
+    const [membership] = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.workspaceId, workspace.id)));
+
+    if (membership) {
+      sendSSE(user.id, 'update_workspace', {
+        ...updatedWorkspace,
+        role: membership.role,
+        type: 'WORKSPACE',
+      });
+    }
+
+    logEvent('Workspace updated', { workspace: updatedWorkspace.id });
+
+    return ctx.json({
+      success: true,
+      data: {
+        ...updatedWorkspace,
+        role: membership?.role || null,
+      },
+    });
+  }) /*
+   * Delete workspaces
+   */
+  .openapi(deleteOrganizationsRouteConfig, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
+    const user = ctx.get('user');
+
+    const workspaceIds = Array.isArray(ids) ? ids : [ids];
+
+    const errors: ErrorType[] = [];
+
+    await Promise.all(
+      workspaceIds.map(async (id) => {
+        const [result] = await db
+          .select({
+            workspace: workspacesTable,
+            userRole: membershipsTable.role,
+          })
+          .from(workspacesTable)
+          .leftJoin(membershipsTable, and(eq(membershipsTable.workspaceId, workspacesTable.id), eq(membershipsTable.userId, user.id)))
+          .where(eq(workspacesTable.id, id));
+
+        if (!result) {
+          errors.push(
+            createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', {
+              organization: id,
+            }),
+          );
+        }
+
+        if (user.role !== 'ADMIN') {
+          errors.push(
+            createError(ctx, 403, 'delete_forbidden', 'warn', 'ORGANIZATION', {
+              organization: id,
+            }),
+          );
+        }
+
+        await db.delete(workspacesTable).where(eq(workspacesTable.id, id));
+
+        if (result.userRole) sendSSE(user.id, 'remove_workspace', result.workspace);
+
+        logEvent('Workspace deleted', { workspace: id });
+      }),
+    );
+
+    return ctx.json({
+      success: true,
+      errors: errors,
     });
   });
 

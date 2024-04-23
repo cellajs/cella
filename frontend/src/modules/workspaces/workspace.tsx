@@ -24,7 +24,7 @@ const WorkspacePage = () => {
 
   return (
     <WorkspaceContext.Provider value={{ workspace }}>
-        <Outlet />
+      <Outlet />
     </WorkspaceContext.Provider>
   );
 };
