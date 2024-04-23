@@ -1,6 +1,7 @@
-import { Settings, Plus } from 'lucide-react';
+import { Settings, Plus, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import WorkspaceView from '~/modules/projects/workspace-view';
+import ShowOptions from '~/modules/projects/show-options';
 import BoardSearch from '~/modules/projects/board-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
@@ -24,8 +25,7 @@ function KanbanHeader() {
   return (
     <>
       <div className="flex items-center max-sm:justify-between gap-2">
-        <Button
-          variant="secondary"
+        <Button variant="plain"
           onClick={() => {
             dialog(<CreateProjectForm />, {
               //callback={(project) => callback([project], 'create')} dialog
@@ -40,11 +40,17 @@ function KanbanHeader() {
 
         <Button variant="outline" onClick={openSettingsSheet}>
           <Settings size={16} />
-          <span className="ml-1 max-sm:hidden">{t('common:settings')}</span>
+          <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
+        </Button>
+
+        <Button variant="outline" onClick={openSettingsSheet}>
+          <Tag size={16} />
+          <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
         </Button>
 
         <BoardSearch />
         <WorkspaceView className="max-sm:hidden" />
+        <ShowOptions className="max-sm:hidden" />
         <FocusView iconOnly />
       </div>
     </>

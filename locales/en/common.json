@@ -349,5 +349,7 @@
   "placeholder.email_domains": "Add email domains",
   "email_domains": "Email domains",
   "email_domains.text": "Enforce members to have an organizational email domain.",
-  "add_domain": "Add domain"
+  "add_domain": "Add domain",
+  "labels": "Labels",
+  "view_options": "View options"
 }
