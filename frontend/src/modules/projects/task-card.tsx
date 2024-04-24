@@ -15,6 +15,7 @@ import { LabelBox } from './labels';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
+import { SelectImpact } from './select-impact.tsx/index.tsx';
 
 interface User {
   id: UniqueIdentifier;
@@ -107,7 +108,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
               {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
             </div>
 
-            <div>pt</div>
+            <SelectImpact />
           </div>
           {!isViewState && (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
