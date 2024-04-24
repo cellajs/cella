@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Activity, GripVertical, Star } from 'lucide-react';
+import { Activity, GripVertical, Star, Bug, Bolt } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -100,16 +100,15 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
           <div className="flex flex-col gap-2">
             <div className="group mt-[2px]">
               <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
-              <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
-              {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
-              {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
+              {task.type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />}
+              {task.type === 'bug' && <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" />}
+              {task.type === 'chore' && <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" />}
             </div>
-
           </div>
           {!isViewState && (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <div onClick={toggleEditorState}>
-              <MDEditor.Markdown source={task.text} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose" />
+              <MDEditor.Markdown source={task.text} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose font-light" />
             </div>
           )}
           {isViewState && (

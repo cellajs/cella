@@ -25,8 +25,8 @@ export type SectionItem = {
 // Here you declare the menu sections
 export const menuSections: SectionItem[] = [
   { id: 'organizations', type: 'ORGANIZATION', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
-  { id: 'workspaces', type: 'WORKSPACE', label: 'app:workspaces', createForm: <CreateWorkspaceForm dialog /> },
-  { id: 'projects', type: 'PROJECT', label: 'app:projects' },
+  { id: 'workspaces', type: 'WORKSPACE', label: 'common:workspaces', createForm: <CreateWorkspaceForm dialog /> },
+  { id: 'projects', type: 'PROJECT', label: 'common:projects' },
 ];
 
 // Set search results to empty array for each menu type

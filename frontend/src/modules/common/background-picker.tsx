@@ -61,7 +61,7 @@ export function BackgroundPicker({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant={'ghost'} className={cn('justify-start text-left font-normal', !background && 'text-muted-foreground', className)}>
+        <Button variant={'ghost'} size="xs" className={cn('justify-start text-left font-normal', !background && 'text-muted-foreground', className)}>
           <div className="flex w-full items-center gap-2">
             {background ? (
               <div className="h-4 w-4 rounded !bg-cover !bg-center transition-all" style={{ background }} />

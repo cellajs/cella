@@ -10,7 +10,7 @@ import { HighIcon } from './icons/high';
 import { LowIcon } from './icons/low';
 import { MediumIcon } from './icons/medium';
 import { NoneIcon } from './icons/none';
-import { Kbd } from './kbd';
+import { Kbd } from '../../common/kbd';
 import { Check } from 'lucide-react';
 
 type Impact = {

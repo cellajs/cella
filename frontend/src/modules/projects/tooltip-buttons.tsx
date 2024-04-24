@@ -1,6 +1,6 @@
 import { Button } from '~/modules/ui/button';
 import { TooltipButton } from '../common/tooltip-button';
-import { Settings, EllipsisVertical, Minimize2, MessagesSquare } from 'lucide-react';
+import { Settings, EllipsisVertical, Minimize2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
@@ -8,7 +8,7 @@ const ToolTipButtons = ({ rolledUp }: { rolledUp: boolean }) => {
   const { t } = useTranslation();
 
   const tooltipButtons = [
-    { content: t('Comments'), icon: <MessagesSquare size={16} /> },
+    // { content: t('Comments'), icon: <MessagesSquare size={16} /> },
     { content: t('Project settings'), icon: <Settings size={16} /> },
     { content: t('Minimize'), icon: <Minimize2 size={16} /> },
   ];
@@ -32,7 +32,7 @@ const ToolTipButtons = ({ rolledUp }: { rolledUp: boolean }) => {
       {rolledUp ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Tool buttons">
+            <Button variant="ghost" size="xs" aria-label="Tool buttons">
               <EllipsisVertical size={16} />
             </Button>
           </DropdownMenuTrigger>

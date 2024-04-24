@@ -87,21 +87,21 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
       })}
     >
-      <CardHeader ref={ref as RefObject<HTMLDivElement>} className="p-3 font-semibold border-b flex flex-row gap-2 space-between items-center">
-        <Button variant={'ghost'} {...attributes} {...listeners} className=" py-1 px-0 text-primary/50 -ml-1 h-auto cursor-grab relative">
+      <CardHeader ref={ref as RefObject<HTMLDivElement>} className="p-3 text-normal leading-4 font-semibold border-b flex flex-row gap-2 space-between items-center">
+        <Button variant={'ghost'} {...attributes} {...listeners} size="xs" className=" px-0 text-primary/50 -ml-1 cursor-grab relative">
           <span className="sr-only">{`Move column: ${column.name}`}</span>
           <GripVertical size={16} />
         </Button>
 
-        <BackgroundPicker background={background} setBackground={setBackground} className="p-2 h-8 w-8" options={['solid']} />
+        <BackgroundPicker background={background} setBackground={setBackground} options={['solid']} />
 
-        <div> {column.name}</div>
+        <div>{column.name}</div>
 
         <div className="grow" />
 
         <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} />
 
-        <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8">
+        <Button variant="plain" size="xs" className="rounded">
           <Plus size={16} className="mr-1" />
           Story
         </Button>
