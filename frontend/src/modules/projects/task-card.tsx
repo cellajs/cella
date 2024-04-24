@@ -58,7 +58,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('rounded-none border-0 text-sm bg-transparent', {
+  const variants = cva('group/task rounded-none border-0 text-sm bg-transparent hover:bg-card', {
     variants: {
       dragging: {
         over: 'ring-2 opacity-30',

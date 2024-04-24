@@ -85,7 +85,7 @@ export const LabelBox = () => {
     <>
       <Popover open={isOpenEditLabel} onOpenChange={onComboboxOpenChange}>
         <PopoverTrigger asChild>
-          <div className="relative w-full min-h-[22px] flex align-center justify-start overflow-hidden gap-1">
+          <div className="relative w-full min-h-[22px] group-hover/task:opacity-100 opacity-70 flex align-center justify-start overflow-hidden gap-1">
             {!isOpenEditLabel &&
               selectedLabels.map(({ label, value, color }) => (
                 <button type="button" onClick={() => setOpenEditLabel(true)}>
