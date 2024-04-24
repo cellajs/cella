@@ -2,8 +2,8 @@ import { type UniqueIdentifier, useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
-import { ChevronDown, ChevronUp, GripVertical, Plus } from 'lucide-react';
-import { type RefObject, useEffect, useMemo, useState } from 'react';
+import { ChevronDown, GripVertical, Plus } from 'lucide-react';
+import { type RefObject, useMemo, useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
@@ -38,9 +38,6 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const [showCreationForm, setShowCreationForm] = useState(false);
   const [showIcedStories, setShowIcedStories] = useState(false);
   const [showAcceptedStories, setShowAcceptedStories] = useState(false);
-  const [icedStories, setIcedStories] = useState<Task[]>([]);
-  const [acceptedStories, setAcceptedStories] = useState<Task[]>([]);
-  const [inWorkStories, setInWorkStories] = useState<Task[]>([]);
 
   const { ref, bounds } = useMeasure();
 
@@ -109,12 +106,6 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   // TODO
   const [background, setBackground] = useState('#ff75c3');
 
-  useEffect(() => {
-    setAcceptedStories(allTasks.filter((task) => task.status === 6));
-    setIcedStories(allTasks.filter((task) => task.status === 0));
-    setInWorkStories(allTasks.filter((task) => task.status !== 6 && task.status !== 0));
-  }, [allTasks]);
-
   return (
     <Card
       ref={setNodeRef}
@@ -147,39 +138,22 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       </CardHeader>
       <ScrollArea>
         <CardContent className="flex flex-grow flex-col p-0">
-          <SortableContext items={tasksIds}>
-            {acceptedStories.length > 0 && (
-              <>
-                <Button
-                  onClick={handleAcceptedStoriesClick}
-                  variant="secondary"
-                  size="sm"
-                  className={`w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 
-               text-success
-              text-sm -mt-[1px]`}
-                >
-                  <span className="text-[12px]">{`${showAcceptedStories ? 'Hide' : 'Show'} ${acceptedStories.length} accepted stories`}</span>
-                  {showAcceptedStories ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                </Button>
-                {showAcceptedStories && (
-                  <>
-                    {acceptedStories.map((task) => (
-                      <TaskCard
-                        setTaskStatus={setTaskStatus}
-                        isViewState={!foldedTasks.includes(task.id)}
-                        toggleTaskClick={toggleTaskVisibility}
-                        task={task}
-                        user={task.assignedTo}
-                        key={task.id}
-                      />
-                    ))}
-                  </>
-                )}
-              </>
-            )}
-            {showCreationForm && <CreateStoryForm callback={handleStoryCreationCallback} />}
+          {showCreationForm && <CreateStoryForm callback={handleStoryCreationCallback} />}
 
-            {inWorkStories.map((task) => (
+          {
+            <Button
+              onClick={handleAcceptedStoriesClick}
+              variant="ghost"
+              size="sm"
+              className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 hover:bg-green-500/10 text-green-500 text-sm -mt-[1px]"
+            >
+              <span className="text-xs">3 accepted stories</span>
+              <ChevronDown size={16} className={`transition-transform opacity-50 ${showAcceptedStories ? 'rotate-180' : 'rotate-0'}`} />
+            </Button>
+          }
+
+          <SortableContext items={tasksIds}>
+            {allTasks.map((task) => (
               <TaskCard
                 setTaskStatus={setTaskStatus}
                 isViewState={!foldedTasks.includes(task.id)}
@@ -189,35 +163,19 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
                 key={task.id}
               />
             ))}
-            {icedStories.length > 0 && (
-              <>
-                <Button
-                  onClick={handleIcedStoriesClick}
-                  variant="secondary"
-                  size="sm"
-                  className={`w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-600
-              text-sm -mt-[1px]`}
-                >
-                  <span className="text-[12px]">{`${showIcedStories ? 'Hide' : 'Show'} ${icedStories.length} iced stories`}</span>
-                  {showIcedStories ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                </Button>
-                {showIcedStories && (
-                  <>
-                    {icedStories.map((task) => (
-                      <TaskCard
-                        setTaskStatus={setTaskStatus}
-                        isViewState={!foldedTasks.includes(task.id)}
-                        toggleTaskClick={toggleTaskVisibility}
-                        task={task}
-                        user={task.assignedTo}
-                        key={task.id}
-                      />
-                    ))}
-                  </>
-                )}
-              </>
-            )}
           </SortableContext>
+          {
+            <Button
+              onClick={handleIcedStoriesClick}
+              variant="ghost"
+              size="sm"
+              className={`w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/10
+              text-sm -mt-[1px]`}
+            >
+              <span className="text-xs">5 iced stories</span>
+              <ChevronDown size={16} className={`transition-transform opacity-50 ${showIcedStories ? 'rotate-180' : 'rotate-0'}`} />
+            </Button>
+          }
         </CardContent>
       </ScrollArea>
     </Card>

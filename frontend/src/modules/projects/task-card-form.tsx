@@ -51,11 +51,11 @@ const StoryTypeChoose = ({ className = '', defaultValue = 'feature' }: { classNa
         <span className="ml-2">Feature</span>
       </ToggleGroupItem>
       <ToggleGroupItem size="sm" value="bug" className="w-full">
-        <Bug size={16} className={`${selectedValue === 'bug' && 'fill-red-500 text-red-600'}`} />
+        <Bug size={16} className={`${selectedValue === 'bug' && 'fill-red-400 text-red-500'}`} />
         <span className="ml-2">Bug</span>
       </ToggleGroupItem>
       <ToggleGroupItem size="sm" value="chore" className="w-full">
-        <Bolt size={16} className={`${selectedValue === 'chore' && 'fill-slate-500 text-slate-600'}`} />
+        <Bolt size={16} className={`${selectedValue === 'chore' && 'fill-slate-400 text-slate-500'}`} />
         <span className="ml-2">Chore</span>
       </ToggleGroupItem>
     </ToggleGroup>
@@ -118,7 +118,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border-b">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 p-4 border-b">
           <StoryTypeChoose />
           <MDEditor
             value={text}
@@ -130,6 +130,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
             hideToolbar={true}
             visibleDragbar={false}
             height={'auto'}
+            className="border"
             style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '4px' }}
           />
           <SelectImpact mode="create" />

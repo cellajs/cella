@@ -16,7 +16,7 @@ import './style.css';
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
 import { SelectImpact } from './select-impact.tsx/index.tsx';
-import SelectStatusButtons from './card-status-change.tsx';
+import SelectStatus from './select-status.tsx';
 
 interface User {
   id: UniqueIdentifier;
@@ -61,15 +61,20 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('group/task rounded-none border-0 text-sm bg-transparent hover:bg-card', {
+  const variants = cva('group/task rounded-none border-0 text-sm bg-transparent hover:bg-card bg-gradient-to-br from-transparent via-transparent via-60%', {
     variants: {
       dragging: {
         over: 'ring-2 opacity-30',
         overlay: 'ring-2 ring-primary',
       },
       status: {
-        accepted: 'bg-gradient-to-br from-transparent via-transparent via-60% to-lime-500/25 to-100%',
-        iced: 'bg-gradient-to-br from-transparent from-0% via-transparent via-60% to-sky-500/25 to-1090%',
+        0: 'to-sky-600/10 to-100%',
+        1: '',
+        2: '',
+        3: 'to-mint-600/10 to-100%',
+        4: 'to-yellow-600/10 to-100%',
+        5: 'to-orange-600/10 to-100%',
+        6: 'to-lime-600/10 to-100%',
       },
     },
   });
@@ -104,7 +109,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
       style={style}
       className={variants({
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
-        status: task.status === 6 ? 'accepted' : task.status === 0 ? 'iced' : undefined,
+        status: task.status,
       })}
     >
       <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
@@ -113,8 +118,8 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
             <div className="group mt-[2px]">
               <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
               {task.type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />}
-              {task.type === 'bug' && <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" />}
-              {task.type === 'chore' && <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" />}
+              {task.type === 'bug' && <Bug size={16} className="fill-red-400 text-red-500 group-hover:opacity-0 transition-opacity" />}
+              {task.type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500 group-hover:opacity-0 transition-opacity" />}
             </div>
           </div>
           {!isViewState && (
@@ -130,7 +135,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
                 value={value}
                 preview={'edit'}
                 onChange={(newValue) => setValue(newValue)}
-                autoFocus={true}
+                defaultTabEnable={true}
                 hideToolbar={true}
                 visibleDragbar={false}
                 height={'auto'}
@@ -178,7 +183,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
                 </div>
               </HoverCardContent>
             </HoverCard>
-            <SelectStatusButtons taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
+            <SelectStatus taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
           </div>
         </div>
       </CardContent>

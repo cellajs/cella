@@ -5,13 +5,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn } from '~/lib/utils';
-import * as React from 'react';
 import { HighIcon } from './icons/high';
 import { LowIcon } from './icons/low';
 import { MediumIcon } from './icons/medium';
 import { NoneIcon } from './icons/none';
 import { Kbd } from '../../common/kbd';
 import { Check } from 'lucide-react';
+import { useState } from 'react';
 
 type Impact = {
   value: (typeof impacts)[number]['value'];
@@ -28,12 +28,10 @@ const impacts = [
 ] as const;
 
 export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) => {
-  const [openPopover, setOpenPopover] = React.useState(false);
-  const [openTooltip, setOpenTooltip] = React.useState(false);
-
-  const [selectedImpact, setSelectedImpact] = React.useState<Impact | null>(null);
-
-  const [searchValue, setSearchValue] = React.useState('');
+  const [openPopover, setOpenPopover] = useState(false);
+  const [openTooltip, setOpenTooltip] = useState(false);
+  const [selectedImpact, setSelectedImpact] = useState<Impact | null>(null);
+  const [searchValue, setSearchValue] = useState('');
 
   const isSearching = searchValue.length > 0;
 
@@ -98,7 +96,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
               }
               setSearchValue(searchValue);
             }}
-            className="text-[0.8125rem] leading-normal"
+            className="leading-normal"
             placeholder="Set impact ..."
           />
           {!isSearching && <Kbd value="P" className="absolute top-3 right-[10px]" />}
@@ -114,15 +112,15 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
                     setOpenPopover(false);
                     setSearchValue('');
                   }}
-                  className="group rounded-md flex justify-between items-center w-full text-[0.8125rem] leading-normal text-primary"
+                  className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
                   <div className="flex items-center">
                     <Impact.icon title={Impact.label} className="mr-2 size-4 fill-muted-foreground group-hover:fill-primary" />
                     <span>{Impact.label}</span>
                   </div>
                   <div className="flex items-center">
-                    {selectedImpact?.value === Impact.value && <Check size={16} className="mr-3 text-success" />}
-                    {!isSearching && <span className="text-xs opacity-50 mr-1">{index}</span>}
+                    {selectedImpact?.value === Impact.value && <Check size={16} className="text-success" />}
+                    {!isSearching && <span className="max-xs:hidden text-xs ml-3 opacity-50 mr-1">{index}</span>}
                   </div>
                 </CommandItem>
               ))}

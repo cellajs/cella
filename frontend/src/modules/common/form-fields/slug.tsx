@@ -24,7 +24,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState(false);
 
-  const { mutate: checkSlug } = useMutation({
+  useMutation({
     mutationFn: checkSlugAvailable,
     onSuccess: (isAvailable) => {
       if (isAvailable) return form.clearErrors('slug');
@@ -39,17 +39,13 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });
 
-  useEffect(() => {
-    if (!previousSlug || slug === previousSlug) return;
-    if (slug.replaceAll(' ', '') !== '') checkSlug(slug);
-  }, [slug]);
-
   const isValidSlug = (value: string) => {
     const regex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
     return regex.test(value) && !value.startsWith('-') && !value.endsWith('-') && value.replaceAll(' ', '') !== '';
   };
 
   useEffect(() => {
+    if (previousSlug && slug === previousSlug) return;
     if (isValidSlug(slug)) checkSlugAvailable(slug).then((response) => setSlugAvailable(response));
     setSlugAvailable(false);
   }, [slug]);
