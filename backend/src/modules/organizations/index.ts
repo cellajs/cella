@@ -345,7 +345,7 @@ const organizationsRoutes = app
     });
   })
   /*
-   * Get users by organization id
+   * Get members by organization id
    */
   .openapi(getUsersByOrganizationIdRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');

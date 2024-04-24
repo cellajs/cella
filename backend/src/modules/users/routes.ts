@@ -61,7 +61,7 @@ export const getUsersConfig = createRouteConfig({
   path: '/users',
   guard: systemGuard,
   tags: ['users'],
-  summary: 'Get users',
+  summary: 'Get list of users',
   description: `
     Permissions:
       - Users with role 'ADMIN'

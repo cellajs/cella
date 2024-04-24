@@ -105,7 +105,7 @@ export const deleteWorkspacesRouteConfig = createRouteConfig({
   path: '/workspaces',
   guard: systemGuard,
   tags: ['workspaces'],
-  summary: 'Delete organizations',
+  summary: 'Delete workspaces',
   description: `
     Permissions:
       - Users with role 'ADMIN'

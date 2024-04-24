@@ -224,7 +224,7 @@ const usersRoutes = app
     });
   })
   /*
-   * Get users
+   * Get list of  users
    */
   .openapi(getUsersConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
