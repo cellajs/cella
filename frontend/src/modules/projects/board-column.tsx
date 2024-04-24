@@ -29,10 +29,9 @@ interface BoardColumnProps {
   column: Column;
   tasks: Task[];
   isOverlay?: boolean;
-  labels: Record<'value' | 'label' | 'color', string>[];
 }
 
-export function BoardColumn({ column, tasks, isOverlay, labels }: BoardColumnProps) {
+export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(tasks.map((el) => el.id));
   const { ref, bounds } = useMeasure();
 
@@ -120,13 +119,7 @@ export function BoardColumn({ column, tasks, isOverlay, labels }: BoardColumnPro
           <SortableContext items={tasksIds}>
             {tasks.map((task) => (
               <div key={task.id}>
-                <TaskCard
-                  isViewState={!foldedTasks.includes(task.id)}
-                  toggleTaskClick={toggleTaskVisibility}
-                  task={task}
-                  user={task.assignedTo}
-                  labels={labels}
-                />
+                <TaskCard isViewState={!foldedTasks.includes(task.id)} toggleTaskClick={toggleTaskVisibility} task={task} user={task.assignedTo} />
               </div>
             ))}
           </SortableContext>

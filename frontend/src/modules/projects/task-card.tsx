@@ -24,15 +24,12 @@ interface User {
   bio: string;
 }
 
-type Labels = Record<'value' | 'label' | 'color', string>;
-
 interface TaskCardProps {
   task: Task;
   isViewState?: boolean;
   toggleTaskClick?: (id: UniqueIdentifier) => void;
   isOverlay?: boolean;
   user: User;
-  labels: Labels[];
 }
 
 export type TaskType = 'Task';
@@ -42,7 +39,7 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, labels }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.text);
   const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -149,7 +146,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
             <GripVertical size={16} />
           </Button>
 
-          <LabelBox passedLabels={labels} />
+          <LabelBox />
           <div className="flex gap-2">
             <HoverCard>
               <HoverCardTrigger>

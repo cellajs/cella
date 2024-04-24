@@ -27,7 +27,6 @@ import type { ComplexProject, Task } from '~/mocks/dataGeneration';
 
 export default function KanbanBoard() {
   const [columns, setColumns] = useState<ComplexProject[]>([]);
-  const [labels, setLabels] = useState<Record<'value' | 'label' | 'color', string>[]>([]);
   const pickedUpTaskColumn = useRef<UniqueIdentifier | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
@@ -123,7 +122,6 @@ export default function KanbanBoard() {
     if ('project' in content) {
       setColumns(content.project);
       setTasks(content.project.flatMap((project) => project.tasks));
-      setLabels(content.workspace.labelGroups);
     }
   }, [content]);
   return (
@@ -134,7 +132,7 @@ export default function KanbanBoard() {
             {columns.map((col, index) => (
               <Fragment key={col.id}>
                 <ResizablePanel key={`${col.id}-panel`}>
-                  <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.projectId === col.id)} labels={labels} />
+                  <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.projectId === col.id)} />
                 </ResizablePanel>
                 {columns.length > index + 1 && (
                   <ResizableHandle className="w-[2px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
@@ -148,10 +146,8 @@ export default function KanbanBoard() {
       {'document' in window &&
         createPortal(
           <DragOverlay>
-            {activeColumn && (
-              <BoardColumn labels={labels} isOverlay column={activeColumn} tasks={tasks.filter((task) => task.projectId === activeColumn.id)} />
-            )}
-            {activeTask && <TaskCard task={activeTask} isOverlay user={activeTask.assignedTo} labels={labels} />}
+            {activeColumn && <BoardColumn isOverlay column={activeColumn} tasks={tasks.filter((task) => task.projectId === activeColumn.id)} />}
+            {activeTask && <TaskCard task={activeTask} isOverlay user={activeTask.assignedTo} />}
           </DragOverlay>,
           document.body,
         )}

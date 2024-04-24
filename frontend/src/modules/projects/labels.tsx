@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import * as React from 'react';
+import React from 'react';
 
 import { PopoverPortal } from '@radix-ui/react-popover';
 import { CommandList } from 'cmdk';
@@ -10,6 +10,7 @@ import { Command, CommandInput, CommandItem, CommandSeparator } from '~/modules/
 import { Input } from '~/modules/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '../ui/scroll-area';
+import { WorkspaceContext } from '../workspaces/workspace';
 
 type LabelType = Record<'value' | 'label' | 'color', string>;
 
@@ -19,13 +20,15 @@ const badgeStyle = (color: string) => ({
   color,
 });
 
-export const LabelBox = ({ passedLabels }: { passedLabels: LabelType[] }) => {
+export const LabelBox = () => {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [labels, setLabels] = React.useState<LabelType[]>(passedLabels);
+  const [labels, setLabels] = React.useState<LabelType[]>([]);
   const [isOpenEditLabel, setOpenEditLabel] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState<string>('');
-  const [selectedLabels, setSelectedLabels] = React.useState<LabelType[]>(labels.slice(1, Math.floor(Math.random() * (1 - 6 + 1)) + 6));
+  const [selectedLabels, setSelectedLabels] = React.useState<LabelType[]>([]);
   const [editedValue, setEditedValue] = React.useState<string>('');
+
+  const { content } = React.useContext(WorkspaceContext);
 
   const createLabel = (name: string) => {
     const newLabel = {
@@ -69,6 +72,14 @@ export const LabelBox = ({ passedLabels }: { passedLabels: LabelType[] }) => {
     };
     updateLabel(label, newLabel);
   };
+
+  React.useEffect(() => {
+    if ('workspace' in content) {
+      const randomNumber = Math.floor(Math.random() * (1 - 6 + 1) + 6);
+      setLabels(content.workspace.labelGroups);
+      setSelectedLabels(content.workspace.labelGroups.slice(1, randomNumber));
+    }
+  }, [content]);
 
   return (
     <>
