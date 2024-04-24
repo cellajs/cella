@@ -130,6 +130,7 @@
     "react-hook-form": "^7.51.1",
     "react-i18next": "^14.1.0",
     "react-intersection-observer": "^9.5.3",
+    "react-joyride": "^2.8.1",
     "react-leaflet": "^4.2.1",
     "react-resizable-panels": "^2.0.13",
     "react-sticky-el": "^2.1.0",
