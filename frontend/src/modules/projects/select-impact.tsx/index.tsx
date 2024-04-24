@@ -56,6 +56,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
               aria-label="Set impacts"
               variant="ghost"
               size={mode === 'create' ? 'sm' : 'micro'}
+              className={mode === 'create' ? 'w-full text-left flex gap-2 justify-start border' : ''}
             >
               {selectedImpact && selectedImpact.value !== 'none' ? (
                 <>
@@ -82,7 +83,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
           <Kbd value="P" />
         </TooltipContent>
       </Tooltip>
-      <PopoverContent className="w-[206px] p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
+      <PopoverContent className="w-200 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}

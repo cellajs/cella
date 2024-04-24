@@ -12,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { dialog } from '../common/dialoger/state';
 import { useNavigate } from '@tanstack/react-router';
-import { Form, FormLabel } from '../ui/form';
+import { Form } from '../ui/form';
 import { createWorkspace } from '~/api/workspaces';
 import { SelectImpact } from './select-impact.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
@@ -45,15 +45,18 @@ const StoryTypeChoose = ({ className = '', defaultValue = 'feature' }: { classNa
     setSelectedValue(value);
   };
   return (
-    <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)} value={selectedValue} onValueChange={handleValueChange}>
-      <ToggleGroupItem size={'xs'} value="feature">
-        <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
+    <ToggleGroup type="single" variant="merged" className={cn('gap-0 w-full', className)} value={selectedValue} onValueChange={handleValueChange}>
+      <ToggleGroupItem size="sm" value="feature" className="w-full">
+        <Star size={16} className={`${selectedValue === 'feature' && 'fill-amber-400 text-amber-500'}`} />
+        <span className="ml-2">Feature</span>
       </ToggleGroupItem>
-      <ToggleGroupItem size={'xs'} value="bug">
-        <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" />
+      <ToggleGroupItem size="sm" value="bug" className="w-full">
+        <Bug size={16} className={`${selectedValue === 'bug' && 'fill-red-500 text-red-600'}`} />
+        <span className="ml-2">Bug</span>
       </ToggleGroupItem>
-      <ToggleGroupItem size={'xs'} value="chore">
-        <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" />
+      <ToggleGroupItem size="sm" value="chore" className="w-full">
+        <Bolt size={16} className={`${selectedValue === 'chore' && 'fill-slate-500 text-slate-600'}`} />
+        <span className="ml-2">Chore</span>
       </ToggleGroupItem>
     </ToggleGroup>
   );
@@ -115,30 +118,21 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-4">
-        <div className="flex items-center gap-3">
-          <FormLabel>Story type</FormLabel>
-          <StoryTypeChoose className="h-2" />
-        </div>
-        <div className="flex items-center gap-3">
-          <FormLabel>Story points</FormLabel>
-          <SelectImpact mode="edit" />
-        </div>
-        <div className="flex flex-col gap-2">
-          <FormLabel>Story content</FormLabel>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border-b">
+          <StoryTypeChoose />
           <MDEditor
             value={text}
+            defaultTabEnable={true}
             preview={'edit'}
             onChange={(newValue) => {
               if (typeof newValue === 'string') setText(newValue);
             }}
-            autoFocus={true}
             hideToolbar={true}
             visibleDragbar={false}
             height={'auto'}
-            style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '32px', padding: '4px' }}
+            style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '4px' }}
           />
-        </div>
+          <SelectImpact mode="create" />
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Button size={'xs'} type="submit" disabled={text.replaceAll(' ', '') === ''} loading={isPending}>

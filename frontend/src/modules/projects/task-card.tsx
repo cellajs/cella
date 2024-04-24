@@ -123,6 +123,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
                 textareaProps={{ id: task.id as string }}
                 value={value}
                 preview={'edit'}
+                defaultTabEnable={true}
                 onChange={(newValue) => setValue(newValue)}
                 autoFocus={true}
                 hideToolbar={true}

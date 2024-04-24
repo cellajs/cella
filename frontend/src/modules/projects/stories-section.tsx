@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import CreateStoryForm, { type Story } from './task-card-form';
 import type { UniqueIdentifier } from '@dnd-kit/core';
 import type { Task } from '~/mocks/dataGeneration';
+import { Badge } from '../ui/badge';
 
 interface StoriesContextType {
   stories: Task[];
@@ -33,11 +34,11 @@ const StoriesContext = ({
           onClick={handleShowHideClick}
           variant="secondary"
           size="sm"
-          className={`w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 ${
+          className={`w-full rounded-none gap-1 border-none ${
             storiesType === 'accepted' ? 'text-success' : 'text-sky-600'
           } text-sm -mt-[1px]`}
         >
-          <span className="text-[12px]">{`${isStoriesShown ? 'Hide' : 'Show'} ${stories.length} ${storiesType} stories`}</span>
+          <span className="text-[12px]"> <Badge className={storiesType === 'accepted' ? 'bg-success' : 'bg-sky-600'}>{stories.length}</Badge>tasks</span>
           {isStoriesShown ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </Button>
       )}
