@@ -269,7 +269,6 @@
   "start.github.message": "Get started on Github",
   "subject": "Subject",
   "subscription": "Subscription",
-  "workspaces": "Workspaces",
   "select_organization": "Select organization",
   "success.mute_organization": "Organization has been muted.",
   "success.unmute_organization": "Organization has been unmuted.",
@@ -349,5 +348,11 @@
   "email_domains.text": "Enforce members to have an organizational email domain.",
   "add_domain": "Add domain",
   "labels": "Labels",
-  "view_options": "View options"
+  "view_options": "View options",
+  "project": "Project",
+  "projects": "Projects",
+  "workspace": "Workspace",
+  "workspaces": "Workspaces",
+  "add_project": "Add project",
+  "add_projects": "Add projects"
 }

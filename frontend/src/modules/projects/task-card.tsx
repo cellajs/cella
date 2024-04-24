@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Activity, GripVertical, Star } from 'lucide-react';
+import { Activity, GripVertical, Star, Bug, Bolt } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -15,12 +15,21 @@ import { LabelBox } from './labels';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
+import { SelectImpact } from './select-impact.tsx/index.tsx';
+
+interface User {
+  id: UniqueIdentifier;
+  name: string;
+  thumbnailUrl: null;
+  bio: string;
+}
 
 interface TaskCardProps {
   task: Task;
   isViewState?: boolean;
   toggleTaskClick?: (id: UniqueIdentifier) => void;
   isOverlay?: boolean;
+  user: User;
 }
 
 export type TaskType = 'Task';
@@ -30,7 +39,7 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.text);
   const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -49,7 +58,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: Task
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('rounded-none border-0 text-sm bg-transparent', {
+  const variants = cva('group/task rounded-none border-0 text-sm bg-transparent hover:bg-card', {
     variants: {
       dragging: {
         over: 'ring-2 opacity-30',
@@ -60,14 +69,6 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: Task
 
   const toggleEditorState = () => {
     if (toggleTaskClick) toggleTaskClick(task.id);
-  };
-
-  //TODO: Replace with actual user data
-  const user = {
-    id: '1sdfsdsdfsdfwe4rw34rf',
-    name: 'John Doe',
-    thumbnailUrl: null,
-    bio: 'sdfsd sdfs sd fsafsf asdfad fafd; asdf asf safd sfdsfs fsd sdfdsg .fdg dfg dfgd fgdfgdfg',
   };
 
   useEffect(() => {
@@ -99,20 +100,18 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: Task
           <div className="flex flex-col gap-2">
             <div className="group mt-[2px]">
               <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
-              <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
-              {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
-              {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
+              {task.type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />}
+              {task.type === 'bug' && <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" />}
+              {task.type === 'chore' && <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" />}
             </div>
-
-            <div>pt</div>
           </div>
-          {isViewState && (
+          {!isViewState && (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <div onClick={toggleEditorState}>
-              <MDEditor.Markdown source={task.text} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose" />
+              <MDEditor.Markdown source={task.text} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose font-light" />
             </div>
           )}
-          {!isViewState && (
+          {isViewState && (
             <div className="flex flex-col gap-2" data-color-mode="dark">
               <MDEditor
                 textareaProps={{ id: task.id as string }}
@@ -145,15 +144,17 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: Task
             <GripVertical size={16} />
           </Button>
 
+          <SelectImpact mode="edit" />
           <LabelBox />
+
           <div className="flex gap-2">
             <HoverCard>
               <HoverCardTrigger>
-                <AvatarWrap type="USER" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
+                <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
               </HoverCardTrigger>
               <HoverCardContent className="w-80">
                 <div className="flex justify-between space-x-4">
-                  <AvatarWrap type="USER" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                  <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} />
                   <div className="space-y-1">
                     <h4 className="text-sm font-semibold">{user.name}</h4>
                     <p className="text-sm">{user.bio}</p>

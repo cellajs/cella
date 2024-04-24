@@ -17,8 +17,8 @@ function KanbanHeader() {
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings />, {
       className: 'sm:max-w-[64rem]',
-      title: t('app:workspace_settings'),
-      text: t('app:workspace_settings.text'),
+      title: t('common:workspace_settings'),
+      text: t('common:workspace_settings.text'),
       id: 'workspace_settings',
     });
   };
@@ -34,7 +34,7 @@ function KanbanHeader() {
             dialog(<AddProjects />, {
               //callback={(project) => callback([project], 'create')} dialog
               className: 'md:max-w-xl',
-              title: t('app:add_projects'),
+              title: t('common:add_projects'),
             });
           }}
         >
