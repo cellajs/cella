@@ -89,7 +89,7 @@ export const LabelBox = () => {
             {!isOpenEditLabel &&
               selectedLabels.map(({ label, value, color }) => (
                 <button type="button" onClick={() => setOpenEditLabel(true)}>
-                  <Badge key={value} variant="outline" style={badgeStyle(color)}>
+                  <Badge key={value} variant="outline" className="font-light" style={badgeStyle(color)}>
                     {label}
                   </Badge>
                 </button>
