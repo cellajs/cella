@@ -2,17 +2,16 @@ import { type UniqueIdentifier, useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
-import { ChevronDown, GripVertical, Plus } from 'lucide-react';
-import { type RefObject, useMemo, useState } from 'react';
+import { GripVertical, Plus } from 'lucide-react';
+import { type RefObject, useEffect, useMemo, useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { TaskCard } from './task-card';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
 import type { Task } from '~/mocks/dataGeneration';
-import CreateStoryForm from './task-card-form';
+import StoriesContext from './stories-section';
 
 export interface Column {
   id: UniqueIdentifier;
@@ -35,6 +34,12 @@ interface BoardColumnProps {
 export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(tasks.map((el) => el.id));
   const [showCreationForm, setShowCreationForm] = useState(false);
+  const [showIcedStories, setShowIcedStories] = useState(false);
+  const [showAcceptedStories, setShowAcceptedStories] = useState(false);
+  const [icedStories, setIcedStories] = useState<Task[]>([]);
+  const [acceptedStories, setAcceptedStories] = useState<Task[]>([]);
+  const [inWorkStories, setInWorkStories] = useState<Task[]>([]);
+
   const { ref, bounds } = useMeasure();
 
   const neededWidth = 375;
@@ -51,6 +56,16 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
   }, [tasks]);
+
+  const handleAddStoryClick = () => {
+    setShowCreationForm(true);
+  };
+  const handleIcedStoriesClick = () => {
+    setShowIcedStories(!showIcedStories);
+  };
+  const handleAcceptedStoriesClick = () => {
+    setShowAcceptedStories(!showAcceptedStories);
+  };
 
   const handleStoryCreationCallback = () => {
     setShowCreationForm(false);
@@ -85,6 +100,12 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   // TODO
   const [background, setBackground] = useState('#ff75c3');
 
+  useEffect(() => {
+    setAcceptedStories(tasks.filter((task) => task.status === 6));
+    setIcedStories(tasks.filter((task) => task.status === 0));
+    setInWorkStories(tasks.filter((task) => task.status !== 6 && task.status !== 0));
+  }, [tasks]);
+
   return (
     <Card
       ref={setNodeRef}
@@ -110,37 +131,39 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 
         <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} />
 
-        <Button variant="plain" size="xs" className="rounded">
+        <Button variant="plain" size="xs" className="rounded" onClick={handleAddStoryClick}>
           <Plus size={16} className="mr-1" />
           Story
         </Button>
       </CardHeader>
       <ScrollArea>
         <CardContent className="flex flex-grow flex-col p-0">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-success text-sm -mt-[1px]"
-          >
-            <span className="text-[12px]">16 accepted stories</span>
-            <ChevronDown size={12} />
-          </Button>
-          {showCreationForm && <CreateStoryForm callback={handleStoryCreationCallback} />}
           <SortableContext items={tasksIds}>
-            {tasks.map((task) => (
-              <div key={task.id}>
-                <TaskCard isViewState={!foldedTasks.includes(task.id)} toggleTaskClick={toggleTaskVisibility} task={task} user={task.assignedTo} />
-              </div>
-            ))}
+            <StoriesContext
+              stories={acceptedStories}
+              storiesType="accepted"
+              foldedTasks={foldedTasks}
+              toggleTask={toggleTaskVisibility}
+              isStoriesShown={showAcceptedStories}
+              handleShowHideClick={handleAcceptedStoriesClick}
+            />
+            <StoriesContext
+              stories={inWorkStories}
+              storiesType="inWork"
+              foldedTasks={foldedTasks}
+              toggleTask={toggleTaskVisibility}
+              showCreationForm={showCreationForm}
+              creationCallback={handleStoryCreationCallback}
+            />
+            <StoriesContext
+              stories={icedStories}
+              storiesType="iced"
+              foldedTasks={foldedTasks}
+              toggleTask={toggleTaskVisibility}
+              isStoriesShown={showIcedStories}
+              handleShowHideClick={handleIcedStoriesClick}
+            />
           </SortableContext>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-600 text-sm -mt-[1px]"
-          >
-            <span className="text-[12px]">12 iced stories</span>
-            <ChevronDown size={12} />
-          </Button>
         </CardContent>
       </ScrollArea>
     </Card>
