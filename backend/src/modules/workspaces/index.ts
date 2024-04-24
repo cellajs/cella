@@ -121,17 +121,6 @@ const workspacesRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.workspaceId, workspace.id)));
 
-    if (membership.organizationId !== organizationId) {
-      await db
-        .update(membershipsTable)
-        .set({
-          organizationId,
-          modifiedAt: new Date(),
-          modifiedBy: user.id,
-        })
-        .where(and(eq(membershipsTable.workspaceId, workspace.id), eq(membershipsTable.userId, user.id)));
-    }
-
     if (membership) {
       sendSSE(user.id, 'update_workspace', {
         ...updatedWorkspace,

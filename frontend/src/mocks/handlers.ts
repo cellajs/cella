@@ -1,16 +1,13 @@
 import { http, HttpResponse } from 'msw';
-import { faker } from '@faker-js/faker';
+import { taskContent, projectsContent, labelsContent, type MockResponse } from './dataGeneration';
 
 /** Mock server handlers */
 export const handlers = [
   /** Fetch kanban-board data */
   http.get('/mock/kanban', () => {
-    const statusValues = ['todo', 'in-progress', 'done'];
-    const responseContent = Array.from({ length: 13 }, () => ({
-      id: faker.string.uuid(),
-      columnId: statusValues[Math.floor(Math.random() * statusValues.length)],
-      content: faker.lorem.text(),
-    }));
-    return HttpResponse.json(responseContent);
+    const responseProjectContent = projectsContent();
+    const responseTaskContent = taskContent(20);
+    const labels = labelsContent();
+    return HttpResponse.json<MockResponse>({ workspace: { labelGroups: labels }, task: responseTaskContent, project: responseProjectContent });
   }),
 ];
