@@ -6,10 +6,10 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, userParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, systemGuard } from '../../middlewares/guard';
-import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema, userMenuSchema } from './schema';
+import { apiUserSchema, getUsersQuerySchema, updateUserJsonSchema, userMenuSchema } from './schema';
 
 export const meRouteConfig = createRouteConfig({
   method: 'get',
@@ -84,7 +84,7 @@ export const getUsersConfig = createRouteConfig({
 
 export const updateUserConfig = createRouteConfig({
   method: 'put',
-  path: '/users/{userId}',
+  path: '/users/{user}',
   guard: authGuard(),
   tags: ['users'],
   summary: 'Update a user',
@@ -94,7 +94,7 @@ export const updateUserConfig = createRouteConfig({
       - Users, who are the user
   `,
   request: {
-    params: updateUserParamSchema,
+    params: userParamSchema,
     body: {
       content: {
         'application/json': {
@@ -118,7 +118,7 @@ export const updateUserConfig = createRouteConfig({
 
 export const getUserByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/users/{idOrSlug}',
+  path: '/users/{user}',
   guard: authGuard(),
   tags: ['users'],
   summary: 'Get user by id or slug',
@@ -128,7 +128,7 @@ export const getUserByIdOrSlugRouteConfig = createRouteConfig({
       - Users, who are the user
   `,
   request: {
-    params: getUserParamSchema,
+    params: userParamSchema,
   },
   responses: {
     200: {

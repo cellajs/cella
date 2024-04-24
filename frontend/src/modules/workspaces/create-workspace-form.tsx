@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 // Change this in the future on current schema
 import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
@@ -30,7 +30,9 @@ interface CreateWorkspaceFormProps {
   dialog?: boolean;
 }
 
-const formSchema = createWorkspaceJsonSchema;
+const formSchema = createWorkspaceJsonSchema.extend({
+  organization: z.string().nonempty(),
+});
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -45,7 +47,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       defaultValues: {
         name: '',
         slug: '',
-        organizationId: '',
+        organization: '',
       },
     }),
     [],
@@ -96,8 +98,14 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
-        <SlugFormField control={form.control} label={t('common:workspace_handle')} description={t('common:workspace_handle.text')} nameValue={name} />
-        <SelectOrganizationFormField control={form.control} label={t('common:organization')} name="organizationId" required />
+        <SlugFormField
+          control={form.control}
+          type="WORKSPACE"
+          label={t('common:workspace_handle')}
+          description={t('common:workspace_handle.text')}
+          nameValue={name}
+        />
+        <SelectOrganizationFormField control={form.control} label={t('common:organization')} name="organization" required />
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>

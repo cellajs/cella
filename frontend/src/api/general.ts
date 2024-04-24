@@ -26,17 +26,17 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
   return json.data;
 };
 
-// Invite users
 export interface InviteProps {
   emails: string[];
   role?: Member['organizationRole'] | User['role'];
   idOrSlug?: string;
 }
 
-// TODO: fix it
-export const invite = async ({ emails, idOrSlug, role }: InviteProps) => {
-  const response = await client.invite.$post({
-    json: { emails, role },
+// Invite users
+export const invite = async ({ idOrSlug, ...rest }: InviteProps) => {
+  const response = await client[':idOrSlug?'].invite.$post({
+    param: { idOrSlug },
+    json: rest,
   });
 
   const json = await response.json();
@@ -45,9 +45,12 @@ export const invite = async ({ emails, idOrSlug, role }: InviteProps) => {
 };
 
 // Check if slug is available
-export const checkSlugAvailable = async (slug: string) => {
-  const response = await client['check-slug'][':slug'].$get({
-    param: { slug },
+export const checkSlugAvailable = async (params: {
+  slug: string;
+  type: PageResourceType;
+}) => {
+  const response = await client['check-slug'][':type'][':slug'].$get({
+    param: params,
   });
 
   const json = await response.json();

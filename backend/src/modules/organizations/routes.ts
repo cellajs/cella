@@ -52,8 +52,8 @@ export const createOrganizationRouteConfig = createRouteConfig({
 
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/organizations/{idOrSlug}',
-  guard: organizationTenantGuard('idOrSlug', ['ADMIN']),
+  path: '/organizations/{organization}',
+  guard: organizationTenantGuard('organization', ['ADMIN']),
   tags: ['organizations'],
   summary: 'Update organization',
   description: `
@@ -138,8 +138,8 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{idOrSlug}',
-  guard: organizationTenantGuard('idOrSlug'),
+  path: '/organizations/{organization}',
+  guard: organizationTenantGuard('organization'),
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
   description: `
@@ -165,8 +165,8 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
 
 export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{idOrSlug}/members',
-  guard: organizationTenantGuard('idOrSlug'),
+  path: '/organizations/{organization}/members',
+  guard: organizationTenantGuard('organization'),
   tags: ['organizations'],
   summary: 'Get members of organization',
   description: `

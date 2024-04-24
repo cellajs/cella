@@ -24,7 +24,6 @@ export const apiWorkspacesSchema = z.object({
 export const createWorkspaceJsonSchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
-  idOrSlug: idSchema.or(validSlugSchema),
 });
 
 export const updateWorkspaceJsonSchema = createInsertSchema(workspacesTable, {

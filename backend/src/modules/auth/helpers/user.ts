@@ -29,7 +29,7 @@ export const handleCreateUser = async (
   }
 
   // * Check if the slug is available
-  const slugAvailable = await checkSlugAvailable(data.slug);
+  const slugAvailable = await checkSlugAvailable(data.slug, 'USER');
 
   try {
     // * Insert the user into the database

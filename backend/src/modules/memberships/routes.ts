@@ -2,14 +2,14 @@ import { z } from '@hono/zod-openapi';
 
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
-import { anyTenantGuard, publicGuard } from '../../middlewares/guard';
-import { deleteMembersQuerySchema, membershipUserParamSchema, updateMembershipJsonSchema } from './schema';
+import { anyTenantGuard } from '../../middlewares/guard';
+import { deleteMembersParamSchema, deleteMembersQuerySchema, updateMembershipJsonSchema, updateMembershipParamSchema } from './schema';
 import { apiOrganizationUserSchema } from '../organizations/schema';
 
 export const updateMembershipRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/memberships/{id}',
-  guard: anyTenantGuard('id', ['ADMIN']),
+  path: '/{idOrSlug}/memberships/{user}',
+  guard: anyTenantGuard('idOrSlug'),
   tags: ['memberships'],
   summary: 'Update role, muted, or archived status',
   description: `
@@ -17,7 +17,7 @@ export const updateMembershipRouteConfig = createRouteConfig({
       - Users with role 'ADMIN'
   `,
   request: {
-    params: membershipUserParamSchema,
+    params: updateMembershipParamSchema,
     body: {
       content: {
         'application/json': {
@@ -41,10 +41,8 @@ export const updateMembershipRouteConfig = createRouteConfig({
 
 export const deleteMembershipRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/memberships',
-  // TODO: Implement guard
-  // guard: anyTenantGuard(['ADMIN']),
-  guard: publicGuard,
+  path: '/{idOrSlug}/memberships',
+  guard: anyTenantGuard('idOrSlug'),
   tags: ['memberships'],
   summary: 'Delete memberships',
   description: `
@@ -53,6 +51,7 @@ export const deleteMembershipRouteConfig = createRouteConfig({
       - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
+    params: deleteMembersParamSchema,
     query: deleteMembersQuerySchema,
   },
   responses: {

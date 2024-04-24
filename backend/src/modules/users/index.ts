@@ -160,7 +160,7 @@ const usersRoutes = app
    * Update a user
    */
   .openapi(updateUserConfig, async (ctx) => {
-    const { userId } = ctx.req.valid('param');
+    const { user: userId } = ctx.req.valid('param');
     const user = ctx.get('user');
 
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
@@ -176,7 +176,7 @@ const usersRoutes = app
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
 
     if (slug && slug !== targetUser.slug) {
-      const slugAvailable = await checkSlugAvailable(slug);
+      const slugAvailable = await checkSlugAvailable(slug, 'USER');
 
       if (!slugAvailable) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
@@ -340,7 +340,7 @@ const usersRoutes = app
    * Get a user by id or slug
    */
   .openapi(getUserByIdOrSlugRouteConfig, async (ctx) => {
-    const idOrSlug = ctx.req.param('idOrSlug').toLowerCase();
+    const idOrSlug = ctx.req.param('user').toLowerCase();
     const user = ctx.get('user');
 
     const [targetUser] = await db
