@@ -75,9 +75,9 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
     if (value) task.text = value;
   }, [value]);
 
-  // Textarea autofocus cursor on the end of the vaxlue
+  // Textarea autofocus cursor on the end of the value
   useEffect(() => {
-    if (!isViewState) {
+    if (isViewState) {
       const editorTextAria = document.getElementById(task.id as string);
       if (!editorTextAria) return;
       const textAreaElement = editorTextAria as HTMLTextAreaElement;

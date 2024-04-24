@@ -11,7 +11,6 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { dialog } from '../common/dialoger/state';
-import InputFormField from '../common/form-fields/input';
 import { useNavigate } from '@tanstack/react-router';
 import { Form, FormLabel } from '../ui/form';
 import { createWorkspace } from '~/api/workspaces';
@@ -20,10 +19,12 @@ import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { Bolt, Bug, Star } from 'lucide-react';
 import { cn } from '~/lib/utils.ts';
 import type { UniqueIdentifier } from '@dnd-kit/core';
+import MDEditor from '@uiw/react-md-editor';
+import { useThemeStore } from '~/store/theme.ts';
 
 export interface Story {
   id: UniqueIdentifier;
-  name: string;
+  text: string;
   type: 'feature' | 'bug' | 'chore';
   points: 0 | 1 | 2 | 3;
 }
@@ -33,7 +34,7 @@ interface CreateStoryFormProps {
   dialog?: boolean;
 }
 
-const formSchema = z.object({ id: z.string(), name: z.string(), type: z.string(), points: z.number() });
+const formSchema = z.object({ id: z.string(), text: z.string(), type: z.string(), points: z.number() });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -62,13 +63,15 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
+  const [text, setText] = useState(' ');
+  const { mode } = useThemeStore();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         id: 'gfdgdfgsf43t54',
-        name: '',
+        text: '',
         type: 'feature',
         points: 0,
       },
@@ -100,7 +103,13 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   });
 
   const onSubmit = (values: FormValues) => {
-    callback?.(values as Story);
+    const story: Story = {
+      id: values.id,
+      text: text,
+      type: values.type as 'feature' | 'bug' | 'chore',
+      points: values.points as 0 | 2 | 1 | 3,
+    };
+    callback?.(story as Story);
     // create(values);
   };
 
@@ -115,9 +124,24 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
           <FormLabel>Story points</FormLabel>
           <SelectImpact mode="edit" />
         </div>
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
+        <div className="flex flex-col gap-2">
+          <FormLabel>Story content</FormLabel>
+          <MDEditor
+            value={text}
+            preview={'edit'}
+            onChange={(newValue) => {
+              if (typeof newValue === 'string') setText(newValue);
+            }}
+            autoFocus={true}
+            hideToolbar={true}
+            visibleDragbar={false}
+            height={'auto'}
+            style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '32px', padding: '4px' }}
+          />
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button size={'xs'} type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+          <Button size={'xs'} type="submit" disabled={text.replaceAll(' ', '') === ''} loading={isPending}>
             {t('common:create')}
           </Button>
           <Button
