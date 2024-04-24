@@ -15,7 +15,7 @@ import type { Task } from '~/mocks/dataGeneration';
 
 export interface Column {
   id: UniqueIdentifier;
-  title: string;
+  name: string;
 }
 
 export type ColumnType = 'Column';
@@ -29,9 +29,10 @@ interface BoardColumnProps {
   column: Column;
   tasks: Task[];
   isOverlay?: boolean;
+  labels: Record<'value' | 'label' | 'color', string>[];
 }
 
-export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
+export function BoardColumn({ column, tasks, isOverlay, labels }: BoardColumnProps) {
   const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(tasks.map((el) => el.id));
   const { ref, bounds } = useMeasure();
 
@@ -57,7 +58,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       column,
     } satisfies ColumnDragData,
     attributes: {
-      roleDescription: `Column: ${column.title}`,
+      roleDescription: `Column: ${column.name}`,
     },
   });
 
@@ -89,13 +90,13 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     >
       <CardHeader ref={ref as RefObject<HTMLDivElement>} className="p-3 font-semibold border-b flex flex-row gap-2 space-between items-center">
         <Button variant={'ghost'} {...attributes} {...listeners} className=" py-1 px-0 text-primary/50 -ml-1 h-auto cursor-grab relative">
-          <span className="sr-only">{`Move column: ${column.title}`}</span>
+          <span className="sr-only">{`Move column: ${column.name}`}</span>
           <GripVertical size={16} />
         </Button>
 
         <BackgroundPicker background={background} setBackground={setBackground} className="p-2 h-8 w-8" options={['solid']} />
 
-        <div> {column.title}</div>
+        <div> {column.name}</div>
 
         <div className="grow" />
 
@@ -119,7 +120,13 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           <SortableContext items={tasksIds}>
             {tasks.map((task) => (
               <div key={task.id}>
-                <TaskCard isViewState={!foldedTasks.includes(task.id)} toggleTaskClick={toggleTaskVisibility} task={task} />
+                <TaskCard
+                  isViewState={!foldedTasks.includes(task.id)}
+                  toggleTaskClick={toggleTaskVisibility}
+                  task={task}
+                  user={task.assignedTo}
+                  labels={labels}
+                />
               </div>
             ))}
           </SortableContext>

@@ -1,13 +1,10 @@
 import { http, HttpResponse } from 'msw';
-import { taskContent, projectsContent, labelsContent, type MockResponse } from './dataGeneration';
+import { labelsContent, type MockResponse, projectsWithTaskContent } from './dataGeneration';
 
 /** Mock server handlers */
 export const handlers = [
-  /** Fetch kanban-board data */
   http.get('/mock/kanban', () => {
-    const responseProjectContent = projectsContent();
-    const responseTaskContent = taskContent(20);
-    const labels = labelsContent();
-    return HttpResponse.json<MockResponse>({ workspace: { labelGroups: labels }, task: responseTaskContent, project: responseProjectContent });
+    const responseProjectContent = projectsWithTaskContent(3);
+    return HttpResponse.json<MockResponse>({ project: responseProjectContent, workspace: { labelGroups: labelsContent() } });
   }),
 ];

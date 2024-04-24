@@ -13,51 +13,18 @@ import { ScrollArea } from '../ui/scroll-area';
 
 type LabelType = Record<'value' | 'label' | 'color', string>;
 
-const Labels = [
-  {
-    value: 'next.js',
-    label: 'Next.js',
-    color: '#ef4444',
-  },
-  {
-    value: 'sveltekit',
-    label: 'SvelteKit',
-    color: '#eab308',
-  },
-  {
-    value: 'nuxt.js',
-    label: 'Nuxt.js',
-    color: '#22c55e',
-  },
-  {
-    value: 'remix',
-    label: 'Remix',
-    color: '#06b6d4',
-  },
-  {
-    value: 'astro',
-    label: 'Astro',
-    color: '#3b82f6',
-  },
-  {
-    value: 'wordpress',
-    label: 'WordPress',
-    color: '#8b5cf6',
-  },
-] satisfies LabelType[];
-
 const badgeStyle = (color: string) => ({
   borderColor: `${color}20`,
   backgroundColor: `${color}30`,
   color,
 });
 
-export const LabelBox = () => {
+export const LabelBox = ({ passedLabels }: { passedLabels: LabelType[] }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [labels, setLabels] = React.useState<LabelType[]>(Labels);
+  const [labels, setLabels] = React.useState<LabelType[]>(passedLabels);
   const [isOpenEditLabel, setOpenEditLabel] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState<string>('');
-  const [selectedLabels, setSelectedLabels] = React.useState<LabelType[]>([Labels[0], Labels[1], Labels[2]]);
+  const [selectedLabels, setSelectedLabels] = React.useState<LabelType[]>(labels.slice(1, Math.floor(Math.random() * (1 - 6 + 1)) + 6));
   const [editedValue, setEditedValue] = React.useState<string>('');
 
   const createLabel = (name: string) => {

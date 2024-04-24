@@ -36,7 +36,7 @@ const WorkspacePage = () => {
         })
         .catch((error) => console.error('Error fetching  MSW data:', error));
     });
-  }, []);
+  }, [idOrSlug]);
 
   return (
     <WorkspaceContext.Provider value={{ workspace, content }}>
