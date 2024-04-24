@@ -8,7 +8,7 @@ import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { createWorkspaceRouteConfig, getWorkspaceByIdOrSlugRouteConfig, updateWorkspaceRouteConfig, deleteOrganizationsRouteConfig } from './routes';
+import { createWorkspaceRouteConfig, getWorkspaceByIdOrSlugRouteConfig, updateWorkspaceRouteConfig, deleteWorkspacesRouteConfig } from './routes';
 
 const app = new CustomHono();
 
@@ -22,7 +22,7 @@ const workspacesRoutes = app
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
-    const slugAvailable = await checkSlugAvailable(slug);
+    const slugAvailable = await checkSlugAvailable(slug, 'WORKSPACE');
 
     if (!slugAvailable) {
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
@@ -96,10 +96,10 @@ const workspacesRoutes = app
 
     const { name, slug, organizationId } = ctx.req.valid('json');
 
-    if (slug) {
-      const slugAvailable = await checkSlugAvailable(slug);
+    if (slug && slug !== workspace.slug) {
+      const slugAvailable = await checkSlugAvailable(slug, 'WORKSPACE');
 
-      if (!slugAvailable && slug !== workspace.slug) {
+      if (!slugAvailable) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
       }
     }
@@ -143,7 +143,7 @@ const workspacesRoutes = app
   /*
    * Delete workspaces
    */
-  .openapi(deleteOrganizationsRouteConfig, async (ctx) => {
+  .openapi(deleteWorkspacesRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -164,16 +164,16 @@ const workspacesRoutes = app
 
         if (!result) {
           errors.push(
-            createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', {
-              organization: id,
+            createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', {
+              workspace: id,
             }),
           );
         }
 
         if (user.role !== 'ADMIN') {
           errors.push(
-            createError(ctx, 403, 'delete_forbidden', 'warn', 'ORGANIZATION', {
-              organization: id,
+            createError(ctx, 403, 'delete_forbidden', 'warn', 'WORKSPACE', {
+              workspace: id,
             }),
           );
         }

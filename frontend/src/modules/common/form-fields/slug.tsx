@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Undo } from 'lucide-react';
 import slugify from 'slugify';
+import type { PageResourceType } from 'backend/types/common';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -16,10 +17,13 @@ interface SlugFieldProps {
   nameValue?: string;
   description?: string;
   previousSlug?: string;
+  type: PageResourceType;
 }
 
-export const SlugFormField = ({ control, label, previousSlug, description, nameValue }: SlugFieldProps) => {
-  const form = useFormContext();
+export const SlugFormField = ({ control, label, previousSlug, description, nameValue, type }: SlugFieldProps) => {
+  const form = useFormContext<{
+    slug: string;
+  }>();
   const { t } = useTranslation();
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState(false);

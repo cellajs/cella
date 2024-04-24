@@ -31,7 +31,7 @@ const organizationsRoutes = app
     const { name, slug } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    const slugAvailable = await checkSlugAvailable(slug);
+    const slugAvailable = await checkSlugAvailable(slug, 'ORGANIZATION');
 
     if (!slugAvailable) {
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
@@ -177,11 +177,10 @@ const organizationsRoutes = app
       chatSupport,
     } = ctx.req.valid('json');
 
-    if (slug) {
-      const slugAvailable = await checkSlugAvailable(slug);
+    if (slug && slug !== organization.slug) {
+      const slugAvailable = await checkSlugAvailable(slug, 'ORGANIZATION');
 
-      if (!slugAvailable && slug !== organization.slug) {
-        // t('common:error.slug_exists')
+      if (!slugAvailable) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
       }
     }

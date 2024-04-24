@@ -74,6 +74,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog }: Props) =
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
+          type="WORKSPACE"
           label={t('common:workspace_handle')}
           description={t('common:workspace_handle.text')}
           previousSlug={workspace.slug}

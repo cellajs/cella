@@ -32,10 +32,10 @@ export type User = Extract<InferResponseType<(typeof usersClient.me)['$get']>, {
 
 export type Organization = Extract<InferResponseType<(typeof organizationsClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
 
-export type Workspace = Extract<InferResponseType<(typeof workspaceClient.workspaces)[':idOrSlug']['$get']>, { data: unknown }>['data'];
+export type Workspace = Extract<InferResponseType<(typeof workspaceClient.workspaces)[':workspace']['$get']>, { data: unknown }>['data'];
 
 export type Member = Extract<
-  InferResponseType<(typeof organizationsClient.organizations)[':idOrSlug']['members']['$get']>,
+  InferResponseType<(typeof organizationsClient.organizations)[':organization']['members']['$get']>,
   { data: unknown }
 >['data']['items'][number];
 

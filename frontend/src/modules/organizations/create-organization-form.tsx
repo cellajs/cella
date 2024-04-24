@@ -108,6 +108,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
+          type="ORGANIZATION"
           label={t('common:organization_handle')}
           description={t('common:organization_handle.text')}
           nameValue={name}

@@ -126,6 +126,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
+          type="ORGANIZATION"
           label={t('common:organization_handle')}
           description={t('common:organization_handle.text')}
           previousSlug={organization.slug}
