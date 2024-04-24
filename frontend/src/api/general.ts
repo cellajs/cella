@@ -1,5 +1,6 @@
-import { UploadType, type Member, type UploadParams, type User, type ResourceType } from '~/types';
+import { UploadType, type Member, type UploadParams, type User } from '~/types';
 import { ApiError, generalClient as client } from '.';
+import type { PageResourceType } from 'backend/types/common';
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
@@ -29,12 +30,12 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
 export interface InviteProps {
   emails: string[];
   role?: Member['organizationRole'] | User['role'];
-  resourceIdentifier?: string;
+  idOrSlug?: string;
 }
 
-export const invite = async ({ emails, resourceIdentifier, role }: InviteProps) => {
+export const invite = async ({ emails, idOrSlug, role }: InviteProps) => {
   const response = await client.invite.$post({
-    json: { emails, resourceIdentifier, role },
+    json: { emails, idOrSlug, role },
   });
 
   const json = await response.json();
@@ -65,7 +66,7 @@ export const checkToken = async (token: string) => {
 };
 
 // Get suggestions
-export const getSuggestions = async (query: string, type?: ResourceType | undefined ) => {
+export const getSuggestions = async (query: string, type?: PageResourceType | undefined) => {
   const response = await client.suggestions.$get({
     query: { q: query, type },
   });
@@ -73,4 +74,24 @@ export const getSuggestions = async (query: string, type?: ResourceType | undefi
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
   return json.data;
+};
+
+// Accept an invitation
+export const acceptInvite = async ({
+  token,
+  password,
+  oauth,
+}: {
+  token: string;
+  password?: string;
+  oauth?: 'github' | 'google' | 'microsoft';
+}) => {
+  const response = await client['accept-invite'][':token'].$post({
+    param: { token },
+    json: { password, oauth },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return json.success;
 };

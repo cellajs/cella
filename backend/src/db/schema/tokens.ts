@@ -2,7 +2,7 @@ import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 
-const tokenTypeEnum = ['EMAIL_VERIFICATION', 'PASSWORD_RESET', 'INVITATION'] as const;
+const tokenTypeEnum = ['EMAIL_VERIFICATION', 'PASSWORD_RESET', 'SYSTEM_INVITATION', 'ORGANIZATION_INVITATION'] as const;
 
 export const tokensTable = pgTable('tokens', {
   id: varchar('id').primaryKey(),

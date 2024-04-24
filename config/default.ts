@@ -69,7 +69,7 @@ export const config = {
 
   // Optional settings
   has: {
-    pwaSupport: true,
+    pwa: false,
     signUp: true,
     onboarding: true,
   },

@@ -24,6 +24,13 @@ app.use(
 // Health check for render.com
 app.get('/ping', (c) => c.text('pong'));
 
+// TODO - Add a middleware to check if the user is a bot
+// Prevent crawlers from causing log spam
+// app.use(async (ctx, next) => {
+//   if (!isbot(ctx.req.header('user-agent'))) await next();
+//   return errorResponse(ctx, 403, 'user_maybe_bot', 'warn');
+// });
+
 // Logger
 app.use('*', logger(logEvent as unknown as Parameters<typeof logger>[0]));
 
@@ -48,5 +55,4 @@ app.use(
 
 // Rate limiter
 app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));
-
 export default app;

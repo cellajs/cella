@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import * as React from 'react';
+import React from 'react';
 
 import { PopoverPortal } from '@radix-ui/react-popover';
 import { CommandList } from 'cmdk';
@@ -10,41 +10,9 @@ import { Command, CommandInput, CommandItem, CommandSeparator } from '~/modules/
 import { Input } from '~/modules/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '../ui/scroll-area';
+import { WorkspaceContext } from '../workspaces/workspace';
 
 type LabelType = Record<'value' | 'label' | 'color', string>;
-
-const Labels = [
-  {
-    value: 'next.js',
-    label: 'Next.js',
-    color: '#ef4444',
-  },
-  {
-    value: 'sveltekit',
-    label: 'SvelteKit',
-    color: '#eab308',
-  },
-  {
-    value: 'nuxt.js',
-    label: 'Nuxt.js',
-    color: '#22c55e',
-  },
-  {
-    value: 'remix',
-    label: 'Remix',
-    color: '#06b6d4',
-  },
-  {
-    value: 'astro',
-    label: 'Astro',
-    color: '#3b82f6',
-  },
-  {
-    value: 'wordpress',
-    label: 'WordPress',
-    color: '#8b5cf6',
-  },
-] satisfies LabelType[];
 
 const badgeStyle = (color: string) => ({
   borderColor: `${color}20`,
@@ -54,11 +22,13 @@ const badgeStyle = (color: string) => ({
 
 export const LabelBox = () => {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [labels, setLabels] = React.useState<LabelType[]>(Labels);
+  const [labels, setLabels] = React.useState<LabelType[]>([]);
   const [isOpenEditLabel, setOpenEditLabel] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState<string>('');
-  const [selectedLabels, setSelectedLabels] = React.useState<LabelType[]>([Labels[0], Labels[1], Labels[2]]);
+  const [selectedLabels, setSelectedLabels] = React.useState<LabelType[]>([]);
   const [editedValue, setEditedValue] = React.useState<string>('');
+
+  const { content } = React.useContext(WorkspaceContext);
 
   const createLabel = (name: string) => {
     const newLabel = {
@@ -103,15 +73,23 @@ export const LabelBox = () => {
     updateLabel(label, newLabel);
   };
 
+  React.useEffect(() => {
+    if ('workspace' in content) {
+      const randomNumber = Math.floor(Math.random() * (1 - 6 + 1) + 6);
+      setLabels(content.workspace.labelGroups);
+      setSelectedLabels(content.workspace.labelGroups.slice(1, randomNumber));
+    }
+  }, [content]);
+
   return (
     <>
       <Popover open={isOpenEditLabel} onOpenChange={onComboboxOpenChange}>
         <PopoverTrigger asChild>
-          <div className="relative w-full min-h-[22px] flex align-center justify-start overflow-hidden gap-1">
+          <div className="relative w-full min-h-[22px] group-hover/task:opacity-100 opacity-70 flex align-center justify-start overflow-hidden gap-1">
             {!isOpenEditLabel &&
               selectedLabels.map(({ label, value, color }) => (
                 <button type="button" onClick={() => setOpenEditLabel(true)}>
-                  <Badge key={value} variant="outline" style={badgeStyle(color)}>
+                  <Badge key={value} variant="outline" className="font-light" style={badgeStyle(color)}>
                     {label}
                   </Badge>
                 </button>

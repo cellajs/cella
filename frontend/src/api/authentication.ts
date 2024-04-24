@@ -6,9 +6,9 @@ export const googleSignInUrl = client['sign-in'].google.$url().href;
 export const microsoftSignInUrl = client['sign-in'].microsoft.$url().href;
 
 // Sign up a user with the provided email and password
-export const signUp = async ({ email, password }: { email: string; password: string }) => {
+export const signUp = async ({ email, password, token }: { email: string; password: string; token?: string }) => {
   const response = await client['sign-up'].$post({
-    json: { email, password },
+    json: { email, password, token },
   });
 
   const json = await response.json();
@@ -43,12 +43,14 @@ export const verifyEmail = async ({ token, resend }: { token: string; resend?: b
 export const signIn = async ({
   email,
   password,
+  token,
 }: {
   email: string;
   password: string;
+  token?: string;
 }) => {
   const response = await client['sign-in'].$post({
-    json: { email, password },
+    json: { email, password, token },
   });
 
   const json = await response.json();
@@ -94,26 +96,6 @@ export const resetPassword = async ({
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
   return;
-};
-
-// Accept an invitation
-export const acceptInvite = async ({
-  token,
-  password,
-  oauth,
-}: {
-  token: string;
-  password?: string;
-  oauth?: 'github' | 'google' | 'microsoft';
-}) => {
-  const response = await client['accept-invite'][':token'].$post({
-    param: { token },
-    json: { password, oauth },
-  });
-
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return json.data;
 };
 
 export const signOut = () => client['sign-out'].$get();

@@ -9,7 +9,7 @@ import {
 import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { authGuard, systemGuard } from '../../middlewares/guard';
-import { userMenuSchema, apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema } from './schema';
+import { apiUserSchema, getUserParamSchema, getUsersQuerySchema, updateUserJsonSchema, updateUserParamSchema, userMenuSchema } from './schema';
 
 export const meRouteConfig = createRouteConfig({
   method: 'get',
@@ -118,7 +118,7 @@ export const updateUserConfig = createRouteConfig({
 
 export const getUserByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/users/{userIdentifier}',
+  path: '/users/{idOrSlug}',
   guard: authGuard(),
   tags: ['users'],
   summary: 'Get user by id or slug',

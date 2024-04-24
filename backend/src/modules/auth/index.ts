@@ -1,20 +1,16 @@
 import { render } from '@react-email/render';
-import { and, eq } from 'drizzle-orm';
-import { type User, generateId } from 'lucia';
+import { eq } from 'drizzle-orm';
+import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { VerificationEmail } from '../../../../email/emails/email-verification';
 import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
 
 import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
-import { setCookie } from './helpers/cookies';
-import { acceptInviteRouteConfig, githubSignInRouteConfig } from './routes';
 
 import { config } from 'config';
 import { emailSender } from '../../../../email';
 import { db } from '../../db/db';
-import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
-import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
@@ -22,7 +18,6 @@ import { i18n } from '../../lib/i18n';
 import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
 import { sendVerificationEmail } from './helpers/verify-email';
@@ -39,8 +34,12 @@ import {
   verifyEmailRouteConfig,
 } from './routes';
 import { handleCreateUser } from './helpers/user';
+import { checkTokenRouteConfig } from '../general/routes';
 
 const app = new CustomHono();
+
+type CheckTokenResponse = Zod.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']> | undefined;
+type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
 // * Authentication endpoints
 const authRoutes = app
@@ -48,13 +47,23 @@ const authRoutes = app
    * Sign up with email and password
    */
   .openapi(signUpRouteConfig, async (ctx) => {
-    const { email, password } = ctx.req.valid('json');
+    const { email, password, token } = ctx.req.valid('json');
+
+    let tokenData: TokenData | undefined;
+    if (token) {
+      const response = await fetch(`${config.backendUrl + checkTokenRouteConfig.path.replace('{token}', token)}`);
+
+      const data = (await response.json()) as CheckTokenResponse;
+      tokenData = data?.data;
+    }
 
     // * hash password
     const hashedPassword = await new Argon2id().hash(password);
     const userId = nanoid();
 
     const slug = slugFromEmail(email);
+
+    const isEmailVerified = tokenData?.email === email;
 
     // * create user and send verification email
     return await handleCreateUser(
@@ -68,7 +77,7 @@ const authRoutes = app
         hashedPassword,
       },
       {
-        isEmailVerified: false,
+        isEmailVerified,
       },
     );
   })
@@ -141,7 +150,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
     }
 
     // * creating email verification token
@@ -254,7 +263,7 @@ const authRoutes = app
 
     // * If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { userId: token.userId });
     }
 
     await auth.invalidateUserSessions(user.id);
@@ -276,30 +285,42 @@ const authRoutes = app
    * Sign in with email and password
    */
   .openapi(signInRouteConfig, async (ctx) => {
-    const { email, password } = ctx.req.valid('json');
+    const { email, password, token } = ctx.req.valid('json');
+
+    let tokenData: TokenData | undefined;
+    if (token) {
+      const response = await fetch(`${config.backendUrl + checkTokenRouteConfig.path.replace('{token}', token)}`);
+
+      const data = (await response.json()) as CheckTokenResponse;
+      tokenData = data?.data;
+    }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     // * If the user is not found or signed up with oauth
     if (!user || !user.hashedPassword) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
     }
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
 
     if (!validPassword) {
-      // t('common:error.invalid_password')
       return errorResponse(ctx, 400, 'invalid_password', 'warn');
     }
 
+    const isEmailVerified = user.emailVerified || tokenData?.email === user.email;
+
     // * send verify email first
-    if (!user.emailVerified) {
+    if (!isEmailVerified) {
       sendVerificationEmail(email);
 
-      return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
+      // return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
+      // return ctx.json({}, 302, {
+      //   Location: `${config.frontendUrl}/auth/verify-email`,
+      // });
+    } else {
+      await setSessionCookie(ctx, user.id, 'password');
     }
-
-    await setSessionCookie(ctx, user.id, 'password');
 
     return ctx.json({
       success: true,
@@ -328,130 +349,6 @@ const authRoutes = app
     logEvent('User signed out', { user: session?.userId || 'na' });
 
     return ctx.json({ success: true, data: undefined });
-  })
-  /*
-   * Accept invite token
-   */
-  .openapi(acceptInviteRouteConfig, async (ctx) => {
-    const { password, oauth } = ctx.req.valid('json');
-    const verificationToken = ctx.req.valid('param').token;
-
-    const [token] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, verificationToken)));
-
-    // * If the token is not found or expired
-    if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-      // t('common:error.invalid_token_or_expired')
-      return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
-    }
-
-    let organization: OrganizationModel | undefined;
-
-    // * If the token has an organization id we will check if the organization exists
-    if (token.organizationId) {
-      [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, token.organizationId));
-
-      if (!organization) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', {
-          organizationId: token.organizationId,
-        });
-      }
-    }
-
-    let user: User;
-
-    // * If the token has a user id we will check if the user exists
-    if (token.userId) {
-      [user] = await db
-        .select()
-        .from(usersTable)
-        .where(and(eq(usersTable.id, token.userId)));
-
-      if (!user || user.email !== token.email) {
-        return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
-          userId: token.userId,
-          type: 'invitation',
-        });
-      }
-    }
-    // * Else we will create a new user
-    else if (password || oauth) {
-      const hashedPassword = password ? await new Argon2id().hash(password) : undefined;
-      const userId = nanoid();
-
-      const slug = slugFromEmail(token.email);
-
-      const slugAvailable = await checkSlugAvailable(slug);
-
-      [user] = await db
-        .insert(usersTable)
-        .values({
-          id: userId,
-          slug: slugAvailable ? slug : `${slug}-${userId}`,
-          name: slug,
-          language: organization?.defaultLanguage || config.defaultLanguage,
-          email: token.email,
-          role: (token.role as User['role']) || 'USER',
-          emailVerified: true,
-          hashedPassword,
-        })
-        .returning();
-
-      if (password) {
-        await Promise.all([db.delete(tokensTable).where(and(eq(tokensTable.id, verificationToken))), setSessionCookie(ctx, user.id, 'password')]);
-      }
-    } else {
-      return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
-        type: 'invitation',
-      });
-    }
-
-    // * If the organization exists we will add the user to the organization
-    if (organization) {
-      await db.insert(membershipsTable).values({
-        organizationId: organization.id,
-        userId: user.id,
-        role: (token.role as MembershipModel['role']) || 'MEMBER',
-        createdBy: user.id,
-      });
-    }
-
-    // * If the oauth is github we will redirect to github sign in
-    if (oauth === 'github') {
-      const response = await fetch(`${config.backendUrl + githubSignInRouteConfig.path}${organization ? `?redirect=${organization.slug}` : ''}`, {
-        method: githubSignInRouteConfig.method,
-        redirect: 'manual',
-      });
-
-      const url = response.headers.get('Location');
-
-      if (response.status === 302 && url) {
-        ctx.header('Set-Cookie', response.headers.get('Set-Cookie') ?? '', { append: true });
-        setCookie(ctx, 'oauth_invite_token', verificationToken);
-        return ctx.json({
-          success: true,
-          data: url,
-        });
-
-        // TODO: Fix redirect
-        // return ctx.json({}, 302, {
-        //   Location: url,
-        // });
-        // return ctx.redirect(url, 302);
-      }
-
-      // t('common:error.invalid_invitation')
-      return errorResponse(ctx, 400, 'invalid_invitation', 'warn', undefined, {
-        type: 'invitation',
-      });
-    }
-
-    return ctx.json({
-      success: true,
-      data: organization?.slug || '',
-    });
   });
 
 const allRoutes = authRoutes.route('/', oauthRoutes);

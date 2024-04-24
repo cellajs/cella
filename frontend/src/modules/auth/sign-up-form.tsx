@@ -7,29 +7,35 @@ import type * as z from 'zod';
 
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { signUp as baseSignUp } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { PrivacyText } from '../marketing/privacy';
-import { TermsText } from '../marketing/terms';
+import { LegalText } from '../marketing/legals';
+import type { TokenData } from '.';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
 const formSchema = signUpJsonSchema;
 
-export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: string) => void }) => {
+export const SignUpForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: string) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const { mutate: signUp, isPending } = useMutation({
     mutationFn: baseSignUp,
     onSuccess: () => {
+      const to = tokenData ? '/auth/accept-invite/$token' : '/auth/verify-email';
+
       navigate({
-        to: '/auth/verify-email',
+        to,
+        replace: true,
+        params: {
+          token: tokenData?.token,
+        },
       });
     },
   });
@@ -43,17 +49,28 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    signUp(values);
+    signUp({
+      ...values,
+      token: tokenData?.token,
+    });
   };
+
+  useEffect(() => {
+    if (tokenData?.email) {
+      form.setValue('email', tokenData.email);
+    }
+  }, [tokenData]);
 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {t('common:create_account')}? <br />
-        <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-2 text-xl">
-          {email}
-          <ChevronDown size={16} className="ml-2" />
-        </Button>
+        {tokenData ? t('common:invite_create_account') : `${t('common:create_account')}?`} <br />
+        {!tokenData && (
+          <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-2 text-xl">
+            {email}
+            <ChevronDown size={16} className="ml-2" />
+          </Button>
+        )}
       </h1>
 
       <LegalNotice />
@@ -101,8 +118,8 @@ export const SignUpForm = ({ email, setStep }: { email: string; setStep: (step: 
 export const LegalNotice = () => {
   const { t } = useTranslation();
 
-  const openDialog = (mode: string) => () => {
-    const dialogComponent = mode === 'terms' ? <TermsText /> : <PrivacyText />;
+  const openDialog = (mode: 'terms' | 'privacy') => () => {
+    const dialogComponent = <LegalText textFor={mode} />;
     const dialogTitle = mode;
 
     dialog(dialogComponent, {

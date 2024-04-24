@@ -101,3 +101,5 @@ export const rateLimiter = (options: Omit<IRateLimiterPostgresOptions, 'storeCli
     tableName: 'rate_limits',
     storeClient: queryClient,
   }).middleware(mode);
+
+export const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');

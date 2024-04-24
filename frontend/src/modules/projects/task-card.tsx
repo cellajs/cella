@@ -3,28 +3,35 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Activity, GripVertical, Star } from 'lucide-react';
+import { Activity, GripVertical, Star, Bug, Bolt } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader } from '~/modules/ui/card';
+import { Card, CardContent } from '~/modules/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { Checkbox } from '../ui/checkbox';
-import type { ColumnId } from './kanban-board';
 import { LabelBox } from './labels';
+import './style.css';
+import { useThemeStore } from '~/store/theme';
+import type { Task } from '~/mocks/dataGeneration';
+import { SelectImpact } from './select-impact.tsx/index.tsx';
+import SelectStatus from './select-status.tsx';
 
-export interface Task {
+interface User {
   id: UniqueIdentifier;
-  columnId: ColumnId;
-  content: string;
+  name: string;
+  thumbnailUrl: null;
+  bio: string;
 }
 
 interface TaskCardProps {
   task: Task;
-  isOpen?: boolean;
+  isViewState?: boolean;
   toggleTaskClick?: (id: UniqueIdentifier) => void;
   isOverlay?: boolean;
+  user: User;
+  setTaskStatus: (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
 }
 
 export type TaskType = 'Task';
@@ -34,9 +41,10 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardProps) {
-  const [value, setValue] = useState<string | undefined>(task.content);
-
+export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, setTaskStatus }: TaskCardProps) {
+  const [value, setValue] = useState<string | undefined>(task.text);
+  const [status, setStatus] = useState(task.status);
+  const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: {
@@ -53,11 +61,20 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('rounded-none border-0 text-sm border-b', {
+  const variants = cva('group/task rounded-none border-0 text-sm bg-transparent hover:bg-card bg-gradient-to-br from-transparent via-transparent via-60%', {
     variants: {
       dragging: {
         over: 'ring-2 opacity-30',
         overlay: 'ring-2 ring-primary',
+      },
+      status: {
+        0: 'to-sky-600/10 to-100%',
+        1: '',
+        2: '',
+        3: 'to-mint-600/10 to-100%',
+        4: 'to-yellow-600/10 to-100%',
+        5: 'to-orange-600/10 to-100%',
+        6: 'to-lime-600/10 to-100%',
       },
     },
   });
@@ -66,21 +83,13 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
     if (toggleTaskClick) toggleTaskClick(task.id);
   };
 
-  //TODO: Replace with actual user data
-  const user = {
-    id: '1sdfsdsdfsdfwe4rw34rf',
-    name: 'John Doe',
-    thumbnailUrl: null,
-    bio: 'sdfsd sdfs sd fsafsf asdfad fafd; asdf asf safd sfdsfs fsd sdfdsg .fdg dfg dfgd fgdfgdfg',
-  };
-
   useEffect(() => {
-    if (value) task.content = value;
+    if (value) task.text = value;
   }, [value]);
 
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {
-    if (isOpen) {
+    if (isViewState) {
       const editorTextAria = document.getElementById(task.id as string);
       if (!editorTextAria) return;
       const textAreaElement = editorTextAria as HTMLTextAreaElement;
@@ -88,7 +97,11 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
       textAreaElement.focus();
       textAreaElement.setSelectionRange(textAreaElement.value.length, textAreaElement.value.length);
     }
-  }, [task.id, isOpen]);
+  }, [task.id, isViewState]);
+
+  useEffect(() => {
+    setTaskStatus(task, status);
+  }, [status]);
 
   return (
     <Card
@@ -96,60 +109,69 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
       style={style}
       className={variants({
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
+        status: task.status,
       })}
     >
-      <CardHeader className="p-2 pr-4 space-between flex flex-col border-b border-secondary relative">
-        {!isOpen && (
-          <Button onClick={toggleEditorState} size={'auto'} variant="secondary" className="w-full flex justify-start bg-transparent">
-            <div className="flex items-center gap-2">
-              <div className="group mt-[2px]">
-                <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
-                <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
-                {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
-                {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
-              </div>
-              <MDEditor.Markdown source={task.content} style={{ textAlign: 'start', background: 'transparent', whiteSpace: 'pre-wrap' }} />
+      <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
+        <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
+            <div className="group mt-[2px]">
+              <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
+              {task.type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />}
+              {task.type === 'bug' && <Bug size={16} className="fill-red-400 text-red-500 group-hover:opacity-0 transition-opacity" />}
+              {task.type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500 group-hover:opacity-0 transition-opacity" />}
             </div>
-          </Button>
-        )}
-        {isOpen && (
-          <>
-            <MDEditor
-              textareaProps={{ id: task.id as string }}
-              value={value}
-              preview={'edit'}
-              onChange={(newValue) => setValue(newValue)}
-              autoFocus={true}
-              hideToolbar={true}
-              visibleDragbar={false}
-              height={'auto'}
-              style={{ background: 'transparent', boxShadow: 'none' }}
-            />
-          </>
-        )}
-
-        <div className="flex items-center justify-between mt-1 gap-2">
-          {isOpen && (
-            <div className="flex gap-2">
-              <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
-                <span className="sr-only">Move task</span>
-                <GripVertical size={16} />
-              </Button>
-              <Button onClick={toggleEditorState} variant="plain" size="sm" className="rounded text-[12px] p-1 h-6">
-                Collapse
-              </Button>
+          </div>
+          {!isViewState && (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+            <div onClick={toggleEditorState}>
+              <MDEditor.Markdown source={task.text} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose font-light" />
             </div>
           )}
+          {isViewState && (
+            <div className="flex flex-col gap-2" data-color-mode="dark">
+              <MDEditor
+                textareaProps={{ id: task.id as string }}
+                value={value}
+                preview={'edit'}
+                onChange={(newValue) => setValue(newValue)}
+                defaultTabEnable={true}
+                hideToolbar={true}
+                visibleDragbar={false}
+                height={'auto'}
+                style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', boxShadow: 'none', padding: '0' }}
+              />
 
+              <div className="flex gap-2">
+                <Button onClick={toggleEditorState} size="sm" className="rounded text-[12px] p-1 h-6">
+                  Save
+                </Button>
+
+                <Button onClick={toggleEditorState} variant="secondary" size="sm" className="rounded text-[12px] p-1 h-6">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between mt-1 gap-2">
+          <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
+            <span className="sr-only">Move task</span>
+            <GripVertical size={16} />
+          </Button>
+
+          {task.type !== 'bug' && <SelectImpact mode="edit" />}
           <LabelBox />
-          <div className="flex  gap-2">
+
+          <div className="flex gap-2">
             <HoverCard>
               <HoverCardTrigger>
-                <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
+                <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
               </HoverCardTrigger>
               <HoverCardContent className="w-80">
                 <div className="flex justify-between space-x-4">
-                  <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                  <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} />
                   <div className="space-y-1">
                     <h4 className="text-sm font-semibold">{user.name}</h4>
                     <p className="text-sm">{user.bio}</p>
@@ -161,13 +183,10 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isOpen }: TaskCardP
                 </div>
               </HoverCardContent>
             </HoverCard>
-            <Button variant="plain" size="sm" className="rounded text-[12px] p-1 h-6">
-              Start
-            </Button>
+            <SelectStatus taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
           </div>
         </div>
-      </CardHeader>
-      {isOpen && <CardContent className="px-3 pt-3 pb-6 text-left whitespace-pre-wrap">collapsed info here</CardContent>}
+      </CardContent>
     </Card>
   );
 }

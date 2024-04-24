@@ -121,9 +121,11 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               inView && showSheet ? 'opacity-1 delay-300' : 'opacity-0'
             }`}
           >
-            <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
+            <div className="flex justify-between">
+              <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
+              <UserTheme className="absolute top-5 right-4 xs:hidden" />
+            </div>
             {renderNavItems()}
-
             <Button
               size="lg"
               className="sm:hidden"

@@ -3,6 +3,7 @@ import { index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 import { usersTable } from './users';
 import { membershipsTable } from './memberships';
+import { organizationsTable } from './organizations';
 
 export const workspacesTable = pgTable(
   'workspaces',
@@ -10,6 +11,11 @@ export const workspacesTable = pgTable(
     id: varchar('id').primaryKey().$defaultFn(nanoid),
     name: varchar('name').notNull(),
     slug: varchar('slug').unique().notNull(),
+    organizationId: varchar('organization_id')
+      .notNull()
+      .references(() => organizationsTable.id, {
+        onDelete: 'cascade',
+      }),
     thumbnailUrl: varchar('thumbnail_url'),
     bannerUrl: varchar('banner_url'),
     createdAt: timestamp('created_at').defaultNow().notNull(),

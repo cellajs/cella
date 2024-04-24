@@ -34,7 +34,7 @@ const organizationsRoutes = app
     const slugAvailable = await checkSlugAvailable(slug);
 
     if (!slugAvailable) {
-      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
+      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
     }
 
     const [createdOrganization] = await db
@@ -51,14 +51,11 @@ const organizationsRoutes = app
 
     logEvent('Organization created', { organization: createdOrganization.id });
 
-    await db
-      .insert(membershipsTable)
-      .values({
-        userId: user.id,
-        organizationId: createdOrganization.id,
-        role: 'ADMIN',
-      })
-      .returning();
+    await db.insert(membershipsTable).values({
+      userId: user.id,
+      organizationId: createdOrganization.id,
+      role: 'ADMIN',
+    });
 
     logEvent('User added to organization', {
       user: user.id,
@@ -68,6 +65,7 @@ const organizationsRoutes = app
     sendSSE(user.id, 'new_organization_membership', {
       ...createdOrganization,
       userRole: 'ADMIN',
+      type: 'ORGANIZATION',
     });
 
     return ctx.json({
@@ -184,7 +182,7 @@ const organizationsRoutes = app
 
       if (!slugAvailable && slug !== organization.slug) {
         // t('common:error.slug_exists')
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
       }
     }
 
@@ -223,6 +221,7 @@ const organizationsRoutes = app
       sendSSE(user.id, 'update_organization', {
         ...updatedOrganization,
         userRole: membership.role,
+        type: 'ORGANIZATION',
       });
     }
 
@@ -279,7 +278,7 @@ const organizationsRoutes = app
 
         if (!result) {
           errors.push(
-            createError(ctx, 404, 'not_found', 'warn', 'organization', {
+            createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', {
               organization: id,
             }),
           );
@@ -287,7 +286,7 @@ const organizationsRoutes = app
 
         if (user.role !== 'ADMIN') {
           errors.push(
-            createError(ctx, 403, 'delete_forbidden', 'warn', 'organization', {
+            createError(ctx, 403, 'delete_forbidden', 'warn', 'ORGANIZATION', {
               organization: id,
             }),
           );

@@ -37,7 +37,7 @@ export const SignInRoute = createRoute({
     }
   },
   component: () => <SignIn />,
-  validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional() }),
+  validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional(), token: z.string().optional() }),
 });
 
 export const AcceptRoute = createRoute({

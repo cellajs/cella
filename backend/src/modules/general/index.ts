@@ -5,28 +5,30 @@ import { InviteEmail } from '../../../../email/emails/invite';
 import { render } from '@react-email/render';
 import { config } from 'config';
 import { env } from 'env';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
+import { streamSSE, type SSEStreamingApi } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';
-import { TimeSpan, createDate } from 'oslo';
+import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 
 import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
-import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { membershipsTable, type MembershipModel } from '../../db/schema/memberships';
+import { organizationsTable, type OrganizationModel } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
+import { workspacesTable } from '../../db/schema/workspaces';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { sendSSE } from '../../lib/sse';
 import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono, type ResourceType } from '../../types/common';
+import { CustomHono } from '../../types/common';
 import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
+  acceptInviteRouteConfig,
   checkSlugRouteConfig,
   checkTokenRouteConfig,
   getUploadTokenRouteConfig,
@@ -34,7 +36,7 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import { workspacesTable } from '../../db/schema/workspaces';
+import { checkRole } from './helpers/check-role';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -93,23 +95,31 @@ const generalRoutes = app
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, token)));
-    if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn');
+
+    // if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
+
+    // const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // For reset token: check if token has valid user
-    if (tokenRecord.type === 'PASSWORD_RESET') {
-      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
-      if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
-    }
+    // if (tokenRecord.type === 'PASSWORD_RESET') {
+    //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    //   if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+    // }
 
-    // For invitation token: check if user email is not already in the system
-    if (tokenRecord.type === 'INVITATION') {
-      const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
-      if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
-    }
+    // For system invitation token: check if user email is not already in the system
+    // if (tokenRecord.type === 'SYSTEM_INVITATION') {
+    //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
+    // }
 
     return ctx.json({
       success: true,
-      data: tokenRecord.email,
+      data: {
+        type: tokenRecord.type,
+        // TODO: review
+        email: tokenRecord.email || '',
+      },
     });
   })
   /*
@@ -124,30 +134,29 @@ const generalRoutes = app
       return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
 
-    if (role && organization && !membershipSchema.shape.role.safeParse(role).success) {
-      logEvent('Invalid role', { role }, 'warn');
-      // t('common:error.invalid_role.text')
+    if (organization && !checkRole(membershipSchema, role)) {
       return errorResponse(ctx, 400, 'invalid_role', 'warn');
     }
 
-    if (role && !organization && !apiUserSchema.shape.role.safeParse(role).success) {
-      logEvent('Invalid role', { role }, 'warn');
+    if (!organization && !checkRole(apiUserSchema, role)) {
       return errorResponse(ctx, 400, 'invalid_role', 'warn');
     }
 
     for (const email of emails) {
       const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
 
+      // Check if it's invitation to organization
       if (targetUser && organization) {
+        // Check if user is already member of organization
         const [existingMembership] = await db
           .select()
           .from(membershipsTable)
           .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
-
         if (existingMembership) {
           logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
 
-          if (role && existingMembership.role !== role) {
+          // Update role if different
+          if (role && existingMembership.role !== role && existingMembership.organizationId) {
             await db
               .update(membershipsTable)
               .set({ role: role as MembershipModel['role'] })
@@ -159,14 +168,15 @@ const generalRoutes = app
             sendSSE(targetUser.id, 'update_organization', {
               ...organization,
               userRole: role,
+              type: 'ORGANIZATION',
             });
           }
 
           continue;
         }
 
+        // Check if user is trying to invite themselves
         if (user.id === targetUser.id) {
-          console.log('User is trying to invite themselves');
           await db
             .insert(membershipsTable)
             .values({
@@ -191,7 +201,7 @@ const generalRoutes = app
       const token = generateId(40);
       await db.insert(tokensTable).values({
         id: token,
-        type: 'INVITATION',
+        type: organization ? 'ORGANIZATION_INVITATION' : 'SYSTEM_INVITATION',
         userId: targetUser?.id,
         email: email.toLowerCase(),
         role: role || 'USER',
@@ -205,6 +215,7 @@ const generalRoutes = app
 
       if (!organization) {
         if (!targetUser) {
+          // Send invitation email in system level
           emailHtml = render(
             InviteEmail({
               i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
@@ -221,6 +232,7 @@ const generalRoutes = app
           continue;
         }
       } else {
+        // Send invitation email in organization level
         emailHtml = render(
           InviteEmail({
             i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
@@ -235,21 +247,104 @@ const generalRoutes = app
         );
         logEvent('User invited to organization', { organization: organization?.id });
       }
-      try {
-        emailSender.send(
+      emailSender
+        .send(
           config.senderIsReceiver ? user.email : email.toLowerCase(),
           organization ? `Invitation to ${organization.name} on Cella` : 'Invitation to Cella',
           emailHtml,
-        );
-      } catch (error) {
-        const errorMessage = (error as Error).message;
-        logEvent('Error sending email', { errorMessage }, 'error');
-      }
+        )
+        .catch((error) => {
+          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+        });
     }
 
     return ctx.json({
       success: true,
       data: undefined,
+    });
+  })
+  /*
+   * Accept invite token
+   */
+  .openapi(acceptInviteRouteConfig, async (ctx) => {
+    const verificationToken = ctx.req.valid('param').token;
+    const [token] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.id, verificationToken)));
+    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
+
+    if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
+      return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
+    }
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, token.email));
+
+    if (!user) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', {
+        email: token.email,
+      });
+    }
+
+    if (token.type === 'SYSTEM_INVITATION') {
+      if (token.role === 'ADMIN') {
+        await db.update(usersTable).set({ role: 'ADMIN' }).where(eq(usersTable.id, user.id));
+      }
+
+      return ctx.json({
+        success: true,
+      });
+    }
+
+    if (token.type === 'ORGANIZATION_INVITATION') {
+      if (!token.organizationId) {
+        return errorResponse(ctx, 400, 'invalid_token', 'warn');
+      }
+
+      const [organization] = await db
+        .select()
+        .from(organizationsTable)
+        .where(and(eq(organizationsTable.id, token.organizationId)));
+
+      if (!organization) {
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', {
+          organizationId: token.organizationId,
+        });
+      }
+
+      const [existingMembership] = await db
+        .select()
+        .from(membershipsTable)
+        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+
+      if (existingMembership) {
+        if (existingMembership.role !== token.role) {
+          await db
+            .update(membershipsTable)
+            .set({ role: token.role as MembershipModel['role'] })
+            .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+        }
+
+        return ctx.json({
+          success: true,
+        });
+      }
+
+      await db.insert(membershipsTable).values({
+        organizationId: organization.id,
+        userId: user.id,
+        role: token.role as MembershipModel['role'],
+        createdBy: user.id,
+      });
+
+      sendSSE(user.id, 'new_membership', {
+        ...organization,
+        userRole: token.role,
+      });
+    }
+
+    return ctx.json({
+      success: true,
     });
   })
   /*
@@ -292,7 +387,7 @@ const generalRoutes = app
     const workspacesResult = [];
     const organizationsResult = [];
 
-    if (type === 'user' || !type) {
+    if (type === 'USER' || !type) {
       const users = await db
         .select({
           id: usersTable.id,
@@ -305,11 +400,10 @@ const generalRoutes = app
         .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
         .limit(10);
 
-      const userType = 'user' satisfies ResourceType;
-      usersResult.push(...users.map((user) => ({ ...user, type: userType })));
+      usersResult.push(...users.map((user) => ({ ...user, type: 'USER' as const })));
     }
 
-    if (type === 'organization' || !type) {
+    if (type === 'ORGANIZATION' || !type) {
       const organizations = await db
         .select({
           id: organizationsTable.id,
@@ -321,11 +415,10 @@ const generalRoutes = app
         .where(ilike(organizationsTable.name, `%${q}%`))
         .limit(10);
 
-      const organizationType = 'organization' satisfies ResourceType;
-      organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: organizationType })));
+      organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: 'ORGANIZATION' as const })));
     }
 
-    if (type === 'workspace' || !type) {
+    if (type === 'WORKSPACE' || !type) {
       const workspaces = await db
         .select({
           id: workspacesTable.id,
@@ -337,8 +430,7 @@ const generalRoutes = app
         .where(ilike(workspacesTable.name, `%${q}%`))
         .limit(10);
 
-      const workspaceType = 'workspace' satisfies ResourceType;
-      workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: workspaceType })));
+      workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'WORKSPACE' as const })));
     }
 
     return ctx.json({

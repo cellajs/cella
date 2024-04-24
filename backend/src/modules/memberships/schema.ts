@@ -16,12 +16,12 @@ export const membershipUserParamSchema = z.object({
 
 export const deleteMembersQuerySchema = z.object({
   ids: z.union([z.string(), z.array(z.string())]),
-  resourceIdentifier: z.string(),
+  idOrSlug: z.string(),
 });
 
 export const updateMembershipJsonSchema = z.object({
   role: membershipSchema.shape.role.optional(),
-  resourceIdentifier: z.string(),
+  idOrSlug: z.string(),
   muted: z.boolean().optional(),
   inactive: z.boolean().optional(),
 });

@@ -2,7 +2,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import slugify from 'slugify';
 import type { z } from 'zod';
 
 // Change this in the future on current schema
@@ -10,18 +9,20 @@ import { createOrganizationJsonSchema } from 'backend/modules/organizations/sche
 import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
-import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { useStepper } from '../ui/stepper';
 import { SlugFormField } from '../common/form-fields/slug';
+import { SquarePen } from 'lucide-react';
+import { type LabelDirectionType, Form } from '../ui/form';
+import { Badge } from '../ui/badge';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -38,7 +39,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
-  const [isDeviating, setDeviating] = useState(false);
   const { nextStep } = useStepper();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -54,6 +54,9 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
 
   const form = useFormWithDraft<FormValues>('create-organization', formOptions);
 
+  // Watch to update slug field
+  const name = useWatch({ control: form.control, name: 'name' });
+
   const { mutate: create, isPending } = useMutation({
     mutationFn: createOrganization,
     onSuccess: (result) => {
@@ -61,16 +64,17 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       callback?.(result);
       toast.success(t('common:success.create_organization'));
 
+      // If in stepper
       nextStep?.();
 
-      if (!callback && !nextStep) {
-        setSheet(null);
+      if (!callback && !children) {
         navigate({
-          to: '/$resourceIdentifier/members',
+          to: '/$idOrSlug/members',
           params: {
-            resourceIdentifier: result.slug,
+            idOrSlug: result.slug,
           },
         });
+        setSheet(null);
       }
 
       if (isDialog) {
@@ -79,24 +83,24 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     },
   });
 
+  useEffect(() => {
+    if (form.unsavedChanges) {
+      dialog.updateTitle(
+        '1',
+        <Badge variant="plain" className="w-fit">
+          <SquarePen size={12} className="mr-2" />
+          <span className="font-light">{t('common:unsaved_changes')}</span>
+        </Badge>,
+        true,
+      );
+      return;
+    }
+    dialog.setDefaultTitle('1');
+  }, [form.unsavedChanges]);
+
   const onSubmit = (values: FormValues) => {
     create(values);
   };
-
-  const cancel = () => {
-    form.reset();
-    if (isDialog) dialog.remove();
-  };
-
-  const name = useWatch({
-    control: form.control,
-    name: 'name',
-  });
-
-  useEffect(() => {
-    if (isDeviating) return;
-    form.setValue('slug', slugify(name, { lower: true }));
-  }, [name]);
 
   return (
     <Form {...form} labelDirection={labelDirection}>
@@ -104,12 +108,9 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          name="slug"
-          onFocus={() => setDeviating(true)}
           label={t('common:organization_handle')}
-          required
           description={t('common:organization_handle.text')}
-          errorMessage={t('common:error.slug_exists')}
+          nameValue={name}
         />
         {children}
         {!children && (
@@ -117,7 +118,13 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
             <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
               {t('common:create')}
             </Button>
-            <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'sm:invisible'} aria-label="Cancel" onClick={cancel}>
+            <Button
+              type="reset"
+              variant="secondary"
+              className={form.formState.isDirty ? '' : 'invisible'}
+              aria-label="Cancel"
+              onClick={() => form.reset()}
+            >
               {t('common:cancel')}
             </Button>
           </div>

@@ -2,8 +2,7 @@ import { createRoute } from '@tanstack/react-router';
 import About from '~/modules/marketing/about';
 import Accessibility from '~/modules/marketing/accessibility';
 import Contact from '~/modules/marketing/contact';
-import { Privacy } from '~/modules/marketing/privacy';
-import { Terms } from '~/modules/marketing/terms';
+import { LegalsMenu } from '~/modules/marketing/legals';
 import { rootRoute } from './routeTree';
 
 export const AboutRoute = createRoute({
@@ -20,18 +19,11 @@ export const ContactRoute = createRoute({
   component: () => <Contact />,
 });
 
-export const TermsRoute = createRoute({
-  path: '/terms',
-  staticData: { pageTitle: 'Terms' },
+export const LegalRoute = createRoute({
+  path: '/legal',
+  staticData: { pageTitle: 'Legal' },
   getParentRoute: () => rootRoute,
-  component: () => <Terms />,
-});
-
-export const PrivacyRoute = createRoute({
-  path: '/privacy',
-  staticData: { pageTitle: 'Privacy' },
-  getParentRoute: () => rootRoute,
-  component: () => <Privacy />,
+  component: () => <LegalsMenu />,
 });
 
 export const AccessibilityRoute = createRoute({

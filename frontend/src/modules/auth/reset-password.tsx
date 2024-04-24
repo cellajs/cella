@@ -31,7 +31,7 @@ const ResetPassword = () => {
 
   const { mutate: checkToken } = useMutation({
     mutationFn: baseCheckToken,
-    onSuccess: (email) => setEmail(email),
+    onSuccess: (data) => setEmail(data.email),
     onError: (error) => setError(error),
   });
   const { mutate: resetPassword, isPending } = useMutation({

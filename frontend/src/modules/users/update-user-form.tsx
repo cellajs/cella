@@ -9,14 +9,13 @@ import AvatarFormField from '../common/form-fields/avatar';
 
 import { type UpdateUserParams, updateUser } from '~/api/users';
 
-import { Undo } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-import { type UseFormProps, useWatch } from 'react-hook-form';
+import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
@@ -40,10 +39,10 @@ const formSchema = updateUserJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const useUpdateUserMutation = (userIdentifier: string) => {
+export const useUpdateUserMutation = (idOrSlug: string) => {
   return useMutation<User, DefaultError, UpdateUserParams>({
-    mutationKey: ['me', 'update', userIdentifier],
-    mutationFn: (params) => updateUser(userIdentifier, params),
+    mutationKey: ['me', 'update', idOrSlug],
+    mutationFn: (params) => updateUser(idOrSlug, params),
     onSuccess: (user) => {
       queryClient.setQueryData(['users', user.id], user);
     },
@@ -81,9 +80,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
     [],
   );
 
-  const form = useFormWithDraft<FormValues>('create-organization', formOptions);
-
-  const allFields = useWatch({ control: form.control });
+  const form = useFormWithDraft<FormValues>(`update-user-${user.id}`, formOptions);
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
@@ -113,17 +110,8 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
     });
   };
 
-  const cancel = () => {
-    form.reset();
-    isDialog && dialog.remove();
-  };
-
   const setImageUrl = (url: string) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
-  };
-
-  const revertSlug = () => {
-    form.resetField('slug');
   };
 
   return (
@@ -132,7 +120,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
         <AvatarFormField
           control={form.control}
           label={t('common:profile_picture')}
-          type="user"
+          type="USER"
           name="thumbnailUrl"
           entity={user}
           url={form.getValues('thumbnailUrl')}
@@ -142,24 +130,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
           <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
           <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
         </div>
-        <SlugFormField
-          control={form.control}
-          name="slug"
-          required
-          label={t('common:user_handle')}
-          description={t('common:user_handle.text')}
-          errorMessage={t('common:error.slug_exists')}
-          previousSlug={user.slug}
-          subComponent={
-            user.slug !== allFields.slug && (
-              <div className="absolute inset-y-1 right-1 flex justify-end">
-                <Button variant="ghost" size="sm" aria-label="Revert to current user handle" onClick={revertSlug} className="h-full">
-                  <Undo size={16} className="mr-2" /> Revert to <strong className="ml-1">{user.slug}</strong>
-                </Button>
-              </div>
-            )
-          }
-        />
+        <SlugFormField control={form.control} label={t('common:user_handle')} description={t('common:user_handle.text')} previousSlug={user.slug} />
         <InputFormField control={form.control} value={user.email} name="email" label={t('common:email')} type="email" disabled required />
         <InputFormField control={form.control} name="bio" label={t('common:bio')} type="textarea" />
         <LanguageFormField
@@ -188,7 +159,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
             <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending}>
               {t('common:save_changes')}
             </Button>
-            <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
+            <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
               {t('common:cancel')}
             </Button>
           </div>

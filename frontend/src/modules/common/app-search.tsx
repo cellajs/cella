@@ -12,20 +12,20 @@ import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
 import type { userSuggestionSchema, organizationSuggestionSchema, workspaceSuggestionSchema } from 'backend/modules/general/schema';
 import type { z } from 'zod';
-import type { ResourceType } from '~/types';
+import type { PageResourceType } from 'backend/types/common';
 
 type SuggestionType = z.infer<typeof userSuggestionSchema> | z.infer<typeof organizationSuggestionSchema> | z.infer<typeof workspaceSuggestionSchema>;
 
 interface SuggestionSection {
   id: 'users' | 'organizations' | 'workspaces';
   label: string;
-  type: ResourceType;
+  type: PageResourceType;
 }
 
 const suggestionSections: SuggestionSection[] = [
-  { id: 'users', label: 'common:users', type: 'user' },
-  { id: 'organizations', label: 'common:organizations', type: 'organization' },
-  { id: 'workspaces', label: 'common:workspaces', type: 'workspace' },
+  { id: 'users', label: 'common:users', type: 'USER' },
+  { id: 'organizations', label: 'common:organizations', type: 'ORGANIZATION' },
+  { id: 'workspaces', label: 'common:workspaces', type: 'WORKSPACE' },
 ];
 
 export const AppSearch = () => {
@@ -76,23 +76,14 @@ export const AppSearch = () => {
   const onSelectSuggestion = (suggestion: SuggestionType) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
-    if (suggestion.type === 'user') {
-      navigate({
-        to: '/user/$userIdentifier',
-        resetScroll: false,
-        params: {
-          userIdentifier: suggestion.slug,
-        },
-      });
-    } else {
-      navigate({
-        to: '/$resourceIdentifier/members',
-        resetScroll: false,
-        params: {
-          resourceIdentifier: suggestion.slug,
-        },
-      });
-    }
+
+    navigate({
+      to: suggestion.type === 'ORGANIZATION' ? '/$idOrSlug' : `/${suggestion.type.toLowerCase()}/$idOrSlug`,
+      resetScroll: false,
+      params: {
+        idOrSlug: suggestion.slug,
+      },
+    });
 
     dialog.remove(false);
   };

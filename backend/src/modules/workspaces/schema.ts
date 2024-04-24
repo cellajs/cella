@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-import { createSelectSchema } from 'drizzle-zod';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
-import { idSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
+import { idSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
 
 import { apiUserSchema } from '../users/schema';
 
@@ -24,16 +24,17 @@ export const apiWorkspacesSchema = z.object({
 export const createWorkspaceJsonSchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
+  idOrSlug: idSchema.or(validSlugSchema),
+});
+
+export const updateWorkspaceJsonSchema = createInsertSchema(workspacesTable, {
+  slug: validSlugSchema,
+  name: nameSchema,
   organizationId: idSchema,
-});
-
-export const getUsersByProjectQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'email', 'workspaceRole', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-  role: z.enum(['admin', 'member']).default('member').optional(),
-});
-
-export const getWorkspacesQuerySchema = paginationQuerySchema.merge(
-  z.object({
-    sort: z.enum(['id', 'name', 'role', 'createdAt']).default('createdAt').optional(),
-  }),
-);
+})
+  .pick({
+    slug: true,
+    name: true,
+    organizationId: true,
+  })
+  .partial();

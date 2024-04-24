@@ -9,6 +9,8 @@ import type { UserMenu } from '~/types';
 interface NavigationState {
   recentSearches: string[];
   setRecentSearches: (searchValue: string[]) => void;
+  activeItemsOrder: Record<keyof UserMenu, string[]>;
+  setActiveItemsOrder: (sectionName: keyof UserMenu, itemIds: string[]) => void;
   activeSheet: NavItem | null;
   setSheet: (activeSheet: NavItem | null) => void;
   menu: UserMenu;
@@ -38,6 +40,11 @@ export const useNavigationStore = create<NavigationState>()(
           keepMenuOpen: false as boolean,
           navLoading: false as boolean,
           focusView: false as boolean,
+          activeItemsOrder: {
+            organizations: [],
+            workspaces: [],
+            projects: [],
+          },
           menu: initialMenuState,
           activeSections: {},
           setRecentSearches: (searchValues: string[]) => {
@@ -80,6 +87,11 @@ export const useNavigationStore = create<NavigationState>()(
               }
             });
           },
+          setActiveItemsOrder: (sectionName: keyof UserMenu, itemIds: string[]) => {
+            set((state) => {
+              state.activeItemsOrder[sectionName] = itemIds;
+            });
+          },
         }),
         {
           version: 1,
@@ -88,6 +100,7 @@ export const useNavigationStore = create<NavigationState>()(
             keepMenuOpen: state.keepMenuOpen,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
+            activeItemsOrder: state.activeItemsOrder,
           }),
           storage: createJSONStorage(() => localStorage),
         },

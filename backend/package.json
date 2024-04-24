@@ -43,8 +43,9 @@
     "email": "workspace:*",
     "enforce-unique": "^1.3.0",
     "env": "workspace:*",
-    "hono": "4.2.3",
+    "hono": "4.2.6",
     "i18next": "^23.10.0",
+    "isbot": "^5.1.4",
     "jsonwebtoken": "^9.0.2",
     "locales": "workspace:*",
     "lucia": "^3.1.1",
@@ -68,7 +69,9 @@
     "tsx": "^4.7.0"
   },
   "babel": {
-    "presets": ["@babel/preset-typescript"]
+    "presets": [
+      "@babel/preset-typescript"
+    ]
   },
   "exports": {
     "./*": "./src/*.ts"

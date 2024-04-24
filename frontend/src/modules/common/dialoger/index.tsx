@@ -6,6 +6,9 @@ import { DialogState, type DialogT, type DialogToRemove } from './state';
 
 export function Dialoger() {
   const [dialogs, setDialogs] = useState<DialogT[]>([]);
+  const [updatedTitle, setTitle] = useState<React.ReactNode | string | null>(null);
+  const [replaceTitle, setReplaceTitle] = useState<boolean | undefined>();
+  const [useDefaultTitle, setUseDefaultTitle] = useState<boolean | undefined>();
   const isMobile = useBreakpoints('max', 'sm');
   const prevFocusedElement = useRef<HTMLElement | null>(null);
 
@@ -26,10 +29,44 @@ export function Dialoger() {
     }
   }, []);
 
+  const CombineTitles = ({
+    first,
+    second,
+    defaultTitle,
+  }: { first: string | React.ReactNode; second: string | React.ReactNode; defaultTitle?: boolean }) => {
+    return defaultTitle ? (
+      typeof first === 'string' ? (
+        <span>{first}</span>
+      ) : (
+        first
+      )
+    ) : (
+      <div className="flex flex-row gap-2">
+        {typeof first === 'string' ? <span>{first}</span> : first}
+        {typeof second === 'string' ? <span>{second}</span> : second}
+      </div>
+    );
+  };
+
+  const setUpdatedTitle = useCallback((dialog: DialogT) => {
+    setTitle(dialog.titleContent);
+    setReplaceTitle(dialog.addToTitle);
+
+    setUseDefaultTitle(false);
+  }, []);
+
   useEffect(() => {
     return DialogState.subscribe((dialog) => {
       if ((dialog as DialogToRemove).remove) {
         removeDialog(dialog as DialogT);
+        return;
+      }
+      if ((dialog as DialogT).titleContent) {
+        setUpdatedTitle(dialog as DialogT);
+        return;
+      }
+      if ((dialog as DialogT).useDefaultTitle) {
+        setUseDefaultTitle(true);
         return;
       }
       prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
@@ -58,7 +95,15 @@ export function Dialoger() {
           >
             {dialog.title || dialog.text ? (
               <DialogHeader>
-                {dialog.title && <DialogTitle>{dialog.title}</DialogTitle>}
+                {dialog.title && (
+                  <DialogTitle>
+                    {replaceTitle ? (
+                      <CombineTitles first={dialog.title} second={updatedTitle} defaultTitle={useDefaultTitle} />
+                    ) : (
+                      updatedTitle || dialog.title
+                    )}
+                  </DialogTitle>
+                )}
                 {dialog.text && <DialogDescription>{dialog.text}</DialogDescription>}
               </DialogHeader>
             ) : null}
@@ -73,7 +118,15 @@ export function Dialoger() {
         <DrawerContent className={dialog.className}>
           {dialog.title || dialog.text ? (
             <DrawerHeader className="text-left">
-              {dialog.title && <DrawerTitle>{dialog.title}</DrawerTitle>}
+              {dialog.title && (
+                <DrawerTitle>
+                  {replaceTitle ? (
+                    <CombineTitles first={dialog.title} second={updatedTitle} defaultTitle={useDefaultTitle} />
+                  ) : (
+                    updatedTitle || dialog.title
+                  )}
+                </DrawerTitle>
+              )}
               {dialog.text && <DrawerDescription>{dialog.text}</DrawerDescription>}
             </DrawerHeader>
           ) : null}
