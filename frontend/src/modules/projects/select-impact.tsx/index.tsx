@@ -100,7 +100,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
             className="text-[0.8125rem] leading-normal"
             placeholder="Set impact ..."
           />
-          {!isSearching && <Kbd value="P" className="absolute top-3 right-[6px]" />}
+          {!isSearching && <Kbd value="P" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
               {impacts.map((Impact, index) => (
@@ -121,7 +121,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
                   </div>
                   <div className="flex items-center">
                     {selectedImpact?.value === Impact.value && <Check size={16} className="mr-3 text-success" />}
-                    {!isSearching && <span className="text-xs">{index}</span>}
+                    {!isSearching && <span className="text-xs opacity-50 mr-1">{index}</span>}
                   </div>
                 </CommandItem>
               ))}

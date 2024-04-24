@@ -64,6 +64,10 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
         over: 'ring-2 opacity-30',
         overlay: 'ring-2 ring-primary',
       },
+      status: {
+        accepted: 'bg-gradient-to-br from-transparent via-transparent via-60% to-lime-500/25 to-100%',
+        iced: 'bg-gradient-to-br from-transparent from-0% via-transparent via-60% to-sky-500/25 to-1090%',
+      },
     },
   });
 
@@ -93,6 +97,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
       style={style}
       className={variants({
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
+        status: task.status === 6 ? 'accepted' : task.status === 0 ? 'iced' : undefined,
       })}
     >
       <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
@@ -144,7 +149,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
             <GripVertical size={16} />
           </Button>
 
-          <SelectImpact mode="edit" />
+          {task.type !== 'bug' && <SelectImpact mode="edit" />}
           <LabelBox />
 
           <div className="flex gap-2">

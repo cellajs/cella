@@ -45,9 +45,7 @@ const StoriesContext = ({
       {isStoriesShown && (
         <>
           {stories.map((task) => (
-            <div key={task.id} className={`${storiesType === 'accepted' ? 'bg-green-900' : ''} ${storiesType === 'iced' ? 'bg-sky-900' : ''}`}>
-              <TaskCard isViewState={!foldedTasks.includes(task.id)} toggleTaskClick={toggleTask} task={task} user={task.assignedTo} />
-            </div>
+            <TaskCard isViewState={!foldedTasks.includes(task.id)} toggleTaskClick={toggleTask} task={task} user={task.assignedTo} key={task.id} />
           ))}
         </>
       )}
