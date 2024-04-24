@@ -11,6 +11,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { TaskCard } from './task-card';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
+import type { Task } from '~/mocks/dataGeneration';
 
 export interface Column {
   id: UniqueIdentifier;
