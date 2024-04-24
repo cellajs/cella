@@ -10,3 +10,7 @@
   white-space: pre-wrap !important;
   background:  none !important;
 }
+
+.w-md-editor {
+  box-shadow: none !important;
+}

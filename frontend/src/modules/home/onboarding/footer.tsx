@@ -5,6 +5,7 @@ import type { Organization } from '~/types';
 import { Button } from '../../ui/button';
 import { useStepper } from '../../ui/stepper';
 import type { OnboardingStates } from '.';
+import { useTranslation } from 'react-i18next';
 
 interface StepperFooterProps {
   organization?: Organization | null;
@@ -13,6 +14,7 @@ interface StepperFooterProps {
 
 const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
   const { nextStep, prevStep, isLastStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
+  const { t } = useTranslation();
 
   useEffect(() => {
     console.log('activeStep', activeStep, 'hasCompletedAllSteps', hasCompletedAllSteps);
@@ -25,23 +27,23 @@ const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
       {activeStep === 1 && !organization && (
         <Button onClick={prevStep} size="sm" variant="secondary" className="max-sm:w-full">
           <ArrowLeft size={16} className="mr-2" />
-          Previous
+          {t('common:previous')}
         </Button>
       )}
       {isOptionalStep && (
         <Button onClick={nextStep} size="sm" variant="secondary" className="max-sm:w-full">
           <Redo size={16} className="mr-2" />
-          Skip
+          {t('common:skip')}
         </Button>
       )}
       {!isLastStep && (
         <Button onClick={nextStep} size="sm" className="max-sm:w-full">
-          Continue
+          {t('common:continue')}
         </Button>
       )}
       {isLastStep && (
         <Button onClick={() => setOnboarding('completed')} size="sm" className="max-sm:w-full">
-          Finish
+          {t('common:finish')}
         </Button>
       )}
     </div>

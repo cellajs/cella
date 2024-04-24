@@ -91,8 +91,8 @@ export const projectsWithTaskContent = (number: number): ComplexProject[] => {
 export const labelsContent = (): Label[] => {
   return Array.from({ length: 10 }, () => ({
     id: faker.string.uuid(),
-    value: faker.animal.cow(),
-    label: faker.animal.cow(),
+    value: faker.hacker.noun().toLowerCase(),
+    label: faker.hacker.noun().toLowerCase(),
     color: faker.color.rgb({ casing: 'upper' }),
   }));
 };
