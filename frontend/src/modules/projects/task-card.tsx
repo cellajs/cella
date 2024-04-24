@@ -31,6 +31,7 @@ interface TaskCardProps {
   toggleTaskClick?: (id: UniqueIdentifier) => void;
   isOverlay?: boolean;
   user: User;
+  setTaskStatus: (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
 }
 
 export type TaskType = 'Task';
@@ -40,8 +41,9 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, setTaskStatus }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.text);
+  const [status, setStatus] = useState(task.status);
   const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -92,6 +94,10 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
     }
   }, [task.id, isViewState]);
 
+  useEffect(() => {
+    setTaskStatus(task, status);
+  }, [status]);
+
   return (
     <Card
       ref={setNodeRef}
@@ -123,7 +129,6 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
                 textareaProps={{ id: task.id as string }}
                 value={value}
                 preview={'edit'}
-                defaultTabEnable={true}
                 onChange={(newValue) => setValue(newValue)}
                 autoFocus={true}
                 hideToolbar={true}
@@ -173,7 +178,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
                 </div>
               </HoverCardContent>
             </HoverCard>
-            <SelectStatusButtons />
+            <SelectStatusButtons taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
           </div>
         </div>
       </CardContent>

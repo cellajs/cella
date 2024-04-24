@@ -7,29 +7,35 @@ import { ChevronRight, ChevronDown } from 'lucide-react';
 
 type Status = {
   value: (typeof statuses)[number]['value'];
-  currentStatus: string;
+  status: string;
   button: string;
 };
 
 const statuses = [
-  { value: 0, button: 'Ice', currentStatus: 'Iced' },
-  { value: 1, button: 'Unstart', currentStatus: 'Unstarted' },
-  { value: 2, button: 'Start', currentStatus: 'Started' },
-  { value: 3, button: 'Finish', currentStatus: 'Finished' },
-  { value: 4, button: 'Deliver', currentStatus: 'Delivered' },
-  { value: 5, button: 'Review', currentStatus: 'Reviewed' },
-  { value: 6, button: 'Accept', currentStatus: 'Accepted' },
+  { value: 0, button: 'Ice', status: 'Iced' },
+  { value: 1, button: 'Unstart', status: 'Unstarted' },
+  { value: 2, button: 'Start', status: 'Started' },
+  { value: 3, button: 'Finish', status: 'Finished' },
+  { value: 4, button: 'Deliver', status: 'Delivered' },
+  { value: 5, button: 'Review', status: 'Reviewed' },
+  { value: 6, button: 'Accept', status: 'Accepted' },
 ] as const;
 
-const SelectStatusButtons = () => {
+interface SelectStatusButtons {
+  taskStatus: (typeof statuses)[number]['value'];
+  changeTaskStatus: (newStatus: number) => void;
+}
+
+const SelectStatusButtons = ({ taskStatus, changeTaskStatus }: SelectStatusButtons) => {
   const [openPopover, setOpenPopover] = useState(false);
   const [openTooltip, setOpenTooltip] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<Status>(statuses[1]);
+  const [selectedStatus, setSelectedStatus] = useState<Status>(statuses[taskStatus]);
 
   const nextStatusClick = () => {
-    const currentStatusIndex = selectedStatus.value;
-    if (currentStatusIndex > 5) return;
-    setSelectedStatus(statuses[currentStatusIndex + 1]);
+    const statusIndex = selectedStatus.value;
+    if (statusIndex > 5) return;
+    setSelectedStatus(statuses[statusIndex + 1]);
+    changeTaskStatus(statusIndex + 1);
   };
 
   return (
@@ -43,7 +49,6 @@ const SelectStatusButtons = () => {
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
             <Button aria-label="Set status" variant="ghost" size="sm" className="rounded text-[12px] p-1 h-6 gap-0.5">
-              {selectedStatus.currentStatus}
               {openPopover ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
             </Button>
           </PopoverTrigger>
@@ -58,15 +63,16 @@ const SelectStatusButtons = () => {
                 .map((status, index) => (
                   <CommandItem
                     key={status.value}
-                    value={status.currentStatus}
+                    value={status.status}
                     onSelect={() => {
                       setSelectedStatus(statuses[index + 1]);
                       setOpenTooltip(false);
                       setOpenPopover(false);
+                      changeTaskStatus(index);
                     }}
                     className="rounded-md justify-center text-[0.8125rem] leading-normal text-primary"
                   >
-                    <span>{status.currentStatus}</span>
+                    <span>{status.status}</span>
                   </CommandItem>
                 ))}
             </CommandGroup>

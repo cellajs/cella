@@ -2,7 +2,7 @@ import { type UniqueIdentifier, useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
-import { GripVertical, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, GripVertical, Plus } from 'lucide-react';
 import { type RefObject, useEffect, useMemo, useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
@@ -11,7 +11,8 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
 import type { Task } from '~/mocks/dataGeneration';
-import StoriesContext from './stories-section';
+import { TaskCard } from './task-card';
+import CreateStoryForm from './task-card-form';
 
 export interface Column {
   id: UniqueIdentifier;
@@ -32,7 +33,8 @@ interface BoardColumnProps {
 }
 
 export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
-  const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(tasks.map((el) => el.id));
+  const [allTasks, setAllTasks] = useState<Task[]>(tasks);
+  const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(allTasks.map((el) => el.id));
   const [showCreationForm, setShowCreationForm] = useState(false);
   const [showIcedStories, setShowIcedStories] = useState(false);
   const [showAcceptedStories, setShowAcceptedStories] = useState(false);
@@ -53,9 +55,17 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     });
   };
 
+  const setTaskStatus = (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
+    const updatedTasks = allTasks.map((t) => {
+      if (t.id !== task.id) return t;
+      return { ...t, status };
+    });
+    setAllTasks(updatedTasks);
+  };
+
   const tasksIds = useMemo(() => {
-    return tasks.map((task) => task.id);
-  }, [tasks]);
+    return allTasks.map((task) => task.id);
+  }, [allTasks]);
 
   const handleAddStoryClick = () => {
     setShowCreationForm(true);
@@ -81,7 +91,6 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       roleDescription: `Column: ${column.name}`,
     },
   });
-
   const style = {
     transition,
     transform: CSS.Translate.toString(transform),
@@ -101,10 +110,10 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const [background, setBackground] = useState('#ff75c3');
 
   useEffect(() => {
-    setAcceptedStories(tasks.filter((task) => task.status === 6));
-    setIcedStories(tasks.filter((task) => task.status === 0));
-    setInWorkStories(tasks.filter((task) => task.status !== 6 && task.status !== 0));
-  }, [tasks]);
+    setAcceptedStories(allTasks.filter((task) => task.status === 6));
+    setIcedStories(allTasks.filter((task) => task.status === 0));
+    setInWorkStories(allTasks.filter((task) => task.status !== 6 && task.status !== 0));
+  }, [allTasks]);
 
   return (
     <Card
@@ -139,30 +148,75 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       <ScrollArea>
         <CardContent className="flex flex-grow flex-col p-0">
           <SortableContext items={tasksIds}>
-            <StoriesContext
-              stories={acceptedStories}
-              storiesType="accepted"
-              foldedTasks={foldedTasks}
-              toggleTask={toggleTaskVisibility}
-              isStoriesShown={showAcceptedStories}
-              handleShowHideClick={handleAcceptedStoriesClick}
-            />
-            <StoriesContext
-              stories={inWorkStories}
-              storiesType="inWork"
-              foldedTasks={foldedTasks}
-              toggleTask={toggleTaskVisibility}
-              showCreationForm={showCreationForm}
-              creationCallback={handleStoryCreationCallback}
-            />
-            <StoriesContext
-              stories={icedStories}
-              storiesType="iced"
-              foldedTasks={foldedTasks}
-              toggleTask={toggleTaskVisibility}
-              isStoriesShown={showIcedStories}
-              handleShowHideClick={handleIcedStoriesClick}
-            />
+            {acceptedStories.length > 0 && (
+              <>
+                <Button
+                  onClick={handleAcceptedStoriesClick}
+                  variant="secondary"
+                  size="sm"
+                  className={`w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 
+               text-success
+              text-sm -mt-[1px]`}
+                >
+                  <span className="text-[12px]">{`${showAcceptedStories ? 'Hide' : 'Show'} ${acceptedStories.length} accepted stories`}</span>
+                  {showAcceptedStories ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                </Button>
+                {showAcceptedStories && (
+                  <>
+                    {acceptedStories.map((task) => (
+                      <TaskCard
+                        setTaskStatus={setTaskStatus}
+                        isViewState={!foldedTasks.includes(task.id)}
+                        toggleTaskClick={toggleTaskVisibility}
+                        task={task}
+                        user={task.assignedTo}
+                        key={task.id}
+                      />
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+            {showCreationForm && <CreateStoryForm callback={handleStoryCreationCallback} />}
+
+            {inWorkStories.map((task) => (
+              <TaskCard
+                setTaskStatus={setTaskStatus}
+                isViewState={!foldedTasks.includes(task.id)}
+                toggleTaskClick={toggleTaskVisibility}
+                task={task}
+                user={task.assignedTo}
+                key={task.id}
+              />
+            ))}
+            {icedStories.length > 0 && (
+              <>
+                <Button
+                  onClick={handleIcedStoriesClick}
+                  variant="secondary"
+                  size="sm"
+                  className={`w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-600
+              text-sm -mt-[1px]`}
+                >
+                  <span className="text-[12px]">{`${showIcedStories ? 'Hide' : 'Show'} ${icedStories.length} iced stories`}</span>
+                  {showIcedStories ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                </Button>
+                {showIcedStories && (
+                  <>
+                    {icedStories.map((task) => (
+                      <TaskCard
+                        setTaskStatus={setTaskStatus}
+                        isViewState={!foldedTasks.includes(task.id)}
+                        toggleTaskClick={toggleTaskVisibility}
+                        task={task}
+                        user={task.assignedTo}
+                        key={task.id}
+                      />
+                    ))}
+                  </>
+                )}
+              </>
+            )}
           </SortableContext>
         </CardContent>
       </ScrollArea>
