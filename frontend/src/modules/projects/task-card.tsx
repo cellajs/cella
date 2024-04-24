@@ -16,6 +16,7 @@ import './style.css';
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
 import { SelectImpact } from './select-impact.tsx/index.tsx';
+import SelectStatusButtons from './card-status-change.tsx';
 
 interface User {
   id: UniqueIdentifier;
@@ -171,9 +172,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
                 </div>
               </HoverCardContent>
             </HoverCard>
-            <Button variant="plain" size="sm" className="rounded text-[12px] p-1 h-6">
-              Start
-            </Button>
+            <SelectStatusButtons />
           </div>
         </div>
       </CardContent>
