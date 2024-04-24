@@ -12,6 +12,7 @@ import { TaskCard } from './task-card';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
 import type { Task } from '~/mocks/dataGeneration';
+import CreateStoryForm from './task-card-form';
 
 export interface Column {
   id: UniqueIdentifier;
@@ -33,6 +34,7 @@ interface BoardColumnProps {
 
 export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(tasks.map((el) => el.id));
+  const [showCreationForm, setShowCreationForm] = useState(false);
   const { ref, bounds } = useMeasure();
 
   const neededWidth = 375;
@@ -49,6 +51,14 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
   }, [tasks]);
+
+  const handleAddStoryClick = () => {
+    setShowCreationForm(true);
+  };
+
+  const handleStoryCreationCallback = () => {
+    setShowCreationForm(false);
+  };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: column.id,
@@ -101,7 +111,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 
         <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} />
 
-        <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8">
+        <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8" onClick={handleAddStoryClick}>
           <Plus size={16} className="mr-1" />
           Story
         </Button>
@@ -116,6 +126,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
             <span className="text-[12px]">16 accepted stories</span>
             <ChevronDown size={12} />
           </Button>
+          {showCreationForm && <CreateStoryForm callback={handleStoryCreationCallback} />}
           <SortableContext items={tasksIds}>
             {tasks.map((task) => (
               <div key={task.id}>
