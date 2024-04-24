@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { AppAlert } from './app-alert';
-import InviteEmailForm from './invite-email-form';
-import InviteSearchForm from './invite-search-form';
-import { dialog } from './dialoger/state';
+import { AppAlert } from '../common/app-alert';
+import InviteEmailForm from '../common/invite-email-form';
+import InviteSearchForm from '../common/invite-search-form';
+import { dialog } from '../common/dialoger/state';
 
-interface InviteUsersProps {
+interface AddProjectsProps {
   organization?: Organization | null;
   type?: 'system' | 'organization';
   callback?: () => void;
@@ -17,7 +17,7 @@ interface InviteUsersProps {
   children?: React.ReactNode;
 }
 
-const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
+const AddProjects = ({ organization, type = 'system', callback, dialog: isDialog, mode, children }: AddProjectsProps) => {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
@@ -90,4 +90,4 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
   );
 };
 
-export default InviteUsers;
+export default AddProjects;

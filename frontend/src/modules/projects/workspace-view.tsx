@@ -17,7 +17,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
     <DropdownMenu
 
     >
-      <TooltipButton toolTipContent={t('common:columns_view')}>
+      <TooltipButton toolTipContent={t('common:view_options')}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className={cn('relative flex', className)}>
             <SlidersHorizontal className="h-4 w-4" />

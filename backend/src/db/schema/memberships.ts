@@ -15,7 +15,7 @@ export const membershipsTable = pgTable('memberships', {
   })
     .notNull()
     .default('ORGANIZATION'),
-  workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'set null' }),
+  workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   userId: varchar('user_id')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),

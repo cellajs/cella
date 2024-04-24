@@ -11,16 +11,10 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { Checkbox } from '../ui/checkbox';
-import type { ColumnId } from './kanban-board';
 import { LabelBox } from './labels';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
-
-export interface Task {
-  id: UniqueIdentifier;
-  columnId: ColumnId;
-  content: string;
-}
+import type { Task } from '~/mocks/dataGeneration';
 
 interface TaskCardProps {
   task: Task;
@@ -37,7 +31,7 @@ export interface TaskDragData {
 }
 
 export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: TaskCardProps) {
-  const [value, setValue] = useState<string | undefined>(task.content);
+  const [value, setValue] = useState<string | undefined>(task.text);
   const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -77,7 +71,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: Task
   };
 
   useEffect(() => {
-    if (value) task.content = value;
+    if (value) task.text = value;
   }, [value]);
 
   // Textarea autofocus cursor on the end of the vaxlue
@@ -115,7 +109,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState }: Task
           {isViewState && (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <div onClick={toggleEditorState}>
-              <MDEditor.Markdown source={task.content} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose" />
+              <MDEditor.Markdown source={task.text} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose" />
             </div>
           )}
           {!isViewState && (

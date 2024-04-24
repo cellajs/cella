@@ -143,8 +143,6 @@
   "home.text": "An overview of your activity on Cella",
   "invite": "Invite",
   "restore": "Restore",
-  "invite_search": "By search",
-  "invite_email": "By email",
   "invite_by_email": "Invite with email addresses",
   "invite_by_name": "Invite by searching for users",
   "invite_members.text": "Invited members will receive an email to accept the invitation.",
@@ -349,5 +347,7 @@
   "placeholder.email_domains": "Add email domains",
   "email_domains": "Email domains",
   "email_domains.text": "Enforce members to have an organizational email domain.",
-  "add_domain": "Add domain"
+  "add_domain": "Add domain",
+  "labels": "Labels",
+  "view_options": "View options"
 }

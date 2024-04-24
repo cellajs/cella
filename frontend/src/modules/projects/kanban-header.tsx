@@ -1,13 +1,15 @@
-import { Settings, Plus } from 'lucide-react';
+import { Settings, Plus, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import WorkspaceView from '~/modules/projects/workspace-view';
+import DisplayOptions from '~/modules/projects/display-options';
 import BoardSearch from '~/modules/projects/board-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
-import { CreateProjectForm } from './create-project-form';
+import AddProjects from './add-projects';
+import { AvatarWrap } from '../common/avatar-wrap';
 
 function KanbanHeader() {
   const { t } = useTranslation();
@@ -24,27 +26,35 @@ function KanbanHeader() {
   return (
     <>
       <div className="flex items-center max-sm:justify-between gap-2">
-        <Button
-          variant="secondary"
+
+      <AvatarWrap type="WORKSPACE" id="sdfsdfsdf" name="dfsdfsdf" url={null} />
+
+        <Button variant="plain"
           onClick={() => {
-            dialog(<CreateProjectForm />, {
+            dialog(<AddProjects />, {
               //callback={(project) => callback([project], 'create')} dialog
               className: 'md:max-w-xl',
-              title: t('app:create_project'),
+              title: t('app:add_projects'),
             });
           }}
         >
           <Plus size={16} />
-          <span className="ml-1">{t('common:create')}</span>
+          <span className="ml-1">{t('common:add')}</span>
         </Button>
 
         <Button variant="outline" onClick={openSettingsSheet}>
           <Settings size={16} />
-          <span className="ml-1 max-sm:hidden">{t('common:settings')}</span>
+          <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
+        </Button>
+
+        <Button variant="outline" onClick={openSettingsSheet}>
+          <Tag size={16} />
+          <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
         </Button>
 
         <BoardSearch />
         <WorkspaceView className="max-sm:hidden" />
+        <DisplayOptions className="max-sm:hidden" />
         <FocusView iconOnly />
       </div>
     </>

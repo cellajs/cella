@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -20,9 +20,10 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resi
 import { BoardColumn, BoardContainer } from './board-column';
 import type { Column } from './board-column';
 import { coordinateGetter } from './keyboard-preset';
-import { type Task, TaskCard } from './task-card';
+import { TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
-import { stopMocking, enableMocking } from '~/mocks/browser';
+import { WorkspaceContext } from '../workspaces/workspace';
+import type { Task } from '~/mocks/dataGeneration';
 
 const defaultCols = [
   {
@@ -51,6 +52,8 @@ export default function KanbanBoard() {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const { content } = useContext(WorkspaceContext);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -82,7 +85,7 @@ export default function KanbanBoard() {
       if (active.data.current?.type === 'Task') {
         pickedUpTaskColumn.current = active.data.current.task.columnId;
         const { tasksInColumn, taskPosition, column } = getDraggingTaskData(active.id, pickedUpTaskColumn.current);
-        return `Picked up Task ${active.data.current.task.content} at position: ${taskPosition + 1} of ${tasksInColumn.length} in column ${
+        return `Picked up Task ${active.data.current.task.text} at position: ${taskPosition + 1} of ${tasksInColumn.length} in column ${
           column?.title
         }`;
       }
@@ -99,7 +102,7 @@ export default function KanbanBoard() {
       if (active.data.current?.type === 'Task' && over.data.current?.type === 'Task') {
         const { tasksInColumn, taskPosition, column } = getDraggingTaskData(over.id, over.data.current.task.columnId);
         if (over.data.current.task.columnId !== pickedUpTaskColumn.current) {
-          return `Task ${active.data.current.task.content} was moved over column ${column?.title} in position ${taskPosition + 1} of ${
+          return `Task ${active.data.current.task.text} was moved over column ${column?.title} in position ${taskPosition + 1} of ${
             tasksInColumn.length
           }`;
         }
@@ -133,16 +136,8 @@ export default function KanbanBoard() {
   };
 
   useEffect(() => {
-    enableMocking().then(() => {
-      fetch('/mock/kanban')
-        .then((response) => response.json())
-        .then((data) => {
-          setTasks(data);
-          stopMocking();
-        })
-        .catch((error) => console.error('Error fetching  MSW data:', error));
-    });
-  }, []);
+    setTasks(content.task);
+  }, [content]);
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
@@ -151,9 +146,11 @@ export default function KanbanBoard() {
             {columns.map((col, index) => (
               <Fragment key={col.id}>
                 <ResizablePanel key={`${col.id}-panel`}>
-                  <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.columnId === col.id)} />
+                  <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks ? tasks.filter((task) => task.columnId === col.id) : []} />
                 </ResizablePanel>
-                {columns.length > index + 1 && <ResizableHandle className="w-[2px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />}
+                {columns.length > index + 1 && (
+                  <ResizableHandle className="w-[2px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
+                )}
               </Fragment>
             ))}
           </SortableContext>
