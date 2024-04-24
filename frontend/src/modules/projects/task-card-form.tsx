@@ -11,19 +11,20 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { dialog } from '../common/dialoger/state';
-import InputFormField from '../common/form-fields/input';
 import { useNavigate } from '@tanstack/react-router';
-import { Form, FormLabel } from '../ui/form';
+import { Form } from '../ui/form';
 import { createWorkspace } from '~/api/workspaces';
 import { SelectImpact } from './select-impact.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { Bolt, Bug, Star } from 'lucide-react';
 import { cn } from '~/lib/utils.ts';
 import type { UniqueIdentifier } from '@dnd-kit/core';
+import MDEditor from '@uiw/react-md-editor';
+import { useThemeStore } from '~/store/theme.ts';
 
 export interface Story {
   id: UniqueIdentifier;
-  name: string;
+  text: string;
   type: 'feature' | 'bug' | 'chore';
   points: 0 | 1 | 2 | 3;
 }
@@ -33,7 +34,7 @@ interface CreateStoryFormProps {
   dialog?: boolean;
 }
 
-const formSchema = z.object({ id: z.string(), name: z.string(), type: z.string(), points: z.number() });
+const formSchema = z.object({ id: z.string(), text: z.string(), type: z.string(), points: z.number() });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -44,15 +45,18 @@ const StoryTypeChoose = ({ className = '', defaultValue = 'feature' }: { classNa
     setSelectedValue(value);
   };
   return (
-    <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)} value={selectedValue} onValueChange={handleValueChange}>
-      <ToggleGroupItem size={'xs'} value="feature">
-        <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
+    <ToggleGroup type="single" variant="merged" className={cn('gap-0 w-full', className)} value={selectedValue} onValueChange={handleValueChange}>
+      <ToggleGroupItem size="sm" value="feature" className="w-full">
+        <Star size={16} className={`${selectedValue === 'feature' && 'fill-amber-400 text-amber-500'}`} />
+        <span className="ml-2">Feature</span>
       </ToggleGroupItem>
-      <ToggleGroupItem size={'xs'} value="bug">
-        <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" />
+      <ToggleGroupItem size="sm" value="bug" className="w-full">
+        <Bug size={16} className={`${selectedValue === 'bug' && 'fill-red-500 text-red-600'}`} />
+        <span className="ml-2">Bug</span>
       </ToggleGroupItem>
-      <ToggleGroupItem size={'xs'} value="chore">
-        <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" />
+      <ToggleGroupItem size="sm" value="chore" className="w-full">
+        <Bolt size={16} className={`${selectedValue === 'chore' && 'fill-slate-500 text-slate-600'}`} />
+        <span className="ml-2">Chore</span>
       </ToggleGroupItem>
     </ToggleGroup>
   );
@@ -62,13 +66,15 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
+  const [text, setText] = useState(' ');
+  const { mode } = useThemeStore();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         id: 'gfdgdfgsf43t54',
-        name: '',
+        text: '',
         type: 'feature',
         points: 0,
       },
@@ -100,24 +106,36 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   });
 
   const onSubmit = (values: FormValues) => {
-    callback?.(values as Story);
+    const story: Story = {
+      id: values.id,
+      text: text,
+      type: values.type as 'feature' | 'bug' | 'chore',
+      points: values.points as 0 | 2 | 1 | 3,
+    };
+    callback?.(story as Story);
     // create(values);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-4">
-        <div className="flex items-center gap-3">
-          <FormLabel>Story type</FormLabel>
-          <StoryTypeChoose className="h-2" />
-        </div>
-        <div className="flex items-center gap-3">
-          <FormLabel>Story points</FormLabel>
-          <SelectImpact mode="edit" />
-        </div>
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border-b">
+          <StoryTypeChoose />
+          <MDEditor
+            value={text}
+            defaultTabEnable={true}
+            preview={'edit'}
+            onChange={(newValue) => {
+              if (typeof newValue === 'string') setText(newValue);
+            }}
+            hideToolbar={true}
+            visibleDragbar={false}
+            height={'auto'}
+            style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '4px' }}
+          />
+          <SelectImpact mode="create" />
+
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button size={'xs'} type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+          <Button size={'xs'} type="submit" disabled={text.replaceAll(' ', '') === ''} loading={isPending}>
             {t('common:create')}
           </Button>
           <Button

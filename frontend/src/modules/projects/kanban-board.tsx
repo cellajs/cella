@@ -38,6 +38,13 @@ export default function KanbanBoard() {
 
   const { content } = useContext(WorkspaceContext);
 
+  const setTaskStatus = (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
+    const updatedTasks = tasks.map((t) => {
+      if (t.id !== task.id) return t;
+      return { ...t, status };
+    });
+    setTasks(updatedTasks);
+  };
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
@@ -147,7 +154,7 @@ export default function KanbanBoard() {
         createPortal(
           <DragOverlay>
             {activeColumn && <BoardColumn isOverlay column={activeColumn} tasks={tasks.filter((task) => task.projectId === activeColumn.id)} />}
-            {activeTask && <TaskCard task={activeTask} isOverlay user={activeTask.assignedTo} />}
+            {activeTask && <TaskCard setTaskStatus={setTaskStatus} task={activeTask} isOverlay user={activeTask.assignedTo} />}
           </DragOverlay>,
           document.body,
         )}

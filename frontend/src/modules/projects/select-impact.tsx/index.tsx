@@ -56,6 +56,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
               aria-label="Set impacts"
               variant="ghost"
               size={mode === 'create' ? 'sm' : 'micro'}
+              className={mode === 'create' ? 'w-full text-left flex gap-2 justify-start border' : ''}
             >
               {selectedImpact && selectedImpact.value !== 'none' ? (
                 <>
@@ -82,7 +83,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
           <Kbd value="P" />
         </TooltipContent>
       </Tooltip>
-      <PopoverContent className="w-[206px] p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
+      <PopoverContent className="w-200 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
@@ -100,7 +101,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
             className="text-[0.8125rem] leading-normal"
             placeholder="Set impact ..."
           />
-          {!isSearching && <Kbd value="P" className="absolute top-3 right-[6px]" />}
+          {!isSearching && <Kbd value="P" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
               {impacts.map((Impact, index) => (
@@ -121,7 +122,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
                   </div>
                   <div className="flex items-center">
                     {selectedImpact?.value === Impact.value && <Check size={16} className="mr-3 text-success" />}
-                    {!isSearching && <span className="text-xs">{index}</span>}
+                    {!isSearching && <span className="text-xs opacity-50 mr-1">{index}</span>}
                   </div>
                 </CommandItem>
               ))}
