@@ -27,7 +27,7 @@ const impacts = [
   { value: 'high', label: 'High', icon: HighIcon },
 ] as const;
 
-export const SelectImpact = () => {
+export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) => {
   const [openPopover, setOpenPopover] = React.useState(false);
   const [openTooltip, setOpenTooltip] = React.useState(false);
 
@@ -55,13 +55,18 @@ export const SelectImpact = () => {
             <Button
               aria-label="Set impacts"
               variant="ghost"
-              size="sm"
-              className="w-fit px-2 h-8 text-[0.8125rem] leading-normal font-medium text-primary"
+              size={mode === 'create' ? 'sm' : 'micro'}
             >
               {selectedImpact && selectedImpact.value !== 'none' ? (
-                <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />
+                <>
+                  <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />
+                  {mode === 'create' && selectedImpact.label}
+                </>
               ) : (
-                <NoneIcon className="size-4 fill-primary" aria-hidden="true" title="Set impacts" />
+                <>
+                  <NoneIcon className="size-4 fill-primary" aria-hidden="true" title="Set impact" />
+                  {mode === 'create' && 'Set impact'}
+                </>
               )}
             </Button>
           </PopoverTrigger>
@@ -74,7 +79,7 @@ export const SelectImpact = () => {
           className="flex items-center gap-2 bg-background border text-xs px-2 h-8"
         >
           <span className="text-primary">Change impact</span>
-          <Kbd />
+          <Kbd value="P" />
         </TooltipContent>
       </Tooltip>
       <PopoverContent className="w-[206px] p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
@@ -95,7 +100,7 @@ export const SelectImpact = () => {
             className="text-[0.8125rem] leading-normal"
             placeholder="Set impact ..."
           />
-          {!isSearching && <Kbd />}
+          {!isSearching && <Kbd value="P" className="absolute top-3 right-[6px]" />}
           <CommandList>
             <CommandGroup>
               {impacts.map((Impact, index) => (
@@ -115,9 +120,7 @@ export const SelectImpact = () => {
                     <span>{Impact.label}</span>
                   </div>
                   <div className="flex items-center">
-                    {selectedImpact?.value === Impact.value && (
-                      <Check size={16} className="mr-3 text-success" />
-                    )}
+                    {selectedImpact?.value === Impact.value && <Check size={16} className="mr-3 text-success" />}
                     {!isSearching && <span className="text-xs">{index}</span>}
                   </div>
                 </CommandItem>

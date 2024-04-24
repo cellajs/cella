@@ -105,7 +105,6 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
               {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
             </div>
 
-            <SelectImpact />
           </div>
           {!isViewState && (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
@@ -146,7 +145,9 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user }
             <GripVertical size={16} />
           </Button>
 
+          <SelectImpact mode="edit" />
           <LabelBox />
+
           <div className="flex gap-2">
             <HoverCard>
               <HoverCardTrigger>

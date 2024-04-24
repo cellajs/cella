@@ -1,7 +1,9 @@
-export const Kbd = () => {
+import { cn } from "~/lib/utils";
+
+export const Kbd = ({className = '', value = ''}) => {
 	return (
-		<span className="border absolute right-[6px] top-3 rounded-sm flex items-center justify-center size-[18px] text-xs text-primary">
-			<kbd>P</kbd>
+		<span className={cn('border rounded-sm flex items-center justify-center size-[18px] text-xs text-primary', className)}>
+			<kbd>{value}</kbd>
 		</span>
 	);
 };
