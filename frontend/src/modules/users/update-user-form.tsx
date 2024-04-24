@@ -24,7 +24,7 @@ import { useUserStore } from '~/store/user';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
-import { useStepper } from '../ui/stepper';
+import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
 
 interface UpdateUserFormProps {
@@ -159,17 +159,18 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
             </FormItem>
           )}
         />
-        {children}
-        {!children && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending}>
-              {t('common:save_changes')}
-            </Button>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          {children}
+          <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending}>
+            {t('common:save_changes')}
+          </Button>
+          {!children && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
               {t('common:cancel')}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </form>
     </Form>
   );

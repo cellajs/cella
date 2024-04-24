@@ -18,7 +18,7 @@ import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
-import { useStepper } from '../ui/stepper';
+import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
 import { SquarePen } from 'lucide-react';
 import { type LabelDirectionType, Form } from '../ui/form';
@@ -113,12 +113,14 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
           description={t('common:organization_handle.text')}
           nameValue={name}
         />
-        {children}
-        {!children && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
-              {t('common:create')}
-            </Button>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          {children}
+          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+            {t('common:create')}
+          </Button>
+
+          {!children && (
             <Button
               type="reset"
               variant="secondary"
@@ -128,8 +130,8 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
             >
               {t('common:cancel')}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </form>
     </Form>
   );

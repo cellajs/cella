@@ -50,7 +50,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
 
   useEffect(() => {
     if (previousSlug && slug === previousSlug) return;
-    if (isValidSlug(slug)) checkSlugAvailable(slug).then((response) => setSlugAvailable(response));
+    if (isValidSlug(slug)) checkSlugAvailable({slug, type}).then((response) => setSlugAvailable(response));
     setSlugAvailable(false);
   }, [slug]);
 

@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { ArrowLeft, Redo } from 'lucide-react';
 import type { Organization } from '~/types';
 import { Button } from '../../ui/button';
-import { useStepper } from '../../ui/stepper';
+import { useStepper } from '~/modules/common/stepper';
 import type { OnboardingStates } from '.';
 import { useTranslation } from 'react-i18next';
 
@@ -13,39 +13,38 @@ interface StepperFooterProps {
 }
 
 const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
-  const { nextStep, prevStep, isLastStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
+  const { nextStep, prevStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
   const { t } = useTranslation();
 
   useEffect(() => {
-    console.log('activeStep', activeStep, 'hasCompletedAllSteps', hasCompletedAllSteps);
-    if (activeStep === 0 || !hasCompletedAllSteps) return;
-    setOnboarding('completed');
-  }, [hasCompletedAllSteps, activeStep]);
+    if (activeStep === 2 && organization === null) setOnboarding('completed');
+    if (hasCompletedAllSteps) setOnboarding('completed');
+  }, [organization, hasCompletedAllSteps]);
 
   return (
     <div className="w-full flex justify-end gap-2 max-sm:justify-stretch">
       {activeStep === 1 && !organization && (
-        <Button onClick={prevStep} size="sm" variant="secondary" className="max-sm:w-full">
+        <Button onClick={prevStep}  variant="secondary" className="max-sm:w-full">
           <ArrowLeft size={16} className="mr-2" />
           {t('common:previous')}
         </Button>
       )}
       {isOptionalStep && (
-        <Button onClick={nextStep} size="sm" variant="secondary" className="max-sm:w-full">
+        <Button onClick={nextStep} variant="secondary" className="max-sm:w-full">
           <Redo size={16} className="mr-2" />
           {t('common:skip')}
         </Button>
       )}
-      {!isLastStep && (
-        <Button onClick={nextStep} size="sm" className="max-sm:w-full">
+      {/* {activeStep === 0 && (
+        <Button type="submit" onClick={nextStep} className="max-sm:w-full">
           {t('common:continue')}
         </Button>
-      )}
-      {isLastStep && (
-        <Button onClick={() => setOnboarding('completed')} size="sm" className="max-sm:w-full">
+      )} */}
+      {/* {isLastStep && (
+        <Button type="submit" onClick={() => setOnboarding('completed')} className="max-sm:w-full">
           {t('common:finish')}
         </Button>
-      )}
+      )} */}
     </div>
   );
 };
