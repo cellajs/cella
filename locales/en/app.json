@@ -2,5 +2,7 @@
   "project": "Project",
   "projects": "Projects",
   "workspace": "Workspace",
-  "workspaces": "Workspaces"
+  "workspaces": "Workspaces",
+  "add_project": "Add project",
+  "add_projects": "Add projects"
 }

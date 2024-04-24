@@ -1,6 +1,6 @@
 import { Button } from '~/modules/ui/button';
 import { TooltipButton } from '../common/tooltip-button';
-import { Footprints, Maximize2, Settings, EllipsisVertical } from 'lucide-react';
+import { Settings, EllipsisVertical, Minimize2, MessagesSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
@@ -8,9 +8,9 @@ const ToolTipButtons = ({ rolledUp }: { rolledUp: boolean }) => {
   const { t } = useTranslation();
 
   const tooltipButtons = [
-    { content: t('Show velocity'), icon: <Footprints size={16} /> },
-    { content: t('Project view'), icon: <Maximize2 size={16} /> },
+    { content: t('Comments'), icon: <MessagesSquare size={16} /> },
     { content: t('Project settings'), icon: <Settings size={16} /> },
+    { content: t('Minimize'), icon: <Minimize2 size={16} /> },
   ];
 
   const renderButtons = () => {

@@ -6,7 +6,7 @@ interface Props {
   className?: string;
 }
 
-const ShowOptions = ({ className = '' }: Props) => {
+const DisplayOptions = ({ className = '' }: Props) => {
 
   return (
     <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)}>
@@ -17,4 +17,4 @@ const ShowOptions = ({ className = '' }: Props) => {
   );
 };
 
-export default ShowOptions;
+export default DisplayOptions;
