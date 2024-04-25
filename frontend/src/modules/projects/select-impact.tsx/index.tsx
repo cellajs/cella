@@ -27,7 +27,7 @@ const impacts = [
   { value: 'high', label: 'High', icon: HighIcon },
 ] as const;
 
-export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) => {
+export const SelectImpact = ({ mode = 'create', passImpact }: { mode: 'edit' | 'create'; passImpact?: (value: 0 | 1 | 2 | 3) => void }) => {
   const [openPopover, setOpenPopover] = useState(false);
   const [openTooltip, setOpenTooltip] = useState(false);
   const [selectedImpact, setSelectedImpact] = useState<Impact | null>(null);
@@ -108,10 +108,12 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
                   key={Impact.value}
                   value={Impact.value}
                   onSelect={(value) => {
-                    setSelectedImpact(impacts.find((p) => p.value === value) || null);
+                    const currentImpact = impacts.find((p) => p.value === value);
+                    setSelectedImpact(currentImpact || null);
                     setOpenTooltip(false);
                     setOpenPopover(false);
                     setSearchValue('');
+                    if (passImpact) passImpact(impacts.findIndex((impact) => impact.value === value) as 0 | 1 | 2 | 3);
                   }}
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >

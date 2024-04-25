@@ -27,7 +27,7 @@ import AssignMembers from './assign-members.tsx';
 export interface Story {
   id: UniqueIdentifier;
   text: string;
-  type: 'feature' | 'bug' | 'chore';
+  type: StoryType;
   points: 0 | 1 | 2 | 3;
   status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   assignedTo: User[];
@@ -38,15 +38,22 @@ interface CreateStoryFormProps {
   dialog?: boolean;
 }
 
+type StoryType = 'feature' | 'bug' | 'chore';
+
 const formSchema = z.object({ id: z.string(), text: z.string(), type: z.string(), points: z.number() });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const StoryTypeChoose = ({ className = '', defaultValue = 'feature' }: { className?: string; defaultValue?: string }) => {
-  const [selectedValue, setSelectedValue] = useState<string>(defaultValue);
+const StoryTypeChoose = ({
+  passSelectedType,
+  className = '',
+  defaultValue = 'feature',
+}: { passSelectedType: (value: StoryType) => void; className?: string; defaultValue?: StoryType }) => {
+  const [selectedValue, setSelectedValue] = useState<StoryType>(defaultValue);
 
-  const handleValueChange = (value: string) => {
+  const handleValueChange = (value: StoryType) => {
     setSelectedValue(value);
+    passSelectedType(value);
   };
   return (
     <ToggleGroup type="single" variant="merged" className={cn('gap-0 w-full', className)} value={selectedValue} onValueChange={handleValueChange}>
@@ -73,15 +80,19 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   const [text, setText] = useState(' ');
   const { mode } = useThemeStore();
 
+  const [type, setType] = useState<StoryType>('feature');
+  const [assignTo, setAssignTo] = useState<User[]>([]);
+  const [points, setPoints] = useState<0 | 1 | 2 | 3>(0);
+
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         id: 'gfdgdfgsf43t54',
         text: '',
-        type: 'feature',
-        points: 0,
-        assignedTo: [],
+        type: type,
+        points: points,
+        assignedTo: assignTo,
       },
     }),
     [],
@@ -111,15 +122,15 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   });
 
   const onSubmit = (values: FormValues) => {
-    console.log('values:', values);
     const story: Story = {
       id: values.id,
       text: text,
-      type: values.type as 'feature' | 'bug' | 'chore',
-      points: values.points as 0 | 2 | 1 | 3,
+      type: type,
+      points: points,
       status: 0,
-      assignedTo: [],
+      assignedTo: assignTo,
     };
+    console.log('story:', story);
     callback?.(story as Task);
     // create(values);
   };
@@ -127,7 +138,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 p-4 border-b shadow-inner">
-        <StoryTypeChoose />
+        <StoryTypeChoose passSelectedType={setType} />
         <MDEditor
           value={text}
           defaultTabEnable={true}
@@ -141,8 +152,8 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
           className="border"
           style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '4px' }}
         />
-        <SelectImpact mode="create" />
-        <AssignMembers mode="create" /> {/*  add members */}
+        <SelectImpact mode="create" passImpact={setPoints} />
+        <AssignMembers mode="create" changeAssignTo={setAssignTo} /> {/*  add members */}
         <div className="flex flex-col sm:flex-row gap-2">
           <Button size={'xs'} type="submit" disabled={text.replaceAll(' ', '') === ''} loading={isPending}>
             {t('common:create')}

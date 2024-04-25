@@ -112,7 +112,6 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
   useEffect(() => {
     setTaskStatus(task, status);
   }, [status]);
-  console.log('status:', status);
 
   return (
     <Card
