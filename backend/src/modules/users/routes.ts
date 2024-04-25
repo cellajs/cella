@@ -165,6 +165,28 @@ export const getUserMenuConfig = createRouteConfig({
   },
 });
 
+export const terminateSessionsConfig = createRouteConfig({
+  method: 'delete',
+  path: '/me/sessions',
+  guard: authGuard(),
+  tags: ['users'],
+  summary: 'Terminate sessions',
+  request: {
+    query: deleteByIdsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Success',
+      content: {
+        'application/json': {
+          schema: successResponseWithErrorsSchema(),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
 export const deleteUsersRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/users',
@@ -179,28 +201,6 @@ export const deleteUsersRouteConfig = createRouteConfig({
       - Users with role 'ADMIN'
       - Users, who are the user
   `,
-  responses: {
-    200: {
-      description: 'Success',
-      content: {
-        'application/json': {
-          schema: successResponseWithErrorsSchema(),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const terminateSessionsConfig = createRouteConfig({
-  method: 'delete',
-  path: '/me/sessions',
-  guard: authGuard(),
-  tags: ['users'],
-  summary: 'Terminate sessions',
-  request: {
-    query: deleteByIdsQuerySchema,
-  },
   responses: {
     200: {
       description: 'Success',

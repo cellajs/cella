@@ -147,6 +147,7 @@ const workspacesRoutes = app
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
+    // * Convert the workspace ids to an array
     const workspaceIds = Array.isArray(ids) ? ids : [ids];
 
     const errors: ErrorType[] = [];
@@ -196,6 +197,7 @@ const workspacesRoutes = app
       });
     }
 
+    // * Delete the workspaces
     await db.delete(workspacesTable).where(
       inArray(
         workspacesTable.id,
