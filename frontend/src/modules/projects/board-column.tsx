@@ -2,19 +2,21 @@ import { type UniqueIdentifier, useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
-import { ChevronDown, Footprints, GripVertical, Maximize2, Plus, Settings } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { ChevronDown, GripVertical, Plus } from 'lucide-react';
+import { type RefObject, useMemo, useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { type Task, TaskCard } from './task-card';
-import { TooltipButton } from '../common/tooltip-button';
+import ToolTipButtons from './tooltip-buttons';
+import { useMeasure } from '~/hooks/use-measure';
+import type { Task, User } from '~/mocks/dataGeneration';
+import { TaskCard } from './task-card';
+import CreateStoryForm from './task-card-form';
 
 export interface Column {
   id: UniqueIdentifier;
-  title: string;
+  name: string;
 }
 
 export type ColumnType = 'Column';
@@ -31,8 +33,15 @@ interface BoardColumnProps {
 }
 
 export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
-  const { t } = useTranslation();
-  const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(tasks.map((el) => el.id));
+  const [allTasks, setAllTasks] = useState<Task[]>(tasks);
+  const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(allTasks.map((el) => el.id));
+  const [showCreationForm, setShowCreationForm] = useState(false);
+  const [showIcedStories, setShowIcedStories] = useState(false);
+  const [showAcceptedStories, setShowAcceptedStories] = useState(false);
+
+  const { ref, bounds } = useMeasure();
+
+  const neededWidth = 375;
 
   const toggleTaskVisibility = (taskId: UniqueIdentifier) => {
     setFoldedTasks((prevIds) => {
@@ -43,9 +52,51 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     });
   };
 
+  const setTaskStatus = (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
+    const updatedTasks = allTasks.map((t) => {
+      if (t.id !== task.id) return t;
+      return { ...t, status };
+    });
+    setAllTasks(updatedTasks.sort((a, b) => b.status - a.status));
+  };
+
+  const setTaskAssignTo = (task: Task, users: User[]) => {
+    const updatedTasks = allTasks.map((t) => {
+      if (t.id !== task.id) return t;
+      return { ...t, users };
+    });
+    setAllTasks(updatedTasks);
+  };
+
   const tasksIds = useMemo(() => {
-    return tasks.map((task) => task.id);
-  }, [tasks]);
+    return allTasks.map((task) => task.id);
+  }, [allTasks]);
+
+  const handleAddStoryClick = () => {
+    if (!showCreationForm) {
+      const container = document.getElementById(`${column.id as string}-viewport`);
+      container?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    setShowCreationForm(!showCreationForm);
+  };
+  const handleIcedStoriesClick = () => {
+    setShowIcedStories(!showIcedStories);
+  };
+  const handleAcceptedStoriesClick = () => {
+    setShowAcceptedStories(!showAcceptedStories);
+  };
+
+  const handleStoryCreationCallback = (value?: Task) => {
+    if (!value) {
+      setShowCreationForm(false);
+      return;
+    }
+    const updatedTasks = [...allTasks, ...[value]];
+    setAllTasks(updatedTasks);
+    setFoldedTasks(updatedTasks.map((el) => el.id));
+    setShowCreationForm(false);
+  };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: column.id,
@@ -54,16 +105,15 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       column,
     } satisfies ColumnDragData,
     attributes: {
-      roleDescription: `Column: ${column.title}`,
+      roleDescription: `Column: ${column.name}`,
     },
   });
-
   const style = {
     transition,
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('h-full max-w-full bg-card flex flex-col flex-shrink-0 snap-center', {
+  const variants = cva('h-full max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center', {
     variants: {
       dragging: {
         default: 'border-2 border-transparent',
@@ -84,66 +134,68 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
       })}
     >
-      <CardHeader className="p-3 font-semibold border-b flex flex-row gap-2 space-between items-center">
-        <Button variant={'ghost'} {...attributes} {...listeners} className=" py-1 px-0 text-primary/50 -ml-1 h-auto cursor-grab relative">
-          <span className="sr-only">{`Move column: ${column.title}`}</span>
+      <CardHeader
+        ref={ref as RefObject<HTMLDivElement>}
+        className="p-3 text-normal leading-4 font-semibold border-b flex flex-row gap-2 space-between items-center"
+      >
+        <Button variant={'ghost'} {...attributes} {...listeners} size="xs" className="max-xs:hidden px-0 text-primary/50 -ml-1 cursor-grab relative">
+          <span className="sr-only">{`Move column: ${column.name}`}</span>
           <GripVertical size={16} />
         </Button>
 
-        <BackgroundPicker background={background} setBackground={setBackground} className="p-2 h-8 w-8" options={['solid']} />
+        <BackgroundPicker background={background} setBackground={setBackground} options={['solid']} />
 
-        <div> {column.title}</div>
+        <div>{column.name}</div>
 
         <div className="grow" />
 
-        <TooltipButton side="bottom" sideOffset={13} toolTipContent={t('Show velocity')}>
-          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-            <Footprints size={16} />
-          </Button>
-        </TooltipButton>
+        <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} />
 
-        <TooltipButton side="bottom" sideOffset={13} toolTipContent={t('Project view')}>
-          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-            <Maximize2 size={16} />
-          </Button>
-        </TooltipButton>
-
-        <TooltipButton side="bottom" sideOffset={13} toolTipContent={t('Project settings')}>
-          <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-            <Settings size={16} />
-          </Button>
-        </TooltipButton>
-
-        <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8">
-          <Plus size={16} className="mr-1" />
-          Story
+        <Button variant="plain" size="xs" className="rounded" onClick={handleAddStoryClick}>
+          <Plus size={16} className={`transition-transform ${showCreationForm ? 'rotate-45 scale-125' : 'rotate-0'}`} />
+          <span className="ml-1">Story</span>
         </Button>
       </CardHeader>
-      <ScrollArea>
+      <ScrollArea id={column.id as string}>
         <CardContent className="flex flex-grow flex-col p-0">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-success text-sm -mt-[1px]"
-          >
-            <span className="text-[12px]">16 accepted stories</span>
-            <ChevronDown size={12} />
-          </Button>
+          {showCreationForm && <CreateStoryForm callback={handleStoryCreationCallback} />}
+
+          {
+            <Button
+              onClick={handleAcceptedStoriesClick}
+              variant="ghost"
+              size="sm"
+              className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
+            >
+              <span className="text-xs">3 accepted stories</span>
+              <ChevronDown size={16} className={`transition-transform opacity-50 ${showAcceptedStories ? 'rotate-180' : 'rotate-0'}`} />
+            </Button>
+          }
+
           <SortableContext items={tasksIds}>
-            {tasks.map((task) => (
-              <div key={task.id}>
-                <TaskCard isOpen={!foldedTasks.includes(task.id)} toggleTaskClick={toggleTaskVisibility} task={task} />
-              </div>
+            {allTasks.map((task) => (
+              <TaskCard
+                setTaskStatus={setTaskStatus}
+                isViewState={!foldedTasks.includes(task.id)}
+                toggleTaskClick={toggleTaskVisibility}
+                task={task}
+                key={task.id}
+                setMainAssignTo={setTaskAssignTo}
+              />
             ))}
           </SortableContext>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-600 text-sm -mt-[1px]"
-          >
-            <span className="text-[12px]">12 iced stories</span>
-            <ChevronDown size={12} />
-          </Button>
+          {
+            <Button
+              onClick={handleIcedStoriesClick}
+              variant="ghost"
+              size="sm"
+              className={`w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5
+              text-sm -mt-[1px]`}
+            >
+              <span className="text-xs">5 iced stories</span>
+              <ChevronDown size={16} className={`transition-transform opacity-50 ${showIcedStories ? 'rotate-180' : 'rotate-0'}`} />
+            </Button>
+          }
         </CardContent>
       </ScrollArea>
     </Card>
@@ -153,7 +205,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   const dndContext = useDndContext();
 
-  const variations = cva('h-[calc(100vh-64px-64px)] md:h-[calc(100vh-80px)]', {
+  const variations = cva('h-[calc(100vh-64px-64px)] md:h-[calc(100vh-88px)]', {
     variants: {
       dragging: {
         default: 'snap-x snap-mandatory',

@@ -9,18 +9,20 @@ import { createOrganizationJsonSchema } from 'backend/modules/organizations/sche
 import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
-import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
-import { useStepper } from '../ui/stepper';
+import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
+import { SquarePen } from 'lucide-react';
+import { type LabelDirectionType, Form } from '../ui/form';
+import { Badge } from '../ui/badge';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -81,6 +83,21 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     },
   });
 
+  useEffect(() => {
+    if (form.unsavedChanges) {
+      dialog.updateTitle(
+        '1',
+        <Badge variant="plain" className="w-fit">
+          <SquarePen size={12} className="mr-2" />
+          <span className="font-light">{t('common:unsaved_changes')}</span>
+        </Badge>,
+        true,
+      );
+      return;
+    }
+    dialog.setDefaultTitle('1');
+  }, [form.unsavedChanges]);
+
   const onSubmit = (values: FormValues) => {
     create(values);
   };
@@ -91,16 +108,19 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
+          type="ORGANIZATION"
           label={t('common:organization_handle')}
           description={t('common:organization_handle.text')}
           nameValue={name}
         />
-        {children}
-        {!children && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
-              {t('common:create')}
-            </Button>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          {children}
+          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+            {t('common:create')}
+          </Button>
+
+          {!children && (
             <Button
               type="reset"
               variant="secondary"
@@ -110,8 +130,8 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
             >
               {t('common:cancel')}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </form>
     </Form>
   );

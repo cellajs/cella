@@ -1,10 +1,12 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
-import { acceptInvite, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
+import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/authentication';
 import { useThemeStore } from '~/store/theme';
+import type { Step } from '.';
+import { acceptInvite } from '~/api/general';
 
 const oauthOptions = [
   {
@@ -37,7 +39,7 @@ const oauthOptions = [
 ];
 
 interface OauthOptionsProps {
-  actionType: 'check' | 'signIn' | 'signUp' | 'acceptInvite' | 'inviteOnly';
+  actionType: Step;
 }
 
 const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
@@ -46,7 +48,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   const { token }: { token: string } = useParams({ strict: false });
   const invertClass = mode === 'dark' ? 'invert' : '';
   let redirect = '';
-  if (actionType !== 'acceptInvite') {
+  if (token) {
     const searchResult = useSearch({
       from: SignInRoute.id,
     });
@@ -71,10 +73,12 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
               type="button"
               variant="outline"
               onClick={
-                actionType === 'acceptInvite' && token
+                token
                   ? () =>
-                      option.acceptInvite(token).then((url) => {
-                        window.location.href = url;
+                      option.acceptInvite(token).then(() => {
+                        // TODO: we need to handle the redirect here
+                        // window.location.href = url;
+                        window.location.href = '/home';
                       })
                   : () => {
                       window.location.href = option.url + redirectQuery;
@@ -87,8 +91,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
                 className={`w-4 h-4 mr-2 ${option.name === 'Github' ? invertClass : ''}`}
                 loading="lazy"
               />
-              {actionType === 'acceptInvite' ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with{' '}
-              {option.name}
+              {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with {option.name}
             </Button>
           );
         })}

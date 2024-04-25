@@ -4,7 +4,7 @@ export const passwordSchema = z.string().min(8).max(100);
 
 export const cookieSchema = z.string();
 
-export const resourceTypeSchema = z.enum(['ORGANIZATION', 'WORKSPACE', 'PROJECT', 'USER']);
+export const resourceTypeSchema = z.enum(['ORGANIZATION', 'WORKSPACE', 'PROJECT', 'USER', 'UNKNOWN']);
 
 export const idSchema = z.string();
 
@@ -68,12 +68,16 @@ export const validDomainsSchema = z
   )
   .optional();
 
+export const userParamSchema = z.object({
+  user: idSchema.or(slugSchema),
+});
+
 export const organizationParamSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
+  organization: idSchema.or(slugSchema),
 });
 
 export const workspaceParamSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
+  workspace: idSchema.or(slugSchema),
 });
 
 export const imageUrlSchema = z

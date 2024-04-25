@@ -33,7 +33,7 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
             {t('common:invite')}
           </button>
           <ChevronRight className="opacity-50" size={16} />
-          <span>{mode[0] === 'search' ? t('common:invite_search') : t('common:invite_email')}</span>
+          <span>{mode[0] === 'search' ? t('common:search') : t('common:email')}</span>
         </div>
       ) : (
         t('common:invite')

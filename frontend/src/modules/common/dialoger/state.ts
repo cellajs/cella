@@ -1,4 +1,4 @@
-import type React from "react";
+import type React from 'react';
 
 let dialogsCounter = 1;
 
@@ -14,6 +14,8 @@ export type DialogT = {
   hideClose?: boolean;
   content?: React.ReactNode;
   titleContent?: string | React.ReactNode;
+  addToTitle?: boolean;
+  useDefaultTitle?: boolean;
 };
 
 export type DialogToRemove = {
@@ -73,11 +75,22 @@ class Observer {
   };
 
   // Update dialog title
-  updateTitle = (id: number | string, titleContent: string | React.ReactNode) => {
+  updateTitle = (id: number | string, titleContent: string | React.ReactNode, addToTitle?: boolean) => {
     if (!id) return;
 
     for (const subscriber of this.subscribers) {
-      subscriber({ id, titleContent });
+      subscriber({ id, titleContent, addToTitle });
+    }
+
+    return;
+  };
+
+  // Return default title
+  setDefaultTitle = (id: number | string) => {
+    if (!id) return;
+
+    for (const subscriber of this.subscribers) {
+      subscriber({ id, useDefaultTitle: true });
     }
 
     return;
@@ -104,4 +117,5 @@ const dialogFunction = (content: React.ReactNode, data?: ExternalDialog) => {
 export const dialog = Object.assign(dialogFunction, {
   remove: DialogState.remove,
   updateTitle: DialogState.updateTitle,
+  setDefaultTitle: DialogState.setDefaultTitle,
 });

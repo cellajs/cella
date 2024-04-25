@@ -4,7 +4,6 @@ import { type InsertUserModel, usersTable } from '../../../db/schema/users';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { sendVerificationEmail } from './verify-email';
 import type { Context } from 'hono';
-import { PostgresError } from 'postgres';
 import { errorResponse } from '../../../lib/errors';
 import { logEvent } from '../../../middlewares/logger/log-event';
 import type { ProviderId } from '../../../types/common';
@@ -30,11 +29,11 @@ export const handleCreateUser = async (
   }
 
   // * Check if the slug is available
-  const slugAvailable = await checkSlugAvailable(data.slug);
+  const slugAvailable = await checkSlugAvailable(data.slug, 'USER');
 
   try {
     // * Insert the user into the database
-    await db.insert(usersTable).values({
+    const [user] = await db.insert(usersTable).values({
       id: data.id,
       slug: slugAvailable ? data.slug : `${data.slug}-${data.id}`,
       firstName: data.firstName,
@@ -42,41 +41,19 @@ export const handleCreateUser = async (
       name: data.name,
       language: config.defaultLanguage,
       hashedPassword: data.hashedPassword,
-    });
+    }).returning();
 
     // * If a provider is passed, insert the oauth account
     if (options?.provider) {
       await insertOauthAccount(data.id, options.provider.id, options.provider.userId);
-      await setSessionCookie(ctx, data.id, options.provider.id.toLowerCase());
+      // await setSessionCookie(ctx, data.id, options.provider.id.toLowerCase());
     }
 
     // * If the email is not verified, send a verification email
     if (!options?.isEmailVerified) {
       sendVerificationEmail(data.email);
-
-      if (options?.provider) {
-        return ctx.json(
-          {
-            success: true,
-          },
-          302,
-          {
-            Location: `${config.frontendUrl}/auth/verify-email`,
-          },
-        );
-      }
-    }
-
-    if (options?.provider) {
-      return ctx.json(
-        {
-          success: true,
-        },
-        302,
-        {
-          Location: config.frontendUrl + options.redirectUrl || config.defaultRedirectPath,
-        },
-      );
+    } else {
+      await setSessionCookie(ctx, user.id, 'password');
     }
 
     return ctx.json({
@@ -84,8 +61,7 @@ export const handleCreateUser = async (
     });
   } catch (error) {
     // * If the email already exists, return an error
-    if (error instanceof PostgresError && error.message.startsWith('duplicate key')) {
-      // t('common:error.email_exists')
+    if (error instanceof Error && error.message.startsWith('duplicate key')) {
       return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
     }
 

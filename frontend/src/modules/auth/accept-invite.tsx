@@ -1,26 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { acceptInviteJsonSchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import AuthPage from './auth-page';
-import OauthOptions from './oauth-options';
 
 import { ArrowRight, Loader2 } from 'lucide-react';
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { ApiError } from '~/api';
-import { acceptInvite as baseAcceptInvite } from '~/api/authentication';
+import { acceptInvite as baseAcceptInvite } from '~/api/general';
 import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { cn } from '~/lib/utils';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
+import { Form } from '~/modules/ui/form';
 import { LegalNotice } from './sign-up-form';
-
-const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
+import { acceptInviteJsonSchema } from 'backend/modules/general/schema';
 
 const formSchema = acceptInviteJsonSchema;
 
@@ -34,15 +30,16 @@ const Accept = () => {
 
   const { mutate: checkToken } = useMutation({
     mutationFn: baseCheckToken,
-    onSuccess: (email) => setEmail(email),
+    onSuccess: (data) => setEmail(data?.email || ''),
     onError: (error) => setError(error),
   });
+
   const { mutate: acceptInvite, isPending } = useMutation({
     mutationFn: baseAcceptInvite,
-    onSuccess: (path) => {
+    onSuccess: () => {
       toast.success(t('common:invitation_accepted'));
       navigate({
-        to: path,
+        to: '/home',
       });
     },
     onError: (error) => {
@@ -57,10 +54,9 @@ const Accept = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onAccept = () => {
     acceptInvite({
       token,
-      password: values.password,
     });
   };
 
@@ -82,32 +78,15 @@ const Accept = () => {
         </h1>
 
         {email && !error ? (
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-4">
             <LegalNotice />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="relative">
-                      <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
-                      <Suspense>
-                        <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
-                      </Suspense>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" loading={isPending} className="w-full">
+            <Button type="submit" loading={isPending} className="w-full" onClick={onAccept}>
               {t('common:accept')}
               <ArrowRight size={16} className="ml-2" />
             </Button>
 
-            <OauthOptions actionType="acceptInvite" />
-          </form>
+            {/* <OauthOptions actionType="acceptInvite" /> */}
+          </div>
         ) : (
           <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
             {/* TODO: we need a render error message component ? */}

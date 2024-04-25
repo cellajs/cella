@@ -1,128 +1,212 @@
-import { and, count, eq } from 'drizzle-orm';
+import { type SQL, and, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/db';
-import { membershipsTable } from '../../db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { usersTable } from '../../db/schema/users';
 
-import { errorResponse } from '../../lib/errors';
+import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { transformDatabaseUser } from '../users/helpers/transform-database-user';
-import { deleteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
+import { deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
+import type { OrganizationModel } from '../../db/schema/organizations';
+import type { WorkspaceModel } from '../../db/schema/workspaces';
 
 const app = new CustomHono();
 
 // * Membership endpoints
 const membershipRoutes = app
   /*
-   * Delete users from organization
-   */
-  .openapi(deleteMembershipRouteConfig, async (ctx) => {
-    const { ids, idOrSlug } = ctx.req.valid('query');
-    const usersIds = Array.isArray(ids) ? ids : [ids];
-
-    await Promise.all(
-      usersIds.map(async (id) => {
-        const [targetMembership] = await db
-          .delete(membershipsTable)
-          .where(and(eq(membershipsTable.userId, id), eq(membershipsTable.organizationId, idOrSlug)))
-          .returning();
-        if (!targetMembership) {
-          return errorResponse(ctx, 404, 'not_found', 'warn', undefined, {
-            user: id,
-            resource: idOrSlug,
-          });
-        }
-
-        logEvent('Member deleted', { user: id, organization: idOrSlug });
-
-        sendSSE(id, 'remove_organization_membership', { id: idOrSlug });
-      }),
-    );
-
-    return ctx.json({
-      success: true,
-      data: undefined,
-    });
-  })
-  /*
    * Update user membership
    */
   .openapi(updateMembershipRouteConfig, async (ctx) => {
-    const { id } = ctx.req.valid('param');
+    const { user: userId } = ctx.req.valid('param');
     const { role, inactive, muted } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    const organization = ctx.get('organization');
+    let type: 'ORGANIZATION' | 'WORKSPACE';
+    const organization = ctx.get('organization') as OrganizationModel | undefined;
+    const workspace = ctx.get('workspace') as WorkspaceModel | undefined;
 
-    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+    let where: SQL | undefined;
+    if (organization) {
+      type = 'ORGANIZATION';
+      where = eq(membershipsTable.organizationId, organization.id);
+    } else if (workspace) {
+      type = 'WORKSPACE';
+      where = eq(membershipsTable.workspaceId, workspace.id);
+    } else {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN');
+    }
 
-    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: id });
+    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
-    let [membership] = await db
+    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: userId });
+
+    const [membership] = await db
       .update(membershipsTable)
       .set(
         role
           ? { role, inactive, muted, modifiedBy: user.id, modifiedAt: new Date() }
           : { inactive, muted, modifiedBy: user.id, modifiedAt: new Date() },
       )
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)))
+      .where(and(eq(membershipsTable.userId, userId), where))
       .returning();
 
     if (!membership) {
-      if (targetUser.id === user.id) {
-        [membership] = await db
-          .insert(membershipsTable)
-          .values({
-            userId: user.id,
-            organizationId: organization.id,
-            role,
-          })
-          .returning();
+      // TODO: Check if this is necessary
+      // if (targetUser.id === user.id) {
+      //   [membership] = await db
+      //     .insert(membershipsTable)
+      //     .values({
+      //       userId: user.id,
+      //       organizationId: organization?.id,
+      //       workspaceId: workspace?.id,
+      //       role,
+      //     })
+      //     .returning();
 
-        sendSSE(targetUser.id, 'new_organization_membership', {
-          ...organization,
-          userRole: role,
-          type: 'ORGANIZATION',
-        });
-      } else {
-        return errorResponse(ctx, 404, 'not_found', 'warn', undefined, {
-          user: targetUser.id,
-          organization: organization.id,
-        });
-      }
+      //   if (organization) {
+      //     sendSSE(targetUser.id, 'new_organization_membership', {
+      //       ...organization,
+      //       userRole: role,
+      //       type: 'ORGANIZATION',
+      //     });
+      //   } else {
+      //     sendSSE(targetUser.id, 'new_workspace_membership', {
+      //       ...workspace,
+      //       userRole: role,
+      //       type: 'WORKSPACE',
+      //     });
+      //   }
+      // } else {
+      //   return errorResponse(ctx, 404, 'not_found', 'warn', type, {
+      //     user: userId,
+      //   });
+      // }
+      return errorResponse(ctx, 404, 'not_found', 'warn', type, {
+        user: userId,
+      });
     }
 
-    const [{ memberships }] = await db
-      .select({
-        memberships: count(),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.organizationId, organization.id));
+    if (type === 'ORGANIZATION') {
+      sendSSE(membership.userId, 'update_organization', {
+        ...organization,
+        muted,
+        archived: inactive,
+        userRole: role,
+        type: 'ORGANIZATION',
+      });
+    } else {
+      sendSSE(membership.userId, 'update_workspace', {
+        ...workspace,
+        muted,
+        archived: inactive,
+        userRole: role,
+        type: 'WORKSPACE',
+      });
+    }
 
-    logEvent('User updated in organization', {
-      user: targetUser.id,
-      organization: organization.id,
-    });
-
-    sendSSE(targetUser.id, 'update_organization', {
-      ...organization,
-      muted,
-      archived: inactive,
-      userRole: role,
-      type: 'ORGANIZATION',
+    logEvent('Membership updated', {
+      user: userId,
     });
 
     return ctx.json({
       success: true,
-      data: {
-        ...transformDatabaseUser(targetUser),
-        sessions: [],
-        organizationRole: membership.role,
-        counts: {
-          memberships,
-        },
-      },
+      data: membership,
+    });
+  })
+  /*
+   * Delete users from organization
+   */
+  .openapi(deleteMembershipsRouteConfig, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
+    const user = ctx.get('user');
+
+    // * Convert the member ids to an array
+    const memberIds = Array.isArray(ids) ? ids : [ids];
+
+    const errors: ErrorType[] = [];
+
+    let type: 'ORGANIZATION' | 'WORKSPACE';
+    const organization = ctx.get('organization') as OrganizationModel | undefined;
+    const workspace = ctx.get('workspace') as WorkspaceModel | undefined;
+
+    let where: SQL;
+    if (organization) {
+      type = 'ORGANIZATION';
+      where = eq(membershipsTable.organizationId, organization.id);
+    } else if (workspace) {
+      type = 'WORKSPACE';
+      where = eq(membershipsTable.workspaceId, workspace.id);
+    } else {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN');
+    }
+
+    // * Get the user membership
+    const [currentUserMembership] = (await db
+      .select()
+      .from(membershipsTable)
+      .where(and(where, eq(membershipsTable.userId, user.id)))) as (MembershipModel | undefined)[];
+
+    // * Get the memberships
+    const targets = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(inArray(membershipsTable.userId, memberIds), where));
+
+    // * Check if the memberships exist
+    for (const id of memberIds) {
+      if (!targets.some((target) => target.userId === id)) {
+        errors.push(
+          createError(ctx, 404, 'not_found', 'warn', type, {
+            user: id,
+          }),
+        );
+      }
+    }
+
+    // * Filter out memberships that the user doesn't have permission to delete
+    const allowedTargets = targets.filter((target) => {
+      if (user.role !== 'ADMIN' && currentUserMembership?.role !== 'ADMIN') {
+        errors.push(
+          createError(ctx, 403, 'delete_forbidden', 'warn', type, {
+            user: target.userId,
+            membership: target.id,
+          }),
+        );
+        return false;
+      }
+
+      return true;
+    });
+
+    // * If the user doesn't have permission to delete any of the memberships, return an error
+    if (allowedTargets.length === 0) {
+      return ctx.json({
+        success: false,
+        errors: errors,
+      });
+    }
+
+    // * Delete the memberships
+    await db.delete(membershipsTable).where(
+      inArray(
+        membershipsTable.id,
+        allowedTargets.map((target) => target.id),
+      ),
+    );
+
+    // * Send SSE events for the memberships that were deleted
+    for (const membership of allowedTargets) {
+      // * Send the event to the user if they are a member of the organization
+      sendSSE(membership.userId, 'remove_organization_membership', { membership });
+
+      logEvent('Member deleted', { membership: membership.id });
+    }
+
+    return ctx.json({
+      success: true,
+      data: undefined,
     });
   });
 

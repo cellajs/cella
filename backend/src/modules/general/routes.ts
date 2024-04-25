@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
-import { authGuard, publicGuard, tenantGuard } from '../../middlewares/guard';
-import { rateLimiter } from '../../middlewares/rate-limiter';
-import { inviteJsonSchema, suggestionsSchema } from './schema';
+import { anyTenantGuard, authGuard, publicGuard } from '../../middlewares/guard';
+import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
+import { acceptInviteJsonSchema, inviteJsonSchema, inviteParamSchema, suggestionsSchema, tokensSchema } from './schema';
 import { resourceTypeSchema } from '../../lib/common-schemas';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
@@ -43,13 +43,14 @@ export const getUploadTokenRouteConfig = createRouteConfig({
 
 export const checkSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/check-slug/{slug}',
+  path: '/check-slug/{type}/{slug}',
   guard: authGuard(),
   tags: ['general'],
   summary: 'Check if a slug is available',
   description: 'This endpoint is used to check if a slug is available. It is used for organizations and users.',
   request: {
     params: z.object({
+      type: z.string().toUpperCase().pipe(resourceTypeSchema),
       slug: z.string(),
     }),
   },
@@ -83,7 +84,12 @@ export const checkTokenRouteConfig = createRouteConfig({
       description: 'Email address of user',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(z.string().email()),
+          schema: successResponseWithDataSchema(
+            z.object({
+              type: tokensSchema.shape.type,
+              email: z.string().email(),
+            }),
+          ),
         },
       },
     },
@@ -93,8 +99,8 @@ export const checkTokenRouteConfig = createRouteConfig({
 
 export const inviteRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/invite',
-  guard: tenantGuard(['ADMIN']),
+  path: '/{idOrSlug?}/invite',
+  guard: anyTenantGuard('idOrSlug', ['ADMIN']),
   middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
   summary: 'Invite a new member(user) to organization or system',
@@ -104,6 +110,7 @@ export const inviteRouteConfig = createRouteConfig({
       - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
+    params: inviteParamSchema,
     body: {
       content: {
         'application/json': {
@@ -120,6 +127,44 @@ export const inviteRouteConfig = createRouteConfig({
           schema: successResponseWithoutDataSchema,
         },
       },
+    },
+    ...errorResponses,
+  },
+});
+
+export const acceptInviteRouteConfig = createRouteConfig({
+  method: 'post',
+  path: '/accept-invite/{token}',
+  guard: publicGuard,
+  middleware: [authRateLimiter],
+  tags: ['auth'],
+  summary: 'Accept invitation',
+  request: {
+    params: z.object({
+      token: z.string(),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: acceptInviteJsonSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Invitation was accepted',
+      content: {
+        'application/json': {
+          schema: successResponseWithoutDataSchema,
+        },
+      },
+    },
+    302: {
+      description: 'Redirect to github',
+      headers: z.object({
+        Location: z.string(),
+      }),
     },
     ...errorResponses,
   },

@@ -12,10 +12,12 @@ import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { checkEmail as baseCheckEmail } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
+import type { TokenData } from '.';
+import { useEffect } from 'react';
 
 const formSchema = checkEmailJsonSchema;
 
-export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: string) => void }) => {
+export const CheckEmailForm = ({ tokenData, setStep }: { tokenData: TokenData | null; setStep: (step: string, email: string) => void }) => {
   const { t } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -42,9 +44,24 @@ export const CheckEmailForm = ({ setStep }: { setStep: (step: string, email: str
     checkEmail(values.email);
   };
 
+  const title = config.has.signUp
+    ? tokenData
+      ? t('common:invite_sign_in_or_up')
+      : t('common:sign_in_or_up')
+    : tokenData
+      ? t('common:invite_sign_in')
+      : t('common:sign_in');
+
+  useEffect(() => {
+    if (tokenData?.email) {
+      form.setValue('email', tokenData.email);
+      form.handleSubmit(onSubmit)();
+    }
+  }, [tokenData]);
+
   return (
     <Form {...form}>
-      <h1 className="text-2xl text-center pb-2 mt-4">{`${config.has.signUp ? t('common:sign_in_or_up') : t('common:sign_in')}`}</h1>
+      <h1 className="text-2xl text-center pb-2 mt-4">{title}</h1>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField

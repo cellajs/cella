@@ -8,7 +8,7 @@ import type { Organization } from '~/types';
 
 import { Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
-import { UseFormProps, useWatch } from 'react-hook-form';
+import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -126,6 +126,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
+          type="ORGANIZATION"
           label={t('common:organization_handle')}
           description={t('common:organization_handle.text')}
           previousSlug={organization.slug}

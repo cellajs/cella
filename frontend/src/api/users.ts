@@ -19,9 +19,9 @@ export const getUserMenu = async () => {
 };
 
 // Get a user by slug or ID
-export const getUserBySlugOrId = async (idOrSlug: string) => {
-  const response = await client.users[':idOrSlug'].$get({
-    param: { idOrSlug },
+export const getUserBySlugOrId = async (user: string) => {
+  const response = await client.users[':user'].$get({
+    param: { user },
   });
 
   const json = await response.json();
@@ -76,12 +76,12 @@ export const deleteUsers = async (userIds: string[]) => {
   return;
 };
 
-export type UpdateUserParams = Parameters<(typeof client.users)[':userId']['$put']>['0']['json'];
+export type UpdateUserParams = Parameters<(typeof client.users)[':user']['$put']>['0']['json'];
 
 // Update a user
-export const updateUser = async (userId: string, params: UpdateUserParams) => {
-  const response = await client.users[':userId'].$put({
-    param: { userId },
+export const updateUser = async (user: string, params: UpdateUserParams) => {
+  const response = await client.users[':user'].$put({
+    param: { user },
     json: params,
   });
 

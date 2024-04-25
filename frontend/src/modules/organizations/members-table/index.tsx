@@ -2,7 +2,7 @@ import { type DefaultError, infiniteQueryOptions, useInfiniteQuery, useMutation 
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Member } from '~/types';
+import type { Member, Membership } from '~/types';
 
 import { type GetMembersParams, getOrganizationMembers } from '~/api/organizations';
 import { updateMembership } from '~/api/memberships';
@@ -55,7 +55,7 @@ export const membersQueryOptions = (idOrSlug: string, { q, sort: initialSort, or
 
 export const useUpdateUserInOrganizationMutation = (idOrSlug: string) => {
   return useMutation<
-    Member,
+    Membership,
     DefaultError,
     {
       id: string;
@@ -64,8 +64,14 @@ export const useUpdateUserInOrganizationMutation = (idOrSlug: string) => {
   >({
     mutationKey: ['members', 'update', idOrSlug],
     mutationFn: (params) => updateMembership(idOrSlug, params.id, params.role),
-    onSuccess: (member) => {
-      queryClient.setQueryData(['users', idOrSlug], member);
+    // TODO: Review onSuccess
+    onSuccess: (membership) => {
+      const member = queryClient.getQueryData<Member>(['users', idOrSlug]);
+      if (!member) return;
+      queryClient.setQueryData<Member>(['users', idOrSlug], {
+        ...member,
+        organizationRole: membership.role,
+      });
     },
     gcTime: 1000 * 10,
   });

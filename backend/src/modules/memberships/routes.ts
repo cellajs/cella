@@ -2,14 +2,19 @@ import { z } from '@hono/zod-openapi';
 
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
-import { tenantGuard } from '../../middlewares/guard';
-import { deleteMembersQuerySchema, membershipUserParamSchema, updateMembershipJsonSchema } from './schema';
-import { apiOrganizationUserSchema } from '../organizations/schema';
+import { anyTenantGuard } from '../../middlewares/guard';
+import {
+  apiMembershipSchema,
+  deleteMembersParamSchema,
+  deleteMembersQuerySchema,
+  updateMembershipJsonSchema,
+  updateMembershipParamSchema,
+} from './schema';
 
 export const updateMembershipRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/memberships/{id}',
-  guard: tenantGuard(['ADMIN']),
+  path: '/{idOrSlug}/memberships/{user}',
+  guard: anyTenantGuard('idOrSlug'),
   tags: ['memberships'],
   summary: 'Update role, muted, or archived status',
   description: `
@@ -17,7 +22,7 @@ export const updateMembershipRouteConfig = createRouteConfig({
       - Users with role 'ADMIN'
   `,
   request: {
-    params: membershipUserParamSchema,
+    params: updateMembershipParamSchema,
     body: {
       content: {
         'application/json': {
@@ -31,7 +36,7 @@ export const updateMembershipRouteConfig = createRouteConfig({
       description: 'Role, muted, or archived status was updated',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiOrganizationUserSchema),
+          schema: successResponseWithDataSchema(apiMembershipSchema),
         },
       },
     },
@@ -39,10 +44,10 @@ export const updateMembershipRouteConfig = createRouteConfig({
   },
 });
 
-export const deleteMembershipRouteConfig = createRouteConfig({
+export const deleteMembershipsRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/memberships',
-  guard: tenantGuard(['ADMIN']),
+  path: '/{idOrSlug}/memberships',
+  guard: anyTenantGuard('idOrSlug'),
   tags: ['memberships'],
   summary: 'Delete memberships',
   description: `
@@ -51,6 +56,7 @@ export const deleteMembershipRouteConfig = createRouteConfig({
       - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
+    params: deleteMembersParamSchema,
     query: deleteMembersQuerySchema,
   },
   responses: {

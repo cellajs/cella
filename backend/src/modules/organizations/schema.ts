@@ -1,16 +1,14 @@
 import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { imageUrlSchema, nameSchema, paginationQuerySchema, validDomainsSchema, validSlugSchema, validUrlSchema } from '../../lib/common-schemas';
 import { apiUserSchema } from '../users/schema';
-
-export const membershipSchema = createSelectSchema(membershipsTable);
+import { apiMembershipSchema } from '../memberships/schema';
 
 export const apiOrganizationUserSchema = z.object({
   ...apiUserSchema.shape,
-  organizationRole: membershipSchema.shape.role,
+  organizationRole: apiMembershipSchema.shape.role,
 });
 
 export const apiOrganizationSchema = z.object({
@@ -20,7 +18,7 @@ export const apiOrganizationSchema = z.object({
   languages: z.array(z.string()),
   emailDomains: z.array(z.string()).nullable(),
   authStrategies: z.array(z.string()).nullable(),
-  userRole: membershipSchema.shape.role.nullable(),
+  userRole: apiMembershipSchema.shape.role.nullable(),
   counts: z.object({
     admins: z.number(),
     members: z.number(),

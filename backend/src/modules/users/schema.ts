@@ -11,7 +11,7 @@ import {
   slugSchema,
   validSlugSchema,
 } from '../../lib/common-schemas';
-import { membershipSchema } from '../memberships/schema';
+import { apiMembershipSchema } from '../memberships/schema';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
@@ -32,14 +32,6 @@ export const apiUserSchema = createSelectSchema(usersTable, {
   )
   .setKey('sessions', z.array(z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string() })));
 
-export const updateUserParamSchema = z.object({
-  userId: idSchema,
-});
-
-export const getUserParamSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
-});
-
 export const getUsersQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount']).default('createdAt').optional(),
@@ -57,7 +49,7 @@ export const menuItemSchema = z.array(
     thumbnailUrl: imageUrlSchema.nullable(),
     archived: z.boolean(),
     muted: z.boolean(),
-    role: membershipSchema.shape.role.nullable(),
+    role: apiMembershipSchema.shape.role.nullable(),
     type: resourceTypeSchema,
   }),
 );

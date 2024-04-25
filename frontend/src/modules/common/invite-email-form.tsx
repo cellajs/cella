@@ -15,7 +15,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Badge } from '../ui/badge';
-import { useStepper } from '../ui/stepper';
+import { useStepper } from '../common/stepper/use-stepper';
 import SelectRole from './form-fields/select-role';
 import { MultiEmail } from './multi-email';
 
@@ -111,23 +111,22 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
             </FormItem>
           )}
         />
-        {children}
-        {!children && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="submit" loading={isPending} className="relative">
-              {!!form.getValues('emails')?.length && (
-                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
-              )}{' '}
-              <Send size={16} className="mr-2" />
-              {t('common:invite')}
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          {children}
+          <Button type="submit" loading={isPending} className="relative">
+            {!!form.getValues('emails')?.length && (
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
+            )}{' '}
+            <Send size={16} className="mr-2" />
+            {t('common:invite')}
+          </Button>
+          {!children && form.formState.isDirty && (
+            <Button type="reset" variant="secondary" onClick={cancel}>
+              {t('common:cancel')}
             </Button>
-            {form.formState.isDirty && (
-              <Button type="reset" variant="secondary" onClick={cancel}>
-                {t('common:cancel')}
-              </Button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </form>
     </Form>
   );

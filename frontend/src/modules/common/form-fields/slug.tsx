@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Undo } from 'lucide-react';
 import slugify from 'slugify';
+import type { PageResourceType } from 'backend/types/common';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -16,14 +17,18 @@ interface SlugFieldProps {
   nameValue?: string;
   description?: string;
   previousSlug?: string;
+  type: PageResourceType;
 }
 
-export const SlugFormField = ({ control, label, previousSlug, description, nameValue }: SlugFieldProps) => {
-  const form = useFormContext();
+export const SlugFormField = ({ control, label, previousSlug, description, nameValue, type }: SlugFieldProps) => {
+  const form = useFormContext<{
+    slug: string;
+  }>();
   const { t } = useTranslation();
   const [isDeviating, setDeviating] = useState(false);
+  const [isSlugAvailable, setSlugAvailable] = useState(false);
 
-  const { mutate: checkSlug } = useMutation({
+  useMutation({
     mutationFn: checkSlugAvailable,
     onSuccess: (isAvailable) => {
       if (isAvailable) return form.clearErrors('slug');
@@ -38,10 +43,15 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });
 
-  useEffect(() => {
-    if (!previousSlug || slug === previousSlug) return;
+  const isValidSlug = (value: string) => {
+    const regex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    return regex.test(value) && !value.startsWith('-') && !value.endsWith('-') && value.replaceAll(' ', '') !== '';
+  };
 
-    checkSlug(slug);
+  useEffect(() => {
+    if (previousSlug && slug === previousSlug) return;
+    if (isValidSlug(slug)) checkSlugAvailable({slug, type}).then((response) => setSlugAvailable(response));
+    setSlugAvailable(false);
   }, [slug]);
 
   // In create forms, auto-generate from name
@@ -60,6 +70,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     <InputFormField
       control={control}
       name="slug"
+      inputClassName={isSlugAvailable ? 'ring-2 ring-green-500 focus-visible:ring-2 focus-visible:ring-green-500' : ''}
       onFocus={() => setDeviating(true)}
       label={label}
       description={description}

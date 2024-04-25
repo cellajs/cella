@@ -20,7 +20,7 @@
 
 #### Prerelease
 
-> ❗ Please be aware this is a prerelease. It does not meet production requirements yet. Want to contribute? Lets connect! ✉️ <info@cellajs.com>
+> ❗ Please be aware this is a prerelease. It does not meet production requirements yet. Want to contribute? Let's connect! ✉️ <info@cellajs.com>
 
 
 #### Contents

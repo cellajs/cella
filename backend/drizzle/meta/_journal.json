@@ -1,13 +1,13 @@
 {
-  "version": "5",
-  "dialect": "pg",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "5",
-      "when": 1713434080350,
-      "tag": "0000_charming_lady_vermin",
-      "breakpoints": true
-    }
-  ]
+    "version": "5",
+    "dialect": "pg",
+    "entries": [
+        {
+            "idx": 0,
+            "version": "5",
+            "when": 1713434080350,
+            "tag": "0000_charming_lady_vermin",
+            "breakpoints": true
+        }
+    ]
 }

@@ -45,7 +45,7 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & Zero
       value={value}
       ref={ref}
       className={cn(
-        'flex h-11 w-full rounded-md bg-transparent pr-1 py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+        'flex h-10 w-full rounded-md bg-transparent pr-1 py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       {...props}
@@ -78,7 +78,7 @@ CommandEmpty.displayName = CommandPrimitive.Empty.displayName;
 
 const CommandGroup = React.forwardRef<React.ElementRef<typeof CommandPrimitive.Group>, React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>>(
   ({ className, ...props }, ref) => (
-    <CommandPrimitive.Group ref={ref} className={cn('overflow-hidden pt-2 pb-2 text-foreground', className)} {...props} />
+    <CommandPrimitive.Group ref={ref} className={cn('overflow-hidden p-1 text-foreground', className)} {...props} />
   ),
 );
 
