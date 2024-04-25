@@ -73,7 +73,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   }, [allTasks]);
 
   const handleAddStoryClick = () => {
-    setShowCreationForm(true);
+    setShowCreationForm(!showCreationForm);
   };
   const handleIcedStoriesClick = () => {
     setShowIcedStories(!showIcedStories);
@@ -147,8 +147,8 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
         <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} />
 
         <Button variant="plain" size="xs" className="rounded" onClick={handleAddStoryClick}>
-          <Plus size={16} className="mr-1" />
-          Story
+          <Plus size={16} className={`transition-transform ${showCreationForm ? 'rotate-45 scale-125' : 'rotate-0'}`} />
+          <span className="ml-1">Story</span>
         </Button>
       </CardHeader>
       <ScrollArea>
