@@ -8,7 +8,7 @@ import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { DownAlert } from './down-alert';
-
+import ReloadPrompt from '~/modules/common/reload-prompt';
 // Lazy load Tanstack dev tools in development
 const TanStackRouterDevtools =
   config.mode === 'production'
@@ -18,9 +18,6 @@ const TanStackRouterDevtools =
           default: res.TanStackRouterDevtools,
         })),
       );
-
-// Lazy load reload prompt for PWA
-const ReloadPrompt = config.has.pwa ? lazy(() => import('~/modules/common/reload-prompt')) : () => null;
 
 // Lazy load gleap chat support
 const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gleap')) : () => null;
@@ -36,11 +33,8 @@ function Root() {
       <Toaster richColors />
       <Dialoger />
       <Sheeter />
-      {config.has.pwa && (
-        <Suspense fallback={null}>
-          <ReloadPrompt />
-        </Suspense>
-      )}
+      <ReloadPrompt />
+
       <Suspense fallback={null}>
         <TanStackRouterDevtools />
       </Suspense>

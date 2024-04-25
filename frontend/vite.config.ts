@@ -78,42 +78,42 @@ export default defineConfig(() => {
     },
   } satisfies UserConfig;
 
-  if (config.has.pwa)
-    viteConfig.plugins?.push(
-      VitePWA({
-        devOptions: {
-          enabled: false,
-        },
-        manifest: {
-          name: config.name,
-          short_name: config.name,
-          description: config.description,
-          theme_color: config.theme.rose.primary,
-          icons: [
-            {
-              src: '/static/icons/icon-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-            },
-            {
-              src: '/static/icons/icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: '/static/icons/maskable-icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
-        },
-        workbox: {
-          navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
-        },
-      }),
-    );
+  viteConfig.plugins?.push(
+    VitePWA({
+      disable: !config.has.pwa,
+      devOptions: {
+        enabled: false,
+      },
+      manifest: {
+        name: config.name,
+        short_name: config.name,
+        description: config.description,
+        theme_color: config.theme.rose.primary,
+        icons: [
+          {
+            src: '/static/icons/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/static/icons/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/static/icons/maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
+      },
+    }),
+  );
 
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   return viteConfig;

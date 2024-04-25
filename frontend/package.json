@@ -141,13 +141,13 @@
     "tippy.js": "^6.3.7",
     "use-count-up": "^3.0.1",
     "vaul": "^0.9.0",
-    "workbox-window": "^7.1.0",
     "yjs": "^13.6.14",
     "zod": "^3.23.4",
     "zustand": "^4.5.2",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
+    "workbox-window": "^7.1.0",
     "@faker-js/faker": "^8.4.1",
     "@redux-devtools/extension": "^3.3.0",
     "@rollup/plugin-terser": "^0.4.4",
