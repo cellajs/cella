@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
-import type { Task } from '~/mocks/dataGeneration';
+import type { Task, User } from '~/mocks/dataGeneration';
 import { TaskCard } from './task-card';
 import CreateStoryForm from './task-card-form';
 
@@ -56,6 +56,14 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     const updatedTasks = allTasks.map((t) => {
       if (t.id !== task.id) return t;
       return { ...t, status };
+    });
+    setAllTasks(updatedTasks);
+  };
+
+  const setTaskAssignTo = (task: Task, users: User[]) => {
+    const updatedTasks = allTasks.map((t) => {
+      if (t.id !== task.id) return t;
+      return { ...t, users };
     });
     setAllTasks(updatedTasks);
   };
@@ -166,8 +174,8 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
                 isViewState={!foldedTasks.includes(task.id)}
                 toggleTaskClick={toggleTaskVisibility}
                 task={task}
-                user={task.assignedTo}
                 key={task.id}
+                setMainAssignTo={setTaskAssignTo}
               />
             ))}
           </SortableContext>

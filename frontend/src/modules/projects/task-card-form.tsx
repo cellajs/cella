@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type React from 'react';
-import type { UseFormProps } from 'react-hook-form'; //useWatch
+import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { useMemo, useState } from 'react';
@@ -22,6 +22,7 @@ import type { UniqueIdentifier } from '@dnd-kit/core';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
 import type { Task } from '~/mocks/dataGeneration.ts';
+import AssignMembers from './assign-members.tsx';
 
 export interface Story {
   id: UniqueIdentifier;
@@ -137,7 +138,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
           style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '4px' }}
         />
         <SelectImpact mode="create" />
-
+        <AssignMembers mode="create" /> {/*  add members */}
         <div className="flex flex-col sm:flex-row gap-2">
           <Button size={'xs'} type="submit" disabled={text.replaceAll(' ', '') === ''} loading={isPending}>
             {t('common:create')}

@@ -59,6 +59,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
+            clearValue={setSearchValue}
             onValueChange={(searchValue) => {
               // If the user types a number, select the Impact like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {

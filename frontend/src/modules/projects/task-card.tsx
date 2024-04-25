@@ -17,6 +17,7 @@ import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
 import { SelectImpact } from './select-impact.tsx/index.tsx';
 import SelectStatus from './select-status.tsx';
+import AssignMembers from './assign-members.tsx';
 
 interface User {
   id: UniqueIdentifier;
@@ -30,8 +31,8 @@ interface TaskCardProps {
   isViewState?: boolean;
   toggleTaskClick?: (id: UniqueIdentifier) => void;
   isOverlay?: boolean;
-  user: User;
   setTaskStatus: (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
+  setMainAssignTo: (task: Task, users: User[]) => void;
 }
 
 export type TaskType = 'Task';
@@ -41,10 +42,10 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, setTaskStatus }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTaskStatus, setMainAssignTo }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.text);
-
   const [status, setStatus] = useState(task.status);
+  const [assignTo, setAssignTo] = useState(task.assignedTo);
   const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -91,6 +92,9 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
     if (value) task.text = value;
   }, [value]);
 
+  useEffect(() => {
+    setMainAssignTo(task, assignTo);
+  }, [assignTo]);
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {
     if (isViewState) {
@@ -168,26 +172,41 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
           {task.type !== 'bug' && <SelectImpact mode="edit" />}
           <LabelBox />
           <div className="flex gap-2">
-            {task.assignedTo && (
-              <HoverCard>
-                <HoverCardTrigger>
-                  <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80">
-                  <div className="flex justify-between space-x-4">
-                    <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} />
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-semibold">{user.name}</h4>
-                      <p className="text-sm">{user.bio}</p>
-                      <div className="flex items-center pt-2">
-                        <Activity className="mr-2 h-4 w-4 opacity-70" />{' '}
-                        <span className="text-xs text-muted-foreground">{dateShort(new Date().toISOString())}</span>
-                      </div>
-                    </div>
-                  </div>
-                </HoverCardContent>
-              </HoverCard>
-            )}
+            <AssignMembers
+              mode="reassign"
+              passedChild={
+                <button type="button" className="flex gap-1">
+                  {assignTo.length > 0 ? (
+                    assignTo.map((user) => {
+                      return (
+                        <HoverCard>
+                          <HoverCardTrigger>
+                            <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
+                          </HoverCardTrigger>
+                          <HoverCardContent className="w-80">
+                            <div className="flex justify-between space-x-4">
+                              <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} />
+                              <div className="space-y-1">
+                                <h4 className="text-sm font-semibold">{user.name}</h4>
+                                <p className="text-sm">{user.bio}</p>
+                                <div className="flex items-center pt-2">
+                                  <Activity className="mr-2 h-4 w-4 opacity-70" />{' '}
+                                  <span className="text-xs text-muted-foreground">{dateShort(new Date().toISOString())}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      );
+                    })
+                  ) : (
+                    <AvatarWrap type="USER" className="h-6 w-6" />
+                  )}
+                </button>
+              }
+              changeAssignTo={setAssignTo}
+            />
+
             <SelectStatus taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
           </div>
         </div>

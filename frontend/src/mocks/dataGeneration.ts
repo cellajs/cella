@@ -18,7 +18,7 @@ const taskGenerator = (projectId: UniqueIdentifier, userIds: UniqueIdentifier[],
       createdBy: userIds[Math.floor(Math.random() * userIds.length)],
       createdAt: faker.date.anytime(),
       assignedBy: userIds[Math.floor(Math.random() * userIds.length)],
-      assignedTo: executor,
+      assignedTo: [executor],
       assignedAt: faker.date.anytime(),
       modifiedBy: userIds[Math.floor(Math.random() * userIds.length)],
       modifiedAt: faker.date.anytime(),
@@ -105,7 +105,7 @@ export const UserContent = (): User => {
   };
 };
 
-type User = {
+export type User = {
   id: UniqueIdentifier;
   name: string;
   thumbnailUrl: null;
@@ -133,7 +133,7 @@ export type Task = {
   createdBy: UniqueIdentifier;
   createdAt: Date;
   assignedBy: UniqueIdentifier;
-  assignedTo: User;
+  assignedTo: User[];
   assignedAt: Date;
   modifiedBy: UniqueIdentifier;
   modifiedAt: Date;

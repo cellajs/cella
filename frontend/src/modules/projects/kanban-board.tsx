@@ -147,7 +147,7 @@ export default function KanbanBoard() {
         createPortal(
           <DragOverlay>
             {activeColumn && <BoardColumn isOverlay column={activeColumn} tasks={tasks.filter((task) => task.projectId === activeColumn.id)} />}
-            {activeTask && <TaskCard setTaskStatus={() => {}} task={activeTask} isOverlay user={activeTask.assignedTo} />}
+            {activeTask && <TaskCard setTaskStatus={() => {}} setMainAssignTo={() => {}} task={activeTask} isOverlay />}
           </DragOverlay>,
           document.body,
         )}

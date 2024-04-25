@@ -84,6 +84,7 @@ export const SelectImpact = ({ mode = 'create' }: { mode: 'edit' | 'create' }) =
       <PopoverContent className="w-200 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
         <Command className="relative rounded-lg">
           <CommandInput
+            clearValue={setSearchValue}
             value={searchValue}
             onValueChange={(searchValue) => {
               // If the user types a number, select the Impact like useHotkeys
