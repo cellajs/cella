@@ -21,7 +21,7 @@ import { cn } from '~/lib/utils.ts';
 import type { UniqueIdentifier } from '@dnd-kit/core';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
-import type { Task } from '~/mocks/dataGeneration.ts';
+import type { Task, User } from '~/mocks/dataGeneration.ts';
 import AssignMembers from './assign-members.tsx';
 
 export interface Story {
@@ -30,6 +30,7 @@ export interface Story {
   type: 'feature' | 'bug' | 'chore';
   points: 0 | 1 | 2 | 3;
   status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  assignedTo: User[];
 }
 
 interface CreateStoryFormProps {
@@ -80,6 +81,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
         text: '',
         type: 'feature',
         points: 0,
+        assignedTo: [],
       },
     }),
     [],
@@ -109,12 +111,14 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   });
 
   const onSubmit = (values: FormValues) => {
+    console.log('values:', values);
     const story: Story = {
       id: values.id,
       text: text,
       type: values.type as 'feature' | 'bug' | 'chore',
       points: values.points as 0 | 2 | 1 | 3,
       status: 0,
+      assignedTo: [],
     };
     callback?.(story as Task);
     // create(values);
