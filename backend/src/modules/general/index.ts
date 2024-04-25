@@ -24,7 +24,6 @@ import { sendSSE } from '../../lib/sse';
 import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
@@ -37,6 +36,7 @@ import {
   suggestionsConfig,
 } from './routes';
 import { checkRole } from './helpers/check-role';
+import { apiMembershipSchema } from '../memberships/schema';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -134,7 +134,7 @@ const generalRoutes = app
       return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
 
-    if (organization && !checkRole(membershipSchema, role)) {
+    if (organization && !checkRole(apiMembershipSchema, role)) {
       return errorResponse(ctx, 400, 'invalid_role', 'warn');
     }
 

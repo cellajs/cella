@@ -4,10 +4,13 @@ import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { idSchema, slugSchema } from '../../lib/common-schemas';
 
-export const membershipSchema = createSelectSchema(membershipsTable).extend({
-  inactive: z.boolean().default(false),
-  muted: z.boolean().default(false),
-  resourceType: z.string().default('organization'),
+export const membershipSchema = createSelectSchema(membershipsTable);
+
+export const apiMembershipSchema = membershipSchema.extend({
+  inactive: z.boolean().nullable(),
+  muted: z.boolean().nullable(),
+  createdAt: z.string(),
+  modifiedAt: z.string().nullable(),
 });
 
 export const updateMembershipParamSchema = z.object({

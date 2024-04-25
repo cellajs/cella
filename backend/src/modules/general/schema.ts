@@ -1,16 +1,16 @@
 import { z } from 'zod';
 
 import { idSchema, imageUrlSchema, nameSchema, passwordSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
-import { membershipSchema } from '../organizations/schema';
 import { apiUserSchema } from '../users/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '../../db/schema/tokens';
+import { apiMembershipSchema } from '../memberships/schema';
 
 export const tokensSchema = createSelectSchema(tokensTable);
 
 export const inviteJsonSchema = z.object({
   emails: apiUserSchema.shape.email.array().min(1),
-  role: z.union([apiUserSchema.shape.role, membershipSchema.shape.role]).optional(),
+  role: z.union([apiUserSchema.shape.role, apiMembershipSchema.shape.role]).optional(),
 });
 
 export const inviteParamSchema = z.object({

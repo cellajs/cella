@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, inArray } from 'drizzle-orm';
+import { type SQL, and, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { usersTable } from '../../db/schema/users';
@@ -7,8 +7,9 @@ import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import { deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
+import type { OrganizationModel } from '../../db/schema/organizations';
+import type { WorkspaceModel } from '../../db/schema/workspaces';
 
 const app = new CustomHono();
 
@@ -23,8 +24,8 @@ const membershipRoutes = app
     const user = ctx.get('user');
 
     let type: 'ORGANIZATION' | 'WORKSPACE';
-    const organization = ctx.get('organization');
-    const workspace = ctx.get('workspace');
+    const organization = ctx.get('organization') as OrganizationModel | undefined;
+    const workspace = ctx.get('workspace') as WorkspaceModel | undefined;
 
     let where: SQL | undefined;
     if (organization) {
@@ -52,38 +53,40 @@ const membershipRoutes = app
       .returning();
 
     if (!membership) {
+      // TODO: Check if this is necessary
       // if (targetUser.id === user.id) {
       //   [membership] = await db
       //     .insert(membershipsTable)
       //     .values({
       //       userId: user.id,
-      //       organizationId: organization.id,
+      //       organizationId: organization?.id,
+      //       workspaceId: workspace?.id,
       //       role,
       //     })
       //     .returning();
 
-      //   sendSSE(targetUser.id, 'new_organization_membership', {
-      //     ...organization,
-      //     userRole: role,
-      //     type: 'ORGANIZATION',
-      //   });
+      //   if (organization) {
+      //     sendSSE(targetUser.id, 'new_organization_membership', {
+      //       ...organization,
+      //       userRole: role,
+      //       type: 'ORGANIZATION',
+      //     });
+      //   } else {
+      //     sendSSE(targetUser.id, 'new_workspace_membership', {
+      //       ...workspace,
+      //       userRole: role,
+      //       type: 'WORKSPACE',
+      //     });
+      //   }
       // } else {
+      //   return errorResponse(ctx, 404, 'not_found', 'warn', type, {
+      //     user: userId,
+      //   });
       // }
       return errorResponse(ctx, 404, 'not_found', 'warn', type, {
         user: userId,
       });
     }
-
-    const [{ memberships }] = await db
-      .select({
-        memberships: count(),
-      })
-      .from(membershipsTable)
-      .where(where);
-
-    logEvent('Membership updated', {
-      user: userId,
-    });
 
     if (type === 'ORGANIZATION') {
       sendSSE(membership.userId, 'update_organization', {
@@ -103,16 +106,13 @@ const membershipRoutes = app
       });
     }
 
+    logEvent('Membership updated', {
+      user: userId,
+    });
+
     return ctx.json({
       success: true,
-      data: {
-        ...transformDatabaseUser(targetUser),
-        sessions: [],
-        organizationRole: membership.role,
-        counts: {
-          memberships,
-        },
-      },
+      data: membership,
     });
   })
   /*
@@ -128,8 +128,8 @@ const membershipRoutes = app
     const errors: ErrorType[] = [];
 
     let type: 'ORGANIZATION' | 'WORKSPACE';
-    const organization = ctx.get('organization');
-    const workspace = ctx.get('workspace');
+    const organization = ctx.get('organization') as OrganizationModel | undefined;
+    const workspace = ctx.get('workspace') as WorkspaceModel | undefined;
 
     let where: SQL;
     if (organization) {

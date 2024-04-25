@@ -3,8 +3,13 @@ import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
 import { anyTenantGuard } from '../../middlewares/guard';
-import { deleteMembersParamSchema, deleteMembersQuerySchema, updateMembershipJsonSchema, updateMembershipParamSchema } from './schema';
-import { apiOrganizationUserSchema } from '../organizations/schema';
+import {
+  apiMembershipSchema,
+  deleteMembersParamSchema,
+  deleteMembersQuerySchema,
+  updateMembershipJsonSchema,
+  updateMembershipParamSchema,
+} from './schema';
 
 export const updateMembershipRouteConfig = createRouteConfig({
   method: 'put',
@@ -31,7 +36,7 @@ export const updateMembershipRouteConfig = createRouteConfig({
       description: 'Role, muted, or archived status was updated',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiOrganizationUserSchema),
+          schema: successResponseWithDataSchema(apiMembershipSchema),
         },
       },
     },

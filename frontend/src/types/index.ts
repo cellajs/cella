@@ -1,6 +1,6 @@
 import type { PageResourceType } from 'backend/types/common';
 import type { InferResponseType } from 'hono/client';
-import type { organizationsClient, usersClient, workspaceClient } from '~/api';
+import type { membershipClient, organizationsClient, usersClient, workspaceClient } from '~/api';
 
 export enum UploadType {
   Personal,
@@ -38,5 +38,10 @@ export type Member = Extract<
   InferResponseType<(typeof organizationsClient.organizations)[':organization']['members']['$get']>,
   { data: unknown }
 >['data']['items'][number];
+
+export type Membership = Extract<
+  InferResponseType<(typeof membershipClient)[':idOrSlug']['memberships'][':user']['$put']>,
+  { data: unknown }
+>['data'];
 
 export type UserMenu = Extract<InferResponseType<(typeof usersClient.menu)['$get']>, { data: unknown }>['data'];
