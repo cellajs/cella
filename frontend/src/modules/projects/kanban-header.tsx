@@ -39,7 +39,7 @@ function KanbanHeader() {
           }}
         >
           <Plus size={16} />
-          <span className="ml-1">{t('common:add')}</span>
+          <span className="max-sm:hidden ml-1">{t('common:add')}</span>
         </Button>
 
         <Button variant="outline" onClick={openSettingsSheet}>

@@ -14,26 +14,26 @@ const viewOptions = [
   {
     id: 'type',
     options: [
-      { value: 'feature', label: 'feature' },
-      { value: 'bug', label: 'bug' },
-      { value: 'chore', label: 'chore' },
+      { id: 'feature', label: 'feature' },
+      { id: 'bug', label: 'bug' },
+      { id: 'chore', label: 'chore' },
     ],
   },
   {
     id: 'status',
     options: [
-      { value: '1', label: 'unstarted' },
-      { value: '2', label: 'started' },
-      { value: '4', label: 'delivered' },
-      { value: '5', label: 'reviewed' },
+      { id: '1', label: 'unstarted' },
+      { id: '2', label: 'started' },
+      { id: '4', label: 'delivered' },
+      { id: '5', label: 'reviewed' },
     ],
   },
   {
     id: 'labels',
     options: [
-      { value: 'primary', label: 'primary' },
-      { value: 'secondary', label: 'secondary' },
-      { value: 'colors', label: 'colors' },
+      { id: 'primary', label: 'primary' },
+      { id: 'secondary', label: 'secondary' },
+      { id: 'colors', label: 'colors' },
     ],
   },
 ];
@@ -55,21 +55,22 @@ const WorkspaceView = ({ className = '' }: Props) => {
         </DropdownMenuTrigger>
       </TooltipButton>
       <DropdownMenuContent align="end" className="min-w-[320px] p-2 gap-2 flex flex-col">
-          {viewOptions.map((viewOption) => (
-              <ToggleGroup
-                key={viewOption.id}
-                type="multiple"
-                variant="merged"
-                className={cn('gap-0 w-full', className)}
-                onValueChange={(values) => handleValueChange(viewOption.id, values)}
-              >
-                {viewOption.options.map(({ value, label }) => (
-                  <ToggleGroupItem key={value} size="sm" value={value} className="w-full">
-                    <span className="ml-2 text-sm font-normal">{t(`common:${label}`)}</span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-          ))}
+        {viewOptions.map((viewOption) => (
+          <ToggleGroup
+            key={viewOption.id}
+            type="multiple"
+            variant="merged"
+            //TODO: add value from zustand here                value={}
+            className={cn('gap-0 w-full', className)}
+            onValueChange={(values) => handleValueChange(viewOption.id, values)}
+          >
+            {viewOption.options.map(({ id, label }) => (
+              <ToggleGroupItem key={id} size="sm" value={id} className="w-full">
+                <span className="ml-2 text-sm font-normal">{t(`common:${label}`)}</span>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
