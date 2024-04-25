@@ -64,7 +64,7 @@ const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: Ass
                     <AvatarWrap
                       type="USER"
                       key={user.id}
-                      id={user.id as string}
+                      id={user.id}
                       name={user.name}
                       url={user.thumbnailUrl}
                       className="h-6 w-6 text-xs"
@@ -118,7 +118,7 @@ const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: Ass
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
                   <div className="flex items-center gap-3">
-                    <AvatarWrap type="USER" id={member.id as string} name={member.name} url={member.thumbnailUrl} className="h-6 w-6 text-xs" />
+                    <AvatarWrap type="USER" id={member.id} name={member.name} url={member.thumbnailUrl} className="h-6 w-6 text-xs" />
                     <span>{member.name}</span>
                   </div>
 

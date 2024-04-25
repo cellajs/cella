@@ -1,9 +1,8 @@
-import type { UniqueIdentifier } from '@dnd-kit/core';
 import { faker } from '@faker-js/faker';
 
 const roles = ['MEMBER', 'ADMIN'] as const;
 
-const taskGenerator = (projectId: UniqueIdentifier, userIds: UniqueIdentifier[], executor: User, numberOfTasks: number): Task[] => {
+const taskGenerator = (projectId: string, userIds: string[], executor: User, numberOfTasks: number): Task[] => {
   const labels = labelsContent();
   const returnedArray = [] as Task[];
   const type = ['feature', 'bug', 'chore'];
@@ -106,42 +105,42 @@ export const UserContent = (): User => {
 };
 
 export type User = {
-  id: UniqueIdentifier;
+  id: string;
   name: string;
   thumbnailUrl: null;
   bio: string;
 };
 type Label = {
-  id: UniqueIdentifier;
+  id: string;
   value: string;
   label: string;
   color: string;
 };
 
 // type Label = {
-//   id: UniqueIdentifier;
+//   id: string;
 //   slug: string;
 //   name: string;
 //   group: number | null;
 // };
 
 export type Task = {
-  id: UniqueIdentifier;
+  id: string;
   slug: string;
   text: string;
   summary: string;
-  createdBy: UniqueIdentifier;
+  createdBy: string;
   createdAt: Date;
-  assignedBy: UniqueIdentifier;
+  assignedBy: string;
   assignedTo: User[];
   assignedAt: Date;
-  modifiedBy: UniqueIdentifier;
+  modifiedBy: string;
   modifiedAt: Date;
   type: 'feature' | 'bug' | 'chore';
   points: 0 | 1 | 2 | 3;
   status: 0 | 1 | 2 | 3 | 4 | 5 | 6; //(0 = iced, 1=unstarted, 2=started, 3=finished, 4=delivered, 5=reviewed, 6=accepted )
-  labels: UniqueIdentifier[]; //array of labels by id
-  projectId: UniqueIdentifier;
+  labels: string[]; //array of labels by id
+  projectId: string;
   workspaceId: string;
   organizationId: string;
 };
@@ -152,14 +151,14 @@ export type MockResponse = {
 };
 
 export type ComplexProject = {
-  id: UniqueIdentifier;
+  id: string;
   slug: string;
   name: string;
   color: string;
   role: 'ADMIN' | 'MEMBER';
-  createdBy: UniqueIdentifier;
+  createdBy: string;
   createdAt: Date;
-  modifiedBy: UniqueIdentifier;
+  modifiedBy: string;
   modifiedAt: Date;
   workspaceId: string;
   organizationId: string;

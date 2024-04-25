@@ -11,7 +11,6 @@ import {
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
-  type UniqueIdentifier,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -27,7 +26,7 @@ import type { ComplexProject, Task } from '~/mocks/dataGeneration';
 
 export default function KanbanBoard() {
   const [columns, setColumns] = useState<ComplexProject[]>([]);
-  const pickedUpTaskColumn = useRef<UniqueIdentifier | null>(null);
+  const pickedUpTaskColumn = useRef<string | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -46,7 +45,7 @@ export default function KanbanBoard() {
     }),
   );
 
-  function getDraggingTaskData(taskId: UniqueIdentifier, columnId: UniqueIdentifier) {
+  function getDraggingTaskData(taskId: string, columnId: string) {
     const tasksInColumn = tasks.filter((task) => task.projectId === columnId);
     const taskPosition = tasksInColumn.findIndex((task) => task.id === taskId);
     const column = columns.find((col) => col.id === columnId);
@@ -67,7 +66,7 @@ export default function KanbanBoard() {
       }
       if (active.data.current?.type === 'Task') {
         pickedUpTaskColumn.current = active.data.current.task.projectId;
-        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(active.id, pickedUpTaskColumn.current);
+        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(active.id.toString(), pickedUpTaskColumn.current);
         return `Picked up Task ${active.data.current.task.text} at position: ${taskPosition + 1} of ${tasksInColumn.length} in column ${
           column?.name
         }`;
@@ -83,7 +82,7 @@ export default function KanbanBoard() {
         }`;
       }
       if (active.data.current?.type === 'Task' && over.data.current?.type === 'Task') {
-        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(over.id, over.data.current.task.projectId);
+        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(over.id.toString(), over.data.current.task.projectId);
         if (over.data.current.task.projectId !== pickedUpTaskColumn.current) {
           return `Task ${active.data.current.task.text} was moved over column ${column?.name} in position ${taskPosition + 1} of ${
             tasksInColumn.length
@@ -103,7 +102,7 @@ export default function KanbanBoard() {
         return `Column ${active.data.current.column.name} was dropped into position ${overColumnPosition + 1} of ${columnsId.length}`;
       }
       if (active.data.current?.type === 'Task' && over.data.current?.type === 'Task') {
-        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(over.id, over.data.current.task.projectId);
+        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(over.id.toString(), over.data.current.task.projectId);
         if (over.data.current.task.projectId !== pickedUpTaskColumn.current) {
           return `Task was dropped into column ${column?.name} in position ${taskPosition + 1} of ${tasksInColumn.length}`;
         }
@@ -239,7 +238,7 @@ export default function KanbanBoard() {
         const activeIndex = tasks.findIndex((t) => t.id === activeId);
         const activeTask = tasks[activeIndex];
         if (activeTask) {
-          activeTask.projectId = overId;
+          activeTask.projectId = String(overId);
           return arrayMove(tasks, activeIndex, activeIndex);
         }
         return tasks;

@@ -18,7 +18,6 @@ import { SelectImpact } from './select-impact.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { Bolt, Bug, Star } from 'lucide-react';
 import { cn } from '~/lib/utils.ts';
-import type { UniqueIdentifier } from '@dnd-kit/core';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
 import type { Task, User } from '~/mocks/dataGeneration.ts';
@@ -26,7 +25,7 @@ import AssignMembers from './assign-members.tsx';
 import SetLabels, { type Label } from './set-labels.tsx';
 
 export interface Story {
-  id: UniqueIdentifier;
+  id: string;
   text: string;
   type: StoryType;
   points: 0 | 1 | 2 | 3;

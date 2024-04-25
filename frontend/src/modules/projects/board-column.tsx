@@ -1,4 +1,4 @@
-import { type UniqueIdentifier, useDndContext } from '@dnd-kit/core';
+import { useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
@@ -15,7 +15,7 @@ import { TaskCard } from './task-card';
 import CreateStoryForm from './task-card-form';
 
 export interface Column {
-  id: UniqueIdentifier;
+  id: string;
   name: string;
 }
 
@@ -34,7 +34,7 @@ interface BoardColumnProps {
 
 export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   const [allTasks, setAllTasks] = useState<Task[]>(tasks);
-  const [foldedTasks, setFoldedTasks] = useState<UniqueIdentifier[]>(allTasks.map((el) => el.id));
+  const [foldedTasks, setFoldedTasks] = useState<string[]>(allTasks.map((el) => el.id));
   const [showCreationForm, setShowCreationForm] = useState(false);
   const [showIcedStories, setShowIcedStories] = useState(false);
   const [showAcceptedStories, setShowAcceptedStories] = useState(false);
@@ -43,7 +43,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 
   const neededWidth = 375;
 
-  const toggleTaskVisibility = (taskId: UniqueIdentifier) => {
+  const toggleTaskVisibility = (taskId: string) => {
     setFoldedTasks((prevIds) => {
       if (prevIds.includes(taskId)) {
         return prevIds.filter((id) => id !== taskId);
@@ -74,7 +74,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
 
   const handleAddStoryClick = () => {
     if (!showCreationForm) {
-      const container = document.getElementById(`${column.id as string}-viewport`);
+      const container = document.getElementById(`${column.id}-viewport`);
       container?.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -156,7 +156,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           <span className="ml-1">Story</span>
         </Button>
       </CardHeader>
-      <ScrollArea id={column.id as string}>
+      <ScrollArea id={column.id}>
         <CardContent className="flex flex-grow flex-col p-0">
           {showCreationForm && <CreateStoryForm callback={handleStoryCreationCallback} />}
 

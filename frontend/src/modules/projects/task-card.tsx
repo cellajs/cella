@@ -1,4 +1,3 @@
-import type { UniqueIdentifier } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
@@ -17,7 +16,7 @@ import AssignMembers from './assign-members.tsx';
 import SetLabels from './set-labels.tsx';
 
 interface User {
-  id: UniqueIdentifier;
+  id: string;
   name: string;
   thumbnailUrl: null;
   bio: string;
@@ -26,7 +25,7 @@ interface User {
 interface TaskCardProps {
   task: Task;
   isViewState?: boolean;
-  toggleTaskClick?: (id: UniqueIdentifier) => void;
+  toggleTaskClick?: (id: string) => void;
   isOverlay?: boolean;
   setTaskStatus: (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
   setMainAssignedTo: (task: Task, users: User[]) => void;
@@ -97,7 +96,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {
     if (isViewState) {
-      const editorTextAria = document.getElementById(task.id as string);
+      const editorTextAria = document.getElementById(task.id);
       if (!editorTextAria) return;
       const textAreaElement = editorTextAria as HTMLTextAreaElement;
       if (value) textAreaElement.value = value;
@@ -138,7 +137,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
           {isViewState && (
             <div className="flex flex-col gap-2" data-color-mode="dark">
               <MDEditor
-                textareaProps={{ id: task.id as string }}
+                textareaProps={{ id: task.id }}
                 value={value}
                 preview={'edit'}
                 onChange={(newValue) => setValue(newValue)}
