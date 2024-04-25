@@ -1,6 +1,6 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useEffect, useRef, useState } from 'react';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import { enableMocking, stopMocking } from '~/mocks/browser';
 import type { MockResponse } from '~/mocks/dataGeneration';
@@ -25,18 +25,24 @@ const WorkspacePage = () => {
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
   const [content, setContent] = useState({} as MockResponse);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return; // Stop mock worker from running twice in Strict mode
+    }
+
     enableMocking().then(() => {
       fetch('/mock/kanban')
         .then((response) => response.json())
         .then((data) => {
           setContent(data);
-          stopMocking();
+          stopMocking(); // Ensure to stop mocking after fetching data
         })
-        .catch((error) => console.error('Error fetching  MSW data:', error));
+        .catch((error) => console.error('Error fetching MSW data:', error));
     });
-  }, [idOrSlug]);
+  }, [workspace]);
 
   return (
     <WorkspaceContext.Provider value={{ workspace, content }}>

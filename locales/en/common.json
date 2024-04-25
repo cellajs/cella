@@ -290,7 +290,7 @@
   "success.delete_users": "Users have been deleted",
   "success.email_verified": "Email verified and signed in!",
   "success.newsletter_sign_up": "Thanks for requesting info about Cella!",
-  "onboarding_completed": "Great! Lets go.",
+  "onboarding_completed": "Great! Let's go.",
   "onboarding_completed.text": "Have a look at the demo project in your menu.",
   "success.reset_link_sent": "Reset link sent",
   "success.signed_out": "You have been signed out",
@@ -356,7 +356,8 @@
   "project": "Project",
   "projects": "Projects",
   "workspace": "Workspace",
-  "workspaces": "Workspaces",
   "add_project": "Add project",
-  "add_projects": "Add projects"
+  "add_projects": "Add projects",
+  "select_project.text": "Select existing projects",
+  "create_project.text": "Set up a new project"
 }

@@ -152,7 +152,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
               onClick={handleAcceptedStoriesClick}
               variant="ghost"
               size="sm"
-              className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 hover:bg-green-500/10 text-green-500 text-sm -mt-[1px]"
+              className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
             >
               <span className="text-xs">3 accepted stories</span>
               <ChevronDown size={16} className={`transition-transform opacity-50 ${showAcceptedStories ? 'rotate-180' : 'rotate-0'}`} />
@@ -176,7 +176,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
               onClick={handleIcedStoriesClick}
               variant="ghost"
               size="sm"
-              className={`w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/10
+              className={`w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5
               text-sm -mt-[1px]`}
             >
               <span className="text-xs">5 iced stories</span>

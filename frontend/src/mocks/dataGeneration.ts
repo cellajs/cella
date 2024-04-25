@@ -32,7 +32,7 @@ const taskGenerator = (projectId: UniqueIdentifier, userIds: UniqueIdentifier[],
     });
   }
 
-  return returnedArray;
+  return returnedArray.sort((a, b) => b.status - a.status);
 };
 
 export const projectsWithTaskContent = (number: number): ComplexProject[] => {
