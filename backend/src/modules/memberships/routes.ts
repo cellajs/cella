@@ -39,7 +39,7 @@ export const updateMembershipRouteConfig = createRouteConfig({
   },
 });
 
-export const deleteMembershipRouteConfig = createRouteConfig({
+export const deleteMembershipsRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/{idOrSlug}/memberships',
   guard: anyTenantGuard('idOrSlug'),

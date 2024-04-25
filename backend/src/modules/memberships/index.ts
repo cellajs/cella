@@ -1,14 +1,14 @@
-import { type SQL, and, count, eq } from 'drizzle-orm';
+import { type SQL, and, count, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/db';
-import { membershipsTable } from '../../db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { usersTable } from '../../db/schema/users';
 
-import { errorResponse } from '../../lib/errors';
+import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
-import { deleteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
+import { deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
 
 const app = new CustomHono();
 
@@ -118,9 +118,14 @@ const membershipRoutes = app
   /*
    * Delete users from organization
    */
-  .openapi(deleteMembershipRouteConfig, async (ctx) => {
+  .openapi(deleteMembershipsRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
-    const usersIds = Array.isArray(ids) ? ids : [ids];
+    const user = ctx.get('user');
+
+    // * Convert the member ids to an array
+    const memberIds = Array.isArray(ids) ? ids : [ids];
+
+    const errors: ErrorType[] = [];
 
     let type: 'ORGANIZATION' | 'WORKSPACE';
     const organization = ctx.get('organization');
@@ -137,20 +142,67 @@ const membershipRoutes = app
       return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN');
     }
 
-    await Promise.all(
-      usersIds.map(async (id) => {
-        const [targetMembership] = await db.delete(membershipsTable).where(where).returning();
-        if (!targetMembership) {
-          return errorResponse(ctx, 404, 'not_found', 'warn', type, {
+    // * Get the user membership
+    const [currentUserMembership] = (await db
+      .select()
+      .from(membershipsTable)
+      .where(and(where, eq(membershipsTable.userId, user.id)))) as (MembershipModel | undefined)[];
+
+    // * Get the memberships
+    const targets = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(inArray(membershipsTable.userId, memberIds), where));
+
+    // * Check if the memberships exist
+    for (const id of memberIds) {
+      if (!targets.some((target) => target.userId === id)) {
+        errors.push(
+          createError(ctx, 404, 'not_found', 'warn', type, {
             user: id,
-          });
-        }
+          }),
+        );
+      }
+    }
 
-        logEvent('Member deleted', { user: id, membership: targetMembership.id });
+    // * Filter out memberships that the user doesn't have permission to delete
+    const allowedTargets = targets.filter((target) => {
+      if (user.role !== 'ADMIN' && currentUserMembership?.role !== 'ADMIN') {
+        errors.push(
+          createError(ctx, 403, 'delete_forbidden', 'warn', type, {
+            user: target.userId,
+            membership: target.id,
+          }),
+        );
+        return false;
+      }
 
-        sendSSE(id, 'remove_organization_membership', { membership: targetMembership.id });
-      }),
+      return true;
+    });
+
+    // * If the user doesn't have permission to delete any of the memberships, return an error
+    if (allowedTargets.length === 0) {
+      return ctx.json({
+        success: false,
+        errors: errors,
+      });
+    }
+
+    // * Delete the memberships
+    await db.delete(membershipsTable).where(
+      inArray(
+        membershipsTable.id,
+        allowedTargets.map((target) => target.id),
+      ),
     );
+
+    // * Send SSE events for the memberships that were deleted
+    for (const membership of allowedTargets) {
+      // * Send the event to the user if they are a member of the organization
+      sendSSE(membership.userId, 'remove_organization_membership', { membership });
+
+      logEvent('Member deleted', { membership: membership.id });
+    }
 
     return ctx.json({
       success: true,
