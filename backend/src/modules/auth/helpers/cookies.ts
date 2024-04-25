@@ -7,6 +7,7 @@ import { db } from '../../../db/db';
 import { auth } from '../../../db/lucia';
 import { usersTable } from '../../../db/schema/users';
 import { logEvent } from '../../../middlewares/logger/log-event';
+import { randomUUID } from 'crypto';
 
 export const setCookie = (ctx: Context, name: string, value: string) =>
   baseSetCookie(ctx, name, value, {
@@ -17,7 +18,9 @@ export const setCookie = (ctx: Context, name: string, value: string) =>
   });
 
 export const setSessionCookie = async (ctx: Context, userId: User['id'], strategy: string) => {
-  const session = await auth.createSession(userId, {});
+  const session = await auth.createSession(userId, {}, {
+    sessionId: randomUUID(),
+  });
   const sessionCookie = auth.createSessionCookie(session.id);
 
   const lastSignInAt = new Date();

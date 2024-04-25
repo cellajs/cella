@@ -1,5 +1,5 @@
 import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react';
-import { nanoid } from 'nanoid';
+
 import { useCallback, useRef } from 'react';
 import { type Instance, sticky } from 'tippy.js';
 
@@ -48,7 +48,7 @@ export const ImageBlockMenu = ({ editor, appendTo }: MenuProps): JSX.Element => 
   return (
     <BaseBubbleMenu
       editor={editor}
-      pluginKey={`imageBlockMenu-${nanoid()}`}
+      pluginKey={`imageBlockMenu-${window.crypto.randomUUID()}`}
       shouldShow={shouldShow}
       updateDelay={0}
       tippyOptions={{

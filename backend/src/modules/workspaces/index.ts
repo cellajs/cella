@@ -35,7 +35,9 @@ const workspacesRoutes = app
         name,
         slug,
       })
-      .returning();
+      .returning({
+        id: workspacesTable.id,
+      });
 
     logEvent('Workspace created', { workspace: createdWorkspace.id });
 

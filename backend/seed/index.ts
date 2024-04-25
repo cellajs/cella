@@ -7,7 +7,7 @@ import { db } from '../src/db/db';
 import { type InsertMembershipModel, membershipsTable } from '../src/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '../src/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '../src/db/schema/users';
-import { nanoid } from '../src/lib/nanoid';
+
 
 // Seed an admin user to access app first time
 export const usersSeed = async () => {
@@ -24,7 +24,6 @@ export const usersSeed = async () => {
   await db
     .insert(usersTable)
     .values({
-      id: nanoid(),
       email,
       emailVerified: true,
       name: 'Admin User',
@@ -49,15 +48,12 @@ export const organizationsAndMembersSeed = async () => {
 
   const organizationsUniqueEnforcer = new UniqueEnforcer();
 
-  const organizations: (InsertOrganizationModel & {
-    id: string;
-  })[] = Array.from({
+  let organizations: (InsertOrganizationModel & {})[] = Array.from({
     length: 100,
   }).map(() => {
     const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
     return {
-      id: nanoid(),
       name,
       slug: faker.helpers.slugify(name).toLowerCase(),
       bannerUrl: faker.image.url(),
@@ -70,7 +66,8 @@ export const organizationsAndMembersSeed = async () => {
     };
   });
 
-  await db.insert(organizationsTable).values(organizations).onConflictDoNothing();
+  organizations = await db.insert(organizationsTable).values(organizations).
+  returning().onConflictDoNothing();
 
   console.info('Create 100 organizations successfully.');
 
@@ -96,7 +93,6 @@ export const organizationsAndMembersSeed = async () => {
       );
 
       return {
-        id: nanoid(),
         firstName,
         lastName,
         thumbnailUrl: faker.image.avatar(),
@@ -110,12 +106,13 @@ export const organizationsAndMembersSeed = async () => {
       };
     });
 
-    const users = await db.insert(usersTable).values(insertUsers).returning().onConflictDoNothing();
+    const users = await db.insert(usersTable).values(insertUsers).returning({
+        id: usersTable.id,
+    }).onConflictDoNothing();
 
     // Create 100 memberships for each organization
     const memberships: InsertMembershipModel[] = users.map((user) => {
       return {
-        id: nanoid(),
         userId: user.id,
         organizationId: organization.id,
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),

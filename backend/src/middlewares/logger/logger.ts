@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'hono/types';
-import { nanoid } from 'nanoid';
+import { randomUUID } from 'crypto';
 
 enum LogPrefix {
   Outgoing = 'res',
@@ -35,7 +35,7 @@ export const logger = (fn: PrintFunc = console.info): MiddlewareHandler => {
     const { method } = c.req;
 
     // Generate logId and set it so we can use it to match error reports
-    const logId = nanoid();
+    const logId = randomUUID();
     c.set('logId', logId);
 
     // Show path with search params

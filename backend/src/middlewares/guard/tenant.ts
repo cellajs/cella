@@ -7,6 +7,7 @@ import { errorResponse } from '../../lib/errors';
 import type { Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 import { type WorkspaceModel, workspacesTable } from '../../db/schema/workspaces';
+import { mustBeUUID } from '../../lib/uuid';
 
 function isOrganization(entity: OrganizationModel | WorkspaceModel): entity is OrganizationModel {
   return !('organizationId' in entity);
@@ -20,7 +21,7 @@ export const getOrganization = async (idOrSlug: string) => {
   const [organization] = await db
     .select()
     .from(organizationsTable)
-    .where(or(eq(organizationsTable.id, idOrSlug), eq(organizationsTable.slug, idOrSlug)));
+    .where(or(eq(organizationsTable.id, mustBeUUID(idOrSlug)), eq(organizationsTable.slug, idOrSlug)));
 
   return organization;
 };
@@ -29,7 +30,7 @@ export const getWorkspace = async (idOrSlug: string) => {
   const [workspace] = await db
     .select()
     .from(workspacesTable)
-    .where(or(eq(workspacesTable.id, idOrSlug), eq(workspacesTable.slug, idOrSlug)));
+    .where(or(eq(workspacesTable.id, mustBeUUID(idOrSlug)), eq(workspacesTable.slug, idOrSlug)));
 
   return workspace;
 };

@@ -1,6 +1,6 @@
 import { config } from 'config';
-import { relations } from 'drizzle-orm';
-import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
+import { boolean, foreignKey, index, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { membershipsTable } from './memberships';
 
 const roleEnum = ['USER', 'ADMIN'] as const;
@@ -8,7 +8,7 @@ const roleEnum = ['USER', 'ADMIN'] as const;
 export const usersTable = pgTable(
   'users',
   {
-    id: varchar('id').primaryKey(),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     hashedPassword: varchar('hashed_password'),
     slug: varchar('slug').unique().notNull(),
     name: varchar('name').notNull(),
@@ -30,7 +30,7 @@ export const usersTable = pgTable(
     lastSignInAt: timestamp('last_sign_in_at'), // last time user went through authentication flow
     createdAt: timestamp('created_at').defaultNow().notNull(),
     modifiedAt: timestamp('modified_at'),
-    modifiedBy: varchar('modified_by'),
+    modifiedBy: uuid('modified_by'),
     role: varchar('role', { enum: roleEnum }).notNull().default('USER'),
   },
   (table) => {

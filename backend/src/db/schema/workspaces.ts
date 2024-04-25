@@ -1,6 +1,6 @@
-import { relations } from 'drizzle-orm';
-import { index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from '../../lib/nanoid';
+import { relations, sql } from 'drizzle-orm';
+import { index, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+
 import { usersTable } from './users';
 import { membershipsTable } from './memberships';
 import { organizationsTable } from './organizations';
@@ -8,10 +8,10 @@ import { organizationsTable } from './organizations';
 export const workspacesTable = pgTable(
   'workspaces',
   {
-    id: varchar('id').primaryKey().$defaultFn(nanoid),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     name: varchar('name').notNull(),
     slug: varchar('slug').unique().notNull(),
-    organizationId: varchar('organization_id')
+    organizationId: uuid('organization_id')
       .notNull()
       .references(() => organizationsTable.id, {
         onDelete: 'cascade',
@@ -19,11 +19,11 @@ export const workspacesTable = pgTable(
     thumbnailUrl: varchar('thumbnail_url'),
     bannerUrl: varchar('banner_url'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    createdBy: varchar('created_by').references(() => usersTable.id, {
+    createdBy: uuid('created_by').references(() => usersTable.id, {
       onDelete: 'set null',
     }),
     modifiedAt: timestamp('modified_at'),
-    modifiedBy: varchar('modified_by').references(() => usersTable.id, {
+    modifiedBy: uuid('modified_by').references(() => usersTable.id, {
       onDelete: 'set null',
     }),
   },

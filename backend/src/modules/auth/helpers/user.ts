@@ -34,18 +34,19 @@ export const handleCreateUser = async (
   try {
     // * Insert the user into the database
     const [user] = await db.insert(usersTable).values({
-      id: data.id,
       slug: slugAvailable ? data.slug : `${data.slug}-${data.id}`,
       firstName: data.firstName,
       email: data.email.toLowerCase(),
       name: data.name,
       language: config.defaultLanguage,
       hashedPassword: data.hashedPassword,
-    }).returning();
+    }).returning({
+        id: usersTable.id,
+    });
 
     // * If a provider is passed, insert the oauth account
     if (options?.provider) {
-      await insertOauthAccount(data.id, options.provider.id, options.provider.userId);
+      await insertOauthAccount(user.id, options.provider.id, options.provider.userId);
       // await setSessionCookie(ctx, data.id, options.provider.id.toLowerCase());
     }
 

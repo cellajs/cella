@@ -47,7 +47,9 @@ const organizationsRoutes = app
         defaultLanguage: config.defaultLanguage,
         createdBy: user.id,
       })
-      .returning();
+      .returning({
+        id: organizationsTable.id,
+      });
 
     logEvent('Organization created', { organization: createdOrganization.id });
 

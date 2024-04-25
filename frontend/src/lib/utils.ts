@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import i18next from 'i18next';
-import { customAlphabet } from 'nanoid';
+
 import * as React from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -27,8 +27,8 @@ export function dateShort(date?: string | null) {
   });
 }
 
-// nanoid with only lowercase letters and numbers
-export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789');
+
+
 
 // Merge tailwind classes
 export function cn(...inputs: ClassValue[]) {

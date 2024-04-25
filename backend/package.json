@@ -49,7 +49,6 @@
     "jsonwebtoken": "^9.0.2",
     "locales": "workspace:*",
     "lucia": "^3.1.1",
-    "nanoid": "^5.0.6",
     "node-cron": "^3.0.3",
     "oslo": "^1.1.3",
     "pg": "^8.11.3",

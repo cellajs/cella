@@ -1,6 +1,6 @@
 import { render } from '@react-email/render';
 import { eq } from 'drizzle-orm';
-import { generateId } from 'lucia';
+
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { VerificationEmail } from '../../../../email/emails/email-verification';
 import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
@@ -15,7 +15,7 @@ import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
-import { nanoid } from '../../lib/nanoid';
+import { randomUUID } from 'crypto';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
@@ -59,7 +59,6 @@ const authRoutes = app
 
     // * hash password
     const hashedPassword = await new Argon2id().hash(password);
-    const userId = nanoid();
 
     const slug = slugFromEmail(email);
 
@@ -69,7 +68,6 @@ const authRoutes = app
     return await handleCreateUser(
       ctx,
       {
-        id: userId,
         slug,
         name: slug,
         email: email.toLowerCase(),
@@ -155,7 +153,7 @@ const authRoutes = app
 
     // * creating email verification token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
-    const token = generateId(40);
+    const token = randomUUID();
     await db.insert(tokensTable).values({
       id: token,
       type: 'EMAIL_VERIFICATION',
@@ -214,7 +212,7 @@ const authRoutes = app
 
     // * creating password reset token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
-    const token = generateId(40);
+    const token = randomUUID();
     await db.insert(tokensTable).values({
       id: token,
       type: 'PASSWORD_RESET',

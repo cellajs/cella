@@ -1,5 +1,5 @@
 import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react';
-import { nanoid } from 'nanoid';
+
 import { useCallback } from 'react';
 import { sticky } from 'tippy.js';
 
@@ -37,7 +37,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
   return (
     <BaseBubbleMenu
       editor={editor}
-      pluginKey={`columnsMenu-${nanoid()}`}
+      pluginKey={`columnsMenu-${window.crypto.randomUUID()}`}
       shouldShow={shouldShow}
       updateDelay={0}
       tippyOptions={{

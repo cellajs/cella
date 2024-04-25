@@ -1,9 +1,9 @@
-import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { usersTable } from './users';
 
 export const sessionsTable = pgTable('sessions', {
-  id: varchar('id').primaryKey(),
-  userId: varchar('user_id')
+  id: uuid('id').primaryKey(),  // Lucia doesn't support default database values.
+  userId: uuid('user_id')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),

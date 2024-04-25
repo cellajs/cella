@@ -9,7 +9,6 @@ import { db } from '../../db/db';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { tokensTable } from '../../db/schema/tokens';
 import { errorResponse } from '../../lib/errors';
-import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { setSessionCookie } from './helpers/cookies';
@@ -197,13 +196,11 @@ const oauthRoutes = app
         });
       }
 
-      const userId = nanoid();
 
       // * Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
-          id: userId,
           slug: slugify(githubUser.login, { lower: true }),
           email: primaryEmail.email.toLowerCase(),
           name: githubUser.name || githubUser.login,
@@ -294,13 +291,10 @@ const oauthRoutes = app
         });
       }
 
-      const userId = nanoid();
-
       // * Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
-          id: userId,
           slug: slugFromEmail(user.email),
           email: user.email.toLowerCase(),
           name: user.given_name,
@@ -391,13 +385,10 @@ const oauthRoutes = app
         });
       }
 
-      const userId = nanoid();
-
       // * Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
-          id: userId,
           slug: slugFromEmail(user.email),
           language: config.defaultLanguage,
           email: user.email.toLowerCase(),
