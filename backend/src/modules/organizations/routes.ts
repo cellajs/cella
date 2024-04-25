@@ -84,32 +84,6 @@ export const updateOrganizationRouteConfig = createRouteConfig({
   },
 });
 
-export const deleteOrganizationsRouteConfig = createRouteConfig({
-  method: 'delete',
-  path: '/organizations',
-  guard: systemGuard,
-  tags: ['organizations'],
-  summary: 'Delete organizations',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
-  request: {
-    query: deleteByIdsQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Success',
-      content: {
-        'application/json': {
-          schema: successResponseWithErrorsSchema(),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const getOrganizationsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations',
@@ -184,6 +158,32 @@ export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithPaginationSchema(apiOrganizationUserSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const deleteOrganizationsRouteConfig = createRouteConfig({
+  method: 'delete',
+  path: '/organizations',
+  guard: systemGuard,
+  tags: ['organizations'],
+  summary: 'Delete organizations',
+  description: `
+    Permissions:
+      - Users with role 'ADMIN'
+  `,
+  request: {
+    query: deleteByIdsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Success',
+      content: {
+        'application/json': {
+          schema: successResponseWithErrorsSchema(),
         },
       },
     },
