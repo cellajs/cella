@@ -386,7 +386,7 @@ const organizationsRoutes = app
     const errors: ErrorType[] = [];
 
     // * Get the organizations and the user role
-    const targetOrganizations = await db
+    const targets = await db
       .select({
         organization: organizationsTable,
         userRole: membershipsTable.role,
@@ -397,7 +397,7 @@ const organizationsRoutes = app
 
     // * Check if the organizations exist
     for (const id of organizationIds) {
-      if (!targetOrganizations.some((org) => org.organization.id === id)) {
+      if (!targets.some((target) => target.organization.id === id)) {
         errors.push(
           createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', {
             organization: id,
@@ -407,10 +407,10 @@ const organizationsRoutes = app
     }
 
     // * Filter out organizations that the user doesn't have permission to delete
-    const allowedOrganizations = targetOrganizations.filter((org) => {
-      const organizationId = org.organization.id;
+    const allowedTargets = targets.filter((target) => {
+      const organizationId = target.organization.id;
 
-      if (user.role !== 'ADMIN' && org.userRole !== 'ADMIN') {
+      if (user.role !== 'ADMIN' && target.userRole !== 'ADMIN') {
         errors.push(
           createError(ctx, 403, 'delete_forbidden', 'warn', 'ORGANIZATION', {
             organization: organizationId,
@@ -423,7 +423,7 @@ const organizationsRoutes = app
     });
 
     // * If the user doesn't have permission to delete any of the organizations, return an error
-    if (allowedOrganizations.length === 0) {
+    if (allowedTargets.length === 0) {
       return ctx.json({
         success: false,
         errors: errors,
@@ -434,12 +434,12 @@ const organizationsRoutes = app
     await db.delete(organizationsTable).where(
       inArray(
         organizationsTable.id,
-        allowedOrganizations.map((org) => org.organization.id),
+        allowedTargets.map((target) => target.organization.id),
       ),
     );
 
     // * Send SSE events for the organizations that were deleted
-    for (const { organization, userRole } of allowedOrganizations) {
+    for (const { organization, userRole } of allowedTargets) {
       // * Send the event to the user if they are a member of the organization
       if (userRole) {
         sendSSE(user.id, 'remove_organization', organization);

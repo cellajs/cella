@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
@@ -151,40 +151,67 @@ const workspacesRoutes = app
 
     const errors: ErrorType[] = [];
 
-    await Promise.all(
-      workspaceIds.map(async (id) => {
-        const [result] = await db
-          .select({
-            workspace: workspacesTable,
-            userRole: membershipsTable.role,
-          })
-          .from(workspacesTable)
-          .leftJoin(membershipsTable, and(eq(membershipsTable.workspaceId, workspacesTable.id), eq(membershipsTable.userId, user.id)))
-          .where(eq(workspacesTable.id, id));
+    // * Get the workspaces and the user role
+    const targets = await db
+      .select({
+        workspace: workspacesTable,
+        userRole: membershipsTable.role,
+      })
+      .from(workspacesTable)
+      .leftJoin(membershipsTable, and(eq(membershipsTable.workspaceId, workspacesTable.id), eq(membershipsTable.userId, user.id)))
+      .where(inArray(workspacesTable.id, workspaceIds));
 
-        if (!result) {
-          errors.push(
-            createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', {
-              workspace: id,
-            }),
-          );
-        }
+    // * Check if the workspaces exist
+    for (const id of workspaceIds) {
+      if (!targets.some((target) => target.workspace.id === id)) {
+        errors.push(
+          createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', {
+            workspace: id,
+          }),
+        );
+      }
+    }
 
-        if (user.role !== 'ADMIN') {
-          errors.push(
-            createError(ctx, 403, 'delete_forbidden', 'warn', 'WORKSPACE', {
-              workspace: id,
-            }),
-          );
-        }
+    // * Filter out workspaces that the user doesn't have permission to delete
+    const allowedTargets = targets.filter((target) => {
+      const workspaceId = target.workspace.id;
 
-        await db.delete(workspacesTable).where(eq(workspacesTable.id, id));
+      if (user.role !== 'ADMIN' && target.userRole !== 'ADMIN') {
+        errors.push(
+          createError(ctx, 403, 'delete_forbidden', 'warn', 'WORKSPACE', {
+            workspace: workspaceId,
+          }),
+        );
+        return false;
+      }
 
-        if (result.userRole) sendSSE(user.id, 'remove_workspace', result.workspace);
+      return true;
+    });
 
-        logEvent('Workspace deleted', { workspace: id });
-      }),
+    // * If the user doesn't have permission to delete any of the workspaces, return an error
+    if (allowedTargets.length === 0) {
+      return ctx.json({
+        success: false,
+        errors: errors,
+      });
+    }
+
+    await db.delete(workspacesTable).where(
+      inArray(
+        workspacesTable.id,
+        allowedTargets.map((target) => target.workspace.id),
+      ),
     );
+
+    // * Send SSE events for the workspaces that were deleted
+    for (const { workspace, userRole } of allowedTargets) {
+      // * Send the event to the user if they are a member of the workspace
+      if (userRole) {
+        sendSSE(user.id, 'remove_workspace', workspace);
+      }
+
+      logEvent('Workspace deleted', { workspace: workspace.id });
+    }
 
     return ctx.json({
       success: true,
