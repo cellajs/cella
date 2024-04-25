@@ -10,6 +10,7 @@ import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import AddProjects from './add-projects';
 import { AvatarWrap } from '../common/avatar-wrap';
+import LabelsTable from './labels-table';
 
 function KanbanHeader() {
   const { t } = useTranslation();
@@ -23,13 +24,22 @@ function KanbanHeader() {
     });
   };
 
+  const openLablesSheet = () => {
+    sheet(<LabelsTable />, {
+      className: 'sm:max-w-[48rem]',
+      title: 'Labels',
+      // text: '',
+      id: 'workspace_settings',
+    });
+  };
+
   return (
     <>
       <div className="flex items-center max-sm:justify-between gap-2">
+        <AvatarWrap type="WORKSPACE" id="sdfsdfsdf" name="dfsdfsdf" url={null} />
 
-      <AvatarWrap type="WORKSPACE" id="sdfsdfsdf" name="dfsdfsdf" url={null} />
-
-        <Button variant="plain"
+        <Button
+          variant="plain"
           onClick={() => {
             dialog(<AddProjects dialog />, {
               //callback={(project) => callback([project], 'create')} dialog
@@ -47,7 +57,7 @@ function KanbanHeader() {
           <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
         </Button>
 
-        <Button variant="outline" onClick={openSettingsSheet}>
+        <Button variant="outline" onClick={openLablesSheet}>
           <Tag size={16} />
           <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
         </Button>
