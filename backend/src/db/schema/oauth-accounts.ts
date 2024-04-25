@@ -1,4 +1,4 @@
-import { pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, primaryKey, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from './users';
 
 const providerIdEnum = ['GITHUB', 'GOOGLE', 'MICROSOFT'] as const;
@@ -8,7 +8,7 @@ export const oauthAccountsTable = pgTable(
   {
     providerId: varchar('provider_id', { enum: providerIdEnum }).notNull(),
     providerUserId: varchar('provider_user_id').notNull(),
-    userId: varchar('user_id')
+    userId: uuid('user_id')
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').defaultNow().notNull(),

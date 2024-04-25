@@ -23,6 +23,7 @@ import {
   terminateSessionsConfig,
   updateUserConfig,
 } from './routes';
+import { mustBeUUID } from '../../lib/uuid';
 
 const app = new CustomHono();
 
@@ -346,7 +347,7 @@ const usersRoutes = app
     const [targetUser] = await db
       .select()
       .from(usersTable)
-      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)));
+      .where(or(eq(usersTable.id, mustBeUUID(idOrSlug)), eq(usersTable.slug, idOrSlug)));
 
     if (!targetUser) {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: idOrSlug });

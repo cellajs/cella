@@ -9,7 +9,7 @@ import { db } from '../../db/db';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 import { tokensTable } from '../../db/schema/tokens';
 import { errorResponse } from '../../lib/errors';
-import { nanoid } from '../../lib/nanoid';
+import { randomUUID } from 'crypto';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { setSessionCookie } from './helpers/cookies';
@@ -197,7 +197,7 @@ const oauthRoutes = app
         });
       }
 
-      const userId = nanoid();
+      const userId = randomUUID();
 
       // * Create new user and oauth account
       return await handleCreateUser(
@@ -294,7 +294,7 @@ const oauthRoutes = app
         });
       }
 
-      const userId = nanoid();
+      const userId = randomUUID();
 
       // * Create new user and oauth account
       return await handleCreateUser(
@@ -391,7 +391,7 @@ const oauthRoutes = app
         });
       }
 
-      const userId = nanoid();
+      const userId = randomUUID();
 
       // * Create new user and oauth account
       return await handleCreateUser(

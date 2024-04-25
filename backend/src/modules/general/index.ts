@@ -7,7 +7,8 @@ import { config } from 'config';
 import { env } from 'env';
 import { streamSSE, type SSEStreamingApi } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
-import { type User, generateId } from 'lucia';
+import { type User } from 'lucia';
+import { randomUUID } from 'crypto';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 
 import { db } from '../../db/db';
@@ -198,7 +199,7 @@ const generalRoutes = app
         }
       }
 
-      const token = generateId(40);
+      const token = randomUUID();
       await db.insert(tokensTable).values({
         id: token,
         type: organization ? 'ORGANIZATION_INVITATION' : 'SYSTEM_INVITATION',

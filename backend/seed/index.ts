@@ -7,7 +7,7 @@ import { db } from '../src/db/db';
 import { type InsertMembershipModel, membershipsTable } from '../src/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '../src/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '../src/db/schema/users';
-import { nanoid } from '../src/lib/nanoid';
+import { randomUUID } from 'crypto';
 
 // Seed an admin user to access app first time
 export const usersSeed = async () => {
@@ -24,7 +24,7 @@ export const usersSeed = async () => {
   await db
     .insert(usersTable)
     .values({
-      id: nanoid(),
+      id: randomUUID(),
       email,
       emailVerified: true,
       name: 'Admin User',
@@ -57,7 +57,7 @@ export const organizationsAndMembersSeed = async () => {
     const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
     return {
-      id: nanoid(),
+      id: randomUUID(),
       name,
       slug: faker.helpers.slugify(name).toLowerCase(),
       bannerUrl: faker.image.url(),
@@ -96,7 +96,7 @@ export const organizationsAndMembersSeed = async () => {
       );
 
       return {
-        id: nanoid(),
+        id: randomUUID(),
         firstName,
         lastName,
         thumbnailUrl: faker.image.avatar(),
@@ -115,7 +115,7 @@ export const organizationsAndMembersSeed = async () => {
     // Create 100 memberships for each organization
     const memberships: InsertMembershipModel[] = users.map((user) => {
       return {
-        id: nanoid(),
+        id: randomUUID(),
         userId: user.id,
         organizationId: organization.id,
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
