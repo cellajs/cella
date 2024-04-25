@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 
 import type { User } from 'lucia';
 import { coalesce, db } from '../../db/db';
@@ -298,45 +298,6 @@ const usersRoutes = app
     });
   })
   /*
-   * Delete users
-   */
-  .openapi(deleteUsersRouteConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
-    const user = ctx.get('user');
-
-    const userIds = Array.isArray(ids) ? ids : [ids];
-
-    const errors: ErrorType[] = [];
-
-    await Promise.all(
-      userIds.map(async (id) => {
-        const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
-
-        if (!targetUser) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', 'USER', { user: id }));
-        }
-
-        if (user.role !== 'ADMIN' && user.id !== id) {
-          errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'USER', { user: id }));
-        }
-
-        await db.delete(usersTable).where(eq(usersTable.id, id));
-
-        if (user.id === id) {
-          await auth.invalidateUserSessions(user.id);
-          removeSessionCookie(ctx);
-        }
-
-        logEvent('User deleted', { user: targetUser.id });
-      }),
-    );
-
-    return ctx.json({
-      success: true,
-      errors: errors,
-    });
-  })
-  /*
    * Get a user by id or slug
    */
   .openapi(getUserByIdOrSlugRouteConfig, async (ctx) => {
@@ -372,6 +333,79 @@ const usersRoutes = app
           memberships,
         },
       },
+    });
+  }) /*
+   * Delete users
+   */
+  .openapi(deleteUsersRouteConfig, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
+    const user = ctx.get('user');
+
+    // * Convert the user ids to an array
+    const userIds = Array.isArray(ids) ? ids : [ids];
+
+    const errors: ErrorType[] = [];
+
+    // * Get the users
+    const targets = await db.select().from(usersTable).where(inArray(usersTable.id, userIds));
+
+    // * Check if the users exist
+    for (const id of userIds) {
+      if (!targets.some((target) => target.id === id)) {
+        errors.push(
+          createError(ctx, 404, 'not_found', 'warn', 'USER', {
+            user: id,
+          }),
+        );
+      }
+    }
+
+    // * Filter out users that the user doesn't have permission to delete
+    const allowedTargets = targets.filter((target) => {
+      const userId = target.id;
+
+      if (user.role !== 'ADMIN' && user.id !== userId) {
+        errors.push(
+          createError(ctx, 403, 'delete_forbidden', 'warn', 'USER', {
+            user: userId,
+          }),
+        );
+        return false;
+      }
+
+      return true;
+    });
+
+    // * If the user doesn't have permission to delete any of the users, return an error
+    if (allowedTargets.length === 0) {
+      return ctx.json({
+        success: false,
+        errors: errors,
+      });
+    }
+
+    // * Delete the users
+    await db.delete(usersTable).where(
+      inArray(
+        usersTable.id,
+        allowedTargets.map((target) => target.id),
+      ),
+    );
+
+    // * Send SSE events for the users that were deleted
+    for (const { id } of allowedTargets) {
+      // * Invalidate the user's sessions if the user is deleting themselves
+      if (user.id === id) {
+        await auth.invalidateUserSessions(user.id);
+        removeSessionCookie(ctx);
+      }
+
+      logEvent('User deleted', { user: id });
+    }
+
+    return ctx.json({
+      success: true,
+      errors: errors,
     });
   });
 
