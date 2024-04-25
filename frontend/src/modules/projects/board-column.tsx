@@ -73,6 +73,11 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
   }, [allTasks]);
 
   const handleAddStoryClick = () => {
+    if (!showCreationForm) {
+      const container = document.getElementById(`${column.id as string}-viewport`);
+      container?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     setShowCreationForm(!showCreationForm);
   };
   const handleIcedStoriesClick = () => {
@@ -151,7 +156,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           <span className="ml-1">Story</span>
         </Button>
       </CardHeader>
-      <ScrollArea>
+      <ScrollArea id={column.id as string}>
         <CardContent className="flex flex-grow flex-col p-0">
           {showCreationForm && <CreateStoryForm callback={handleStoryCreationCallback} />}
 

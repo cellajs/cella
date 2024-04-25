@@ -111,7 +111,6 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   });
 
   const onSubmit = (values: FormValues) => {
-    console.log('values:', values);
     const story: Story = {
       id: values.id,
       text: text,
