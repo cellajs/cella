@@ -21,16 +21,18 @@ import { cn } from '~/lib/utils.ts';
 import type { UniqueIdentifier } from '@dnd-kit/core';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
+import type { Task } from '~/mocks/dataGeneration.ts';
 
 export interface Story {
   id: UniqueIdentifier;
   text: string;
   type: 'feature' | 'bug' | 'chore';
   points: 0 | 1 | 2 | 3;
+  status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 interface CreateStoryFormProps {
-  callback?: (story: Story) => void;
+  callback?: (story?: Task) => void;
   dialog?: boolean;
 }
 
@@ -111,29 +113,30 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
       text: text,
       type: values.type as 'feature' | 'bug' | 'chore',
       points: values.points as 0 | 2 | 1 | 3,
+      status: 0,
     };
-    callback?.(story as Story);
+    callback?.(story as Task);
     // create(values);
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 p-4 border-b">
-          <StoryTypeChoose />
-          <MDEditor
-            value={text}
-            defaultTabEnable={true}
-            preview={'edit'}
-            onChange={(newValue) => {
-              if (typeof newValue === 'string') setText(newValue);
-            }}
-            hideToolbar={true}
-            visibleDragbar={false}
-            height={'auto'}
-            className="border"
-            style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '4px' }}
-          />
-          <SelectImpact mode="create" />
+        <StoryTypeChoose />
+        <MDEditor
+          value={text}
+          defaultTabEnable={true}
+          preview={'edit'}
+          onChange={(newValue) => {
+            if (typeof newValue === 'string') setText(newValue);
+          }}
+          hideToolbar={true}
+          visibleDragbar={false}
+          height={'auto'}
+          className="border"
+          style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '4px' }}
+        />
+        <SelectImpact mode="create" />
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Button size={'xs'} type="submit" disabled={text.replaceAll(' ', '') === ''} loading={isPending}>
@@ -145,7 +148,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
             variant="secondary"
             aria-label="Cancel"
             onClick={() => {
-              callback?.({} as Story);
+              callback?.();
               form.reset();
             }}
           >

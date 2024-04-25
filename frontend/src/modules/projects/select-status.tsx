@@ -50,7 +50,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
             <Button aria-label="Set status" variant="plain" size="micro" className="rounded-none rounded-r -ml-2">
-            <ChevronDown size={12} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
+              <ChevronDown size={12} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
             </Button>
           </PopoverTrigger>
         </TooltipTrigger>

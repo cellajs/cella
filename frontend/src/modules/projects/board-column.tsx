@@ -74,7 +74,14 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     setShowAcceptedStories(!showAcceptedStories);
   };
 
-  const handleStoryCreationCallback = () => {
+  const handleStoryCreationCallback = (value?: Task) => {
+    if (!value) {
+      setShowCreationForm(false);
+      return;
+    }
+    const updatedTasks = [...allTasks, ...[value]];
+    setAllTasks(updatedTasks);
+    setFoldedTasks(updatedTasks.map((el) => el.id));
     setShowCreationForm(false);
   };
 

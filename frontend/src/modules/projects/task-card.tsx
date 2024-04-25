@@ -43,6 +43,7 @@ export interface TaskDragData {
 
 export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, setTaskStatus }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.text);
+
   const [status, setStatus] = useState(task.status);
   const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -61,23 +62,26 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('group/task rounded-none border-0 text-sm bg-transparent hover:bg-card bg-gradient-to-br from-transparent via-transparent via-60%', {
-    variants: {
-      dragging: {
-        over: 'ring-2 opacity-30',
-        overlay: 'ring-2 ring-primary',
-      },
-      status: {
-        0: 'to-sky-600/10 to-100%',
-        1: '',
-        2: '',
-        3: 'to-mint-600/10 to-100%',
-        4: 'to-yellow-600/10 to-100%',
-        5: 'to-orange-600/10 to-100%',
-        6: 'to-lime-600/10 to-100%',
+  const variants = cva(
+    'group/task rounded-none border-0 text-sm bg-transparent hover:bg-card bg-gradient-to-br from-transparent via-transparent via-60%',
+    {
+      variants: {
+        dragging: {
+          over: 'ring-2 opacity-30',
+          overlay: 'ring-2 ring-primary',
+        },
+        status: {
+          0: 'to-sky-600/10 to-100%',
+          1: '',
+          2: '',
+          3: 'to-mint-600/10 to-100%',
+          4: 'to-yellow-600/10 to-100%',
+          5: 'to-orange-600/10 to-100%',
+          6: 'to-lime-600/10 to-100%',
+        },
       },
     },
-  });
+  );
 
   const toggleEditorState = () => {
     if (toggleTaskClick) toggleTaskClick(task.id);
@@ -163,26 +167,27 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, user, 
 
           {task.type !== 'bug' && <SelectImpact mode="edit" />}
           <LabelBox />
-
           <div className="flex gap-2">
-            <HoverCard>
-              <HoverCardTrigger>
-                <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80">
-                <div className="flex justify-between space-x-4">
-                  <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} />
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-semibold">{user.name}</h4>
-                    <p className="text-sm">{user.bio}</p>
-                    <div className="flex items-center pt-2">
-                      <Activity className="mr-2 h-4 w-4 opacity-70" />{' '}
-                      <span className="text-xs text-muted-foreground">{dateShort(new Date().toISOString())}</span>
+            {task.assignedTo && (
+              <HoverCard>
+                <HoverCardTrigger>
+                  <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80">
+                  <div className="flex justify-between space-x-4">
+                    <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} />
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-semibold">{user.name}</h4>
+                      <p className="text-sm">{user.bio}</p>
+                      <div className="flex items-center pt-2">
+                        <Activity className="mr-2 h-4 w-4 opacity-70" />{' '}
+                        <span className="text-xs text-muted-foreground">{dateShort(new Date().toISOString())}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
+                </HoverCardContent>
+              </HoverCard>
+            )}
             <SelectStatus taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
           </div>
         </div>
