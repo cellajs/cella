@@ -57,7 +57,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       if (t.id !== task.id) return t;
       return { ...t, status };
     });
-    setAllTasks(updatedTasks);
+    setAllTasks(updatedTasks.sort((a, b) => b.status - a.status));
   };
 
   const setTaskAssignTo = (task: Task, users: User[]) => {

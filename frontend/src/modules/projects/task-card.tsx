@@ -45,6 +45,7 @@ export interface TaskDragData {
 export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTaskStatus, setMainAssignTo }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.text);
   const [status, setStatus] = useState(task.status);
+
   const [assignTo, setAssignTo] = useState(task.assignedTo);
   const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -95,6 +96,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
   useEffect(() => {
     setMainAssignTo(task, assignTo);
   }, [assignTo]);
+
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {
     if (isViewState) {
@@ -110,6 +112,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
   useEffect(() => {
     setTaskStatus(task, status);
   }, [status]);
+  console.log('status:', status);
 
   return (
     <Card

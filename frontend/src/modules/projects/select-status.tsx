@@ -37,7 +37,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
   const nextStatusClick = () => {
     const statusIndex = selectedStatus.value;
     setSelectedStatus(statuses[statusIndex + 1]);
-    changeTaskStatus(statusIndex);
+    changeTaskStatus(statusIndex + 1);
   };
 
   return (
