@@ -186,7 +186,9 @@ const generalRoutes = app
               role: (role as MembershipModel['role']) || 'MEMBER',
               createdBy: user.id,
             })
-            .returning();
+            .returning({
+                id: membershipsTable.id,
+            });
 
           logEvent('User added to organization', { user: user.id, organization: organization.id });
 

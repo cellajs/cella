@@ -59,7 +59,6 @@ const authRoutes = app
 
     // * hash password
     const hashedPassword = await new Argon2id().hash(password);
-    const userId = randomUUID();
 
     const slug = slugFromEmail(email);
 
@@ -69,7 +68,6 @@ const authRoutes = app
     return await handleCreateUser(
       ctx,
       {
-        id: userId,
         slug,
         name: slug,
         email: email.toLowerCase(),
