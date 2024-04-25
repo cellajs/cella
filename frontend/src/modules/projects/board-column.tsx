@@ -60,7 +60,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     setAllTasks(updatedTasks.sort((a, b) => b.status - a.status));
   };
 
-  const setTaskAssignTo = (task: Task, users: User[]) => {
+  const setTaskAssignedTo = (task: Task, users: User[]) => {
     const updatedTasks = allTasks.map((t) => {
       if (t.id !== task.id) return t;
       return { ...t, users };
@@ -180,7 +180,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
                 toggleTaskClick={toggleTaskVisibility}
                 task={task}
                 key={task.id}
-                setMainAssignTo={setTaskAssignTo}
+                setMainAssignedTo={setTaskAssignedTo}
               />
             ))}
           </SortableContext>

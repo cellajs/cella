@@ -13,7 +13,7 @@ import StepperFooter from './footer';
 import { OnboardingStart } from './start';
 
 const steps: StepItem[] = [
-  { id: 'profile', label: 'Tune your profile', optional: false },
+  { id: 'profile', label: 'Tune your profile', optional: true },
   { id: 'organization', label: 'Create organization', optional: true },
   { id: 'invitation', label: 'Invite others', optional: true },
 ];

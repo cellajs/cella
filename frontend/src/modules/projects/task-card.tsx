@@ -3,21 +3,18 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Activity, GripVertical, Star, Bug, Bolt } from 'lucide-react';
+import { GripVertical, Star, Bug, Bolt } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { dateShort } from '~/lib/utils';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { Checkbox } from '../ui/checkbox';
-import { LabelBox } from './labels';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
 import { SelectImpact } from './select-impact.tsx/index.tsx';
 import SelectStatus from './select-status.tsx';
 import AssignMembers from './assign-members.tsx';
+import SetLabels from './set-labels.tsx';
 
 interface User {
   id: UniqueIdentifier;
@@ -32,7 +29,7 @@ interface TaskCardProps {
   toggleTaskClick?: (id: UniqueIdentifier) => void;
   isOverlay?: boolean;
   setTaskStatus: (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
-  setMainAssignTo: (task: Task, users: User[]) => void;
+  setMainAssignedTo: (task: Task, users: User[]) => void;
 }
 
 export type TaskType = 'Task';
@@ -42,11 +39,11 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTaskStatus, setMainAssignTo }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTaskStatus, setMainAssignedTo }: TaskCardProps) {
   const [value, setValue] = useState<string | undefined>(task.text);
   const [status, setStatus] = useState(task.status);
 
-  const [assignTo, setAssignTo] = useState(task.assignedTo);
+  const [assignedTo, setAssignedTo] = useState(task.assignedTo);
   const { mode } = useThemeStore();
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -94,8 +91,8 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
   }, [value]);
 
   useEffect(() => {
-    setMainAssignTo(task, assignTo);
-  }, [assignTo]);
+    setMainAssignedTo(task, assignedTo);
+  }, [assignedTo]);
 
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {
@@ -165,49 +162,27 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-1 gap-2">
-          <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
+        <div className="flex items-center justify-between mt-1 gap-1">
+          <Button
+            variant={'ghost'}
+            {...attributes}
+            {...listeners}
+            className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab group-hover/task:opacity-100 opacity-70"
+          >
             <span className="sr-only">Move task</span>
             <GripVertical size={16} />
           </Button>
 
           {task.type !== 'bug' && <SelectImpact mode="edit" />}
-          <LabelBox />
-          <div className="flex gap-2">
-            <AssignMembers
-              mode="reassign"
-              passedChild={
-                <button type="button" className="flex gap-1">
-                  {assignTo.length > 0 ? (
-                    assignTo.map((user) => {
-                      return (
-                        <HoverCard>
-                          <HoverCardTrigger>
-                            <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
-                          </HoverCardTrigger>
-                          <HoverCardContent className="w-80">
-                            <div className="flex justify-between space-x-4">
-                              <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} />
-                              <div className="space-y-1">
-                                <h4 className="text-sm font-semibold">{user.name}</h4>
-                                <p className="text-sm">{user.bio}</p>
-                                <div className="flex items-center pt-2">
-                                  <Activity className="mr-2 h-4 w-4 opacity-70" />{' '}
-                                  <span className="text-xs text-muted-foreground">{dateShort(new Date().toISOString())}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
-                      );
-                    })
-                  ) : (
-                    <AvatarWrap type="USER" className="h-6 w-6" />
-                  )}
-                </button>
-              }
-              changeAssignTo={setAssignTo}
+          <div className="grow">
+            <SetLabels
+              // labels={task.labels} // TODO set labels from task
+              mode="edit"
             />
+          </div>
+
+          <div className="flex gap-2">
+            <AssignMembers mode="edit" changeAssignedTo={setAssignedTo} />
 
             <SelectStatus taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
           </div>

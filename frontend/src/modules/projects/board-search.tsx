@@ -19,7 +19,6 @@ const BoardSearch = () => {
         <Search size={16} className="absolute left-3" style={{ opacity: 1 }} />
         <Input
           placeholder={t('common:placeholder.search')}
-          value={'value'}
           style={{ paddingLeft: '2rem' }}
           className="h-10 w-full"
           ref={inputRef}

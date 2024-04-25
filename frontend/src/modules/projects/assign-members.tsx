@@ -1,12 +1,12 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
-import { Check } from 'lucide-react';
+import { Check, UserX } from 'lucide-react';
 import type { User } from '~/mocks/dataGeneration.ts';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip.tsx';
 import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { Kbd } from '../common/kbd.tsx';
-import { AvatarWrap } from '../common/avatar-wrap.tsx';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 
 const defaultMembers = [
   { bio: 'poor advocate, photographer 👕', id: '9a4630c1-5036-4cdf-a521-c0dee7f48304', name: 'Alton Labadie', thumbnailUrl: null },
@@ -16,15 +16,14 @@ const defaultMembers = [
   { bio: 'entrepreneur', id: 'cda6e97e-07a9-4b90-9b71-b5f6cd85c944', name: 'Leticia Grimes', thumbnailUrl: null },
 ];
 
-const AssignMembers = ({
-  members = defaultMembers,
-  mode,
-  passedChild,
-  changeAssignTo,
-}: { members?: User[]; mode: 'create' | 'reassign'; passedChild?: ReactNode; changeAssignTo?: (users: User[]) => void }) => {
-  const isToolTipOpen = mode === 'create' ? false : true;
-  const [openPopover, setOpenPopover] = useState(isToolTipOpen);
-  const [openTooltip, setOpenTooltip] = useState(isToolTipOpen);
+interface AssignMembersProps {
+  members?: User[];
+  mode: 'create' | 'edit';
+  changeAssignedTo?: (users: User[]) => void;
+}
+
+const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: AssignMembersProps) => {
+  const [openPopover, setOpenPopover] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [searchValue, setSearchValue] = useState('');
 
@@ -45,43 +44,49 @@ const AssignMembers = ({
   const isSearching = searchValue.length > 0;
 
   useEffect(() => {
-    if (changeAssignTo && selectedUsers.length > 0) changeAssignTo(selectedUsers);
+    if (changeAssignedTo && selectedUsers.length > 0) changeAssignedTo(selectedUsers);
   }, [selectedUsers]);
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <Tooltip delayDuration={500} open={openTooltip} onOpenChange={setOpenTooltip}>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            {passedChild ? (
-              passedChild
-            ) : (
-              <Button aria-label="Set impacts" variant="ghost" size={'sm'} className="w-full text-left flex gap-2 justify-start border">
-                {selectedUsers.length < 1 ? (
-                  <AvatarWrap type="USER" className="h-6 w-6 text-xs" />
-                ) : (
-                  selectedUsers.map((user) => {
-                    return <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />;
-                  })
-                )}
-                Assign members
-              </Button>
-            )}
-          </PopoverTrigger>
-        </TooltipTrigger>
-        {!passedChild && (
-          <TooltipContent
-            hideWhenDetached
-            side="bottom"
-            align="start"
-            sideOffset={6}
-            className="flex items-center gap-2 bg-background border text-xs px-2 h-8"
-          >
-            <span className="text-primary">Assign to</span>
-            <Kbd value="A" />
-          </TooltipContent>
-        )}
-      </Tooltip>
-      <PopoverContent className="w-200 p-0 rounded-lg" align="end" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
+      <PopoverTrigger asChild>
+        <Button
+          aria-label="Assign"
+          variant="ghost"
+          size={mode === 'create' ? 'sm' : 'micro'}
+          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'}`}
+        >
+          {!selectedUsers.length && <UserX className="h-4 w-4 opacity-50" />}
+          {!!selectedUsers.length && (
+            <AvatarGroup limit={3}>
+              <AvatarGroupList>
+                {selectedUsers.map((user) => {
+                  return (
+                    <AvatarWrap
+                      type="USER"
+                      key={user.id}
+                      id={user.id as string}
+                      name={user.name}
+                      url={user.thumbnailUrl}
+                      className="h-6 w-6 text-xs"
+                    />
+                  );
+                })}
+              </AvatarGroupList>
+              <AvatarOverflowIndicator className='h-6 w-6 text-xs' />
+            </AvatarGroup>
+          )}
+          {mode === 'create' && (
+            <span className="ml-2 truncate">
+              {selectedUsers.length === 0 && 'Assign to'}
+              {selectedUsers.length === 1 && selectedUsers[0].name}
+              {selectedUsers.length === 2 && selectedUsers.map(({ name }) => name).join(', ')}
+              {selectedUsers.length > 2 && `${selectedUsers.length} assigned`}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-60 p-0 rounded-lg" align="end" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
@@ -89,7 +94,6 @@ const AssignMembers = ({
               // If the user types a number, select the user like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
                 handleSelectClick(defaultMembers[Number.parseInt(searchValue)]?.name);
-                setOpenTooltip(false);
                 setOpenPopover(false);
                 setSearchValue('');
                 return;
@@ -98,7 +102,7 @@ const AssignMembers = ({
             }}
             clearValue={setSearchValue}
             className="leading-normal"
-            placeholder="Assign to..."
+            placeholder="Assign to ..."
           />
           {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
           <CommandList>

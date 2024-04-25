@@ -88,7 +88,7 @@ export interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
 const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(({ children, className, limit, ...props }, ref) => {
   return (
     <AvatarGroupProvider limit={limit}>
-      <div ref={ref} className={cn('flex items-center justify-end -space-x-4 relative', className)} {...props}>
+      <div ref={ref} className={cn('flex items-center justify-end -space-x-2 relative', className)} {...props}>
         {children}
       </div>
     </AvatarGroupProvider>

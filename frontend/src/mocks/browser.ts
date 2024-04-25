@@ -3,10 +3,9 @@ import { handlers } from './handlers';
 
 const worker = setupWorker(...handlers);
 
-// Enable mocking in development
+// Enable mocking
 // https://mswjs.io/docs/getting-started/integrate/node
 export async function enableMocking() {
-  if (process.env.NODE_ENV !== 'development') return;
   // Ignore requests that not /mock/kanban
   worker.events.on('request:start', ({ request }) => {
     const urlObject = new URL(request.url);

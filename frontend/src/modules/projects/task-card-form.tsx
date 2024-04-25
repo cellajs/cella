@@ -23,6 +23,7 @@ import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
 import type { Task, User } from '~/mocks/dataGeneration.ts';
 import AssignMembers from './assign-members.tsx';
+import SetLabels, { type Label } from './set-labels.tsx';
 
 export interface Story {
   id: UniqueIdentifier;
@@ -59,15 +60,15 @@ const StoryTypeChoose = ({
     <ToggleGroup type="single" variant="merged" className={cn('gap-0 w-full', className)} value={selectedValue} onValueChange={handleValueChange}>
       <ToggleGroupItem size="sm" value="feature" className="w-full">
         <Star size={16} className={`${selectedValue === 'feature' && 'fill-amber-400 text-amber-500'}`} />
-        <span className="ml-2">Feature</span>
+        <span className="ml-2 font-light">Feature</span>
       </ToggleGroupItem>
       <ToggleGroupItem size="sm" value="bug" className="w-full">
         <Bug size={16} className={`${selectedValue === 'bug' && 'fill-red-400 text-red-500'}`} />
-        <span className="ml-2">Bug</span>
+        <span className="ml-2 font-light">Bug</span>
       </ToggleGroupItem>
       <ToggleGroupItem size="sm" value="chore" className="w-full">
         <Bolt size={16} className={`${selectedValue === 'chore' && 'fill-slate-400 text-slate-500'}`} />
-        <span className="ml-2">Chore</span>
+        <span className="ml-2 font-light">Chore</span>
       </ToggleGroupItem>
     </ToggleGroup>
   );
@@ -81,7 +82,8 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   const { mode } = useThemeStore();
 
   const [type, setType] = useState<StoryType>('feature');
-  const [assignTo, setAssignTo] = useState<User[]>([]);
+  const [assignedTo, setAssignedTo] = useState<User[]>([]);
+  const [labels, setLabels] = useState<Label[]>([]);
   const [points, setPoints] = useState<0 | 1 | 2 | 3>(0);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -92,7 +94,8 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
         text: '',
         type: type,
         points: points,
-        assignedTo: assignTo,
+        assignedTo: assignedTo,
+        labels: labels,
       },
     }),
     [],
@@ -100,8 +103,6 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
 
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>('create-story', formOptions);
-  // Watch to update slug field
-  // const name = useWatch({ control: form.control, name: 'name' });
 
   const { isPending } = useMutation({
     // mutate: create
@@ -128,9 +129,8 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
       type: type,
       points: points,
       status: 0,
-      assignedTo: assignTo,
+      assignedTo,
     };
-    console.log('story:', story);
     callback?.(story as Task);
     // create(values);
   };
@@ -150,10 +150,12 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
           visibleDragbar={false}
           height={'auto'}
           className="border"
-          style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '4px' }}
+          style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '0.5rem' }}
         />
-        <SelectImpact mode="create" passImpact={setPoints} />
-        <AssignMembers mode="create" changeAssignTo={setAssignTo} /> {/*  add members */}
+        {form.getValues('type') !== 'chore' && <SelectImpact mode="create" changeTaskImpact={setPoints} />}
+        <AssignMembers mode="create" changeAssignedTo={setAssignedTo} />
+        <SetLabels mode="create" changeLabels={setLabels} /> 
+
         <div className="flex flex-col sm:flex-row gap-2">
           <Button size={'xs'} type="submit" disabled={text.replaceAll(' ', '') === ''} loading={isPending}>
             {t('common:create')}
@@ -162,11 +164,9 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
             size={'xs'}
             type="reset"
             variant="secondary"
+            className={form.formState.isDirty ? '' : 'invisible'}
             aria-label="Cancel"
-            onClick={() => {
-              callback?.();
-              form.reset();
-            }}
+            onClick={() => form.reset()}
           >
             {t('common:cancel')}
           </Button>
