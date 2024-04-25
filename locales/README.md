@@ -41,4 +41,3 @@ The recommended settings to put in your `.vscode/settings.json` or to edit in th
 * `common`: texts that are in a generic part of cella
 * `about`: texts that are in the marketing 'about' page of cella
 * `backend`: pure backend texts, mostly email translations
-* `app`: app-specific texts that are NOT part of cella.

@@ -65,7 +65,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
   };
 
   const variants = cva(
-    'group/task rounded-none border-0 text-sm bg-transparent hover:bg-card bg-gradient-to-br from-transparent via-transparent via-60%',
+    'group/task rounded-none border-0 text-sm bg-transparent hover:bg-card bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
     {
       variants: {
         dragging: {
@@ -73,13 +73,13 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
           overlay: 'ring-2 ring-primary',
         },
         status: {
-          0: 'to-sky-600/10 to-100%',
+          0: 'to-sky-600/10',
           1: '',
-          2: '',
-          3: 'to-mint-600/10 to-100%',
-          4: 'to-yellow-600/10 to-100%',
-          5: 'to-orange-600/10 to-100%',
-          6: 'to-lime-600/10 to-100%',
+          2: 'to-slate-600/10',
+          3: 'to-lime-600/10',
+          4: 'to-yellow-600/10',
+          5: 'to-orange-600/10',
+          6: 'to-green-600/10',
         },
       },
     },
@@ -183,7 +183,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
                       return (
                         <HoverCard>
                           <HoverCardTrigger>
-                            <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
+                            <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
                           </HoverCardTrigger>
                           <HoverCardContent className="w-80">
                             <div className="flex justify-between space-x-4">

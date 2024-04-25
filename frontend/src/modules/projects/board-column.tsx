@@ -138,7 +138,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
         ref={ref as RefObject<HTMLDivElement>}
         className="p-3 text-normal leading-4 font-semibold border-b flex flex-row gap-2 space-between items-center"
       >
-        <Button variant={'ghost'} {...attributes} {...listeners} size="xs" className=" px-0 text-primary/50 -ml-1 cursor-grab relative">
+        <Button variant={'ghost'} {...attributes} {...listeners} size="xs" className="max-xs:hidden px-0 text-primary/50 -ml-1 cursor-grab relative">
           <span className="sr-only">{`Move column: ${column.name}`}</span>
           <GripVertical size={16} />
         </Button>

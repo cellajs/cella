@@ -61,7 +61,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
             value={searchValue}
             clearValue={setSearchValue}
             onValueChange={(searchValue) => {
-              // If the user types a number, select the Impact like useHotkeys
+              // If the user types a number, select status like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
                 setSelectedStatus(statuses[Number.parseInt(searchValue)]);
                 setOpenTooltip(false);

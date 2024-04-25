@@ -29,6 +29,7 @@ const AssignMembers = ({
   const [searchValue, setSearchValue] = useState('');
 
   const handleSelectClick = (name: string) => {
+    if (!name) return;
     const existingUser = selectedUsers.find((user) => user.name === name);
     if (existingUser) {
       setSelectedUsers(selectedUsers.filter((user) => user.name !== name));
@@ -56,10 +57,10 @@ const AssignMembers = ({
             ) : (
               <Button aria-label="Set impacts" variant="ghost" size={'sm'} className="w-full text-left flex gap-2 justify-start border">
                 {selectedUsers.length < 1 ? (
-                  <AvatarWrap type="USER" className="h-6 w-6" />
+                  <AvatarWrap type="USER" className="h-6 w-6 text-xs" />
                 ) : (
                   selectedUsers.map((user) => {
-                    return <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />;
+                    return <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />;
                   })
                 )}
                 Assign members
@@ -80,11 +81,19 @@ const AssignMembers = ({
           </TooltipContent>
         )}
       </Tooltip>
-      <PopoverContent className="w-200 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
+      <PopoverContent className="w-200 p-0 rounded-lg" align="end" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
             onValueChange={(searchValue) => {
+              // If the user types a number, select the user like useHotkeys
+              if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
+                handleSelectClick(defaultMembers[Number.parseInt(searchValue)]?.name);
+                setOpenTooltip(false);
+                setOpenPopover(false);
+                setSearchValue('');
+                return;
+              }
               setSearchValue(searchValue);
             }}
             clearValue={setSearchValue}
@@ -94,7 +103,7 @@ const AssignMembers = ({
           {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
-              {members.map((member) => (
+              {members.map((member, index) => (
                 <CommandItem
                   key={member.name}
                   value={member.name}
@@ -105,11 +114,14 @@ const AssignMembers = ({
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
                   <div className="flex items-center gap-3">
-                    <AvatarWrap type="USER" id={member.id as string} name={member.name} url={member.thumbnailUrl} className="h-6 w-6" />
+                    <AvatarWrap type="USER" id={member.id as string} name={member.name} url={member.thumbnailUrl} className="h-6 w-6 text-xs" />
                     <span>{member.name}</span>
                   </div>
 
-                  <div className="flex items-center">{selectedUsers.includes(member) && <Check size={16} className="text-success" />}</div>
+                  <div className="flex items-center">
+                    {selectedUsers.includes(member) && <Check size={16} className="text-success" />}
+                    {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>

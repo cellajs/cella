@@ -15,8 +15,7 @@ import { WorkspaceContext } from '../workspaces/workspace';
 type LabelType = Record<'value' | 'label' | 'color', string>;
 
 const badgeStyle = (color: string) => ({
-  borderColor: `${color}20`,
-  backgroundColor: `${color}30`,
+  borderColor: `${color}40`,
   color,
 });
 
