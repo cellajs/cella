@@ -31,7 +31,7 @@ function KanbanHeader() {
 
         <Button variant="plain"
           onClick={() => {
-            dialog(<AddProjects />, {
+            dialog(<AddProjects dialog />, {
               //callback={(project) => callback([project], 'create')} dialog
               className: 'md:max-w-xl',
               title: t('common:add_projects'),

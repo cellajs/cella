@@ -118,7 +118,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 p-4 border-b">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 p-4 border-b shadow-inner">
           <StoryTypeChoose />
           <MDEditor
             value={text}
