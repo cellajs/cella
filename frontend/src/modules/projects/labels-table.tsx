@@ -7,12 +7,14 @@ import { useState } from 'react';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { useTranslation } from 'react-i18next';
-import { useDebounce } from '~/hooks/use-debounce';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { Bird } from 'lucide-react';
 import { DataTable } from '../common/data-table';
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions } from '@tanstack/react-query';
 import type { SortColumn } from 'react-data-grid';
+import { dateShort } from '~/lib/utils';
+import { enableMocking, stopMocking } from '~/mocks/browser';
+import type { MockResponse } from '~/mocks/dataGeneration';
 
 interface Props {
   query?: string;
@@ -60,17 +62,26 @@ const useColumns = () => {
     CheckboxColumn,
     {
       key: 'name',
-      name: 'name',
+      name: 'Name',
       visible: true,
       sortable: true,
       renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => t(row.name),
+    },
+    {
+      key: 'role',
+      name: 'Role',
+      visible: true,
+      sortable: true,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => t(row.role),
     },
     {
       key: 'count',
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      name: 'count',
+      name: 'Count',
       renderCell: ({ row }) => t(row.count.toString()),
     },
     {
@@ -78,8 +89,16 @@ const useColumns = () => {
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      name: 'status',
+      name: 'Status',
       renderCell: ({ row }) => t(row.status.toString()),
+    },
+    {
+      key: 'lastAdd',
+      sortable: true,
+      visible: true,
+      renderHeaderCell: HeaderCell,
+      name: 'Last active',
+      renderCell: ({ row }) => dateShort(row.lastActive.toString()),
     },
   ];
 
@@ -99,6 +118,7 @@ interface Labels {
   count: number;
   status: number;
   role: 'secondary' | 'primary';
+  lastActive: Date;
 }
 
 export const labelsQueryOptions = (idOrSlug: string, { query, sort: initialSort, order: initialOrder, role }: LabelsParam) => {
@@ -131,11 +151,13 @@ export const labelsQueryOptions = (idOrSlug: string, { query, sort: initialSort,
 
 const LabelsTable = () => {
   const [columns] = useColumns();
-  //   const search = useSearch({
-  //     from: OrganizationMembersRoute.id,
-  //   }) as LabelsParam;
-
-  const search = { sort: '', order: '', query: '', role: 'primary' as const };
+  // const search = useSearch({
+  //   from: OrganizationMembersRoute.id,
+  // }) as LabelsParam;
+  const [content, setContent] = useState({} as MockResponse);
+  const isInitialMount = useRef(true);
+  const defaultSearch: LabelsParam = { sort: 'name', order: 'asc' };
+  const [search, setSearch] = useState(defaultSearch);
   const [rows, setRows] = useState<Labels[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
@@ -143,10 +165,10 @@ const LabelsTable = () => {
       ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
       : [{ columnKey: 'name', direction: 'ASC' }],
   );
-  const [query, setQuery] = useState<LabelsParam['query']>(search.query);
-  const [role, setRole] = useState<LabelsParam['role']>(search.role);
+  const [query, setQuery] = useState<LabelsParam['query']>();
+  const [role, setRole] = useState<LabelsParam['role']>();
 
-  const debounceQuery = useDebounce(query, 300);
+  // const debounceQuery = useDebounce(query, 300);
   // Save filters in search params
   const filters = useMemo(
     () => ({
@@ -163,21 +185,16 @@ const LabelsTable = () => {
     order: 'asc',
   });
 
-  const queryResult = useInfiniteQuery(
-    labelsQueryOptions('id1', {
-      query: debounceQuery,
-      sort: sortColumns[0]?.columnKey as LabelsParam['sort'],
-      order: sortColumns[0]?.direction.toLowerCase() as LabelsParam['order'],
-      role,
-    }),
-  );
+  // const queryResult = useInfiniteQuery(
+  //   labelsQueryOptions('id1', {
+  //     query: debounceQuery,
+  //     sort: sortColumns[0]?.columnKey as LabelsParam['sort'],
+  //     order: sortColumns[0]?.direction.toLowerCase() as LabelsParam['order'],
+  //     role,
+  //   }),
+  // );
 
   const onRowsChange = (records: Labels[]) => {
-    // for (const index of indexes) {
-    //   const label = records[index];
-
-    // }
-
     setRows(records);
   };
 
@@ -190,13 +207,35 @@ const LabelsTable = () => {
   };
 
   useEffect(() => {
-    const data = queryResult.data?.pages?.flatMap((page) => page);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return; // Stop mock worker from running twice in Strict mode
+    }
+    enableMocking().then(() => {
+      fetch('/mock/kanban')
+        .then((response) => response.json())
+        .then((data) => {
+          setContent(data);
+          stopMocking(); // Ensure to stop mocking after fetching data
+        })
+        .catch((error) => console.error('Error fetching MSW data:', error));
+    });
+  }, []);
 
-    if (data) {
+  useEffect(() => {
+    setSearch(filters as LabelsParam);
+  }, [filters]);
+
+  useEffect(() => {
+    if (!('project' in content)) return;
+
+    const data = content.workspace.labelsTable;
+
+    if (data.length > 0) {
       setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
       setRows(data);
     }
-  }, [queryResult.data]);
+  }, [content]);
 
   return (
     <div className="space-y-4">

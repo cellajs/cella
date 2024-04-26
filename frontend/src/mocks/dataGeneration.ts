@@ -77,15 +77,22 @@ export const projectsWithTaskContent = (number: number): ComplexProject[] => {
   return finalArray;
 };
 
-// export const labelsContent = (): Label[] => {
-//   const group = [null, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-//   return Array.from({ length: 10 }, () => ({
-//     id: faker.string.uuid(),
-//     slug: faker.animal.fish(),
-//     name: faker.person.fullName(),
-//     group: group[Math.floor(Math.random() * group.length)],
-//   }));
-// };
+export const labelsTable = (): LabelTable[] => {
+  const roles = ['secondary', 'primary'] as const;
+  const returnedArray: LabelTable[] = [];
+  for (let i = 0; i < 10; i++) {
+    const count = Math.floor(Math.random() * (40 - 4 + 1)) + 4;
+    returnedArray.push({
+      id: faker.string.uuid(),
+      status: 3,
+      count: count,
+      name: faker.person.fullName(),
+      role: roles[Math.floor(Math.random() * roles.length)],
+      lastActive: faker.date.anytime(),
+    });
+  }
+  return returnedArray;
+};
 
 export const labelsContent = (): Label[] => {
   return Array.from({ length: 10 }, () => ({
@@ -110,6 +117,7 @@ export type User = {
   thumbnailUrl: null;
   bio: string;
 };
+
 type Label = {
   id: string;
   value: string;
@@ -117,12 +125,14 @@ type Label = {
   color: string;
 };
 
-// type Label = {
-//   id: string;
-//   slug: string;
-//   name: string;
-//   group: number | null;
-// };
+type LabelTable = {
+  id: string;
+  name: string;
+  count: number;
+  status: number;
+  role: 'secondary' | 'primary';
+  lastActive: Date;
+};
 
 export type Task = {
   id: string;
@@ -146,7 +156,7 @@ export type Task = {
 };
 
 export type MockResponse = {
-  workspace: { labelGroups: Label[] };
+  workspace: { labelGroups: Label[]; labelsTable: LabelTable[] };
   project: ComplexProject[];
 };
 

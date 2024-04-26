@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "pnpm run preview",
-    "dev": "NODE_ENV=development vite --mode development",
+    "dev": "set NODE_ENV=development& vite --mode development",
     "build": "tsc && vite build",
     "check:types": "tsc",
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
@@ -173,11 +173,7 @@
     "vite-plugin-pwa": "^0.19.8",
     "vite-plugin-static-copy": "^1.0.3"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not op_mini all"
-  ],
+  "browserslist": [">0.2%", "not dead", "not op_mini all"],
   "postcss": {
     "plugins": {
       "postcss-import": {},
