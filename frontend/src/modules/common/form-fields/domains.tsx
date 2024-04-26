@@ -14,15 +14,7 @@ type Props = {
   required?: boolean;
 };
 
-const DomainsFormField = ({
-  control,
-  name,
-  label,
-  description,
-  placeholder,
-  emptyIndicator,
-  required,
-}: Props) => {
+const DomainsFormField = ({ control, name, label, description, placeholder, emptyIndicator, required }: Props) => {
   const { t } = useTranslation();
   return (
     <FormField
@@ -32,14 +24,13 @@ const DomainsFormField = ({
         const defaultValue = value ? value.map((val: string) => ({ label: val, value: val })) : [];
 
         return (
-        <FormItem>
-          <FormLabel>
-            {label}
-            {required && <span className="ml-1 opacity-50">*</span>}
-          </FormLabel>
-          {description && <FormDescription>{description}</FormDescription>}
-          <FormControl>
-          
+          <FormItem>
+            <FormLabel>
+              {label}
+              {required && <span className="ml-1 opacity-50">*</span>}
+            </FormLabel>
+            {description && <FormDescription>{description}</FormDescription>}
+            <FormControl>
               <>
                 <MultipleSelector
                   value={defaultValue}
@@ -53,11 +44,11 @@ const DomainsFormField = ({
                   emptyValue={emptyIndicator}
                 />
               </>
-          
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}}
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 };

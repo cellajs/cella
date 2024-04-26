@@ -1,10 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type React from 'react';
-import type { UseFormProps } from 'react-hook-form';
+import type { Control, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -12,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { dialog } from '../common/dialoger/state';
 import { useNavigate } from '@tanstack/react-router';
-import { Form } from '../ui/form';
+import { Form, FormDescription, FormField, FormItem, FormLabel, FormControl, FormMessage } from '../ui/form';
 import { createWorkspace } from '~/api/workspaces';
 import { SelectImpact } from './select-impact.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
@@ -22,7 +22,7 @@ import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
 import type { Task, User } from '~/mocks/dataGeneration.ts';
 import AssignMembers from './assign-members.tsx';
-import SetLabels, { type Label } from './set-labels.tsx';
+import SetLabels from './set-labels.tsx';
 
 export interface Story {
   id: string;
@@ -31,6 +31,7 @@ export interface Story {
   points: 0 | 1 | 2 | 3;
   status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   assignedTo: User[];
+  labels: string[];
 }
 
 interface CreateStoryFormProps {
@@ -40,50 +41,37 @@ interface CreateStoryFormProps {
 
 type StoryType = 'feature' | 'bug' | 'chore';
 
-const formSchema = z.object({ id: z.string(), text: z.string(), type: z.string(), points: z.number() });
+const formSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  type: z.string(),
+  points: z.number(),
+  assignedTo: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      thumbnailUrl: z.number().nullable(),
+      bio: z.string(),
+    }),
+  ),
+  labels: z.array(
+    z.object({
+      id: z.string(),
+      slug: z.string(),
+      name: z.string(),
+      color: z.string(),
+    }),
+  ),
+  status: z.number(),
+});
 
 type FormValues = z.infer<typeof formSchema>;
-
-const StoryTypeChoose = ({
-  passSelectedType,
-  className = '',
-  defaultValue = 'feature',
-}: { passSelectedType: (value: StoryType) => void; className?: string; defaultValue?: StoryType }) => {
-  const [selectedValue, setSelectedValue] = useState<StoryType>(defaultValue);
-
-  const handleValueChange = (value: StoryType) => {
-    setSelectedValue(value);
-    passSelectedType(value);
-  };
-  return (
-    <ToggleGroup type="single" variant="merged" className={cn('gap-0 w-full', className)} value={selectedValue} onValueChange={handleValueChange}>
-      <ToggleGroupItem size="sm" value="feature" className="w-full">
-        <Star size={16} className={`${selectedValue === 'feature' && 'fill-amber-400 text-amber-500'}`} />
-        <span className="ml-2 font-light">Feature</span>
-      </ToggleGroupItem>
-      <ToggleGroupItem size="sm" value="bug" className="w-full">
-        <Bug size={16} className={`${selectedValue === 'bug' && 'fill-red-400 text-red-500'}`} />
-        <span className="ml-2 font-light">Bug</span>
-      </ToggleGroupItem>
-      <ToggleGroupItem size="sm" value="chore" className="w-full">
-        <Bolt size={16} className={`${selectedValue === 'chore' && 'fill-slate-400 text-slate-500'}`} />
-        <span className="ml-2 font-light">Chore</span>
-      </ToggleGroupItem>
-    </ToggleGroup>
-  );
-};
 
 const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
-  const [text, setText] = useState(' ');
   const { mode } = useThemeStore();
-
-  const [type, setType] = useState<StoryType>('feature');
-  const [assignedTo, setAssignedTo] = useState<User[]>([]);
-  const [labels, setLabels] = useState<Label[]>([]);
-  const [points, setPoints] = useState<0 | 1 | 2 | 3>(0);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -91,10 +79,11 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
       defaultValues: {
         id: 'gfdgdfgsf43t54',
         text: '',
-        type: type,
-        points: points,
-        assignedTo: assignedTo,
-        labels: labels,
+        type: 'feature',
+        points: 0,
+        assignedTo: [],
+        labels: [],
+        status: 0,
       },
     }),
     [],
@@ -124,39 +113,27 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   const onSubmit = (values: FormValues) => {
     const story: Story = {
       id: values.id,
-      text: text,
-      type: type,
-      points: points,
-      status: 0,
-      assignedTo,
+      text: values.text,
+      type: values.type as StoryType,
+      points: values.points as 0 | 1 | 2 | 3,
+      assignedTo: values.assignedTo as User[],
+      labels: values.labels.map((label) => label.name),
+      status: 0 as 0 | 1 | 2 | 3 | 4 | 5 | 6,
     };
     callback?.(story as Task);
     // create(values);
   };
-
+  // Fix types
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 p-4 border-b shadow-inner">
-        <StoryTypeChoose passSelectedType={setType} />
-        <MDEditor
-          value={text}
-          defaultTabEnable={true}
-          preview={'edit'}
-          onChange={(newValue) => {
-            if (typeof newValue === 'string') setText(newValue.trim());
-          }}
-          hideToolbar={true}
-          visibleDragbar={false}
-          height={'auto'}
-          className="border"
-          style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '0.5rem' }}
-        />
-        {form.getValues('type') !== 'chore' && <SelectImpact mode="create" changeTaskImpact={setPoints} />}
-        <AssignMembers mode="create" changeAssignedTo={setAssignedTo} />
-        <SetLabels mode="create" changeLabels={setLabels} /> 
-
+        <StoryTypeChooseForm control={form.control} name={'type'} />
+        <StoryTextForm control={form.control} name={'text'} mode={mode} />
+        <StoryImpactForm control={form.control} name={'points'} storyType={form.getValues('type') as StoryType} />
+        <StoryAssignMembersForm control={form.control} name={'assignedTo'} />
+        <StoryAddLabelsForm control={form.control} name={'labels'} />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button size={'xs'} type="submit" disabled={text.replaceAll(' ', '') === ''} loading={isPending}>
+          <Button size={'xs'} type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}
           </Button>
           <Button
@@ -176,3 +153,211 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
 };
 
 export default CreateStoryForm;
+
+type Props = {
+  control: Control<FormValues>;
+  name: 'id' | 'text' | 'type' | 'points' | 'assignedTo' | 'status' | 'labels';
+  label?: string;
+  placeholder?: string;
+  description?: string;
+  disabledItemFunction?: (value: string) => boolean;
+  emptyIndicator?: string;
+  required?: boolean;
+};
+
+const StoryTypeChooseForm = ({
+  control,
+  name,
+  label,
+  className = '',
+  defaultValue = 'feature',
+  required,
+  description,
+}: Props & { defaultValue?: StoryType; className?: string }) => {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field: { value, onChange } }) => {
+        const defaultFieldValue = value ? value : defaultValue;
+
+        return (
+          <FormItem>
+            <FormLabel>
+              {label && (
+                <>
+                  {label}
+                  {required && <span className="ml-1 opacity-50">*</span>}
+                </>
+              )}
+            </FormLabel>
+            {description && <FormDescription>{description}</FormDescription>}
+            <FormControl>
+              <ToggleGroup
+                type="single"
+                variant="merged"
+                className={cn('gap-0 w-full', className)}
+                value={defaultFieldValue as StoryType}
+                onValueChange={(value) => {
+                  onChange(value);
+                }}
+              >
+                <ToggleGroupItem size="sm" value="feature" className="w-full">
+                  <Star size={16} className={`${value === 'feature' && 'fill-amber-400 text-amber-500'}`} />
+                  <span className="ml-2 font-light">Feature</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem size="sm" value="bug" className="w-full">
+                  <Bug size={16} className={`${value === 'bug' && 'fill-red-400 text-red-500'}`} />
+                  <span className="ml-2 font-light">Bug</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem size="sm" value="chore" className="w-full">
+                  <Bolt size={16} className={`${value === 'chore' && 'fill-slate-400 text-slate-500'}`} />
+                  <span className="ml-2 font-light">Chore</span>
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+  );
+};
+
+const StoryTextForm = ({
+  control,
+  name,
+  label,
+  defaultValue = ' ',
+  required,
+  description,
+  mode,
+}: Props & { defaultValue?: string; mode: 'dark' | 'light' }) => {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field: { value, onChange } }) => {
+        const defaultInnerValue = value ? value : defaultValue;
+
+        return (
+          <FormItem>
+            <FormLabel>
+              {label && (
+                <>
+                  {label}
+                  {required && <span className="ml-1 opacity-50">*</span>}
+                </>
+              )}
+            </FormLabel>
+            {description && <FormDescription>{description}</FormDescription>}
+            <FormControl>
+              <MDEditor
+                value={defaultInnerValue as string}
+                defaultTabEnable={true}
+                preview={'edit'}
+                onChange={(newValue) => {
+                  if (typeof newValue === 'string') onChange(newValue.trim());
+                }}
+                hideToolbar={true}
+                visibleDragbar={false}
+                height={'auto'}
+                className="border"
+                style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '0.5rem' }}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+  );
+};
+
+const StoryImpactForm = ({ control, name, label, required, description, storyType }: Props & { storyType: StoryType }) => {
+  return (
+    <>
+      {storyType !== 'chore' && (
+        <FormField
+          control={control}
+          name={name}
+          render={({ field: { onChange } }) => {
+            return (
+              <FormItem>
+                <FormLabel>
+                  {label && (
+                    <>
+                      {label}
+                      {required && <span className="ml-1 opacity-50">*</span>}
+                    </>
+                  )}
+                </FormLabel>
+                {description && <FormDescription>{description}</FormDescription>}
+                <FormControl>
+                  <SelectImpact mode="create" changeTaskImpact={onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+      )}
+    </>
+  );
+};
+
+const StoryAssignMembersForm = ({ control, name, label, required, description }: Props) => {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field: { onChange } }) => {
+        return (
+          <FormItem>
+            <FormLabel>
+              {label && (
+                <>
+                  {label}
+                  {required && <span className="ml-1 opacity-50">*</span>}
+                </>
+              )}
+            </FormLabel>
+            {description && <FormDescription>{description}</FormDescription>}
+            <FormControl>
+              <AssignMembers mode="create" changeAssignedTo={onChange} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+  );
+};
+
+const StoryAddLabelsForm = ({ control, name, label, required, description }: Props) => {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field: { onChange } }) => {
+        return (
+          <FormItem>
+            <FormLabel>
+              {label && (
+                <>
+                  {label}
+                  {required && <span className="ml-1 opacity-50">*</span>}
+                </>
+              )}
+            </FormLabel>
+            {description && <FormDescription>{description}</FormDescription>}
+            <FormControl>
+              <SetLabels mode="create" changeLabels={onChange} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+  );
+};

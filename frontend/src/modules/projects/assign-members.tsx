@@ -60,19 +60,10 @@ const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: Ass
             <AvatarGroup limit={3}>
               <AvatarGroupList>
                 {selectedUsers.map((user) => {
-                  return (
-                    <AvatarWrap
-                      type="USER"
-                      key={user.id}
-                      id={user.id}
-                      name={user.name}
-                      url={user.thumbnailUrl}
-                      className="h-6 w-6 text-xs"
-                    />
-                  );
+                  return <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />;
                 })}
               </AvatarGroupList>
-              <AvatarOverflowIndicator className='h-6 w-6 text-xs' />
+              <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
             </AvatarGroup>
           )}
           {mode === 'create' && (
