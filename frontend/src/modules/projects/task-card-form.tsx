@@ -258,7 +258,7 @@ const StoryTextForm = ({
                 defaultTabEnable={true}
                 preview={'edit'}
                 onChange={(newValue) => {
-                  if (typeof newValue === 'string') onChange(newValue.trim());
+                  if (typeof newValue === 'string') onChange(newValue);
                 }}
                 hideToolbar={true}
                 visibleDragbar={false}

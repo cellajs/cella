@@ -15,6 +15,7 @@ import SelectStatus from './select-status.tsx';
 import AssignMembers from './assign-members.tsx';
 import SetLabels from './set-labels.tsx';
 import { useTranslation } from 'react-i18next';
+import { SelectTaskType } from './select-task-type.tsx';
 
 interface User {
   id: string;
@@ -42,6 +43,7 @@ export interface TaskDragData {
 export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTaskStatus, setMainAssignedTo }: TaskCardProps) {
   const { t } = useTranslation();
   const [value, setValue] = useState<string | undefined>(task.text);
+  const [type, setType] = useState<'feature' | 'bug' | 'chore'>(task.type);
   const [status, setStatus] = useState(task.status);
 
   const [assignedTo, setAssignedTo] = useState(task.assignedTo);
@@ -123,11 +125,19 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
       <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
         <div className="flex gap-2">
           <div className="flex flex-col gap-2">
-            <div className="group mt-[2px]">
-              <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
-              {task.type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />}
-              {task.type === 'bug' && <Bug size={16} className="fill-red-400 text-red-500 group-hover:opacity-0 transition-opacity" />}
-              {task.type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500 group-hover:opacity-0 transition-opacity" />}
+            <div className="group mt-[2px] ">
+              {isViewState ? (
+                <SelectTaskType
+                  currentType={type}
+                  changeTaskType={(newType) => setType(newType)}
+                  className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10"
+                />
+              ) : (
+                <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
+              )}
+              {type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />}
+              {type === 'bug' && <Bug size={16} className="fill-red-400 text-red-500 group-hover:opacity-0 transition-opacity" />}
+              {type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500 group-hover:opacity-0 transition-opacity" />}
             </div>
           </div>
           {!isViewState && (
@@ -174,7 +184,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
             <GripVertical size={16} />
           </Button>
 
-          {task.type !== 'bug' && <SelectImpact mode="edit" />}
+          {type !== 'bug' && <SelectImpact mode="edit" />}
           <div className="grow">
             <SetLabels
               // labels={task.labels} // TODO set labels from task

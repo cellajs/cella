@@ -358,6 +358,7 @@
   "create_new_label": "Create new label",
   "placeholder.search-label": "Search label..",
   "placeholder.impact": "Set impact ...",
+  "placeholder.type": "Set type ...",
   "placeholder.assign": "Assign to ...",
   "placeholder.email_domains": "Add email domains",
   "email_domains": "Email domains",
