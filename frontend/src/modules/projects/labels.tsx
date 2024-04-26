@@ -11,6 +11,7 @@ import { Input } from '~/modules/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '../ui/scroll-area';
 import { WorkspaceContext } from '../workspaces/workspace';
+import { useTranslation } from 'react-i18next';
 
 type LabelType = Record<'value' | 'label' | 'color', string>;
 
@@ -20,6 +21,7 @@ const badgeStyle = (color: string) => ({
 });
 
 export const LabelBox = () => {
+  const { t } = useTranslation();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [labels, setLabels] = React.useState<LabelType[]>([]);
   const [isOpenEditLabel, setOpenEditLabel] = React.useState(false);
@@ -95,7 +97,7 @@ export const LabelBox = () => {
               ))}
             {!isOpenEditLabel && selectedLabels.length < 1 && (
               <Button size={'micro'} className="text-muted" variant="none" onClick={() => setOpenEditLabel(true)}>
-                No labels yet
+                {t('common:no_labels')}
               </Button>
             )}
           </div>
@@ -105,7 +107,7 @@ export const LabelBox = () => {
             <Command>
               <CommandInput
                 ref={inputRef}
-                placeholder="Search label..."
+                placeholder={t('common:placeholder.search-label')}
                 value={searchValue}
                 clearValue={setSearchValue}
                 onValueChange={setSearchValue}
@@ -154,6 +156,7 @@ type CreateLabelType = {
 };
 
 const CreateLabel = ({ searchValue, setDefaultSearch, labels, onSelect }: CreateLabelType) => {
+  const { t } = useTranslation();
   const hasNoLabel = !labels.some((label) => label.value === searchValue.toLowerCase());
   const render = searchValue !== '' && hasNoLabel;
   if (!render) return null;
@@ -169,7 +172,7 @@ const CreateLabel = ({ searchValue, setDefaultSearch, labels, onSelect }: Create
           onSelect={onSelect}
         >
           <Button onClick={() => setDefaultSearch('')} className="w-full" variant={'outlineGhost'} size={'xs'}>
-            Create new label &quot;{searchValue}&quot;
+            {t('common:create_new_label')} &quot;{searchValue}&quot;
           </Button>
         </CommandItem>
       )}
@@ -187,6 +190,7 @@ type LabelsItem = LabelType & {
 };
 
 const LabelsListItem = ({ value, label, color, editedValue, setEditedValue, onSubmit, onDelete, onSelect, isActive }: LabelsItem) => {
+  const { t } = useTranslation();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [newLabelName, setNewLabelName] = React.useState<string>(label);
   const [newColorValue, setNewColorValue] = React.useState<string>(color);
@@ -224,10 +228,10 @@ const LabelsListItem = ({ value, label, color, editedValue, setEditedValue, onSu
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={handleEditClick} variant="outlineGhost" size="xs">
-              Edit
+              {t('common:edit')}
             </Button>
             <Button onClick={onDelete} variant="destructive" size="xs">
-              Delete
+              {t('common:delete')}
             </Button>
           </div>
         </div>
@@ -250,10 +254,10 @@ const LabelsListItem = ({ value, label, color, editedValue, setEditedValue, onSu
           />
           <div className="gap-1.5 flex">
             <Button variant="outlineGhost" type="submit" disabled={disabled} size="xs">
-              Save
+              {t('common:save')}
             </Button>
             <Button variant="outlineGhost" onClick={handleCancelEdit} size="xs">
-              Cancel
+              {t('common:cancel')}
             </Button>
           </div>
         </form>

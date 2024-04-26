@@ -174,6 +174,7 @@ const StoryTypeChooseForm = ({
   required,
   description,
 }: Props & { defaultValue?: StoryType; className?: string }) => {
+  const { t } = useTranslation();
   return (
     <FormField
       control={control}
@@ -204,15 +205,15 @@ const StoryTypeChooseForm = ({
               >
                 <ToggleGroupItem size="sm" value="feature" className="w-full">
                   <Star size={16} className={`${value === 'feature' && 'fill-amber-400 text-amber-500'}`} />
-                  <span className="ml-2 font-light">Feature</span>
+                  <span className="ml-2 font-light">{t('common:feature')}</span>
                 </ToggleGroupItem>
                 <ToggleGroupItem size="sm" value="bug" className="w-full">
                   <Bug size={16} className={`${value === 'bug' && 'fill-red-400 text-red-500'}`} />
-                  <span className="ml-2 font-light">Bug</span>
+                  <span className="ml-2 font-light">{t('common:bug')}</span>
                 </ToggleGroupItem>
                 <ToggleGroupItem size="sm" value="chore" className="w-full">
                   <Bolt size={16} className={`${value === 'chore' && 'fill-slate-400 text-slate-500'}`} />
-                  <span className="ml-2 font-light">Chore</span>
+                  <span className="ml-2 font-light">{t('common:chore')}</span>
                 </ToggleGroupItem>
               </ToggleGroup>
             </FormControl>

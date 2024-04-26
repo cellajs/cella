@@ -11,6 +11,7 @@ import { NoneIcon } from './icons/none';
 import { Kbd } from '../../common/kbd';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Impact = {
   value: (typeof impacts)[number]['value'];
@@ -28,10 +29,11 @@ const impacts = [
 
 interface SelectImpactProps {
   mode: 'edit' | 'create';
-  changeTaskImpact?: (value: 0 | 1 | 2 | 3) => void
+  changeTaskImpact?: (value: 0 | 1 | 2 | 3) => void;
 }
 
 export const SelectImpact = ({ mode = 'create', changeTaskImpact }: SelectImpactProps) => {
+  const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedImpact, setSelectedImpact] = useState<Impact | null>(null);
   const [searchValue, setSearchValue] = useState('');
@@ -86,7 +88,7 @@ export const SelectImpact = ({ mode = 'create', changeTaskImpact }: SelectImpact
               setSearchValue(searchValue);
             }}
             className="leading-normal"
-            placeholder="Set impact ..."
+            placeholder={t('common:placeholder.impact')}
           />
           {!isSearching && <Kbd value="P" className="absolute top-3 right-[10px]" />}
           <CommandList>

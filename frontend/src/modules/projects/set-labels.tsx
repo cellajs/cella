@@ -5,6 +5,7 @@ import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '.
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { Kbd } from '../common/kbd.tsx';
 import { Badge } from '../ui/badge.tsx';
+import { useTranslation } from 'react-i18next';
 
 export type Label = {
   id: string;
@@ -31,6 +32,7 @@ interface SetLabelsProps {
 }
 
 const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps) => {
+  const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<Label[]>([]);
   const [searchValue, setSearchValue] = useState('');
@@ -61,7 +63,9 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
           aria-label="Set labels"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70 hover:bg-transparent'}`}
+          className={`flex justify-start font-light ${
+            mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70 hover:bg-transparent'
+          }`}
         >
           {!selectedLabels.length && <Tag className="h-4 w-4 opacity-50" />}
           <div className="flex gap-1 truncate">
@@ -94,7 +98,7 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
             }}
             clearValue={setSearchValue}
             className="leading-normal"
-            placeholder="Search labels ..."
+            placeholder={t('common:placeholder.search_labels')}
           />
           {!isSearching && <Kbd value="L" className="absolute top-3 right-[10px]" />}
           <CommandList>
@@ -112,7 +116,6 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
                   <div className="flex items-center gap-3">
                     <span>{label.name}</span>
                   </div>
-
                   <div className="flex items-center">
                     {selectedLabels.includes(label) && <Check size={16} className="text-success" />}
                     {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}

@@ -14,6 +14,7 @@ import { SelectImpact } from './select-impact.tsx/index.tsx';
 import SelectStatus from './select-status.tsx';
 import AssignMembers from './assign-members.tsx';
 import SetLabels from './set-labels.tsx';
+import { useTranslation } from 'react-i18next';
 
 interface User {
   id: string;
@@ -39,6 +40,7 @@ export interface TaskDragData {
 }
 
 export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTaskStatus, setMainAssignedTo }: TaskCardProps) {
+  const { t } = useTranslation();
   const [value, setValue] = useState<string | undefined>(task.text);
   const [status, setStatus] = useState(task.status);
 
@@ -150,11 +152,11 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
 
               <div className="flex gap-2">
                 <Button onClick={toggleEditorState} size="sm" className="rounded text-[12px] p-1 h-6">
-                  Save
+                  {t('common:save')}
                 </Button>
 
                 <Button onClick={toggleEditorState} variant="secondary" size="sm" className="rounded text-[12px] p-1 h-6">
-                  Cancel
+                  {t('common:cancel')}
                 </Button>
               </div>
             </div>
@@ -168,7 +170,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
             {...listeners}
             className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab group-hover/task:opacity-100 opacity-70"
           >
-            <span className="sr-only">Move task</span>
+            <span className="sr-only"> {t('common:move_task')}</span>
             <GripVertical size={16} />
           </Button>
 
@@ -182,7 +184,6 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
 
           <div className="flex gap-2">
             <AssignMembers mode="edit" changeAssignedTo={setAssignedTo} />
-
             <SelectStatus taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
           </div>
         </div>

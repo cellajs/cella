@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { Kbd } from '../common/kbd.tsx';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
+import { useTranslation } from 'react-i18next';
 
 const defaultMembers = [
   { bio: 'poor advocate, photographer 👕', id: '9a4630c1-5036-4cdf-a521-c0dee7f48304', name: 'Alton Labadie', thumbnailUrl: null },
@@ -23,6 +24,7 @@ interface AssignMembersProps {
 }
 
 const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: AssignMembersProps) => {
+  const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [searchValue, setSearchValue] = useState('');
@@ -46,6 +48,7 @@ const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: Ass
   useEffect(() => {
     if (changeAssignedTo && selectedUsers.length > 0) changeAssignedTo(selectedUsers);
   }, [selectedUsers]);
+
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
@@ -93,7 +96,7 @@ const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: Ass
             }}
             clearValue={setSearchValue}
             className="leading-normal"
-            placeholder="Assign to ..."
+            placeholder={t('common:placeholder.assign')}
           />
           {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
           <CommandList>

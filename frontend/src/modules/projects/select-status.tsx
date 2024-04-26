@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Button } from '../ui/button';
 import { ChevronDown, Check } from 'lucide-react';
 import { Kbd } from '../common/kbd';
+import { useTranslation } from 'react-i18next';
 
 type Status = {
   value: (typeof statuses)[number]['value'];
@@ -27,6 +28,7 @@ interface SelectStatusProps {
 }
 
 const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
+  const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
@@ -40,15 +42,15 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-        <Button variant="plain" size="micro" className="border-r-0 rounded-r-none" onClick={nextStatusClick} disabled={selectedStatus.value === 6}>
-          {statuses[selectedStatus.value].button}
-        </Button>
+      <Button variant="plain" size="micro" className="border-r-0 rounded-r-none" onClick={nextStatusClick} disabled={selectedStatus.value === 6}>
+        {statuses[selectedStatus.value].button}
+      </Button>
 
-          <PopoverTrigger asChild>
-            <Button aria-label="Set status" variant="plain" size="micro" className="rounded-none rounded-r -ml-2">
-              <ChevronDown size={12} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
-            </Button>
-          </PopoverTrigger>
+      <PopoverTrigger asChild>
+        <Button aria-label="Set status" variant="plain" size="micro" className="rounded-none rounded-r -ml-2">
+          <ChevronDown size={12} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
+        </Button>
+      </PopoverTrigger>
       <PopoverContent className="w-48 p-0 rounded-lg" align="end" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
         <Command className="relative rounded-lg">
           <CommandInput
@@ -64,7 +66,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
               }
               setSearchValue(searchValue);
             }}
-            placeholder="Set status ..."
+            placeholder={t('common:placeholder.set_status')}
           />
           {!isSearching && <Kbd value="S" className="absolute top-3 right-[10px]" />}
           <CommandList>
