@@ -28,33 +28,39 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState(false);
 
-  useMutation({
+  // Watch to check if slug availability
+  const slug = useWatch({ control: form.control, name: 'slug' });
+
+  // Check if slug is available
+  const { mutate: checkAvailability } = useMutation({
     mutationFn: checkSlugAvailable,
     onSuccess: (isAvailable) => {
-      if (isAvailable) return form.clearErrors('slug');
+      if (isValidSlug(slug)) form.clearErrors('slug');
+      if (previousSlug && slug === previousSlug) return setSlugAvailable(false);
+      if (isAvailable) return setSlugAvailable(true);
 
+      // Slug is not available
       form.setError('slug', {
         type: 'manual',
         message: t('common:error.slug_exists'),
       });
+      setSlugAvailable(false);
     },
   });
 
-  // Watch to check if slug availability
-  const slug = useWatch({ control: form.control, name: 'slug' });
-
+  // Only show green ring if slug is valid
   const isValidSlug = (value: string) => {
+    if (!value || value.trim().length < 2) return false;
     const regex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
     return regex.test(value) && !value.startsWith('-') && !value.endsWith('-') && value.replaceAll(' ', '') !== '';
   };
 
+  // Check on change
   useEffect(() => {
-    if (previousSlug && slug === previousSlug) return;
-    if (isValidSlug(slug)) checkSlugAvailable({slug, type}).then((response) => setSlugAvailable(response));
-    setSlugAvailable(false);
+    if (isValidSlug(slug)) checkAvailability({ slug, type });
   }, [slug]);
 
-  // In create forms, auto-generate from name
+  // In create forms, auto-generate slug from name
   useEffect(() => {
     if (previousSlug || isDeviating) return;
 
@@ -70,7 +76,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     <InputFormField
       control={control}
       name="slug"
-      inputClassName={isSlugAvailable ? 'ring-2 ring-green-500 focus-visible:ring-2 focus-visible:ring-green-500' : ''}
+      inputClassName={isSlugAvailable && isValidSlug(slug) ? 'ring-2 ring-green-500 focus-visible:ring-2 focus-visible:ring-green-500' : ''}
       onFocus={() => setDeviating(true)}
       label={label}
       description={description}

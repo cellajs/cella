@@ -62,7 +62,7 @@ function Toolbar({
     dialog(<InviteUsers mode="email" dialog />, {
       id: 'user-invite',
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-[100] max-w-3xl',
+      className: 'w-auto shadow-none relative z-[100] max-w-4xl',
       container: containerRef.current,
       title: t('common:invite'),
       text: `${t('common:invite_users.text')}`,

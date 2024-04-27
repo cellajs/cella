@@ -9,6 +9,7 @@ import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~
 
 import { AvatarWrap } from './avatar-wrap';
 import { ScrollArea } from '../ui/scroll-area';
+import { useFormContext } from 'react-hook-form';
 
 export interface Option {
   value: string;
@@ -130,14 +131,21 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     }: MultipleSelectorProps,
     ref: React.Ref<MultipleSelectorRef>,
   ) => {
+    const formValue = useFormContext?.()?.getValues('emails');
     const inputRef = React.useRef<HTMLInputElement>(null);
     const [isShowResults, setShowResults] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
 
-    const [selected, setSelected] = React.useState<Option[]>(value || []);
+    const [selected, setSelected] = React.useState<Option[]>(value || formValue || []);
     const [options, setOptions] = React.useState<Option[]>(arrayDefaultOptions || []);
     const [inputValue, setInputValue] = React.useState('');
     const debouncedSearchTerm = useDebounce(inputValue, delay || 200);
+
+    // Whenever the form value changes (also on reset), update the internal state
+    useEffect(() => {
+      console.log('formValue', formValue, useFormContext);
+      setSelected(formValue || []);
+    }, [formValue]);
 
     React.useImperativeHandle(
       ref,

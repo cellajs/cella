@@ -43,7 +43,7 @@ function KanbanHeader() {
           onClick={() => {
             dialog(<AddProjects dialog />, {
               //callback={(project) => callback([project], 'create')} dialog
-              className: 'md:max-w-xl',
+              className: 'md:max-w-4xl',
               title: t('common:add_projects'),
             });
           }}
