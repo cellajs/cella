@@ -176,7 +176,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
             {allTasks.map((task) => (
               <TaskCard
                 setTaskStatus={setTaskStatus}
-                isViewState={!foldedTasks.includes(task.id)}
+                isEditing={!foldedTasks.includes(task.id)}
                 toggleTaskClick={toggleTaskVisibility}
                 task={task}
                 key={task.id}

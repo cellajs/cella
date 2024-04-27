@@ -31,14 +31,8 @@ export const SelectTaskType = ({
 
   const isSearching = searchValue.length > 0;
 
-  useHotkeys([
-    [
-      't',
-      () => {
-        setOpenPopover(true);
-      },
-    ],
-  ]);
+ // Open on key press
+ useHotkeys([['t', () => setOpenPopover(true)]]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>

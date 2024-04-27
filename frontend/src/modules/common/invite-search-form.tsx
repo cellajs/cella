@@ -74,11 +74,6 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
     });
   };
 
-  const cancel = () => {
-    form.reset();
-    isDialog && dialog.remove();
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -132,7 +127,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
             {t('common:invite')}
           </Button>
           {form.formState.isDirty && (
-            <Button type="reset" variant="secondary" onClick={cancel}>
+            <Button type="reset" variant="secondary" onClick={() => form.reset()}>
               {t('common:cancel')}
             </Button>
           )}

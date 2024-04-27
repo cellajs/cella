@@ -8,6 +8,8 @@ import { Kbd } from '../common/kbd.tsx';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { useTranslation } from 'react-i18next';
+import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import { useFormContext } from 'react-hook-form';
 
 const defaultMembers = [
   { bio: 'poor advocate, photographer 👕', id: '9a4630c1-5036-4cdf-a521-c0dee7f48304', name: 'Alton Labadie', thumbnailUrl: null },
@@ -25,9 +27,11 @@ interface AssignMembersProps {
 
 const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: AssignMembersProps) => {
   const { t } = useTranslation();
+  const formValue = useFormContext?.()?.getValues('assignedTo');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>(formValue || []);
   const [searchValue, setSearchValue] = useState('');
+  const isSearching = searchValue.length > 0;
 
   const handleSelectClick = (name: string) => {
     if (!name) return;
@@ -43,11 +47,17 @@ const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: Ass
     }
   };
 
-  const isSearching = searchValue.length > 0;
+  // Open on key press
+  useHotkeys([['a', () => setOpenPopover(true)]]);
 
   useEffect(() => {
     if (changeAssignedTo && selectedUsers.length > 0) changeAssignedTo(selectedUsers);
   }, [selectedUsers]);
+
+  // Whenever the form value changes (also on reset), update the internal state
+  useEffect(() => {
+    setSelectedUsers(formValue || []);
+  }, [formValue]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>

@@ -10,10 +10,11 @@ import { MediumIcon } from './icons/medium';
 import { NoneIcon } from './icons/none';
 import { Kbd } from '../../common/kbd';
 import { Check } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useFormContext } from 'react-hook-form';
 
-type Impact = {
+type ImpactOption = {
   value: (typeof impacts)[number]['value'];
   label: string;
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -34,20 +35,20 @@ interface SelectImpactProps {
 
 export const SelectImpact = ({ mode = 'create', changeTaskImpact }: SelectImpactProps) => {
   const { t } = useTranslation();
+  const formValue = useFormContext?.()?.getValues('impact');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedImpact, setSelectedImpact] = useState<Impact | null>(null);
+  const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(formValue ? impacts[formValue] : null);
   const [searchValue, setSearchValue] = useState('');
-
   const isSearching = searchValue.length > 0;
 
-  useHotkeys([
-    [
-      'p',
-      () => {
-        setOpenPopover(true);
-      },
-    ],
-  ]);
+  // Open on key press
+  useHotkeys([['p', () => setOpenPopover(true)]]);
+
+  // Whenever the form value changes (also on reset), update the internal state
+  useEffect(() => {
+    const updatedValue = impacts[formValue];
+    setSelectedImpact(updatedValue || null);
+  }, [formValue]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>

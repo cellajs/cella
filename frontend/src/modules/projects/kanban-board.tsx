@@ -67,7 +67,7 @@ export default function KanbanBoard() {
       if (active.data.current?.type === 'Task') {
         pickedUpTaskColumn.current = active.data.current.task.projectId;
         const { tasksInColumn, taskPosition, column } = getDraggingTaskData(active.id.toString(), pickedUpTaskColumn.current);
-        return `Picked up Task ${active.data.current.task.text} at position: ${taskPosition + 1} of ${tasksInColumn.length} in column ${
+        return `Picked up Task at position: ${taskPosition + 1} of ${tasksInColumn.length} in column ${
           column?.name
         }`;
       }
@@ -84,7 +84,7 @@ export default function KanbanBoard() {
       if (active.data.current?.type === 'Task' && over.data.current?.type === 'Task') {
         const { tasksInColumn, taskPosition, column } = getDraggingTaskData(over.id.toString(), over.data.current.task.projectId);
         if (over.data.current.task.projectId !== pickedUpTaskColumn.current) {
-          return `Task ${active.data.current.task.text} was moved over column ${column?.name} in position ${taskPosition + 1} of ${
+          return `Task was moved over column ${column?.name} in position ${taskPosition + 1} of ${
             tasksInColumn.length
           }`;
         }

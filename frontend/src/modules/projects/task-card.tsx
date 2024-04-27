@@ -26,7 +26,7 @@ interface User {
 
 interface TaskCardProps {
   task: Task;
-  isViewState?: boolean;
+  isEditing?: boolean;
   toggleTaskClick?: (id: string) => void;
   isOverlay?: boolean;
   setTaskStatus: (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
@@ -40,9 +40,9 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTaskStatus, setMainAssignedTo }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, setTaskStatus, setMainAssignedTo }: TaskCardProps) {
   const { t } = useTranslation();
-  const [value, setValue] = useState<string | undefined>(task.text);
+  const [value, setValue] = useState<string | undefined>(task.markdown);
   const [type, setType] = useState<'feature' | 'bug' | 'chore'>(task.type);
   const [status, setStatus] = useState(task.status);
 
@@ -90,7 +90,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
   };
 
   useEffect(() => {
-    if (value) task.text = value;
+    if (value) task.markdown = value;
   }, [value]);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
 
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {
-    if (isViewState) {
+    if (isEditing) {
       const editorTextAria = document.getElementById(task.id);
       if (!editorTextAria) return;
       const textAreaElement = editorTextAria as HTMLTextAreaElement;
@@ -107,7 +107,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
       textAreaElement.focus();
       textAreaElement.setSelectionRange(textAreaElement.value.length, textAreaElement.value.length);
     }
-  }, [task.id, isViewState]);
+  }, [task.id, isEditing]);
 
   useEffect(() => {
     setTaskStatus(task, status);
@@ -126,7 +126,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
         <div className="flex gap-2">
           <div className="flex flex-col gap-2">
             <div className="group mt-[2px] ">
-              {isViewState ? (
+              {isEditing ? (
                 <SelectTaskType
                   currentType={type}
                   changeTaskType={(newType) => setType(newType)}
@@ -140,13 +140,13 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
               {type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500 group-hover:opacity-0 transition-opacity" />}
             </div>
           </div>
-          {!isViewState && (
+          {!isEditing && (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <div onClick={toggleEditorState}>
-              <MDEditor.Markdown source={task.text} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose font-light" />
+              <MDEditor.Markdown source={task.markdown} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose font-light" />
             </div>
           )}
-          {isViewState && (
+          {isEditing && (
             <div className="flex flex-col gap-2" data-color-mode="dark">
               <MDEditor
                 textareaProps={{ id: task.id }}
@@ -157,6 +157,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
                 hideToolbar={true}
                 visibleDragbar={false}
                 height={'auto'}
+                minHeight={20}
                 style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', boxShadow: 'none', padding: '0' }}
               />
 

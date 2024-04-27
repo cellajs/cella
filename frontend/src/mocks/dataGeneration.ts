@@ -6,13 +6,13 @@ const taskGenerator = (projectId: string, userIds: string[], executor: User, num
   const labels = labelsContent();
   const returnedArray = [] as Task[];
   const type = ['feature', 'bug', 'chore'];
-  const points = [0, 1, 2, 3];
+  const impact = [0, 1, 2, 3];
   const status = [0, 1, 2, 3, 4, 5, 6];
   for (let i = 0; i < numberOfTasks; i++) {
     returnedArray.push({
       id: faker.string.uuid(),
       slug: faker.animal.bird(),
-      text: faker.commerce.productDescription(),
+      markdown: faker.commerce.productDescription(),
       summary: faker.company.catchPhrase(),
       createdBy: userIds[Math.floor(Math.random() * userIds.length)],
       createdAt: faker.date.anytime(),
@@ -22,7 +22,7 @@ const taskGenerator = (projectId: string, userIds: string[], executor: User, num
       modifiedBy: userIds[Math.floor(Math.random() * userIds.length)],
       modifiedAt: faker.date.anytime(),
       type: type[Math.floor(Math.random() * type.length)] as 'feature' | 'bug' | 'chore',
-      points: points[Math.floor(Math.random() * points.length)] as 0 | 1 | 2 | 3,
+      impact: impact[Math.floor(Math.random() * impact.length)] as 0 | 1 | 2 | 3,
       status: status[Math.floor(Math.random() * status.length)] as 0 | 1 | 2 | 3 | 4 | 5 | 6,
       labels: labels.map((label) => label.id),
       projectId: projectId,
@@ -137,7 +137,7 @@ type LabelTable = {
 export type Task = {
   id: string;
   slug: string;
-  text: string;
+  markdown: string;
   summary: string;
   createdBy: string;
   createdAt: Date;
@@ -147,7 +147,7 @@ export type Task = {
   modifiedBy: string;
   modifiedAt: Date;
   type: 'feature' | 'bug' | 'chore';
-  points: 0 | 1 | 2 | 3;
+  impact: 0 | 1 | 2 | 3;
   status: 0 | 1 | 2 | 3 | 4 | 5 | 6; //(0 = iced, 1=unstarted, 2=started, 3=finished, 4=delivered, 5=reviewed, 6=accepted )
   labels: string[]; //array of labels by id
   projectId: string;

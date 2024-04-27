@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type React from 'react';
-import type { Control, UseFormProps } from 'react-hook-form';
+import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { useMemo } from 'react';
@@ -9,15 +9,12 @@ import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
 import { dialog } from '../common/dialoger/state';
-import { useNavigate } from '@tanstack/react-router';
-import { Form, FormDescription, FormField, FormItem, FormLabel, FormControl, FormMessage } from '../ui/form';
+import { Form, FormField, FormItem, FormControl, FormMessage } from '../ui/form';
 import { createWorkspace } from '~/api/workspaces';
 import { SelectImpact } from './select-impact.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { Bolt, Bug, Star } from 'lucide-react';
-import { cn } from '~/lib/utils.ts';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
 import type { Task, User } from '~/mocks/dataGeneration.ts';
@@ -26,9 +23,9 @@ import SetLabels from './set-labels.tsx';
 
 export interface Story {
   id: string;
-  text: string;
+  markdown: string;
   type: StoryType;
-  points: 0 | 1 | 2 | 3;
+  impact: 0 | 1 | 2 | 3 | null | undefined;
   status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   assignedTo: User[];
   labels: string[];
@@ -43,9 +40,9 @@ type StoryType = 'feature' | 'bug' | 'chore';
 
 const formSchema = z.object({
   id: z.string(),
-  text: z.string(),
+  markdown: z.string(),
   type: z.string(),
-  points: z.number(),
+  impact: z.number().nullable(),
   assignedTo: z.array(
     z.object({
       id: z.string(),
@@ -69,8 +66,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { setSheet } = useNavigationStore();
   const { mode } = useThemeStore();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -78,12 +73,12 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
       resolver: zodResolver(formSchema),
       defaultValues: {
         id: 'gfdgdfgsf43t54',
-        text: '',
+        markdown: '',
         type: 'feature',
-        points: 0,
+        impact: null,
         assignedTo: [],
         labels: [],
-        status: 0,
+        status: 1,
       },
     }),
     [],
@@ -95,17 +90,9 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   const { isPending } = useMutation({
     // mutate: create
     mutationFn: createWorkspace, // change to create story
-    onSuccess: (result) => {
-      form.reset();
+    onSuccess: () => {
+      //form.reset();
       //   callback?.(result);
-      toast.success(t('common:success.create_story'));
-
-      setSheet(null);
-      navigate({
-        to: '/workspace/$idOrSlug/projects',
-        params: { idOrSlug: result.slug },
-      });
-
       if (isDialog) dialog.remove();
     },
   });
@@ -113,25 +100,133 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   const onSubmit = (values: FormValues) => {
     const story: Story = {
       id: values.id,
-      text: values.text,
+      markdown: values.markdown,
       type: values.type as StoryType,
-      points: values.points as 0 | 1 | 2 | 3,
+      impact: values.impact as 0 | 1 | 2 | 3,
       assignedTo: values.assignedTo as User[],
       labels: values.labels.map((label) => label.name),
       status: 0 as 0 | 1 | 2 | 3 | 4 | 5 | 6,
     };
+    form.reset();
+    toast.success(t('common:success.create_story'));
     callback?.(story as Task);
     // create(values);
   };
   // Fix types
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 p-4 border-b shadow-inner">
-        <StoryTypeChooseForm control={form.control} name={'type'} />
-        <StoryTextForm control={form.control} name={'text'} mode={mode} />
-        <StoryImpactForm control={form.control} name={'points'} storyType={form.getValues('type') as StoryType} />
-        <StoryAssignMembersForm control={form.control} name={'assignedTo'} />
-        <StoryAddLabelsForm control={form.control} name={'labels'} />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 border-b flex gap-2 flex-col shadow-inner">
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field: { value, onChange } }) => {
+            return (
+              <FormItem>
+                <FormControl>
+                  <ToggleGroup
+                    type="single"
+                    variant="merged"
+                    className="gap-0 w-full"
+                    value={value}
+                    onValueChange={(value) => {
+                      onChange(value);
+                    }}
+                  >
+                    <ToggleGroupItem size="sm" value="feature" className="w-full">
+                      <Star size={16} className={`${value === 'feature' && 'fill-amber-400 text-amber-500'}`} />
+                      <span className="ml-2 font-light">{t('common:feature')}</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem size="sm" value="bug" className="w-full">
+                      <Bug size={16} className={`${value === 'bug' && 'fill-red-400 text-red-500'}`} />
+                      <span className="ml-2 font-light">{t('common:bug')}</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem size="sm" value="chore" className="w-full">
+                      <Bolt size={16} className={`${value === 'chore' && 'fill-slate-400 text-slate-500'}`} />
+                      <span className="ml-2 font-light">{t('common:chore')}</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+
+        <FormField
+          control={form.control}
+          name="markdown"
+          render={({ field: { value, onChange } }) => {
+            return (
+              <FormItem>
+                <FormControl>
+                  <MDEditor
+                    value={value}
+                    defaultTabEnable={true}
+                    preview={'edit'}
+                    onChange={(newValue) => {
+                      if (typeof newValue === 'string') onChange(newValue);
+                    }}
+                    hideToolbar={true}
+                    visibleDragbar={false}
+                    height={'auto'}
+                    minHeight={40}
+                    className="border text-sm"
+                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', padding: '0.5rem' }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+
+        {form.getValues('type') !== 'chore' && (
+          <FormField
+            control={form.control}
+            name="impact"
+            render={({ field: { onChange } }) => {
+              return (
+                <FormItem>
+                  <FormControl>
+                    <SelectImpact mode="create" changeTaskImpact={onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="assignedTo"
+          render={({ field: { onChange } }) => {
+            return (
+              <FormItem>
+                <FormControl>
+                  <AssignMembers mode="create" changeAssignedTo={onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+
+        <FormField
+          control={form.control}
+          name="labels"
+          render={({ field: { onChange } }) => {
+            return (
+              <FormItem>
+                <FormControl>
+                  <SetLabels mode="create" changeLabels={onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+
         <div className="flex flex-col sm:flex-row gap-2">
           <Button size={'xs'} type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}
@@ -153,212 +248,3 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
 };
 
 export default CreateStoryForm;
-
-type Props = {
-  control: Control<FormValues>;
-  name: 'id' | 'text' | 'type' | 'points' | 'assignedTo' | 'status' | 'labels';
-  label?: string;
-  placeholder?: string;
-  description?: string;
-  disabledItemFunction?: (value: string) => boolean;
-  emptyIndicator?: string;
-  required?: boolean;
-};
-
-const StoryTypeChooseForm = ({
-  control,
-  name,
-  label,
-  className = '',
-  defaultValue = 'feature',
-  required,
-  description,
-}: Props & { defaultValue?: StoryType; className?: string }) => {
-  const { t } = useTranslation();
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field: { value, onChange } }) => {
-        const defaultFieldValue = value ? value : defaultValue;
-
-        return (
-          <FormItem>
-            <FormLabel>
-              {label && (
-                <>
-                  {label}
-                  {required && <span className="ml-1 opacity-50">*</span>}
-                </>
-              )}
-            </FormLabel>
-            {description && <FormDescription>{description}</FormDescription>}
-            <FormControl>
-              <ToggleGroup
-                type="single"
-                variant="merged"
-                className={cn('gap-0 w-full', className)}
-                value={defaultFieldValue as StoryType}
-                onValueChange={(value) => {
-                  onChange(value);
-                }}
-              >
-                <ToggleGroupItem size="sm" value="feature" className="w-full">
-                  <Star size={16} className={`${value === 'feature' && 'fill-amber-400 text-amber-500'}`} />
-                  <span className="ml-2 font-light">{t('common:feature')}</span>
-                </ToggleGroupItem>
-                <ToggleGroupItem size="sm" value="bug" className="w-full">
-                  <Bug size={16} className={`${value === 'bug' && 'fill-red-400 text-red-500'}`} />
-                  <span className="ml-2 font-light">{t('common:bug')}</span>
-                </ToggleGroupItem>
-                <ToggleGroupItem size="sm" value="chore" className="w-full">
-                  <Bolt size={16} className={`${value === 'chore' && 'fill-slate-400 text-slate-500'}`} />
-                  <span className="ml-2 font-light">{t('common:chore')}</span>
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        );
-      }}
-    />
-  );
-};
-
-const StoryTextForm = ({
-  control,
-  name,
-  label,
-  defaultValue = ' ',
-  required,
-  description,
-  mode,
-}: Props & { defaultValue?: string; mode: 'dark' | 'light' }) => {
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field: { value, onChange } }) => {
-        const defaultInnerValue = value ? value : defaultValue;
-
-        return (
-          <FormItem>
-            <FormLabel>
-              {label && (
-                <>
-                  {label}
-                  {required && <span className="ml-1 opacity-50">*</span>}
-                </>
-              )}
-            </FormLabel>
-            {description && <FormDescription>{description}</FormDescription>}
-            <FormControl>
-              <MDEditor
-                value={defaultInnerValue as string}
-                defaultTabEnable={true}
-                preview={'edit'}
-                onChange={(newValue) => {
-                  if (typeof newValue === 'string') onChange(newValue);
-                }}
-                hideToolbar={true}
-                visibleDragbar={false}
-                height={'auto'}
-                className="border"
-                style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', minHeight: '60px', padding: '0.5rem' }}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        );
-      }}
-    />
-  );
-};
-
-const StoryImpactForm = ({ control, name, label, required, description, storyType }: Props & { storyType: StoryType }) => {
-  return (
-    <>
-      {storyType !== 'chore' && (
-        <FormField
-          control={control}
-          name={name}
-          render={({ field: { onChange } }) => {
-            return (
-              <FormItem>
-                <FormLabel>
-                  {label && (
-                    <>
-                      {label}
-                      {required && <span className="ml-1 opacity-50">*</span>}
-                    </>
-                  )}
-                </FormLabel>
-                {description && <FormDescription>{description}</FormDescription>}
-                <FormControl>
-                  <SelectImpact mode="create" changeTaskImpact={onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-      )}
-    </>
-  );
-};
-
-const StoryAssignMembersForm = ({ control, name, label, required, description }: Props) => {
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field: { onChange } }) => {
-        return (
-          <FormItem>
-            <FormLabel>
-              {label && (
-                <>
-                  {label}
-                  {required && <span className="ml-1 opacity-50">*</span>}
-                </>
-              )}
-            </FormLabel>
-            {description && <FormDescription>{description}</FormDescription>}
-            <FormControl>
-              <AssignMembers mode="create" changeAssignedTo={onChange} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        );
-      }}
-    />
-  );
-};
-
-const StoryAddLabelsForm = ({ control, name, label, required, description }: Props) => {
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field: { onChange } }) => {
-        return (
-          <FormItem>
-            <FormLabel>
-              {label && (
-                <>
-                  {label}
-                  {required && <span className="ml-1 opacity-50">*</span>}
-                </>
-              )}
-            </FormLabel>
-            {description && <FormDescription>{description}</FormDescription>}
-            <FormControl>
-              <SetLabels mode="create" changeLabels={onChange} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        );
-      }}
-    />
-  );
-};

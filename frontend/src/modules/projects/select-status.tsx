@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { ChevronDown, Check } from 'lucide-react';
 import { Kbd } from '../common/kbd';
 import { useTranslation } from 'react-i18next';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 
 type Status = {
   value: (typeof statuses)[number]['value'];
@@ -31,8 +32,11 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const isSearching = searchValue.length > 0;
   const [selectedStatus, setSelectedStatus] = useState<Status>(statuses[taskStatus]);
+  const isSearching = searchValue.length > 0;
+
+  // Open on key press
+  useHotkeys([['s', () => setOpenPopover(true)]]);
 
   const nextStatusClick = () => {
     const statusIndex = selectedStatus.value;

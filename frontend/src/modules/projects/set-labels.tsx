@@ -6,6 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { Kbd } from '../common/kbd.tsx';
 import { Badge } from '../ui/badge.tsx';
 import { useTranslation } from 'react-i18next';
+import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import { useFormContext } from 'react-hook-form';
 
 export type Label = {
   id: string;
@@ -33,9 +35,11 @@ interface SetLabelsProps {
 
 const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps) => {
   const { t } = useTranslation();
+  const formValue = useFormContext?.()?.getValues('labels');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedLabels, setSelectedLabels] = useState<Label[]>([]);
+  const [selectedLabels, setSelectedLabels] = useState<Label[]>(formValue || []);
   const [searchValue, setSearchValue] = useState('');
+  const isSearching = searchValue.length > 0;
 
   const handleSelectClick = (name: string) => {
     if (!name) return;
@@ -51,11 +55,19 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
     }
   };
 
-  const isSearching = searchValue.length > 0;
+  // Open on key press
+  useHotkeys([['l', () => setOpenPopover(true)]]);
 
+  // callback to change labels in task card
   useEffect(() => {
     if (changeLabels && selectedLabels.length > 0) changeLabels(selectedLabels);
   }, [selectedLabels]);
+
+  // Whenever the form value changes (also on reset), update the internal state
+  useEffect(() => {
+    setSelectedLabels(formValue || []);
+  }, [formValue]);
+
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>

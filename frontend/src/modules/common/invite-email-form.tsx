@@ -78,11 +78,6 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
     });
   };
 
-  const cancel = () => {
-    form.reset();
-    isDialog && dialog.remove();
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -122,8 +117,8 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
             {t('common:invite')}
           </Button>
           {!children && form.formState.isDirty && (
-            <Button type="reset" variant="secondary" onClick={cancel}>
-              {t('common:cancel')}
+            <Button type="reset" variant="secondary" onClick={() => form.reset()}>
+            {t('common:cancel')}
             </Button>
           )}
         </div>
