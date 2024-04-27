@@ -22,8 +22,6 @@
     "rehype-highlight": "^7.0.0",
     "remark-frontmatter": "^5.0.0",
     "remark-mdx-frontmatter": "^4.0.0",
-    "tailwind-merge": "^2.2.0",
-    "tailwindcss-animate": "^1.0.7",
     "frontend": "workspace:*",
     "config": "workspace:*",
     "stream-browserify": "^3.0.0",
