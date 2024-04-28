@@ -19,11 +19,11 @@ import type { Workspace } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
-import SelectOrganizationFormField from '../common/form-fields/select-organization';
 import { useNavigate } from '@tanstack/react-router';
 import { SquarePen } from 'lucide-react';
 import { Form } from '../ui/form';
 import { Badge } from '../ui/badge';
+import SelectParentFormField from '../common/form-fields/select-parent';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -105,7 +105,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
           description={t('common:workspace_handle.text')}
           nameValue={name}
         />
-        <SelectOrganizationFormField control={form.control} label={t('common:organization')} name="organization" required />
+        <SelectParentFormField collection="organizations" control={form.control} label={t('common:organization')} name="organization" required />
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>

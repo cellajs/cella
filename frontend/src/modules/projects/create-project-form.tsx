@@ -22,7 +22,7 @@ import { SquarePen } from 'lucide-react';
 import { Form } from '../ui/form';
 import { Badge } from '../ui/badge';
 import type { Workspace } from '~/types';
-import SelectFormField from '~/modules/common/form-fields/space-select';
+import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -107,8 +107,8 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
           description={t('common:project_handle.text')}
           nameValue={name}
         />
-        <SelectFormField selectFor="organizations" control={form.control} label={t('common:organization')} name="organization" disabled />
-        <SelectFormField selectFor="workspaces" control={form.control} label={t('common:workspace')} name="workspace" disabled />
+        <SelectParentFormField collection="organizations" control={form.control} label={t('common:organization')} name="organization" disabled />
+        <SelectParentFormField collection="workspaces" control={form.control} label={t('common:workspace')} name="workspace" disabled />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}
