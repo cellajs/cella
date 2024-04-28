@@ -375,5 +375,7 @@
   "add_project": "Add project",
   "add_projects": "Add projects",
   "select_project.text": "Select existing projects",
-  "create_project.text": "Set up a new project"
+  "create_project.text": "Set up a new project",
+  "no_organization": "No organization",
+  "organization_required.text": "An organization is required for workspaces. Please create an organization first or ask to be invited to an existing organization."
 }
