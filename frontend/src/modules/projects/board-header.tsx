@@ -11,11 +11,14 @@ import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import AddProjects from './add-projects';
 import { AvatarWrap } from '../common/avatar-wrap';
 import LabelsTable from './labels-table';
+import { WorkspaceContext } from '../workspaces';
+import { useContext } from 'react';
 
 function BoardHeader() {
   const { t } = useTranslation();
+  const { labels } = useContext(WorkspaceContext);
 
-  const openSettingsSheet = () => {
+  const openSettingsSheet = () => {    
     sheet(<WorkspaceSettings />, {
       className: 'sm:max-w-[64rem]',
       title: t('common:workspace_settings'),
@@ -25,7 +28,7 @@ function BoardHeader() {
   };
 
   const openLablesSheet = () => {
-    sheet(<LabelsTable />, {
+    sheet(<LabelsTable labels={labels} />, {
       className: 'sm:max-w-[48rem]',
       title: 'Labels',
       // text: '',

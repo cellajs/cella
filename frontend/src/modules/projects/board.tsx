@@ -1,4 +1,4 @@
-import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, Fragment, useContext, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -22,31 +22,25 @@ import { coordinateGetter } from './keyboard-preset';
 import { TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
 import { WorkspaceContext } from '../workspaces';
-import type { ComplexProject, Task, User } from '~/mocks/dataGeneration';
-import type { Label } from './select-labels';
+import type { Project, Task } from '~/mocks/dataGeneration';
 
 interface ProjectContextValue {
   tasks: Task[];
-  members: Record<string, User[]>;
-  labels: Record<string, Label[]>;
+  project: Project;
 }
 
 export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
-  const [columns, setColumns] = useState<ComplexProject[]>([]);
+  const [columns, setColumns] = useState<Project[]>([]);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
-
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [members, setMembers] = useState<Record<string, User[]>>({});
-  const [labels, setLabels] = useState<Record<string, Label[]>>({});
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  const { projects } = useContext(WorkspaceContext);
+  const { projects, tasks } = useContext(WorkspaceContext);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -124,56 +118,16 @@ export default function Board() {
     },
   };
 
-  useEffect(() => {
-    if (projects) {
-      setColumns(projects);
-      setTasks(projects.flatMap((project) => project.tasks));
-      setMembers(
-        projects.reduce(
-          (acc, project) => {
-            return {
-              // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
-              ...acc,
-              [project.id]: project.canBeAssignedTo,
-            };
-          },
-          {} as Record<string, User[]>,
-        ),
-      );
-    }
-  }, [projects]);
-
-  useEffect(() => {
-    if (tasks) {
-      setLabels(
-        projects.reduce(
-          (acc, project) => {
-            const projectLabels = tasks.filter((task) => task.projectId === project.id).flatMap((task) => task.labels);
-            const labelStrings = projectLabels.map((label) => JSON.stringify(label));
-            const uniqueLabelStrings = Array.from(new Set(labelStrings));
-            const uniqueLabels = uniqueLabelStrings.map((labelString) => JSON.parse(labelString));
-            return {
-              // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
-              ...acc,
-              [project.id]: uniqueLabels,
-            };
-          },
-          {} as Record<string, Label[]>,
-        ),
-      );
-    }
-  }, [tasks]);
-
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
         <ResizablePanelGroup direction="horizontal" className="flex gap-2">
           <SortableContext items={columnsId}>
-            {columns.map((col, index) => (
-              <Fragment key={col.id}>
-                <ResizablePanel key={`${col.id}-panel`}>
-                  <ProjectContext.Provider value={{ tasks, members, labels }}>
-                    <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.projectId === col.id)} />
+            {projects.map((project, index) => (
+              <Fragment key={project.id}>
+                <ResizablePanel key={`${project.id}-panel`}>
+                  <ProjectContext.Provider value={{ tasks: tasks.filter((t) => t.projectId === project.id), project }}>
+                    <BoardColumn column={{ id: project.id, name: project.name }} key={`${project.id}-column`} />
                   </ProjectContext.Provider>
                 </ResizablePanel>
                 {columns.length > index + 1 && (
@@ -188,7 +142,7 @@ export default function Board() {
       {'document' in window &&
         createPortal(
           <DragOverlay>
-            {activeColumn && <BoardColumn isOverlay column={activeColumn} tasks={tasks.filter((task) => task.projectId === activeColumn.id)} />}
+            {activeColumn && <BoardColumn isOverlay column={activeColumn} />}
             {activeTask && <TaskCard task={activeTask} isOverlay />}
           </DragOverlay>,
           document.body,
@@ -259,33 +213,29 @@ export default function Board() {
 
     // Im dropping a Task over another Task
     if (isActiveATask && isOverATask) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
-        const overIndex = tasks.findIndex((t) => t.id === overId);
-        const activeTask = tasks[activeIndex];
-        const overTask = tasks[overIndex];
-        if (activeTask && overTask && activeTask.projectId !== overTask.projectId) {
-          activeTask.projectId = overTask.projectId;
-          return arrayMove(tasks, activeIndex, overIndex - 1);
-        }
+      const activeIndex = tasks.findIndex((t) => t.id === activeId);
+      const overIndex = tasks.findIndex((t) => t.id === overId);
+      const activeTask = tasks[activeIndex];
+      const overTask = tasks[overIndex];
+      if (activeTask && overTask && activeTask.projectId !== overTask.projectId) {
+        activeTask.projectId = overTask.projectId;
+        return arrayMove(tasks, activeIndex, overIndex - 1);
+      }
 
-        return arrayMove(tasks, activeIndex, overIndex);
-      });
+      return arrayMove(tasks, activeIndex, overIndex);
     }
 
     const isOverAColumn = overData?.type === 'Column';
 
     // Im dropping a Task over a column
     if (isActiveATask && isOverAColumn) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
-        const activeTask = tasks[activeIndex];
-        if (activeTask) {
-          activeTask.projectId = String(overId);
-          return arrayMove(tasks, activeIndex, activeIndex);
-        }
-        return tasks;
-      });
+      const activeIndex = tasks.findIndex((t) => t.id === activeId);
+      const activeTask = tasks[activeIndex];
+      if (activeTask) {
+        activeTask.projectId = String(overId);
+        return arrayMove(tasks, activeIndex, activeIndex);
+      }
+      return tasks;
     }
   }
 }

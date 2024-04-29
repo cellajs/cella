@@ -32,7 +32,6 @@ export interface ColumnDragData {
 
 interface BoardColumnProps {
   column: Column;
-  tasks: Task[];
   isOverlay?: boolean;
 }
 
@@ -41,9 +40,9 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const { tasks } = useContext(ProjectContext);
   const [allTasks, setAllTasks] = useState<Task[]>(tasks.filter((t) => t.projectId === column.id));
   const [foldedTasks, setFoldedTasks] = useState<string[]>(allTasks.map((el) => el.id));
-  const [showCreationForm, setShowCreationForm] = useState(false);
-  const [showIcedStories, setShowIcedStories] = useState(false);
-  const [showAcceptedStories, setShowAcceptedStories] = useState(false);
+  const [createForm, setCreateForm] = useState(false);
+  const [showIced, setShowIced] = useState(false);
+  const [showAccepted, setShowAccepted] = useState(false);
 
   const containerRef = useRef(null);
   const { ref, bounds } = useMeasure();
@@ -81,29 +80,23 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   }, [allTasks]);
 
   const handleAddStoryClick = () => {
-    if (!showCreationForm) {
+    if (!createForm) {
       const container = document.getElementById(`${column.id}-viewport`);
       container?.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    setShowCreationForm(!showCreationForm);
-  };
-  const handleIcedStoriesClick = () => {
-    setShowIcedStories(!showIcedStories);
-  };
-  const handleAcceptedStoriesClick = () => {
-    setShowAcceptedStories(!showAcceptedStories);
+    setCreateForm(!createForm);
   };
 
-  const handleStoryCreationCallback = (value?: Task) => {
+  const onTaskCreate = (value?: Task) => {
     if (!value) {
-      setShowCreationForm(false);
+      setCreateForm(false);
       return;
     }
     const updatedTasks = [...allTasks, ...[value]];
     setAllTasks(updatedTasks);
     setFoldedTasks(updatedTasks.map((el) => el.id));
-    setShowCreationForm(false);
+    setCreateForm(false);
   };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -160,25 +153,28 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
         <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} onSettingsClick={openSettingsSheet} />
 
         <Button variant="plain" size="xs" className="rounded" onClick={handleAddStoryClick}>
-          <Plus size={16} className={`transition-transform ${showCreationForm ? 'rotate-45 scale-125' : 'rotate-0'}`} />
+          <Plus size={16} className={`transition-transform ${createForm ? 'rotate-45 scale-125' : 'rotate-0'}`} />
           <span className="ml-1">Story</span>
         </Button>
       </CardHeader>
       <ScrollArea id={column.id}>
         <CardContent className="flex flex-grow flex-col p-0">
-          {showCreationForm && (
-            <CreateStoryForm projectId={column.id} onCloseForm={() => setShowCreationForm(false)} callback={handleStoryCreationCallback} />
+          {createForm && (
+            <CreateStoryForm
+              onCloseForm={() => setCreateForm(false)}
+              callback={onTaskCreate}
+            />
           )}
 
           {
             <Button
-              onClick={handleAcceptedStoriesClick}
+              onClick={() => setShowAccepted(!showAccepted)}
               variant="ghost"
               size="sm"
               className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
             >
               <span className="text-xs">3 accepted stories</span>
-              <ChevronDown size={16} className={`transition-transform opacity-50 ${showAcceptedStories ? 'rotate-180' : 'rotate-0'}`} />
+              <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted? 'rotate-180' : 'rotate-0'}`} />
             </Button>
           }
           <div ref={containerRef} />
@@ -195,14 +191,14 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
           </SortableContext>
           {
             <Button
-              onClick={handleIcedStoriesClick}
+              onClick={() => setShowIced(!showIced)}
               variant="ghost"
               size="sm"
               className={`w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5
               text-sm -mt-[1px]`}
             >
               <span className="text-xs">5 iced stories</span>
-              <ChevronDown size={16} className={`transition-transform opacity-50 ${showIcedStories ? 'rotate-180' : 'rotate-0'}`} />
+              <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />
             </Button>
           }
         </CardContent>

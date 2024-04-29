@@ -8,16 +8,16 @@ import { Card, CardContent } from '~/modules/ui/card';
 import { Checkbox } from '../ui/checkbox';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
-import type { Task } from '~/mocks/dataGeneration';
+import type { TaskLabel, Task } from '~/mocks/dataGeneration';
 import { SelectImpact } from './select-impact.tsx';
 import AssignMembers from './select-members.tsx';
-import SetLabels, { type Label } from './select-labels.tsx';
+import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import SelectStatus from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
-import { ProjectContext } from './board.tsx';
+import type { TaskStatus, TaskType } from './task-form.tsx';
 
 interface User {
   id: string;
@@ -34,10 +34,8 @@ interface TaskCardProps {
   isOverlay?: boolean;
 }
 
-export type TaskType = 'Task';
-
 export interface TaskDragData {
-  type: TaskType;
+  type: 'Task';
   task: Task;
 }
 
@@ -45,15 +43,14 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTa
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const [innerTask, setInnerTask] = useState(task);
-  const { members } = useContext(ProjectContext);
 
-  const handleChangeType = (newType: 'feature' | 'bug' | 'chore') => {
+  const handleChangeType = (newType: TaskType) => {
     const updatedTask = { ...innerTask, type: newType };
     setInnerTask(updatedTask);
     UpdateTasks?.(updatedTask);
   };
 
-  const handleChangeStatus = (newStatus: 0 | 1 | 3 | 2 | 4 | 5 | 6) => {
+  const handleChangeStatus = (newStatus: TaskStatus) => {
     const updatedTask = { ...innerTask, status: newStatus };
     setInnerTask(updatedTask);
     UpdateTasks?.(updatedTask);
@@ -71,7 +68,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTa
     UpdateTasks?.(updatedTask);
   };
 
-  const handleLabelsValue = (newValue: Label[]) => {
+  const handleLabelsValue = (newValue: TaskLabel[]) => {
     const updatedTask = { ...innerTask, labels: newValue };
     setInnerTask(updatedTask);
     UpdateTasks?.(updatedTask);
@@ -177,11 +174,11 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTa
 
               {innerTask.type !== 'bug' && <SelectImpact mode="edit" />}
               <div className="grow">
-                <SetLabels changeLabels={handleLabelsValue} passedLabels={innerTask.labels} mode="edit" />
+                <SetLabels changeLabels={handleLabelsValue} taskLabels={innerTask.labels} mode="edit" />
               </div>
 
               <div className="flex gap-2">
-                <AssignMembers members={members[innerTask.projectId]} mode="edit" changeAssignedTo={handleChangeAssignedTo} />
+                <AssignMembers mode="edit" changeAssignedTo={handleChangeAssignedTo} />
                 <SelectStatus taskStatus={innerTask.status} changeTaskStatus={(value) => handleChangeStatus(value as typeof innerTask.status)} />
               </div>
             </div>

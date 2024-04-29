@@ -14,7 +14,7 @@ interface TaskEditorProps {
 export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleTaskClick }: TaskEditorProps) => {
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
     (event) => {
-      if (event.key === 'Enter' || event.key === 'Escape') toggleTaskClick?.(id);
+      if (event.key === 'Escape') toggleTaskClick?.(id);
     },
     [toggleTaskClick, id],
   );

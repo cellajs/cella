@@ -4,7 +4,7 @@ import type React from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { useCallback, useContext, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -17,30 +17,30 @@ import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { Bolt, Bug, Star } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
-import type { Task, User } from '~/mocks/dataGeneration.ts';
+import type { Task, TaskLabel, TaskUser } from '~/mocks/dataGeneration.ts';
 import AssignMembers from './select-members.tsx';
-import SetLabels, { type Label } from './select-labels.tsx';
+import SetLabels from './select-labels.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { ProjectContext } from './board.tsx';
 
 export interface Story {
   id: string;
   markdown: string;
-  type: StoryType;
-  impact: 0 | 1 | 2 | 3 | null | undefined;
-  status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-  assignedTo: User[];
-  labels: Label[];
+  type: TaskType;
+  impact: TaskImpact;
+  status: TaskStatus;
+  assignedTo: TaskUser[];
+  labels: TaskLabel[];
 }
 
+export type TaskType = 'feature' | 'bug' | 'chore';
+export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type TaskImpact = 0 | 1 | 2 | 3 | null;
+
 interface CreateStoryFormProps {
-  projectId: string;
   callback?: (story?: Task) => void;
   dialog?: boolean;
   onCloseForm?: () => void;
 }
-
-type StoryType = 'feature' | 'bug' | 'chore';
 
 const formSchema = z.object({
   id: z.string(),
@@ -58,8 +58,7 @@ const formSchema = z.object({
   labels: z.array(
     z.object({
       id: z.string(),
-      slug: z.string(),
-      name: z.string(),
+      value: z.string(),
       color: z.string(),
     }),
   ),
@@ -68,11 +67,9 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ projectId, callback, dialog: isDialog, onCloseForm }) => {
+const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-
-  const { members, labels } = useContext(ProjectContext);
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
     (event) => {
@@ -123,11 +120,11 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ projectId, callback, 
     const story: Story = {
       id: values.id,
       markdown: values.markdown,
-      type: values.type as StoryType,
+      type: values.type as TaskType,
       impact: values.impact as 0 | 1 | 2 | 3,
-      assignedTo: values.assignedTo as User[],
+      assignedTo: values.assignedTo as TaskUser[],
       labels: values.labels,
-      status: 0 as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+      status: 0,
     };
     form.reset();
     toast.success(t('common:success.create_story'));
@@ -228,7 +225,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ projectId, callback, 
             return (
               <FormItem>
                 <FormControl>
-                  <AssignMembers members={members[projectId]} mode="create" changeAssignedTo={onChange} />
+                  <AssignMembers mode="create" changeAssignedTo={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -243,7 +240,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ projectId, callback, 
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels passedLabels={labels[projectId]} mode="create" changeLabels={onChange} />
+                  <SetLabels mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

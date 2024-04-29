@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Check, Dot, History, Tag } from 'lucide-react';
 import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '../ui/command.tsx';
@@ -10,13 +10,8 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
 import { faker } from '@faker-js/faker';
 import { cn } from '~/lib/utils.ts';
-
-export type Label = {
-  id: string;
-  slug: string;
-  name: string;
-  color: string;
-};
+import type { TaskLabel } from '~/mocks/dataGeneration.ts';
+import { WorkspaceContext } from '../workspaces/index.tsx';
 
 const badgeStyle = (color: string) => ({
   borderColor: `${color}40`,
@@ -24,45 +19,43 @@ const badgeStyle = (color: string) => ({
 });
 
 interface SetLabelsProps {
-  passedLabels: Label[];
+  taskLabels?: TaskLabel[];
   mode: 'create' | 'edit';
-  changeLabels?: (labels: Label[]) => void;
+  changeLabels?: (labels: TaskLabel[]) => void;
 }
 
-const SetLabels = ({ mode, passedLabels, changeLabels }: SetLabelsProps) => {
+const SetLabels = ({ mode, taskLabels, changeLabels }: SetLabelsProps) => {
   const { t } = useTranslation();
+  const { labels } = useContext(WorkspaceContext);
   const formValue = useFormContext?.()?.getValues('labels');
   const [openPopover, setOpenPopover] = useState(false);
-  const [innerLabels, setInnerLabels] = useState<Label[]>(passedLabels);
-  const [selectedLabels, setSelectedLabels] = useState<Label[]>(mode === 'create' ? [] : passedLabels);
+  const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>(taskLabels || []);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
-  const handleSelectClick = (name: string) => {
-    if (!name) return;
-    const existingLabel = selectedLabels.find((label) => label.name === name);
+  const handleSelectClick = (value: string) => {
+    if (!value) return;
+    const existingLabel = selectedLabels.find((label) => label.value === value);
     if (existingLabel) {
-      setSelectedLabels(selectedLabels.filter((label) => label.name !== name));
+      setSelectedLabels(selectedLabels.filter((label) => label.value !== value));
       return;
     }
-    const newLabel = innerLabels.find((label) => label.name === name);
+    const newLabel = labels.find((label) => label.value === value);
     if (newLabel) {
       setSelectedLabels([...selectedLabels, newLabel]);
       return;
     }
   };
 
-  const createLabel = (name: string) => {
-    const newLabel: Label = {
+  const createLabel = (value: string) => {
+    const newLabel: TaskLabel = {
       id: faker.string.uuid(),
-      slug: name.toLowerCase(),
-      name,
+      value,
       color: '#ffffff',
     };
-    setInnerLabels((prev) => [...prev, newLabel]);
     setSelectedLabels((prev) => [...prev, newLabel]);
     setSearchValue('');
-    changeLabels?.([...innerLabels, newLabel]);
+  //  changeLabels?.([...passedLabels, newLabel]);
   };
 
   // Open on key press
@@ -75,7 +68,7 @@ const SetLabels = ({ mode, passedLabels, changeLabels }: SetLabelsProps) => {
 
   // Whenever the form value changes (also on reset), update the internal state
   useEffect(() => {
-    setSelectedLabels(formValue || mode === 'create' ? [] : passedLabels);
+  //  setSelectedLabels(formValue || mode === 'create' ? [] : passedLabels);
   }, [formValue]);
 
   return (
@@ -93,10 +86,10 @@ const SetLabels = ({ mode, passedLabels, changeLabels }: SetLabelsProps) => {
           <div className="flex gap-1 truncate">
             {mode === 'create' && selectedLabels.length === 0 && <span className="ml-2">Choose labels</span>}
             {selectedLabels.length > 0 &&
-              selectedLabels.map(({ name, slug, color }) => {
+              selectedLabels.map(({ value, id, color }) => {
                 return (
-                  <Badge variant="outline" key={slug} className="font-light" style={badgeStyle(color)}>
-                    {name}
+                  <Badge variant="outline" key={id} className="font-light" style={badgeStyle(color)}>
+                    {value}
                   </Badge>
                 );
               })}
@@ -111,7 +104,7 @@ const SetLabels = ({ mode, passedLabels, changeLabels }: SetLabelsProps) => {
             onValueChange={(searchValue) => {
               // If the label types a number, select the label like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
-                handleSelectClick(passedLabels[Number.parseInt(searchValue)]?.name);
+                handleSelectClick(labels[Number.parseInt(searchValue)]?.value);
                 setOpenPopover(false);
                 setSearchValue('');
                 return;
@@ -125,28 +118,28 @@ const SetLabels = ({ mode, passedLabels, changeLabels }: SetLabelsProps) => {
           {!isSearching && <Kbd value="L" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
-              {passedLabels.map((mappedLabel, index) => (
+              {labels.map((label, index) => (
                 <CommandItem
-                  key={mappedLabel.name}
-                  value={mappedLabel.name}
-                  onSelect={(name) => {
-                    handleSelectClick(name);
+                  key={label.id}
+                  value={label.value}
+                  onSelect={(value) => {
+                    handleSelectClick(value);
                     setSearchValue('');
                   }}
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
                   <div className="flex items-center gap-2">
-                    {isSearching ? <Dot size={16} style={badgeStyle(mappedLabel.color)} strokeWidth={8} /> : <History size={16} />}
-                    <span>{mappedLabel.name}</span>
+                    {isSearching ? <Dot size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
+                    <span>{label.value}</span>
                   </div>
                   <div className="flex items-center">
-                    {selectedLabels.includes(mappedLabel) && <Check size={16} className="text-success" />}
+                    {selectedLabels.includes(label) && <Check size={16} className="text-success" />}
                     {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
                   </div>
                 </CommandItem>
               ))}
             </CommandGroup>
-            <CommandItemCreate onSelect={() => createLabel(searchValue)} {...{ searchValue, labels: passedLabels }} />
+            <CommandItemCreate onSelect={() => createLabel(searchValue)} {...{ searchValue, labels }} />
           </CommandList>
         </Command>
       </PopoverContent>
@@ -162,10 +155,10 @@ const CommandItemCreate = ({
   onSelect,
 }: {
   searchValue: string;
-  labels: Label[];
+  labels: TaskLabel[];
   onSelect: () => void;
 }) => {
-  const hasNoLabel = !labels.map(({ slug }) => slug).includes(`${searchValue.toLowerCase()}`);
+  const hasNoLabel = !labels.map(({ id }) => id).includes(`${searchValue.toLowerCase()}`);
 
   const render = searchValue !== '' && hasNoLabel;
 

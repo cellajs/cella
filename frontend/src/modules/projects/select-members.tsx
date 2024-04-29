@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Check, UserX } from 'lucide-react';
-import type { User } from '~/mocks/dataGeneration.ts';
+import type { TaskUser } from '~/mocks/dataGeneration.ts';
 import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { Kbd } from '../common/kbd.tsx';
@@ -10,18 +10,19 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
+import { ProjectContext } from './board';
 
 interface AssignMembersProps {
-  members: User[];
   mode: 'create' | 'edit';
-  changeAssignedTo?: (users: User[]) => void;
+  changeAssignedTo?: (users: TaskUser[]) => void;
 }
 
-const AssignMembers = ({ members, mode, changeAssignedTo }: AssignMembersProps) => {
+const AssignMembers = ({ mode, changeAssignedTo }: AssignMembersProps) => {
+  const { project } = useContext(ProjectContext);
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('assignedTo');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<User[]>(formValue || []);
+  const [selectedUsers, setSelectedUsers] = useState<TaskUser[]>(formValue || []);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
@@ -32,7 +33,7 @@ const AssignMembers = ({ members, mode, changeAssignedTo }: AssignMembersProps) 
       setSelectedUsers(selectedUsers.filter((user) => user.name !== name));
       return;
     }
-    const newUser = members.find((user) => user.name === name);
+    const newUser = project.members.find((user) => user.name === name);
     if (newUser) {
       setSelectedUsers([...selectedUsers, newUser]);
       return;
@@ -91,7 +92,7 @@ const AssignMembers = ({ members, mode, changeAssignedTo }: AssignMembersProps) 
             onValueChange={(searchValue) => {
               // If the user types a number, select the user like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
-                handleSelectClick(members[Number.parseInt(searchValue)]?.name);
+                handleSelectClick(project.members[Number.parseInt(searchValue)]?.name);
                 setSearchValue('');
                 return;
               }
@@ -104,7 +105,7 @@ const AssignMembers = ({ members, mode, changeAssignedTo }: AssignMembersProps) 
           {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
-              {members.map((member, index) => (
+              {project.members.map((member, index) => (
                 <CommandItem
                   key={member.name}
                   value={member.name}

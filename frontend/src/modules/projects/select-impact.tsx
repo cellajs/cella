@@ -13,6 +13,7 @@ import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFormContext } from 'react-hook-form';
+import type { TaskImpact } from './task-form';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -30,7 +31,7 @@ const impacts = [
 
 interface SelectImpactProps {
   mode: 'edit' | 'create';
-  changeTaskImpact?: (value: 0 | 1 | 2 | 3) => void;
+  changeTaskImpact?: (value: TaskImpact) => void;
 }
 
 export const SelectImpact = ({ mode = 'create', changeTaskImpact }: SelectImpactProps) => {
@@ -103,7 +104,7 @@ export const SelectImpact = ({ mode = 'create', changeTaskImpact }: SelectImpact
                     setSelectedImpact(currentImpact || null);
                     setOpenPopover(false);
                     setSearchValue('');
-                    if (changeTaskImpact) changeTaskImpact(impacts.findIndex((impact) => impact.value === value) as 0 | 1 | 2 | 3);
+                    if (changeTaskImpact) changeTaskImpact(impacts.findIndex((impact) => impact.value === value) as TaskImpact);
                   }}
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
