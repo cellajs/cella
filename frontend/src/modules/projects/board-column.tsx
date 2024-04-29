@@ -3,7 +3,7 @@ import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
 import { ChevronDown, GripVertical, Plus } from 'lucide-react';
-import { type RefObject, useContext, useMemo, useState } from 'react';
+import { type RefObject, useContext, useMemo, useRef, useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
@@ -17,6 +17,7 @@ import { ProjectContext } from './board';
 import { sheet } from '../common/sheeter/state';
 import { ProjectSettings } from './project-settings';
 import { useTranslation } from 'react-i18next';
+import { dialog } from '../common/dialoger/state';
 
 export interface Column {
   id: string;
@@ -45,6 +46,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const [showIcedStories, setShowIcedStories] = useState(false);
   const [showAcceptedStories, setShowAcceptedStories] = useState(false);
 
+  const containerRef = useRef(null);
   const { ref, bounds } = useMeasure();
 
   const neededWidth = 375;
@@ -184,7 +186,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
               <ChevronDown size={16} className={`transition-transform opacity-50 ${showAcceptedStories ? 'rotate-180' : 'rotate-0'}`} />
             </Button>
           }
-
+          <div ref={containerRef} />
           <SortableContext items={tasksIds}>
             {allTasks.map((task) => (
               <TaskCard
