@@ -3,7 +3,6 @@ import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Star, Bug, Bolt } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { Checkbox } from '../ui/checkbox';
@@ -11,12 +10,13 @@ import './style.css';
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
 import { SelectImpact } from './select-impact.tsx';
-import SelectStatus from './select-status.tsx';
 import AssignMembers from './select-members.tsx';
 import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
+import SelectStatus from './select-status.tsx';
+import { TaskEditor } from './task-editor.tsx';
+import { useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 
 interface User {
   id: string;
@@ -27,11 +27,10 @@ interface User {
 
 interface TaskCardProps {
   task: Task;
+  UpdateTasks?: (task: Task) => void;
   isEditing?: boolean;
   toggleTaskClick?: (id: string) => void;
   isOverlay?: boolean;
-  setTaskStatus: (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
-  setMainAssignedTo: (task: Task, users: User[]) => void;
 }
 
 export type TaskType = 'Task';
@@ -41,32 +40,37 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, setTaskStatus, setMainAssignedTo }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTasks }: TaskCardProps) {
   const { t } = useTranslation();
-  const [value, setValue] = useState<string | undefined>(task.markdown);
-  const [type, setType] = useState<'feature' | 'bug' | 'chore'>(task.type);
-  const [status, setStatus] = useState(task.status);
-
-  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
-    (event) => {
-      if (!isEditing) return;
-      if (event.key !== 'Escape') return;
-      toggleTaskClick?.(task.id);
-    },
-    [toggleTaskClick, task.id],
-  );
-
-  const handleHotKeysEsc = useCallback(() => {
-    if (!isEditing) return;
-    toggleTaskClick?.(task.id);
-  }, [toggleTaskClick, task.id]);
-
-  useHotkeys([['Escape', handleHotKeysEsc]]);
-
-  const [assignedTo, setAssignedTo] = useState(task.assignedTo);
   const { mode } = useThemeStore();
+  const [innerTask, setInnerTask] = useState(task);
+
+  const handleChangeType = (newType: 'feature' | 'bug' | 'chore') => {
+    const updatedTask = { ...innerTask, type: newType };
+    setInnerTask(updatedTask);
+    UpdateTasks?.(updatedTask);
+  };
+
+  const handleChangeStatus = (newStatus: 0 | 1 | 3 | 2 | 4 | 5 | 6) => {
+    const updatedTask = { ...innerTask, status: newStatus };
+    setInnerTask(updatedTask);
+    UpdateTasks?.(updatedTask);
+  };
+
+  const handleChangeAssignedTo = (newAssignedTo: User[]) => {
+    const updatedTask = { ...innerTask, assignedTo: newAssignedTo };
+    setInnerTask(updatedTask);
+    UpdateTasks?.(updatedTask);
+  };
+
+  const handleChangeValue = (newValue: string) => {
+    const updatedTask = { ...innerTask, markdown: newValue };
+    setInnerTask(updatedTask);
+    UpdateTasks?.(updatedTask);
+  };
+
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: task.id,
+    id: innerTask.id,
     data: {
       type: 'Task',
       task,
@@ -103,32 +107,8 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, setTaskS
   );
 
   const toggleEditorState = () => {
-    if (toggleTaskClick) toggleTaskClick(task.id);
+    if (toggleTaskClick) toggleTaskClick(innerTask.id);
   };
-
-  useEffect(() => {
-    if (value) task.markdown = value;
-  }, [value]);
-
-  useEffect(() => {
-    setMainAssignedTo(task, assignedTo);
-  }, [assignedTo]);
-
-  // Textarea autofocus cursor on the end of the value
-  useEffect(() => {
-    if (isEditing) {
-      const editorTextAria = document.getElementById(task.id);
-      if (!editorTextAria) return;
-      const textAreaElement = editorTextAria as HTMLTextAreaElement;
-      if (value) textAreaElement.value = value;
-      textAreaElement.focus();
-      textAreaElement.setSelectionRange(textAreaElement.value.length, textAreaElement.value.length);
-    }
-  }, [task.id, isEditing]);
-
-  useEffect(() => {
-    setTaskStatus(task, status);
-  }, [status]);
 
   return (
     <Card
@@ -136,7 +116,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, setTaskS
       style={style}
       className={variants({
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
-        status: task.status,
+        status: innerTask.status,
       })}
     >
       <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
@@ -145,74 +125,61 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, setTaskS
             <div className="group mt-[2px] ">
               {isEditing ? (
                 <SelectTaskType
-                  currentType={type}
-                  changeTaskType={(newType) => setType(newType)}
+                  currentType={innerTask.type}
+                  changeTaskType={(newType) => handleChangeType(newType)}
                   className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10"
                 />
               ) : (
                 <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
               )}
-              {type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />}
-              {type === 'bug' && <Bug size={16} className="fill-red-400 text-red-500 group-hover:opacity-0 transition-opacity" />}
-              {type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500 group-hover:opacity-0 transition-opacity" />}
+              {innerTask.type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />}
+              {innerTask.type === 'bug' && <Bug size={16} className="fill-red-400 text-red-500 group-hover:opacity-0 transition-opacity" />}
+              {innerTask.type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500 group-hover:opacity-0 transition-opacity" />}
             </div>
           </div>
-          {!isEditing && (
-            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-            <div onClick={toggleEditorState}>
-              <MDEditor.Markdown source={task.markdown} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose font-light" />
-            </div>
-          )}
-          {isEditing && (
-            <div className="flex flex-col gap-2" data-color-mode="dark">
-              <MDEditor
-                onKeyDown={handleMDEscKeyPress}
-                textareaProps={{ id: task.id }}
-                value={value}
-                preview={'edit'}
-                onChange={(newValue) => setValue(newValue)}
-                defaultTabEnable={true}
-                hideToolbar={true}
-                visibleDragbar={false}
-                height={'auto'}
-                minHeight={20}
-                style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', boxShadow: 'none', padding: '0' }}
+          <div className="flex flex-col gap-2">
+            {isEditing ? (
+              <TaskEditor
+                mode={mode}
+                markdown={innerTask.markdown}
+                setMarkdown={handleChangeValue}
+                toggleTaskClick={toggleTaskClick}
+                id={innerTask.id}
               />
+            ) : (
+              <button type="button" onClick={toggleEditorState}>
+                <MDEditor.Markdown
+                  source={innerTask.markdown}
+                  style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                  className="prose font-light text-start"
+                />
+              </button>
+            )}
+
+            <div className="flex items-center justify-between mt-1 gap-1">
+              <Button
+                variant={'ghost'}
+                {...attributes}
+                {...listeners}
+                className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab group-hover/task:opacity-100 opacity-70"
+              >
+                <span className="sr-only"> {t('common:move_task')}</span>
+                <GripVertical size={16} />
+              </Button>
+
+              {innerTask.type !== 'bug' && <SelectImpact mode="edit" />}
+              <div className="grow">
+                <SetLabels
+                  // labels={innerTask.labels} // TODO set labels from task
+                  mode="edit"
+                />
+              </div>
 
               <div className="flex gap-2">
-                <Button onClick={toggleEditorState} size="sm" className="rounded text-[12px] p-1 h-6">
-                  {t('common:save')}
-                </Button>
-                <Button onClick={toggleEditorState} variant="secondary" size="sm" className="rounded text-[12px] p-1 h-6">
-                  {t('common:cancel')}
-                </Button>
+                <AssignMembers mode="edit" changeAssignedTo={handleChangeAssignedTo} />
+                <SelectStatus taskStatus={innerTask.status} changeTaskStatus={(value) => handleChangeStatus(value as typeof innerTask.status)} />
               </div>
             </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between mt-1 gap-1">
-          <Button
-            variant={'ghost'}
-            {...attributes}
-            {...listeners}
-            className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab group-hover/task:opacity-100 opacity-70"
-          >
-            <span className="sr-only"> {t('common:move_task')}</span>
-            <GripVertical size={16} />
-          </Button>
-
-          {type !== 'bug' && <SelectImpact mode="edit" />}
-          <div className="grow">
-            <SetLabels
-              // labels={task.labels} // TODO set labels from task
-              mode="edit"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <AssignMembers mode="edit" changeAssignedTo={setAssignedTo} />
-            <SelectStatus taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
           </div>
         </div>
       </CardContent>

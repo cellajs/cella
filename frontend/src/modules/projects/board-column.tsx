@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
-import type { Task, User } from '~/mocks/dataGeneration';
+import type { Task } from '~/mocks/dataGeneration';
 import { TaskCard } from './task-card';
 import CreateStoryForm from './task-form';
 
@@ -52,20 +52,12 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     });
   };
 
-  const setTaskStatus = (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
+  const UpdateTask = (task: Task) => {
     const updatedTasks = allTasks.map((t) => {
       if (t.id !== task.id) return t;
-      return { ...t, status };
+      return { ...t, ...task };
     });
     setAllTasks(updatedTasks.sort((a, b) => b.status - a.status));
-  };
-
-  const setTaskAssignedTo = (task: Task, users: User[]) => {
-    const updatedTasks = allTasks.map((t) => {
-      if (t.id !== task.id) return t;
-      return { ...t, users };
-    });
-    setAllTasks(updatedTasks);
   };
 
   const tasksIds = useMemo(() => {
@@ -175,12 +167,11 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           <SortableContext items={tasksIds}>
             {allTasks.map((task) => (
               <TaskCard
-                setTaskStatus={setTaskStatus}
+                UpdateTasks={UpdateTask}
                 isEditing={!foldedTasks.includes(task.id)}
                 toggleTaskClick={toggleTaskVisibility}
                 task={task}
                 key={task.id}
-                setMainAssignedTo={setTaskAssignedTo}
               />
             ))}
           </SortableContext>

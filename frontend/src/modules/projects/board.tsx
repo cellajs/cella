@@ -142,7 +142,7 @@ export default function Board() {
         createPortal(
           <DragOverlay>
             {activeColumn && <BoardColumn isOverlay column={activeColumn} tasks={tasks.filter((task) => task.projectId === activeColumn.id)} />}
-            {activeTask && <TaskCard setTaskStatus={() => {}} setMainAssignedTo={() => {}} task={activeTask} isOverlay />}
+            {activeTask && <TaskCard task={activeTask} isOverlay />}
           </DragOverlay>,
           document.body,
         )}
