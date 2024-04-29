@@ -14,6 +14,9 @@ import type { Task } from '~/mocks/dataGeneration';
 import { TaskCard } from './task-card';
 import CreateStoryForm from './task-form';
 import { ProjectContext } from './board';
+import { sheet } from '../common/sheeter/state';
+import { ProjectSettings } from './project-settings';
+import { useTranslation } from 'react-i18next';
 
 export interface Column {
   id: string;
@@ -34,6 +37,7 @@ interface BoardColumnProps {
 }
 
 export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
+  const { t } = useTranslation();
   const { tasks, members } = useContext(ProjectContext);
   const [allTasks, setAllTasks] = useState<Task[]>(tasks.filter((t) => t.projectId === column.id));
   const [foldedTasks, setFoldedTasks] = useState<string[]>(allTasks.map((el) => el.id));
@@ -44,6 +48,15 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const { ref, bounds } = useMeasure();
 
   const neededWidth = 375;
+
+  const openSettingsSheet = () => {
+    sheet(<ProjectSettings />, {
+      className: 'sm:max-w-[64rem]',
+      title: t('common:project_settings'),
+      text: t('common:project_settings.text'),
+      id: 'project_settings',
+    });
+  };
 
   const toggleTaskVisibility = (taskId: string) => {
     setFoldedTasks((prevIds) => {
@@ -143,7 +156,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
 
         <div className="grow" />
 
-        <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} />
+        <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} onSettingsClick={openSettingsSheet} />
 
         <Button variant="plain" size="xs" className="rounded" onClick={handleAddStoryClick}>
           <Plus size={16} className={`transition-transform ${showCreationForm ? 'rotate-45 scale-125' : 'rotate-0'}`} />
