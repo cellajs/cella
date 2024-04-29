@@ -134,10 +134,8 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
         <DomainsFormField
           control={form.control}
-          name="emailDomains"
           label={t('common:email_domains')}
           description={t('common:email_domains.text')}
-          placeholder={t('common:placeholder.email_domains')}
         />
         <InputFormField
           control={form.control}

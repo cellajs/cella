@@ -1,4 +1,4 @@
-import { Loader2, Search, X, XCircle } from 'lucide-react';
+import { Check, Loader2, Search, X, XCircle } from 'lucide-react';
 import * as React from 'react';
 
 import { Command as CommandPrimitive } from 'cmdk';
@@ -41,6 +41,7 @@ interface MultipleSelectorProps {
   /** async search */
   onSearch?: (value: string) => Promise<Option[]>;
   onChange?: (options: Option[]) => void;
+  formControlName: string;
   /** Limit the maximum number of selected options. */
   maxSelected?: number;
   /** EDIT: Limit the minimum number of selected options. */
@@ -124,6 +125,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       triggerSearchOnFocus = false,
       commandProps,
       inputProps,
+      formControlName,
       emptyValue,
       createPlaceholder,
       basicSignValue,
@@ -131,20 +133,32 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     }: MultipleSelectorProps,
     ref: React.Ref<MultipleSelectorRef>,
   ) => {
-    const formValue = useFormContext?.()?.getValues('emails');
+    const formValue = useFormContext?.()?.getValues(formControlName);
     const inputRef = React.useRef<HTMLInputElement>(null);
     const [isShowResults, setShowResults] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
 
-    const [selected, setSelected] = React.useState<Option[]>(value || formValue || []);
     const [options, setOptions] = React.useState<Option[]>(arrayDefaultOptions || []);
+    const [selected, setSelected] = React.useState<Option[]>(value || options.filter(o => {
+      if (onSearch) return true;
+      const values = formValue.filter((v: string | null) => v !== '' && v !== null);
+     return o.value && values.includes(o.value)
+    }) || []);
     const [inputValue, setInputValue] = React.useState('');
     const debouncedSearchTerm = useDebounce(inputValue, delay || 200);
 
     // Whenever the form value changes (also on reset), update the internal state
     useEffect(() => {
-      console.log('formValue', formValue, useFormContext);
-      setSelected(formValue || []);
+      if (onSearch) {
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        return setSelected(formValue.map((o: any) => {
+          return { label: o, value: o }
+        }) || [])
+      };
+      setSelected(options.filter(o => {
+        const values = formValue.filter((v: string | null) => v !== '' && v !== null);
+       return o.value && values.includes(o.value)
+      }) || []);
     }, [formValue]);
 
     React.useImperativeHandle(
@@ -273,7 +287,8 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
               return;
             }
             setInputValue('');
-            const newOptions = [...selected, { value, label: value }];
+            setOptions([...options, { value, label: value, new: true }]);
+            const newOptions = [...selected, { value, label: value, new: true }];
             setSelected(newOptions);
             onChange?.(newOptions);
           }}
@@ -416,7 +431,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                         value={option.value}
                         disabled={option.disable}
                         onMouseDown={onMouseDown}
-                        className={cn('cursor-pointer', option.disable && 'cursor-default text-muted-foreground', option.selected && 'font-semibold')}
+                        className={cn(
+                          'group rounded-md flex justify-between items-center w-full leading-normal cursor-pointer',
+                          option.disable && 'cursor-default text-muted-foreground',
+                        )}
                       >
                         {itemComponent ? (
                           itemComponent(option)
@@ -426,6 +444,7 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                             <span className="group-hover:underline underline-offset-4 truncate font-medium">{option.label}</span>
                           </div>
                         )}
+                        {option.selected && <Check size={16} className="text-success" />}
                       </CommandItem>
                     ))}
                   </CommandGroup>
