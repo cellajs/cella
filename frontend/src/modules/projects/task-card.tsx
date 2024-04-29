@@ -10,10 +10,10 @@ import { Checkbox } from '../ui/checkbox';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
-import { SelectImpact } from './select-impact.tsx/index.tsx';
+import { SelectImpact } from './select-impact.tsx';
 import SelectStatus from './select-status.tsx';
-import AssignMembers from './assign-members.tsx';
-import SetLabels from './set-labels.tsx';
+import AssignMembers from './select-members.tsx';
+import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import { SelectTaskType } from './select-task-type.tsx';
 

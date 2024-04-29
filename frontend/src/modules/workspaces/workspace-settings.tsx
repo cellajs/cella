@@ -6,7 +6,7 @@ import { Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import DeleteWorkspaces from './delete-workspace';
 import { dialog } from '../common/dialoger/state';
-import { workspaceQueryOptions } from './workspace';
+import { workspaceQueryOptions } from '.';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { sheet } from '~/modules/common/sheeter/state';

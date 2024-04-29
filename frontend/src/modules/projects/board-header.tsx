@@ -1,6 +1,6 @@
 import { Settings, Plus, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import WorkspaceView from '~/modules/projects/workspace-view';
+import WorkspaceView from '~/modules/projects/view-options';
 import DisplayOptions from '~/modules/projects/display-options';
 import BoardSearch from '~/modules/projects/board-search';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -12,7 +12,7 @@ import AddProjects from './add-projects';
 import { AvatarWrap } from '../common/avatar-wrap';
 import LabelsTable from './labels-table';
 
-function KanbanHeader() {
+function BoardHeader() {
   const { t } = useTranslation();
 
   const openSettingsSheet = () => {
@@ -71,4 +71,4 @@ function KanbanHeader() {
   );
 }
 
-export default KanbanHeader;
+export default BoardHeader;

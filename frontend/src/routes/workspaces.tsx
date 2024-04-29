@@ -4,7 +4,7 @@ import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
-import Workspace, { workspaceQueryOptions } from '~/modules/workspaces/workspace';
+import Workspace, { workspaceQueryOptions } from '~/modules/workspaces';
 import { IndexRoute } from './routeTree';
 
 // Lazy-loaded components

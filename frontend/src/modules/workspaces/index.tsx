@@ -34,7 +34,7 @@ const WorkspacePage = () => {
     }
 
     enableMocking().then(() => {
-      fetch('/mock/kanban')
+      fetch('/mock/workspace')
         .then((response) => response.json())
         .then((data) => {
           setContent(data);

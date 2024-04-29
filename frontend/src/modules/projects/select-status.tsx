@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Button } from '../ui/button';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, Snowflake, CircleDashed, Circle, CircleDot, CircleDotDashed, CircleCheck, type LucideIcon, Dot } from 'lucide-react';
 import { Kbd } from '../common/kbd';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -11,16 +11,17 @@ type Status = {
   value: (typeof statuses)[number]['value'];
   status: string;
   button: string;
+  icon: LucideIcon;
 };
 
 const statuses = [
-  { value: 0, button: 'Iced', status: 'Iced' },
-  { value: 1, button: 'Start', status: 'Unstarted' },
-  { value: 2, button: 'Finish', status: 'Started' },
-  { value: 3, button: 'Deliver', status: 'Finished' },
-  { value: 4, button: 'Review', status: 'Delivered' },
-  { value: 5, button: 'Accept', status: 'Reviewed' },
-  { value: 6, button: 'Accepted', status: 'Accepted' },
+  { value: 0, button: 'Iced', status: 'Iced', icon: Snowflake },
+  { value: 1, button: 'Start', status: 'Unstarted', icon: Dot },
+  { value: 2, button: 'Finish', status: 'Started', icon: CircleDashed },
+  { value: 3, button: 'Deliver', status: 'Finished', icon: Circle },
+  { value: 4, button: 'Review', status: 'Delivered', icon: CircleDotDashed },
+  { value: 5, button: 'Accept', status: 'Reviewed', icon: CircleDot },
+  { value: 6, button: 'Accepted', status: 'Accepted', icon: CircleCheck },
 ] as const;
 
 interface SelectStatusProps {
@@ -88,6 +89,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
                   <div className="flex items-center">
+                    <status.icon size={16} className="mr-2 size-4 " />
                     <span>{status.status}</span>
                   </div>
                   <div className="flex items-center">

@@ -66,7 +66,7 @@ const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: Ass
           aria-label="Assign"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'}`}
+          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${mode === 'edit' && selectedUsers.length && 'hover:bg-transparent'}`}
         >
           {!selectedUsers.length && <UserX className="h-4 w-4 opacity-50" />}
           {!!selectedUsers.length && (

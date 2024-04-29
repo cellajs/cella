@@ -78,7 +78,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       }
 
       if (isDialog) {
-        dialog.remove();
+        dialog.remove(true, 'create-organization');
       }
     },
   });

@@ -21,10 +21,10 @@ import type { Column } from './board-column';
 import { coordinateGetter } from './keyboard-preset';
 import { TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
-import { WorkspaceContext } from '../workspaces/workspace';
+import { WorkspaceContext } from '../workspaces';
 import type { ComplexProject, Task } from '~/mocks/dataGeneration';
 
-export default function KanbanBoard() {
+export default function Board() {
   const [columns, setColumns] = useState<ComplexProject[]>([]);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
@@ -67,9 +67,7 @@ export default function KanbanBoard() {
       if (active.data.current?.type === 'Task') {
         pickedUpTaskColumn.current = active.data.current.task.projectId;
         const { tasksInColumn, taskPosition, column } = getDraggingTaskData(active.id.toString(), pickedUpTaskColumn.current);
-        return `Picked up Task at position: ${taskPosition + 1} of ${tasksInColumn.length} in column ${
-          column?.name
-        }`;
+        return `Picked up Task at position: ${taskPosition + 1} of ${tasksInColumn.length} in column ${column?.name}`;
       }
     },
     onDragOver({ active, over }) {
@@ -84,9 +82,7 @@ export default function KanbanBoard() {
       if (active.data.current?.type === 'Task' && over.data.current?.type === 'Task') {
         const { tasksInColumn, taskPosition, column } = getDraggingTaskData(over.id.toString(), over.data.current.task.projectId);
         if (over.data.current.task.projectId !== pickedUpTaskColumn.current) {
-          return `Task was moved over column ${column?.name} in position ${taskPosition + 1} of ${
-            tasksInColumn.length
-          }`;
+          return `Task was moved over column ${column?.name} in position ${taskPosition + 1} of ${tasksInColumn.length}`;
         }
         return `Task was moved over position ${taskPosition + 1} of ${tasksInColumn.length} in column ${column?.name}`;
       }

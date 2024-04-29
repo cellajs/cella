@@ -3,7 +3,7 @@ import { labelsContent, type MockResponse, projectsWithTaskContent, labelsTable 
 
 /** Mock server handlers */
 export const handlers = [
-  http.get('/mock/kanban', () => {
+  http.get('/mock/workspace', () => {
     const responseProjectContent = projectsWithTaskContent(3);
     return HttpResponse.json<MockResponse>({
       project: responseProjectContent,

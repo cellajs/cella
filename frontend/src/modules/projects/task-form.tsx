@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
-import { dialog } from '../common/dialoger/state';
-import { Form, FormField, FormItem, FormControl, FormMessage } from '../ui/form';
+import { dialog } from '../common/dialoger/state.ts';
+import { Form, FormField, FormItem, FormControl, FormMessage } from '../ui/form.tsx';
 import { createWorkspace } from '~/api/workspaces';
 import { SelectImpact } from './select-impact.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
@@ -18,8 +18,8 @@ import { Bolt, Bug, Star } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
 import type { Task, User } from '~/mocks/dataGeneration.ts';
-import AssignMembers from './assign-members.tsx';
-import SetLabels from './set-labels.tsx';
+import AssignMembers from './select-members.tsx';
+import SetLabels from './select-labels.tsx';
 
 export interface Story {
   id: string;

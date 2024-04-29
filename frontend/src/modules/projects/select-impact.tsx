@@ -4,11 +4,11 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn } from '~/lib/utils';
-import { HighIcon } from './icons/high';
-import { LowIcon } from './icons/low';
-import { MediumIcon } from './icons/medium';
-import { NoneIcon } from './icons/none';
-import { Kbd } from '../../common/kbd';
+import { HighIcon } from './impact-icons/high';
+import { LowIcon } from './impact-icons/low';
+import { MediumIcon } from './impact-icons/medium';
+import { NoneIcon } from './impact-icons/none';
+import { Kbd } from '../common/kbd';
 import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

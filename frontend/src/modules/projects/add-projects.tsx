@@ -5,7 +5,7 @@ import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { dialog } from '../common/dialoger/state';
 import { CreateProjectForm } from './create-project-form';
-import { workspaceQueryOptions } from '../workspaces/workspace';
+import { workspaceQueryOptions } from '../workspaces';
 import { useParams } from '@tanstack/react-router';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useSuspenseQuery } from '@tanstack/react-query';

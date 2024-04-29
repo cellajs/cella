@@ -212,7 +212,7 @@ const LabelsTable = () => {
       return; // Stop mock worker from running twice in Strict mode
     }
     enableMocking().then(() => {
-      fetch('/mock/kanban')
+      fetch('/mock/workpace')
         .then((response) => response.json())
         .then((data) => {
           setContent(data);

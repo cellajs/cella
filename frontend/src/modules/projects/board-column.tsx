@@ -12,7 +12,7 @@ import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
 import type { Task, User } from '~/mocks/dataGeneration';
 import { TaskCard } from './task-card';
-import CreateStoryForm from './task-card-form';
+import CreateStoryForm from './task-form';
 
 export interface Column {
   id: string;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
-import { Check, Tag } from 'lucide-react';
+import { Check, Dot, History, Tag } from 'lucide-react';
 import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { Kbd } from '../common/kbd.tsx';
@@ -75,8 +75,8 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
           aria-label="Set labels"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex justify-start font-light ${
-            mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70 hover:bg-transparent'
+          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${
+            mode === 'edit' && selectedLabels.length && 'hover:bg-transparent'
           }`}
         >
           {!selectedLabels.length && <Tag className="h-4 w-4 opacity-50" />}
@@ -85,7 +85,7 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
             {selectedLabels.length > 0 &&
               selectedLabels.map(({ name, slug, color }) => {
                 return (
-                  <Badge variant="outline" key={slug} className="font-light " style={badgeStyle(color)}>
+                  <Badge variant="outline" key={slug} className="font-light" style={badgeStyle(color)}>
                     {name}
                   </Badge>
                 );
@@ -125,7 +125,8 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
                   }}
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                  {isSearching ? <Dot size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
                     <span>{label.name}</span>
                   </div>
                   <div className="flex items-center">
