@@ -4,7 +4,7 @@ import type React from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useContext, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -19,8 +19,9 @@ import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
 import type { Task, User } from '~/mocks/dataGeneration.ts';
 import AssignMembers from './select-members.tsx';
-import SetLabels from './select-labels.tsx';
+import SetLabels, { type Label } from './select-labels.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import { ProjectContext } from './board.tsx';
 
 export interface Story {
   id: string;
@@ -29,11 +30,11 @@ export interface Story {
   impact: 0 | 1 | 2 | 3 | null | undefined;
   status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   assignedTo: User[];
-  labels: string[];
+  labels: Label[];
 }
 
 interface CreateStoryFormProps {
-  canBeAssignTo: User[];
+  projectId: string;
   callback?: (story?: Task) => void;
   dialog?: boolean;
   onCloseForm?: () => void;
@@ -67,9 +68,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ canBeAssignTo, callback, dialog: isDialog, onCloseForm }) => {
+const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ projectId, callback, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+
+  const { members, labels } = useContext(ProjectContext);
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
     (event) => {
@@ -123,7 +126,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ canBeAssignTo, callba
       type: values.type as StoryType,
       impact: values.impact as 0 | 1 | 2 | 3,
       assignedTo: values.assignedTo as User[],
-      labels: values.labels.map((label) => label.name),
+      labels: values.labels,
       status: 0 as 0 | 1 | 2 | 3 | 4 | 5 | 6,
     };
     form.reset();
@@ -225,7 +228,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ canBeAssignTo, callba
             return (
               <FormItem>
                 <FormControl>
-                  <AssignMembers members={canBeAssignTo} mode="create" changeAssignedTo={onChange} />
+                  <AssignMembers members={members[projectId]} mode="create" changeAssignedTo={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -240,7 +243,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ canBeAssignTo, callba
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels mode="create" changeLabels={onChange} />
+                  <SetLabels passedLabels={labels[projectId]} mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

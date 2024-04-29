@@ -8,6 +8,8 @@ import { Badge } from '../ui/badge.tsx';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
+import { faker } from '@faker-js/faker';
+import { cn } from '~/lib/utils.ts';
 
 export type Label = {
   id: string;
@@ -21,23 +23,18 @@ const badgeStyle = (color: string) => ({
   color,
 });
 
-const recentLabels = [
-  { id: 'blogger', slug: 'sdfsdfsdf', name: 'blogger', color: '#FFD700' },
-  { id: 'scientist', slug: 'sdfdsdfsdf', name: 'scientist', color: '#FF6347' },
-  { id: 'entrepreneur', slug: 'sdssfsdfsdf', name: 'entrepreneur', color: '#FF4500' },
-];
-
 interface SetLabelsProps {
-  labels?: Label[];
+  passedLabels: Label[];
   mode: 'create' | 'edit';
   changeLabels?: (labels: Label[]) => void;
 }
 
-const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps) => {
+const SetLabels = ({ mode, passedLabels, changeLabels }: SetLabelsProps) => {
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('labels');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedLabels, setSelectedLabels] = useState<Label[]>(formValue || []);
+  const [innerLabels, setInnerLabels] = useState<Label[]>(passedLabels);
+  const [selectedLabels, setSelectedLabels] = useState<Label[]>(mode === 'create' ? [] : passedLabels);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
@@ -48,11 +45,24 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
       setSelectedLabels(selectedLabels.filter((label) => label.name !== name));
       return;
     }
-    const newLabel = labels.find((label) => label.name === name);
+    const newLabel = innerLabels.find((label) => label.name === name);
     if (newLabel) {
       setSelectedLabels([...selectedLabels, newLabel]);
       return;
     }
+  };
+
+  const createLabel = (name: string) => {
+    const newLabel: Label = {
+      id: faker.string.uuid(),
+      slug: name.toLowerCase(),
+      name,
+      color: '#ffffff',
+    };
+    setInnerLabels((prev) => [...prev, newLabel]);
+    setSelectedLabels((prev) => [...prev, newLabel]);
+    setSearchValue('');
+    changeLabels?.([...innerLabels, newLabel]);
   };
 
   // Open on key press
@@ -65,7 +75,7 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
 
   // Whenever the form value changes (also on reset), update the internal state
   useEffect(() => {
-    setSelectedLabels(formValue || []);
+    setSelectedLabels(formValue || mode === 'create' ? [] : passedLabels);
   }, [formValue]);
 
   return (
@@ -101,7 +111,7 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
             onValueChange={(searchValue) => {
               // If the label types a number, select the label like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
-                handleSelectClick(recentLabels[Number.parseInt(searchValue)]?.name);
+                handleSelectClick(passedLabels[Number.parseInt(searchValue)]?.name);
                 setOpenPopover(false);
                 setSearchValue('');
                 return;
@@ -115,10 +125,10 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
           {!isSearching && <Kbd value="L" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
-              {recentLabels.map((label, index) => (
+              {passedLabels.map((mappedLabel, index) => (
                 <CommandItem
-                  key={label.name}
-                  value={label.name}
+                  key={mappedLabel.name}
+                  value={mappedLabel.name}
                   onSelect={(name) => {
                     handleSelectClick(name);
                     setSearchValue('');
@@ -126,16 +136,17 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
                   <div className="flex items-center gap-2">
-                  {isSearching ? <Dot size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
-                    <span>{label.name}</span>
+                    {isSearching ? <Dot size={16} style={badgeStyle(mappedLabel.color)} strokeWidth={8} /> : <History size={16} />}
+                    <span>{mappedLabel.name}</span>
                   </div>
                   <div className="flex items-center">
-                    {selectedLabels.includes(label) && <Check size={16} className="text-success" />}
+                    {selectedLabels.includes(mappedLabel) && <Check size={16} className="text-success" />}
                     {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
                   </div>
                 </CommandItem>
               ))}
             </CommandGroup>
+            <CommandItemCreate onSelect={() => createLabel(searchValue)} {...{ searchValue, labels: passedLabels }} />
           </CommandList>
         </Command>
       </PopoverContent>
@@ -144,3 +155,27 @@ const SetLabels = ({ labels = recentLabels, mode, changeLabels }: SetLabelsProps
 };
 
 export default SetLabels;
+
+const CommandItemCreate = ({
+  searchValue,
+  labels,
+  onSelect,
+}: {
+  searchValue: string;
+  labels: Label[];
+  onSelect: () => void;
+}) => {
+  const hasNoLabel = !labels.map(({ slug }) => slug).includes(`${searchValue.toLowerCase()}`);
+
+  const render = searchValue !== '' && hasNoLabel;
+
+  if (!render) return null;
+
+  // BUG: whenever a space is appended, the Create-Button will not be shown.
+  return (
+    <CommandItem key={`${searchValue}`} value={`${searchValue}`} className="text-xs text-muted-foreground" onSelect={onSelect}>
+      <div className={cn('mr-2 h-4 w-4')} />
+      Create new label &quot;{searchValue}&quot;
+    </CommandItem>
+  );
+};

@@ -40,7 +40,7 @@ const WorkspacePage = () => {
         .then((response) => response.json())
         .then((data) => {
           setProjects(data.project);
-          setLabels(data.workspace.labelsTable);
+          setLabels(data.project.labelsTable);
           stopMocking(); // Ensure to stop mocking after fetching data
         })
         .catch((error) => console.error('Error fetching MSW data:', error));

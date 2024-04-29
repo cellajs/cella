@@ -38,7 +38,7 @@ interface BoardColumnProps {
 
 export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const { t } = useTranslation();
-  const { tasks, members } = useContext(ProjectContext);
+  const { tasks } = useContext(ProjectContext);
   const [allTasks, setAllTasks] = useState<Task[]>(tasks.filter((t) => t.projectId === column.id));
   const [foldedTasks, setFoldedTasks] = useState<string[]>(allTasks.map((el) => el.id));
   const [showCreationForm, setShowCreationForm] = useState(false);
@@ -167,11 +167,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
       <ScrollArea id={column.id}>
         <CardContent className="flex flex-grow flex-col p-0">
           {showCreationForm && (
-            <CreateStoryForm
-              canBeAssignTo={members[column.id]}
-              onCloseForm={() => setShowCreationForm(false)}
-              callback={handleStoryCreationCallback}
-            />
+            <CreateStoryForm projectId={column.id} onCloseForm={() => setShowCreationForm(false)} callback={handleStoryCreationCallback} />
           )}
 
           {

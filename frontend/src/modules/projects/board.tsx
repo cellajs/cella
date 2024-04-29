@@ -23,10 +23,12 @@ import { TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
 import { WorkspaceContext } from '../workspaces';
 import type { ComplexProject, Task, User } from '~/mocks/dataGeneration';
+import type { Label } from './select-labels';
 
 interface ProjectContextValue {
   tasks: Task[];
   members: Record<string, User[]>;
+  labels: Record<string, Label[]>;
 }
 
 export const ProjectContext = createContext({} as ProjectContextValue);
@@ -38,6 +40,7 @@ export default function Board() {
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Record<string, User[]>>({});
+  const [labels, setLabels] = useState<Record<string, Label[]>>({});
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
@@ -140,6 +143,27 @@ export default function Board() {
     }
   }, [projects]);
 
+  useEffect(() => {
+    if (tasks) {
+      setLabels(
+        projects.reduce(
+          (acc, project) => {
+            const projectLabels = tasks.filter((task) => task.projectId === project.id).flatMap((task) => task.labels);
+            const labelStrings = projectLabels.map((label) => JSON.stringify(label));
+            const uniqueLabelStrings = Array.from(new Set(labelStrings));
+            const uniqueLabels = uniqueLabelStrings.map((labelString) => JSON.parse(labelString));
+            return {
+              // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
+              ...acc,
+              [project.id]: uniqueLabels,
+            };
+          },
+          {} as Record<string, Label[]>,
+        ),
+      );
+    }
+  }, [tasks]);
+
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
@@ -148,7 +172,7 @@ export default function Board() {
             {columns.map((col, index) => (
               <Fragment key={col.id}>
                 <ResizablePanel key={`${col.id}-panel`}>
-                  <ProjectContext.Provider value={{ tasks, members }}>
+                  <ProjectContext.Provider value={{ tasks, members, labels }}>
                     <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.projectId === col.id)} />
                   </ProjectContext.Provider>
                 </ResizablePanel>

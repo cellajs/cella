@@ -3,12 +3,18 @@ import { faker } from '@faker-js/faker';
 const roles = ['MEMBER', 'ADMIN'] as const;
 
 const taskGenerator = (projectId: string, userIds: string[], executor: User, numberOfTasks: number): Task[] => {
-  const labels = labelsContent();
   const returnedArray = [] as Task[];
   const type = ['feature', 'bug', 'chore'];
   const impact = [0, 1, 2, 3];
   const status = [0, 1, 2, 3, 4, 5, 6];
+  const labels = labelsContent();
   for (let i = 0; i < numberOfTasks; i++) {
+    const taskLabels = [];
+    const numberOfLabels = Math.floor(Math.random() * 5) + 2;
+    for (let j = 0; j < numberOfLabels; j++) {
+      const randomLabelIndex = Math.floor(Math.random() * labels.length);
+      taskLabels.push(labels[randomLabelIndex]);
+    }
     returnedArray.push({
       id: faker.string.uuid(),
       slug: faker.animal.bird(),
@@ -24,7 +30,7 @@ const taskGenerator = (projectId: string, userIds: string[], executor: User, num
       type: type[Math.floor(Math.random() * type.length)] as 'feature' | 'bug' | 'chore',
       impact: impact[Math.floor(Math.random() * impact.length)] as 0 | 1 | 2 | 3,
       status: status[Math.floor(Math.random() * status.length)] as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-      labels: labels.map((label) => label.id),
+      labels: taskLabels,
       projectId: projectId,
       workspaceId: faker.string.uuid(),
       organizationId: faker.string.uuid(),
@@ -96,13 +102,18 @@ export const labelsTable = (): LabelTable[] => {
 };
 
 export const labelsContent = (): Label[] => {
-  return Array.from({ length: 10 }, () => ({
-    id: faker.string.uuid(),
-    value: faker.hacker.noun().toLowerCase(),
-    label: faker.hacker.noun().toLowerCase(),
-    color: faker.color.rgb({ casing: 'upper' }),
-  }));
+  const returnedArray: Label[] = [];
+  for (let i = 0; i < 7; i++) {
+    returnedArray.push({
+      id: faker.string.uuid(),
+      name: faker.vehicle.manufacturer(),
+      slug: faker.vehicle.manufacturer(),
+      color: faker.color.rgb({ casing: 'upper' }),
+    });
+  }
+  return returnedArray;
 };
+
 export const UserContent = (number: number): User[] => {
   return Array.from({ length: number }, () => ({
     id: faker.string.uuid(),
@@ -121,8 +132,8 @@ export type User = {
 
 type Label = {
   id: string;
-  value: string;
-  label: string;
+  slug: string;
+  name: string;
   color: string;
 };
 
@@ -150,7 +161,7 @@ export type Task = {
   type: 'feature' | 'bug' | 'chore';
   impact: 0 | 1 | 2 | 3;
   status: 0 | 1 | 2 | 3 | 4 | 5 | 6; //(0 = iced, 1=unstarted, 2=started, 3=finished, 4=delivered, 5=reviewed, 6=accepted )
-  labels: string[]; //array of labels by id
+  labels: Label[]; //array of labels
   projectId: string;
   workspaceId: string;
   organizationId: string;

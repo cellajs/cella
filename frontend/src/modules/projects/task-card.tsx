@@ -11,7 +11,7 @@ import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
 import { SelectImpact } from './select-impact.tsx';
 import AssignMembers from './select-members.tsx';
-import SetLabels from './select-labels.tsx';
+import SetLabels, { type Label } from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import SelectStatus from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
@@ -67,6 +67,12 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTa
 
   const handleChangeValue = (newValue: string) => {
     const updatedTask = { ...innerTask, markdown: newValue };
+    setInnerTask(updatedTask);
+    UpdateTasks?.(updatedTask);
+  };
+
+  const handleLabelsValue = (newValue: Label[]) => {
+    const updatedTask = { ...innerTask, labels: newValue };
     setInnerTask(updatedTask);
     UpdateTasks?.(updatedTask);
   };
@@ -171,10 +177,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTa
 
               {innerTask.type !== 'bug' && <SelectImpact mode="edit" />}
               <div className="grow">
-                <SetLabels
-                  // labels={innerTask.labels} // TODO set labels from task
-                  mode="edit"
-                />
+                <SetLabels changeLabels={handleLabelsValue} passedLabels={innerTask.labels} mode="edit" />
               </div>
 
               <div className="flex gap-2">
