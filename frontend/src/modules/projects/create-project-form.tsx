@@ -14,7 +14,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { dialog } from '../common/dialoger/state';
+import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 // import { useNavigate } from '@tanstack/react-router';
@@ -81,19 +81,26 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
     // create(values);
   };
 
+  // Update dialog title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
-      dialog.updateTitle(
-        '1',
-        <Badge variant="plain" className="w-fit">
-          <SquarePen size={12} className="mr-2" />
-          <span className="font-light">{t('common:unsaved_changes')}</span>
-        </Badge>,
-        true,
-      );
+      const targetDialog = dialog.get('create-project');
+      if (targetDialog && checkDialog(targetDialog)) {
+        dialog.update('create-project', {
+          title: (
+            <div className="flex flex-row gap-2">
+              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
+              <Badge variant="plain" className="w-fit">
+                <SquarePen size={12} className="mr-2" />
+                <span className="font-light">{t('common:unsaved_changes')}</span>
+              </Badge>
+            </div>
+          ),
+        });
+      }
       return;
     }
-    dialog.setDefaultTitle('1');
+    dialog.reset('create-project');
   }, [form.unsavedChanges]);
 
   return (

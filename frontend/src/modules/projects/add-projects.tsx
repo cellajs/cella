@@ -31,9 +31,8 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
   const updateMode = (mode: string[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
-    dialog.updateTitle(
-      'user-invite',
-      mode[0] ? (
+    dialog.update('user-invite', {
+      title: mode[0] ? (
         <div className="flex items-center gap-2">
           <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
             {t('common:add_projects')}
@@ -44,7 +43,7 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
       ) : (
         t('common:add_projects')
       ),
-    );
+    });
   };
 
   if (!inviteMode)

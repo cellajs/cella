@@ -25,9 +25,8 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
   const updateMode = (mode: string[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
-    dialog.updateTitle(
-      'user-invite',
-      mode[0] ? (
+    dialog.update('user-invite', {
+      title: mode[0] ? (
         <div className="flex items-center gap-2">
           <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
             {t('common:invite')}
@@ -38,10 +37,10 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
       ) : (
         t('common:invite')
       ),
-    );
+    });
   };
 
-  if (!inviteMode)
+  if (!inviteMode) {
     return (
       <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
         <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
@@ -66,6 +65,7 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
         </ToggleGroupItem>
       </ToggleGroup>
     );
+  }
 
   if (inviteMode === 'search') {
     return (
