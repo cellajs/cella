@@ -9,7 +9,6 @@ import { workspaceQueryOptions } from '../workspaces';
 import { useParams } from '@tanstack/react-router';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useSuspenseQuery } from '@tanstack/react-query';
-// import { CreateProjectForm } from './create-project-form';
 
 interface AddProjectsProps {
   organization?: Organization | null;

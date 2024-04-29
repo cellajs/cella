@@ -12,6 +12,7 @@ interface WorkspaceContextValue {
   projects: Project[];
   labels: Label[];
   tasks: Task[];
+  updateTasks: (task: Task) => void;
 }
 
 export const WorkspaceContext = createContext({} as WorkspaceContextValue);
@@ -27,11 +28,20 @@ const WorkspacePage = () => {
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
 
-  const [projects, setProjects] = useState([]);
-  const [labels, setLabels] = useState([]);
-  const [tasks, setTasks] = useState([]);
+  // TODO: move to react-query
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [labels, setLabels] = useState<Label[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   const isInitialMount = useRef(true);
+
+  const updateTasks = (task: Task) => {
+    const updatedTasks = tasks.map((t: Task) => {
+      if (t.id !== task.id) return t;
+      return { ...t, ...task };
+    });
+    setTasks(updatedTasks.sort((a, b) => b.status - a.status));
+  };
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -43,7 +53,6 @@ const WorkspacePage = () => {
       fetch('/mock/workspace-data')
         .then((response) => response.json())
         .then((data) => {
-          console.log('Fetched MSW data:', data);
           setProjects(data.projects);
           setLabels(data.labels);
           setTasks(data.tasks);
@@ -54,8 +63,8 @@ const WorkspacePage = () => {
   }, [workspace]);
 
   return (
-    <WorkspaceContext.Provider value={{ workspace, projects, labels, tasks }}>
-      {projects && tasks && labels && <Outlet />}
+    <WorkspaceContext.Provider value={{ workspace, projects, labels, tasks, updateTasks }}>
+      <Outlet />
     </WorkspaceContext.Provider>
   );
 };

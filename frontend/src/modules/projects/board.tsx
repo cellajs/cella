@@ -1,4 +1,4 @@
-import { createContext, Fragment, useContext, useMemo, useRef, useState } from 'react';
+import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -32,15 +32,14 @@ interface ProjectContextValue {
 export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
-  const [columns, setColumns] = useState<Project[]>([]);
+  const { projects, tasks } = useContext(WorkspaceContext);
+  const [columns, setColumns] = useState<Column[]>(projects || []);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-
-  const { projects, tasks } = useContext(WorkspaceContext);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -60,6 +59,10 @@ export default function Board() {
       column,
     };
   }
+
+  useEffect(() => {
+    setColumns(projects);
+  }, [projects]);
 
   const announcements: Announcements = {
     onDragStart({ active }) {

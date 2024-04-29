@@ -5,6 +5,8 @@ import { Kbd } from '~/modules/common/kbd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bolt, Bug, Star, Check } from 'lucide-react';
+import type { TaskType } from './task-form';
+import { Button } from '../ui/button';
 
 type Type = {
   value: (typeof types)[number]['value'];
@@ -20,9 +22,8 @@ const types = [
 
 export const SelectTaskType = ({
   currentType,
-  className,
   changeTaskType,
-}: { currentType: 'feature' | 'bug' | 'chore'; className?: string; changeTaskType?: (value: 'feature' | 'bug' | 'chore') => void }) => {
+}: { currentType: TaskType; className?: string; changeTaskType?: (value: TaskType) => void }) => {
   const { t } = useTranslation();
 
   const [openPopover, setOpenPopover] = useState(false);
@@ -31,15 +32,15 @@ export const SelectTaskType = ({
 
   const isSearching = searchValue.length > 0;
 
- // Open on key press
- useHotkeys([['t', () => setOpenPopover(true)]]);
+  // Open on key press
+  useHotkeys([['t', () => setOpenPopover(true)]]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
-        <button type="button" className={`${className} h-4 w-4 hover:outline outline-2 outline-offset-1 outline-blue-500/50 rounded`}>
+        <Button aria-label="Set status" variant="ghost" size="micro" className={'group-hover/task:opacity-100 -m-1 opacity-70'}>
           {selectedType.icon()}
-        </button>
+        </Button>
       </PopoverTrigger>
 
       <PopoverContent className="w-48 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>

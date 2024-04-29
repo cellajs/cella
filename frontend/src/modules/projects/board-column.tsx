@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
-import type { Task } from '~/mocks/dataGeneration';
 import { TaskCard } from './task-card';
 import CreateStoryForm from './task-form';
 import { ProjectContext } from './board';
@@ -23,10 +22,8 @@ export interface Column {
   name: string;
 }
 
-export type ColumnType = 'Column';
-
 export interface ColumnDragData {
-  type: ColumnType;
+  type: 'Column';
   column: Column;
 }
 
@@ -37,9 +34,10 @@ interface BoardColumnProps {
 
 export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const { t } = useTranslation();
+
   const { tasks } = useContext(ProjectContext);
-  const [allTasks, setAllTasks] = useState<Task[]>(tasks.filter((t) => t.projectId === column.id));
-  const [foldedTasks, setFoldedTasks] = useState<string[]>(allTasks.map((el) => el.id));
+  const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+
   const [createForm, setCreateForm] = useState(false);
   const [showIced, setShowIced] = useState(false);
   const [showAccepted, setShowAccepted] = useState(false);
@@ -58,27 +56,6 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
     });
   };
 
-  const toggleTaskVisibility = (taskId: string) => {
-    setFoldedTasks((prevIds) => {
-      if (prevIds.includes(taskId)) {
-        return prevIds.filter((id) => id !== taskId);
-      }
-      return [...prevIds, taskId];
-    });
-  };
-
-  const UpdateTask = (task: Task) => {
-    const updatedTasks = allTasks.map((t) => {
-      if (t.id !== task.id) return t;
-      return { ...t, ...task };
-    });
-    setAllTasks(updatedTasks.sort((a, b) => b.status - a.status));
-  };
-
-  const tasksIds = useMemo(() => {
-    return allTasks.map((task) => task.id);
-  }, [allTasks]);
-
   const handleAddStoryClick = () => {
     if (!createForm) {
       const container = document.getElementById(`${column.id}-viewport`);
@@ -86,17 +63,6 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
     }
 
     setCreateForm(!createForm);
-  };
-
-  const onTaskCreate = (value?: Task) => {
-    if (!value) {
-      setCreateForm(false);
-      return;
-    }
-    const updatedTasks = [...allTasks, ...[value]];
-    setAllTasks(updatedTasks);
-    setFoldedTasks(updatedTasks.map((el) => el.id));
-    setCreateForm(false);
   };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -154,53 +120,40 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
 
         <Button variant="plain" size="xs" className="rounded" onClick={handleAddStoryClick}>
           <Plus size={16} className={`transition-transform ${createForm ? 'rotate-45 scale-125' : 'rotate-0'}`} />
-          <span className="ml-1">Story</span>
+          <span className="ml-1">Task</span>
         </Button>
       </CardHeader>
       <ScrollArea id={column.id}>
         <CardContent className="flex flex-grow flex-col p-0">
-          {createForm && (
-            <CreateStoryForm
-              onCloseForm={() => setCreateForm(false)}
-              callback={onTaskCreate}
-            />
-          )}
+          {createForm && <CreateStoryForm onCloseForm={() => setCreateForm(false)} />}
 
-          {
-            <Button
-              onClick={() => setShowAccepted(!showAccepted)}
-              variant="ghost"
-              size="sm"
-              className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
-            >
-              <span className="text-xs">3 accepted stories</span>
-              <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted? 'rotate-180' : 'rotate-0'}`} />
-            </Button>
-          }
+          <Button
+            onClick={() => setShowAccepted(!showAccepted)}
+            variant="ghost"
+            size="sm"
+            className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
+          >
+            <span className="text-xs">{tasks.filter((t) => t.status === 6).length} accepted stories</span>
+            <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+          </Button>
+
           <div ref={containerRef} />
           <SortableContext items={tasksIds}>
-            {allTasks.map((task) => (
-              <TaskCard
-                UpdateTasks={UpdateTask}
-                isEditing={!foldedTasks.includes(task.id)}
-                toggleTaskClick={toggleTaskVisibility}
-                task={task}
-                key={task.id}
-              />
+            {tasks.map((task) => (
+              <TaskCard task={task} key={task.id} />
             ))}
           </SortableContext>
-          {
-            <Button
-              onClick={() => setShowIced(!showIced)}
-              variant="ghost"
-              size="sm"
-              className={`w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5
+
+          <Button
+            onClick={() => setShowIced(!showIced)}
+            variant="ghost"
+            size="sm"
+            className={`w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5
               text-sm -mt-[1px]`}
-            >
-              <span className="text-xs">5 iced stories</span>
-              <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />
-            </Button>
-          }
+          >
+            <span className="text-xs">{tasks.filter((t) => t.status === 0).length} iced stories</span>
+            <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />
+          </Button>
         </CardContent>
       </ScrollArea>
     </Card>

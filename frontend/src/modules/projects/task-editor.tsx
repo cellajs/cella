@@ -8,20 +8,20 @@ interface TaskEditorProps {
   setMarkdown: (newValue: string) => void;
   id: string;
   mode: Mode;
-  toggleTaskClick?: (id: string) => void;
+  toggleEditorState: () => void;
 }
 
-export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleTaskClick }: TaskEditorProps) => {
+export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState }: TaskEditorProps) => {
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
     (event) => {
-      if (event.key === 'Escape') toggleTaskClick?.(id);
+      if (event.key === 'Escape') toggleEditorState();
     },
-    [toggleTaskClick, id],
+    [],
   );
 
   const handleHotKeysEsc = useCallback(() => {
-    toggleTaskClick?.(id);
-  }, [toggleTaskClick, id]);
+    toggleEditorState();
+  }, []);
 
   useHotkeys([['Escape', handleHotKeysEsc]]);
 
@@ -42,7 +42,7 @@ export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleTaskClick }:
         onBlur={(event) => {
           const newValue = (event as unknown as React.FocusEvent<HTMLTextAreaElement>).target.value;
           setMarkdown(newValue);
-          toggleTaskClick?.(id);
+          toggleEditorState();
         }}
         textareaProps={{ id: id }}
         value={markdown}
