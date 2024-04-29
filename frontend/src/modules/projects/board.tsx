@@ -119,6 +119,7 @@ export default function Board() {
       setTasks(content.project.flatMap((project) => project.tasks));
     }
   }, [content]);
+
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
@@ -127,7 +128,12 @@ export default function Board() {
             {columns.map((col, index) => (
               <Fragment key={col.id}>
                 <ResizablePanel key={`${col.id}-panel`}>
-                  <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.projectId === col.id)} />
+                  <BoardColumn
+                    canBeAssignedTo={content.project[index].canBeAssignedTo}
+                    key={`${col.id}-column`}
+                    column={col}
+                    tasks={tasks.filter((task) => task.projectId === col.id)}
+                  />
                 </ResizablePanel>
                 {columns.length > index + 1 && (
                   <ResizableHandle className="w-[2px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
@@ -141,8 +147,21 @@ export default function Board() {
       {'document' in window &&
         createPortal(
           <DragOverlay>
-            {activeColumn && <BoardColumn isOverlay column={activeColumn} tasks={tasks.filter((task) => task.projectId === activeColumn.id)} />}
-            {activeTask && <TaskCard task={activeTask} isOverlay />}
+            {activeColumn && (
+              <BoardColumn
+                canBeAssignedTo={content.project.filter((p) => p.id === activeColumn.id)[0].canBeAssignedTo}
+                isOverlay
+                column={activeColumn}
+                tasks={tasks.filter((task) => task.projectId === activeColumn.id)}
+              />
+            )}
+            {activeTask && (
+              <TaskCard
+                canBeAssignedTo={content.project.filter((p) => p.id === activeTask.projectId)[0].canBeAssignedTo}
+                task={activeTask}
+                isOverlay
+              />
+            )}
           </DragOverlay>,
           document.body,
         )}

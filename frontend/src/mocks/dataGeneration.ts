@@ -50,10 +50,10 @@ export const projectsWithTaskContent = (number: number): ComplexProject[] => {
 
   for (let i = 0; i < number; i++) {
     const user = users[Math.floor(Math.random() * users.length)];
-    const executor = UserContent();
+    const executor = UserContent(1)[0];
     const tasksNumber = Math.floor(Math.random() * (18 - 4 + 1)) + 4;
-
     const projectId = faker.string.uuid();
+    const canBeAssignedToNumber = Math.floor(Math.random() * (8 - 2 + 1)) + 2;
     finalArray.push({
       id: projectId,
       slug: faker.animal.cat(),
@@ -72,6 +72,7 @@ export const projectsWithTaskContent = (number: number): ComplexProject[] => {
         executor,
         tasksNumber,
       ),
+      canBeAssignedTo: UserContent(canBeAssignedToNumber),
     });
   }
   return finalArray;
@@ -102,13 +103,13 @@ export const labelsContent = (): Label[] => {
     color: faker.color.rgb({ casing: 'upper' }),
   }));
 };
-export const UserContent = (): User => {
-  return {
+export const UserContent = (number: number): User[] => {
+  return Array.from({ length: number }, () => ({
     id: faker.string.uuid(),
     name: faker.person.fullName(),
     thumbnailUrl: null,
     bio: faker.person.bio(),
-  };
+  }));
 };
 
 export type User = {
@@ -173,4 +174,5 @@ export type ComplexProject = {
   workspaceId: string;
   organizationId: string;
   tasks: Task[];
+  canBeAssignedTo: User[];
 };

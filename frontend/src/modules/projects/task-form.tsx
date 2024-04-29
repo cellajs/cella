@@ -33,6 +33,7 @@ export interface Story {
 }
 
 interface CreateStoryFormProps {
+  canBeAssignTo: User[];
   callback?: (story?: Task) => void;
   dialog?: boolean;
   onCloseForm?: () => void;
@@ -66,7 +67,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isDialog, onCloseForm }) => {
+const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ canBeAssignTo, callback, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
 
@@ -224,7 +225,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
             return (
               <FormItem>
                 <FormControl>
-                  <AssignMembers mode="create" changeAssignedTo={onChange} />
+                  <AssignMembers members={canBeAssignTo} mode="create" changeAssignedTo={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

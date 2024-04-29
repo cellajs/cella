@@ -27,6 +27,7 @@ interface User {
 
 interface TaskCardProps {
   task: Task;
+  canBeAssignedTo: User[];
   UpdateTasks?: (task: Task) => void;
   isEditing?: boolean;
   toggleTaskClick?: (id: string) => void;
@@ -40,7 +41,7 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTasks }: TaskCardProps) {
+export function TaskCard({ task, canBeAssignedTo, toggleTaskClick, isOverlay, isEditing, UpdateTasks }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const [innerTask, setInnerTask] = useState(task);
@@ -137,7 +138,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTa
               {innerTask.type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500 group-hover:opacity-0 transition-opacity" />}
             </div>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 w-full">
             {isEditing ? (
               <TaskEditor
                 mode={mode}
@@ -176,7 +177,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTa
               </div>
 
               <div className="flex gap-2">
-                <AssignMembers mode="edit" changeAssignedTo={handleChangeAssignedTo} />
+                <AssignMembers members={canBeAssignedTo} mode="edit" changeAssignedTo={handleChangeAssignedTo} />
                 <SelectStatus taskStatus={innerTask.status} changeTaskStatus={(value) => handleChangeStatus(value as typeof innerTask.status)} />
               </div>
             </div>

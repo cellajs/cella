@@ -11,21 +11,13 @@ import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
 
-const defaultMembers = [
-  { bio: 'poor advocate, photographer 👕', id: '9a4630c1-5036-4cdf-a521-c0dee7f48304', name: 'Alton Labadie', thumbnailUrl: null },
-  { bio: 'agent advocate', id: 'e128c479-7618-477d-8f8f-9fb9b8e6587f', name: 'Jane Balistreri', thumbnailUrl: null },
-  { bio: 'blogger, environmentalist', id: '41e8c32e-188e-4f9d-bb10-c90dfdc25e68', name: 'Karla Jacobson', thumbnailUrl: null },
-  { bio: 'scientist', id: 'ae8e81ea-8880-439a-ac00-ef4c81d17177', name: 'Rudy Cole', thumbnailUrl: null },
-  { bio: 'entrepreneur', id: 'cda6e97e-07a9-4b90-9b71-b5f6cd85c944', name: 'Leticia Grimes', thumbnailUrl: null },
-];
-
 interface AssignMembersProps {
-  members?: User[];
+  members: User[];
   mode: 'create' | 'edit';
   changeAssignedTo?: (users: User[]) => void;
 }
 
-const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: AssignMembersProps) => {
+const AssignMembers = ({ members, mode, changeAssignedTo }: AssignMembersProps) => {
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('assignedTo');
   const [openPopover, setOpenPopover] = useState(false);
@@ -66,7 +58,9 @@ const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: Ass
           aria-label="Assign"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${mode === 'edit' && selectedUsers.length && 'hover:bg-transparent'}`}
+          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${
+            mode === 'edit' && selectedUsers.length && 'hover:bg-transparent'
+          }`}
         >
           {!selectedUsers.length && <UserX className="h-4 w-4 opacity-50" />}
           {!!selectedUsers.length && (
@@ -97,7 +91,7 @@ const AssignMembers = ({ members = defaultMembers, mode, changeAssignedTo }: Ass
             onValueChange={(searchValue) => {
               // If the user types a number, select the user like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
-                handleSelectClick(defaultMembers[Number.parseInt(searchValue)]?.name);
+                handleSelectClick(members[Number.parseInt(searchValue)]?.name);
                 setOpenPopover(false);
                 setSearchValue('');
                 return;

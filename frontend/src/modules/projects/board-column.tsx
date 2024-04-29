@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
-import type { Task } from '~/mocks/dataGeneration';
+import type { Task, User } from '~/mocks/dataGeneration';
 import { TaskCard } from './task-card';
 import CreateStoryForm from './task-form';
 
@@ -29,10 +29,11 @@ export interface ColumnDragData {
 interface BoardColumnProps {
   column: Column;
   tasks: Task[];
+  canBeAssignedTo: User[];
   isOverlay?: boolean;
 }
 
-export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
+export function BoardColumn({ column, tasks, canBeAssignedTo, isOverlay }: BoardColumnProps) {
   const [allTasks, setAllTasks] = useState<Task[]>(tasks);
   const [foldedTasks, setFoldedTasks] = useState<string[]>(allTasks.map((el) => el.id));
   const [showCreationForm, setShowCreationForm] = useState(false);
@@ -150,7 +151,9 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       </CardHeader>
       <ScrollArea id={column.id}>
         <CardContent className="flex flex-grow flex-col p-0">
-          {showCreationForm && <CreateStoryForm onCloseForm={() => setShowCreationForm(false)} callback={handleStoryCreationCallback} />}
+          {showCreationForm && (
+            <CreateStoryForm canBeAssignTo={canBeAssignedTo} onCloseForm={() => setShowCreationForm(false)} callback={handleStoryCreationCallback} />
+          )}
 
           {
             <Button
@@ -167,6 +170,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
           <SortableContext items={tasksIds}>
             {allTasks.map((task) => (
               <TaskCard
+                canBeAssignedTo={canBeAssignedTo}
                 UpdateTasks={UpdateTask}
                 isEditing={!foldedTasks.includes(task.id)}
                 toggleTaskClick={toggleTaskVisibility}
