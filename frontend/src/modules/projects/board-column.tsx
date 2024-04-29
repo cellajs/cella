@@ -17,7 +17,6 @@ import { ProjectContext } from './board';
 import { sheet } from '../common/sheeter/state';
 import { ProjectSettings } from './project-settings';
 import { useTranslation } from 'react-i18next';
-import { dialog } from '../common/dialoger/state';
 
 export interface Column {
   id: string;

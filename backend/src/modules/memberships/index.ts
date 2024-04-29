@@ -42,7 +42,7 @@ const membershipRoutes = app
 
     if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: userId });
 
-    const [membership] = await db
+    let [membership] = await db
       .update(membershipsTable)
       .set(
         role
@@ -53,39 +53,21 @@ const membershipRoutes = app
       .returning();
 
     if (!membership) {
-      // TODO: Check if this is necessary
-      // if (targetUser.id === user.id) {
-      //   [membership] = await db
-      //     .insert(membershipsTable)
-      //     .values({
-      //       userId: user.id,
-      //       organizationId: organization?.id,
-      //       workspaceId: workspace?.id,
-      //       role,
-      //     })
-      //     .returning();
-
-      //   if (organization) {
-      //     sendSSE(targetUser.id, 'new_organization_membership', {
-      //       ...organization,
-      //       userRole: role,
-      //       type: 'ORGANIZATION',
-      //     });
-      //   } else {
-      //     sendSSE(targetUser.id, 'new_workspace_membership', {
-      //       ...workspace,
-      //       userRole: role,
-      //       type: 'WORKSPACE',
-      //     });
-      //   }
-      // } else {
-      //   return errorResponse(ctx, 404, 'not_found', 'warn', type, {
-      //     user: userId,
-      //   });
-      // }
-      return errorResponse(ctx, 404, 'not_found', 'warn', type, {
-        user: userId,
-      });
+      if (targetUser.id === user.id) {
+        [membership] = await db
+          .insert(membershipsTable)
+          .values({
+            userId: user.id,
+            organizationId: organization?.id,
+            workspaceId: workspace?.id,
+            role,
+          })
+          .returning();
+      } else {
+        return errorResponse(ctx, 404, 'not_found', 'warn', type, {
+          user: userId,
+        });
+      }
     }
 
     if (type === 'ORGANIZATION') {

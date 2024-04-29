@@ -448,16 +448,26 @@ const generalRoutes = app
     return streamSSE(ctx, async (stream) => {
       streams.set(user.id, stream);
       console.info('User connected to SSE', user.id);
-      stream.writeSSE({
+      await stream.writeSSE({
         event: 'connected',
         data: 'connected',
+        retry: 5000,
       });
 
-      stream.onAbort(() => {
+      stream.onAbort(async () => {
         console.info('User disconnected from SSE', user.id);
         streams.delete(user.id);
-        stream.close();
       });
+
+      // Keep connection alive
+      while (true) {
+        await stream.writeSSE({
+          event: 'ping',
+          data: 'pong',
+          retry: 5000,
+        });
+        await stream.sleep(30000);
+      }
     });
   });
 

@@ -7,6 +7,14 @@ const SSE = () => {
     try {
       const entity = JSON.parse(e.data);
       useNavigationStore.setState((state) => {
+        const notExist = state.menu[entityType].items.every((item) => item.id !== entity.id);
+
+        // If entity does not exist in the list, add it
+        if (notExist) {
+          state.menu[entityType].items = [entity, ...state.menu[entityType].items];
+          return state;
+        }
+
         state.menu[entityType].items = state.menu[entityType].items.map((item) => (item.id === entity.id ? entity : item));
         return state;
       });
@@ -19,6 +27,13 @@ const SSE = () => {
     try {
       const entity = JSON.parse(e.data);
       useNavigationStore.setState((state) => {
+        const exist = state.menu[entityType].items.some((item) => item.id === entity.id);
+
+        // If entity already exists in the list, do nothing
+        if (exist) {
+          return state;
+        }
+
         state.menu[entityType].items = [entity, ...state.menu[entityType].items];
         return state;
       });
