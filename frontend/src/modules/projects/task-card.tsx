@@ -15,8 +15,9 @@ import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import SelectStatus from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
+import { ProjectContext } from './board.tsx';
 
 interface User {
   id: string;
@@ -27,7 +28,6 @@ interface User {
 
 interface TaskCardProps {
   task: Task;
-  canBeAssignedTo: User[];
   UpdateTasks?: (task: Task) => void;
   isEditing?: boolean;
   toggleTaskClick?: (id: string) => void;
@@ -41,10 +41,11 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, canBeAssignedTo, toggleTaskClick, isOverlay, isEditing, UpdateTasks }: TaskCardProps) {
+export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, UpdateTasks }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const [innerTask, setInnerTask] = useState(task);
+  const { members } = useContext(ProjectContext);
 
   const handleChangeType = (newType: 'feature' | 'bug' | 'chore') => {
     const updatedTask = { ...innerTask, type: newType };
@@ -177,7 +178,7 @@ export function TaskCard({ task, canBeAssignedTo, toggleTaskClick, isOverlay, is
               </div>
 
               <div className="flex gap-2">
-                <AssignMembers members={canBeAssignedTo} mode="edit" changeAssignedTo={handleChangeAssignedTo} />
+                <AssignMembers members={members[innerTask.projectId]} mode="edit" changeAssignedTo={handleChangeAssignedTo} />
                 <SelectStatus taskStatus={innerTask.status} changeTaskStatus={(value) => handleChangeStatus(value as typeof innerTask.status)} />
               </div>
             </div>

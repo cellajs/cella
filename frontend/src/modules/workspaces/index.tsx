@@ -9,7 +9,8 @@ import type { Workspace } from '~/types';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
-  content: MockResponse;
+  projects: MockResponse['project'];
+  labels: MockResponse['workspace']['labelsTable'];
 }
 
 export const WorkspaceContext = createContext({} as WorkspaceContextValue);
@@ -24,7 +25,8 @@ const WorkspacePage = () => {
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
-  const [content, setContent] = useState({} as MockResponse);
+  const [projects, setProjects] = useState([] as MockResponse['project']);
+  const [labels, setLabels] = useState([] as MockResponse['workspace']['labelsTable']);
   const isInitialMount = useRef(true);
 
   useEffect(() => {
@@ -37,7 +39,8 @@ const WorkspacePage = () => {
       fetch('/mock/workspace')
         .then((response) => response.json())
         .then((data) => {
-          setContent(data);
+          setProjects(data.project);
+          setLabels(data.workspace.labelsTable);
           stopMocking(); // Ensure to stop mocking after fetching data
         })
         .catch((error) => console.error('Error fetching MSW data:', error));
@@ -45,7 +48,7 @@ const WorkspacePage = () => {
   }, [workspace]);
 
   return (
-    <WorkspaceContext.Provider value={{ workspace, content }}>
+    <WorkspaceContext.Provider value={{ workspace, projects, labels }}>
       <Outlet />
     </WorkspaceContext.Provider>
   );

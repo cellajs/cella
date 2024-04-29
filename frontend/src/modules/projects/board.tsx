@@ -1,4 +1,4 @@
-import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -22,7 +22,14 @@ import { coordinateGetter } from './keyboard-preset';
 import { TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
 import { WorkspaceContext } from '../workspaces';
-import type { ComplexProject, Task } from '~/mocks/dataGeneration';
+import type { ComplexProject, Task, User } from '~/mocks/dataGeneration';
+
+interface ProjectContextValue {
+  tasks: Task[];
+  members: Record<string, User[]>;
+}
+
+export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
   const [columns, setColumns] = useState<ComplexProject[]>([]);
@@ -30,12 +37,13 @@ export default function Board() {
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [members, setMembers] = useState<Record<string, User[]>>({});
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  const { content } = useContext(WorkspaceContext);
+  const { projects } = useContext(WorkspaceContext);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -114,11 +122,23 @@ export default function Board() {
   };
 
   useEffect(() => {
-    if ('project' in content) {
-      setColumns(content.project);
-      setTasks(content.project.flatMap((project) => project.tasks));
+    if (projects) {
+      setColumns(projects);
+      setTasks(projects.flatMap((project) => project.tasks));
+      setMembers(
+        projects.reduce(
+          (acc, project) => {
+            return {
+              // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
+              ...acc,
+              [project.id]: project.canBeAssignedTo,
+            };
+          },
+          {} as Record<string, User[]>,
+        ),
+      );
     }
-  }, [content]);
+  }, [projects]);
 
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
@@ -128,12 +148,9 @@ export default function Board() {
             {columns.map((col, index) => (
               <Fragment key={col.id}>
                 <ResizablePanel key={`${col.id}-panel`}>
-                  <BoardColumn
-                    canBeAssignedTo={content.project[index].canBeAssignedTo}
-                    key={`${col.id}-column`}
-                    column={col}
-                    tasks={tasks.filter((task) => task.projectId === col.id)}
-                  />
+                  <ProjectContext.Provider value={{ tasks, members }}>
+                    <BoardColumn key={`${col.id}-column`} column={col} tasks={tasks.filter((task) => task.projectId === col.id)} />
+                  </ProjectContext.Provider>
                 </ResizablePanel>
                 {columns.length > index + 1 && (
                   <ResizableHandle className="w-[2px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
@@ -147,21 +164,8 @@ export default function Board() {
       {'document' in window &&
         createPortal(
           <DragOverlay>
-            {activeColumn && (
-              <BoardColumn
-                canBeAssignedTo={content.project.filter((p) => p.id === activeColumn.id)[0].canBeAssignedTo}
-                isOverlay
-                column={activeColumn}
-                tasks={tasks.filter((task) => task.projectId === activeColumn.id)}
-              />
-            )}
-            {activeTask && (
-              <TaskCard
-                canBeAssignedTo={content.project.filter((p) => p.id === activeTask.projectId)[0].canBeAssignedTo}
-                task={activeTask}
-                isOverlay
-              />
-            )}
+            {activeColumn && <BoardColumn isOverlay column={activeColumn} tasks={tasks.filter((task) => task.projectId === activeColumn.id)} />}
+            {activeTask && <TaskCard task={activeTask} isOverlay />}
           </DragOverlay>,
           document.body,
         )}

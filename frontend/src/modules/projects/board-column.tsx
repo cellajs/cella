@@ -3,16 +3,17 @@ import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
 import { ChevronDown, GripVertical, Plus } from 'lucide-react';
-import { type RefObject, useMemo, useState } from 'react';
+import { type RefObject, useContext, useMemo, useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader } from '~/modules/ui/card';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
-import type { Task, User } from '~/mocks/dataGeneration';
+import type { Task } from '~/mocks/dataGeneration';
 import { TaskCard } from './task-card';
 import CreateStoryForm from './task-form';
+import { ProjectContext } from './board';
 
 export interface Column {
   id: string;
@@ -29,12 +30,12 @@ export interface ColumnDragData {
 interface BoardColumnProps {
   column: Column;
   tasks: Task[];
-  canBeAssignedTo: User[];
   isOverlay?: boolean;
 }
 
-export function BoardColumn({ column, tasks, canBeAssignedTo, isOverlay }: BoardColumnProps) {
-  const [allTasks, setAllTasks] = useState<Task[]>(tasks);
+export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
+  const { tasks, members } = useContext(ProjectContext);
+  const [allTasks, setAllTasks] = useState<Task[]>(tasks.filter((t) => t.projectId === column.id));
   const [foldedTasks, setFoldedTasks] = useState<string[]>(allTasks.map((el) => el.id));
   const [showCreationForm, setShowCreationForm] = useState(false);
   const [showIcedStories, setShowIcedStories] = useState(false);
@@ -152,7 +153,11 @@ export function BoardColumn({ column, tasks, canBeAssignedTo, isOverlay }: Board
       <ScrollArea id={column.id}>
         <CardContent className="flex flex-grow flex-col p-0">
           {showCreationForm && (
-            <CreateStoryForm canBeAssignTo={canBeAssignedTo} onCloseForm={() => setShowCreationForm(false)} callback={handleStoryCreationCallback} />
+            <CreateStoryForm
+              canBeAssignTo={members[column.id]}
+              onCloseForm={() => setShowCreationForm(false)}
+              callback={handleStoryCreationCallback}
+            />
           )}
 
           {
@@ -170,7 +175,6 @@ export function BoardColumn({ column, tasks, canBeAssignedTo, isOverlay }: Board
           <SortableContext items={tasksIds}>
             {allTasks.map((task) => (
               <TaskCard
-                canBeAssignedTo={canBeAssignedTo}
                 UpdateTasks={UpdateTask}
                 isEditing={!foldedTasks.includes(task.id)}
                 toggleTaskClick={toggleTaskVisibility}

@@ -92,7 +92,6 @@ const AssignMembers = ({ members, mode, changeAssignedTo }: AssignMembersProps) 
               // If the user types a number, select the user like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
                 handleSelectClick(members[Number.parseInt(searchValue)]?.name);
-                setOpenPopover(false);
                 setSearchValue('');
                 return;
               }
