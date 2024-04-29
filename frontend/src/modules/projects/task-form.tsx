@@ -4,7 +4,7 @@ import type React from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -20,6 +20,7 @@ import { useThemeStore } from '~/store/theme.ts';
 import type { Task, User } from '~/mocks/dataGeneration.ts';
 import AssignMembers from './select-members.tsx';
 import SetLabels from './select-labels.tsx';
+import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 
 export interface Story {
   id: string;
@@ -34,6 +35,7 @@ export interface Story {
 interface CreateStoryFormProps {
   callback?: (story?: Task) => void;
   dialog?: boolean;
+  onCloseForm?: () => void;
 }
 
 type StoryType = 'feature' | 'bug' | 'chore';
@@ -64,9 +66,25 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isDialog }) => {
+const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+
+  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
+    (event) => {
+      if (event.key !== 'Escape') return;
+      if (isDialog) dialog.remove();
+      onCloseForm?.();
+    },
+    [isDialog, onCloseForm],
+  );
+
+  const handleHotKeysEscKeyPress = useCallback(() => {
+    if (isDialog) dialog.remove();
+    onCloseForm?.();
+  }, [isDialog, onCloseForm]);
+
+  useHotkeys([['Escape', handleHotKeysEscKeyPress]]);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -115,7 +133,7 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   // Fix types
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 border-b flex gap-2 flex-col shadow-inner">
+      <form id="create-story" onSubmit={form.handleSubmit(onSubmit)} className="p-4 border-b flex gap-2 flex-col shadow-inner">
         <FormField
           control={form.control}
           name="type"
@@ -160,12 +178,14 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
               <FormItem>
                 <FormControl>
                   <MDEditor
+                    onKeyDown={handleMDEscKeyPress}
                     value={value}
                     defaultTabEnable={true}
                     preview={'edit'}
                     onChange={(newValue) => {
                       if (typeof newValue === 'string') onChange(newValue);
                     }}
+                    autoFocus={true}
                     hideToolbar={true}
                     visibleDragbar={false}
                     height={'auto'}

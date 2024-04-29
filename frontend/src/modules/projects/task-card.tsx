@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Star, Bug, Bolt } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { Checkbox } from '../ui/checkbox';
@@ -16,6 +16,7 @@ import AssignMembers from './select-members.tsx';
 import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import { SelectTaskType } from './select-task-type.tsx';
+import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 
 interface User {
   id: string;
@@ -45,6 +46,22 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, setTaskS
   const [value, setValue] = useState<string | undefined>(task.markdown);
   const [type, setType] = useState<'feature' | 'bug' | 'chore'>(task.type);
   const [status, setStatus] = useState(task.status);
+
+  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
+    (event) => {
+      if (!isEditing) return;
+      if (event.key !== 'Escape') return;
+      toggleTaskClick?.(task.id);
+    },
+    [toggleTaskClick, task.id],
+  );
+
+  const handleHotKeysEsc = useCallback(() => {
+    if (!isEditing) return;
+    toggleTaskClick?.(task.id);
+  }, [toggleTaskClick, task.id]);
+
+  useHotkeys([['Escape', handleHotKeysEsc]]);
 
   const [assignedTo, setAssignedTo] = useState(task.assignedTo);
   const { mode } = useThemeStore();
@@ -149,6 +166,7 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, setTaskS
           {isEditing && (
             <div className="flex flex-col gap-2" data-color-mode="dark">
               <MDEditor
+                onKeyDown={handleMDEscKeyPress}
                 textareaProps={{ id: task.id }}
                 value={value}
                 preview={'edit'}
@@ -165,7 +183,6 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isEditing, setTaskS
                 <Button onClick={toggleEditorState} size="sm" className="rounded text-[12px] p-1 h-6">
                   {t('common:save')}
                 </Button>
-
                 <Button onClick={toggleEditorState} variant="secondary" size="sm" className="rounded text-[12px] p-1 h-6">
                   {t('common:cancel')}
                 </Button>

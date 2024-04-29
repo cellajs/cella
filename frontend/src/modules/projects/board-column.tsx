@@ -158,7 +158,7 @@ export function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       </CardHeader>
       <ScrollArea id={column.id}>
         <CardContent className="flex flex-grow flex-col p-0">
-          {showCreationForm && <CreateStoryForm callback={handleStoryCreationCallback} />}
+          {showCreationForm && <CreateStoryForm onCloseForm={() => setShowCreationForm(false)} callback={handleStoryCreationCallback} />}
 
           {
             <Button
