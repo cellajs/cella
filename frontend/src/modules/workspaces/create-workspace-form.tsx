@@ -33,7 +33,7 @@ interface CreateWorkspaceFormProps {
 }
 
 const formSchema = createWorkspaceJsonSchema.extend({
-  organization: z.string().nonempty(),
+  organization: z.string().min(1),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -43,13 +43,14 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   const navigate = useNavigate();
   const { setSheet, menu } = useNavigationStore();
 
+  const organizations = menu.organizations.items;
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         name: '',
         slug: '',
-        organization: '',
+        organization: organizations.length === 1 ? organizations[0].id : '',
       },
     }),
     [],
@@ -60,7 +61,6 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
-
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createWorkspace,
@@ -85,7 +85,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
   const organizationCreated = (organization: Organization) => {
     form.setValue('organization', organization.id);
-  }
+  };
 
   useEffect(() => {
     if (form.unsavedChanges) {
