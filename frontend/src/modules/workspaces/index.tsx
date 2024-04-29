@@ -36,10 +36,19 @@ const WorkspacePage = () => {
   const isInitialMount = useRef(true);
 
   const updateTasks = (task: Task) => {
+    if (!task) return;
+
+    // Add new task
+    if (!tasks.find((t) => t.id === task.id)) {
+      const updatedTasks = [...tasks, task]
+      return setTasks(updatedTasks.sort((a, b) => b.status - a.status));
+    }
+    // Update existing task
     const updatedTasks = tasks.map((t: Task) => {
       if (t.id !== task.id) return t;
       return { ...t, ...task };
     });
+
     setTasks(updatedTasks.sort((a, b) => b.status - a.status));
   };
 

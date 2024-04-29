@@ -11,7 +11,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import ToolTipButtons from './tooltip-buttons';
 import { useMeasure } from '~/hooks/use-measure';
 import { TaskCard } from './task-card';
-import CreateStoryForm from './task-form';
+import CreateTaskForm from './task-form';
 import { ProjectContext } from './board';
 import { sheet } from '../common/sheeter/state';
 import { ProjectSettings } from './project-settings';
@@ -56,7 +56,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
     });
   };
 
-  const handleAddStoryClick = () => {
+  const handleTaskFormClick = () => {
     if (!createForm) {
       const container = document.getElementById(`${column.id}-viewport`);
       container?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -118,14 +118,14 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
 
         <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} onSettingsClick={openSettingsSheet} />
 
-        <Button variant="plain" size="xs" className="rounded" onClick={handleAddStoryClick}>
+        <Button variant="plain" size="xs" className="rounded" onClick={handleTaskFormClick}>
           <Plus size={16} className={`transition-transform ${createForm ? 'rotate-45 scale-125' : 'rotate-0'}`} />
           <span className="ml-1">Task</span>
         </Button>
       </CardHeader>
       <ScrollArea id={column.id}>
         <CardContent className="flex flex-grow flex-col p-0">
-          {createForm && <CreateStoryForm onCloseForm={() => setCreateForm(false)} />}
+          {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
           <Button
             onClick={() => setShowAccepted(!showAccepted)}
@@ -133,7 +133,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
             size="sm"
             className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
           >
-            <span className="text-xs">{tasks.filter((t) => t.status === 6).length} accepted stories</span>
+            <span className="text-xs">{tasks.filter((t) => t.status === 6).length} accepted tasks</span>
             <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
 
@@ -151,7 +151,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
             className={`w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5
               text-sm -mt-[1px]`}
           >
-            <span className="text-xs">{tasks.filter((t) => t.status === 0).length} iced stories</span>
+            <span className="text-xs">{tasks.filter((t) => t.status === 0).length} iced tasks</span>
             <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />
           </Button>
         </CardContent>

@@ -4,7 +4,7 @@ import type React from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useContext, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -17,27 +17,18 @@ import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { Bolt, Bug, Star } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
-import type { Task, TaskLabel, TaskUser } from '~/mocks/dataGeneration.ts';
+import type { Task, TaskUser } from '~/mocks/dataGeneration.ts';
 import AssignMembers from './select-members.tsx';
 import SetLabels from './select-labels.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-
-export interface Story {
-  id: string;
-  markdown: string;
-  type: TaskType;
-  impact: TaskImpact;
-  status: TaskStatus;
-  assignedTo: TaskUser[];
-  labels: TaskLabel[];
-}
+import { WorkspaceContext } from '../workspaces/index.tsx';
+import { ProjectContext } from './board.tsx';
 
 export type TaskType = 'feature' | 'bug' | 'chore';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
 
-interface CreateStoryFormProps {
-  callback?: (story?: Task) => void;
+interface CreateTaskFormProps {
   dialog?: boolean;
   onCloseForm?: () => void;
 }
@@ -67,9 +58,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isDialog, onCloseForm }) => {
+const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+
+  const { updateTasks } = useContext(WorkspaceContext);
+  const { project } = useContext(ProjectContext);
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
     (event) => {
@@ -104,37 +98,39 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   );
 
   // Form with draft in local storage
-  const form = useFormWithDraft<FormValues>('create-story', formOptions);
+  const form = useFormWithDraft<FormValues>('create-task', formOptions);
 
   const { isPending } = useMutation({
     // mutate: create
-    mutationFn: createWorkspace, // change to create story
+    mutationFn: createWorkspace, // change to create task
     onSuccess: () => {
-      //form.reset();
-      //   callback?.(result);
+      // form.reset();
       if (isDialog) dialog.remove();
     },
   });
 
+  type PartialTask = Partial<Task>;
+
   const onSubmit = (values: FormValues) => {
-    const story: Story = {
+    const task: PartialTask = {
       id: values.id,
       markdown: values.markdown,
       type: values.type as TaskType,
-      impact: values.impact as 0 | 1 | 2 | 3,
+      impact: values.impact as TaskImpact,
       assignedTo: values.assignedTo as TaskUser[],
       labels: values.labels,
-      status: 0,
+      status: 1,
+      projectId: project.id,
     };
+    updateTasks(task as Task);
     form.reset();
-    toast.success(t('common:success.create_story'));
-    callback?.(story as Task);
-    // create(values);
+    toast.success(t('common:success.create_task'));
+    onCloseForm?.();
   };
   // Fix types
   return (
     <Form {...form}>
-      <form id="create-story" onSubmit={form.handleSubmit(onSubmit)} className="p-4 border-b flex gap-2 flex-col shadow-inner">
+      <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-4 border-b flex gap-2 flex-col shadow-inner">
         <FormField
           control={form.control}
           name="type"
@@ -268,4 +264,4 @@ const CreateStoryForm: React.FC<CreateStoryFormProps> = ({ callback, dialog: isD
   );
 };
 
-export default CreateStoryForm;
+export default CreateTaskForm;
