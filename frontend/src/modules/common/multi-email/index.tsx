@@ -284,6 +284,7 @@ export function MultiEmail(props: MultiEmailProps) {
       })();
     } else {
       const validEmails = props.emails?.filter((email) => {
+        if (!email) return false;
         return isEmailFn(email);
       });
       setEmails(validEmails ?? []);

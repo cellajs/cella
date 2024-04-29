@@ -76,7 +76,7 @@
   "edit_user": "Edit user",
   "email": "Email",
   "email_domains": "Email domains",
-  "email_domains.text": "Enforce members to have an organizational email domain.",
+  "email_domains.text": "Enforce members to have an organizational email domain, ie 'cellajs.com'.",
   "emails": "Emails",
   "empty_languages": "All languages have been selected",
   "entered_focus.text": "Focus view activated",

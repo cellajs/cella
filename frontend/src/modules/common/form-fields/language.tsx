@@ -59,7 +59,9 @@ const LanguageFormField = ({
             ) : (
               <>
                 <MultipleSelector
-                  value={config.languages.filter((language) => value?.includes(language.value))}
+                                formControlName='languages'
+
+                  // value={config.languages.filter((language) => value?.includes(language.value))}
                   onChange={(value) => {
                     onChange(value.map((language) => language.value));
                   }}

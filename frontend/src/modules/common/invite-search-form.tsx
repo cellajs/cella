@@ -80,10 +80,12 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
         <FormField
           control={form.control}
           name="emails"
-          render={({ field: { onChange } }) => (
+          render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
                 <MultipleSelector
+                formControlName='emails'
+                value={value ? value.map((val: string) => ({ label: val, value: val })) : []}
                   onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
                     const data = await getSuggestions(query, 'USER');
@@ -95,6 +97,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
                   }}
                   basicSignValue={t('common:invite_members_search.text')}
                   hidePlaceholderWhenSelected
+                  defaultOptions={value ? value.map((val: string) => ({ label: val, value: val })) : []}
                   placeholder={t('common:search_users')}
                   emptyValue={t('common:no_users_found')}
                 />
