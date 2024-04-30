@@ -2,12 +2,13 @@ import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
-import { SheetState, type SheetT, type SheetToRemove } from './state';
+import { SheetState, type SheetToReset, type SheetT, type SheetToRemove } from './state';
 
 export function Sheeter() {
   const { t } = useTranslation();
   const [open] = useState(true);
   const [sheets, setSheets] = useState<SheetT[]>([]);
+  const [updatedSheets, setUpdatedSheets] = useState<SheetT[]>([]);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
 
   const onOpenChange = (sheet: SheetT) => (open: boolean) => {
@@ -33,8 +34,24 @@ export function Sheeter() {
         removeSheet(sheet as SheetT);
         return;
       }
+      if ((sheet as SheetToReset).reset) {
+        setUpdatedSheets((updatedSheets) => updatedSheets.filter(({ id }) => id !== sheet.id));
+        return;
+      }
+
       prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
-      setSheets((sheets) => [...sheets, sheet]);
+      setUpdatedSheets((updatedSheets) => {
+        const existingSheet = updatedSheets.find(({ id }) => id === sheet.id);
+        if (existingSheet) {
+          return updatedSheets.map((s) => (s.id === sheet.id ? sheet : s));
+        }
+        return [...updatedSheets, sheet];
+      });
+      setSheets((sheets) => {
+        const existingSheet = sheets.find(({ id }) => id === sheet.id);
+        if (existingSheet) return sheets;
+        return [...sheets, sheet];
+      });
     });
   }, []);
 
@@ -43,13 +60,18 @@ export function Sheeter() {
   }
 
   return sheets.map((sheet) => {
+    const existingSheet = updatedSheets.find(({ id }) => id === sheet.id);
     return (
       <Sheet key={sheet.id} open={open} onOpenChange={onOpenChange(sheet)} modal={true}>
         <SheetPortal>
           <SheetContent className={sheet.className}>
             {sheet.title || sheet.text ? (
               <SheetHeader className="text-left">
-                {sheet.title && <SheetTitle>{sheet.title}</SheetTitle>}
+                {existingSheet?.title ? (
+                  existingSheet.title
+                ) : sheet.title ? (
+                  <SheetTitle>{typeof sheet.title === 'string' ? <span>{sheet.title}</span> : sheet.title}</SheetTitle>
+                ) : null}
                 {sheet.text && <SheetDescription>{sheet.text}</SheetDescription>}
               </SheetHeader>
             ) : null}
