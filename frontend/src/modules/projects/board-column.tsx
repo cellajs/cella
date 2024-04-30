@@ -27,10 +27,11 @@ interface BoardColumnProps {
 
 export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const { tasks } = useContext(ProjectContext);
-  const tasksIds = useMemo(() => {
-    if (!tasks) return [];
-    return tasks.map((task) => task.id);
-  }, [tasks]);
+
+  const tasksIds = useMemo(() =>  tasks.map((task) => task.id), [tasks]);
+  const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
+  const icedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
+
   const [showIced, setShowIced] = useState(false);
   const [showAccepted, setShowAccepted] = useState(false);
 
@@ -43,46 +44,32 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
               <Button
                 onClick={() => setShowAccepted(!showAccepted)}
                 variant="ghost"
+                disabled={!acceptedCount}
                 size="sm"
                 className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
               >
-                <span className="text-xs">{tasks.filter((t) => t.status === 6).length} accepted tasks</span>
+                <span className="text-xs">{acceptedCount} accepted tasks</span>
                 <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
               </Button>
-              {showAccepted && (
-                <>
-                  {tasks
-                    .filter((t) => t.status === 6)
-                    .map((task) => (
-                      <TaskCard task={task} key={task.id} />
-                    ))}
-                </>
-              )}
               {tasks
-                .filter((t) => t.status !== 0 && t.status !== 6)
+                .filter((t) => {
+                  if (showAccepted && t.status === 6) return true;
+                  if (showIced && t.status === 0) return true;
+                  return t.status !== 0 && t.status !== 6;
+                })
                 .map((task) => (
                   <TaskCard task={task} key={task.id} />
                 ))}
-
               <Button
                 onClick={() => setShowIced(!showIced)}
                 variant="ghost"
+                disabled={!icedCount}
                 size="sm"
-                className={`w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5
-              text-sm -mt-[1px]`}
+                className="w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5 text-sm -mt-[1px]"
               >
-                <span className="text-xs">{tasks.filter((t) => t.status === 0).length} iced tasks</span>
+                <span className="text-xs">{icedCount} iced tasks</span>
                 <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />
               </Button>
-              {showIced && (
-                <>
-                  {tasks
-                    .filter((t) => t.status === 0)
-                    .map((task) => (
-                      <TaskCard task={task} key={task.id} />
-                    ))}
-                </>
-              )}
             </SortableContext>
           )}
         </CardContent>
