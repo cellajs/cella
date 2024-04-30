@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn } from '~/lib/utils';
 import { HighIcon } from './impact-icons/high';
+import { NotSelected } from './impact-icons/notSelected';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
 import { NoneIcon } from './impact-icons/none';
@@ -39,7 +40,9 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('impact');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(viewValue ? impacts[viewValue] : impacts[formValue] || null);
+  const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(
+    viewValue !== undefined && viewValue !== null ? impacts[viewValue] : impacts[formValue] || null,
+  );
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
@@ -61,16 +64,22 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
           size={mode === 'create' ? 'sm' : 'micro'}
           className={mode === 'create' ? 'w-full text-left font-light flex gap-2 justify-start border' : 'group-hover/task:opacity-100 opacity-70'}
         >
-          {selectedImpact && selectedImpact.value !== 'none' ? (
+          {mode === 'create' ? (
             <>
-              <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />
-              {mode === 'create' && selectedImpact.label}
+              {selectedImpact !== null ? (
+                <>
+                  <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />
+                  {mode === 'create' && selectedImpact.label}
+                </>
+              ) : (
+                <>
+                  <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+                  {mode === 'create' && 'Set impact'}
+                </>
+              )}
             </>
           ) : (
-            <>
-              <NoneIcon className="size-4 fill-primary" aria-hidden="true" title="Set impact" />
-              {mode === 'create' && 'Set impact'}
-            </>
+            <>{selectedImpact && <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />}</>
           )}
         </Button>
       </PopoverTrigger>
@@ -82,7 +91,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
             value={searchValue}
             onValueChange={(searchValue) => {
               // If the user types a number, select the Impact like useHotkeys
-              if ([0, 1, 2, 3, 4].includes(Number.parseInt(searchValue))) {
+              if ([0, 1, 2, 3].includes(Number.parseInt(searchValue))) {
                 setSelectedImpact(impacts[Number.parseInt(searchValue)]);
                 setOpenPopover(false);
                 setSearchValue('');
