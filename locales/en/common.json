@@ -384,5 +384,7 @@
   "workspace_settings.text": "Update your workspace settings and preferences.",
   "workspaces": "Workspaces",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "less_info": "Less info",
+  "more_info": "More info"
 }

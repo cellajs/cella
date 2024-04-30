@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { GripVertical } from 'lucide-react';
+import { CheckCheck, GripVertical, Paperclip } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { Checkbox } from '../ui/checkbox';
@@ -15,9 +15,11 @@ import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import SelectStatus from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
 import { WorkspaceContext } from '../workspaces/index.tsx';
+import useDoubleClick from '~/hooks/use-double-click.tsx';
+import { cn } from '~/lib/utils.ts';
 
 interface TaskCardProps {
   task: Task;
@@ -32,8 +34,10 @@ export interface TaskDragData {
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+
   const [innerTask, setInnerTask] = useState(task);
   const [isEditing, setIsEditing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const { updateTasks } = useContext(WorkspaceContext);
 
@@ -85,6 +89,22 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     setIsEditing(!isEditing);
   };
 
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useDoubleClick({
+    onSingleClick: (e) => {
+      console.log(e, 'single click');
+      if(isExpanded) toggleEditorState();
+      if(!isExpanded) setIsExpanded(true);
+    },
+    onDoubleClick: (e) => {
+      console.log(e, 'double click');
+      toggleEditorState();
+    },
+    ref: buttonRef,
+    latency: 250,
+  });
+
   return (
     <Card
       ref={setNodeRef}
@@ -94,34 +114,58 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
         status: innerTask.status,
       })}
     >
-      <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
+      <CardContent className={cn('p-2 pr-4 space-between gap-1 flex flex-col border-b border-secondary relative group/content', isExpanded ? 'is-expanded' : 'is-collapsed')}>
         <div className="flex flex-col gap-2">
           <div className="flex gap-2 w-full">
             <div className="flex flex-col gap-2 mt-[2px]">
               <SelectTaskType currentType={innerTask.type} changeTaskType={(newType) => handleChange('type', newType)} />
 
-              <Checkbox className="opacity-0 -translate-y-2 transition-all duration-700 group-hover/task:translate-y-0 group-hover/task:opacity-100" />
+              <Checkbox className="opacity-0 transition-opacity duration-700 group-hover/task:opacity-100" />
             </div>
-            {isEditing ? (
-              <TaskEditor
-                mode={mode}
-                markdown={innerTask.markdown}
-                setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown)}
-                toggleEditorState={toggleEditorState}
-                id={innerTask.id}
-              />
-            ) : (
-              <button type="button" onClick={toggleEditorState}>
-                <MDEditor.Markdown
-                  source={innerTask.markdown}
-                  style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                  className="prose font-light text-start"
+            <div className="flex flex-col">
+              {isEditing ? (
+                <TaskEditor
+                  mode={mode}
+                  markdown={innerTask.markdown}
+                  setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown)}
+                  toggleEditorState={toggleEditorState}
+                  id={innerTask.id}
                 />
-              </button>
-            )}
+              ) : (
+                <button type="button" ref={buttonRef}>
+                  <MDEditor.Markdown
+                    source={innerTask.markdown}
+                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                    className="prose font-light text-start"
+                  />
+                </button>
+              )}
+              {isExpanded && <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>}
+              <div className="opacity-50 group-hover/task:opacity-75 text-xs items-center font-light flex gap-1">
+                <div>F</div>
+                <div>&#183;</div>
+                <div>2d</div>
+                <div>&#183;</div>
+                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="collapsed-only flex gap-[2px]">
+                  <CheckCheck size={12} />
+                  <span className="text-success">1</span>
+                  <span className="font-light scale-90">/ 3</span>
+                </Button>
+                <div className="collapsed-only">&#183;</div>
+                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="collapsed-only flex gap-[2px]">
+                  <Paperclip size={12} />
+                  <span>3</span>
+                </Button>
+                <div className="collapsed-only">&#183;</div>
+                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(!isExpanded)} className="flex gap-[2px]">
+                <span className="group-[.is-collapsed]/content:hidden">{t('common:less_info')}</span>
+                <span className="group-[.is-expanded]/content:hidden">{t('common:more_info')}</span>
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between mt-1 gap-1">
+          <div className="flex items-center justify-between gap-1">
             <Button
               variant={'ghost'}
               {...attributes}
