@@ -239,7 +239,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels {...register('labels')} mode="create" changeLabels={onChange} />
+                  <SetLabels projectId={project.id} {...register('labels')} mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

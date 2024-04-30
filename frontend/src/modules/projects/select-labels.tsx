@@ -12,6 +12,7 @@ import { faker } from '@faker-js/faker';
 import { cn } from '~/lib/utils.ts';
 import type { TaskLabel } from '~/mocks/dataGeneration.ts';
 import { WorkspaceContext } from '../workspaces/index.tsx';
+import { useWorkspaceStore } from '~/store/workspace';
 
 const badgeStyle = (color: string) => ({
   borderColor: `${color}40`,
@@ -20,14 +21,17 @@ const badgeStyle = (color: string) => ({
 
 interface SetLabelsProps {
   mode: 'create' | 'edit';
+  projectId: string;
   viewValue?: TaskLabel[];
   changeLabels?: (labels: TaskLabel[]) => void;
 }
 
-const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
+const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps) => {
   const { t } = useTranslation();
   const { labels } = useContext(WorkspaceContext);
+  const { columns, setColumnRecentLabel } = useWorkspaceStore();
   const formValue = useFormContext?.()?.getValues('labels');
+  const [labelsForMap, setLabelsForMap] = useState<TaskLabel[]>(labels);
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
@@ -42,6 +46,7 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
     }
     const newLabel = labels.find((label) => label.value === value);
     if (newLabel) {
+      setColumnRecentLabel(projectId, newLabel);
       setSelectedLabels([...selectedLabels, newLabel]);
       return;
     }
@@ -71,6 +76,16 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
     if (mode === 'edit') return;
     setSelectedLabels(formValue || []);
   }, [formValue]);
+
+  useEffect(() => {
+    const recent = columns[projectId]?.recentLabels || [];
+    if (!isSearching && recent.length > 0) {
+      setLabelsForMap(recent);
+      return;
+    }
+
+    setLabelsForMap(labels);
+  }, [isSearching, columns]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
@@ -104,9 +119,8 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
             value={searchValue}
             onValueChange={(searchValue) => {
               // If the label types a number, select the label like useHotkeys
-              if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
+              if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(Number.parseInt(searchValue))) {
                 handleSelectClick(labels[Number.parseInt(searchValue)]?.value);
-                setOpenPopover(false);
                 setSearchValue('');
                 return;
               }
@@ -119,7 +133,7 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
           {!isSearching && <Kbd value="L" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
-              {labels.map((label, index) => (
+              {labelsForMap.map((label, index) => (
                 <CommandItem
                   key={label.id}
                   value={label.value}

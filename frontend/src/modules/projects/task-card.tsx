@@ -134,7 +134,12 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
 
             {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" />}
             <div className="grow">
-              <SetLabels changeLabels={(newLabels) => handleChange('labels', newLabels)} viewValue={innerTask.labels} mode="edit" />
+              <SetLabels
+                projectId={task.projectId}
+                changeLabels={(newLabels) => handleChange('labels', newLabels)}
+                viewValue={innerTask.labels}
+                mode="edit"
+              />
             </div>
 
             <div className="flex gap-2">

@@ -16,8 +16,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
-import { BoardColumn, BoardContainer } from './board-column';
-import type { Column } from './board-column';
+import { BoardColumn, BoardContainer, type Column } from './board-column';
 import { coordinateGetter } from './keyboard-preset';
 import { TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
@@ -33,13 +32,13 @@ export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
   const { projects, tasks } = useContext(WorkspaceContext);
-  const [columns, setColumns] = useState<Column[]>(projects || []);
   const pickedUpTaskColumn = useRef<string | null>(null);
-  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
+  const [innerColumns, setInnerColumns] = useState<Project[]>(projects || []);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const columnsId = useMemo(() => innerColumns.map((col) => col.id), [innerColumns]);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -52,7 +51,7 @@ export default function Board() {
   function getDraggingTaskData(taskId: string, columnId: string) {
     const tasksInColumn = tasks.filter((task) => task.projectId === columnId);
     const taskPosition = tasksInColumn.findIndex((task) => task.id === taskId);
-    const column = columns.find((col) => col.id === columnId);
+    const column = innerColumns.find((col) => col.id === columnId);
     return {
       tasksInColumn,
       taskPosition,
@@ -61,7 +60,7 @@ export default function Board() {
   }
 
   useEffect(() => {
-    setColumns(projects);
+    setInnerColumns(projects);
   }, [projects]);
 
   const announcements: Announcements = {
@@ -69,7 +68,7 @@ export default function Board() {
       if (!hasDraggableData(active)) return;
       if (active.data.current?.type === 'Column') {
         const startColumnIdx = columnsId.findIndex((id) => id === active.id);
-        const startColumn = columns[startColumnIdx];
+        const startColumn = innerColumns[startColumnIdx];
         return `Picked up Column ${startColumn?.name} at position: ${startColumnIdx + 1} of ${columnsId.length}`;
       }
       if (active.data.current?.type === 'Task') {
@@ -133,7 +132,7 @@ export default function Board() {
                     <BoardColumn column={{ id: project.id, name: project.name }} key={`${project.id}-column`} />
                   </ProjectContext.Provider>
                 </ResizablePanel>
-                {columns.length > index + 1 && (
+                {innerColumns.length > index + 1 && (
                   <ResizableHandle className="w-[2px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
                 )}
               </Fragment>
@@ -186,12 +185,12 @@ export default function Board() {
     const isActiveAColumn = activeData?.type === 'Column';
     if (!isActiveAColumn) return;
 
-    setColumns((columns) => {
-      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
+    setInnerColumns((innerColumns) => {
+      const activeColumnIndex = innerColumns.findIndex((col) => col.id === activeId);
 
-      const overColumnIndex = columns.findIndex((col) => col.id === overId);
+      const overColumnIndex = innerColumns.findIndex((col) => col.id === overId);
 
-      return arrayMove(columns, activeColumnIndex, overColumnIndex);
+      return arrayMove(innerColumns, activeColumnIndex, overColumnIndex);
     });
   }
 
