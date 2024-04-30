@@ -47,7 +47,6 @@ export function BoardColumnHeader({ column, children, isOverlay }: BoardColumnHe
       const container = document.getElementById(`${column.id}-viewport`);
       container?.scrollTo({ top: 0, behavior: 'smooth' });
     }
-
     setCreateForm(!createForm);
   };
 

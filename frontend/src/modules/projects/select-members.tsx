@@ -105,29 +105,31 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
           />
           {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
           <CommandList>
-            <CommandGroup>
-              {project.members.map((member, index) => (
-                <CommandItem
-                  key={member.name}
-                  value={member.name}
-                  onSelect={(name) => {
-                    handleSelectClick(name);
-                    setSearchValue('');
-                  }}
-                  className="group rounded-md flex justify-between items-center w-full leading-normal"
-                >
-                  <div className="flex items-center gap-3">
-                    <AvatarWrap type="USER" id={member.id} name={member.name} url={member.thumbnailUrl} className="h-6 w-6 text-xs" />
-                    <span>{member.name}</span>
-                  </div>
+            {project?.members && (
+              <CommandGroup>
+                {project.members.map((member, index) => (
+                  <CommandItem
+                    key={member.name}
+                    value={member.name}
+                    onSelect={(name) => {
+                      handleSelectClick(name);
+                      setSearchValue('');
+                    }}
+                    className="group rounded-md flex justify-between items-center w-full leading-normal"
+                  >
+                    <div className="flex items-center gap-3">
+                      <AvatarWrap type="USER" id={member.id} name={member.name} url={member.thumbnailUrl} className="h-6 w-6 text-xs" />
+                      <span>{member.name}</span>
+                    </div>
 
-                  <div className="flex items-center">
-                    {selectedUsers.some((user) => user.id === member.id) && <Check size={16} className="text-success" />}
-                    {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
+                    <div className="flex items-center">
+                      {selectedUsers.some((user) => user.id === member.id) && <Check size={16} className="text-success" />}
+                      {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>
