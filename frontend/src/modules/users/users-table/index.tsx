@@ -20,7 +20,7 @@ import { useColumns } from './columns';
 import Toolbar from './toolbar';
 
 // export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
-export type UserRow = User & { type: 'MASTER' | 'DETAIL'; expanded?: boolean; parent?: User };
+export type UserRow = User & { _type: 'MASTER' | 'DETAIL'; _expanded?: boolean; _parent?: User };
 
 export type UsersSearch = z.infer<typeof getUsersQuerySchema>;
 
@@ -110,7 +110,7 @@ const UsersTable = () => {
 
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
-    const rows = data?.map((item) => ({ ...item, type: 'MASTER' as const, expanded: false }));
+    const rows = data?.map((item) => ({ ...item, _type: 'MASTER' as const, _expanded: false }));
 
     if (rows) {
       setSelectedRows(new Set<string>([...selectedRows].filter((id) => rows.some((row) => row.id === id))));

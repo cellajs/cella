@@ -12,7 +12,7 @@ dayjs.extend(calendar);
 dayjs.extend(relativeTime);
 
 // Format a date to a relative time
-export function dateShort(date?: string | null) {
+export function dateShort(date?: string | null | Date) {
   if (!date) return '-';
 
   return dayjs(date).calendar(null, {

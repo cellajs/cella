@@ -24,7 +24,6 @@
   "engines": {
     "node": ">=20.9.0"
   },
-  "packageManager": "pnpm@8.14.3",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "lefthook install",

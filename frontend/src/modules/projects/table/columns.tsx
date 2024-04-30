@@ -1,27 +1,26 @@
 import { Link } from '@tanstack/react-router';
 
 import { useTranslation } from 'react-i18next';
-import type { User } from '~/types';
 
-import { ChevronRight, UserRoundCheck } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
-import { renderSelect } from '~/modules/common/data-table/select-column';
 import { Button } from '~/modules/ui/button';
-import type { UserRow } from '.';
-import { AvatarWrap } from '../../common/avatar-wrap';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import Expand from './expand';
-import RowEdit from './row-edit';
+import type { Task } from '~/mocks/dataGeneration';
+import SelectStatus from '../select-status';
 
-export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
+export type TaskRow = Task & { _type: 'MASTER' | 'DETAIL'; _expanded?: boolean; _parent?: Task };
+
+export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const mobileColumns: ColumnOrColumnGroup<UserRow>[] = [
+  const mobileColumns: ColumnOrColumnGroup<TaskRow>[] = [
     {
       ...CheckboxColumn,
       renderCell: (props) => props.row._type === 'MASTER' && CheckboxColumn.renderCell?.(props),
@@ -43,22 +42,14 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             params={{ idOrSlug: row.slug }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
-            <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
-            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
+            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.summary || '-'}</span>
           </Link>
         );
       },
     },
-    {
-      key: 'edit',
-      name: '',
-      visible: true,
-      width: 32,
-      renderCell: ({ row, tabIndex }) => row._type === 'MASTER' && <RowEdit user={row} tabIndex={tabIndex} callback={callback} />,
-    },
   ];
 
-  return useState<ColumnOrColumnGroup<UserRow>[]>(
+  return useState<ColumnOrColumnGroup<TaskRow>[]>(
     isMobile
       ? mobileColumns
       : [
@@ -94,38 +85,32 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
           },
           ...mobileColumns,
           {
-            key: 'email',
-            name: t('common:email'),
-            minWidth: 120,
+            key: 'status',
+            name: t('common:status'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row, tabIndex }) => {
-              if (row._type === 'DETAIL') return;
-
-              return (
-                <a
-                  href={`mailto:${row.email}`}
-                  tabIndex={tabIndex}
-                  className="truncate hover:underline underline-offset-4 font-light outline-0 ring-0"
-                >
-                  {row.email || '-'}
-                </a>
-              );
-            },
+            renderCell: ({ row }) =>
+              row._type === 'MASTER' && (
+                <div className="flex gap-2">
+                  <SelectStatus
+                    taskStatus={row.status}
+                    changeTaskStatus={(newStatus) => {
+                      console.log(newStatus);
+                    }}
+                  />
+                </div>
+              ),
+            minWidth: 120,
           },
           {
-            key: 'role',
-            name: t('common:role'),
+            key: 'project',
+            name: t('common:project'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row._type === 'MASTER' && t(row.role.toLowerCase()),
-            width: 100,
-            renderEditCell: renderSelect('role', [
-              { label: t('common:admin'), value: 'ADMIN' },
-              { label: t('common:user'), value: 'USER' },
-            ]),
+            renderCell: ({ row }) => row._type === 'MASTER' && row.projectId,
+            minWidth: 180,
           },
           {
             key: 'createdAt',
@@ -135,21 +120,6 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => row._type === 'MASTER' && dateShort(row.createdAt),
             minWidth: 180,
-          },
-          {
-            key: 'membershipCount',
-            name: t('common:memberships'),
-            sortable: false,
-            visible: true,
-            renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) =>
-              row._type === 'MASTER' && (
-                <>
-                  <UserRoundCheck className="mr-2 opacity-50" size={16} />
-                  {row.counts?.memberships | 0}
-                </>
-              ),
-            width: 140,
           },
         ],
   );
