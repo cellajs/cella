@@ -7,6 +7,7 @@ import { AppAlert } from './app-alert';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
 import { dialog } from './dialoger/state';
+import { DialogTitle } from '../ui/dialog';
 
 interface InviteUsersProps {
   organization?: Organization | null;
@@ -27,15 +28,15 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
 
     dialog.update('user-invite', {
       title: mode[0] ? (
-        <div className="flex items-center gap-2">
+        <DialogTitle className="flex items-center gap-2">
           <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
             {t('common:invite')}
           </button>
           <ChevronRight className="opacity-50" size={16} />
           <span>{mode[0] === 'search' ? t('common:search') : t('common:email')}</span>
-        </div>
+        </DialogTitle>
       ) : (
-        t('common:invite')
+        <DialogTitle>{t('common:invite')}</DialogTitle>
       ),
     });
   };

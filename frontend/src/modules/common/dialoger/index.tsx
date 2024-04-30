@@ -79,7 +79,7 @@ export function Dialoger() {
             {dialog.title || dialog.text ? (
               <DialogHeader>
                 {existingDialog?.title ? (
-                  existingDialog.title
+                  <DialogTitle>{existingDialog.title}</DialogTitle>
                 ) : dialog.title ? (
                   <DialogTitle>{typeof dialog.title === 'string' ? <span>{dialog.title}</span> : dialog.title}</DialogTitle>
                 ) : null}

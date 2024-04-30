@@ -114,15 +114,15 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
         status: innerTask.status,
       })}
     >
-      <CardContent className={cn('p-2 pr-4 space-between gap-1 flex flex-col border-b border-secondary relative group/content', isExpanded ? 'is-expanded' : 'is-collapsed')}>
-        <div className="flex flex-col gap-2">
+      <CardContent className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative group/content', isExpanded ? 'is-expanded' : 'is-collapsed')}>
+        <div className="flex flex-col gap-1">
           <div className="flex gap-2 w-full">
             <div className="flex flex-col gap-2 mt-[2px]">
               <SelectTaskType currentType={innerTask.type} changeTaskType={(newType) => handleChange('type', newType)} />
 
               <Checkbox className="opacity-0 transition-opacity duration-700 group-hover/task:opacity-100" />
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col grow">
               {isEditing ? (
                 <TaskEditor
                   mode={mode}
@@ -132,11 +132,11 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                   id={innerTask.id}
                 />
               ) : (
-                <button type="button" ref={buttonRef}>
+                <button type="button" ref={buttonRef} className="w-full">
                   <MDEditor.Markdown
                     source={innerTask.markdown}
                     style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                    className="prose font-light text-start"
+                    className="prose font-light text-start max-w-none"
                   />
                 </button>
               )}

@@ -221,7 +221,7 @@
   "offline_mode": "Offline mode",
   "offline_mode.text": "You appear to have no internet connection.",
   "onboarding_completed": "Great! Let's go.",
-  "onboarding_completed.text": "Have a look at the demo project in your menu.",
+  "onboarding_completed.text": "Have a look at the demo workspace in your menu.",
   "onboarding_step1": "Hi {{name}}, this is you?",
   "onboarding_step2": "Let's get started by creating your organization.",
   "onboarding_step3": "Invite one or more team members of {{organizationName}} to Cella.",

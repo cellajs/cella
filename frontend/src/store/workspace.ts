@@ -3,6 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { createJSONStorage } from 'zustand/middleware';
 import type { TaskLabel } from '~/mocks/dataGeneration';
+import { config } from 'config';
 
 type Column = {
   [key: string]: {
@@ -81,7 +82,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
       {
         version: 1,
-        name: 'workspace',
+        name: `${config.slug}-workspace`,
         partialize: (state) => ({
           columns: state.columns,
         }),

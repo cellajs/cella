@@ -30,7 +30,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
 
   const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
-  const icedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
+  const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
 
   const [showIced, setShowIced] = useState(false);
   const [showAccepted, setShowAccepted] = useState(false);
@@ -48,7 +48,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
                 size="sm"
                 className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
               >
-                <span className="text-xs">{acceptedCount} accepted tasks</span>
+                <span className="text-xs">{acceptedCount} accepted</span>
                 {!!acceptedCount && (
                   <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
                 )}
@@ -69,7 +69,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
                 size="sm"
                 className="w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5 text-sm -mt-[1px]"
               >
-                <span className="text-xs">{icedCount} iced tasks</span>
+                <span className="text-xs">{icedCount} iced</span>
                 {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
               </Button>
             </SortableContext>

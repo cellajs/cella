@@ -66,7 +66,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
           >
             {viewOption.options.map(({ id, label }) => (
               <ToggleGroupItem key={id} size="sm" value={id} className="w-full">
-                <span className="ml-2 text-sm font-normal">{t(`common:${label}`)}</span>
+                <span className="ml-2 text-xs font-normal">{t(`common:${label}`)}</span>
               </ToggleGroupItem>
             ))}
           </ToggleGroup>

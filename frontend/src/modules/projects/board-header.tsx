@@ -47,6 +47,7 @@ function BoardHeader() {
             dialog(<AddProjects dialog />, {
               //callback={(project) => callback([project], 'create')} dialog
               className: 'md:max-w-4xl',
+              id: 'add-projects',
               title: t('common:add_projects'),
             });
           }}
