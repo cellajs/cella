@@ -5,42 +5,50 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { useEffect } from 'react';
+import { useFormContext } from 'react-hook-form';
 
-interface Option {
+interface ComboBoxOption {
   value: string;
-  shownText: string;
+  label: string;
 }
 
 interface ComboboxProps {
-  options: Option[];
-  value: string;
+  options: ComboBoxOption[];
+  name: string;
   onChange: (newValue: string) => void;
   placeholder?: string;
   searchPlaceholder?: string;
-  renderOption?: (option: Option) => React.ReactNode;
+  renderOption?: (option: ComboBoxOption) => React.ReactNode;
 }
 
-const Combobox: React.FC<ComboboxProps> = ({ options, value, onChange, placeholder, searchPlaceholder, renderOption }) => {
+const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholder, searchPlaceholder, renderOption }) => {
+  const formValue = useFormContext?.()?.getValues(name);
+
   const [open, setOpen] = React.useState(false);
-  const [innerValue, setInnerValue] = React.useState(value);
+  const [selectedOption, setSelectedOption] = React.useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
   const [searchValue, setSearchValue] = React.useState('');
 
-  const handleSelect = (newValue: string) => {
-    setInnerValue(newValue);
-    onChange(newValue);
+  const handleSelect = (newResult: string) => {
+    const result = options.find((o) => o.label === newResult);
+    if (!result) return;
+    setSelectedOption(result);
+    onChange(result.value);
     setOpen(false);
     setSearchValue('');
   };
+
+  // Whenever the form value changes (also on reset), update the internal state
+  useEffect(() => {
+    const selected = options.find((o) => o.value === formValue);
+    setSelectedOption(selected || null);
+  }, [formValue]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
-          {innerValue.length > 0 ? (
-            <div>{renderOption ? renderOption({ value: innerValue, shownText: innerValue }) : innerValue}</div>
-          ) : (
-            placeholder || ''
-          )}
+          {selectedOption ? <div>{renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}</div> : placeholder || ''}
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -57,17 +65,17 @@ const Combobox: React.FC<ComboboxProps> = ({ options, value, onChange, placehold
           />
           <ScrollArea className="max-h-[30vh] overflow-auto">
             <CommandList>
-              <CommandEmpty>No such option found.</CommandEmpty>
+              <CommandEmpty>No option found</CommandEmpty>
               <CommandGroup>
                 {options.map((option) => (
                   <CommandItem
-                    key={option.value}
-                    value={option.value}
+                    key={option.value?.trim().toLowerCase() + Math.floor(Math.random() * 1000)}
+                    value={option.label}
                     onSelect={handleSelect}
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
-                    <div>{renderOption ? renderOption(option) : <> {option.shownText}</>}</div>
-                    <Check size={16} className={cn('text-success', value === option.value ? 'opacity-100' : 'opacity-0')} />
+                    <div>{renderOption ? renderOption(option) : <> {option.label}</>}</div>
+                    <Check size={16} className={cn('text-success', formValue === option.value ? 'opacity-100' : 'opacity-0')} />
                   </CommandItem>
                 ))}
               </CommandGroup>

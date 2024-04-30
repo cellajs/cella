@@ -163,12 +163,12 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <FormField
           control={form.control}
           name="timezone"
-          render={({ field: { value, onChange } }) => (
+          render={({ field: { onChange } }) => (
             <FormItem name="timezone">
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectTimezone value={value || ''} onChange={onChange} />
+                  <SelectTimezone onChange={onChange} />
                 </Suspense>
               </FormControl>
               <FormMessage />
@@ -179,12 +179,12 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <FormField
           control={form.control}
           name="country"
-          render={({ field: { value, onChange } }) => (
+          render={({ field: { onChange } }) => (
             <FormItem name="country">
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectCountry value={value || ''} onChange={onChange} />
+                  <SelectCountry onChange={onChange} />
                 </Suspense>
               </FormControl>
               <FormMessage />

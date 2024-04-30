@@ -3,20 +3,20 @@ import { useTranslation } from 'react-i18next';
 import Combobox from '~/modules/ui/combobox';
 import CountryFlag from '../country-flag';
 
-const SelectCountry = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
+const SelectCountry = ({ onChange }: { onChange: (value: string) => void }) => {
   const { t } = useTranslation();
-  const options = countries.map((country) => ({ value: country.name, shownText: country.name }));
+  const options = countries.map((country) => ({ value: country.code, label: country.name }));
 
-  const renderCountryOption = (option: { value: string; shownText: string }) => (
+  const renderCountryOption = (option: { value: string; label: string }) => (
     <div className="flex items-center">
-      <CountryFlag countryCode={countries.find((c) => c.name === option.value)?.code || ''} imgType="png" className="mr-2" />
-      {option.shownText}
+      <CountryFlag countryCode={option.value} imgType="png" className="mr-2" />
+      {option.label}
     </div>
   );
   return (
     <Combobox
       options={options}
-      value={value}
+      name="country"
       onChange={onChange}
       placeholder={t('common:placeholder.select_country')}
       searchPlaceholder={t('common:placeholder.search_country')}
