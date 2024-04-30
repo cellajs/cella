@@ -189,9 +189,10 @@ const generalRoutes = app
 
           logEvent('User added to organization', { user: user.id, organization: organization.id });
 
-          sendSSE(user.id, 'new_membership', {
+          sendSSE(user.id, 'new_organization_membership', {
             ...organization,
             userRole: role || 'MEMBER',
+            type: 'ORGANIZATION',
           });
 
           continue;

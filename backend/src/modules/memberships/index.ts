@@ -181,7 +181,18 @@ const membershipRoutes = app
     // * Send SSE events for the memberships that were deleted
     for (const membership of allowedTargets) {
       // * Send the event to the user if they are a member of the organization
-      sendSSE(membership.userId, 'remove_organization_membership', { membership });
+
+      if (type === 'ORGANIZATION') {
+        sendSSE(membership.userId, 'remove_organization_membership', {
+          id: organization?.id,
+          userId: membership.userId,
+        });
+      } else {
+        sendSSE(membership.userId, 'remove_workspace_membership', {
+          id: workspace?.id,
+          userId: membership.userId,
+        });
+      }
 
       logEvent('Member deleted', { membership: membership.id });
     }

@@ -34,8 +34,8 @@ export interface InviteProps {
 
 // Invite users
 export const invite = async ({ idOrSlug, ...rest }: InviteProps) => {
-  const response = await client[':idOrSlug?'].invite.$post({
-    param: { idOrSlug },
+  const response = await client.invite.$post({
+    query: { idOrSlug },
     json: rest,
   });
 
