@@ -37,7 +37,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
 
   return (
     <BoardColumnHeader column={column} isOverlay={isOverlay}>
-      <ScrollArea id={column.id}>
+      <ScrollArea id={column.id} size="indicatorVertical">
         <CardContent className="flex flex-grow flex-col p-0 group/column">
           {!!tasks.length && (
             <SortableContext items={tasksIds}>
