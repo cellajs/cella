@@ -47,12 +47,12 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <Button variant="plain" size="micro" className="border-r-0 rounded-r-none" onClick={nextStatusClick} disabled={selectedStatus.value === 6}>
+      <Button variant="outlineGhost" size="micro" className="border-r-0 rounded-r-none" onClick={nextStatusClick} disabled={selectedStatus.value === 6}>
         {statuses[selectedStatus.value].button}
       </Button>
 
       <PopoverTrigger asChild>
-        <Button aria-label="Set status" variant="plain" size="micro" className="rounded-none rounded-r -ml-2">
+        <Button aria-label="Set status" variant="outlineGhost" size="micro" className="rounded-none rounded-r -ml-2">
           <ChevronDown size={12} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>

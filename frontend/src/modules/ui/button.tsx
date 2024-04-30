@@ -21,7 +21,7 @@ const buttonVariants = cva(
         cell: 'text-regular underline-offset-4 hover:underline !ring-offset-transparent !ring-transparent opacity-75 hover:opacity-100',
         plain: 'text-primary bg-primary/5 border border-primary/30 hover:bg-primary/10 hover:border-primary/50',
         glow: 'outline-glow-button bg-background !rounded-full relative active:bk-background',
-        outlineGhost: 'border border-input bg-background opacity-80 hover:opacity-100 hover:text-accent-foreground',
+        outlineGhost: 'border border-foreground/20 bg-background/20 hover:bg-background/40 hover:border-foreground/30 hover:text-accent-foreground',
         gradient:
           'before:bg-primary before:rounded-md after:rounded-md z-0 bg-transparent relative text-primary-foreground gradient-button hover:before:bg-primary/80',
         none: ' bg-transparent border-none',
