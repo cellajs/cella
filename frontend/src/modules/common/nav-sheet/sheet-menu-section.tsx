@@ -1,6 +1,6 @@
 import { ChevronDown, Plus, Settings2 } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sticky from 'react-sticky-el';
 import { toast } from 'sonner';
@@ -38,6 +38,9 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   const [isArchivedVisible, setArchivedVisible] = useState(false);
   const { activeSections, toggleSection, activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
+
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const archivedRef = useRef<HTMLDivElement>(null);
 
   const [unarchive, setUnarchive] = useState<MenuList>(
     data.items.filter((item) => !item.archived).sort((a, b) => sortById(a, b, activeItemsOrder[section.id as keyof UserMenu])),
@@ -133,6 +136,36 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     setUnarchive(data.items.filter((item) => !item.archived).sort((a, b) => sortById(a, b, activeItemsOrder[section.id as keyof UserMenu])));
   }, [data]);
 
+  useEffect(() => {
+    if (!sectionRef.current) return;
+
+    const elements = sectionRef.current.querySelectorAll('*');
+    for (const el of elements) {
+      if (el instanceof HTMLElement) {
+        if (!isSectionVisible) {
+          el.setAttribute('tabindex', '-1');
+        } else {
+          el.removeAttribute('tabindex');
+        }
+      }
+    }
+  }, [sectionRef, isSectionVisible]);
+
+  useEffect(() => {
+    if (!archivedRef.current) return;
+
+    const elements = archivedRef.current.querySelectorAll('*');
+    for (const el of elements) {
+      if (el instanceof HTMLElement) {
+        if (!isArchivedVisible) {
+          el.setAttribute('tabindex', '-1');
+        } else {
+          el.removeAttribute('tabindex');
+        }
+      }
+    }
+  }, [archivedRef, isArchivedVisible]);
+
   return (
     <>
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
@@ -171,7 +204,10 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
           )}
         </div>
       </Sticky>
-      <div className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}>
+      <div
+        ref={sectionRef}
+        className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}
+      >
         <ul className="overflow-hidden">
           <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
             {optionsView ? renderOptions(unarchive) : renderItems(unarchive, data.canCreate, false)}
@@ -179,6 +215,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
               <>
                 <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archived.length} isArchivedVisible={isArchivedVisible} />
                 <div
+                  ref={archivedRef}
                   className={`grid transition-[grid-template-rows] ${
                     isArchivedVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   } ease-in-out duration-300`}
