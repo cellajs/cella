@@ -7,7 +7,7 @@ import { type UpdateOrganizationParams, updateOrganization } from '~/api/organiz
 import type { Organization } from '~/types';
 
 import { Loader2 } from 'lucide-react';
-import { Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -22,9 +22,9 @@ import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import DomainsFormField from '../common/form-fields/domains';
-import { Combobox } from '../ui/combobox';
-import timezones from '~/json/timezones.json';
-import countries from '~/json/countries.json';
+
+const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
+const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 
 interface Props {
   organization: Organization;
@@ -168,13 +168,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <Combobox
-                    data={timezones}
-                    searchPlaceholder={t('common:placeholder.search_timezone')}
-                    placeholder={t('common:placeholder.select_timezone')}
-                    value={value || ''}
-                    onChange={onChange}
-                  />
+                  <SelectTimezone value={value || ''} onChange={onChange} />
                 </Suspense>
               </FormControl>
               <FormMessage />
@@ -190,13 +184,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <Combobox
-                    data={countries}
-                    searchPlaceholder={t('common:placeholder.search_country')}
-                    placeholder={t('common:placeholder.select_country')}
-                    value={value || ''}
-                    onChange={onChange}
-                  />
+                  <SelectCountry value={value || ''} onChange={onChange} />
                 </Suspense>
               </FormControl>
               <FormMessage />

@@ -1,34 +1,26 @@
 import * as React from 'react';
 import { ChevronDown, Check } from 'lucide-react';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './command';
-import { Popover, PopoverContent, PopoverTrigger } from './popover';
-import { Button } from './button';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { cn } from '~/lib/utils';
-import { useTranslation } from 'react-i18next';
-import { ScrollArea } from './scroll-area';
-import CountryFlag from '../common/country-flag';
+import { Button } from '~/modules/ui/button';
+import { ScrollArea } from '~/modules/ui/scroll-area';
 
-type TimeZone = {
+interface Option {
   value: string;
-  abbr: string;
-  offset: number;
-  isdst: boolean;
-  text: string;
-  utc: string[];
-};
-
-type Country = { name: string; code: string };
-
-interface ComboboxProp {
-  data: Country[] | TimeZone[];
-  value: string;
-  placeholder?: string;
-  searchPlaceholder?: string;
-  onChange: (newValue: string) => void;
+  shownText: string;
 }
 
-export function Combobox({ data, value, placeholder, searchPlaceholder, onChange }: ComboboxProp) {
-  const { t } = useTranslation();
+interface ComboboxProps {
+  options: Option[];
+  value: string;
+  onChange: (newValue: string) => void;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  renderOption?: (option: Option) => React.ReactNode;
+}
+
+const Combobox: React.FC<ComboboxProps> = ({ options, value, onChange, placeholder, searchPlaceholder, renderOption }) => {
   const [open, setOpen] = React.useState(false);
   const [innerValue, setInnerValue] = React.useState(value);
   const [searchValue, setSearchValue] = React.useState('');
@@ -40,49 +32,15 @@ export function Combobox({ data, value, placeholder, searchPlaceholder, onChange
     setSearchValue('');
   };
 
-  const isCountryArray = (data: Country[] | TimeZone[]): data is Country[] => {
-    return data[0] && 'name' in data[0];
-  };
-
-  const renderOptions = () => {
-    if (isCountryArray(data)) {
-      return data.map((country) => (
-        <CommandItem
-          key={country.code}
-          value={country.name}
-          onSelect={handleSelect}
-          className="group rounded-md flex justify-between items-center w-full leading-normal"
-        >
-          <div>
-            <CountryFlag countryCode={country.code} imgType="png" className="mr-2" />
-            {country.name}
-          </div>
-
-          <Check size={16} className={cn('text-success', value === country.name ? 'opacity-100' : 'opacity-0')} />
-        </CommandItem>
-      ));
-    }
-    return data.map((timezone) => (
-      <CommandItem
-        key={timezone.value}
-        value={timezone.value}
-        onSelect={handleSelect}
-        className="group rounded-md flex justify-between items-center w-full leading-normal"
-      >
-        {timezone.text}
-        <Check size={16} className={cn('text-success', value === timezone.value ? 'opacity-100' : 'opacity-0')} />
-      </CommandItem>
-    ));
-  };
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
-          <div>
-            {isCountryArray(data) && <CountryFlag countryCode={data.find((c) => c.name === innerValue)?.code || ''} imgType="png" className="mr-2" />}
-            {innerValue.length > 0 ? innerValue : placeholder || ''}
-          </div>
+          {innerValue.length > 0 ? (
+            <div>{renderOption ? renderOption({ value: innerValue, shownText: innerValue }) : innerValue}</div>
+          ) : (
+            placeholder || ''
+          )}
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -95,16 +53,30 @@ export function Combobox({ data, value, placeholder, searchPlaceholder, onChange
               setSearchValue(searchValue);
             }}
             clearValue={setSearchValue}
-            placeholder={searchPlaceholder || t('common:search')}
+            placeholder={searchPlaceholder || ''}
           />
           <ScrollArea className="max-h-[30vh] overflow-auto">
             <CommandList>
-              <CommandEmpty>No such {isCountryArray(data) ? 'country' : 'timezone'} found.</CommandEmpty>
-              <CommandGroup>{renderOptions()}</CommandGroup>
+              <CommandEmpty>No such option found.</CommandEmpty>
+              <CommandGroup>
+                {options.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.value}
+                    onSelect={handleSelect}
+                    className="group rounded-md flex justify-between items-center w-full leading-normal"
+                  >
+                    <div>{renderOption ? renderOption(option) : <> {option.shownText}</>}</div>
+                    <Check size={16} className={cn('text-success', value === option.value ? 'opacity-100' : 'opacity-0')} />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
             </CommandList>
           </ScrollArea>
         </Command>
       </PopoverContent>
     </Popover>
   );
-}
+};
+
+export default Combobox;
