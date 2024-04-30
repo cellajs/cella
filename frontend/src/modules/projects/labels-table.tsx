@@ -10,7 +10,7 @@ import { Bird } from 'lucide-react';
 import { DataTable } from '../common/data-table';
 import type { SortColumn } from 'react-data-grid';
 import { dateShort } from '~/lib/utils';
-import type { Label } from '~/mocks/dataGeneration';
+import type { Label } from '~/mocks/workspaces';
 
 interface Props {
   query?: string;
@@ -21,7 +21,7 @@ interface Props {
   order: LabelsParam['order'];
 }
 
-const Toolbar = ({query, setQuery, isFiltered, onResetFilters }: Props) => {
+const Toolbar = ({ query, setQuery, isFiltered, onResetFilters }: Props) => {
   const containerRef = useRef(null);
 
   return (
@@ -79,7 +79,7 @@ interface LabelsParam {
   order?: 'desc' | 'asc' | undefined;
 }
 
-const LabelsTable = ({labels}: {labels: Label[]}) => {
+const LabelsTable = ({ labels }: { labels: Label[] }) => {
   const [columns] = useColumns();
   const defaultSearch: LabelsParam = { sort: 'name', order: 'asc' };
   const [search] = useState(defaultSearch);

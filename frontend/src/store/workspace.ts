@@ -1,9 +1,8 @@
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
-import { createJSONStorage } from 'zustand/middleware';
-import type { TaskLabel } from '~/mocks/dataGeneration';
 import { config } from 'config';
+import { create } from 'zustand';
+import { createJSONStorage, devtools, persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import type { TaskLabel } from '~/mocks/workspaces';
 
 type Column = {
   [key: string]: {

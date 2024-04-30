@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Check, UserX } from 'lucide-react';
-import type { TaskUser } from '~/mocks/dataGeneration.ts';
+import type { TaskUser } from '~/mocks/workspaces.ts';
 import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { Kbd } from '../common/kbd.tsx';

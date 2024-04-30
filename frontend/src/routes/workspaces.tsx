@@ -13,10 +13,21 @@ const Projects = lazy(() => import('~/modules/projects'));
 export const WorkspaceRoute = createRoute({
   path: 'workspace/$idOrSlug',
   staticData: { pageTitle: 'Workspace', hideFooter: true },
-  beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/projects'),
+  beforeLoad: ({ location, params }) =>  noDirectAccess(location.pathname, params.idOrSlug, '/projects'),
   getParentRoute: () => IndexRoute,
   loader: async ({ params: { idOrSlug } }) => {
     queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+
+    const { worker } = await import('~/mocks/worker')
+ 
+    // `worker.start()` returns a Promise that resolves
+    // once the Service Worker is up and ready to intercept requests.
+    return worker.start()
+  },
+  onLeave: async () => {
+    console.log('Stopping worker')
+    const { worker } = await import('~/mocks/worker')
+    return worker.stop()
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (

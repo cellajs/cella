@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { dateShort } from '~/lib/utils';
-import type { Task } from '~/mocks/dataGeneration';
+import type { Task } from '~/mocks/workspaces';
 
 const Expand = ({ row }: { row: Task }) => {
   const { t } = useTranslation();
@@ -18,9 +18,7 @@ const Expand = ({ row }: { row: Task }) => {
         <div className="font-medium pr-4">{t('common:modified')}</div>
         <div>{dateShort(row.modifiedAt)}</div>
         <div className="font-medium pr-4">{t('common:modified_by')}</div>
-        <div>
-          -
-        </div>
+        <div>-</div>
       </div>
     </div>
   );

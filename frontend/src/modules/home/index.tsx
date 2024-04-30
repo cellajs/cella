@@ -14,7 +14,7 @@ const Home = () => {
 
         {config.has.onboarding && (
           <div className="mt-8 text-center">
-            <Link to="/welcome">Show onboarding (in development)</Link>
+            <Link to="/welcome">Show onboarding (under development)</Link>
           </div>
         )}
       </div>

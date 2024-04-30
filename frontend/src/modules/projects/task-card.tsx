@@ -8,7 +8,7 @@ import { Card, CardContent } from '~/modules/ui/card';
 import { Checkbox } from '../ui/checkbox';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
-import type { Task } from '~/mocks/dataGeneration';
+import type { Task } from '~/mocks/workspaces.ts';
 import { SelectImpact } from './select-impact.tsx';
 import AssignMembers from './select-members.tsx';
 import SetLabels from './select-labels.tsx';
@@ -94,8 +94,8 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   useDoubleClick({
     onSingleClick: (e) => {
       console.log(e, 'single click');
-      if(isExpanded) toggleEditorState();
-      if(!isExpanded) setIsExpanded(true);
+      if (isExpanded) toggleEditorState();
+      if (!isExpanded) setIsExpanded(true);
     },
     onDoubleClick: (e) => {
       console.log(e, 'double click');
@@ -114,7 +114,12 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
         status: innerTask.status,
       })}
     >
-      <CardContent className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative group/content', isExpanded ? 'is-expanded' : 'is-collapsed')}>
+      <CardContent
+        className={cn(
+          'p-2 space-between gap-1 flex flex-col border-b border-secondary relative group/content',
+          isExpanded ? 'is-expanded' : 'is-collapsed',
+        )}
+      >
         <div className="flex flex-col gap-1">
           <div className="flex gap-2 w-full">
             <div className="flex flex-col gap-2 mt-[2px]">
@@ -158,8 +163,8 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                 </Button>
                 <div className="collapsed-only">&#183;</div>
                 <Button variant="ghost" size="micro" onClick={() => setIsExpanded(!isExpanded)} className="flex gap-[2px]">
-                <span className="group-[.is-collapsed]/content:hidden">{t('common:less_info')}</span>
-                <span className="group-[.is-expanded]/content:hidden">{t('common:more_info')}</span>
+                  <span className="group-[.is-collapsed]/content:hidden">{t('common:less_info')}</span>
+                  <span className="group-[.is-expanded]/content:hidden">{t('common:more_info')}</span>
                 </Button>
               </div>
             </div>
