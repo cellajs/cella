@@ -10,7 +10,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
 import { faker } from '@faker-js/faker';
 import { cn } from '~/lib/utils.ts';
-import type { TaskLabel } from '~/mocks/dataGeneration.ts';
+import type { TaskLabel } from '~/mocks/workspaces.ts';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import { useWorkspaceStore } from '~/store/workspace';
 

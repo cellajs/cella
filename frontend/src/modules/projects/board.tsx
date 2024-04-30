@@ -21,7 +21,7 @@ import { coordinateGetter } from './keyboard-preset';
 import { TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
 import { WorkspaceContext } from '../workspaces';
-import type { Project, Task } from '~/mocks/dataGeneration';
+import type { Project, Task } from '~/mocks/workspaces';
 
 interface ProjectContextValue {
   tasks: Task[];

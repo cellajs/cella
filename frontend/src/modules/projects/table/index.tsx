@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { WorkspaceContext } from '../../workspaces';
-import type { Project, Task } from '~/mocks/dataGeneration';
+import type { Project, Task } from '~/mocks/workspaces';
 import { DataTable } from '~/modules/common/data-table';
 import { type TaskRow, useColumns } from './columns';
 import type { RowsChangeData } from 'react-data-grid';

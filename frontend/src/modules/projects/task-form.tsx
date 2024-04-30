@@ -17,7 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { Bolt, Bug, Star } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
-import type { Task, TaskUser } from '~/mocks/dataGeneration.ts';
+import type { Task, TaskUser } from '~/mocks/workspaces.ts';
 import AssignMembers from './select-members.tsx';
 import SetLabels from './select-labels.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';

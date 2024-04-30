@@ -11,7 +11,7 @@ import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import Expand from './expand';
-import type { Task } from '~/mocks/dataGeneration';
+import type { Task } from '~/mocks/workspaces';
 import SelectStatus from '../select-status';
 
 export type TaskRow = Task & { _type: 'MASTER' | 'DETAIL'; _expanded?: boolean; _parent?: Task };
