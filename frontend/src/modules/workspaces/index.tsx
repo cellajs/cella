@@ -1,6 +1,6 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
-import { createContext, useEffect, useRef, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import type { Label, Project, Task } from '~/mocks/workspaces';
 import { WorkspaceRoute } from '~/routes/workspaces';
@@ -32,8 +32,6 @@ const WorkspacePage = () => {
   const [labels, setLabels] = useState<Label[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  const isInitialMount = useRef(true);
-
   const updateTasks = (task: Task) => {
     if (!task) return;
 
@@ -51,11 +49,6 @@ const WorkspacePage = () => {
   };
 
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return; // Stop mock worker from running twice in Strict mode
-    }
-
     fetch('/mock/workspace-data')
       .then((response) => response.json())
       .then((data) => {
