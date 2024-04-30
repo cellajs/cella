@@ -31,14 +31,15 @@ const impacts = [
 
 interface SelectImpactProps {
   mode: 'edit' | 'create';
+  viewValue?: TaskImpact;
   changeTaskImpact?: (value: TaskImpact) => void;
 }
 
-export const SelectImpact = ({ mode = 'create', changeTaskImpact }: SelectImpactProps) => {
+export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: SelectImpactProps) => {
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('impact');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(formValue ? impacts[formValue] : null);
+  const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(viewValue ? impacts[viewValue] : impacts[formValue] || null);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
@@ -47,8 +48,8 @@ export const SelectImpact = ({ mode = 'create', changeTaskImpact }: SelectImpact
 
   // Whenever the form value changes (also on reset), update the internal state
   useEffect(() => {
-    const updatedValue = impacts[formValue];
-    setSelectedImpact(updatedValue || null);
+    if (mode === 'edit') return;
+    setSelectedImpact(impacts[formValue] || null);
   }, [formValue]);
 
   return (

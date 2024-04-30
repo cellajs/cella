@@ -40,7 +40,7 @@ const WorkspacePage = () => {
 
     // Add new task
     if (!tasks.find((t) => t.id === task.id)) {
-      const updatedTasks = [...tasks, task]
+      const updatedTasks = [...tasks, task];
       return setTasks(updatedTasks.sort((a, b) => b.status - a.status));
     }
     // Update existing task
@@ -48,7 +48,6 @@ const WorkspacePage = () => {
       if (t.id !== task.id) return t;
       return { ...t, ...task };
     });
-
     setTasks(updatedTasks.sort((a, b) => b.status - a.status));
   };
 

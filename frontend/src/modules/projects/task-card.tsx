@@ -132,13 +132,13 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               <GripVertical size={16} />
             </Button>
 
-            {innerTask.type !== 'bug' && <SelectImpact mode="edit" />}
+            {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" />}
             <div className="grow">
-              <SetLabels changeLabels={(newLabels) => handleChange('labels', newLabels)} taskLabels={innerTask.labels} mode="edit" />
+              <SetLabels changeLabels={(newLabels) => handleChange('labels', newLabels)} viewValue={innerTask.labels} mode="edit" />
             </div>
 
             <div className="flex gap-2">
-              <AssignMembers mode="edit" changeAssignedTo={(newMembers) => handleChange('assignedTo', newMembers)} />
+              <AssignMembers mode="edit" viewValue={innerTask.assignedTo} changeAssignedTo={(newMembers) => handleChange('assignedTo', newMembers)} />
               <SelectStatus taskStatus={innerTask.status} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
             </div>
           </div>

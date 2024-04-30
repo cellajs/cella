@@ -19,17 +19,17 @@ const badgeStyle = (color: string) => ({
 });
 
 interface SetLabelsProps {
-  taskLabels?: TaskLabel[];
   mode: 'create' | 'edit';
+  viewValue?: TaskLabel[];
   changeLabels?: (labels: TaskLabel[]) => void;
 }
 
-const SetLabels = ({ mode, taskLabels, changeLabels }: SetLabelsProps) => {
+const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
   const { t } = useTranslation();
   const { labels } = useContext(WorkspaceContext);
   const formValue = useFormContext?.()?.getValues('labels');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>(taskLabels || []);
+  const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
@@ -55,7 +55,7 @@ const SetLabels = ({ mode, taskLabels, changeLabels }: SetLabelsProps) => {
     };
     setSelectedLabels((prev) => [...prev, newLabel]);
     setSearchValue('');
-  //  changeLabels?.([...passedLabels, newLabel]);
+    //  changeLabels?.([...passedLabels, newLabel]);
   };
 
   // Open on key press
@@ -68,7 +68,8 @@ const SetLabels = ({ mode, taskLabels, changeLabels }: SetLabelsProps) => {
 
   // Whenever the form value changes (also on reset), update the internal state
   useEffect(() => {
-  //  setSelectedLabels(formValue || mode === 'create' ? [] : passedLabels);
+    if (mode === 'edit') return;
+    setSelectedLabels(formValue || []);
   }, [formValue]);
 
   return (
@@ -133,7 +134,7 @@ const SetLabels = ({ mode, taskLabels, changeLabels }: SetLabelsProps) => {
                     <span>{label.value}</span>
                   </div>
                   <div className="flex items-center">
-                    {selectedLabels.includes(label) && <Check size={16} className="text-success" />}
+                    {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
                     {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
                   </div>
                 </CommandItem>

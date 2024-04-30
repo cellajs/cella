@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type React from 'react';
-import type { UseFormProps } from 'react-hook-form';
+import { useForm, type UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { useCallback, useContext, useMemo } from 'react';
@@ -61,6 +61,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+  const { register } = useForm<FormValues>();
 
   const { updateTasks } = useContext(WorkspaceContext);
   const { project } = useContext(ProjectContext);
@@ -70,16 +71,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     onCloseForm?.();
   };
 
-  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
-    (event) => {
-      if (event.key !== 'Escape') return;
-      handleCloseForm()
-    },
-    [],
-  );
+  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback((event) => {
+    if (event.key !== 'Escape') return;
+    handleCloseForm();
+  }, []);
 
   const handleHotKeysEscKeyPress = useCallback(() => {
-    handleCloseForm()
+    handleCloseForm();
   }, []);
 
   useHotkeys([['Escape', handleHotKeysEscKeyPress]]);
@@ -108,7 +106,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     mutationFn: createWorkspace, // change to create task
     onSuccess: () => {
       // form.reset();
-      handleCloseForm()
+      handleCloseForm();
     },
   });
 
@@ -142,6 +140,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               <FormItem>
                 <FormControl>
                   <ToggleGroup
+                    {...register('type')}
                     type="single"
                     variant="merged"
                     className="gap-0 w-full"
@@ -178,6 +177,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               <FormItem>
                 <FormControl>
                   <MDEditor
+                    {...register('markdown')}
                     onKeyDown={handleMDEscKeyPress}
                     value={value}
                     defaultTabEnable={true}
@@ -200,7 +200,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           }}
         />
 
-        {form.getValues('type') !== 'chore' && (
+        {form.getValues('type') !== 'bug' && (
           <FormField
             control={form.control}
             name="impact"
@@ -208,7 +208,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               return (
                 <FormItem>
                   <FormControl>
-                    <SelectImpact mode="create" changeTaskImpact={onChange} />
+                    <SelectImpact {...register('impact')} mode="create" changeTaskImpact={onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -224,7 +224,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <AssignMembers mode="create" changeAssignedTo={onChange} />
+                  <AssignMembers {...register('assignedTo')} mode="create" changeAssignedTo={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -239,7 +239,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels mode="create" changeLabels={onChange} />
+                  <SetLabels {...register('labels')} mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

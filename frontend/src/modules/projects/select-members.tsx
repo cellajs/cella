@@ -14,15 +14,16 @@ import { ProjectContext } from './board';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';
+  viewValue?: TaskUser[];
   changeAssignedTo?: (users: TaskUser[]) => void;
 }
 
-const AssignMembers = ({ mode, changeAssignedTo }: AssignMembersProps) => {
+const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps) => {
   const { project } = useContext(ProjectContext);
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('assignedTo');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<TaskUser[]>(formValue || []);
+  const [selectedUsers, setSelectedUsers] = useState<TaskUser[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
@@ -39,7 +40,6 @@ const AssignMembers = ({ mode, changeAssignedTo }: AssignMembersProps) => {
       return;
     }
   };
-
   // Open on key press
   useHotkeys([['a', () => setOpenPopover(true)]]);
 
@@ -49,6 +49,7 @@ const AssignMembers = ({ mode, changeAssignedTo }: AssignMembersProps) => {
 
   // Whenever the form value changes (also on reset), update the internal state
   useEffect(() => {
+    if (mode === 'edit') return;
     setSelectedUsers(formValue || []);
   }, [formValue]);
 
@@ -121,7 +122,7 @@ const AssignMembers = ({ mode, changeAssignedTo }: AssignMembersProps) => {
                   </div>
 
                   <div className="flex items-center">
-                    {selectedUsers.includes(member) && <Check size={16} className="text-success" />}
+                    {selectedUsers.some((user) => user.id === member.id) && <Check size={16} className="text-success" />}
                     {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
                   </div>
                 </CommandItem>
