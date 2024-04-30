@@ -16,7 +16,20 @@ const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
   const { nextStep, prevStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
   const { t } = useTranslation();
 
+  // prevent accidental submit
+  const skipStep = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    nextStep();
+  };
+
+  // prevent accidental submit
+  const backStep = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    prevStep();
+  };
+
   useEffect(() => {
+    console.log('stepper footer', activeStep, organization, hasCompletedAllSteps);
     if (activeStep === 2 && organization === null) setOnboarding('completed');
     if (hasCompletedAllSteps) setOnboarding('completed');
   }, [organization, hasCompletedAllSteps]);
@@ -24,27 +37,17 @@ const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
   return (
     <div className="w-full flex justify-end gap-2 max-sm:justify-stretch">
       {activeStep === 1 && !organization && (
-        <Button onClick={prevStep}  variant="secondary" className="max-sm:w-full">
+        <Button onClick={backStep} variant="secondary" className="max-sm:w-full">
           <ArrowLeft size={16} className="mr-2" />
           {t('common:previous')}
         </Button>
       )}
       {isOptionalStep && (
-        <Button onClick={nextStep} variant="secondary" className="max-sm:w-full">
+        <Button onClick={skipStep} variant="secondary" className="max-sm:w-full">
           <Redo size={16} className="mr-2" />
           {t('common:skip')}
         </Button>
       )}
-      {/* {activeStep === 0 && (
-        <Button type="submit" onClick={nextStep} className="max-sm:w-full">
-          {t('common:continue')}
-        </Button>
-      )} */}
-      {/* {isLastStep && (
-        <Button type="submit" onClick={() => setOnboarding('completed')} className="max-sm:w-full">
-          {t('common:finish')}
-        </Button>
-      )} */}
     </div>
   );
 };

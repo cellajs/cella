@@ -100,12 +100,12 @@ const MembersTable = () => {
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q: query,
+      q: debounceQuery,
       sort: sortColumns[0]?.columnKey,
       order: sortColumns[0]?.direction.toLowerCase(),
       role,
     }),
-    [query, role, sortColumns],
+    [debounceQuery, role, sortColumns],
   );
   useSaveInSearchParams(filters, {
     sort: 'createdAt',
@@ -115,7 +115,7 @@ const MembersTable = () => {
   const callback = useMutateQueryData([
     'members',
     organization.slug,
-    query,
+    debounceQuery,
     sortColumns[0]?.columnKey,
     sortColumns[0]?.direction.toLowerCase(),
     role,
@@ -143,7 +143,7 @@ const MembersTable = () => {
     setRows(records);
   };
 
-  const isFiltered = role !== undefined || !!query;
+  const isFiltered = role !== undefined || !!debounceQuery;
 
   const onResetFilters = () => {
     setQuery('');

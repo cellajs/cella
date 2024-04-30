@@ -2,18 +2,21 @@
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn } from '~/lib/utils';
-import { HighIcon } from './icons/high';
-import { LowIcon } from './icons/low';
-import { MediumIcon } from './icons/medium';
-import { NoneIcon } from './icons/none';
-import { Kbd } from '../../common/kbd';
+import { HighIcon } from './impact-icons/high';
+import { NotSelected } from './impact-icons/notSelected';
+import { LowIcon } from './impact-icons/low';
+import { MediumIcon } from './impact-icons/medium';
+import { NoneIcon } from './impact-icons/none';
+import { Kbd } from '../common/kbd';
 import { Check } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useFormContext } from 'react-hook-form';
+import type { TaskImpact } from './task-form';
 
-type Impact = {
+type ImpactOption = {
   value: (typeof impacts)[number]['value'];
   label: string;
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -27,70 +30,69 @@ const impacts = [
   { value: 'high', label: 'High', icon: HighIcon },
 ] as const;
 
-export const SelectImpact = ({ mode = 'create', passImpact }: { mode: 'edit' | 'create'; passImpact?: (value: 0 | 1 | 2 | 3) => void }) => {
-  const [openPopover, setOpenPopover] = useState(false);
-  const [openTooltip, setOpenTooltip] = useState(false);
-  const [selectedImpact, setSelectedImpact] = useState<Impact | null>(null);
-  const [searchValue, setSearchValue] = useState('');
+interface SelectImpactProps {
+  mode: 'edit' | 'create';
+  viewValue?: TaskImpact;
+  changeTaskImpact?: (value: TaskImpact) => void;
+}
 
+export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: SelectImpactProps) => {
+  const { t } = useTranslation();
+  const formValue = useFormContext?.()?.getValues('impact');
+  const [openPopover, setOpenPopover] = useState(false);
+  const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(
+    viewValue !== undefined && viewValue !== null ? impacts[viewValue] : impacts[formValue] || null,
+  );
+  const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
-  useHotkeys([
-    [
-      'p',
-      () => {
-        setOpenTooltip(false);
-        setOpenPopover(true);
-      },
-    ],
-  ]);
+  // Open on key press
+  useHotkeys([['p', () => setOpenPopover(true)]]);
+
+  // Whenever the form value changes (also on reset), update the internal state
+  useEffect(() => {
+    if (mode === 'edit') return;
+    setSelectedImpact(impacts[formValue] || null);
+  }, [formValue]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <Tooltip delayDuration={500} open={openTooltip} onOpenChange={setOpenTooltip}>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              aria-label="Set impacts"
-              variant="ghost"
-              size={mode === 'create' ? 'sm' : 'micro'}
-              className={mode === 'create' ? 'w-full text-left flex gap-2 justify-start border' : ''}
-            >
-              {selectedImpact && selectedImpact.value !== 'none' ? (
+      <PopoverTrigger asChild>
+        <Button
+          aria-label="Set impact"
+          variant="ghost"
+          size={mode === 'create' ? 'sm' : 'micro'}
+          className={mode === 'create' ? 'w-full text-left font-light flex gap-2 justify-start border' : 'group-hover/task:opacity-100 opacity-70'}
+        >
+          {mode === 'create' ? (
+            <>
+              {selectedImpact !== null ? (
                 <>
                   <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />
                   {mode === 'create' && selectedImpact.label}
                 </>
               ) : (
                 <>
-                  <NoneIcon className="size-4 fill-primary" aria-hidden="true" title="Set impact" />
+                  <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
                   {mode === 'create' && 'Set impact'}
                 </>
               )}
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent
-          hideWhenDetached
-          side="bottom"
-          align="start"
-          sideOffset={6}
-          className="flex items-center gap-2 bg-background border text-xs px-2 h-8"
-        >
-          <span className="text-primary">Change impact</span>
-          <Kbd value="P" />
-        </TooltipContent>
-      </Tooltip>
-      <PopoverContent className="w-200 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={6}>
+            </>
+          ) : (
+            <>{selectedImpact && <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />}</>
+          )}
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-48 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
         <Command className="relative rounded-lg">
           <CommandInput
             clearValue={setSearchValue}
             value={searchValue}
             onValueChange={(searchValue) => {
               // If the user types a number, select the Impact like useHotkeys
-              if ([0, 1, 2, 3, 4].includes(Number.parseInt(searchValue))) {
+              if ([0, 1, 2, 3].includes(Number.parseInt(searchValue))) {
                 setSelectedImpact(impacts[Number.parseInt(searchValue)]);
-                setOpenTooltip(false);
                 setOpenPopover(false);
                 setSearchValue('');
                 return;
@@ -98,7 +100,7 @@ export const SelectImpact = ({ mode = 'create', passImpact }: { mode: 'edit' | '
               setSearchValue(searchValue);
             }}
             className="leading-normal"
-            placeholder="Set impact ..."
+            placeholder={t('common:placeholder.impact')}
           />
           {!isSearching && <Kbd value="P" className="absolute top-3 right-[10px]" />}
           <CommandList>
@@ -110,10 +112,9 @@ export const SelectImpact = ({ mode = 'create', passImpact }: { mode: 'edit' | '
                   onSelect={(value) => {
                     const currentImpact = impacts.find((p) => p.value === value);
                     setSelectedImpact(currentImpact || null);
-                    setOpenTooltip(false);
                     setOpenPopover(false);
                     setSearchValue('');
-                    if (passImpact) passImpact(impacts.findIndex((impact) => impact.value === value) as 0 | 1 | 2 | 3);
+                    if (changeTaskImpact) changeTaskImpact(impacts.findIndex((impact) => impact.value === value) as TaskImpact);
                   }}
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >

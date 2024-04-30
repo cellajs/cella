@@ -40,7 +40,7 @@ const tenant =
     (paramName: string, type: 'ORGANIZATION' | 'WORKSPACE' | 'ANY', accessibleFor?: MembershipModel['role'][]): MiddlewareHandler<Env, any> =>
     async (ctx, next) => {
       // const body = ctx.req.header('content-type') === 'application/json' ? ((await ctx.req.raw.clone().json()) as any) : undefined;
-      const idOrSlug = ctx.req.param(paramName)?.toLowerCase();
+      const idOrSlug = ctx.req.param(paramName)?.toLowerCase() || ctx.req.query(paramName)?.toLowerCase();
       const user = ctx.get('user');
 
       if (!idOrSlug || !user) {

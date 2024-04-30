@@ -3,7 +3,7 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithoutDa
 import { createRouteConfig } from '../../lib/route-config';
 import { anyTenantGuard, authGuard, publicGuard } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
-import { acceptInviteJsonSchema, inviteJsonSchema, inviteParamSchema, suggestionsSchema, tokensSchema } from './schema';
+import { acceptInviteJsonSchema, inviteJsonSchema, inviteQuerySchema, suggestionsSchema, tokensSchema } from './schema';
 import { resourceTypeSchema } from '../../lib/common-schemas';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
@@ -99,7 +99,7 @@ export const checkTokenRouteConfig = createRouteConfig({
 
 export const inviteRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/{idOrSlug?}/invite',
+  path: '/invite',
   guard: anyTenantGuard('idOrSlug', ['ADMIN']),
   middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
@@ -110,7 +110,7 @@ export const inviteRouteConfig = createRouteConfig({
       - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
-    params: inviteParamSchema,
+    query: inviteQuerySchema,
     body: {
       content: {
         'application/json': {

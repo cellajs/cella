@@ -7,6 +7,7 @@ import { AppAlert } from './app-alert';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
 import { dialog } from './dialoger/state';
+import { DialogTitle } from '../ui/dialog';
 
 interface InviteUsersProps {
   organization?: Organization | null;
@@ -25,23 +26,22 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
   const updateMode = (mode: string[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
-    dialog.updateTitle(
-      'user-invite',
-      mode[0] ? (
-        <div className="flex items-center gap-2">
+    dialog.update('user-invite', {
+      title: mode[0] ? (
+        <DialogTitle className="flex items-center gap-2">
           <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
             {t('common:invite')}
           </button>
           <ChevronRight className="opacity-50" size={16} />
           <span>{mode[0] === 'search' ? t('common:search') : t('common:email')}</span>
-        </div>
+        </DialogTitle>
       ) : (
-        t('common:invite')
+        <DialogTitle>{t('common:invite')}</DialogTitle>
       ),
-    );
+    });
   };
 
-  if (!inviteMode)
+  if (!inviteMode) {
     return (
       <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
         <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
@@ -66,6 +66,7 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
         </ToggleGroupItem>
       </ToggleGroup>
     );
+  }
 
   if (inviteMode === 'search') {
     return (

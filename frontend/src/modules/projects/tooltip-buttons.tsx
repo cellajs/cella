@@ -4,21 +4,25 @@ import { Settings, EllipsisVertical, Minimize2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
-const ToolTipButtons = ({ rolledUp }: { rolledUp: boolean }) => {
+const ToolTipButtons = ({
+  rolledUp,
+  onSettingsClick,
+  onMinimizeClick,
+}: { rolledUp: boolean; onSettingsClick?: () => void; onMinimizeClick?: () => void }) => {
   const { t } = useTranslation();
 
   const tooltipButtons = [
     // { content: t('Comments'), icon: <MessagesSquare size={16} /> },
-    { content: t('Project settings'), icon: <Settings size={16} /> },
-    { content: t('Minimize'), icon: <Minimize2 size={16} /> },
+    { onClick: onSettingsClick, content: t('Project settings'), icon: <Settings size={16} /> },
+    { onClick: onMinimizeClick, content: t('Minimize'), icon: <Minimize2 size={16} /> },
   ];
 
   const renderButtons = () => {
     return (
       <>
-        {tooltipButtons.map(({ content, icon }) => (
+        {tooltipButtons.map(({ content, icon, onClick }) => (
           <TooltipButton key={content} side="bottom" sideOffset={13} toolTipContent={content}>
-            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
+            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8" onClick={onClick}>
               {icon}
             </Button>
           </TooltipButton>

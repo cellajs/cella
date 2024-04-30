@@ -4,7 +4,12 @@ import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { dialog } from '../common/dialoger/state';
-// import { CreateProjectForm } from './create-project-form';
+import { CreateProjectForm } from './create-project-form';
+import { workspaceQueryOptions } from '../workspaces';
+import { useParams } from '@tanstack/react-router';
+import { WorkspaceRoute } from '~/routes/workspaces';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { DialogTitle } from '../ui/dialog';
 
 interface AddProjectsProps {
   organization?: Organization | null;
@@ -17,25 +22,28 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
   //organization, callback, dialog: isDialog,
   const { t } = useTranslation();
 
+  const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
+  const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
+  const workspace = workspaceQuery.data;
+
   const [inviteMode, setInviteMode] = useState(mode);
 
   const updateMode = (mode: string[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
-    dialog.updateTitle(
-      'user-invite',
-      mode[0] ? (
-        <div className="flex items-center gap-2">
+    dialog.update('add-projects', {
+      title: mode[0] ? (
+        <DialogTitle className="flex items-center gap-2">
           <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
             {t('common:add_projects')}
           </button>
           <ChevronRight className="opacity-50" size={16} />
           <span>{mode[0] === 'search' ? t('common:select') : t('common:create')}</span>
-        </div>
+        </DialogTitle>
       ) : (
-        t('common:add_projects')
+        <DialogTitle>{t('common:add_projects')}</DialogTitle>
       ),
-    );
+    });
   };
 
   if (!inviteMode)
@@ -67,6 +75,7 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
   if (inviteMode === 'search') {
     return (
       <div className="flex flex-col gap-4">
+        Not yet ready
         {/* <SelectProjectsForm organization={organization} workspace={workspace} callback={callback} dialog={isDialog} /> */}
       </div>
     );
@@ -74,8 +83,7 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* <CreateProjectForm organization={organization} workspace={workspace} callback={callback} dialog={isDialog}>
-      </CreateProjectForm> */}
+      <CreateProjectForm workspace={workspace} callback={() => {}} dialog />
     </div>
   );
 };

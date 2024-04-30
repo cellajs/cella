@@ -88,7 +88,7 @@ export interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
 const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(({ children, className, limit, ...props }, ref) => {
   return (
     <AvatarGroupProvider limit={limit}>
-      <div ref={ref} className={cn('flex items-center justify-end -space-x-4 relative', className)} {...props}>
+      <div ref={ref} className={cn('flex items-center justify-end -space-x-2 relative', className)} {...props}>
         {children}
       </div>
     </AvatarGroupProvider>
@@ -99,7 +99,9 @@ AvatarGroup.displayName = 'AvatarGroup';
 const AvatarGroupList = ({ children }: { children?: React.ReactNode }) => {
   const { limit, setCount } = useAvatarGroupContext();
 
-  setCount?.(React.Children.count(children));
+  React.useEffect(() => {
+    setCount?.(React.Children.count(children));
+  }, [children, setCount]); 
 
   return <>{limit ? React.Children.toArray(children).slice(0, limit) : children}</>;
 };
@@ -111,7 +113,7 @@ const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.HTMLAttr
     const { limit, count } = useAvatarGroupContext();
     if (!limit || !count || count <= limit) return null;
     return (
-      <span ref={ref} className={cn('relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted', className)} {...props}>
+      <span ref={ref} className={cn('relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background shadow-sm', className)} {...props}>
         +{count - limit}
       </span>
     );

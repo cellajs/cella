@@ -7,7 +7,7 @@ import { type UpdateOrganizationParams, updateOrganization } from '~/api/organiz
 import type { Organization } from '~/types';
 
 import { Loader2 } from 'lucide-react';
-import { Suspense, lazy, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -23,8 +23,8 @@ import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import DomainsFormField from '../common/form-fields/domains';
 
-const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
+const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 
 interface Props {
   organization: Organization;
@@ -132,13 +132,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           previousSlug={organization.slug}
         />
         <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
-        <DomainsFormField
-          control={form.control}
-          name="emailDomains"
-          label={t('common:email_domains')}
-          description={t('common:email_domains.text')}
-          placeholder={t('common:placeholder.email_domains')}
-        />
+        <DomainsFormField control={form.control} label={t('common:email_domains')} description={t('common:email_domains.text')} />
         <InputFormField
           control={form.control}
           type="email"
@@ -169,12 +163,12 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <FormField
           control={form.control}
           name="timezone"
-          render={({ field: { value, onChange } }) => (
+          render={({ field: { onChange } }) => (
             <FormItem name="timezone">
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectTimezone onChange={onChange} value={value || ''} />
+                  <SelectTimezone onChange={onChange} />
                 </Suspense>
               </FormControl>
               <FormMessage />
@@ -185,12 +179,12 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <FormField
           control={form.control}
           name="country"
-          render={({ field: { value, onChange } }) => (
+          render={({ field: { onChange } }) => (
             <FormItem name="country">
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectCountry onChange={onChange} value={value || ''} />
+                  <SelectCountry onChange={onChange} />
                 </Suspense>
               </FormControl>
               <FormMessage />

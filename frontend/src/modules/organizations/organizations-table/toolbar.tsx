@@ -110,6 +110,7 @@ function Toolbar({
                   onClick={() => {
                     dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
                       className: 'md:max-w-xl',
+                      id: 'create-organization',
                       title: t('common:create_organization'),
                     });
                   }}

@@ -24,7 +24,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
   const mobileColumns: ColumnOrColumnGroup<UserRow>[] = [
     {
       ...CheckboxColumn,
-      renderCell: (props) => props.row.type === 'MASTER' && CheckboxColumn.renderCell?.(props),
+      renderCell: (props) => props.row._type === 'MASTER' && CheckboxColumn.renderCell?.(props),
     },
     {
       key: 'name',
@@ -34,7 +34,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
-        if (row.type !== 'MASTER') return;
+        if (row._type !== 'MASTER') return;
 
         return (
           <Link
@@ -54,7 +54,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => row.type === 'MASTER' && <RowEdit user={row} tabIndex={tabIndex} callback={callback} />,
+      renderCell: ({ row, tabIndex }) => row._type === 'MASTER' && <RowEdit user={row} tabIndex={tabIndex} callback={callback} />,
     },
   ];
 
@@ -68,14 +68,14 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             width: 32,
             visible: true,
             colSpan(args) {
-              return args.type === 'ROW' && args.row.type === 'DETAIL' ? 8 : undefined;
+              return args.type === 'ROW' && args.row._type === 'DETAIL' ? 8 : undefined;
             },
             cellClass(row) {
-              return row.type === 'DETAIL' ? 'p-2 rdg-expand-cell relative' : undefined;
+              return row._type === 'DETAIL' ? 'p-2 rdg-expand-cell relative' : undefined;
             },
             renderCell: ({ row, tabIndex, onRowChange }) => {
-              if (row.type === 'DETAIL' && row.parent) {
-                return <Expand row={row.parent} />;
+              if (row._type === 'DETAIL' && row._parent) {
+                return <Expand row={row._parent} />;
               }
 
               return (
@@ -85,9 +85,9 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
                   variant="cell"
                   className="h-full w-full relative"
                   role="button"
-                  onClick={() => onRowChange({ ...row, expanded: !row.expanded })}
+                  onClick={() => onRowChange({ ...row, _expanded: !row._expanded })}
                 >
-                  <ChevronRight size={16} className={`cursor-pointer transition-transform ${row.expanded ? 'rotate-90' : 'rotate-0'}`} />
+                  <ChevronRight size={16} className={`cursor-pointer transition-transform ${row._expanded ? 'rotate-90' : 'rotate-0'}`} />
                 </Button>
               );
             },
@@ -101,7 +101,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             visible: true,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row, tabIndex }) => {
-              if (row.type === 'DETAIL') return;
+              if (row._type === 'DETAIL') return;
 
               return (
                 <a
@@ -120,7 +120,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row.type === 'MASTER' && t(row.role.toLowerCase()),
+            renderCell: ({ row }) => row._type === 'MASTER' && t(row.role.toLowerCase()),
             width: 100,
             renderEditCell: renderSelect('role', [
               { label: t('common:admin'), value: 'ADMIN' },
@@ -133,7 +133,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row.type === 'MASTER' && dateShort(row.createdAt),
+            renderCell: ({ row }) => row._type === 'MASTER' && dateShort(row.createdAt),
             minWidth: 180,
           },
           {
@@ -143,7 +143,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             visible: true,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) =>
-              row.type === 'MASTER' && (
+              row._type === 'MASTER' && (
                 <>
                   <UserRoundCheck className="mr-2 opacity-50" size={16} />
                   {row.counts?.memberships | 0}

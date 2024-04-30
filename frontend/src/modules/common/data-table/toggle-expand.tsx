@@ -1,22 +1,29 @@
-// TODO: How to make this util function more type safe?
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export const toggleExpand = (changedRows: any, indexes: number[]) => {
+export const toggleExpand = <
+  T extends {
+    id: string;
+    _type: string;
+    _expanded?: boolean;
+    _parent?: { id: string };
+  }[],
+>(
+  changedRows: T,
+  indexes: number[],
+) => {
   let rows = [...changedRows];
   const row = rows[indexes[0]];
 
-  if (row.type === 'MASTER') {
-    if (row.expanded) {
+  if (row._type === 'MASTER') {
+    if (row._expanded) {
       const detailId = `${row.id}-detail`;
       rows.splice(indexes[0] + 1, 0, {
-        type: 'DETAIL',
+        _type: 'DETAIL',
         id: detailId,
-        parent: row,
+        _parent: row,
       });
 
       // Close other masters
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      rows = rows.map((r: any) => {
-        if (r.type === 'MASTER' && r.id === row.id) {
+      rows = rows.map((r) => {
+        if (r._type === 'MASTER' && r.id === row.id) {
           return r;
         }
         return {
@@ -26,8 +33,7 @@ export const toggleExpand = (changedRows: any, indexes: number[]) => {
       });
 
       // Remove other details
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      rows = rows.filter((r: any) => r.type === 'MASTER' || r.id === detailId);
+      rows = rows.filter((r) => r._type === 'MASTER' || r.id === detailId);
     } else {
       rows.splice(indexes[0] + 1, 1);
     }

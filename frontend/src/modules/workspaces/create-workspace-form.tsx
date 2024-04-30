@@ -15,15 +15,17 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { Workspace } from '~/types';
-import { dialog } from '../common/dialoger/state';
+import type { Organization, Workspace } from '~/types';
+import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
-import SelectOrganizationFormField from '../common/form-fields/select-organization';
 import { useNavigate } from '@tanstack/react-router';
 import { SquarePen } from 'lucide-react';
 import { Form } from '../ui/form';
 import { Badge } from '../ui/badge';
+import SelectParentFormField from '../common/form-fields/select-parent';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import CreateOrganizationForm from '../organizations/create-organization-form';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -31,7 +33,7 @@ interface CreateWorkspaceFormProps {
 }
 
 const formSchema = createWorkspaceJsonSchema.extend({
-  organization: z.string().nonempty(),
+  organization: z.string().min(1),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -39,15 +41,16 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setSheet } = useNavigationStore();
+  const { setSheet, menu } = useNavigationStore();
 
+  const organizations = menu.organizations.items;
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         name: '',
         slug: '',
-        organization: '',
+        organization: organizations.length === 1 ? organizations[0].id : '',
       },
     }),
     [],
@@ -55,6 +58,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>('create-workspace', formOptions);
+
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
@@ -79,20 +83,52 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     create(values);
   };
 
+  const organizationCreated = (organization: Organization) => {
+    form.setValue('organization', organization.id);
+  };
+
+  // Update dialog title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
-      dialog.updateTitle(
-        '1',
-        <Badge variant="plain" className="w-fit">
-          <SquarePen size={12} className="mr-2" />
-          <span className="font-light">{t('common:unsaved_changes')}</span>
-        </Badge>,
-        true,
-      );
+      const targetDialog = dialog.get('create-workspace');
+      if (targetDialog && checkDialog(targetDialog)) {
+        dialog.update('create-workspace', {
+          title: (
+            <div className="flex flex-row gap-2">
+              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
+              <Badge variant="plain" className="w-fit">
+                <SquarePen size={12} className="mr-2" />
+                <span className="font-light">{t('common:unsaved_changes')}</span>
+              </Badge>
+            </div>
+          ),
+        });
+      }
       return;
     }
-    dialog.setDefaultTitle('1');
+    dialog.reset('create-workspace');
   }, [form.unsavedChanges]);
+
+  if (!form.getValues('organization') && !menu.organizations.items.length)
+    return (
+      <Alert variant="plain" className="border-0 w-auto">
+        <AlertTitle>{t('common:no_organization')}</AlertTitle>
+        <AlertDescription className="pr-8 font-light">
+          <p className="mb-2">{t('common:organization_required.text')}</p>
+          <Button
+            onClick={() => {
+              dialog(<CreateOrganizationForm callback={organizationCreated} dialog />, {
+                className: 'md:max-w-xl',
+                id: 'create-organization',
+                title: t('common:create_organization'),
+              });
+            }}
+          >
+            <span>{t('common:create_organization')}</span>
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
 
   return (
     <Form {...form}>
@@ -105,7 +141,8 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
           description={t('common:workspace_handle.text')}
           nameValue={name}
         />
-        <SelectOrganizationFormField control={form.control} label={t('common:organization')} name="organization" required />
+
+        <SelectParentFormField collection="organizations" control={form.control} label={t('common:organization')} name="organization" required />
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>

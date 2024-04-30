@@ -13,7 +13,7 @@ export const inviteJsonSchema = z.object({
   role: z.union([apiUserSchema.shape.role, apiMembershipSchema.shape.role]).optional(),
 });
 
-export const inviteParamSchema = z.object({
+export const inviteQuerySchema = z.object({
   idOrSlug: idSchema.or(validSlugSchema).optional(),
 });
 

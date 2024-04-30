@@ -74,22 +74,18 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
     });
   };
 
-  const cancel = () => {
-    form.reset();
-    isDialog && dialog.remove();
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="emails"
-          render={({ field: { value, onChange } }) => (
+          render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
                 <MultipleSelector
-                  value={value.map((v) => ({ label: v, value: v }))}
+                formControlName='emails'
+                value={value ? value.map((val: string) => ({ label: val, value: val })) : []}
                   onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
                     const data = await getSuggestions(query, 'USER');
@@ -101,7 +97,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
                   }}
                   basicSignValue={t('common:invite_members_search.text')}
                   hidePlaceholderWhenSelected
-                  defaultOptions={[]}
+                  defaultOptions={value ? value.map((val: string) => ({ label: val, value: val })) : []}
                   placeholder={t('common:search_users')}
                   emptyValue={t('common:no_users_found')}
                 />
@@ -132,7 +128,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
             {t('common:invite')}
           </Button>
           {form.formState.isDirty && (
-            <Button type="reset" variant="secondary" onClick={cancel}>
+            <Button type="reset" variant="secondary" onClick={() => form.reset()}>
               {t('common:cancel')}
             </Button>
           )}

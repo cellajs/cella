@@ -7,6 +7,7 @@ export const sendSSE = (userId: string, eventName: string, data: Record<string, 
     stream.writeSSE({
       event: eventName,
       data: JSON.stringify(data),
+      retry: 5000,
     });
   }
 };

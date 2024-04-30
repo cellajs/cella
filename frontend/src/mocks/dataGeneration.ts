@@ -1,41 +1,68 @@
-import type { UniqueIdentifier } from '@dnd-kit/core';
 import { faker } from '@faker-js/faker';
+import type { TaskImpact, TaskStatus, TaskType } from '~/modules/projects/task-form';
 
 const roles = ['MEMBER', 'ADMIN'] as const;
 
-const taskGenerator = (projectId: UniqueIdentifier, userIds: UniqueIdentifier[], executor: User, numberOfTasks: number): Task[] => {
-  const labels = labelsContent();
-  const returnedArray = [] as Task[];
-  const type = ['feature', 'bug', 'chore'];
-  const points = [0, 1, 2, 3];
-  const status = [0, 1, 2, 3, 4, 5, 6];
-  for (let i = 0; i < numberOfTasks; i++) {
-    returnedArray.push({
-      id: faker.string.uuid(),
-      slug: faker.animal.bird(),
-      text: faker.commerce.productDescription(),
-      summary: faker.company.catchPhrase(),
-      createdBy: userIds[Math.floor(Math.random() * userIds.length)],
-      createdAt: faker.date.anytime(),
-      assignedBy: userIds[Math.floor(Math.random() * userIds.length)],
-      assignedTo: [executor],
-      assignedAt: faker.date.anytime(),
-      modifiedBy: userIds[Math.floor(Math.random() * userIds.length)],
-      modifiedAt: faker.date.anytime(),
-      type: type[Math.floor(Math.random() * type.length)] as 'feature' | 'bug' | 'chore',
-      points: points[Math.floor(Math.random() * points.length)] as 0 | 1 | 2 | 3,
-      status: status[Math.floor(Math.random() * status.length)] as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-      labels: labels.map((label) => label.id),
-      projectId: projectId,
-      workspaceId: faker.string.uuid(),
-      organizationId: faker.string.uuid(),
-    });
-  }
-
-  return returnedArray.sort((a, b) => b.status - a.status);
+export type TaskUser = {
+  id: string;
+  name: string;
+  thumbnailUrl: null;
+  bio: string;
 };
 
-export const projectsWithTaskContent = (number: number): ComplexProject[] => {
+export type TaskLabel = {
+  id: string;
+  value: string;
+  color: string;
+};
+
+export type Label = {
+  id: string;
+  value: string;
+  color: string;
+  count: number;
+  groupId: string;
+  lastActive: Date;
+};
+
+export type Task = {
+  id: string;
+  slug: string;
+  markdown: string;
+  summary: string;
+  createdBy: string;
+  createdAt: Date;
+  assignedBy: string;
+  assignedTo: TaskUser[];
+  assignedAt: Date;
+  modifiedBy: string;
+  modifiedAt: Date;
+  type: TaskType;
+  impact: TaskImpact;
+  status: TaskStatus;
+  labels: TaskLabel[]; 
+  projectId: string;
+  workspaceId: string;
+  organizationId: string;
+};
+
+export type Project = {
+  id: string;
+  slug: string;
+  name: string;
+  color: string;
+  role: 'ADMIN' | 'MEMBER';
+  createdBy: string;
+  createdAt: Date;
+  modifiedBy: string;
+  modifiedAt: Date;
+  workspaceId: string;
+  organizationId: string;
+  members: TaskUser[];
+};
+
+// This is the mocked API response to get projects
+export const getProjects = (number: number): Project[] => {
   const finalArray = [];
 
   const users = [
@@ -51,10 +78,9 @@ export const projectsWithTaskContent = (number: number): ComplexProject[] => {
 
   for (let i = 0; i < number; i++) {
     const user = users[Math.floor(Math.random() * users.length)];
-    const executor = UserContent();
-    const tasksNumber = Math.floor(Math.random() * (18 - 4 + 1)) + 4;
-
     const projectId = faker.string.uuid();
+    const canBeAssignedToNumber = Math.floor(Math.random() * (8 - 2 + 1)) + 2;
+    
     finalArray.push({
       id: projectId,
       slug: faker.animal.cat(),
@@ -67,101 +93,86 @@ export const projectsWithTaskContent = (number: number): ComplexProject[] => {
       modifiedAt: faker.date.anytime(),
       workspaceId: faker.string.uuid(),
       organizationId: faker.string.uuid(),
-      tasks: taskGenerator(
-        projectId,
-        users.map((user) => user.id),
-        executor,
-        tasksNumber,
-      ),
+      members: usersInTask(canBeAssignedToNumber),
     });
   }
   return finalArray;
 };
 
-// export const labelsContent = (): Label[] => {
-//   const group = [null, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-//   return Array.from({ length: 10 }, () => ({
-//     id: faker.string.uuid(),
-//     slug: faker.animal.fish(),
-//     name: faker.person.fullName(),
-//     group: group[Math.floor(Math.random() * group.length)],
-//   }));
-// };
+// This is the mocked API response to get labels for a workspace
+export const getLabels = (): Label[] => {
+  const returnedArray: Label[] = [];
 
-export const labelsContent = (): Label[] => {
-  return Array.from({ length: 10 }, () => ({
+  for (let i = 0; i < 10; i++) {
+    const count = Math.floor(Math.random() * (40 - 4 + 1)) + 4;
+    returnedArray.push({
+      id: faker.string.uuid(),
+      color: faker.color.rgb({ casing: 'upper' }),
+      count: count,
+      value: faker.hacker.noun().toLowerCase(),
+      groupId: faker.string.uuid(),
+      lastActive: faker.date.anytime(),
+    });
+  }
+  return returnedArray;
+};
+
+// This is the mocked API response to get all tasks for a workspace
+export const getTasks  = (projects: Project[]) => {
+  const executor = usersInTask(1)[0];
+  const numberOfTasks = Math.floor(Math.random() * (18 - 4 + 1)) + 4;
+
+  const tasks: Task[] = [];
+
+  for (const project of projects) {
+    const userIds = project.members.map((member) => member.id);
+    const labels = labelsInTask();
+    const returnedArray = [] as Task[];
+    const type = ['feature', 'bug', 'chore'];
+    const impact = [0, 1, 2, 3];
+    const status = [0, 1, 2, 3, 4, 5, 6];
+    for (let i = 0; i < numberOfTasks; i++) {
+      returnedArray.push({
+        id: faker.string.uuid(),
+        slug: faker.animal.bird(),
+        markdown: faker.commerce.productDescription(),
+        summary: faker.company.catchPhrase(),
+        createdBy: userIds[Math.floor(Math.random() * userIds.length)],
+        createdAt: faker.date.anytime(),
+        assignedBy: userIds[Math.floor(Math.random() * userIds.length)],
+        assignedTo: [executor],
+        assignedAt: faker.date.anytime(),
+        modifiedBy: userIds[Math.floor(Math.random() * userIds.length)],
+        modifiedAt: faker.date.anytime(),
+        type: type[Math.floor(Math.random() * type.length)] as TaskType,
+        impact: impact[Math.floor(Math.random() * impact.length)] as TaskImpact,
+        status: status[Math.floor(Math.random() * status.length)] as TaskStatus,
+        labels: labels,
+        projectId: project.id,
+        workspaceId: faker.string.uuid(),
+        organizationId: faker.string.uuid(),
+      });
+    }
+  
+  tasks.push(...returnedArray);
+  }
+
+  return tasks.sort((a, b) => b.status - a.status);
+};
+
+export const labelsInTask = (): TaskLabel[] => {
+  return Array.from({ length: 3 }, () => ({
     id: faker.string.uuid(),
     value: faker.hacker.noun().toLowerCase(),
-    label: faker.hacker.noun().toLowerCase(),
     color: faker.color.rgb({ casing: 'upper' }),
   }));
 };
-export const UserContent = (): User => {
-  return {
+
+export const usersInTask = (number: number): TaskUser[] => {
+  return Array.from({ length: number }, () => ({
     id: faker.string.uuid(),
     name: faker.person.fullName(),
     thumbnailUrl: null,
     bio: faker.person.bio(),
-  };
-};
-
-export type User = {
-  id: UniqueIdentifier;
-  name: string;
-  thumbnailUrl: null;
-  bio: string;
-};
-type Label = {
-  id: UniqueIdentifier;
-  value: string;
-  label: string;
-  color: string;
-};
-
-// type Label = {
-//   id: UniqueIdentifier;
-//   slug: string;
-//   name: string;
-//   group: number | null;
-// };
-
-export type Task = {
-  id: UniqueIdentifier;
-  slug: string;
-  text: string;
-  summary: string;
-  createdBy: UniqueIdentifier;
-  createdAt: Date;
-  assignedBy: UniqueIdentifier;
-  assignedTo: User[];
-  assignedAt: Date;
-  modifiedBy: UniqueIdentifier;
-  modifiedAt: Date;
-  type: 'feature' | 'bug' | 'chore';
-  points: 0 | 1 | 2 | 3;
-  status: 0 | 1 | 2 | 3 | 4 | 5 | 6; //(0 = iced, 1=unstarted, 2=started, 3=finished, 4=delivered, 5=reviewed, 6=accepted )
-  labels: UniqueIdentifier[]; //array of labels by id
-  projectId: UniqueIdentifier;
-  workspaceId: string;
-  organizationId: string;
-};
-
-export type MockResponse = {
-  workspace: { labelGroups: Label[] };
-  project: ComplexProject[];
-};
-
-export type ComplexProject = {
-  id: UniqueIdentifier;
-  slug: string;
-  name: string;
-  color: string;
-  role: 'ADMIN' | 'MEMBER';
-  createdBy: UniqueIdentifier;
-  createdAt: Date;
-  modifiedBy: UniqueIdentifier;
-  modifiedAt: Date;
-  workspaceId: string;
-  organizationId: string;
-  tasks: Task[];
+  }));
 };

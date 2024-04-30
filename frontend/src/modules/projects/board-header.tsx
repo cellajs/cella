@@ -1,6 +1,6 @@
 import { Settings, Plus, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import WorkspaceView from '~/modules/projects/workspace-view';
+import WorkspaceView from '~/modules/projects/view-options';
 import DisplayOptions from '~/modules/projects/display-options';
 import BoardSearch from '~/modules/projects/board-search';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -11,11 +11,14 @@ import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import AddProjects from './add-projects';
 import { AvatarWrap } from '../common/avatar-wrap';
 import LabelsTable from './labels-table';
+import { WorkspaceContext } from '../workspaces';
+import { useContext } from 'react';
 
-function KanbanHeader() {
+function BoardHeader() {
   const { t } = useTranslation();
+  const { labels } = useContext(WorkspaceContext);
 
-  const openSettingsSheet = () => {
+  const openSettingsSheet = () => {    
     sheet(<WorkspaceSettings />, {
       className: 'sm:max-w-[64rem]',
       title: t('common:workspace_settings'),
@@ -25,7 +28,7 @@ function KanbanHeader() {
   };
 
   const openLablesSheet = () => {
-    sheet(<LabelsTable />, {
+    sheet(<LabelsTable labels={labels} />, {
       className: 'sm:max-w-[48rem]',
       title: 'Labels',
       // text: '',
@@ -43,7 +46,8 @@ function KanbanHeader() {
           onClick={() => {
             dialog(<AddProjects dialog />, {
               //callback={(project) => callback([project], 'create')} dialog
-              className: 'md:max-w-xl',
+              className: 'md:max-w-4xl',
+              id: 'add-projects',
               title: t('common:add_projects'),
             });
           }}
@@ -71,4 +75,4 @@ function KanbanHeader() {
   );
 }
 
-export default KanbanHeader;
+export default BoardHeader;

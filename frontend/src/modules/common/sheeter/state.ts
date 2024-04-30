@@ -13,20 +13,29 @@ export type SheetToRemove = {
   remove: true;
 };
 
+export type SheetToReset = {
+  id: number | string;
+  reset: true;
+};
+
 export type ExternalSheet = Omit<SheetT, 'id' | 'content'> & {
   id?: number | string;
 };
 
+export const isSheet = (dialog: SheetT | SheetToRemove): dialog is SheetT => {
+  return !(dialog as SheetToRemove).remove;
+};
+
 class Observer {
-  subscribers: Array<(sheet: SheetT | SheetToRemove) => void>;
-  sheets: (SheetT | SheetToRemove)[];
+  subscribers: Array<(sheet: SheetT | SheetToRemove | SheetToReset) => void>;
+  sheets: (SheetT | SheetToRemove | SheetToReset)[];
 
   constructor() {
     this.subscribers = [];
     this.sheets = [];
   }
 
-  subscribe = (subscriber: (sheet: SheetT | SheetToRemove) => void) => {
+  subscribe = (subscriber: (sheet: SheetT | SheetToRemove | SheetToReset) => void) => {
     this.subscribers.push(subscriber);
 
     return () => {
@@ -39,6 +48,10 @@ class Observer {
     for (const subscriber of this.subscribers) {
       subscriber(data);
     }
+  };
+
+  get = (id: number | string) => {
+    return this.sheets.find((sheet) => sheet.id === id);
   };
 
   set = (data: SheetT) => {
@@ -61,6 +74,33 @@ class Observer {
       }
     }
   };
+
+  //Update sheet
+  update = (id: number | string, data: Partial<SheetT>) => {
+    if (!id) return;
+
+    for (const subscriber of this.subscribers) {
+      subscriber({ id, ...data });
+    }
+
+    return;
+  };
+
+  // Reset sheet
+  reset = (id?: number | string) => {
+    if (id) {
+      for (const subscriber of this.subscribers) {
+        subscriber({ id, reset: true });
+      }
+      return;
+    }
+    // Reset all sheets
+    for (const dialog of this.sheets) {
+      for (const subscriber of this.subscribers) {
+        subscriber({ id: dialog.id, reset: true });
+      }
+    }
+  };
 }
 
 export const SheetState = new Observer();
@@ -80,4 +120,7 @@ export const basicSheet = sheetFunction;
 
 export const sheet = Object.assign(basicSheet, {
   remove: SheetState.remove,
+  update: SheetState.update,
+  reset: SheetState.reset,
+  get: SheetState.get,
 });

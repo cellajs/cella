@@ -1,55 +1,55 @@
-import type { UniqueIdentifier } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Activity, GripVertical, Star, Bug, Bolt } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { dateShort } from '~/lib/utils';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { CheckCheck, GripVertical, Paperclip } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { Checkbox } from '../ui/checkbox';
-import { LabelBox } from './labels';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/mocks/dataGeneration';
-import { SelectImpact } from './select-impact.tsx/index.tsx';
+import { SelectImpact } from './select-impact.tsx';
+import AssignMembers from './select-members.tsx';
+import SetLabels from './select-labels.tsx';
+import { useTranslation } from 'react-i18next';
 import SelectStatus from './select-status.tsx';
-import AssignMembers from './assign-members.tsx';
-
-interface User {
-  id: UniqueIdentifier;
-  name: string;
-  thumbnailUrl: null;
-  bio: string;
-}
+import { TaskEditor } from './task-editor.tsx';
+import { useContext, useRef, useState } from 'react';
+import { SelectTaskType } from './select-task-type.tsx';
+import { WorkspaceContext } from '../workspaces/index.tsx';
+import useDoubleClick from '~/hooks/use-double-click.tsx';
+import { cn } from '~/lib/utils.ts';
 
 interface TaskCardProps {
   task: Task;
-  isViewState?: boolean;
-  toggleTaskClick?: (id: UniqueIdentifier) => void;
   isOverlay?: boolean;
-  setTaskStatus: (task: Task, status: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
-  setMainAssignTo: (task: Task, users: User[]) => void;
 }
 
-export type TaskType = 'Task';
-
 export interface TaskDragData {
-  type: TaskType;
+  type: 'Task';
   task: Task;
 }
 
-export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTaskStatus, setMainAssignTo }: TaskCardProps) {
-  const [value, setValue] = useState<string | undefined>(task.text);
-  const [status, setStatus] = useState(task.status);
-
-  const [assignTo, setAssignTo] = useState(task.assignedTo);
+export function TaskCard({ task, isOverlay }: TaskCardProps) {
+  const { t } = useTranslation();
   const { mode } = useThemeStore();
+
+  const [innerTask, setInnerTask] = useState(task);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const { updateTasks } = useContext(WorkspaceContext);
+
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const handleChange = (field: keyof Task, value: any) => {
+    const updatedTask = { ...innerTask, [field]: value };
+    setInnerTask(updatedTask);
+    updateTasks(updatedTask);
+  };
+
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: task.id,
+    id: innerTask.id,
     data: {
       type: 'Task',
       task,
@@ -86,32 +86,24 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
   );
 
   const toggleEditorState = () => {
-    if (toggleTaskClick) toggleTaskClick(task.id);
+    setIsEditing(!isEditing);
   };
 
-  useEffect(() => {
-    if (value) task.text = value;
-  }, [value]);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    setMainAssignTo(task, assignTo);
-  }, [assignTo]);
-
-  // Textarea autofocus cursor on the end of the value
-  useEffect(() => {
-    if (isViewState) {
-      const editorTextAria = document.getElementById(task.id as string);
-      if (!editorTextAria) return;
-      const textAreaElement = editorTextAria as HTMLTextAreaElement;
-      if (value) textAreaElement.value = value;
-      textAreaElement.focus();
-      textAreaElement.setSelectionRange(textAreaElement.value.length, textAreaElement.value.length);
-    }
-  }, [task.id, isViewState]);
-
-  useEffect(() => {
-    setTaskStatus(task, status);
-  }, [status]);
+  useDoubleClick({
+    onSingleClick: (e) => {
+      console.log(e, 'single click');
+      if(isExpanded) toggleEditorState();
+      if(!isExpanded) setIsExpanded(true);
+    },
+    onDoubleClick: (e) => {
+      console.log(e, 'double click');
+      toggleEditorState();
+    },
+    ref: buttonRef,
+    latency: 250,
+  });
 
   return (
     <Card
@@ -119,97 +111,85 @@ export function TaskCard({ task, toggleTaskClick, isOverlay, isViewState, setTas
       style={style}
       className={variants({
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
-        status: task.status,
+        status: innerTask.status,
       })}
     >
-      <CardContent className="p-2 pr-4 space-between gap-2 flex flex-col border-b border-secondary relative">
-        <div className="flex gap-2">
-          <div className="flex flex-col gap-2">
-            <div className="group mt-[2px]">
-              <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
-              {task.type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />}
-              {task.type === 'bug' && <Bug size={16} className="fill-red-400 text-red-500 group-hover:opacity-0 transition-opacity" />}
-              {task.type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500 group-hover:opacity-0 transition-opacity" />}
-            </div>
-          </div>
-          {!isViewState && (
-            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-            <div onClick={toggleEditorState}>
-              <MDEditor.Markdown source={task.text} style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }} className="prose font-light" />
-            </div>
-          )}
-          {isViewState && (
-            <div className="flex flex-col gap-2" data-color-mode="dark">
-              <MDEditor
-                textareaProps={{ id: task.id as string }}
-                value={value}
-                preview={'edit'}
-                onChange={(newValue) => setValue(newValue)}
-                defaultTabEnable={true}
-                hideToolbar={true}
-                visibleDragbar={false}
-                height={'auto'}
-                style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', boxShadow: 'none', padding: '0' }}
-              />
+      <CardContent className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative group/content', isExpanded ? 'is-expanded' : 'is-collapsed')}>
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-2 w-full">
+            <div className="flex flex-col gap-2 mt-[2px]">
+              <SelectTaskType currentType={innerTask.type} changeTaskType={(newType) => handleChange('type', newType)} />
 
-              <div className="flex gap-2">
-                <Button onClick={toggleEditorState} size="sm" className="rounded text-[12px] p-1 h-6">
-                  Save
+              <Checkbox className="opacity-0 transition-opacity duration-700 group-hover/task:opacity-100" />
+            </div>
+            <div className="flex flex-col grow">
+              {isEditing ? (
+                <TaskEditor
+                  mode={mode}
+                  markdown={innerTask.markdown}
+                  setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown)}
+                  toggleEditorState={toggleEditorState}
+                  id={innerTask.id}
+                />
+              ) : (
+                <button type="button" ref={buttonRef} className="w-full">
+                  <MDEditor.Markdown
+                    source={innerTask.markdown}
+                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                    className="prose font-light text-start max-w-none"
+                  />
+                </button>
+              )}
+              {isExpanded && <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>}
+              <div className="opacity-50 group-hover/task:opacity-75 text-xs items-center font-light flex gap-1">
+                <div>F</div>
+                <div>&#183;</div>
+                <div>2d</div>
+                <div>&#183;</div>
+                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="collapsed-only flex gap-[2px]">
+                  <CheckCheck size={12} />
+                  <span className="text-success">1</span>
+                  <span className="font-light scale-90">/ 3</span>
                 </Button>
-
-                <Button onClick={toggleEditorState} variant="secondary" size="sm" className="rounded text-[12px] p-1 h-6">
-                  Cancel
+                <div className="collapsed-only">&#183;</div>
+                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="collapsed-only flex gap-[2px]">
+                  <Paperclip size={12} />
+                  <span>3</span>
+                </Button>
+                <div className="collapsed-only">&#183;</div>
+                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(!isExpanded)} className="flex gap-[2px]">
+                <span className="group-[.is-collapsed]/content:hidden">{t('common:less_info')}</span>
+                <span className="group-[.is-expanded]/content:hidden">{t('common:more_info')}</span>
                 </Button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className="flex items-center justify-between mt-1 gap-2">
-          <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
-            <span className="sr-only">Move task</span>
-            <GripVertical size={16} />
-          </Button>
+          <div className="flex items-center justify-between gap-1">
+            <Button
+              variant={'ghost'}
+              {...attributes}
+              {...listeners}
+              className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab group-hover/task:opacity-100 opacity-70"
+            >
+              <span className="sr-only"> {t('common:move_task')}</span>
+              <GripVertical size={16} />
+            </Button>
 
-          {task.type !== 'bug' && <SelectImpact mode="edit" />}
-          <LabelBox />
-          <div className="flex gap-2">
-            <AssignMembers
-              mode="reassign"
-              passedChild={
-                <button type="button" className="flex gap-1">
-                  {assignTo.length > 0 ? (
-                    assignTo.map((user) => {
-                      return (
-                        <HoverCard>
-                          <HoverCardTrigger>
-                            <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
-                          </HoverCardTrigger>
-                          <HoverCardContent className="w-80">
-                            <div className="flex justify-between space-x-4">
-                              <AvatarWrap type="USER" id={user.id as string} name={user.name} url={user.thumbnailUrl} />
-                              <div className="space-y-1">
-                                <h4 className="text-sm font-semibold">{user.name}</h4>
-                                <p className="text-sm">{user.bio}</p>
-                                <div className="flex items-center pt-2">
-                                  <Activity className="mr-2 h-4 w-4 opacity-70" />{' '}
-                                  <span className="text-xs text-muted-foreground">{dateShort(new Date().toISOString())}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
-                      );
-                    })
-                  ) : (
-                    <AvatarWrap type="USER" className="h-6 w-6" />
-                  )}
-                </button>
-              }
-              changeAssignTo={setAssignTo}
-            />
+            {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" />}
+            <div className="grow">
+              <SetLabels
+                projectId={task.projectId}
+                changeLabels={(newLabels) => handleChange('labels', newLabels)}
+                viewValue={innerTask.labels}
+                mode="edit"
+              />
+            </div>
 
-            <SelectStatus taskStatus={status} changeTaskStatus={(value) => setStatus(value as typeof status)} />
+            <div className="flex gap-2">
+              <AssignMembers mode="edit" viewValue={innerTask.assignedTo} changeAssignedTo={(newMembers) => handleChange('assignedTo', newMembers)} />
+              <SelectStatus taskStatus={innerTask.status} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
+            </div>
           </div>
         </div>
       </CardContent>

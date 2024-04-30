@@ -5,59 +5,46 @@ import { useTranslation } from 'react-i18next';
 
 type Props = {
   control: Control;
-  name: string;
   label: string;
-  placeholder?: string;
   description?: string;
-  disabledItemFunction?: (value: string) => boolean;
-  emptyIndicator?: string;
   required?: boolean;
 };
 
-const DomainsFormField = ({
-  control,
-  name,
-  label,
-  description,
-  placeholder,
-  emptyIndicator,
-  required,
-}: Props) => {
+const DomainsFormField = ({ control, label, description, required }: Props) => {
   const { t } = useTranslation();
   return (
     <FormField
       control={control}
-      name={name}
-      render={({ field: { value, onChange } }) => {
+      name={'emailDomains'}
+      render={({ field: { onChange, value } }) => {
         const defaultValue = value ? value.map((val: string) => ({ label: val, value: val })) : [];
-
         return (
-        <FormItem>
-          <FormLabel>
-            {label}
-            {required && <span className="ml-1 opacity-50">*</span>}
-          </FormLabel>
-          {description && <FormDescription>{description}</FormDescription>}
-          <FormControl>
-          
+          <FormItem>
+            <FormLabel>
+              {label}
+              {required && <span className="ml-1 opacity-50">*</span>}
+            </FormLabel>
+            {description && <FormDescription>{description}</FormDescription>}
+            <FormControl>
               <>
                 <MultipleSelector
-                  value={defaultValue}
+                  formControlName="emailDomains"
+                  // value={defaultValue}
                   onChange={(value) => {
                     onChange(value.map((domain) => domain.value));
                   }}
+                  defaultOptions={defaultValue}
                   creatable
                   createPlaceholder={t('common:add_domain')}
                   hidePlaceholderWhenSelected
-                  placeholder={placeholder}
-                  emptyValue={emptyIndicator}
+                  placeholder={t('common:placeholder.email_domains')}
                 />
               </>
-          
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}}
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 };

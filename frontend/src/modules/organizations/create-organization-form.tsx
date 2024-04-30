@@ -16,7 +16,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
-import { dialog } from '../common/dialoger/state';
+import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
@@ -78,24 +78,31 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       }
 
       if (isDialog) {
-        dialog.remove();
+        dialog.remove(true, 'create-organization');
       }
     },
   });
 
+  // Update dialog title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
-      dialog.updateTitle(
-        '1',
-        <Badge variant="plain" className="w-fit">
-          <SquarePen size={12} className="mr-2" />
-          <span className="font-light">{t('common:unsaved_changes')}</span>
-        </Badge>,
-        true,
-      );
+      const targetDialog = dialog.get('create-organization');
+      if (targetDialog && checkDialog(targetDialog)) {
+        dialog.update('create-organization', {
+          title: (
+            <div className="flex flex-row gap-2">
+              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
+              <Badge variant="plain" className="w-fit">
+                <SquarePen size={12} className="mr-2" />
+                <span className="font-light">{t('common:unsaved_changes')}</span>
+              </Badge>
+            </div>
+          ),
+        });
+      }
       return;
     }
-    dialog.setDefaultTitle('1');
+    dialog.reset('create-organization');
   }, [form.unsavedChanges]);
 
   const onSubmit = (values: FormValues) => {

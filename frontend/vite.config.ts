@@ -26,7 +26,7 @@ export default defineConfig(() => {
       react(),
       config.sentSentrySourceMaps
         ? sentryVitePlugin({
-            disable: process.env.NODE_ENV === 'development',
+            disable: config.mode === 'development',
             org: 'cella',
             project: 'cella',
             authToken: process.env.SENTRY_AUTH_TOKEN,
