@@ -65,19 +65,22 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   const { updateTasks } = useContext(WorkspaceContext);
   const { project } = useContext(ProjectContext);
 
+  const handleCloseForm = () => {
+    if (isDialog) dialog.remove();
+    onCloseForm?.();
+  };
+
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
     (event) => {
       if (event.key !== 'Escape') return;
-      if (isDialog) dialog.remove();
-      onCloseForm?.();
+      handleCloseForm()
     },
-    [isDialog, onCloseForm],
+    [],
   );
 
   const handleHotKeysEscKeyPress = useCallback(() => {
-    if (isDialog) dialog.remove();
-    onCloseForm?.();
-  }, [isDialog, onCloseForm]);
+    handleCloseForm()
+  }, []);
 
   useHotkeys([['Escape', handleHotKeysEscKeyPress]]);
 
@@ -105,7 +108,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     mutationFn: createWorkspace, // change to create task
     onSuccess: () => {
       // form.reset();
-      if (isDialog) dialog.remove();
+      handleCloseForm()
     },
   });
 

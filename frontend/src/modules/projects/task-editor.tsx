@@ -12,15 +12,21 @@ interface TaskEditorProps {
 }
 
 export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState }: TaskEditorProps) => {
-  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
-    (event) => {
-      if (event.key === 'Escape') toggleEditorState();
-    },
-    [],
-  );
+  const handleUpdateMarkdown = () => {
+    const editorTextAria = document.getElementById(id);
+    if (!editorTextAria) return toggleEditorState();;
+    const newValue = (editorTextAria as HTMLTextAreaElement).value;
+    setMarkdown(newValue);
+    toggleEditorState();
+  };
+
+  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback((event) => {
+    if (event.key !== 'Escape') return;
+    handleUpdateMarkdown()
+  }, []);
 
   const handleHotKeysEsc = useCallback(() => {
-    toggleEditorState();
+    handleUpdateMarkdown();
   }, []);
 
   useHotkeys([['Escape', handleHotKeysEsc]]);
