@@ -123,7 +123,7 @@ export default function Board() {
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
-        <ResizablePanelGroup direction="horizontal" className="flex gap-2">
+        <ResizablePanelGroup direction="horizontal" className="flex gap-2" id="project-panels">
           <SortableContext items={columnsId}>
             {projects.map((project, index) => (
               <Fragment key={project.id}>

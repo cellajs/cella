@@ -26,9 +26,9 @@ interface BoardColumnProps {
 }
 
 export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
-  const { tasks } = useContext(ProjectContext);
+  const { tasks = [] } = useContext(ProjectContext);
 
-  const tasksIds = useMemo(() =>  tasks.map((task) => task.id), [tasks]);
+  const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
 
@@ -38,8 +38,8 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   return (
     <BoardColumnHeader column={column} isOverlay={isOverlay}>
       <ScrollArea id={column.id}>
-        <CardContent className="flex flex-grow flex-col p-0">
-          {tasks && (
+        <CardContent className="flex flex-grow flex-col p-0 group/column">
+          {!!tasks.length && (
             <SortableContext items={tasksIds}>
               <Button
                 onClick={() => setShowAccepted(!showAccepted)}
@@ -49,7 +49,9 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
                 className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
               >
                 <span className="text-xs">{acceptedCount} accepted tasks</span>
-                <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+                {!!acceptedCount && (
+                  <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+                )}
               </Button>
               {tasks
                 .filter((t) => {
@@ -68,7 +70,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
                 className="w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5 text-sm -mt-[1px]"
               >
                 <span className="text-xs">{icedCount} iced tasks</span>
-                <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />
+                {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
               </Button>
             </SortableContext>
           )}

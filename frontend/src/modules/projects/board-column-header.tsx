@@ -2,12 +2,11 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Plus } from 'lucide-react';
-import { type RefObject, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { Card, CardHeader } from '~/modules/ui/card';
 import ToolTipButtons from './tooltip-buttons';
-import { useMeasure } from '~/hooks/use-measure';
 import CreateTaskForm from './task-form';
 import { sheet } from '../common/sheeter/state';
 import { ProjectSettings } from './project-settings';
@@ -29,9 +28,6 @@ export function BoardColumnHeader({ column, children, isOverlay }: BoardColumnHe
   const { t } = useTranslation();
   const containerRef = useRef(null);
   const [createForm, setCreateForm] = useState(false);
-
-  const { ref, bounds } = useMeasure();
-  const neededWidth = 375;
 
   const openSettingsSheet = () => {
     sheet(<ProjectSettings />, {
@@ -86,7 +82,6 @@ export function BoardColumnHeader({ column, children, isOverlay }: BoardColumnHe
       })}
     >
       <CardHeader
-        ref={ref as RefObject<HTMLDivElement>}
         className="p-3 text-normal leading-4 font-semibold border-b flex flex-row gap-2 space-between items-center"
       >
         <Button variant={'ghost'} {...attributes} {...listeners} size="xs" className="max-xs:hidden px-0 text-primary/50 -ml-1 cursor-grab relative">
@@ -100,7 +95,7 @@ export function BoardColumnHeader({ column, children, isOverlay }: BoardColumnHe
 
         <div className="grow" />
 
-        <ToolTipButtons key={column.id} rolledUp={bounds.width <= neededWidth} onSettingsClick={openSettingsSheet} />
+        <ToolTipButtons key={column.id} rolledUp={false} onSettingsClick={openSettingsSheet} />
 
         <Button variant="plain" size="xs" className="rounded" onClick={handleTaskFormClick}>
           <Plus size={16} className={`transition-transform ${createForm ? 'rotate-45 scale-125' : 'rotate-0'}`} />
