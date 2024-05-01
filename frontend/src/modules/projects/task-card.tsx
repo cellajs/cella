@@ -89,18 +89,21 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     setIsEditing(!isEditing);
   };
 
-  const expandedRef = useRef<HTMLDivElement>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
+  const expandedRef = useRef<HTMLDivElement>(null);
 
   useDoubleClick({
-    onDoubleClick: () => toggleEditorState(),
-    ref: expandedRef,
+    onDoubleClick: () => {
+      toggleEditorState();
+      setIsExpanded(true);
+    },
+    ref: summaryRef,
     latency: 250,
   });
 
   useDoubleClick({
     onDoubleClick: () => toggleEditorState(),
-    ref: summaryRef,
+    ref: expandedRef,
     latency: 250,
   });
 
@@ -116,7 +119,10 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
         isExpanded && 'border-l border-primary/50',
       )}
     >
-      <CardContent className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative')}>
+      <CardContent
+        id={`${innerTask.id}-content`}
+        className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative')}
+      >
         <div className="flex flex-col gap-1">
           <div className="flex gap-2 w-full">
             <div className="flex flex-col gap-2 mt-[2px]">
@@ -176,7 +182,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               {isExpanded && (
                 <div>
                   <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>
-                  <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 h-5 opacity-70">
+                  <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 h-5 -ml-1 opacity-70">
                     {t('common:less').toLowerCase()}
                   </Button>
                 </div>
@@ -197,14 +203,13 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
 
             {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" />}
 
-            <div className="grow">
-              <SetLabels
-                projectId={task.projectId}
-                changeLabels={(newLabels) => handleChange('labels', newLabels)}
-                viewValue={innerTask.labels}
-                mode="edit"
-              />
-            </div>
+            <SetLabels
+              projectId={task.projectId}
+              changeLabels={(newLabels) => handleChange('labels', newLabels)}
+              viewValue={innerTask.labels}
+              mode="edit"
+            />
+            <div className="grow h-0" />
 
             <div className="flex gap-2">
               <AssignMembers mode="edit" viewValue={innerTask.assignedTo} changeAssignedTo={(newMembers) => handleChange('assignedTo', newMembers)} />
