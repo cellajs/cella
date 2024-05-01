@@ -108,8 +108,18 @@ const UserSettings = () => {
       useUserStore.setState((state) => {
         state.user.sessions = state.user.sessions.filter((session) => !variables.includes(session.id));
       });
+      toast.success(variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'));
     },
   });
+
+  const sendResetPasswordClick = () => {
+    sendResetPasswordEmail(user.email);
+    setDisabledResetPassword(true);
+    setTimeout(() => {
+      setDisabledResetPassword(false);
+    }, 60000);
+    toast.success(t('common:success.send_reset_password_email', { email: user.email }));
+  };
 
   const openDeleteDialog = () => {
     dialog(
@@ -232,18 +242,7 @@ const UserSettings = () => {
               <CardDescription>Reset your password by sending a reset link to your email address.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button
-                className="w-full sm:w-auto"
-                disabled={disabledResetPassword}
-                onClick={() => {
-                  sendResetPasswordEmail(user.email);
-                  setDisabledResetPassword(true);
-
-                  setTimeout(() => {
-                    setDisabledResetPassword(false);
-                  }, 60000);
-                }}
-              >
+              <Button className="w-full sm:w-auto" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
                 <Send size={16} className="mr-2" />
                 {t('common:send_reset_link')}
               </Button>
