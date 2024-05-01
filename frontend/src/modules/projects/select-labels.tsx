@@ -97,17 +97,17 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
           aria-label="Set labels"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${
+          className={`flex h-auto justify-start font-light ${mode === 'create' ? 'w-full text-left py-1 border' : 'py-[2px] group-hover/task:opacity-100 opacity-70'} ${
             mode === 'edit' && selectedLabels.length && 'hover:bg-transparent'
           }`}
         >
           {!selectedLabels.length && <Tag size={16} className="opacity-50" />}
-          <div className="flex gap-[2px] truncate">
+          <div className="flex truncate flex-wrap gap-[1px]">
             {mode === 'create' && selectedLabels.length === 0 && <span className="ml-2">Choose labels</span>}
             {selectedLabels.length > 0 &&
               selectedLabels.map(({ value, id, color }) => {
                 return (
-                  <Badge variant="outline" key={id} className="font-light h-5" style={badgeStyle(color)}>
+                  <Badge variant="outline" key={id} className={`font-light ${mode === 'create' ? 'mr-1 h-6' : '-mr-1 h-5'} last:mr-0 bg-background/25`} style={badgeStyle(color)}>
                     {value}
                   </Badge>
                 );

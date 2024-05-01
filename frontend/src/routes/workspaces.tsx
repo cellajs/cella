@@ -18,11 +18,11 @@ export const WorkspaceRoute = createRoute({
   loader: async ({ params: { idOrSlug } }) => {
     queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
 
-    const { worker } = await import('~/mocks/worker')
+    // const { worker } = await import('~/mocks/worker')
  
     // `worker.start()` returns a Promise that resolves
     // once the Service Worker is up and ready to intercept requests.
-    return worker.start()
+    // return worker.start()
   },
   onLeave: async () => {
     console.log('Stopping worker')

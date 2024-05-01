@@ -5,6 +5,7 @@ import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import type { Label, Project, Task } from '~/mocks/workspaces';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import type { Workspace } from '~/types';
+import { getLabels, getProjects, getTasks } from '~/mocks/workspaces';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
@@ -49,14 +50,13 @@ const WorkspacePage = () => {
   };
 
   useEffect(() => {
-    fetch('/mock/workspace-data')
-      .then((response) => response.json())
-      .then((data) => {
-        setProjects(data.projects);
-        setLabels(data.labels);
-        setTasks(data.tasks);
-      })
-      .catch((error) => console.error('Error fetching MSW data:', error));
+    const projects = getProjects(3);
+    const labels = getLabels();
+    const tasks = getTasks(projects);
+
+    setProjects(projects);
+    setLabels(labels);
+    setTasks(tasks);
   }, [workspace]);
 
   return (

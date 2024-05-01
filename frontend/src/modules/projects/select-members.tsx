@@ -61,7 +61,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
           className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${
-            mode === 'edit' && selectedUsers.length && 'hover:bg-transparent'
+            mode === 'edit' && selectedUsers.length && 'px-0 hover:bg-transparent'
           }`}
         >
           {!selectedUsers.length && <UserX className="h-4 w-4 opacity-50" />}
