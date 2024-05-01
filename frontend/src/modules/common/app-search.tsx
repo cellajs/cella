@@ -1,21 +1,37 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { History, Loader2, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sticky from 'react-sticky-el';
-import { type OrganizationSuggestion, type UserSuggestion, getSuggestions } from '~/api/general';
+import { getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { useNavigationStore } from '~/store/navigation';
 import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
+import type { userSuggestionSchema, organizationSuggestionSchema, workspaceSuggestionSchema } from 'backend/modules/general/schema';
+import type { z } from 'zod';
+import type { PageResourceType } from 'backend/types/common';
+
+type SuggestionType = z.infer<typeof userSuggestionSchema> | z.infer<typeof organizationSuggestionSchema> | z.infer<typeof workspaceSuggestionSchema>;
+
+interface SuggestionSection {
+  id: 'users' | 'organizations' | 'workspaces';
+  label: string;
+  type: PageResourceType;
+}
+
+const suggestionSections: SuggestionSection[] = [
+  { id: 'users', label: 'common:users', type: 'USER' },
+  { id: 'organizations', label: 'common:organizations', type: 'ORGANIZATION' },
+  { id: 'workspaces', label: 'common:workspaces', type: 'WORKSPACE' },
+];
 
 export const AppSearch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
-  const maxVisibleItemsRef = useRef(0);
 
   const [searchValue, setSearchValue] = useState('');
 
@@ -50,147 +66,112 @@ export const AppSearch = () => {
     });
   };
 
-  const { data, isFetching } = useQuery({
+  const { data: suggestions, isFetching } = useQuery({
     queryKey: ['search', searchValue],
     queryFn: () => getSuggestions(searchValue),
     enabled: searchValue.length > 0,
+    initialData: { users: [], organizations: [], workspaces: [], total: 0 },
   });
 
-  const userSuggestions = data?.filter((suggestion) => suggestion.type === 'user') ?? [];
-  const organizationSuggestions = data?.filter((suggestion) => suggestion.type === 'organization') ?? [];
-
-  const onSelectSuggestion = (suggestion: UserSuggestion | OrganizationSuggestion) => {
+  const onSelectSuggestion = (suggestion: SuggestionType) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
-    if (suggestion.type === 'user') {
-      navigate({
-        to: '/user/$userIdentifier',
-        resetScroll: false,
-        params: {
-          userIdentifier: suggestion.slug,
-        },
-      });
-    } else if (suggestion.type === 'organization') {
-      navigate({
-        to: '/$organizationIdentifier/members',
-        resetScroll: false,
-        params: {
-          organizationIdentifier: suggestion.slug,
-        },
-      });
-    }
+
+    navigate({
+      to: suggestion.type === 'ORGANIZATION' ? '/$idOrSlug' : `/${suggestion.type.toLowerCase()}/$idOrSlug`,
+      resetScroll: false,
+      params: {
+        idOrSlug: suggestion.slug,
+      },
+    });
 
     dialog.remove(false);
   };
 
   useEffect(() => {
     if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = 0;
-  }, [data]);
-
-  useEffect(() => {
-    const calculateMaxVisibleItems = () => {
-      if (scrollAreaRef.current) {
-        const scrollAreaHeight = scrollAreaRef.current.clientHeight;
-        const itemHeight = 24;
-        return Math.floor(scrollAreaHeight / itemHeight);
-      }
-      return 0;
-    };
-    maxVisibleItemsRef.current = calculateMaxVisibleItems();
-  }, []);
-
-  const visibleUserSuggestions = userSuggestions.slice(0, maxVisibleItemsRef.current);
-  const visibleOrganizationSuggestions = organizationSuggestions.slice(0, maxVisibleItemsRef.current);
+  }, [suggestions]);
 
   return (
     <Command className="rounded-lg border" shouldFilter={false}>
       <CommandInput
         value={searchValue}
-        setZeroValue={setSearchValue}
+        clearValue={setSearchValue}
         autoFocus
         placeholder={t('common:placeholder.search')}
         onValueChange={(value) => {
           setSearchValue(value);
         }}
       />
-      <ScrollArea id={'suggestion-search'} ref={scrollAreaRef} className="h-[30vh] overflow-y-auto">
+      <ScrollArea id={'suggestion-search'} ref={scrollAreaRef} className="h-[50vh] sm:h-[40vh] overflow-y-auto">
         {isFetching && (
           <CommandLoading>
             <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
           </CommandLoading>
         )}
-        <CommandList>
-          {userSuggestions.length < 1 && organizationSuggestions.length < 1 && (
-            <>
-              {!!searchValue.length && <CommandEmpty>{t('common:no_results_found')}</CommandEmpty>}
-              {searchValue.length === 0 && <CommandEmpty>{t('common:global_search.text')}</CommandEmpty>}
-              {!!recentSearches.length && (
-                <CommandGroup>
-                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
-                  {recentSearches.map((search) => (
-                    <CommandItem
-                      key={search}
-                      onSelect={() => {
-                        setSearchValue(search);
-                      }}
-                      className="justify-between"
-                    >
-                      <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                        <History className="h-5 w-5" />
-                        <span className="underline-offset-4 truncate font-medium">{search}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          deleteItemFromList(search);
-                        }}
-                      >
-                        <X className="h-5 w-5 opacity-70 hover:opacity-100" />
-                      </button>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-            </>
-          )}
-          {/* {isFetching && (
-          <CommandLoading>
-            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-          </CommandLoading>
-        )} */}
-          {userSuggestions.length > 0 && (
-            <CommandGroup>
-              <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-10">
-                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:user.plural')}</div>
-              </Sticky>
-              {visibleUserSuggestions.map((suggestion) => (
-                <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
-                  <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                    <AvatarWrap type="user" className="h-8 w-8" id={suggestion.id} name={suggestion.name} url={suggestion.thumbnailUrl} />
-                    <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-          {organizationSuggestions.length > 0 && userSuggestions.length > 0 && <CommandSeparator />}
-          {organizationSuggestions.length > 0 && (
-            <CommandGroup>
-              <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-20">
-                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:organization.plural')}</div>
-              </Sticky>
-              {visibleOrganizationSuggestions.map((suggestion) => (
-                <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
-                  <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                    <AvatarWrap type="organization" className="h-8 w-8" id={suggestion.id} name={suggestion.name} url={suggestion.thumbnailUrl} />
-                    <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-        </CommandList>
+        {
+          <CommandList className="px-1">
+            {suggestions.total === 0 && (
+              <>
+                {!!searchValue.length && <CommandEmpty>{t('common:no_results_found')}</CommandEmpty>}
+                {searchValue.length === 0 && <CommandEmpty>{t('common:global_search.text')}</CommandEmpty>}
+                {!!recentSearches.length && (
+                  <CommandGroup>
+                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
+                    {recentSearches.map((search) => (
+                      <CommandItem key={search} onSelect={() => setSearchValue(search)} className="justify-between">
+                        <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                          <History className="h-5 w-5" />
+                          <span className="underline-offset-4 truncate font-medium">{search}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            deleteItemFromList(search);
+                          }}
+                        >
+                          <X className="h-5 w-5 opacity-70 hover:opacity-100" />
+                        </button>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </>
+            )}
+            {suggestionSections.map((section, index) => {
+              const hasPrevious = index > 0 && suggestions[suggestionSections[index - 1].id].length > 0;
+              const hasNext = index < suggestionSections.length - 1 && suggestions[suggestionSections[index + 1].id].length > 0;
+
+              return (
+                <Fragment key={section.id}>
+                  {hasPrevious && hasNext && <CommandSeparator />}
+                  <CommandGroup>
+                    {hasNext && (
+                      <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-10">
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</div>
+                      </Sticky>
+                    )}
+                    {suggestions[section.id].map((suggestion) => (
+                      <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
+                        <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                          <AvatarWrap
+                            type={section.type}
+                            className="h-8 w-8"
+                            id={suggestion.id}
+                            name={suggestion.name}
+                            url={suggestion.thumbnailUrl}
+                          />
+                          <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Fragment>
+              );
+            })}
+          </CommandList>
+        }
       </ScrollArea>
     </Command>
   );

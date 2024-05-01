@@ -1,6 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '~/store/theme';
 
+import { ExpandableList } from '~/modules/common/expandable-list';
+import { useBreakpoints } from '../../../hooks/use-breakpoints';
+
 type FeatureProps = {
   icon: string;
   invertClass: string;
@@ -36,42 +39,21 @@ const Feature = ({ icon, invertClass, index }: FeatureProps) => {
   );
 };
 
-import { ArrowDown } from 'lucide-react';
-import { useState } from 'react';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
-import { useBreakpoints } from '../../../hooks/use-breakpoints';
-
 const Features = () => {
-  const { t } = useTranslation();
   const { mode } = useThemeStore();
   const invertClass = mode === 'dark' ? 'invert' : '';
   const isMediumScreen = useBreakpoints('min', 'md');
 
-  const [showAllFeatures, setShowAllFeatures] = useState(isMediumScreen);
-
-  const visibleFeatures = showAllFeatures ? features : features.slice(0, 4);
-
-  const handleLoadMore = () => {
-    setShowAllFeatures(true);
-  };
-
   return (
-    <>
-      <div className="mx-auto grid max-w-[64rem] justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">
-        {visibleFeatures.map((feature, index) => (
-          <Feature key={feature.icon} {...feature} index={index} invertClass={invertClass} />
-        ))}
-      </div>
-
-      {!showAllFeatures && features.length > 4 && (
-        <Button variant="ghost" className="w-full mt-4" onClick={handleLoadMore}>
-          <Badge className="mr-2">5</Badge>
-          {t('common:more_features')}
-          <ArrowDown className="ml-2" size={16} />
-        </Button>
-      )}
-    </>
+    <div className="mx-auto grid max-w-[64rem] justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">
+      <ExpandableList
+        items={features}
+        renderItem={(feature, index) => <Feature key={feature.icon} {...feature} index={index} invertClass={invertClass} />}
+        initialDisplayCount={4}
+        alwaysShowAll={isMediumScreen}
+        expandText="common:more_features"
+      />
+    </div>
   );
 };
 

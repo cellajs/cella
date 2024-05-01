@@ -12,9 +12,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 interface ErrorNoticeProps {
   error?: ErrorType;
   resetErrorBoundary?: () => void;
+  isRootLevel?: boolean;
 }
 
-const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) => {
+const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, isRootLevel }) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const dateNow = new Date().toUTCString();
@@ -43,7 +44,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) 
           <CardHeader className="text-center">
             <CardTitle className="text-2xl mb-2">
               {error?.resourceType
-                ? t(`common:error.resource_${error.type}`, { resource: t(error.resourceType) })
+                ? t(`common:error.resource_${error.type}`, { resource: t(error.resourceType.toLowerCase()) })
                 : error?.type
                   ? t(`common:error.${error.type}`)
                   : error?.message || t('common:error.error')}
@@ -51,7 +52,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) 
             <CardDescription>
               <span>
                 {error?.resourceType
-                  ? t(`common:error.resource_${error.type}.text`, { resource: t(error.resourceType).toLowerCase() })
+                  ? t(`common:error.resource_${error.type}.text`, { resource: t(error.resourceType.toLowerCase()) })
                   : error?.type
                     ? t(`common:error.${error.type}.text`)
                     : error?.message || t('common:error.reported_try_or_contact')}
@@ -111,7 +112,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary }) 
             )}
           </CardFooter>
         </Card>
-        <AppFooter />
+        {isRootLevel && <AppFooter />}
       </div>
     </div>
   );

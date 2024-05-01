@@ -4,19 +4,10 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithoutDa
 import { cookieSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { publicGuard } from '../../middlewares/guard';
-import { rateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { apiUserSchema } from '../users/schema';
-import {
-  acceptInviteJsonSchema,
-  checkEmailJsonSchema,
-  emailExistsJsonSchema,
-  resetPasswordJsonSchema,
-  signInJsonSchema,
-  signUpJsonSchema,
-} from './schema';
-
-const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');
+import { checkEmailJsonSchema, emailExistsJsonSchema, resetPasswordJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
+import { authRateLimiter } from '../../middlewares/rate-limiter';
 
 export const signUpRouteConfig = createRouteConfig({
   method: 'post',
@@ -54,7 +45,7 @@ export const verifyEmailRouteConfig = createRouteConfig({
   method: 'get',
   path: '/verify-email/{token}',
   guard: publicGuard,
-  middlewares: [authRateLimiter],
+  middleware: [authRateLimiter],
   tags: ['auth'],
   summary: 'Verify a user email address',
   security: [],
@@ -83,7 +74,7 @@ export const sendVerificationEmailRouteConfig = createRouteConfig({
   method: 'post',
   path: '/send-verification-email',
   guard: publicGuard,
-  middlewares: [authRateLimiter],
+  middleware: [authRateLimiter],
   tags: ['auth'],
   summary: 'Resend a verification email',
   security: [],
@@ -115,7 +106,7 @@ export const resetPasswordRouteConfig = createRouteConfig({
   method: 'post',
   path: '/reset-password',
   guard: publicGuard,
-  middlewares: [authRateLimiter],
+  middleware: [authRateLimiter],
   tags: ['auth'],
   summary: 'Request a reset password email',
   security: [],
@@ -147,7 +138,7 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
   method: 'post',
   path: '/reset-password/{token}',
   guard: publicGuard,
-  middlewares: [authRateLimiter],
+  middleware: [authRateLimiter],
   tags: ['auth'],
   summary: 'Submit a new password',
   security: [],
@@ -180,7 +171,7 @@ export const checkEmailRouteConfig = createRouteConfig({
   method: 'post',
   path: '/check-email',
   guard: publicGuard,
-  middlewares: [authRateLimiter],
+  middleware: [authRateLimiter],
   tags: ['auth'],
   summary: 'Check if an email address exists',
   security: [],
@@ -210,7 +201,7 @@ export const signInRouteConfig = createRouteConfig({
   method: 'post',
   path: '/sign-in',
   guard: publicGuard,
-  middlewares: [signInRateLimiter()],
+  middleware: [signInRateLimiter()],
   tags: ['auth'],
   summary: 'Sign in a user',
   security: [],
@@ -400,44 +391,6 @@ export const signOutRouteConfig = createRouteConfig({
           schema: successResponseWithoutDataSchema,
         },
       },
-    },
-    ...errorResponses,
-  },
-});
-
-export const acceptInviteRouteConfig = createRouteConfig({
-  method: 'post',
-  path: '/accept-invite/{token}',
-  guard: publicGuard,
-  middlewares: [authRateLimiter],
-  tags: ['auth'],
-  summary: 'Accept invitation',
-  request: {
-    params: z.object({
-      token: z.string(),
-    }),
-    body: {
-      content: {
-        'application/json': {
-          schema: acceptInviteJsonSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Invitation was accepted',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(z.string()),
-        },
-      },
-    },
-    302: {
-      description: 'Redirect to github',
-      headers: z.object({
-        Location: z.string(),
-      }),
     },
     ...errorResponses,
   },

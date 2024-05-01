@@ -1,6 +1,9 @@
 import { createRoute } from '@tanstack/react-router';
 import Home from '~/modules/home';
 import { IndexRoute } from './routeTree';
+import { Suspense, lazy } from 'react';
+
+const Welcome = lazy(() => import('~/modules/home/welcome'));
 
 export const HomeRoute = createRoute({
   path: '/',
@@ -15,4 +18,15 @@ export const HomeAliasRoute = createRoute({
   staticData: { pageTitle: 'Home' },
   getParentRoute: () => IndexRoute,
   component: () => <Home />,
+});
+
+export const WelcomeRoute = createRoute({
+  path: '/welcome',
+  staticData: { pageTitle: 'Welcome' },
+  getParentRoute: () => IndexRoute,
+  component: () => (
+    <Suspense>
+      <Welcome />
+    </Suspense>
+  ),
 });

@@ -1,190 +1,100 @@
-import { useDndContext, type UniqueIdentifier } from '@dnd-kit/core';
-import { SortableContext, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useDndContext } from '@dnd-kit/core';
+import { SortableContext } from '@dnd-kit/sortable';
 import { cva } from 'class-variance-authority';
-import { ChevronDown, Footprints, GripVertical, Maximize2, Plus, Settings, Trash } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { BackgroundPicker } from '~/modules/common/background-picker';
+import { ChevronDown } from 'lucide-react';
+import { useContext, useMemo, useState } from 'react';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader } from '~/modules/ui/card';
-import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { dialog } from '../common/dialoger/state';
-import { useElectric, type Project, type Task } from '../common/root/electric';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import CreateTaskForm from './create-task-form';
+import { CardContent } from '~/modules/ui/card';
+import { ScrollArea } from '~/modules/ui/scroll-area';
 import { TaskCard } from './task-card';
+import { ProjectContext } from './board';
+import { BoardColumnHeader } from './board-column-header';
 
 export interface Column {
-  id: UniqueIdentifier;
+  id: string;
   name: string;
 }
 
-export type ColumnType = 'Column';
-
 export interface ColumnDragData {
-  type: ColumnType;
-  column: Project;
+  type: 'Column';
+  column: Column;
 }
 
 interface BoardColumnProps {
-  project: Project;
-  tasks: Task[];
+  column: Column;
   isOverlay?: boolean;
 }
 
-export function BoardColumn({ project, tasks, isOverlay }: BoardColumnProps) {
-  const { t } = useTranslation();
+export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
+  const { tasks = [] } = useContext(ProjectContext);
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+  const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
+  const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
 
-  const tasksIds = useMemo(() => {
-    return tasks.map((task) => task.id);
-  }, [tasks]);
+  const [showIced, setShowIced] = useState(false);
+  const [showAccepted, setShowAccepted] = useState(false);
 
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: project.id,
-    data: {
-      type: 'Column',
-      column: project,
-    } satisfies ColumnDragData,
-    attributes: {
-      roleDescription: `Column: ${project.name}`,
-    },
-  });
+  // const createTask = () => {
+  //   dialog(<CreateTaskForm project={project} dialog />, {
+  //     className: 'md:max-w-xl',
+  //     title: t('common:create_task'),
+  //   });
+  // };
 
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
-  };
-
-  const variants = cva('h-[80vh] max-w-full bg-card flex flex-col flex-shrink-0 snap-center', {
-    variants: {
-      dragging: {
-        default: 'border-2 border-transparent',
-        over: 'ring-2 opacity-30',
-        overlay: 'ring-2 ring-primary',
-      },
-    },
-  });
-
-  // TODO
-  const [background, setBackground] = useState('#ff75c3');
-
-  const createTask = () => {
-    dialog(<CreateTaskForm project={project} dialog />, {
-      className: 'md:max-w-xl',
-      title: t('common:create_task'),
-    });
-  };
-
-  const onDelete = () => {
-    db.projects.delete({ where: { id: project.id } });
-  };
+  // const onDelete = () => {
+  //   db.projects.delete({ where: { id: project.id } });
+  // };
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={variants({
-        dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
-      })}
-    >
-      <CardHeader className="p-3 font-semibold border-b flex flex-row gap-2 space-between items-center">
-        <Button variant={'ghost'} {...attributes} {...listeners} className=" py-1 px-0 text-primary/50 -ml-1 h-auto cursor-grab relative">
-          <span className="sr-only">{`Move column: ${project.name}`}</span>
-          <GripVertical size={16} />
-        </Button>
-
-        <BackgroundPicker background={background} setBackground={setBackground} className="p-2 h-8 w-8" options={['solid']} />
-
-        <div> {project.name}</div>
-
-        <div className="grow" />
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-              <Footprints size={16} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={13}>
-            {t('Show velocity')}
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-              <Maximize2 size={16} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={13}>
-            {t('Project view')}
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8">
-              <Settings size={16} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={13}>
-            {t('Project settings')}
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8" onClick={onDelete}>
-              <Trash size={16} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={13}>
-            {t('Delete project')}
-          </TooltipContent>
-        </Tooltip>
-
-        <Button variant="plain" size="sm" className="rounded text-sm p-2 h-8" onClick={createTask}>
-          <Plus size={16} className="mr-1" />
-          Story
-        </Button>
-      </CardHeader>
-      <ScrollArea>
-        <CardContent className="flex flex-grow flex-col p-0">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-success text-sm -mt-[1px]"
-          >
-            <span className="text-[12px]">16 accepted stories</span>
-            <ChevronDown size={12} />
-          </Button>
-          <SortableContext items={tasksIds}>
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </SortableContext>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full rounded-none gap-1 border-none opacity-75 hover:opacity-100 text-sky-600 text-sm -mt-[1px]"
-          >
-            <span className="text-[12px]">12 iced stories</span>
-            <ChevronDown size={12} />
-          </Button>
+    <BoardColumnHeader column={column} isOverlay={isOverlay}>
+      <ScrollArea id={column.id} size="indicatorVertical">
+        <CardContent className="flex flex-grow flex-col p-0 group/column">
+          {!!tasks.length && (
+            <SortableContext items={tasksIds}>
+              <Button
+                onClick={() => setShowAccepted(!showAccepted)}
+                variant="ghost"
+                disabled={!acceptedCount}
+                size="sm"
+                className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
+              >
+                <span className="text-xs">{acceptedCount} accepted</span>
+                {!!acceptedCount && (
+                  <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+                )}
+              </Button>
+              {tasks
+                .filter((t) => {
+                  if (showAccepted && t.status === 6) return true;
+                  if (showIced && t.status === 0) return true;
+                  return t.status !== 0 && t.status !== 6;
+                })
+                .map((task) => (
+                  <TaskCard task={task} key={task.id} />
+                ))}
+              <Button
+                onClick={() => setShowIced(!showIced)}
+                variant="ghost"
+                disabled={!icedCount}
+                size="sm"
+                className="w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5 text-sm -mt-[1px]"
+              >
+                <span className="text-xs">{icedCount} iced</span>
+                {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
+              </Button>
+            </SortableContext>
+          )}
         </CardContent>
       </ScrollArea>
-    </Card>
+    </BoardColumnHeader>
   );
 }
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   const dndContext = useDndContext();
 
-  const variations = cva('px-2 md:px-0 flex lg:justify-center pb-4', {
+  const variations = cva('h-[calc(100vh-64px-64px)] md:h-[calc(100vh-88px)]', {
     variants: {
       dragging: {
         default: 'snap-x snap-mandatory',
@@ -193,14 +103,5 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
     },
   });
 
-  return (
-    <ScrollArea
-      className={variations({
-        dragging: dndContext.active ? 'active' : 'default',
-      })}
-    >
-      <div className="flex gap-2 items-center flex-row justify-center">{children}</div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
-  );
+  return <div className={variations({ dragging: dndContext.active ? 'active' : 'default' })}>{children}</div>;
 }

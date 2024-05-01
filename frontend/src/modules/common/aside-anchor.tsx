@@ -9,7 +9,8 @@ interface AsideAnchorProps {
 export const AsideAnchor = ({ id, className, children }: AsideAnchorProps) => {
   return (
     // aside-anchor class is used to correct the offset of the anchor
-    <div id={id} className={cn('first:-mt-20 first:pt-20 md:first:-mt-10 md:first:pt-10', className)}>
+    <div id={id} className={cn('', className)}>
+      <div id={`${id}-anchor`} className="absolute w-[1px] -mt-20 h-20 md:-mt-16 md:h-16" />
       {children}
     </div>
   );

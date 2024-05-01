@@ -2,7 +2,7 @@ import { Mail, Trash, XSquare } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useContext, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { type GetMembersParams, getMembersByOrganizationIdentifier } from '~/api/organizations';
+import { type GetMembersParams, getOrganizationMembers } from '~/api/organizations';
 import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -68,8 +68,9 @@ function Toolbar({
 
   const openInviteDialog = () => {
     dialog(<InviteUsers organization={organization} type="organization" dialog />, {
+      id: 'user-invite',
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-[100] max-w-3xl',
+      className: 'w-auto shadow-none relative z-[100] max-w-4xl',
       container: containerRef.current,
       title: t('common:invite'),
       text: `${t('common:invite_members.text')}`,
@@ -151,7 +152,7 @@ function Toolbar({
           columns={columns}
           selectedRows={selectedMembers}
           fetchRows={async (limit) => {
-            const { items } = await getMembersByOrganizationIdentifier(organization.id, { limit, role, q: query, sort, order });
+            const { items } = await getOrganizationMembers(organization.id, { limit, role, q: query, sort, order });
             return items;
           }}
         />

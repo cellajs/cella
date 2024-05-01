@@ -13,11 +13,13 @@ interface Props<TFieldValues extends FieldValues> {
   type?: Parameters<typeof Input>[0]['type'] | 'textarea';
   description?: string;
   placeholder?: string;
+  onFocus?: () => void;
   minimal?: boolean;
   subComponent?: React.ReactNode;
   required?: boolean;
   disabled?: boolean;
   icon?: ReactNode;
+  inputClassName?: string;
 }
 
 const InputFormField = <TFieldValues extends FieldValues>({
@@ -27,12 +29,14 @@ const InputFormField = <TFieldValues extends FieldValues>({
   value,
   defaultValue,
   description,
+  onFocus,
   type = 'text',
   placeholder,
   subComponent,
   required,
   disabled,
   icon,
+  inputClassName,
 }: Props<TFieldValues>) => (
   <FormField
     control={disabled ? undefined : control}
@@ -50,6 +54,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
             {type === 'textarea' ? (
               <Textarea
                 placeholder={placeholder}
+                onFocus={onFocus}
                 autoResize={true}
                 defaultValue={defaultValue}
                 value={value || formFieldValue || ''}
@@ -58,7 +63,9 @@ const InputFormField = <TFieldValues extends FieldValues>({
               />
             ) : (
               <Input
+                className={inputClassName}
                 type={type}
+                onFocus={onFocus}
                 placeholder={placeholder}
                 defaultValue={defaultValue}
                 value={value || formFieldValue || ''}

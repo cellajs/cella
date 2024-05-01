@@ -2,9 +2,10 @@ import { type DefaultError, infiniteQueryOptions, useInfiniteQuery, useMutation 
 import { useSearch } from '@tanstack/react-router';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Member } from '~/types';
+import type { Member, Membership } from '~/types';
 
-import { type GetMembersParams, getMembersByOrganizationIdentifier, updateUserInOrganization } from '~/api/organizations';
+import { type GetMembersParams, getOrganizationMembers } from '~/api/organizations';
+import { updateMembership } from '~/api/memberships';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
@@ -15,7 +16,7 @@ import { useDebounce } from '~/hooks/use-debounce';
 import useMutateQueryData from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import { OrganizationContext } from '~/modules/organizations/organization';
-import { organizationMembersRoute } from '~/routes/organizations';
+import { OrganizationMembersRoute } from '~/routes/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
@@ -24,16 +25,16 @@ const LIMIT = 40;
 
 export type MembersSearch = z.infer<typeof getUsersByOrganizationQuerySchema>;
 
-export const membersQueryOptions = (organizationIdentifier: string, { q, sort: initialSort, order: initialOrder, role }: GetMembersParams) => {
+export const membersQueryOptions = (idOrSlug: string, { q, sort: initialSort, order: initialOrder, role }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['members', organizationIdentifier, q, sort, order, role],
+    queryKey: ['members', idOrSlug, q, sort, order, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getMembersByOrganizationIdentifier(
-        organizationIdentifier,
+      const fetchedData = await getOrganizationMembers(
+        idOrSlug,
         {
           page: pageParam,
           q,
@@ -52,19 +53,25 @@ export const membersQueryOptions = (organizationIdentifier: string, { q, sort: i
   });
 };
 
-export const useUpdateUserInOrganizationMutation = (organizationIdentifier: string) => {
+export const useUpdateUserInOrganizationMutation = (idOrSlug: string) => {
   return useMutation<
-    Member,
+    Membership,
     DefaultError,
     {
       id: string;
       role: Member['organizationRole'];
     }
   >({
-    mutationKey: ['members', 'update', organizationIdentifier],
-    mutationFn: (params) => updateUserInOrganization(organizationIdentifier, params.id, params.role),
-    onSuccess: (member) => {
-      queryClient.setQueryData(['users', organizationIdentifier], member);
+    mutationKey: ['members', 'update', idOrSlug],
+    mutationFn: (params) => updateMembership(idOrSlug, params.id, params.role),
+    // TODO: Review onSuccess
+    onSuccess: (membership) => {
+      const member = queryClient.getQueryData<Member>(['users', idOrSlug]);
+      if (!member) return;
+      queryClient.setQueryData<Member>(['users', idOrSlug], {
+        ...member,
+        organizationRole: membership.role,
+      });
     },
     gcTime: 1000 * 10,
   });
@@ -75,7 +82,7 @@ const MembersTable = () => {
   const { organization } = useContext(OrganizationContext);
   const [columns, setColumns] = useColumns();
   const search = useSearch({
-    from: organizationMembersRoute.id,
+    from: OrganizationMembersRoute.id,
   });
   const { mutate: mutateMember } = useUpdateUserInOrganizationMutation(organization.slug);
 
@@ -93,12 +100,12 @@ const MembersTable = () => {
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q: query,
+      q: debounceQuery,
       sort: sortColumns[0]?.columnKey,
       order: sortColumns[0]?.direction.toLowerCase(),
       role,
     }),
-    [query, role, sortColumns],
+    [debounceQuery, role, sortColumns],
   );
   useSaveInSearchParams(filters, {
     sort: 'createdAt',
@@ -108,7 +115,7 @@ const MembersTable = () => {
   const callback = useMutateQueryData([
     'members',
     organization.slug,
-    query,
+    debounceQuery,
     sortColumns[0]?.columnKey,
     sortColumns[0]?.direction.toLowerCase(),
     role,
@@ -136,7 +143,7 @@ const MembersTable = () => {
     setRows(records);
   };
 
-  const isFiltered = role !== undefined || !!query;
+  const isFiltered = role !== undefined || !!debounceQuery;
 
   const onResetFilters = () => {
     setQuery('');

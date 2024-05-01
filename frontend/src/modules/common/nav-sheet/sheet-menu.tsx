@@ -7,18 +7,27 @@ import { useNavigationStore } from '~/store/navigation';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
+import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
+import type { LucideProps } from 'lucide-react';
+import type { PageResourceType } from 'backend/types/common';
 
 export type SectionItem = {
   id: string;
-  type: string;
+  type: PageResourceType;
+  label: string;
   createForm?: React.ReactNode;
+  icon?: React.ElementType<LucideProps>;
 };
 
 // Here you declare the menu sections
-export const menuSections: SectionItem[] = [{ id: 'organizations', type: 'organization', createForm: <CreateOrganizationForm dialog /> }];
+export const menuSections: SectionItem[] = [
+  { id: 'organizations', type: 'ORGANIZATION', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
+  { id: 'workspaces', type: 'WORKSPACE', label: 'common:workspaces', createForm: <CreateWorkspaceForm dialog /> },
+  { id: 'projects', type: 'PROJECT', label: 'common:projects' },
+];
 
 // Set search results to empty array for each menu type
 export const initialSearchResults = menuSections.reduce(
@@ -49,7 +58,9 @@ export const SheetMenu = memo(() => {
   // Render search results
   const searchResultsListItems = useCallback(() => {
     return Object.entries(searchResults).flatMap(([_, items]) => {
-      return items.length > 0 ? items.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} />) : [];
+      return items.length > 0
+        ? items.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} searchResults={true} />)
+        : [];
     });
   }, [searchResults, menuItemClick]);
 
@@ -80,7 +91,7 @@ export const SheetMenu = memo(() => {
         </div>
       )}
 
-      {!searchTerm && renderedSections}
+      {!searchTerm && <div className="mt-2">{renderedSections}</div>}
 
       {!searchTerm && (
         <div className="my-4 flex items-center justify-center space-x-2">

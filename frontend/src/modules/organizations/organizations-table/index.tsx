@@ -1,7 +1,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { getOrganizations, updateUserInOrganization } from '~/api/organizations';
+import { getOrganizations } from '~/api/organizations';
+import { updateMembership } from '~/api/memberships';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { Bird } from 'lucide-react';
@@ -42,17 +43,17 @@ const OrganizationsTable = () => {
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q: query,
+      q: debounceQuery,
       sort: sortColumns[0]?.columnKey,
       order: sortColumns[0]?.direction.toLowerCase(),
     }),
-    [query, sortColumns],
+    [debounceQuery, sortColumns],
   );
 
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   const queryResult = useInfiniteQuery({
-    queryKey: ['organizations', query, sortColumns],
+    queryKey: ['organizations', debounceQuery, sortColumns],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
       const fetchedData = await getOrganizations(
@@ -71,7 +72,7 @@ const OrganizationsTable = () => {
     refetchOnWindowFocus: false,
   });
 
-  const callback = useMutateQueryData(['organizations', query, sortColumns]);
+  const callback = useMutateQueryData(['organizations', debounceQuery, sortColumns]);
   const [columns, setColumns] = useColumns(callback);
 
   const onRowsChange = async (records: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
@@ -79,7 +80,7 @@ const OrganizationsTable = () => {
     for (const index of indexes) {
       const organization = records[index];
       if (column.key === 'userRole' && organization.userRole) {
-        updateUserInOrganization(organization.id, user.id, organization.userRole)
+        updateMembership(organization.id, user.id, organization.userRole)
           .then(() => {
             toast.success(t('common:success.your_role_updated'));
           })
@@ -92,7 +93,7 @@ const OrganizationsTable = () => {
     setRows(records);
   };
 
-  const isFiltered = !!query;
+  const isFiltered = !!debounceQuery;
 
   const onResetFilters = () => {
     setQuery('');

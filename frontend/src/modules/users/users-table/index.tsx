@@ -20,7 +20,7 @@ import { useColumns } from './columns';
 import Toolbar from './toolbar';
 
 // export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
-export type UserRow = User & { type: 'MASTER' | 'DETAIL'; expanded?: boolean; parent?: User };
+export type UserRow = User & { _type: 'MASTER' | 'DETAIL'; _expanded?: boolean; _parent?: User };
 
 export type UsersSearch = z.infer<typeof getUsersQuerySchema>;
 
@@ -40,23 +40,24 @@ const UsersTable = () => {
   const [query, setQuery] = useState<UsersSearch['q']>(search.q);
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
 
+  const debounceQuery = useDebounce(query, 300);
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q: query,
+      q: debounceQuery,
       sort: sortColumns[0]?.columnKey,
       order: sortColumns[0]?.direction.toLowerCase(),
       role,
     }),
-    [query, role, sortColumns],
+    [debounceQuery, role, sortColumns],
   );
 
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-  const callback = useMutateQueryData(['users', query, sortColumns, role]);
+  const callback = useMutateQueryData(['users', debounceQuery, sortColumns, role]);
 
   const queryResult = useInfiniteQuery({
-    queryKey: ['users', query, sortColumns, role],
+    queryKey: ['users', debounceQuery, sortColumns, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
       const fetchedData = await getUsers(
@@ -78,9 +79,7 @@ const UsersTable = () => {
   });
   const [columns, setColumns] = useColumns(callback);
 
-  const isFiltered = role !== undefined || !!query;
-
-  const debounceQuery = useDebounce(query, 300);
+  const isFiltered = role !== undefined || !!debounceQuery;
 
   const onResetFilters = () => {
     setQuery('');
@@ -111,7 +110,7 @@ const UsersTable = () => {
 
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
-    const rows = data?.map((item) => ({ ...item, type: 'MASTER' as const, expanded: false }));
+    const rows = data?.map((item) => ({ ...item, _type: 'MASTER' as const, _expanded: false }));
 
     if (rows) {
       setSelectedRows(new Set<string>([...selectedRows].filter((id) => rows.some((row) => row.id === id))));

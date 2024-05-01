@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, sql } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, sql, inArray } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
@@ -11,16 +11,13 @@ import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import {
   createOrganizationRouteConfig,
   deleteOrganizationsRouteConfig,
-  deleteUsersFromOrganizationRouteConfig,
   getOrganizationByIdOrSlugRouteConfig,
   getOrganizationsRouteConfig,
   getUsersByOrganizationIdRouteConfig,
   updateOrganizationRouteConfig,
-  updateUserInOrganizationRouteConfig,
 } from './routes';
 
 const app = new CustomHono();
@@ -30,14 +27,14 @@ const organizationsRoutes = app
   /*
    * Create organization
    */
-  .add(createOrganizationRouteConfig, async (ctx) => {
+  .openapi(createOrganizationRouteConfig, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    const slugAvailable = await checkSlugAvailable(slug);
+    const slugAvailable = await checkSlugAvailable(slug, 'ORGANIZATION');
 
     if (!slugAvailable) {
-      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
+      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
     }
 
     const [createdOrganization] = await db
@@ -54,23 +51,21 @@ const organizationsRoutes = app
 
     logEvent('Organization created', { organization: createdOrganization.id });
 
-    await db
-      .insert(membershipsTable)
-      .values({
-        userId: user.id,
-        organizationId: createdOrganization.id,
-        role: 'ADMIN',
-      })
-      .returning();
+    await db.insert(membershipsTable).values({
+      userId: user.id,
+      organizationId: createdOrganization.id,
+      role: 'ADMIN',
+    });
 
     logEvent('User added to organization', {
       user: user.id,
       organization: createdOrganization.id,
     });
 
-    sendSSE(user.id, 'new_membership', {
+    sendSSE(user.id, 'new_organization_membership', {
       ...createdOrganization,
       userRole: 'ADMIN',
+      type: 'ORGANIZATION',
     });
 
     return ctx.json({
@@ -88,7 +83,7 @@ const organizationsRoutes = app
   /*
    * Get an organization
    */
-  .add(getOrganizationsRouteConfig, async (ctx) => {
+  .openapi(getOrganizationsRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -158,7 +153,7 @@ const organizationsRoutes = app
   /*
    * Update an organization
    */
-  .add(updateOrganizationRouteConfig, async (ctx) => {
+  .openapi(updateOrganizationRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -182,12 +177,11 @@ const organizationsRoutes = app
       chatSupport,
     } = ctx.req.valid('json');
 
-    if (slug) {
-      const slugAvailable = await checkSlugAvailable(slug);
+    if (slug && slug !== organization.slug) {
+      const slugAvailable = await checkSlugAvailable(slug, 'ORGANIZATION');
 
-      if (!slugAvailable && slug !== organization.slug) {
-        // t('common:error.slug_exists')
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
+      if (!slugAvailable) {
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
       }
     }
 
@@ -226,6 +220,7 @@ const organizationsRoutes = app
       sendSSE(user.id, 'update_organization', {
         ...updatedOrganization,
         userRole: membership.role,
+        type: 'ORGANIZATION',
       });
     }
 
@@ -258,135 +253,9 @@ const organizationsRoutes = app
     });
   })
   /*
-   * Update user in organization
-   */
-  .add(updateUserInOrganizationRouteConfig, async (ctx) => {
-    const { userId } = ctx.req.valid('param');
-    const { role } = ctx.req.valid('json');
-    const user = ctx.get('user');
-    const organization = ctx.get('organization');
-
-    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-
-    if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: userId });
-    }
-
-    let [membership] = await db
-      .update(membershipsTable)
-      .set({ role, modifiedBy: user.id, modifiedAt: new Date() })
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)))
-      .returning();
-
-    if (!membership) {
-      if (targetUser.id === user.id) {
-        [membership] = await db
-          .insert(membershipsTable)
-          .values({
-            userId: user.id,
-            organizationId: organization.id,
-            role,
-          })
-          .returning();
-
-        sendSSE(targetUser.id, 'new_membership', {
-          ...organization,
-          userRole: role,
-        });
-      } else {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
-          user: targetUser.id,
-          organization: organization.id,
-        });
-      }
-    } else {
-      sendSSE(targetUser.id, 'update_organization', {
-        ...organization,
-        userRole: role,
-      });
-    }
-
-    const [{ memberships }] = await db
-      .select({
-        memberships: count(),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.organizationId, organization.id));
-
-    logEvent('User updated in organization', {
-      user: targetUser.id,
-      organization: organization.id,
-    });
-
-    return ctx.json({
-      success: true,
-      data: {
-        ...transformDatabaseUser(targetUser),
-        sessions: [],
-        organizationRole: membership.role,
-        counts: {
-          memberships,
-        },
-      },
-    });
-  })
-  /*
-   * Delete organizations
-   */
-  .add(deleteOrganizationsRouteConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
-    const user = ctx.get('user');
-
-    const organizationIds = Array.isArray(ids) ? ids : [ids];
-
-    const errors: ErrorType[] = [];
-
-    await Promise.all(
-      organizationIds.map(async (id) => {
-        const [result] = await db
-          .select({
-            organization: organizationsTable,
-            userRole: membershipsTable.role,
-          })
-          .from(organizationsTable)
-          .leftJoin(membershipsTable, and(eq(membershipsTable.organizationId, organizationsTable.id), eq(membershipsTable.userId, user.id)))
-          .where(eq(organizationsTable.id, id));
-
-        if (!result) {
-          errors.push(
-            createError(ctx, 404, 'not_found', 'warn', 'organization', {
-              organization: id,
-            }),
-          );
-        }
-
-        if (user.role !== 'ADMIN') {
-          errors.push(
-            createError(ctx, 403, 'delete_forbidden', 'warn', 'organization', {
-              organization: id,
-            }),
-          );
-        }
-
-        await db.delete(organizationsTable).where(eq(organizationsTable.id, id));
-
-        if (result.userRole) {
-          sendSSE(user.id, 'remove_organization', result.organization);
-        }
-
-        logEvent('Organization deleted', { organization: id });
-      }),
-    );
-
-    return ctx.json({
-      success: true,
-      errors: errors,
-    });
-  })
-  /*
    * Get organization by id or slug
    */
-  .add(getOrganizationByIdOrSlugRouteConfig, async (ctx) => {
+  .openapi(getOrganizationByIdOrSlugRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -422,9 +291,9 @@ const organizationsRoutes = app
     });
   })
   /*
-   * Get users by organization id
+   * Get members by organization id
    */
-  .add(getUsersByOrganizationIdRouteConfig, async (ctx) => {
+  .openapi(getUsersByOrganizationIdRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 
@@ -505,37 +374,83 @@ const organizationsRoutes = app
     });
   })
   /*
-   * Delete users from organization
+   * Delete organizations
    */
-  .add(deleteUsersFromOrganizationRouteConfig, async (ctx) => {
+  .openapi(deleteOrganizationsRouteConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
-    const organization = ctx.get('organization');
+    const user = ctx.get('user');
 
-    const usersIds = Array.isArray(ids) ? ids : [ids];
+    // * Convert the ids to an array
+    const organizationIds = Array.isArray(ids) ? ids : [ids];
 
-    await Promise.all(
-      usersIds.map(async (id) => {
-        const [targetMembership] = await db
-          .delete(membershipsTable)
-          .where(and(eq(membershipsTable.userId, id), eq(membershipsTable.organizationId, organization.id)))
-          .returning();
+    const errors: ErrorType[] = [];
 
-        if (!targetMembership) {
-          return errorResponse(ctx, 404, 'not_found', 'warn', 'membership', {
-            user: id,
-            organization: organization.id,
-          });
-        }
+    // * Get the organizations and the user role
+    const targets = await db
+      .select({
+        organization: organizationsTable,
+        userRole: membershipsTable.role,
+      })
+      .from(organizationsTable)
+      .leftJoin(membershipsTable, and(eq(membershipsTable.organizationId, organizationsTable.id), eq(membershipsTable.userId, user.id)))
+      .where(inArray(organizationsTable.id, organizationIds));
 
-        logEvent('Member deleted', { user: id, organization: organization.id });
+    // * Check if the organizations exist
+    for (const id of organizationIds) {
+      if (!targets.some((target) => target.organization.id === id)) {
+        errors.push(
+          createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', {
+            organization: id,
+          }),
+        );
+      }
+    }
 
-        sendSSE(id, 'remove_membership', organization);
-      }),
+    // * Filter out organizations that the user doesn't have permission to delete
+    const allowedTargets = targets.filter((target) => {
+      const organizationId = target.organization.id;
+
+      if (user.role !== 'ADMIN' && target.userRole !== 'ADMIN') {
+        errors.push(
+          createError(ctx, 403, 'delete_forbidden', 'warn', 'ORGANIZATION', {
+            organization: organizationId,
+          }),
+        );
+        return false;
+      }
+
+      return true;
+    });
+
+    // * If the user doesn't have permission to delete any of the organizations, return an error
+    if (allowedTargets.length === 0) {
+      return ctx.json({
+        success: false,
+        errors: errors,
+      });
+    }
+
+    // * Delete the organizations
+    await db.delete(organizationsTable).where(
+      inArray(
+        organizationsTable.id,
+        allowedTargets.map((target) => target.organization.id),
+      ),
     );
+
+    // * Send SSE events for the organizations that were deleted
+    for (const { organization, userRole } of allowedTargets) {
+      // * Send the event to the user if they are a member of the organization
+      if (userRole) {
+        sendSSE(user.id, 'remove_organization', organization);
+      }
+
+      logEvent('Organization deleted', { organization: organization.id });
+    }
 
     return ctx.json({
       success: true,
-      data: undefined,
+      errors: errors,
     });
   });
 

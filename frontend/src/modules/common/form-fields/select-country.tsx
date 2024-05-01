@@ -1,25 +1,27 @@
-import CountryFlag from '~/modules/common/country-flag';
-
-import { useTranslation } from 'react-i18next';
 import countries from '~/json/countries.json';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import { useTranslation } from 'react-i18next';
+import Combobox from '~/modules/ui/combobox';
+import CountryFlag from '../country-flag';
 
-const SelectCountry = ({ onChange, value }: { onChange: (value: string) => void; value: string }) => {
+const SelectCountry = ({ onChange }: { onChange: (value: string) => void }) => {
   const { t } = useTranslation();
+  const options = countries.map((country) => ({ value: country.code, label: country.name }));
+
+  const renderCountryOption = (option: { value: string; label: string }) => (
+    <div className="flex items-center">
+      <CountryFlag countryCode={option.value} imgType="png" className="mr-2" />
+      {option.label}
+    </div>
+  );
   return (
-    <Select onValueChange={onChange} value={value || ''}>
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder={t('common:placeholder.select_country')} />
-      </SelectTrigger>
-      <SelectContent className="h-[300px]">
-        {countries.map((country) => (
-          <SelectItem key={country.code} value={country.name}>
-            <CountryFlag countryCode={country.code} imgType="png" className="mr-2" />
-            {country.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <Combobox
+      options={options}
+      name="country"
+      onChange={onChange}
+      placeholder={t('common:placeholder.select_country')}
+      searchPlaceholder={t('common:placeholder.search_country')}
+      renderOption={renderCountryOption}
+    />
   );
 };
 

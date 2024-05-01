@@ -2,39 +2,54 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Activity, GripVertical, Star, Trash } from 'lucide-react';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { dateShort } from '~/lib/utils';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { CheckCheck, GripVertical, Paperclip } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader } from '~/modules/ui/card';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
-import { useElectric, type Task } from '../common/root/electric';
+import { Card, CardContent } from '~/modules/ui/card';
 import { Checkbox } from '../ui/checkbox';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import './style.css';
+import { useThemeStore } from '~/store/theme';
+import type { Task } from '~/mocks/workspaces.ts';
+import { SelectImpact } from './select-impact.tsx';
+import AssignMembers from './select-members.tsx';
+import SetLabels from './select-labels.tsx';
+import { useTranslation } from 'react-i18next';
+import SelectStatus from './select-status.tsx';
+import { TaskEditor } from './task-editor.tsx';
+import { useContext, useRef, useState } from 'react';
+import { SelectTaskType } from './select-task-type.tsx';
+import { WorkspaceContext } from '../workspaces/index.tsx';
+import useDoubleClick from '~/hooks/use-double-click.tsx';
+import { cn } from '~/lib/utils.ts';
 
 interface TaskCardProps {
   task: Task;
   isOverlay?: boolean;
 }
 
-export type TaskType = 'Task';
-
 export interface TaskDragData {
-  type: TaskType;
+  type: 'Task';
   task: Task;
 }
 
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
-  const [value, setValue] = useState<string | undefined>('**Hello world!!!**');
   const { t } = useTranslation();
+  const { mode } = useThemeStore();
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const [innerTask, setInnerTask] = useState(task);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const { updateTasks } = useContext(WorkspaceContext);
+
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const handleChange = (field: keyof Task, value: any) => {
+    const updatedTask = { ...innerTask, [field]: value };
+    setInnerTask(updatedTask);
+    updateTasks(updatedTask);
+  };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: task.id,
+    id: innerTask.id,
     data: {
       type: 'Task',
       task,
@@ -49,26 +64,41 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva('rounded-none border-0 text-sm border-b', {
-    variants: {
-      dragging: {
-        over: 'ring-2 opacity-30',
-        overlay: 'ring-2 ring-primary',
+  const variants = cva(
+    'group/task rounded-none border-0 text-sm bg-transparent hover:bg-card bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
+    {
+      variants: {
+        dragging: {
+          over: 'ring-2 opacity-30',
+          overlay: 'ring-2 ring-primary',
+        },
+        status: {
+          0: 'to-sky-600/10',
+          1: '',
+          2: 'to-slate-600/10',
+          3: 'to-lime-600/10',
+          4: 'to-yellow-600/10',
+          5: 'to-orange-600/10',
+          6: 'to-green-600/10',
+        },
       },
     },
+  );
+
+  const toggleEditorState = () => {
+    setIsEditing(!isEditing);
+  };
+
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useDoubleClick({
+    onDoubleClick: (e) => {
+      console.log(e, 'double click');
+      toggleEditorState();
+    },
+    ref: buttonRef,
+    latency: 250,
   });
-
-  //TODO: Replace with actual user data
-  const user = {
-    id: '1sdfsdsdfsdfwe4rw34rf',
-    name: 'John Doe',
-    thumbnailUrl: null,
-    bio: 'sdfsd sdfs sd fsafsf asdfad fafd; asdf asf safd sfdsfs fsd sdfdsg .fdg dfg dfgd fgdfgdfg',
-  };
-
-  const onDelete = () => {
-    db.tasks.delete({ where: { id: task.id } });
-  };
 
   return (
     <Card
@@ -78,75 +108,90 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
       })}
     >
-      <CardHeader className="p-2 pr-4 space-between flex flex-col border-b border-secondary relative">
-        <div className="flex gap-2 items-center">
-          <div className="group mt-[2px]">
-            <Checkbox className="opacity-0 absolute group-hover:opacity-100 transition-opacity z-10" />
-            <Star size={16} className="fill-amber-400 text-amber-500 group-hover:opacity-0 transition-opacity" />
-            {/* <Bug size={16} className="fill-red-500 text-red-600 group-hover:opacity-0 transition-opacity" /> */}
-            {/* <Bolt size={16} className="fill-slate-500 text-slate-600 group-hover:opacity-0 transition-opacity" /> */}
-          </div>
-          <h3 className="font-semibold">{task.name}</h3>
-          <div className="">
-            <span>{task.description}</span>
-            <span className="font-light opacity-50">2d &#183; F</span>
-          </div>
-          <div className="ml-auto">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="rounded text-sm p-2 h-8" onClick={onDelete}>
-                  <Trash size={16} />
+      <CardContent
+        className={cn(
+          'p-2 space-between gap-1 flex flex-col border-b border-secondary relative group/content',
+          isExpanded ? 'is-expanded' : 'is-collapsed',
+        )}
+      >
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-2 w-full">
+            <div className="flex flex-col gap-2 mt-[2px]">
+              <SelectTaskType currentType={innerTask.type} changeTaskType={(newType) => handleChange('type', newType)} />
+
+              <Checkbox className="opacity-0 transition-opacity duration-700 group-hover/task:opacity-100" />
+            </div>
+            <div className="flex flex-col grow">
+              {isEditing ? (
+                <TaskEditor
+                  mode={mode}
+                  markdown={innerTask.markdown}
+                  setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown)}
+                  toggleEditorState={toggleEditorState}
+                  id={innerTask.id}
+                />
+              ) : (
+                <button type="button" ref={buttonRef} className="w-full">
+                  <MDEditor.Markdown
+                    source={innerTask.markdown}
+                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                    className="prose font-light text-start max-w-none"
+                  />
+                </button>
+              )}
+              {isExpanded && <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>}
+              <div className="opacity-50 group-hover/task:opacity-75 text-xs items-center font-light flex gap-1">
+                <div>F</div>
+                <div>&#183;</div>
+                <div>2d</div>
+                <div>&#183;</div>
+                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="collapsed-only flex gap-[2px]">
+                  <CheckCheck size={12} />
+                  <span className="text-success">1</span>
+                  <span className="font-light scale-90">/ 3</span>
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={13}>
-                {t('Delete task')}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-        <div>
-          <MDEditor value={value} onChange={(newValue) => setValue(newValue)} />
-          <MDEditor.Markdown source={value} style={{ whiteSpace: 'pre-wrap' }} />
-        </div>
-        <div className="flex items-center mt-1 gap-2">
-          <Button variant={'ghost'} {...attributes} {...listeners} className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab">
-            <span className="sr-only">Move task</span>
-            <GripVertical size={16} />
-          </Button>
-
-          <div className="grow text-[12px] font-light">
-            <span className="font-semibold opacity-75">label</span>
-            <span className="mr-1 opacity-50">,</span>
-            <span className="font-semibold opacity-75">label</span>
-            <span className="mr-1 opacity-50">,</span>
-            <span className="font-semibold opacity-75">label</span>
-          </div>
-
-          <HoverCard>
-            <HoverCardTrigger>
-              <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6" />
-            </HoverCardTrigger>
-            <HoverCardContent className="w-80">
-              <div className="flex justify-between space-x-4">
-                <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
-                <div className="space-y-1">
-                  <h4 className="text-sm font-semibold">{user.name}</h4>
-                  <p className="text-sm">{user.bio}</p>
-                  <div className="flex items-center pt-2">
-                    <Activity className="mr-2 h-4 w-4 opacity-70" />{' '}
-                    <span className="text-xs text-muted-foreground">{dateShort(new Date().toISOString())}</span>
-                  </div>
-                </div>
+                <div className="collapsed-only">&#183;</div>
+                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="collapsed-only flex gap-[2px]">
+                  <Paperclip size={12} />
+                  <span>3</span>
+                </Button>
+                <div className="collapsed-only">&#183;</div>
+                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(!isExpanded)} className="flex gap-[2px]">
+                  <span className="group-[.is-collapsed]/content:hidden">{t('common:less_info')}</span>
+                  <span className="group-[.is-expanded]/content:hidden">{t('common:more_info')}</span>
+                </Button>
               </div>
-            </HoverCardContent>
-          </HoverCard>
+            </div>
+          </div>
 
-          <Button variant="plain" size="sm" className="rounded text-[12px] p-1 h-6">
-            Start
-          </Button>
+          <div className="flex items-center justify-between gap-1">
+            <Button
+              variant={'ghost'}
+              {...attributes}
+              {...listeners}
+              className="py-1 px-0 text-secondary-foreground/50 h-auto cursor-grab group-hover/task:opacity-100 opacity-70"
+            >
+              <span className="sr-only"> {t('common:move_task')}</span>
+              <GripVertical size={16} />
+            </Button>
+
+            {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" />}
+            <div className="grow">
+              <SetLabels
+                projectId={task.projectId}
+                changeLabels={(newLabels) => handleChange('labels', newLabels)}
+                viewValue={innerTask.labels}
+                mode="edit"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <AssignMembers mode="edit" viewValue={innerTask.assignedTo} changeAssignedTo={(newMembers) => handleChange('assignedTo', newMembers)} />
+              <SelectStatus taskStatus={innerTask.status} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
+            </div>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent className="px-3 pt-3 pb-6 text-left whitespace-pre-wrap">collapsed info here</CardContent>
+      </CardContent>
     </Card>
   );
 }

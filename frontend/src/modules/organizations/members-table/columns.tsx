@@ -25,13 +25,8 @@ export const useColumns = () => {
       sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
-        <Link
-          to="/user/$userIdentifier"
-          params={{ userIdentifier: row.slug }}
-          tabIndex={tabIndex}
-          className="flex space-x-2 items-center outline-0 ring-0 group"
-        >
-          <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+        <Link to="/user/$idOrSlug" params={{ idOrSlug: row.slug }} tabIndex={tabIndex} className="flex space-x-2 items-center outline-0 ring-0 group">
+          <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
         </Link>
       ),

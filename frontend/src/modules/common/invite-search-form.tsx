@@ -5,9 +5,9 @@ import { invite as baseInvite } from '~/api/general';
 import type { Organization } from '~/types';
 
 import { config } from 'config';
-import { Loader2, Send } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
-import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
+import { Send } from 'lucide-react';
+import { useMemo } from 'react';
+import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { getSuggestions } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -20,14 +20,10 @@ import SelectRole from './form-fields/select-role';
 import MultipleSelector from './multi-select';
 
 interface Props {
-  organization?: Organization;
+  organization?: Organization | null;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
-  withDraft?: boolean;
-  withButtons?: boolean;
-  initValues?: FormValues | null;
-  onValuesChange?: (values: FormValues | null) => void;
 }
 
 const formSchema = z.object({
@@ -37,16 +33,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteSearchForm = ({
-  organization,
-  type = 'system',
-  callback,
-  dialog: isDialog,
-  withDraft = true,
-  withButtons = true,
-  initValues,
-  onValuesChange,
-}: Props) => {
+const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -60,9 +47,7 @@ const InviteSearchForm = ({
     [],
   );
 
-  const form = withDraft ? useFormWithDraft<FormValues>('invite-users', formOptions) : useForm<FormValues>(formOptions);
-
-  const allFields = useWatch({ control: form.control });
+  const form = useFormWithDraft<FormValues>('invite-users', formOptions);
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: baseInvite,
@@ -85,30 +70,9 @@ const InviteSearchForm = ({
     invite({
       emails: values.emails,
       role: values.role,
-      organizationIdentifier: organization?.id,
+      idOrSlug: organization?.id,
     });
   };
-
-  const cancel = () => {
-    form.reset();
-    isDialog && dialog.remove();
-  };
-
-  // Set initial values
-  useEffect(() => {
-    if (initValues) {
-      for (const [key, value] of Object.entries(initValues)) {
-        form.setValue(key as keyof FormValues, value, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
-  }, [onValuesChange, allFields]);
 
   return (
     <Form {...form}>
@@ -116,25 +80,26 @@ const InviteSearchForm = ({
         <FormField
           control={form.control}
           name="emails"
-          render={({ field: { value, onChange } }) => (
+          render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
                 <MultipleSelector
-                  value={value.map((v) => ({ label: v, value: v }))}
+                formControlName='emails'
+                value={value ? value.map((val: string) => ({ label: val, value: val })) : []}
                   onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
-                    const users = await getSuggestions(query, 'user');
+                    const data = await getSuggestions(query, 'USER');
 
-                    return users.map((u) => ({
+                    return data.users.map((u) => ({
                       label: u.name || u.email,
                       value: u.email,
                     }));
                   }}
+                  basicSignValue={t('common:invite_members_search.text')}
                   hidePlaceholderWhenSelected
-                  loadingIndicator={<Loader2 className="animate-spin mx-auto my-3" size={16} />}
-                  defaultOptions={[]}
+                  defaultOptions={value ? value.map((val: string) => ({ label: val, value: val })) : []}
                   placeholder={t('common:search_users')}
-                  emptyIndicator={<div className="block w-full text-center p-1">{t('common:no_users_found')}</div>}
+                  emptyValue={t('common:no_users_found')}
                 />
               </FormControl>
               <FormMessage />
@@ -154,22 +119,20 @@ const InviteSearchForm = ({
             </FormItem>
           )}
         />
-        {withButtons && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="submit" loading={isPending} className="relative">
-              {!!form.getValues('emails')?.length && (
-                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
-              )}
-              <Send size={16} className="mr-2" />
-              {t('common:invite')}
-            </Button>
-            {form.formState.isDirty && (
-              <Button type="reset" variant="secondary" onClick={cancel}>
-                {t('common:cancel')}
-              </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button type="submit" loading={isPending} className="relative">
+            {!!form.getValues('emails')?.length && (
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
             )}
-          </div>
-        )}
+            <Send size={16} className="mr-2" />
+            {t('common:invite')}
+          </Button>
+          {form.formState.isDirty && (
+            <Button type="reset" variant="secondary" onClick={() => form.reset()}>
+              {t('common:cancel')}
+            </Button>
+          )}
+        </div>
       </form>
     </Form>
   );

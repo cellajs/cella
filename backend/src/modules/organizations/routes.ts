@@ -1,5 +1,3 @@
-import { z } from '@hono/zod-openapi';
-
 import {
   errorResponses,
   successResponseWithDataSchema,
@@ -8,16 +6,14 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { authGuard, systemGuard, tenantGuard } from '../../middlewares/guard';
+import { authGuard, systemGuard, organizationTenantGuard } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
   createOrganizationJsonSchema,
   getOrganizationsQuerySchema,
   getUsersByOrganizationQuerySchema,
-  organizationWithUserParamSchema,
   updateOrganizationJsonSchema,
-  updateUserInOrganizationJsonSchema,
 } from './schema';
 
 export const createOrganizationRouteConfig = createRouteConfig({
@@ -56,8 +52,8 @@ export const createOrganizationRouteConfig = createRouteConfig({
 
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/organizations/{organizationIdentifier}',
-  guard: tenantGuard(['ADMIN']),
+  path: '/organizations/{organization}',
+  guard: organizationTenantGuard('organization', ['ADMIN']),
   tags: ['organizations'],
   summary: 'Update organization',
   description: `
@@ -88,41 +84,15 @@ export const updateOrganizationRouteConfig = createRouteConfig({
   },
 });
 
-export const deleteOrganizationsRouteConfig = createRouteConfig({
-  method: 'delete',
-  path: '/organizations',
-  guard: systemGuard,
-  tags: ['organizations'],
-  summary: 'Delete organizations',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
-  request: {
-    query: deleteByIdsQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Success',
-      content: {
-        'application/json': {
-          schema: successResponseWithErrorsSchema(),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const getOrganizationsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations',
   guard: systemGuard,
   tags: ['organizations'],
-  summary: 'Get organizations',
+  summary: 'Get list of organizations',
   description: `
-    If user has role 'ADMIN', then he receives all organizations.
-    If user has role 'USER', then he receives only organizations, where he is a member.
+    System role 'ADMIN' receives all organizations.
+    System role 'USER' receives only organizations with membership.
   `,
   request: {
     query: getOrganizationsQuerySchema,
@@ -142,8 +112,8 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{organizationIdentifier}',
-  guard: tenantGuard(),
+  path: '/organizations/{organization}',
+  guard: organizationTenantGuard('organization'),
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
   description: `
@@ -169,10 +139,10 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
 
 export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{organizationIdentifier}/members',
-  guard: tenantGuard(),
+  path: '/organizations/{organization}/members',
+  guard: organizationTenantGuard('organization'),
   tags: ['organizations'],
-  summary: 'Get members(users) of organization',
+  summary: 'Get members of organization',
   description: `
     Permissions:
       - Users with role 'ADMIN'
@@ -195,50 +165,15 @@ export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   },
 });
 
-export const updateUserInOrganizationRouteConfig = createRouteConfig({
-  method: 'put',
-  path: '/organizations/{organizationIdentifier}/members/{userId}',
-  guard: tenantGuard(['ADMIN']),
-  tags: ['organizations'],
-  summary: 'Update member(user) in organization',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the organization and have role 'ADMIN' in the organization
-  `,
-  request: {
-    params: organizationWithUserParamSchema,
-    body: {
-      content: {
-        'application/json': {
-          schema: updateUserInOrganizationJsonSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Member was updated in organization',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(apiOrganizationUserSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const deleteUsersFromOrganizationRouteConfig = createRouteConfig({
+export const deleteOrganizationsRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/organizations/{organizationIdentifier}/members',
-  guard: tenantGuard(['ADMIN']),
+  path: '/organizations',
+  guard: systemGuard,
   tags: ['organizations'],
-  summary: 'Delete members(users) from organization',
+  summary: 'Delete organizations',
   description: `
     Permissions:
       - Users with role 'ADMIN'
-      - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
     query: deleteByIdsQuerySchema,
@@ -248,7 +183,7 @@ export const deleteUsersFromOrganizationRouteConfig = createRouteConfig({
       description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
+          schema: successResponseWithErrorsSchema(),
         },
       },
     },

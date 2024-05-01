@@ -1,43 +1,49 @@
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { InviteProps } from '~/api/general';
 import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { AppAlert } from './app-alert';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
+import { dialog } from './dialoger/state';
+import { DialogTitle } from '../ui/dialog';
 
-interface Props {
-  organization?: Organization;
+interface InviteUsersProps {
+  organization?: Organization | null;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
-  withDraft?: boolean;
-  withButtons?: boolean;
-  initValues?: InviteProps | null;
-  onValuesChange?: (values: InviteProps | null) => void;
-  mode?: string;
+  mode?: string | null;
+  children?: React.ReactNode;
 }
 
-const InviteUsers = ({
-  organization,
-  type = 'system',
-  callback,
-  dialog: isDialog,
-  mode,
-  initValues,
-  onValuesChange,
-  withButtons,
-  withDraft,
-}: Props) => {
+const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
 
-  if (!inviteMode)
+  const updateMode = (mode: string[]) => {
+    mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
+
+    dialog.update('user-invite', {
+      title: mode[0] ? (
+        <DialogTitle className="flex items-center gap-2">
+          <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
+            {t('common:invite')}
+          </button>
+          <ChevronRight className="opacity-50" size={16} />
+          <span>{mode[0] === 'search' ? t('common:search') : t('common:email')}</span>
+        </DialogTitle>
+      ) : (
+        <DialogTitle>{t('common:invite')}</DialogTitle>
+      ),
+    });
+  };
+
+  if (!inviteMode) {
     return (
-      <ToggleGroup type="multiple" onValueChange={(values) => setInviteMode(values[0])} className="gap-4 max-sm:flex-col">
+      <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
         <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
           <Search size={48} strokeWidth={1} />
           <div className="flex flex-col p-4">
@@ -60,6 +66,7 @@ const InviteUsers = ({
         </ToggleGroupItem>
       </ToggleGroup>
     );
+  }
 
   if (inviteMode === 'search') {
     return (
@@ -67,35 +74,19 @@ const InviteUsers = ({
         <AppAlert id="invite_search" variant="success" Icon={Info}>
           {t('common:explain.invite_search.text')}
         </AppAlert>
-        <InviteSearchForm
-          organization={organization}
-          type={type}
-          callback={callback}
-          dialog={isDialog}
-          withButtons={withButtons}
-          withDraft={withDraft}
-          initValues={initValues}
-          onValuesChange={onValuesChange}
-        />
+        <InviteSearchForm organization={organization} type={type} callback={callback} dialog={isDialog} />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-    <AppAlert id="invite_email" variant="success" Icon={Info}>
+      <AppAlert id="invite_email" variant="success" Icon={Info}>
         {t('common:explain.invite_email.text')}
       </AppAlert>
-      <InviteEmailForm
-        organization={organization}
-        type={type}
-        callback={callback}
-        dialog={isDialog}
-        withButtons={withButtons}
-        withDraft={withDraft}
-        initValues={initValues}
-        onValuesChange={onValuesChange}
-      />
+      <InviteEmailForm organization={organization} type={type} callback={callback} dialog={isDialog}>
+        {children}
+      </InviteEmailForm>
     </div>
   );
 };

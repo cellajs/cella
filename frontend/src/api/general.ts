@@ -1,6 +1,6 @@
-import type { InferResponseType } from 'hono';
-import { type Member, type UploadParams, UploadType, type User } from '~/types';
+import { UploadType, type Member, type UploadParams, type User } from '~/types';
 import { ApiError, generalClient as client } from '.';
+import type { PageResourceType } from 'backend/types/common';
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
@@ -26,16 +26,17 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
   return json.data;
 };
 
-// Invite users
 export interface InviteProps {
   emails: string[];
   role?: Member['organizationRole'] | User['role'];
-  organizationIdentifier?: string;
+  idOrSlug?: string;
 }
 
-export const invite = async ({ emails, organizationIdentifier, role }: InviteProps) => {
+// Invite users
+export const invite = async ({ idOrSlug, ...rest }: InviteProps) => {
   const response = await client.invite.$post({
-    json: { emails, organizationIdentifier, role },
+    query: { idOrSlug },
+    json: rest,
   });
 
   const json = await response.json();
@@ -44,9 +45,12 @@ export const invite = async ({ emails, organizationIdentifier, role }: InvitePro
 };
 
 // Check if slug is available
-export const checkSlugAvailable = async (slug: string) => {
-  const response = await client['check-slug'][':slug'].$get({
-    param: { slug },
+export const checkSlugAvailable = async (params: {
+  slug: string;
+  type: PageResourceType;
+}) => {
+  const response = await client['check-slug'][':type'][':slug'].$get({
+    param: params,
   });
 
   const json = await response.json();
@@ -65,23 +69,33 @@ export const checkToken = async (token: string) => {
   return json.data;
 };
 
-type SuggestionsResponse = Extract<InferResponseType<typeof client.suggestions.$get>, { data: unknown }>['data'];
-
-export type UserSuggestion = Extract<SuggestionsResponse[0], { type: 'user' }>;
-export type OrganizationSuggestion = Extract<SuggestionsResponse[0], { type: 'organization' }>;
-
-type Suggestions<T extends 'user' | 'organization'> = T extends 'user' ? UserSuggestion[] : OrganizationSuggestion[];
-
 // Get suggestions
-export const getSuggestions = async <T extends 'user' | 'organization'>(query: string, type?: T): Promise<Suggestions<T>> => {
+export const getSuggestions = async (query: string, type?: PageResourceType | undefined) => {
   const response = await client.suggestions.$get({
     query: { q: query, type },
   });
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
+  return json.data;
+};
 
-  const data = json.data as SuggestionsResponse;
+// Accept an invitation
+export const acceptInvite = async ({
+  token,
+  password,
+  oauth,
+}: {
+  token: string;
+  password?: string;
+  oauth?: 'github' | 'google' | 'microsoft';
+}) => {
+  const response = await client['accept-invite'][':token'].$post({
+    param: { token },
+    json: { password, oauth },
+  });
 
-  return data as Suggestions<T>;
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return json.success;
 };

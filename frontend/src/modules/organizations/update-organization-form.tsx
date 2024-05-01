@@ -6,24 +6,26 @@ import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
 import type { Organization } from '~/types';
 
-import { Loader2, Undo } from 'lucide-react';
-import { Suspense, lazy, useEffect } from 'react';
-import { useWatch } from 'react-hook-form';
+import { Loader2, SquarePen } from 'lucide-react';
+import { lazy, Suspense, useEffect } from 'react';
+import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
-import { checkSlugAvailable } from '~/api/general';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
-import { dialog } from '~/modules/common/dialoger/state';
+import { dialog, isDialog as checkDialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import AvatarFormField from '../common/form-fields/avatar';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
+import { SlugFormField } from '../common/form-fields/slug';
+import DomainsFormField from '../common/form-fields/domains';
+import { Badge } from '../ui/badge';
 
-const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
+const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 
 interface Props {
   organization: Organization;
@@ -35,12 +37,12 @@ const formSchema = updateOrganizationJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const useUpdateOrganizationMutation = (organizationIdentifier: string) => {
+export const useUpdateOrganizationMutation = (idOrSlug: string) => {
   return useMutation<Organization, DefaultError, UpdateOrganizationParams>({
-    mutationKey: ['organizations', 'update', organizationIdentifier],
-    mutationFn: (params) => updateOrganization(organizationIdentifier, params),
+    mutationKey: ['organizations', 'update', idOrSlug],
+    mutationFn: (params) => updateOrganization(idOrSlug, params),
     onSuccess: (organization) => {
-      queryClient.setQueryData(['organizations', organizationIdentifier], organization);
+      queryClient.setQueryData(['organizations', idOrSlug], organization);
     },
     gcTime: 1000 * 10,
   });
@@ -49,27 +51,15 @@ export const useUpdateOrganizationMutation = (organizationIdentifier: string) =>
 const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   const { mutate, isPending } = useUpdateOrganizationMutation(organization.id);
-  const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
-    mutationFn: checkSlugAvailable,
-    onSuccess: (isAvailable) => {
-      if (!isAvailable) {
-        form.setError('slug', {
-          type: 'manual',
-          message: t('common:error.slug_exists'),
-        });
-      } else {
-        form.clearErrors('slug');
-      }
-    },
-  });
 
-  const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, {
+  const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
     defaultValues: {
       slug: organization.slug,
       name: organization.name,
       shortName: organization.shortName,
       websiteUrl: organization.websiteUrl,
+      emailDomains: organization.emailDomains,
       thumbnailUrl: cleanUrl(organization.thumbnailUrl),
       notificationEmail: organization.notificationEmail,
       timezone: organization.timezone,
@@ -77,12 +67,9 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       defaultLanguage: organization.defaultLanguage,
       languages: organization.languages || [],
     },
-  });
+  };
 
-  const slug = useWatch({
-    control: form.control,
-    name: 'slug',
-  });
+  const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, formOptions);
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
@@ -91,38 +78,60 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     mutate(values, {
       onSuccess: (data) => {
         callback?.(data);
-        if (isDialog) {
-          dialog.remove();
-        }
+        if (isDialog) dialog.remove(true, 'edit-organization');
+
         toast.success(t('common:success.update_organization'));
       },
     });
   };
 
-  const cancel = () => {
-    form.reset();
-    isDialog && dialog.remove();
-  };
+  const languages = useWatch({
+    control: form.control,
+    name: 'languages',
+  });
+
+  const defaultLanguage = useWatch({
+    control: form.control,
+    name: 'defaultLanguage',
+  });
+
+  useEffect(() => {
+    if (languages && !languages.includes(defaultLanguage as string)) {
+      form.setValue('defaultLanguage', languages[0] as typeof defaultLanguage);
+    }
+  }, [languages, defaultLanguage]);
 
   const setImageUrl = (url: string) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
-  const revertSlug = () => {
-    form.resetField('slug');
-  };
+  // useEffect(() => {
+  //   if (form.formState.isSubmitSuccessful) {
+  //     form.reset(form.getValues());
+  //   }
+  // }, [form.formState.isSubmitSuccessful]);
 
+  // Update dialog title with unsaved changes
   useEffect(() => {
-    if (slug && slug !== organization.slug) {
-      checkSlug(slug);
+    if (form.unsavedChanges) {
+      const targetDialog = dialog.get('edit-organization');
+      if (targetDialog && checkDialog(targetDialog)) {
+        dialog.update('edit-organization', {
+          title: (
+            <div className="flex flex-row gap-2">
+              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
+              <Badge variant="plain" className="w-fit">
+                <SquarePen size={12} className="mr-2" />
+                <span className="font-light">{t('common:unsaved_changes')}</span>
+              </Badge>
+            </div>
+          ),
+        });
+      }
+      return;
     }
-  }, [slug]);
-
-  useEffect(() => {
-    if (form.formState.isSubmitSuccessful) {
-      form.reset(form.getValues());
-    }
-  }, [form.formState.isSubmitSuccessful]);
+    dialog.reset('edit-organization');
+  }, [form.unsavedChanges]);
 
   return (
     <Form {...form}>
@@ -130,30 +139,22 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <AvatarFormField
           control={form.control}
           label={t('common:organization_logo')}
-          type="organization"
+          type="ORGANIZATION"
           name="thumbnailUrl"
           entity={organization}
           url={form.getValues('thumbnailUrl')}
           setUrl={setImageUrl}
         />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
-        <InputFormField
+        <SlugFormField
           control={form.control}
-          name="slug"
+          type="ORGANIZATION"
           label={t('common:organization_handle')}
-          required
           description={t('common:organization_handle.text')}
-          subComponent={
-            organization.slug !== slug && (
-              <div className="absolute inset-y-1 right-1 flex justify-end">
-                <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
-                  <Undo size={16} className="mr-2" /> {t('common:revert_to')} <strong className="ml-1">{organization.slug}</strong>
-                </Button>
-              </div>
-            )
-          }
+          previousSlug={organization.slug}
         />
         <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
+        <DomainsFormField control={form.control} label={t('common:email_domains')} description={t('common:email_domains.text')} />
         <InputFormField
           control={form.control}
           type="email"
@@ -166,7 +167,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <LanguageFormField
           control={form.control}
           name="languages"
-          label={t('common:language.plural')}
+          label={t('common:languages')}
           mode="multiple"
           placeholder={t('common:placeholder.select_languages')}
           emptyIndicator={t('common:empty_languages')}
@@ -177,19 +178,19 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           name="defaultLanguage"
           label={t('common:default_language')}
           description={t('common:default_language.text')}
-          placeholder={t('common:select_language')}
+          placeholder={t('common:placeholder.select_language')}
           disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
           required
         />
         <FormField
           control={form.control}
           name="timezone"
-          render={({ field: { value, onChange } }) => (
-            <FormItem>
+          render={({ field: { onChange } }) => (
+            <FormItem name="timezone">
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectTimezone onChange={onChange} value={value || ''} />
+                  <SelectTimezone onChange={onChange} />
                 </Suspense>
               </FormControl>
               <FormMessage />
@@ -200,12 +201,12 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
         <FormField
           control={form.control}
           name="country"
-          render={({ field: { value, onChange } }) => (
-            <FormItem>
+          render={({ field: { onChange } }) => (
+            <FormItem name="country">
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
                 <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectCountry onChange={onChange} value={value || ''} />
+                  <SelectCountry onChange={onChange} />
                 </Suspense>
               </FormControl>
               <FormMessage />
@@ -213,10 +214,10 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
           )}
         />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending || isCheckPending}>
+          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}
           </Button>
-          <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
+          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
             {t('common:cancel')}
           </Button>
         </div>

@@ -1,18 +1,29 @@
 {
   "name": "cella",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": false,
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
   "description": "Your last TypeScript template to build modern web apps. Implementation-ready. MIT licensed.",
-  "keywords": ["template", "monorepo", "fullstack", "typescript", "hono", "drizzle", "shadcn", "postgres", "react", "vite", "PWA"],
+  "keywords": [
+    "template",
+    "monorepo",
+    "fullstack",
+    "typescript",
+    "hono",
+    "drizzle",
+    "shadcn",
+    "postgres",
+    "react",
+    "vite",
+    "PWA"
+  ],
   "author": "CellaJS <info@cellajs.com>",
   "homepage": "https://cellajs.com",
   "type": "module",
   "engines": {
     "node": ">=20.9.0"
   },
-  "packageManager": "pnpm@8.14.3",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "lefthook install",
@@ -46,13 +57,18 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.6.3",
-    "@evilmartians/lefthook": "^1.6.7",
+    "@evilmartians/lefthook": "^1.6.10",
     "@t3-oss/env-core": "^0.9.2",
-    "dotenv": "^16.3.2",
-    "dotenv-cli": "^7.3.0",
+    "dotenv": "^16.4.5",
+    "dotenv-cli": "^7.4.1",
     "rimraf": "^5.0.5",
-    "turbo": "^1.13.0",
-    "zod": "^3.22.4",
-    "typescript": "^5.4.4"
+    "turbo": "^1.13.2",
+    "typescript": "^5.4.5",
+    "zod": "^3.23.4"
+  },
+  "msw": {
+    "workerDirectory": [
+      "./frontend/public"
+    ]
   }
 }

@@ -32,7 +32,7 @@
     --foreground: 0 0% 95%;
     --card: 240 10% 14%;
     --card-foreground: 0 0% 95%;
-    --popover: 240 10% 6%;
+    --popover: 240 10% 9%;
     --popover-foreground: 0 0% 95%;
     --primary: 0 0% 98%;
     --primary-foreground: 240 5.9% 16%;
@@ -47,6 +47,7 @@
     --border: 240 3.7% 20%;
     --input: 240 3.7% 25%;
     --ring: 240 4.9% 83.9%;
+    --success: 120 100% 50%;
   }
 
   .theme-rose.light {

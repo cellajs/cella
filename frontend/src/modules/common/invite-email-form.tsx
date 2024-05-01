@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { invite as baseInvite } from '~/api/general';
@@ -7,7 +7,7 @@ import type { Organization } from '~/types';
 
 import { config } from 'config';
 import { Send } from 'lucide-react';
-import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
+import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -15,18 +15,16 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Badge } from '../ui/badge';
+import { useStepper } from '../common/stepper/use-stepper';
 import SelectRole from './form-fields/select-role';
 import { MultiEmail } from './multi-email';
 
 interface Props {
-  organization?: Organization;
+  organization?: Organization | null;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
-  withDraft?: boolean;
-  withButtons?: boolean;
-  initValues?: FormValues | null;
-  onValuesChange?: (values: FormValues | null) => void;
+  children?: React.ReactNode;
 }
 
 const formSchema = z.object({
@@ -36,17 +34,9 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteEmailForm = ({
-  organization,
-  type = 'system',
-  callback,
-  dialog: isDialog,
-  withDraft = true,
-  withButtons = true,
-  initValues,
-  onValuesChange,
-}: Props) => {
+const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
+  const { nextStep } = useStepper();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -59,15 +49,15 @@ const InviteEmailForm = ({
     [],
   );
 
-  const form = withDraft ? useFormWithDraft<FormValues>('invite-users', formOptions) : useForm<FormValues>(formOptions);
-
-  const allFields = useWatch({ control: form.control });
+  const form = useFormWithDraft<FormValues>('invite-users', formOptions);
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: baseInvite,
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
       callback?.();
+
+      nextStep?.();
 
       if (isDialog) {
         dialog.remove();
@@ -84,30 +74,9 @@ const InviteEmailForm = ({
     invite({
       emails: values.emails,
       role: values.role,
-      organizationIdentifier: organization?.id,
+      idOrSlug: organization?.id,
     });
   };
-
-  const cancel = () => {
-    form.reset();
-    isDialog && dialog.remove();
-  };
-
-  // Set initial values
-  useEffect(() => {
-    if (initValues) {
-      for (const [key, value] of Object.entries(initValues)) {
-        form.setValue(key as keyof FormValues, value, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
-  }, [onValuesChange, allFields]);
 
   return (
     <Form {...form}>
@@ -118,7 +87,7 @@ const InviteEmailForm = ({
           render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
-                <MultiEmail placeholder={t('common:add_email')} emails={value} onChange={onChange} />
+                <MultiEmail placeholder={t('common:add_email')} emails={value} onChange={onChange} autoComplete="off" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -137,22 +106,22 @@ const InviteEmailForm = ({
             </FormItem>
           )}
         />
-        {withButtons && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="submit" loading={isPending} className="relative">
-              {!!form.getValues('emails')?.length && (
-                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
-              )}{' '}
-              <Send size={16} className="mr-2" />
-              {t('common:invite')}
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          {children}
+          <Button type="submit" loading={isPending} className="relative">
+            {!!form.getValues('emails')?.length && (
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
+            )}{' '}
+            <Send size={16} className="mr-2" />
+            {t('common:invite')}
+          </Button>
+          {!children && form.formState.isDirty && (
+            <Button type="reset" variant="secondary" onClick={() => form.reset()}>
+            {t('common:cancel')}
             </Button>
-            {form.formState.isDirty && (
-              <Button type="reset" variant="secondary" onClick={cancel}>
-                {t('common:cancel')}
-              </Button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </form>
     </Form>
   );

@@ -1,10 +1,10 @@
-import path from 'node:path';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
+import path from 'node:path';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { type PluginOption, type UserConfig, defineConfig, splitVendorChunkPlugin } from 'vite';
+import { defineConfig, splitVendorChunkPlugin, type PluginOption, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
@@ -29,7 +29,7 @@ export default defineConfig(() => {
       react(),
       config.sentSentrySourceMaps
         ? sentryVitePlugin({
-            disable: process.env.NODE_ENV === 'development',
+            disable: config.mode === 'development',
             org: 'cella',
             project: 'cella',
             authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -81,42 +81,42 @@ export default defineConfig(() => {
     },
   } satisfies UserConfig;
 
-  if (config.has.pwaSupport)
-    viteConfig.plugins?.push(
-      VitePWA({
-        devOptions: {
-          enabled: false,
-        },
-        manifest: {
-          name: config.name,
-          short_name: config.name,
-          description: config.description,
-          theme_color: config.theme.rose.primary,
-          icons: [
-            {
-              src: '/static/icons/icon-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-            },
-            {
-              src: '/static/icons/icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: '/static/icons/maskable-icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
-        },
-        workbox: {
-          navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
-        },
-      }),
-    );
+  viteConfig.plugins?.push(
+    VitePWA({
+      disable: !config.has.pwa,
+      devOptions: {
+        enabled: false,
+      },
+      manifest: {
+        name: config.name,
+        short_name: config.name,
+        description: config.description,
+        theme_color: config.theme.rose.primary,
+        icons: [
+          {
+            src: '/static/icons/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/static/icons/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/static/icons/maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
+      },
+    }),
+  );
 
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   return viteConfig;

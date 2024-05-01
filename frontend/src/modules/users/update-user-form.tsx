@@ -9,43 +9,42 @@ import AvatarFormField from '../common/form-fields/avatar';
 
 import { type UpdateUserParams, updateUser } from '~/api/users';
 
-import { Undo } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-import { type UseFormProps, useForm, useWatch } from 'react-hook-form';
-import { checkSlugAvailable } from '~/api/general';
+import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
-import { dialog } from '../common/dialoger/state';
+import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
+import { useStepper } from '../common/stepper/use-stepper';
+import { SlugFormField } from '../common/form-fields/slug';
+import { SquarePen } from 'lucide-react';
+import { Badge } from '../ui/badge';
 
-interface Props {
+interface UpdateUserFormProps {
   user: User;
   callback?: (user: User) => void;
   dialog?: boolean;
-  withDraft?: boolean;
-  initValues?: FormValues | null;
-  onValuesChange?: (values: FormValues | null) => void;
   hiddenFields?: string[];
-  withButtons?: boolean;
+  children?: React.ReactNode;
 }
 
 const formSchema = updateUserJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const useUpdateUserMutation = (userIdentifier: string) => {
+export const useUpdateUserMutation = (idOrSlug: string) => {
   return useMutation<User, DefaultError, UpdateUserParams>({
-    mutationKey: ['me', 'update', userIdentifier],
-    mutationFn: (params) => updateUser(userIdentifier, params),
+    mutationKey: ['me', 'update', idOrSlug],
+    mutationFn: (params) => updateUser(idOrSlug, params),
     onSuccess: (user) => {
       queryClient.setQueryData(['users', user.id], user);
     },
@@ -53,19 +52,11 @@ export const useUpdateUserMutation = (userIdentifier: string) => {
   });
 };
 
-const UpdateUserForm = ({
-  user,
-  callback,
-  dialog: isDialog,
-  initValues,
-  onValuesChange,
-  hiddenFields,
-  withButtons = true,
-  withDraft = true,
-}: Props) => {
+const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
+  const { nextStep } = useStepper();
 
   // Hide fields if requested
   if (hiddenFields) {
@@ -74,19 +65,6 @@ const UpdateUserForm = ({
   }
 
   const { mutate, isPending } = useUpdateUserMutation(user.id);
-  const { mutate: checkSlug, isPending: isCheckPending } = useMutation({
-    mutationFn: checkSlugAvailable,
-    onSuccess: (isAvailable) => {
-      if (!isAvailable) {
-        form.setError('slug', {
-          type: 'manual',
-          message: t('common:error.slug_exists'),
-        });
-      } else {
-        form.clearErrors('slug');
-      }
-    },
-  });
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -104,9 +82,7 @@ const UpdateUserForm = ({
     [],
   );
 
-  const form = withDraft ? useFormWithDraft<FormValues>('create-organization', formOptions) : useForm<FormValues>(formOptions);
-
-  const allFields = useWatch({ control: form.control });
+  const form = useFormWithDraft<FormValues>(`update-user-${user.id}`, formOptions);
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
@@ -126,48 +102,39 @@ const UpdateUserForm = ({
         form.reset(data);
         callback?.(data);
 
+        nextStep?.();
+
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
-        if (isDialog) {
-          dialog.remove();
-        }
+        if (isDialog) dialog.remove(true, 'edit-user');
       },
     });
   };
 
-  const cancel = () => {
-    form.reset();
-    isDialog && dialog.remove();
-  };
+  // Update dialog title with unsaved changes
+  useEffect(() => {
+    if (form.unsavedChanges) {
+      const targetDialog = dialog.get('edit-user');
+      if (targetDialog && checkDialog(targetDialog)) {
+        dialog.update('edit-user', {
+          title: (
+            <div className="flex flex-row gap-2">
+              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
+              <Badge variant="plain" className="w-fit">
+                <SquarePen size={12} className="mr-2" />
+                <span className="font-light">{t('common:unsaved_changes')}</span>
+              </Badge>
+            </div>
+          ),
+        });
+      }
+      return;
+    }
+    dialog.reset('edit-user');
+  }, [form.unsavedChanges]);
 
   const setImageUrl = (url: string) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
-
-  const revertSlug = () => {
-    form.resetField('slug');
-  };
-
-  useEffect(() => {
-    if (allFields.slug && allFields.slug !== user.slug) {
-      checkSlug(allFields.slug);
-    }
-  }, [allFields.slug]);
-
-  // Set initial values
-  useEffect(() => {
-    if (initValues) {
-      for (const [key, value] of Object.entries(initValues)) {
-        form.setValue(key as keyof FormValues, value, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    onValuesChange?.(form.formState.isDirty ? (allFields as FormValues) : null);
-  }, [onValuesChange, allFields]);
 
   return (
     <Form {...form}>
@@ -175,31 +142,22 @@ const UpdateUserForm = ({
         <AvatarFormField
           control={form.control}
           label={t('common:profile_picture')}
-          type="user"
+          type="USER"
           name="thumbnailUrl"
           entity={user}
           url={form.getValues('thumbnailUrl')}
           setUrl={setImageUrl}
         />
-        <div className="grid sm:grid-cols-2 gap-8">
+        <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
           <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
           <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
         </div>
-        <InputFormField
+        <SlugFormField
           control={form.control}
-          name="slug"
-          required
+          type="USER"
           label={t('common:user_handle')}
           description={t('common:user_handle.text')}
-          subComponent={
-            user.slug !== allFields.slug && (
-              <div className="absolute inset-y-1 right-1 flex justify-end">
-                <Button variant="ghost" size="sm" aria-label="Revert to current user handle" onClick={revertSlug} className="h-full">
-                  <Undo size={16} className="mr-2" /> Revert to <strong className="ml-1">{user.slug}</strong>
-                </Button>
-              </div>
-            )
-          }
+          previousSlug={user.slug}
         />
         <InputFormField control={form.control} value={user.email} name="email" label={t('common:email')} type="email" disabled required />
         <InputFormField control={form.control} name="bio" label={t('common:bio')} type="textarea" />
@@ -223,20 +181,18 @@ const UpdateUserForm = ({
             </FormItem>
           )}
         />
-        {withButtons && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              type="submit"
-              disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0}
-              loading={isPending || isCheckPending}
-            >
-              {t('common:save_changes')}
-            </Button>
-            <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'sm:invisible'}>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          {children}
+          <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending}>
+            {t('common:save_changes')}
+          </Button>
+          {!children && (
+            <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
               {t('common:cancel')}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </form>
     </Form>
   );

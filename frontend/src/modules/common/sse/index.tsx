@@ -1,50 +1,68 @@
 import { useNavigationStore } from '~/store/navigation';
 import { useSSE } from './use-sse';
 
+type EntityType = 'organizations' | 'workspaces';
 const SSE = () => {
-  useSSE('update_organization', (e) => {
+  const updateEntity = (e: MessageEvent<string>, entityType: EntityType) => {
     try {
-      const organization = JSON.parse(e.data);
+      const entity = JSON.parse(e.data);
       useNavigationStore.setState((state) => {
-        state.menu.organizations.active = state.menu.organizations.active.map((org) => (org.id === organization.id ? organization : org));
-      });
-    } catch (error) {
-      console.error('Error parsing update_organization event', error);
-    }
-  });
+        const notExist = state.menu[entityType].items.every((item) => item.id !== entity.id);
 
-  useSSE('remove_organization', (e) => {
-    try {
-      const organization = JSON.parse(e.data);
-      useNavigationStore.setState((state) => {
-        state.menu.organizations.active = state.menu.organizations.active.filter((org) => org.id !== organization.id);
-      });
-    } catch (error) {
-      console.error('Error parsing remove_organization event', error);
-    }
-  });
+        // If entity does not exist in the list, add it
+        if (notExist) {
+          state.menu[entityType].items = [entity, ...state.menu[entityType].items];
+          return state;
+        }
 
-  useSSE('new_membership', (e) => {
-    try {
-      const organization = JSON.parse(e.data);
-      useNavigationStore.setState((state) => {
-        state.menu.organizations.active = [organization, ...state.menu.organizations.active];
+        state.menu[entityType].items = state.menu[entityType].items.map((item) => (item.id === entity.id ? entity : item));
+        return state;
       });
     } catch (error) {
-      console.error('Error parsing new_membership event', error);
+      console.error(`Error parsing ${entityType} event`, error);
     }
-  });
+  };
 
-  useSSE('remove_membership', (e) => {
+  const addEntity = (e: MessageEvent<string>, entityType: EntityType) => {
     try {
-      const organization = JSON.parse(e.data);
+      const entity = JSON.parse(e.data);
       useNavigationStore.setState((state) => {
-        state.menu.organizations.active = state.menu.organizations.active.filter((org) => org.id !== organization.id);
+        const exist = state.menu[entityType].items.some((item) => item.id === entity.id);
+
+        // If entity already exists in the list, do nothing
+        if (exist) {
+          return state;
+        }
+
+        state.menu[entityType].items = [entity, ...state.menu[entityType].items];
+        return state;
       });
     } catch (error) {
-      console.error('Error parsing remove_membership event', error);
+      console.error(`Error parsing new_${entityType} event`, error);
     }
-  });
+  };
+
+  const removeEntity = (e: MessageEvent<string>, entityType: EntityType) => {
+    try {
+      const entity = JSON.parse(e.data);
+      useNavigationStore.setState((state) => {
+        state.menu[entityType].items = state.menu[entityType].items.filter((item) => item.id !== entity.id);
+        return state;
+      });
+    } catch (error) {
+      console.error(`Error parsing remove_${entityType} event`, error);
+    }
+  };
+
+  useSSE('update_organization', (e) => updateEntity(e, 'organizations'));
+  useSSE('remove_organization', (e) => removeEntity(e, 'organizations'));
+  useSSE('new_organization_membership', (e) => addEntity(e, 'organizations'));
+  useSSE('remove_organization_membership', (e) => removeEntity(e, 'organizations'));
+
+  useSSE('update_workspace', (e) => updateEntity(e, 'workspaces'));
+  useSSE('remove_workspace', (e) => removeEntity(e, 'workspaces'));
+  useSSE('new_workspace_membership', (e) => addEntity(e, 'workspaces'));
+  useSSE('remove_workspace_membership', (e) => removeEntity(e, 'workspaces'));
 
   return null;
 };

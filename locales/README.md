@@ -33,7 +33,11 @@ The recommended settings to put in your `.vscode/settings.json` or to edit in th
 * Above three words is considered a sentence
 * Action related sentences have a prefix such as `question.`, `confirm.` or `success.`
 * Other (explanation related) sentences have a suffix `.text`
-* By default the first letter is uppercase. For explicitly lowercase, add a suffix `.lc`.
-* Plurals use suffix `.plural`
+* By default only first letter of first word is uppercase, whether a single word, two words or a sentence. For explicitly lowercase, add a suffix `.lc`.
 * Sort JSON translation keys by alphabetical order
 * Modules or pages with a big amount of unique texts should get their own translation namespace and json: `about:` keys are provided by `about.json`.
+
+### Different namespaces
+* `common`: texts that are in a generic part of cella
+* `about`: texts that are in the marketing 'about' page of cella
+* `backend`: pure backend texts, mostly email translations

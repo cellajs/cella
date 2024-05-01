@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 
 import type { User } from 'lucia';
 import { coalesce, db } from '../../db/db';
@@ -6,10 +6,11 @@ import { auth } from '../../db/lucia';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
-import { type ErrorType, createError, errorResponse } from '../../lib/errors';
+import { workspacesTable } from '../../db/schema/workspaces';
+import { createError, errorResponse, type ErrorType } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import { CustomHono, type PageResourceType } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
@@ -30,7 +31,7 @@ const usersRoutes = app
   /*
    * Get current user
    */
-  .add(meRouteConfig, async (ctx) => {
+  .openapi(meRouteConfig, async (ctx) => {
     const user = ctx.get('user');
 
     const [{ memberships }] = await db
@@ -62,7 +63,7 @@ const usersRoutes = app
   /*
    * Terminate a session
    */
-  .add(terminateSessionsConfig, async (ctx) => {
+  .openapi(terminateSessionsConfig, async (ctx) => {
     const { ids } = ctx.req.valid('query');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
@@ -80,7 +81,7 @@ const usersRoutes = app
           }
           await auth.invalidateSession(id);
         } catch (error) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', 'session', { session: id }));
+          errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
         }
       }),
     );
@@ -93,7 +94,7 @@ const usersRoutes = app
   /*
    * Get user menu
    */
-  .add(getUserMenuConfig, async (ctx) => {
+  .openapi(getUserMenuConfig, async (ctx) => {
     const user = ctx.get('user');
 
     const organizationsWithMemberships = await db
@@ -106,68 +107,79 @@ const usersRoutes = app
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
-    const organizations = await Promise.all(
-      organizationsWithMemberships.map(async ({ organization, membership }) => {
-        const [{ admins }] = await db
-          .select({
-            admins: count(),
-          })
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.role, 'ADMIN'), eq(membershipsTable.organizationId, organization.id)));
+    const workspaceWithMemberships = await db
+      .select({
+        workspace: workspacesTable,
+        membership: membershipsTable,
+      })
+      .from(workspacesTable)
+      .where(eq(membershipsTable.userId, user.id))
+      .orderBy(desc(workspacesTable.createdAt))
+      .innerJoin(membershipsTable, eq(membershipsTable.workspaceId, workspacesTable.id));
 
-        const [{ members }] = await db
-          .select({
-            members: count(),
-          })
-          .from(membershipsTable)
-          .where(eq(membershipsTable.organizationId, organization.id));
+    const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
+      return {
+        slug: organization.slug,
+        id: organization.id,
+        createdAt: organization.createdAt,
+        modifiedAt: organization.modifiedAt,
+        name: organization.name,
+        thumbnailUrl: organization.thumbnailUrl,
+        archived: membership.inactive || false,
+        muted: membership.muted || false,
+        role: membership?.role || null,
+        type: 'ORGANIZATION' as PageResourceType,
+      };
+    });
 
-        return {
-          ...organization,
-          userRole: membership?.role || null,
-          counts: {
-            members,
-            admins,
-          },
-        };
-      }),
-    );
+    const workspaces = workspaceWithMemberships.map(({ workspace, membership }) => {
+      return {
+        slug: workspace.slug,
+        id: workspace.id,
+        createdAt: workspace.createdAt,
+        modifiedAt: workspace.modifiedAt,
+        name: workspace.name,
+        thumbnailUrl: workspace.thumbnailUrl,
+        archived: membership.inactive || false,
+        muted: membership.muted || false,
+        role: membership?.role || null,
+        type: 'WORKSPACE' as PageResourceType,
+      };
+    });
 
     return ctx.json({
       success: true,
       data: {
-        organizations: {
-          active: organizations,
-          inactive: [],
-          canCreate: true,
-        },
+        organizations: { items: organizations, canCreate: true },
+        workspaces: { items: workspaces, canCreate: true },
+        projects: { items: [], canCreate: false },
       },
     });
   })
   /*
    * Update a user
    */
-  .add(updateUserConfig, async (ctx) => {
-    const { userId } = ctx.req.valid('param');
+  .openapi(updateUserConfig, async (ctx) => {
+    const { user: userId } = ctx.req.valid('param');
     const user = ctx.get('user');
 
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: userId });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: userId });
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: userId });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'USER', { user: userId });
     }
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
 
     if (slug && slug !== targetUser.slug) {
-      const slugAvailable = await checkSlugAvailable(slug);
+      const slugAvailable = await checkSlugAvailable(slug, 'USER');
 
       if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
       }
     }
 
@@ -184,7 +196,7 @@ const usersRoutes = app
         thumbnailUrl,
         slug,
         role,
-        name: [firstName, lastName].filter(Boolean).join(' ') || null,
+        name: [firstName, lastName].filter(Boolean).join(' ') || slug,
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })
@@ -212,9 +224,9 @@ const usersRoutes = app
     });
   })
   /*
-   * Get users
+   * Get list of  users
    */
-  .add(getUsersConfig, async (ctx) => {
+  .openapi(getUsersConfig, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const memberships = db
@@ -286,62 +298,23 @@ const usersRoutes = app
     });
   })
   /*
-   * Delete users
-   */
-  .add(deleteUsersRouteConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
-    const user = ctx.get('user');
-
-    const userIds = Array.isArray(ids) ? ids : [ids];
-
-    const errors: ErrorType[] = [];
-
-    await Promise.all(
-      userIds.map(async (id) => {
-        const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
-
-        if (!targetUser) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', 'user', { user: id }));
-        }
-
-        if (user.role !== 'ADMIN' && user.id !== id) {
-          errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'user', { user: id }));
-        }
-
-        await db.delete(usersTable).where(eq(usersTable.id, id));
-
-        if (user.id === id) {
-          await auth.invalidateUserSessions(user.id);
-          removeSessionCookie(ctx);
-        }
-
-        logEvent('User deleted', { user: targetUser.id });
-      }),
-    );
-
-    return ctx.json({
-      success: true,
-      errors: errors,
-    });
-  })
-  /*
    * Get a user by id or slug
    */
-  .add(getUserByIdOrSlugRouteConfig, async (ctx) => {
-    const userIdentifier = ctx.req.param('userIdentifier').toLowerCase();
+  .openapi(getUserByIdOrSlugRouteConfig, async (ctx) => {
+    const idOrSlug = ctx.req.param('user').toLowerCase();
     const user = ctx.get('user');
 
     const [targetUser] = await db
       .select()
       .from(usersTable)
-      .where(or(eq(usersTable.id, userIdentifier), eq(usersTable.slug, userIdentifier)));
+      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: userIdentifier });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: idOrSlug });
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'USER', { user: targetUser.id });
     }
 
     const [{ memberships }] = await db
@@ -360,6 +333,79 @@ const usersRoutes = app
           memberships,
         },
       },
+    });
+  }) /*
+   * Delete users
+   */
+  .openapi(deleteUsersRouteConfig, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
+    const user = ctx.get('user');
+
+    // * Convert the user ids to an array
+    const userIds = Array.isArray(ids) ? ids : [ids];
+
+    const errors: ErrorType[] = [];
+
+    // * Get the users
+    const targets = await db.select().from(usersTable).where(inArray(usersTable.id, userIds));
+
+    // * Check if the users exist
+    for (const id of userIds) {
+      if (!targets.some((target) => target.id === id)) {
+        errors.push(
+          createError(ctx, 404, 'not_found', 'warn', 'USER', {
+            user: id,
+          }),
+        );
+      }
+    }
+
+    // * Filter out users that the user doesn't have permission to delete
+    const allowedTargets = targets.filter((target) => {
+      const userId = target.id;
+
+      if (user.role !== 'ADMIN' && user.id !== userId) {
+        errors.push(
+          createError(ctx, 403, 'delete_forbidden', 'warn', 'USER', {
+            user: userId,
+          }),
+        );
+        return false;
+      }
+
+      return true;
+    });
+
+    // * If the user doesn't have permission to delete any of the users, return an error
+    if (allowedTargets.length === 0) {
+      return ctx.json({
+        success: false,
+        errors: errors,
+      });
+    }
+
+    // * Delete the users
+    await db.delete(usersTable).where(
+      inArray(
+        usersTable.id,
+        allowedTargets.map((target) => target.id),
+      ),
+    );
+
+    // * Send SSE events for the users that were deleted
+    for (const { id } of allowedTargets) {
+      // * Invalidate the user's sessions if the user is deleting themselves
+      if (user.id === id) {
+        await auth.invalidateUserSessions(user.id);
+        removeSessionCookie(ctx);
+      }
+
+      logEvent('User deleted', { user: id });
+    }
+
+    return ctx.json({
+      success: true,
+      errors: errors,
     });
   });
 

@@ -16,15 +16,15 @@ import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
 
 const tabs = [
-  { value: 'general', label: 'common:general', hash: 'general' },
-  { value: 'delete-organization', label: 'common:delete_organization', hash: 'delete-organization' },
+  { id: 'general', label: 'common:general' },
+  { id: 'delete-organization', label: 'common:delete_organization' },
 ];
 
 const OrganizationSettings = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { organization } = useContext(OrganizationContext);
-  const { organizationIdentifier }: { organizationIdentifier: string } = useParams({ strict: false });
+  const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
 
   const openDeleteDialog = () => {
     dialog(
@@ -52,7 +52,7 @@ const OrganizationSettings = () => {
         </Sticky>
       </div>
 
-      <div className="md:w-[70%] space-y-6">
+      <div className="md:w-[70%]  flex flex-col gap-8">
         <AsideAnchor id="general">
           <Card>
             <CardHeader>
@@ -62,10 +62,10 @@ const OrganizationSettings = () => {
               <UpdateOrganizationForm
                 organization={organization}
                 callback={(organization) => {
-                  if (organizationIdentifier !== organization.slug) {
+                  if (idOrSlug !== organization.slug) {
                     navigate({
-                      to: '/$organizationIdentifier/settings',
-                      params: { organizationIdentifier: organization.slug },
+                      to: '/$idOrSlug/settings',
+                      params: { idOrSlug: organization.slug },
                       replace: true,
                     });
                   }

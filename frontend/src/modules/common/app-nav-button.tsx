@@ -7,9 +7,9 @@ import { AvatarWrap } from './avatar-wrap';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '~/lib/utils';
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import type { NavItem } from './app-nav';
 import AppNavLoader from './app-nav-loader';
+import { TooltipButton } from './tooltip-button';
 
 interface NavButtonProps {
   navItem: NavItem;
@@ -26,27 +26,22 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   const activeClass = isActive ? 'bg-accent/20 hover:bg-accent/20' : '';
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button variant="ghost" className={cn('hover:bg-accent/10 group h-14 w-14', navIconColor, activeClass)} onClick={() => onClick(navItem.id)}>
-          {navItem.id === 'account' ? (
-            <AvatarWrap
-              type="user"
-              className="border-[1.5px] rounded-full border-primary group-hover:scale-110 transition-transform text-primary-foreground"
-              id={user.id}
-              name={user.name}
-              url={user.thumbnailUrl}
-            />
-          ) : navItem.id === 'home' ? (
-            <AppNavLoader />
-          ) : (
-            <navItem.icon className="group-hover:scale-110 transition-transform" strokeWidth={config.theme.strokeWidth} />
-          )}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="right" sideOffset={10} hideWhenDetached>
-        {t(`common:${navItem.id}`)}
-      </TooltipContent>
-    </Tooltip>
+    <TooltipButton toolTipContent={t(`common:${navItem.id}`)} side="right" sideOffset={10} hideWhenDetached>
+      <Button variant="ghost" className={cn('hover:bg-accent/10 group h-14 w-14', navIconColor, activeClass)} onClick={() => onClick(navItem.id)}>
+        {navItem.id === 'account' ? (
+          <AvatarWrap
+            type="USER"
+            className="border-[1.5px] rounded-full border-primary group-hover:scale-110 transition-transform text-primary-foreground"
+            id={user.id}
+            name={user.name}
+            url={user.thumbnailUrl}
+          />
+        ) : navItem.id === 'home' ? (
+          <AppNavLoader />
+        ) : (
+          <navItem.icon className="group-hover:scale-110 transition-transform" strokeWidth={config.theme.strokeWidth} />
+        )}
+      </Button>
+    </TooltipButton>
   );
 };

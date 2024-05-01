@@ -4,12 +4,18 @@ export const passwordSchema = z.string().min(8).max(100);
 
 export const cookieSchema = z.string();
 
+export const resourceTypeSchema = z.enum(['ORGANIZATION', 'WORKSPACE', 'PROJECT', 'USER', 'UNKNOWN']);
+
+export const idSchema = z.string();
+
+export const slugSchema = z.string();
+
 export const errorSchema = z.object({
   message: z.string(),
   type: z.string(),
   status: z.number(),
   severity: z.string(),
-  resourceType: z.string().optional(),
+  resourceType: resourceTypeSchema.optional(),
   logId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
@@ -38,21 +44,40 @@ export const deleteByIdsQuerySchema = z.object({
   ids: z.union([z.string(), z.array(z.string())]),
 });
 
-export const idSchema = z.string();
-
-export const slugSchema = z.string();
-
 export const validSlugSchema = z
   .string()
   .min(2)
-  .max(200)
+  .max(100)
   .refine(
     (s) => /^[a-z0-9]+(-[a-z0-9]+)*$/i.test(s),
     'Slug may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.',
-  );
+  )
+  .transform((str) => str.toLowerCase().trim());
+
+export const validDomainsSchema = z
+  .array(
+    z
+      .string()
+      .min(4)
+      .max(100)
+      .refine(
+        (s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'),
+        'Domain must not contain @, no special chars and at least one dot (.) in between.',
+      )
+      .transform((str) => str.toLowerCase().trim()),
+  )
+  .optional();
+
+export const userParamSchema = z.object({
+  user: idSchema.or(slugSchema),
+});
 
 export const organizationParamSchema = z.object({
-  organizationIdentifier: slugSchema.or(idSchema),
+  organization: idSchema.or(slugSchema),
+});
+
+export const workspaceParamSchema = z.object({
+  workspace: idSchema.or(slugSchema),
 });
 
 export const imageUrlSchema = z
@@ -63,5 +88,7 @@ export const imageUrlSchema = z
 export const nameSchema = z
   .string()
   .min(2)
-  .max(200)
+  .max(100)
   .refine((s) => /^[a-z ,.'-]+$/i.test(s), "Name may only contain letters, spaces and these characters: ,.'-");
+
+export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');

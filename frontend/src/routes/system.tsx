@@ -18,7 +18,7 @@ const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order:
 export const SystemPanelRoute = createRoute({
   path: '/system',
   staticData: { pageTitle: 'System panel' },
-  beforeLoad: ({ location }) => noDirectAccess(location, '/users'),
+  beforeLoad: ({ location }) => noDirectAccess(location.pathname, 'system', '/users'),
   getParentRoute: () => IndexRoute,
   component: () => <SystemPanel />,
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,

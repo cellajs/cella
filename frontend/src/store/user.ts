@@ -10,7 +10,7 @@ type PartialUser = Partial<User>;
 
 interface UserState {
   user: User;
-  lastUser: PartialUser;
+  lastUser: PartialUser | null;
   clearLastUser: () => void;
   setUser: (user: User) => void;
 }
@@ -19,11 +19,12 @@ export const useUserStore = create<UserState>()(
   devtools(
     persist(
       immer((set) => ({
+        // TODO: Fix this type, can we find another way to allow null, while not having to check for null all through the code?
         user: null as unknown as User,
-        lastUser: null as unknown as PartialUser,
+        lastUser: null,
         clearLastUser: () => {
           set((state) => {
-            state.lastUser = null as unknown as User;
+            state.lastUser = null;
           });
         },
         setUser: (user) => {
@@ -36,7 +37,7 @@ export const useUserStore = create<UserState>()(
         },
       })),
       {
-        version: 1,
+        version: 2,
         name: `${config.slug}-user`,
         partialize: (state) => ({
           user: state.user,

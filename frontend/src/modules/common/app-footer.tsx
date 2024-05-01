@@ -27,8 +27,7 @@ export const FooterLink = ({ id, href }: FooterLinkProps) => {
 // Default footer links
 const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'about', href: '/about' },
-  { id: 'terms', href: '/terms' },
-  { id: 'privacy', href: '/privacy' },
+  { id: 'legal', href: '/legal' },
 ];
 
 interface FooterLinksProps {
@@ -69,7 +68,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
 // App Footer component
 export const AppFooter = () => {
   return (
-    <footer className="container flex flex-col my-4 items-center gap-4">
+    <footer className="container flex flex-col my-12 items-center gap-4">
       <div className="flex items-center gap-4">
         <UserLanguage align="start" />
         <div className="mr-1 font-light text-muted text-sm">|</div>

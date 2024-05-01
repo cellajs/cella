@@ -1,3 +1,5 @@
+import type React from 'react';
+
 let dialogsCounter = 1;
 
 export type DialogT = {
@@ -11,6 +13,9 @@ export type DialogT = {
   autoFocus?: boolean;
   hideClose?: boolean;
   content?: React.ReactNode;
+  titleContent?: string | React.ReactNode;
+  addToTitle?: boolean;
+  useDefaultTitle?: boolean;
 };
 
 export type DialogToRemove = {
@@ -19,20 +24,29 @@ export type DialogToRemove = {
   refocus?: boolean;
 };
 
+export type DialogToReset = {
+  id: number | string;
+  reset: true;
+};
+
 export type ExternalDialog = Omit<DialogT, 'id' | 'content'> & {
   id?: number | string;
 };
 
+export const isDialog = (dialog: DialogT | DialogToRemove): dialog is DialogT => {
+  return !(dialog as DialogToRemove).remove;
+}
+
 class Observer {
-  subscribers: Array<(dialog: DialogT | DialogToRemove) => void>;
-  dialogs: (DialogT | DialogToRemove)[];
+  subscribers: Array<(dialog: DialogT | DialogToRemove | DialogToReset) => void>;
+  dialogs: (DialogT | DialogToRemove | DialogToReset)[];
 
   constructor() {
     this.subscribers = [];
     this.dialogs = [];
   }
 
-  subscribe = (subscriber: (dialog: DialogT | DialogToRemove) => void) => {
+  subscribe = (subscriber: (dialog: DialogT | DialogToRemove | DialogToReset) => void) => {
     this.subscribers.push(subscriber);
 
     return () => {
@@ -52,6 +66,10 @@ class Observer {
     this.dialogs = [...this.dialogs, data];
   };
 
+  get = (id: number | string) => {
+    return this.dialogs.find((dialog) => dialog.id === id);
+  }
+
   remove = (refocus = true, id?: number | string) => {
     if (id) {
       for (const subscriber of this.subscribers) {
@@ -61,9 +79,39 @@ class Observer {
       return;
     }
 
+    // Remove all dialogs
     for (const dialog of this.dialogs) {
       for (const subscriber of this.subscribers) {
         subscriber({ id: dialog.id, remove: true, refocus });
+      }
+    }
+  };
+
+  //Update dialog
+  update = (id: number | string, data: Partial<DialogT>) => {
+    if (!id) return;
+
+    for (const subscriber of this.subscribers) {
+      subscriber({ id, ...data });
+    }
+
+    return;
+  };
+
+  //Reset dialog
+  reset = (id?: number | string) => {
+    if (id) {
+      for (const subscriber of this.subscribers) {
+        subscriber({ id, reset: true });
+      }
+
+      return;
+    }
+
+    // Reset all dialogs
+    for (const dialog of this.dialogs) {
+      for (const subscriber of this.subscribers) {
+        subscriber({ id: dialog.id, reset: true });
       }
     }
   };
@@ -88,4 +136,7 @@ const dialogFunction = (content: React.ReactNode, data?: ExternalDialog) => {
 
 export const dialog = Object.assign(dialogFunction, {
   remove: DialogState.remove,
+  update: DialogState.update,
+  get: DialogState.get,
+  reset: DialogState.reset,
 });

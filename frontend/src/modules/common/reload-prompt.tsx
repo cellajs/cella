@@ -56,4 +56,4 @@ function ReloadPrompt() {
   );
 }
 
-export { ReloadPrompt };
+export default ReloadPrompt;
