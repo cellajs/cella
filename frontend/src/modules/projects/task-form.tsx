@@ -73,15 +73,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   };
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback((event) => {
-    if (event.key !== 'Escape') return;
+    if (event.key === 'Escape' || (event.key === 'Enter' && event.ctrlKey) || (event.key === 'Enter' && event.metaKey)) handleCloseForm();
+  }, []);
+
+  const handleHotKeysKeyPress = useCallback(() => {
     handleCloseForm();
   }, []);
 
-  const handleHotKeysEscKeyPress = useCallback(() => {
-    handleCloseForm();
-  }, []);
-
-  useHotkeys([['Escape', handleHotKeysEscKeyPress]]);
+  useHotkeys([['Escape', handleHotKeysKeyPress]]);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -245,34 +244,40 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button size={'xs'} type="submit" disabled={!form.formState.isDirty} loading={isPending} className="rounded-none rounded-l -ml-2">
+          <Button
+            size={'xs'}
+            type="submit"
+            disabled={!form.formState.isDirty}
+            loading={isPending}
+            className={`${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'}`}
+          >
             {t('common:create')}
           </Button>
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field: { onChange } }) => {
-              return (
-                <FormItem>
-                  <FormControl>
-                    <SelectStatus
-                      {...register('status')}
-                      taskStatus={1}
-                      changeTaskStatus={(newStatus) => {
-                        onChange(newStatus);
-                        onSubmit(form.getValues());
-                      }}
-                      nextButton={false}
-                      buttonsSize={'xs'}
-                      buttonsStyle={'default'}
-                      placeholder={t('common:placeholder.create_with_status')}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
-          />
+          {form.formState.isDirty && (
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field: { onChange } }) => {
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <SelectStatus
+                        {...register('status')}
+                        taskStatus={1}
+                        changeTaskStatus={(newStatus) => {
+                          onChange(newStatus);
+                          onSubmit(form.getValues());
+                        }}
+                        mode="create"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          )}
+
           <Button
             size={'xs'}
             type="reset"

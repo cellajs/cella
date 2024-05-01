@@ -63,7 +63,6 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // In create forms, auto-generate slug from name
   useEffect(() => {
     if (previousSlug || isDeviating) return;
-
     form.setValue('slug', slugify(nameValue || '', { lower: true }));
   }, [nameValue]);
 

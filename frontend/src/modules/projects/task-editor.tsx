@@ -14,22 +14,21 @@ interface TaskEditorProps {
 export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState }: TaskEditorProps) => {
   const handleUpdateMarkdown = () => {
     const editorTextAria = document.getElementById(id);
-    if (!editorTextAria) return toggleEditorState();;
+    if (!editorTextAria) return toggleEditorState();
     const newValue = (editorTextAria as HTMLTextAreaElement).value;
     setMarkdown(newValue);
     toggleEditorState();
   };
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback((event) => {
-    if (event.key !== 'Escape') return;
-    handleUpdateMarkdown()
+    if (event.key === 'Escape' || (event.key === 'Enter' && event.ctrlKey) || (event.key === 'Enter' && event.metaKey)) handleUpdateMarkdown();
   }, []);
 
-  const handleHotKeysEsc = useCallback(() => {
+  const handleHotKeys = useCallback(() => {
     handleUpdateMarkdown();
   }, []);
 
-  useHotkeys([['Escape', handleHotKeysEsc]]);
+  useHotkeys([['Escape', handleHotKeys]]);
 
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {

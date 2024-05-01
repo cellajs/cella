@@ -28,35 +28,10 @@ const statuses = [
 interface SelectStatusProps {
   taskStatus: (typeof statuses)[number]['value'];
   changeTaskStatus: (newStatus: number) => void;
-  placeholder?: string;
-  nextButton?: boolean;
-  buttonsStyle?:
-    | 'default'
-    | 'destructive'
-    | 'success'
-    | 'outline'
-    | 'secondary'
-    | 'ghost'
-    | 'link'
-    | 'darkSuccess'
-    | 'cell'
-    | 'plain'
-    | 'glow'
-    | 'outlineGhost'
-    | 'gradient'
-    | 'none'
-    | null;
-  buttonsSize?: 'default' | 'micro' | 'xs' | 'sm' | 'lg' | 'icon' | 'xl' | 'auto' | null;
+  mode?: 'create' | 'edit';
 }
 
-const SelectStatus = ({
-  taskStatus,
-  changeTaskStatus,
-  nextButton = true,
-  buttonsStyle = 'outlineGhost',
-  buttonsSize = 'micro',
-  placeholder,
-}: SelectStatusProps) => {
+const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectStatusProps) => {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -70,7 +45,7 @@ const SelectStatus = ({
     const newStatus = statuses[index];
     setSelectedStatus(newStatus);
     changeTaskStatus(index);
-    if (nextButton) toast.success(t('common:success.new_status', { status: newStatus.status }));
+    if (mode === 'edit') toast.success(t('common:success.new_status', { status: newStatus.status }));
   };
 
   const nextStatusClick = () => {
@@ -86,10 +61,10 @@ const SelectStatus = ({
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      {nextButton && (
+      {mode === 'edit' && (
         <Button
-          variant={buttonsStyle}
-          size={buttonsSize}
+          variant="outlineGhost"
+          size="micro"
           className="border-r-0 rounded-r-none"
           onClick={nextStatusClick}
           disabled={selectedStatus.value === 6}
@@ -99,7 +74,12 @@ const SelectStatus = ({
       )}
 
       <PopoverTrigger asChild>
-        <Button aria-label="Set status" variant={buttonsStyle} size={buttonsSize} className="rounded-none rounded-r -ml-2">
+        <Button
+          aria-label="Set status"
+          variant={mode === 'edit' ? 'outlineGhost' : 'default'}
+          size={mode === 'edit' ? 'micro' : 'xs'}
+          className="rounded-none rounded-r -ml-2"
+        >
           <ChevronDown size={12} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
@@ -116,7 +96,7 @@ const SelectStatus = ({
               }
               setSearchValue(searchValue);
             }}
-            placeholder={placeholder ? placeholder : t('common:placeholder.set_status')}
+            placeholder={mode === 'edit' ? t('common:placeholder.set_status') : t('common:placeholder.create_with_status')}
           />
           {!isSearching && <Kbd value="S" className="absolute top-3 right-[10px]" />}
           <CommandList>
