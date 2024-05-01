@@ -89,13 +89,18 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     setIsEditing(!isEditing);
   };
 
-  const buttonRef = useRef<HTMLDivElement>(null);
+  const expandedRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   useDoubleClick({
-    onDoubleClick: () => {
-      toggleEditorState();
-    },
-    ref: buttonRef,
+    onDoubleClick: () => toggleEditorState(),
+    ref: expandedRef,
+    latency: 250,
+  });
+
+  useDoubleClick({
+    onDoubleClick: () => toggleEditorState(),
+    ref: summaryRef,
     latency: 250,
   });
 
@@ -132,7 +137,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               {!isEditing && (
                 <>
                   <div
-                    ref={buttonRef}
+                    ref={expandedRef}
                     tabIndex={isExpanded ? 0 : -1}
                     style={{ display: isExpanded ? '' : 'none' }}
                     className="w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -144,21 +149,20 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                     />
                   </div>
                   <div
-                    ref={buttonRef}
+                    ref={summaryRef}
                     tabIndex={isExpanded ? -1 : 0}
                     style={{ display: isExpanded ? 'none' : '' }}
                     className="w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <span className="font-light">{innerTask.markdown}</span>
-                    <div className="opacity-50 group-hover/task:opacity-75 text-xs inline-block font-light ml-2 gap-1">
-                      <span>&#183;</span>
-                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
-                        more
+                    <div className="opacity-50 group-hover/task:opacity-70 text-xs inline-block font-light ml-1 gap-1">
+                      <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
+                        {t('common:more').toLowerCase()}
                       </Button>
                       <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
                         <span className="text-success">1</span>
-                        <span className="font-light opacity-50">/</span>
-                        <span className="font-light opacity-50">3</span>
+                        <span className="font-light">/</span>
+                        <span className="font-light">3</span>
                       </Button>
                       <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
                         <Paperclip size={10} className="transition-transform -rotate-45" />
@@ -169,7 +173,14 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                 </>
               )}
 
-              {isExpanded && <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>}
+              {isExpanded && (
+                <div>
+                  <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>
+                  <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 h-5 opacity-70">
+                    {t('common:less').toLowerCase()}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
