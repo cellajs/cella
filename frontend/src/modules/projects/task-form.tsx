@@ -23,6 +23,7 @@ import SetLabels from './select-labels.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import { ProjectContext } from './board.tsx';
+import SelectStatus from './select-status.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -120,7 +121,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
       impact: values.impact as TaskImpact,
       assignedTo: values.assignedTo as TaskUser[],
       labels: values.labels,
-      status: 1,
+      status: values.status as TaskStatus,
       projectId: project.id,
     };
     updateTasks(task as Task);
@@ -244,9 +245,34 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button size={'xs'} type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+          <Button size={'xs'} type="submit" disabled={!form.formState.isDirty} loading={isPending} className="rounded-none rounded-l -ml-2">
             {t('common:create')}
           </Button>
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field: { onChange } }) => {
+              return (
+                <FormItem>
+                  <FormControl>
+                    <SelectStatus
+                      {...register('status')}
+                      taskStatus={1}
+                      changeTaskStatus={(newStatus) => {
+                        onChange(newStatus);
+                        onSubmit(form.getValues());
+                      }}
+                      nextButton={false}
+                      buttonsSize={'xs'}
+                      buttonsStyle={'default'}
+                      placeholder={t('common:placeholder.create_with_status')}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
           <Button
             size={'xs'}
             type="reset"

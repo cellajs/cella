@@ -28,9 +28,35 @@ const statuses = [
 interface SelectStatusProps {
   taskStatus: (typeof statuses)[number]['value'];
   changeTaskStatus: (newStatus: number) => void;
+  placeholder?: string;
+  nextButton?: boolean;
+  buttonsStyle?:
+    | 'default'
+    | 'destructive'
+    | 'success'
+    | 'outline'
+    | 'secondary'
+    | 'ghost'
+    | 'link'
+    | 'darkSuccess'
+    | 'cell'
+    | 'plain'
+    | 'glow'
+    | 'outlineGhost'
+    | 'gradient'
+    | 'none'
+    | null;
+  buttonsSize?: 'default' | 'micro' | 'xs' | 'sm' | 'lg' | 'icon' | 'xl' | 'auto' | null;
 }
 
-const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
+const SelectStatus = ({
+  taskStatus,
+  changeTaskStatus,
+  nextButton = true,
+  buttonsStyle = 'outlineGhost',
+  buttonsSize = 'micro',
+  placeholder,
+}: SelectStatusProps) => {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -44,7 +70,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
     const newStatus = statuses[index];
     setSelectedStatus(newStatus);
     changeTaskStatus(index);
-    toast.success(t('common:success.new_status', { status: newStatus.status }));
+    if (nextButton) toast.success(t('common:success.new_status', { status: newStatus.status }));
   };
 
   const nextStatusClick = () => {
@@ -60,18 +86,20 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <Button
-        variant="outlineGhost"
-        size="micro"
-        className="border-r-0 rounded-r-none"
-        onClick={nextStatusClick}
-        disabled={selectedStatus.value === 6}
-      >
-        {statuses[selectedStatus.value].button}
-      </Button>
+      {nextButton && (
+        <Button
+          variant={buttonsStyle}
+          size={buttonsSize}
+          className="border-r-0 rounded-r-none"
+          onClick={nextStatusClick}
+          disabled={selectedStatus.value === 6}
+        >
+          {statuses[selectedStatus.value].button}
+        </Button>
+      )}
 
       <PopoverTrigger asChild>
-        <Button aria-label="Set status" variant="outlineGhost" size="micro" className="rounded-none rounded-r -ml-2">
+        <Button aria-label="Set status" variant={buttonsStyle} size={buttonsSize} className="rounded-none rounded-r -ml-2">
           <ChevronDown size={12} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
@@ -88,7 +116,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
               }
               setSearchValue(searchValue);
             }}
-            placeholder={t('common:placeholder.set_status')}
+            placeholder={placeholder ? placeholder : t('common:placeholder.set_status')}
           />
           {!isSearching && <Kbd value="S" className="absolute top-3 right-[10px]" />}
           <CommandList>
