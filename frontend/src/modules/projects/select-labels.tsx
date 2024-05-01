@@ -107,7 +107,7 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
             {selectedLabels.length > 0 &&
               selectedLabels.map(({ value, id, color }) => {
                 return (
-                  <Badge variant="outline" key={id} className={`font-light ${mode === 'create' ? 'mr-1 h-6' : '-mr-1 h-5'} last:mr-0 bg-background/25`} style={badgeStyle(color)}>
+                  <Badge variant="outline" key={id} className={`font-light ${mode === 'create' ? 'mr-1 h-6' : '-mr-1 h-5'} last:mr-0 bg-background`} style={badgeStyle(color)}>
                     {value}
                   </Badge>
                 );

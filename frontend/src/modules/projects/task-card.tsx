@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { CheckCheck, GripVertical, Paperclip } from 'lucide-react';
+import { GripVertical, Paperclip } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { Checkbox } from '../ui/checkbox';
@@ -118,11 +118,9 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               <SelectTaskType currentType={innerTask.type} changeTaskType={(newType) => handleChange('type', newType)} />
 
               {isExpanded && <Checkbox className="" />}
-
-              {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" />}
             </div>
             <div className="flex flex-col grow">
-              {isEditing ? (
+              {isEditing && (
                 <TaskEditor
                   mode={mode}
                   markdown={innerTask.markdown}
@@ -130,32 +128,48 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                   toggleEditorState={toggleEditorState}
                   id={innerTask.id}
                 />
-              ) : (
-                // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
-                <div ref={buttonRef} tabIndex={0} className="w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
-                  <MDEditor.Markdown
-                    source={innerTask.markdown}
-                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                    className="prose font-light text-start max-w-none"
-                  />
-                </div>
               )}
+              {!isEditing && (
+                <>
+                  <div
+                    ref={buttonRef}
+                    tabIndex={isExpanded ? 0 : -1}
+                    style={{ display: isExpanded ? '' : 'none' }}
+                    className="w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <MDEditor.Markdown
+                      source={innerTask.markdown}
+                      style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                      className="prose font-light text-start max-w-none"
+                    />
+                  </div>
+                  <div
+                    ref={buttonRef}
+                    tabIndex={isExpanded ? -1 : 0}
+                    style={{ display: isExpanded ? 'none' : '' }}
+                    className="w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <span className="font-light">{innerTask.markdown}</span>
+                    <div className="opacity-50 group-hover/task:opacity-75 text-xs inline-block font-light ml-2 gap-1">
+                      <span>&#183;</span>
+                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
+                        more
+                      </Button>
+                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
+                        <span className="text-success">1</span>
+                        <span className="font-light opacity-50">/</span>
+                        <span className="font-light opacity-50">3</span>
+                      </Button>
+                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
+                        <Paperclip size={10} className="transition-transform -rotate-45" />
+                        <span>3</span>
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+
               {isExpanded && <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>}
-              <div className="opacity-50 group-hover/task:opacity-75 text-xs items-center font-light flex gap-1">
-                <div>&#183;</div>
-                <div>2d</div>
-                <div>&#183;</div>
-                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="collapsed-only flex gap-[2px]">
-                  <CheckCheck size={12} />
-                  <span className="text-success">1</span>
-                  <span className="font-light scale-90">/ 3</span>
-                </Button>
-                <div className="collapsed-only">&#183;</div>
-                <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="collapsed-only flex gap-[2px]">
-                  <Paperclip size={12} />
-                  <span>3</span>
-                </Button>
-              </div>
             </div>
           </div>
 
@@ -164,11 +178,13 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               variant={'ghost'}
               {...attributes}
               {...listeners}
-              className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-0 transition-opacity group-hover/task:opacity-50"
+              className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35"
             >
               <span className="sr-only"> {t('common:move_task')}</span>
               <GripVertical size={16} />
             </Button>
+
+            {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" />}
 
             <div className="grow">
               <SetLabels

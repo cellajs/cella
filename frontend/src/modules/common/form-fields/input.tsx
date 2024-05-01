@@ -42,7 +42,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
 }: Props<TFieldValues>) => {
   const havePrefix = prefix !== 'undefined' && prefix;
   const spanPrefix = document.querySelector(`#${prefix}-prefix`);
-  const prefixPadding = havePrefix && spanPrefix && 'offsetWidth' in spanPrefix ? `${Number(spanPrefix.offsetWidth) + 10}px` : '12px';
+  const prefixPadding = havePrefix && spanPrefix && 'offsetWidth' in spanPrefix ? `${Number(spanPrefix.offsetWidth) + 16}px` : '12px';
   return (
     <FormField
       control={disabled ? undefined : control}
@@ -57,7 +57,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
           <FormControl>
             <div className="relative flex w-full items-center ">
               {icon && <div className="pr-2 ">{icon}</div>}
-              {havePrefix && <span id={`${prefix}-prefix`} className="absolute left-2 text-sm opacity-50">{`cellajs.com/${prefix}/`}</span>}
+              {havePrefix && <span id={`${prefix}-prefix`} className="absolute left-3 text-sm font-light opacity-50">{`cellajs.com/${prefix}/`}</span>}
               {type === 'textarea' ? (
                 <Textarea
                   placeholder={placeholder}
