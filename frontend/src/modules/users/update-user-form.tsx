@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateUserJsonSchema } from 'backend/modules/users/schema';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { User } from '~/types';
@@ -21,11 +21,13 @@ import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
-import { dialog } from '../common/dialoger/state';
+import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
+import { SquarePen } from 'lucide-react';
+import { Badge } from '../ui/badge';
 
 interface UpdateUserFormProps {
   user: User;
@@ -103,12 +105,32 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
         nextStep?.();
 
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
-        if (isDialog) {
-          dialog.remove();
-        }
+        if (isDialog) dialog.remove(true, 'edit-user');
       },
     });
   };
+
+  // Update dialog title with unsaved changes
+  useEffect(() => {
+    if (form.unsavedChanges) {
+      const targetDialog = dialog.get('edit-user');
+      if (targetDialog && checkDialog(targetDialog)) {
+        dialog.update('edit-user', {
+          title: (
+            <div className="flex flex-row gap-2">
+              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
+              <Badge variant="plain" className="w-fit">
+                <SquarePen size={12} className="mr-2" />
+                <span className="font-light">{t('common:unsaved_changes')}</span>
+              </Badge>
+            </div>
+          ),
+        });
+      }
+      return;
+    }
+    dialog.reset('edit-user');
+  }, [form.unsavedChanges]);
 
   const setImageUrl = (url: string) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
