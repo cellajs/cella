@@ -28,7 +28,11 @@ export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState 
     handleUpdateMarkdown();
   }, []);
 
-  useHotkeys([['Escape', handleHotKeys]]);
+  useHotkeys([
+    ['Escape', handleHotKeys],
+    ['ctrl+enter', handleHotKeys],
+    ['meta+enter', handleHotKeys],
+  ]);
 
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {
