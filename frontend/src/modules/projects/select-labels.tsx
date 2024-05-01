@@ -9,15 +9,18 @@ import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
 import { faker } from '@faker-js/faker';
-import { cn } from '~/lib/utils.ts';
 import type { TaskLabel } from '~/mocks/workspaces.ts';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import { useWorkspaceStore } from '~/store/workspace';
 
-const badgeStyle = (color: string) => ({
-  borderColor: `${color}40`,
-  color,
-});
+const badgeStyle = (color?: string | null) => {
+  if (!color) return {};
+
+  return {
+    borderColor: `${color}40`,
+    color,
+  };
+};
 
 interface SetLabelsProps {
   mode: 'create' | 'edit';
@@ -56,7 +59,7 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
     const newLabel: TaskLabel = {
       id: faker.string.uuid(),
       value,
-      color: '#ffffff',
+      color: null,
     };
     setSelectedLabels((prev) => [...prev, newLabel]);
     setSearchValue('');
@@ -99,12 +102,12 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
           }`}
         >
           {!selectedLabels.length && <Tag size={16} className="opacity-50" />}
-          <div className="flex gap-1 truncate">
+          <div className="flex gap-[2px] truncate">
             {mode === 'create' && selectedLabels.length === 0 && <span className="ml-2">Choose labels</span>}
             {selectedLabels.length > 0 &&
               selectedLabels.map(({ value, id, color }) => {
                 return (
-                  <Badge variant="outline" key={id} className="font-light" style={badgeStyle(color)}>
+                  <Badge variant="outline" key={id} className="font-light h-5" style={badgeStyle(color)}>
                     {value}
                   </Badge>
                 );
@@ -164,15 +167,14 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
 
 export default SetLabels;
 
-const CommandItemCreate = ({
-  searchValue,
-  labels,
-  onSelect,
-}: {
+interface CommandItemCreateProps {
   searchValue: string;
   labels: TaskLabel[];
   onSelect: () => void;
-}) => {
+}
+
+const CommandItemCreate = ({ searchValue, labels, onSelect }: CommandItemCreateProps) => {
+  const { t } = useTranslation();
   const hasNoLabel = !labels.map(({ id }) => id).includes(`${searchValue.toLowerCase()}`);
 
   const render = searchValue !== '' && hasNoLabel;
@@ -181,9 +183,8 @@ const CommandItemCreate = ({
 
   // BUG: whenever a space is appended, the Create-Button will not be shown.
   return (
-    <CommandItem key={`${searchValue}`} value={`${searchValue}`} className="text-xs text-muted-foreground" onSelect={onSelect}>
-      <div className={cn('mr-2 h-4 w-4')} />
-      Create new label &quot;{searchValue}&quot;
+    <CommandItem key={`${searchValue}`} value={`${searchValue}`} className="text-sm text-primary m-1 flex justify-center items-center" onSelect={onSelect}>
+      {t('common:create_label')} <Badge className="ml-2 px-2 py-0 font-light" variant="plain">{searchValue}</Badge>
     </CommandItem>
   );
 };

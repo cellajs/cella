@@ -13,13 +13,13 @@ export type TaskUser = {
 export type TaskLabel = {
   id: string;
   value: string;
-  color: string;
+  color: string | null;
 };
 
 export type Label = {
   id: string;
   value: string;
-  color: string;
+  color: string | null;
   count: number;
   groupId: string;
   lastActive: Date;

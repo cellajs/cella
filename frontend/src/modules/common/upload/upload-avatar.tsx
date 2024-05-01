@@ -57,14 +57,14 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
       <div className="flex flex-col gap-2">
         <p className="font-light text-sm">{t('common:upload_img_max_10mb.text')}</p>
         <div className="flex gap-2 items-center">
-          <Button variant="secondary" type="button" size="sm" onClick={openUploadDialog}>
-            <Upload size={20} className="mr-2" />
+          <Button variant="plain" type="button" size="sm" onClick={openUploadDialog}>
+            <Upload size={16} className="mr-2" />
             <span>{t('common:upload')}</span>
           </Button>
 
           {url && (
-            <Button variant="ghost" onClick={removeImage} size="sm">
-              <Trash size={20} />
+            <Button variant="secondary" onClick={removeImage} size="sm">
+              <Trash size={16} />
             </Button>
           )}
         </div>

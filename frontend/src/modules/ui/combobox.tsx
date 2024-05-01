@@ -47,13 +47,13 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
           {selectedOption ? <div>{renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}</div> : placeholder || ''}
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" className="w-full p-1">
+      <PopoverContent align="start" className="w-full p-0">
         <Command>
           <CommandInput
             value={searchValue}
