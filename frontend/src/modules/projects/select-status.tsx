@@ -6,6 +6,7 @@ import { ChevronDown, Check, Snowflake, CircleDashed, Circle, CircleDot, CircleD
 import { Kbd } from '../common/kbd';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys';
+import { toast } from 'sonner';
 
 type Status = {
   value: (typeof statuses)[number]['value'];
@@ -43,11 +44,26 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
     const statusIndex = selectedStatus.value;
     setSelectedStatus(statuses[statusIndex + 1]);
     changeTaskStatus(statusIndex + 1);
+    toast.success(t('common:task_updated', { name: statuses[statusIndex + 1].status }));
+  };
+
+  const handleStatusChange = (index: number) => {
+    setSelectedStatus(statuses[index]);
+    setOpenPopover(false);
+    setSearchValue('');
+    changeTaskStatus(index);
+    toast.success(t('common:task_updated', { name: statuses[index].status }));
   };
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <Button variant="outlineGhost" size="micro" className="border-r-0 rounded-r-none" onClick={nextStatusClick} disabled={selectedStatus.value === 6}>
+      <Button
+        variant="outlineGhost"
+        size="micro"
+        className="border-r-0 rounded-r-none"
+        onClick={nextStatusClick}
+        disabled={selectedStatus.value === 6}
+      >
         {statuses[selectedStatus.value].button}
       </Button>
 
@@ -64,9 +80,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
             onValueChange={(searchValue) => {
               // If the user types a number, select status like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
-                setSelectedStatus(statuses[Number.parseInt(searchValue)]);
-                setOpenPopover(false);
-                setSearchValue('');
+                handleStatusChange(Number.parseInt(searchValue));
                 return;
               }
               setSearchValue(searchValue);
@@ -81,10 +95,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
                   key={status.value}
                   value={status.status}
                   onSelect={() => {
-                    setSelectedStatus(statuses[index]);
-                    setOpenPopover(false);
-                    setSearchValue('');
-                    changeTaskStatus(index);
+                    handleStatusChange(index);
                   }}
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >

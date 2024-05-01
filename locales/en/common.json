@@ -346,6 +346,7 @@
   "success.your_role_updated": "Your role has been updated",
   "system_panel": "System panel",
   "system_panel.text": "System admins can manage and monitor all organizations and their members.",
+  "task_updated": "Task has been updated to {{name}}",
   "terminate": "Terminate",
   "terminate_all": "Terminate all",
   "terms": "Terms",
