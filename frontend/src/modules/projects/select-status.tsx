@@ -44,7 +44,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
     const statusIndex = selectedStatus.value;
     setSelectedStatus(statuses[statusIndex + 1]);
     changeTaskStatus(statusIndex + 1);
-    toast.success(t('common:success.task_updated', { name: statuses[statusIndex + 1].status }));
+    toast.success(t('common:success.new_status', { name: statuses[statusIndex + 1].status }));
   };
 
   const handleStatusChange = (index: number) => {
@@ -52,7 +52,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
     setOpenPopover(false);
     setSearchValue('');
     changeTaskStatus(index);
-    toast.success(t('common:success.task_updated', { name: statuses[index].status }));
+    toast.success(t('common:success.new_status', { name: statuses[index].status }));
   };
 
   return (
