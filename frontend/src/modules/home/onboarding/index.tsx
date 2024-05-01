@@ -11,6 +11,7 @@ import type { Organization } from '~/types';
 import InviteUsers from '../../common/invite-users';
 import StepperFooter from './footer';
 import { OnboardingStart } from './start';
+import { useNavigationStore } from '~/store/navigation';
 
 const steps: StepItem[] = [
   { id: 'profile', label: 'Tune your profile', optional: true },
@@ -32,6 +33,9 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const user = useUserStore((state) => state.user);
+
+  const { menu } = useNavigationStore();
+  steps[1].optional = menu.organizations.items.length > 0;
 
   const onCreateOrganization = (organization: Organization) => {
     setOrganization(organization);
