@@ -98,7 +98,7 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
             mode === 'edit' && selectedLabels.length && 'hover:bg-transparent'
           }`}
         >
-          {!selectedLabels.length && <Tag className="h-4 w-4 opacity-50" />}
+          {!selectedLabels.length && <Tag size={16} className="opacity-50" />}
           <div className="flex gap-1 truncate">
             {mode === 'create' && selectedLabels.length === 0 && <span className="ml-2">Choose labels</span>}
             {selectedLabels.length > 0 &&

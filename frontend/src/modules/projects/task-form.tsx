@@ -24,7 +24,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import { ProjectContext } from './board.tsx';
 
-export type TaskType = 'feature' | 'bug' | 'chore';
+export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
 
@@ -149,18 +149,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                       onChange(value);
                     }}
                   >
-                    <ToggleGroupItem size="sm" value="feature" className="w-full">
-                      <Star size={16} className={`${value === 'feature' && 'fill-amber-400 text-amber-500'}`} />
-                      <span className="ml-2 font-light">{t('common:feature')}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem size="sm" value="bug" className="w-full">
-                      <Bug size={16} className={`${value === 'bug' && 'fill-red-400 text-red-500'}`} />
-                      <span className="ml-2 font-light">{t('common:bug')}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem size="sm" value="chore" className="w-full">
-                      <Bolt size={16} className={`${value === 'chore' && 'fill-slate-400 text-slate-500'}`} />
-                      <span className="ml-2 font-light">{t('common:chore')}</span>
-                    </ToggleGroupItem>
+                    {['feature', 'chore', 'bug'].map((type) => (
+                      <ToggleGroupItem size="sm" value={type} className="w-full" key={type}>
+                        {type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500" />}
+                        {type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500" />}
+                        {type === 'bug' && <Bug size={16} className="fill-red-400 text-red-500" />}
+                        <span className="ml-2 font-light">{t(`common:${type}`)}</span>
+                      </ToggleGroupItem>
+                    ))}
                   </ToggleGroup>
                 </FormControl>
                 <FormMessage />
@@ -190,8 +186,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                     visibleDragbar={false}
                     height={'auto'}
                     minHeight={40}
-                    className="border text-sm"
-                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', padding: '0.5rem' }}
+                    className="text-sm"
+                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', padding: '0' }}
                   />
                 </FormControl>
                 <FormMessage />
