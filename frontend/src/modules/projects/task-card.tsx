@@ -39,6 +39,8 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  console.log(innerTask)
+
   const { updateTasks } = useContext(WorkspaceContext);
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -201,7 +203,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               <GripVertical size={16} />
             </Button>
 
-            {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" />}
+            {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" changeTaskImpact={(newImpact) => handleChange('impact', newImpact)} />}
 
             <SetLabels
               projectId={task.projectId}
