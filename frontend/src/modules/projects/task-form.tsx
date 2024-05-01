@@ -131,7 +131,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   // Fix types
   return (
     <Form {...form}>
-      <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-4 border-b flex gap-2 flex-col shadow-inner">
+      <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 border-b flex gap-2 flex-col shadow-inner">
         <FormField
           control={form.control}
           name="type"

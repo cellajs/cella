@@ -15,7 +15,7 @@ const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (valu
 
   return (
     <>
-      <div className="relative flex w-full sm:min-w-44 items-center " onClick={handleClick} onKeyDown={undefined}>
+      <div className="relative flex w-full sm:min-w-44 lg:min-w-56 items-center " onClick={handleClick} onKeyDown={undefined}>
         <Search size={16} className="relative left-7 top-2 transform -translate-y-1/2" style={{ opacity: value ? 1 : 0.5 }} />
         <Input
           placeholder={t('common:placeholder.search')}

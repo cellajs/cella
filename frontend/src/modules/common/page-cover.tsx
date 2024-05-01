@@ -74,7 +74,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
 
   return (
     <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={url ? { backgroundImage: `url(${url})` } : {}}>
-      <Button variant="secondary" size="sm" className="absolute top-3 right-3" onClick={openUploadDialog}>
+      <Button variant="secondary" size="sm" className="absolute top-3 right-3 opacity-50 hover:opacity-80 hover:bg-secondary" onClick={openUploadDialog}>
         <Upload size={16} />
         <span className="ml-1">{t('common:upload_cover')}</span>
       </Button>
