@@ -40,19 +40,22 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
   // Open on key press
   useHotkeys([['s', () => setOpenPopover(true)]]);
 
-  const nextStatusClick = () => {
-    const statusIndex = selectedStatus.value;
-    setSelectedStatus(statuses[statusIndex + 1]);
-    changeTaskStatus(statusIndex + 1);
-    toast.success(t('common:success.new_status', { name: statuses[statusIndex + 1].status }));
+  const statusChange = (index: number) => {
+    const newStatus = statuses[index];
+    setSelectedStatus(newStatus);
+    changeTaskStatus(index);
+    toast.success(t('common:success.new_status', { status: newStatus.status }));
   };
 
-  const handleStatusChange = (index: number) => {
-    setSelectedStatus(statuses[index]);
+  const nextStatusClick = () => {
+    const statusIndex = selectedStatus.value;
+    statusChange(statusIndex + 1);
+  };
+
+  const handleStatusChangeClick = (index: number) => {
+    statusChange(index);
     setOpenPopover(false);
     setSearchValue('');
-    changeTaskStatus(index);
-    toast.success(t('common:success.new_status', { name: statuses[index].status }));
   };
 
   return (
@@ -80,7 +83,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
             onValueChange={(searchValue) => {
               // If the user types a number, select status like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
-                handleStatusChange(Number.parseInt(searchValue));
+                handleStatusChangeClick(Number.parseInt(searchValue));
                 return;
               }
               setSearchValue(searchValue);
@@ -95,7 +98,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
                   key={status.value}
                   value={status.status}
                   onSelect={() => {
-                    handleStatusChange(index);
+                    handleStatusChangeClick(index);
                   }}
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
