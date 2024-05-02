@@ -13,12 +13,13 @@ import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import SelectStatus, { type TaskStatus } from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
-import { useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn } from '~/lib/utils.ts';
 import { useElectric, type Task } from '../common/root/electric.ts';
 import type { TaskImpact, TaskType } from './task-form.tsx';
+import { ProjectsContext } from './index.tsx';
 
 interface TaskCardProps {
   task: Task;
@@ -33,6 +34,7 @@ export interface TaskDragData {
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+  const { setSelectedTasks } = useContext(ProjectsContext);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -123,7 +125,17 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
             <div className="flex flex-col gap-2 mt-[2px]">
               <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType)} />
 
-              <Checkbox className="opacity-0 transition-opacity duration-700 group-hover/task:opacity-100" />
+              <Checkbox
+                className="opacity-0 transition-opacity duration-700 group-hover/task:opacity-100"
+                onCheckedChange={(checked) => {
+                  setSelectedTasks((prev) => {
+                    if (checked) {
+                      return [...prev, task.id];
+                    }
+                    return prev.filter((id) => id !== task.id);
+                  });
+                }}
+              />
             </div>
             <div className="flex flex-col grow">
               {isEditing ? (
