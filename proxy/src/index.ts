@@ -2,6 +2,7 @@ export interface Env {
   BACKEND_RENDER_URL: string;
   FRONTEND_RENDER_URL: string;
   TUS_RENDER_URL: string;
+  ELECTRIC_RENDER_URL: string;
 }
 
 const handler: ExportedHandler<Env> = {
@@ -20,6 +21,13 @@ const handler: ExportedHandler<Env> = {
     if (url.pathname.startsWith('/upload')) {
       const pathname = url.pathname.split('/upload').pop();
       const apiServerUrl = env.TUS_RENDER_URL + pathname + url.search;
+      const apiRequest = new Request(apiServerUrl, request);
+      return fetch(apiRequest);
+    }
+
+    if (url.pathname.startsWith('/electric')) {
+      const pathname = url.pathname.split('/electric').pop();
+      const apiServerUrl = env.ELECTRIC_RENDER_URL + pathname + url.search;
       const apiRequest = new Request(apiServerUrl, request);
       return fetch(apiRequest);
     }

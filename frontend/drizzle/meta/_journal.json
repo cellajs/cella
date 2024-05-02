@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1714635876303,
+      "tag": "0000_deep_fixer",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1714635903769,
+      "tag": "0001_material_quicksilver",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type React from 'react';
-import { useForm, type UseFormProps } from 'react-hook-form';
+import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { useCallback, useContext, useMemo } from 'react';
@@ -11,18 +11,16 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { dialog } from '../common/dialoger/state.ts';
 import { Form, FormField, FormItem, FormControl, FormMessage } from '../ui/form.tsx';
-import { createWorkspace } from '~/api/workspaces';
 import { SelectImpact } from './select-impact.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { Bolt, Bug, Star } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useThemeStore } from '~/store/theme.ts';
-import type { Task, TaskUser } from '~/mocks/workspaces.ts';
-import AssignMembers from './select-members.tsx';
 import SetLabels from './select-labels.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { WorkspaceContext } from '../workspaces/index.tsx';
 import { ProjectContext } from './board.tsx';
+import { useElectric } from '../common/root/electric.ts';
+import { Input } from '../ui/input.tsx';
 import SelectStatus from './select-status.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
@@ -36,17 +34,18 @@ interface CreateTaskFormProps {
 
 const formSchema = z.object({
   id: z.string(),
+  summary: z.string(),
   markdown: z.string(),
   type: z.string(),
   impact: z.number().nullable(),
-  assignedTo: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      thumbnailUrl: z.number().nullable(),
-      bio: z.string(),
-    }),
-  ),
+  // assignedTo: z.array(
+  //   z.object({
+  //     id: z.string(),
+  //     name: z.string(),
+  //     thumbnailUrl: z.number().nullable(),
+  //     bio: z.string(),
+  //   }),
+  // ),
   labels: z.array(
     z.object({
       id: z.string(),
@@ -62,9 +61,10 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { register } = useForm<FormValues>();
 
-  const { updateTasks } = useContext(WorkspaceContext);
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
+
   const { project } = useContext(ProjectContext);
 
   const handleCloseForm = () => {
@@ -87,8 +87,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: Math.random().toString(36).substring(7),
+        id: window.crypto.randomUUID(),
         markdown: '',
+        summary: '',
         type: 'feature',
         impact: null,
         assignedTo: [],
@@ -102,37 +103,84 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>('create-task', formOptions);
 
-  const { isPending } = useMutation({
+  const { isPending, mutate: create } = useMutation({
     // mutate: create
-    mutationFn: createWorkspace, // change to create task
+    mutationFn: (values: FormValues) => {
+      return db.tasks.create({
+        data: {
+          id: values.id,
+          markdown: values.markdown,
+          summary: values.summary,
+          type: values.type as TaskType,
+          impact: values.impact as TaskImpact,
+          // assignedTo: values.assignedTo as TaskUser[],
+          // labels: values.labels,
+          status: 1,
+          project_id: project.id,
+          created_at: new Date(),
+          created_by: 'user.id',
+          slug: values.summary.toLowerCase().replace(/ /g, '-'),
+        },
+      });
+    },
     onSuccess: () => {
-      // form.reset();
+      form.reset();
+      toast.success(t('common:success.create_task'));
       handleCloseForm();
     },
   });
 
-  type PartialTask = Partial<Task>;
-
   const onSubmit = (values: FormValues) => {
-    const task: PartialTask = {
-      id: values.id,
-      markdown: values.markdown,
-      type: values.type as TaskType,
-      impact: values.impact as TaskImpact,
-      assignedTo: values.assignedTo as TaskUser[],
-      labels: values.labels,
-      status: values.status as TaskStatus,
-      projectId: project.id,
-    };
-    updateTasks(task as Task, true, task.status);
-    form.reset();
-    toast.success(t('common:success.create_task'));
-    onCloseForm?.();
+    create(values);
+
+    db.tasks
+      .create({
+        data: {
+          id: values.id,
+          markdown: values.markdown,
+          summary: values.summary,
+          type: values.type as TaskType,
+          impact: values.impact as TaskImpact,
+          // assignedTo: values.assignedTo as TaskUser[],
+          // labels: values.labels,
+          status: 1,
+          project_id: project.id,
+          created_at: new Date(),
+          created_by: 'user.id',
+          slug: values.summary.toLowerCase().replace(/ /g, '-'),
+        },
+      })
+      .then(() => {
+        form.reset();
+        toast.success(t('common:success.create_task'));
+        handleCloseForm();
+      });
   };
   // Fix types
   return (
     <Form {...form}>
       <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 border-b flex gap-2 flex-col shadow-inner">
+        <FormField
+          control={form.control}
+          name="summary"
+          render={({ field: { value, onChange } }) => {
+            return (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={t('common:summary')}
+                    className="w-full text-sm"
+                    required
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+
         <FormField
           control={form.control}
           name="type"
@@ -141,7 +189,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               <FormItem>
                 <FormControl>
                   <ToggleGroup
-                    {...register('type')}
                     type="single"
                     variant="merged"
                     className="gap-0 w-full"
@@ -174,7 +221,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               <FormItem>
                 <FormControl>
                   <MDEditor
-                    {...register('markdown')}
                     onKeyDown={handleMDEscKeyPress}
                     value={value}
                     defaultTabEnable={true}
@@ -205,7 +251,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               return (
                 <FormItem>
                   <FormControl>
-                    <SelectImpact {...register('impact')} mode="create" changeTaskImpact={onChange} />
+                    <SelectImpact mode="create" changeTaskImpact={onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -214,7 +260,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           />
         )}
 
-        <FormField
+        {/* <FormField
           control={form.control}
           name="assignedTo"
           render={({ field: { onChange } }) => {
@@ -227,7 +273,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               </FormItem>
             );
           }}
-        />
+        /> */}
 
         <FormField
           control={form.control}
@@ -236,7 +282,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels projectId={project.id} {...register('labels')} mode="create" changeLabels={onChange} />
+                  <SetLabels projectId={project.id} mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -263,7 +309,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                   <FormItem>
                     <FormControl>
                       <SelectStatus
-                        {...register('status')}
                         taskStatus={1}
                         changeTaskStatus={(newStatus) => {
                           onChange(newStatus);

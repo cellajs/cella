@@ -9,8 +9,6 @@ import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { TaskCard } from './task-card';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
-import type { Task } from '~/mocks/workspaces';
-import type { TaskStatus } from './task-form';
 import { CSS } from '@dnd-kit/utilities';
 
 export interface Column {
@@ -31,56 +29,23 @@ interface BoardColumnProps {
 export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const { tasks = [] } = useContext(ProjectContext);
 
-  const [innerTasks, setInnerTasks] = useState(tasks);
-
-  const tasksIds = useMemo(() => innerTasks.map((task) => task.id), [innerTasks]);
-  const acceptedCount = useMemo(() => innerTasks?.filter((t) => t.status === 6).length, [innerTasks]);
-  const icedCount = useMemo(() => innerTasks?.filter((t) => t.status === 0).length, [innerTasks]);
+  const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+  const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
+  const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
 
   const [showIced, setShowIced] = useState(false);
   const [showAccepted, setShowAccepted] = useState(false);
 
-  const handleTaskChange = (task: Task, isNew = false, toStatus?: TaskStatus) => {
-    if (!task) return;
+  // const createTask = () => {
+  //   dialog(<CreateTaskForm project={project} dialog />, {
+  //     className: 'md:max-w-xl',
+  //     title: t('common:create_task'),
+  //   });
+  // };
 
-    // The first task in the project column with matching status
-    // Add new task
-    if (isNew) {
-      setInnerTasks((currentTasks) => {
-        const newTasks = [...currentTasks];
-        const statusIndex = tasks.findIndex((t) => t.status === toStatus);
-        newTasks.splice(statusIndex, 0, task);
-        return newTasks;
-      });
-    }
-
-    // Reposition existing task on status change
-    if (toStatus) {
-      return setInnerTasks((currentTasks) => {
-        const newTasks = [...currentTasks];
-        const oldIndex = currentTasks.findIndex((t: Task) => t.id === task.id);
-        newTasks.splice(oldIndex, 1);
-
-        // TODO if status is higher than the current status, add it to the end
-        //   return tasks.reduce((lastIndex, currentTask, index) => {
-        //     return (currentTask.status === toStatus && currentTask.projectId === task.projectId) ? index : lastIndex;
-        // }, -1);
-
-        const statusIndex = tasks.findIndex((t) => t.status === toStatus);
-        newTasks.splice(statusIndex, 0, task);
-        return newTasks;
-      });
-    }
-
-    // Update existing task for other mutations
-    return setInnerTasks((currentTasks) => {
-      const newTasks = [...currentTasks];
-      return newTasks.map((t: Task) => {
-        if (t.id !== task.id) return t;
-        return { ...t, ...task };
-      });
-    });
-  };
+  // const onDelete = () => {
+  //   db.projects.delete({ where: { id: project.id } });
+  // };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: column.id,
@@ -135,14 +100,14 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
               </Button>
 
               <SortableContext items={tasksIds}>
-                {innerTasks
+                {tasks
                   .filter((t) => {
                     if (showAccepted && t.status === 6) return true;
                     if (showIced && t.status === 0) return true;
                     return t.status !== 0 && t.status !== 6;
                   })
                   .map((task) => (
-                    <TaskCard task={task} key={task.id} updateTasks={handleTaskChange} />
+                    <TaskCard task={task} key={task.id} />
                   ))}
               </SortableContext>
               <Button

@@ -1,8 +1,8 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
-import { Check, UserX } from 'lucide-react';
+import { UserX } from 'lucide-react';
 import type { TaskUser } from '~/mocks/workspaces.ts';
-import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '../ui/command.tsx';
+import { Command, CommandInput } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { Kbd } from '../common/kbd.tsx';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -10,7 +10,6 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
-import { ProjectContext } from './board';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';
@@ -19,7 +18,7 @@ interface AssignMembersProps {
 }
 
 const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps) => {
-  const { project } = useContext(ProjectContext);
+  // const { project } = useContext(ProjectContext);
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('assignedTo');
   const [openPopover, setOpenPopover] = useState(false);
@@ -27,19 +26,19 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
-  const handleSelectClick = (name: string) => {
-    if (!name) return;
-    const existingUser = selectedUsers.find((user) => user.name === name);
-    if (existingUser) {
-      setSelectedUsers(selectedUsers.filter((user) => user.name !== name));
-      return;
-    }
-    const newUser = project.members.find((user) => user.name === name);
-    if (newUser) {
-      setSelectedUsers([...selectedUsers, newUser]);
-      return;
-    }
-  };
+  // const handleSelectClick = (name: string) => {
+  // if (!name) return;
+  // const existingUser = selectedUsers.find((user) => user.name === name);
+  // if (existingUser) {
+  //   setSelectedUsers(selectedUsers.filter((user) => user.name !== name));
+  //   return;
+  // }
+  // const newUser = project.members.find((user) => user.name === name);
+  // if (newUser) {
+  //   setSelectedUsers([...selectedUsers, newUser]);
+  //   return;
+  // }
+  // };
   // Open on key press
   useHotkeys([['a', () => setOpenPopover(true)]]);
 
@@ -93,7 +92,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
             onValueChange={(searchValue) => {
               // If the user types a number, select the user like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
-                handleSelectClick(project.members[Number.parseInt(searchValue)]?.name);
+                // handleSelectClick(project.members[Number.parseInt(searchValue)]?.name);
                 setSearchValue('');
                 return;
               }
@@ -104,7 +103,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
             placeholder={t('common:placeholder.assign')}
           />
           {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
-          <CommandList>
+          {/* <CommandList>
             {project?.members && (
               <CommandGroup>
                 {project.members.map((member, index) => (
@@ -130,7 +129,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
                 ))}
               </CommandGroup>
             )}
-          </CommandList>
+          </CommandList> */}
         </Command>
       </PopoverContent>
     </Popover>
