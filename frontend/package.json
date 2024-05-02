@@ -109,6 +109,8 @@
     "cmdk": "^1.0.0",
     "config": "workspace:*",
     "dayjs": "^1.11.10",
+    "drizzle-orm": "^0.30.9",
+    "electric-sql": "^0.10.1",
     "embla-carousel-autoplay": "8.0.2",
     "embla-carousel-react": "8.0.2",
     "gleap": "^13.6.4",
@@ -147,13 +149,13 @@
     "tippy.js": "^6.3.7",
     "use-count-up": "^3.0.1",
     "vaul": "^0.9.0",
+    "wa-sqlite": "^1.0.0",
     "yjs": "^13.6.14",
     "zod": "^3.23.4",
     "zustand": "^4.5.2",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
-    "workbox-window": "^7.1.0",
     "@faker-js/faker": "^8.4.1",
     "@redux-devtools/extension": "^3.3.0",
     "@rollup/plugin-terser": "^0.4.4",
@@ -167,19 +169,26 @@
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
+    "drizzle-kit": "^0.20.17",
     "msw": "^2.2.14",
     "postcss": "^8.4.38",
     "postcss-import": "^16.1.0",
     "postcss-preset-env": "^9.5.9",
+    "postgres": "^3.4.4",
     "rollup-plugin-visualizer": "^5.12.0",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.4.5",
     "vite": "5.2.6",
     "vite-plugin-html": "^3.2.2",
     "vite-plugin-pwa": "^0.19.8",
-    "vite-plugin-static-copy": "^1.0.3"
+    "vite-plugin-static-copy": "^1.0.3",
+    "workbox-window": "^7.1.0"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},

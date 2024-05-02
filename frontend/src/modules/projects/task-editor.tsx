@@ -4,7 +4,7 @@ import type { Mode } from '~/store/theme';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 
 interface TaskEditorProps {
-  markdown: string;
+  markdown?: string | null;
   setMarkdown: (newValue: string) => void;
   id: string;
   mode: Mode;
@@ -51,7 +51,7 @@ export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState 
           toggleEditorState();
         }}
         textareaProps={{ id: id }}
-        value={markdown}
+        value={markdown || ''}
         preview={'edit'}
         onChange={(newValue) => {
           if (newValue) setMarkdown(newValue);

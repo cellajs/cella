@@ -18,7 +18,7 @@ function BoardHeader() {
   const { t } = useTranslation();
   const { labels } = useContext(WorkspaceContext);
 
-  const openSettingsSheet = () => {    
+  const openSettingsSheet = () => {
     sheet(<WorkspaceSettings />, {
       className: 'sm:max-w-[64rem]',
       title: t('common:workspace_settings'),
@@ -27,7 +27,7 @@ function BoardHeader() {
     });
   };
 
-  const openLablesSheet = () => {
+  const openLabelsSheet = () => {
     sheet(<LabelsTable labels={labels} />, {
       className: 'sm:max-w-[48rem]',
       title: 'Labels',
@@ -61,7 +61,7 @@ function BoardHeader() {
           <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
         </Button>
 
-        <Button variant="outline" onClick={openLablesSheet}>
+        <Button variant="outline" onClick={openLabelsSheet}>
           <Tag size={16} />
           <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
         </Button>

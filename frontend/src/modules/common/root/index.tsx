@@ -3,7 +3,7 @@ import { config } from 'config';
 import { Suspense, lazy, useEffect, useState } from 'react';
 
 import { Dialoger } from '~/modules/common/dialoger';
-import { ReloadPrompt } from '~/modules/common/reload-prompt';
+import ReloadPrompt from '~/modules/common/reload-prompt';
 import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
@@ -111,6 +111,7 @@ function Root() {
   }, []);
 
   if (electric === undefined) {
+    console.log('Electric is not ready yet');
     return null;
   }
 

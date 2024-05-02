@@ -42,8 +42,6 @@ export type Task = {
   status: TaskStatus;
   labels: TaskLabel[]; 
   projectId: string;
-  workspaceId: string;
-  organizationId: string;
 };
 
 export type Project = {
@@ -57,7 +55,6 @@ export type Project = {
   modifiedBy: string;
   modifiedAt: Date;
   workspaceId: string;
-  organizationId: string;
   members: TaskUser[];
 };
 
@@ -149,8 +146,6 @@ export const getTasks  = (projects: Project[]) => {
         status: status[Math.floor(Math.random() * status.length)] as TaskStatus,
         labels: labels,
         projectId: project.id,
-        workspaceId: faker.string.uuid(),
-        organizationId: faker.string.uuid(),
       });
     }
   

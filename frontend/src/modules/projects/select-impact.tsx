@@ -32,7 +32,7 @@ const impacts = [
 
 interface SelectImpactProps {
   mode: 'edit' | 'create';
-  viewValue?: TaskImpact;
+  viewValue?: TaskImpact | null;
   changeTaskImpact?: (value: TaskImpact) => void;
 }
 

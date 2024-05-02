@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { nanoid } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
@@ -21,7 +20,7 @@ interface CreateTaskFormProps {
 }
 
 const formSchema = z.object({
-  name: z.string().nonempty('common:validation.required'),
+  summary: z.string().nonempty('common:validation.required'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -37,7 +36,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ project, dialog: isDial
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        name: '',
+        summary: '',
       },
     }),
     [],
@@ -54,11 +53,17 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ project, dialog: isDial
       db.tasks
         .create({
           data: {
-            id: nanoid(),
-            name: values.name,
+            id: window.crypto.randomUUID(),
+            summary: values.summary,
             project_id: project.id,
             created_at: new Date(),
             created_by: user.id,
+            // TODO: Add status
+            status: 1,
+            // TODO: Add slug
+            slug: values.summary.toLowerCase().replace(/ /g, '-'),
+            // TODO: Add type
+            type: 'feature'
           },
         })
         .then((result) => {
@@ -84,7 +89,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ project, dialog: isDial
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
+        <InputFormField control={form.control} name="summary" label={t('common:summary')} required />
+        {/* <SlugFormField
+          control={form.control}
+          type=""
+          label={t('common:project_handle')}
+          description={t('common:project_handle.text')}
+          nameValue={name}
+        /> */}
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}

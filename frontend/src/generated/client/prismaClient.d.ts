@@ -17,10 +17,14 @@ type UnwrapTuple<Tuple extends readonly unknown[]> = {
  * 
  */
 export type Projects = {
+  /**
+   * @zod.string.uuid()
+   */
   id: string
-  organization_id: string
+  slug: string
   name: string
-  description: string | null
+  color: string
+  workspace_id: string
   created_at: Date
   created_by: string
   modified_at: Date | null
@@ -32,12 +36,30 @@ export type Projects = {
  * 
  */
 export type Tasks = {
+  /**
+   * @zod.string.uuid()
+   */
   id: string
+  slug: string
+  markdown: string | null
+  summary: string
+  type: string
+  /**
+   * @zod.number.int().gte(-2147483648).lte(2147483647)
+   */
+  impact: number | null
+  /**
+   * @zod.number.int().gte(-2147483648).lte(2147483647)
+   */
+  status: number
+  /**
+   * @zod.string.uuid()
+   */
   project_id: string
-  name: string
-  description: string | null
   created_at: Date
   created_by: string
+  assigned_by: string | null
+  assigned_at: Date | null
   modified_at: Date | null
   modified_by: string | null
 }
@@ -890,9 +912,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsMinAggregateOutputType = {
     id: string | null
-    organization_id: string | null
+    slug: string | null
     name: string | null
-    description: string | null
+    color: string | null
+    workspace_id: string | null
     created_at: Date | null
     created_by: string | null
     modified_at: Date | null
@@ -901,9 +924,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsMaxAggregateOutputType = {
     id: string | null
-    organization_id: string | null
+    slug: string | null
     name: string | null
-    description: string | null
+    color: string | null
+    workspace_id: string | null
     created_at: Date | null
     created_by: string | null
     modified_at: Date | null
@@ -912,9 +936,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsCountAggregateOutputType = {
     id: number
-    organization_id: number
+    slug: number
     name: number
-    description: number
+    color: number
+    workspace_id: number
     created_at: number
     created_by: number
     modified_at: number
@@ -925,9 +950,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsMinAggregateInputType = {
     id?: true
-    organization_id?: true
+    slug?: true
     name?: true
-    description?: true
+    color?: true
+    workspace_id?: true
     created_at?: true
     created_by?: true
     modified_at?: true
@@ -936,9 +962,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsMaxAggregateInputType = {
     id?: true
-    organization_id?: true
+    slug?: true
     name?: true
-    description?: true
+    color?: true
+    workspace_id?: true
     created_at?: true
     created_by?: true
     modified_at?: true
@@ -947,9 +974,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsCountAggregateInputType = {
     id?: true
-    organization_id?: true
+    slug?: true
     name?: true
-    description?: true
+    color?: true
+    workspace_id?: true
     created_at?: true
     created_by?: true
     modified_at?: true
@@ -1037,9 +1065,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsGroupByOutputType = {
     id: string
-    organization_id: string
+    slug: string
     name: string
-    description: string | null
+    color: string
+    workspace_id: string
     created_at: Date
     created_by: string
     modified_at: Date | null
@@ -1065,9 +1094,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsSelect = {
     id?: boolean
-    organization_id?: boolean
+    slug?: boolean
     name?: boolean
-    description?: boolean
+    color?: boolean
+    workspace_id?: boolean
     created_at?: boolean
     created_by?: boolean
     modified_at?: boolean
@@ -1923,74 +1953,132 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type AggregateTasks = {
     _count: TasksCountAggregateOutputType | null
+    _avg: TasksAvgAggregateOutputType | null
+    _sum: TasksSumAggregateOutputType | null
     _min: TasksMinAggregateOutputType | null
     _max: TasksMaxAggregateOutputType | null
   }
 
+  export type TasksAvgAggregateOutputType = {
+    impact: number | null
+    status: number | null
+  }
+
+  export type TasksSumAggregateOutputType = {
+    impact: number | null
+    status: number | null
+  }
+
   export type TasksMinAggregateOutputType = {
     id: string | null
+    slug: string | null
+    markdown: string | null
+    summary: string | null
+    type: string | null
+    impact: number | null
+    status: number | null
     project_id: string | null
-    name: string | null
-    description: string | null
     created_at: Date | null
     created_by: string | null
+    assigned_by: string | null
+    assigned_at: Date | null
     modified_at: Date | null
     modified_by: string | null
   }
 
   export type TasksMaxAggregateOutputType = {
     id: string | null
+    slug: string | null
+    markdown: string | null
+    summary: string | null
+    type: string | null
+    impact: number | null
+    status: number | null
     project_id: string | null
-    name: string | null
-    description: string | null
     created_at: Date | null
     created_by: string | null
+    assigned_by: string | null
+    assigned_at: Date | null
     modified_at: Date | null
     modified_by: string | null
   }
 
   export type TasksCountAggregateOutputType = {
     id: number
+    slug: number
+    markdown: number
+    summary: number
+    type: number
+    impact: number
+    status: number
     project_id: number
-    name: number
-    description: number
     created_at: number
     created_by: number
+    assigned_by: number
+    assigned_at: number
     modified_at: number
     modified_by: number
     _all: number
   }
 
 
+  export type TasksAvgAggregateInputType = {
+    impact?: true
+    status?: true
+  }
+
+  export type TasksSumAggregateInputType = {
+    impact?: true
+    status?: true
+  }
+
   export type TasksMinAggregateInputType = {
     id?: true
+    slug?: true
+    markdown?: true
+    summary?: true
+    type?: true
+    impact?: true
+    status?: true
     project_id?: true
-    name?: true
-    description?: true
     created_at?: true
     created_by?: true
+    assigned_by?: true
+    assigned_at?: true
     modified_at?: true
     modified_by?: true
   }
 
   export type TasksMaxAggregateInputType = {
     id?: true
+    slug?: true
+    markdown?: true
+    summary?: true
+    type?: true
+    impact?: true
+    status?: true
     project_id?: true
-    name?: true
-    description?: true
     created_at?: true
     created_by?: true
+    assigned_by?: true
+    assigned_at?: true
     modified_at?: true
     modified_by?: true
   }
 
   export type TasksCountAggregateInputType = {
     id?: true
+    slug?: true
+    markdown?: true
+    summary?: true
+    type?: true
+    impact?: true
+    status?: true
     project_id?: true
-    name?: true
-    description?: true
     created_at?: true
     created_by?: true
+    assigned_by?: true
+    assigned_at?: true
     modified_at?: true
     modified_by?: true
     _all?: true
@@ -2039,6 +2127,18 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: TasksAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: TasksSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: TasksMinAggregateInputType
@@ -2069,6 +2169,8 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     take?: number
     skip?: number
     _count?: TasksCountAggregateInputType | true
+    _avg?: TasksAvgAggregateInputType
+    _sum?: TasksSumAggregateInputType
     _min?: TasksMinAggregateInputType
     _max?: TasksMaxAggregateInputType
   }
@@ -2076,14 +2178,22 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksGroupByOutputType = {
     id: string
+    slug: string
+    markdown: string | null
+    summary: string
+    type: string
+    impact: number | null
+    status: number
     project_id: string
-    name: string
-    description: string | null
     created_at: Date
     created_by: string
+    assigned_by: string | null
+    assigned_at: Date | null
     modified_at: Date | null
     modified_by: string | null
     _count: TasksCountAggregateOutputType | null
+    _avg: TasksAvgAggregateOutputType | null
+    _sum: TasksSumAggregateOutputType | null
     _min: TasksMinAggregateOutputType | null
     _max: TasksMaxAggregateOutputType | null
   }
@@ -2104,11 +2214,17 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksSelect = {
     id?: boolean
+    slug?: boolean
+    markdown?: boolean
+    summary?: boolean
+    type?: boolean
+    impact?: boolean
+    status?: boolean
     project_id?: boolean
-    name?: boolean
-    description?: boolean
     created_at?: boolean
     created_by?: boolean
+    assigned_by?: boolean
+    assigned_at?: boolean
     modified_at?: boolean
     modified_by?: boolean
     projects?: boolean | ProjectsArgs
@@ -2937,9 +3053,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export const ProjectsScalarFieldEnum: {
     id: 'id',
-    organization_id: 'organization_id',
+    slug: 'slug',
     name: 'name',
-    description: 'description',
+    color: 'color',
+    workspace_id: 'workspace_id',
     created_at: 'created_at',
     created_by: 'created_by',
     modified_at: 'modified_at',
@@ -2967,11 +3084,17 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export const TasksScalarFieldEnum: {
     id: 'id',
+    slug: 'slug',
+    markdown: 'markdown',
+    summary: 'summary',
+    type: 'type',
+    impact: 'impact',
+    status: 'status',
     project_id: 'project_id',
-    name: 'name',
-    description: 'description',
     created_at: 'created_at',
     created_by: 'created_by',
+    assigned_by: 'assigned_by',
+    assigned_at: 'assigned_at',
     modified_at: 'modified_at',
     modified_by: 'modified_by'
   };
@@ -2998,10 +3121,11 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     AND?: Enumerable<ProjectsWhereInput>
     OR?: Enumerable<ProjectsWhereInput>
     NOT?: Enumerable<ProjectsWhereInput>
-    id?: StringFilter | string
-    organization_id?: StringFilter | string
+    id?: UuidFilter | string
+    slug?: StringFilter | string
     name?: StringFilter | string
-    description?: StringNullableFilter | string | null
+    color?: StringFilter | string
+    workspace_id?: StringFilter | string
     created_at?: DateTimeFilter | Date | string
     created_by?: StringFilter | string
     modified_at?: DateTimeNullableFilter | Date | string | null
@@ -3011,9 +3135,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsOrderByWithRelationInput = {
     id?: SortOrder
-    organization_id?: SortOrder
+    slug?: SortOrder
     name?: SortOrder
-    description?: SortOrder
+    color?: SortOrder
+    workspace_id?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
     modified_at?: SortOrder
@@ -3027,9 +3152,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsOrderByWithAggregationInput = {
     id?: SortOrder
-    organization_id?: SortOrder
+    slug?: SortOrder
     name?: SortOrder
-    description?: SortOrder
+    color?: SortOrder
+    workspace_id?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
     modified_at?: SortOrder
@@ -3043,10 +3169,11 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     AND?: Enumerable<ProjectsScalarWhereWithAggregatesInput>
     OR?: Enumerable<ProjectsScalarWhereWithAggregatesInput>
     NOT?: Enumerable<ProjectsScalarWhereWithAggregatesInput>
-    id?: StringWithAggregatesFilter | string
-    organization_id?: StringWithAggregatesFilter | string
+    id?: UuidWithAggregatesFilter | string
+    slug?: StringWithAggregatesFilter | string
     name?: StringWithAggregatesFilter | string
-    description?: StringNullableWithAggregatesFilter | string | null
+    color?: StringWithAggregatesFilter | string
+    workspace_id?: StringWithAggregatesFilter | string
     created_at?: DateTimeWithAggregatesFilter | Date | string
     created_by?: StringWithAggregatesFilter | string
     modified_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
@@ -3057,12 +3184,18 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     AND?: Enumerable<TasksWhereInput>
     OR?: Enumerable<TasksWhereInput>
     NOT?: Enumerable<TasksWhereInput>
-    id?: StringFilter | string
-    project_id?: StringFilter | string
-    name?: StringFilter | string
-    description?: StringNullableFilter | string | null
+    id?: UuidFilter | string
+    slug?: StringFilter | string
+    markdown?: StringNullableFilter | string | null
+    summary?: StringFilter | string
+    type?: StringFilter | string
+    impact?: IntNullableFilter | number | null
+    status?: IntFilter | number
+    project_id?: UuidFilter | string
     created_at?: DateTimeFilter | Date | string
     created_by?: StringFilter | string
+    assigned_by?: StringNullableFilter | string | null
+    assigned_at?: DateTimeNullableFilter | Date | string | null
     modified_at?: DateTimeNullableFilter | Date | string | null
     modified_by?: StringNullableFilter | string | null
     projects?: XOR<ProjectsRelationFilter, ProjectsWhereInput>
@@ -3070,11 +3203,17 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksOrderByWithRelationInput = {
     id?: SortOrder
+    slug?: SortOrder
+    markdown?: SortOrder
+    summary?: SortOrder
+    type?: SortOrder
+    impact?: SortOrder
+    status?: SortOrder
     project_id?: SortOrder
-    name?: SortOrder
-    description?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
+    assigned_by?: SortOrder
+    assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
     projects?: ProjectsOrderByWithRelationInput
@@ -3086,37 +3225,52 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksOrderByWithAggregationInput = {
     id?: SortOrder
+    slug?: SortOrder
+    markdown?: SortOrder
+    summary?: SortOrder
+    type?: SortOrder
+    impact?: SortOrder
+    status?: SortOrder
     project_id?: SortOrder
-    name?: SortOrder
-    description?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
+    assigned_by?: SortOrder
+    assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
     _count?: TasksCountOrderByAggregateInput
+    _avg?: TasksAvgOrderByAggregateInput
     _max?: TasksMaxOrderByAggregateInput
     _min?: TasksMinOrderByAggregateInput
+    _sum?: TasksSumOrderByAggregateInput
   }
 
   export type TasksScalarWhereWithAggregatesInput = {
     AND?: Enumerable<TasksScalarWhereWithAggregatesInput>
     OR?: Enumerable<TasksScalarWhereWithAggregatesInput>
     NOT?: Enumerable<TasksScalarWhereWithAggregatesInput>
-    id?: StringWithAggregatesFilter | string
-    project_id?: StringWithAggregatesFilter | string
-    name?: StringWithAggregatesFilter | string
-    description?: StringNullableWithAggregatesFilter | string | null
+    id?: UuidWithAggregatesFilter | string
+    slug?: StringWithAggregatesFilter | string
+    markdown?: StringNullableWithAggregatesFilter | string | null
+    summary?: StringWithAggregatesFilter | string
+    type?: StringWithAggregatesFilter | string
+    impact?: IntNullableWithAggregatesFilter | number | null
+    status?: IntWithAggregatesFilter | number
+    project_id?: UuidWithAggregatesFilter | string
     created_at?: DateTimeWithAggregatesFilter | Date | string
     created_by?: StringWithAggregatesFilter | string
+    assigned_by?: StringNullableWithAggregatesFilter | string | null
+    assigned_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
     modified_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
     modified_by?: StringNullableWithAggregatesFilter | string | null
   }
 
   export type ProjectsCreateInput = {
     id: string
-    organization_id: string
+    slug: string
     name: string
-    description?: string | null
+    color: string
+    workspace_id: string
     created_at: Date | string
     created_by: string
     modified_at?: Date | string | null
@@ -3126,9 +3280,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsUncheckedCreateInput = {
     id: string
-    organization_id: string
+    slug: string
     name: string
-    description?: string | null
+    color: string
+    workspace_id: string
     created_at: Date | string
     created_by: string
     modified_at?: Date | string | null
@@ -3138,9 +3293,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    organization_id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: StringFieldUpdateOperationsInput | string
+    workspace_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3150,9 +3306,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    organization_id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: StringFieldUpdateOperationsInput | string
+    workspace_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3162,9 +3319,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsCreateManyInput = {
     id: string
-    organization_id: string
+    slug: string
     name: string
-    description?: string | null
+    color: string
+    workspace_id: string
     created_at: Date | string
     created_by: string
     modified_at?: Date | string | null
@@ -3173,9 +3331,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    organization_id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: StringFieldUpdateOperationsInput | string
+    workspace_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3184,9 +3343,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
-    organization_id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: StringFieldUpdateOperationsInput | string
+    workspace_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3195,10 +3355,16 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksCreateInput = {
     id: string
-    name: string
-    description?: string | null
+    slug: string
+    markdown?: string | null
+    summary: string
+    type: string
+    impact?: number | null
+    status: number
     created_at: Date | string
     created_by: string
+    assigned_by?: string | null
+    assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
     projects: ProjectsCreateNestedOneWithoutTasksInput
@@ -3206,21 +3372,33 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksUncheckedCreateInput = {
     id: string
+    slug: string
+    markdown?: string | null
+    summary: string
+    type: string
+    impact?: number | null
+    status: number
     project_id: string
-    name: string
-    description?: string | null
     created_at: Date | string
     created_by: string
+    assigned_by?: string | null
+    assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
   }
 
   export type TasksUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    slug?: StringFieldUpdateOperationsInput | string
+    markdown?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    impact?: NullableIntFieldUpdateOperationsInput | number | null
+    status?: IntFieldUpdateOperationsInput | number
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
+    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
+    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
     projects?: ProjectsUpdateOneRequiredWithoutTasksNestedInput
@@ -3228,45 +3406,81 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
+    markdown?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    impact?: NullableIntFieldUpdateOperationsInput | number | null
+    status?: IntFieldUpdateOperationsInput | number
     project_id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
+    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
+    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type TasksCreateManyInput = {
     id: string
+    slug: string
+    markdown?: string | null
+    summary: string
+    type: string
+    impact?: number | null
+    status: number
     project_id: string
-    name: string
-    description?: string | null
     created_at: Date | string
     created_by: string
+    assigned_by?: string | null
+    assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
   }
 
   export type TasksUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    slug?: StringFieldUpdateOperationsInput | string
+    markdown?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    impact?: NullableIntFieldUpdateOperationsInput | number | null
+    status?: IntFieldUpdateOperationsInput | number
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
+    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
+    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type TasksUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
+    markdown?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    impact?: NullableIntFieldUpdateOperationsInput | number | null
+    status?: IntFieldUpdateOperationsInput | number
     project_id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
+    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
+    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type UuidFilter = {
+    equals?: string
+    in?: Enumerable<string>
+    notIn?: Enumerable<string>
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    mode?: QueryMode
+    not?: NestedUuidFilter | string
   }
 
   export type StringFilter = {
@@ -3282,21 +3496,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     endsWith?: string
     mode?: QueryMode
     not?: NestedStringFilter | string
-  }
-
-  export type StringNullableFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    mode?: QueryMode
-    not?: NestedStringNullableFilter | string | null
   }
 
   export type DateTimeFilter = {
@@ -3321,6 +3520,21 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedDateTimeNullableFilter | Date | string | null
   }
 
+  export type StringNullableFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | null
+    notIn?: Enumerable<string> | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    mode?: QueryMode
+    not?: NestedStringNullableFilter | string | null
+  }
+
   export type TasksListRelationFilter = {
     every?: TasksWhereInput
     some?: TasksWhereInput
@@ -3333,9 +3547,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsCountOrderByAggregateInput = {
     id?: SortOrder
-    organization_id?: SortOrder
+    slug?: SortOrder
     name?: SortOrder
-    description?: SortOrder
+    color?: SortOrder
+    workspace_id?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
     modified_at?: SortOrder
@@ -3344,9 +3559,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsMaxOrderByAggregateInput = {
     id?: SortOrder
-    organization_id?: SortOrder
+    slug?: SortOrder
     name?: SortOrder
-    description?: SortOrder
+    color?: SortOrder
+    workspace_id?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
     modified_at?: SortOrder
@@ -3355,13 +3571,29 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsMinOrderByAggregateInput = {
     id?: SortOrder
-    organization_id?: SortOrder
+    slug?: SortOrder
     name?: SortOrder
-    description?: SortOrder
+    color?: SortOrder
+    workspace_id?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
+  }
+
+  export type UuidWithAggregatesFilter = {
+    equals?: string
+    in?: Enumerable<string>
+    notIn?: Enumerable<string>
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    mode?: QueryMode
+    not?: NestedUuidWithAggregatesFilter | string
+    _count?: NestedIntFilter
+    _min?: NestedStringFilter
+    _max?: NestedStringFilter
   }
 
   export type StringWithAggregatesFilter = {
@@ -3380,24 +3612,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     _count?: NestedIntFilter
     _min?: NestedStringFilter
     _max?: NestedStringFilter
-  }
-
-  export type StringNullableWithAggregatesFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    mode?: QueryMode
-    not?: NestedStringNullableWithAggregatesFilter | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedStringNullableFilter
-    _max?: NestedStringNullableFilter
   }
 
   export type DateTimeWithAggregatesFilter = {
@@ -3428,6 +3642,46 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     _max?: NestedDateTimeNullableFilter
   }
 
+  export type StringNullableWithAggregatesFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | null
+    notIn?: Enumerable<string> | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter | string | null
+    _count?: NestedIntNullableFilter
+    _min?: NestedStringNullableFilter
+    _max?: NestedStringNullableFilter
+  }
+
+  export type IntNullableFilter = {
+    equals?: number | null
+    in?: Enumerable<number> | null
+    notIn?: Enumerable<number> | null
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedIntNullableFilter | number | null
+  }
+
+  export type IntFilter = {
+    equals?: number
+    in?: Enumerable<number>
+    notIn?: Enumerable<number>
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedIntFilter | number
+  }
+
   export type ProjectsRelationFilter = {
     is?: ProjectsWhereInput
     isNot?: ProjectsWhereInput
@@ -3435,35 +3689,95 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksCountOrderByAggregateInput = {
     id?: SortOrder
+    slug?: SortOrder
+    markdown?: SortOrder
+    summary?: SortOrder
+    type?: SortOrder
+    impact?: SortOrder
+    status?: SortOrder
     project_id?: SortOrder
-    name?: SortOrder
-    description?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
+    assigned_by?: SortOrder
+    assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
   }
 
+  export type TasksAvgOrderByAggregateInput = {
+    impact?: SortOrder
+    status?: SortOrder
+  }
+
   export type TasksMaxOrderByAggregateInput = {
     id?: SortOrder
+    slug?: SortOrder
+    markdown?: SortOrder
+    summary?: SortOrder
+    type?: SortOrder
+    impact?: SortOrder
+    status?: SortOrder
     project_id?: SortOrder
-    name?: SortOrder
-    description?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
+    assigned_by?: SortOrder
+    assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
   }
 
   export type TasksMinOrderByAggregateInput = {
     id?: SortOrder
+    slug?: SortOrder
+    markdown?: SortOrder
+    summary?: SortOrder
+    type?: SortOrder
+    impact?: SortOrder
+    status?: SortOrder
     project_id?: SortOrder
-    name?: SortOrder
-    description?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
+    assigned_by?: SortOrder
+    assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
+  }
+
+  export type TasksSumOrderByAggregateInput = {
+    impact?: SortOrder
+    status?: SortOrder
+  }
+
+  export type IntNullableWithAggregatesFilter = {
+    equals?: number | null
+    in?: Enumerable<number> | null
+    notIn?: Enumerable<number> | null
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedIntNullableWithAggregatesFilter | number | null
+    _count?: NestedIntNullableFilter
+    _avg?: NestedFloatNullableFilter
+    _sum?: NestedIntNullableFilter
+    _min?: NestedIntNullableFilter
+    _max?: NestedIntNullableFilter
+  }
+
+  export type IntWithAggregatesFilter = {
+    equals?: number
+    in?: Enumerable<number>
+    notIn?: Enumerable<number>
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedIntWithAggregatesFilter | number
+    _count?: NestedIntFilter
+    _avg?: NestedFloatFilter
+    _sum?: NestedIntFilter
+    _min?: NestedIntFilter
+    _max?: NestedIntFilter
   }
 
   export type TasksCreateNestedManyWithoutProjectsInput = {
@@ -3484,16 +3798,16 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     set?: string
   }
 
-  export type NullableStringFieldUpdateOperationsInput = {
-    set?: string | null
-  }
-
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
   }
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
     set?: Date | string | null
+  }
+
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
   }
 
   export type TasksUpdateManyWithoutProjectsNestedInput = {
@@ -3530,12 +3844,39 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     connect?: ProjectsWhereUniqueInput
   }
 
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
   export type ProjectsUpdateOneRequiredWithoutTasksNestedInput = {
     create?: XOR<ProjectsCreateWithoutTasksInput, ProjectsUncheckedCreateWithoutTasksInput>
     connectOrCreate?: ProjectsCreateOrConnectWithoutTasksInput
     upsert?: ProjectsUpsertWithoutTasksInput
     connect?: ProjectsWhereUniqueInput
     update?: XOR<ProjectsUpdateWithoutTasksInput, ProjectsUncheckedUpdateWithoutTasksInput>
+  }
+
+  export type NestedUuidFilter = {
+    equals?: string
+    in?: Enumerable<string>
+    notIn?: Enumerable<string>
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    not?: NestedUuidFilter | string
   }
 
   export type NestedStringFilter = {
@@ -3550,20 +3891,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     startsWith?: string
     endsWith?: string
     not?: NestedStringFilter | string
-  }
-
-  export type NestedStringNullableFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    not?: NestedStringNullableFilter | string | null
   }
 
   export type NestedDateTimeFilter = {
@@ -3588,10 +3915,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedDateTimeNullableFilter | Date | string | null
   }
 
-  export type NestedStringWithAggregatesFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
+  export type NestedStringNullableFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | null
+    notIn?: Enumerable<string> | null
     lt?: string
     lte?: string
     gt?: string
@@ -3599,7 +3926,18 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     contains?: string
     startsWith?: string
     endsWith?: string
-    not?: NestedStringWithAggregatesFilter | string
+    not?: NestedStringNullableFilter | string | null
+  }
+
+  export type NestedUuidWithAggregatesFilter = {
+    equals?: string
+    in?: Enumerable<string>
+    notIn?: Enumerable<string>
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    not?: NestedUuidWithAggregatesFilter | string
     _count?: NestedIntFilter
     _min?: NestedStringFilter
     _max?: NestedStringFilter
@@ -3616,10 +3954,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedIntFilter | number
   }
 
-  export type NestedStringNullableWithAggregatesFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
+  export type NestedStringWithAggregatesFilter = {
+    equals?: string
+    in?: Enumerable<string>
+    notIn?: Enumerable<string>
     lt?: string
     lte?: string
     gt?: string
@@ -3627,21 +3965,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     contains?: string
     startsWith?: string
     endsWith?: string
-    not?: NestedStringNullableWithAggregatesFilter | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedStringNullableFilter
-    _max?: NestedStringNullableFilter
-  }
-
-  export type NestedIntNullableFilter = {
-    equals?: number | null
-    in?: Enumerable<number> | null
-    notIn?: Enumerable<number> | null
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntNullableFilter | number | null
+    not?: NestedStringWithAggregatesFilter | string
+    _count?: NestedIntFilter
+    _min?: NestedStringFilter
+    _max?: NestedStringFilter
   }
 
   export type NestedDateTimeWithAggregatesFilter = {
@@ -3672,22 +3999,116 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     _max?: NestedDateTimeNullableFilter
   }
 
+  export type NestedIntNullableFilter = {
+    equals?: number | null
+    in?: Enumerable<number> | null
+    notIn?: Enumerable<number> | null
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedIntNullableFilter | number | null
+  }
+
+  export type NestedStringNullableWithAggregatesFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | null
+    notIn?: Enumerable<string> | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    not?: NestedStringNullableWithAggregatesFilter | string | null
+    _count?: NestedIntNullableFilter
+    _min?: NestedStringNullableFilter
+    _max?: NestedStringNullableFilter
+  }
+
+  export type NestedIntNullableWithAggregatesFilter = {
+    equals?: number | null
+    in?: Enumerable<number> | null
+    notIn?: Enumerable<number> | null
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedIntNullableWithAggregatesFilter | number | null
+    _count?: NestedIntNullableFilter
+    _avg?: NestedFloatNullableFilter
+    _sum?: NestedIntNullableFilter
+    _min?: NestedIntNullableFilter
+    _max?: NestedIntNullableFilter
+  }
+
+  export type NestedFloatNullableFilter = {
+    equals?: number | null
+    in?: Enumerable<number> | null
+    notIn?: Enumerable<number> | null
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedFloatNullableFilter | number | null
+  }
+
+  export type NestedIntWithAggregatesFilter = {
+    equals?: number
+    in?: Enumerable<number>
+    notIn?: Enumerable<number>
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedIntWithAggregatesFilter | number
+    _count?: NestedIntFilter
+    _avg?: NestedFloatFilter
+    _sum?: NestedIntFilter
+    _min?: NestedIntFilter
+    _max?: NestedIntFilter
+  }
+
+  export type NestedFloatFilter = {
+    equals?: number
+    in?: Enumerable<number>
+    notIn?: Enumerable<number>
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedFloatFilter | number
+  }
+
   export type TasksCreateWithoutProjectsInput = {
     id: string
-    name: string
-    description?: string | null
+    slug: string
+    markdown?: string | null
+    summary: string
+    type: string
+    impact?: number | null
+    status: number
     created_at: Date | string
     created_by: string
+    assigned_by?: string | null
+    assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
   }
 
   export type TasksUncheckedCreateWithoutProjectsInput = {
     id: string
-    name: string
-    description?: string | null
+    slug: string
+    markdown?: string | null
+    summary: string
+    type: string
+    impact?: number | null
+    status: number
     created_at: Date | string
     created_by: string
+    assigned_by?: string | null
+    assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
   }
@@ -3722,21 +4143,28 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     AND?: Enumerable<TasksScalarWhereInput>
     OR?: Enumerable<TasksScalarWhereInput>
     NOT?: Enumerable<TasksScalarWhereInput>
-    id?: StringFilter | string
-    project_id?: StringFilter | string
-    name?: StringFilter | string
-    description?: StringNullableFilter | string | null
+    id?: UuidFilter | string
+    slug?: StringFilter | string
+    markdown?: StringNullableFilter | string | null
+    summary?: StringFilter | string
+    type?: StringFilter | string
+    impact?: IntNullableFilter | number | null
+    status?: IntFilter | number
+    project_id?: UuidFilter | string
     created_at?: DateTimeFilter | Date | string
     created_by?: StringFilter | string
+    assigned_by?: StringNullableFilter | string | null
+    assigned_at?: DateTimeNullableFilter | Date | string | null
     modified_at?: DateTimeNullableFilter | Date | string | null
     modified_by?: StringNullableFilter | string | null
   }
 
   export type ProjectsCreateWithoutTasksInput = {
     id: string
-    organization_id: string
+    slug: string
     name: string
-    description?: string | null
+    color: string
+    workspace_id: string
     created_at: Date | string
     created_by: string
     modified_at?: Date | string | null
@@ -3745,9 +4173,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsUncheckedCreateWithoutTasksInput = {
     id: string
-    organization_id: string
+    slug: string
     name: string
-    description?: string | null
+    color: string
+    workspace_id: string
     created_at: Date | string
     created_by: string
     modified_at?: Date | string | null
@@ -3766,9 +4195,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsUpdateWithoutTasksInput = {
     id?: StringFieldUpdateOperationsInput | string
-    organization_id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: StringFieldUpdateOperationsInput | string
+    workspace_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3777,9 +4207,10 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type ProjectsUncheckedUpdateWithoutTasksInput = {
     id?: StringFieldUpdateOperationsInput | string
-    organization_id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: StringFieldUpdateOperationsInput | string
+    workspace_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3788,40 +4219,64 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksCreateManyProjectsInput = {
     id: string
-    name: string
-    description?: string | null
+    slug: string
+    markdown?: string | null
+    summary: string
+    type: string
+    impact?: number | null
+    status: number
     created_at: Date | string
     created_by: string
+    assigned_by?: string | null
+    assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
   }
 
   export type TasksUpdateWithoutProjectsInput = {
     id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    slug?: StringFieldUpdateOperationsInput | string
+    markdown?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    impact?: NullableIntFieldUpdateOperationsInput | number | null
+    status?: IntFieldUpdateOperationsInput | number
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
+    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
+    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type TasksUncheckedUpdateWithoutProjectsInput = {
     id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    slug?: StringFieldUpdateOperationsInput | string
+    markdown?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    impact?: NullableIntFieldUpdateOperationsInput | number | null
+    status?: IntFieldUpdateOperationsInput | number
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
+    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
+    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type TasksUncheckedUpdateManyWithoutTasksInput = {
     id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
+    slug?: StringFieldUpdateOperationsInput | string
+    markdown?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    impact?: NullableIntFieldUpdateOperationsInput | number | null
+    status?: IntFieldUpdateOperationsInput | number
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
+    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
+    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
   }

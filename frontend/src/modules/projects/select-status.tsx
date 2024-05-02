@@ -25,8 +25,10 @@ const statuses = [
   { value: 6, button: 'Accepted', status: 'Accepted', icon: CircleCheck },
 ] as const;
 
+export type TaskStatus = (typeof statuses)[number]['value'];
+
 interface SelectStatusProps {
-  taskStatus: (typeof statuses)[number]['value'];
+  taskStatus: TaskStatus;
   changeTaskStatus: (newStatus: number) => void;
 }
 
