@@ -106,29 +106,32 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
             placeholder={mode === 'edit' ? t('common:placeholder.set_status') : t('common:placeholder.create_with_status')}
           />
           {!isSearching && <Kbd value="S" className="absolute top-3 right-[10px]" />}
-          <CommandList>
-            <CommandGroup>
-              {statuses.map((status, index) => (
-                <CommandItem
-                  key={status.value}
-                  value={status.status}
-                  onSelect={() => {
-                    handleStatusChangeClick(index);
-                  }}
-                  className="group rounded-md flex justify-between items-center w-full leading-normal"
-                >
-                  <div className="flex items-center">
-                    <status.icon size={16} className="mr-2 size-4 " />
-                    <span>{status.status}</span>
-                  </div>
-                  <div className="flex items-center">
-                    {selectedStatus.value === status.value && <Check size={16} className="text-success" />}
-                    {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
+
+          <CommandGroup>
+            <CommandList>
+              {statuses.map((status, index) => {
+                return (
+                  <CommandItem
+                    key={status.value}
+                    value={status.status}
+                    onSelect={() => {
+                      handleStatusChangeClick(index);
+                    }}
+                    className="group rounded-md flex justify-between items-center w-full leading-normal"
+                  >
+                    <div className="flex items-center">
+                      <status.icon size={16} className="mr-2 size-4 " />
+                      <span>{status.status}</span>
+                    </div>
+                    <div className="flex items-center">
+                      {selectedStatus.value === status.value && <Check size={16} className="text-success" />}
+                      {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandList>
+          </CommandGroup>
         </Command>
       </PopoverContent>
     </Popover>
