@@ -35,10 +35,11 @@ import {
 } from './routes';
 import { handleCreateUser } from './helpers/user';
 import { checkTokenRouteConfig } from '../general/routes';
+import type { z } from 'zod';
 
 const app = new CustomHono();
 
-type CheckTokenResponse = Zod.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']> | undefined;
+type CheckTokenResponse = z.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']> | undefined;
 type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
 // * Authentication endpoints

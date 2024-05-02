@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { dateShort } from '~/lib/utils';
-import type { Task } from '~/mocks/workspaces';
+import type { Task } from '~/modules/common/root/electric';
 
 const Expand = ({ row }: { row: Task }) => {
   const { t } = useTranslation();
@@ -16,7 +16,7 @@ const Expand = ({ row }: { row: Task }) => {
 
       <div className="grid gap-1 grid-cols-[auto_auto]">
         <div className="font-medium pr-4">{t('common:modified')}</div>
-        <div>{dateShort(row.modifiedAt)}</div>
+        <div>{dateShort(row.modified_at)}</div>
         <div className="font-medium pr-4">{t('common:modified_by')}</div>
         <div>-</div>
       </div>

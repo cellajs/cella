@@ -1,6 +1,6 @@
 export default [
   {
-    "statements": [
+    statements: [
       "CREATE TABLE \"projects\" (\n  \"id\" TEXT NOT NULL,\n  \"slug\" TEXT NOT NULL,\n  \"name\" TEXT NOT NULL,\n  \"color\" TEXT NOT NULL,\n  \"workspace_id\" TEXT NOT NULL,\n  \"created_at\" TEXT NOT NULL,\n  \"created_by\" TEXT NOT NULL,\n  \"modified_at\" TEXT,\n  \"modified_by\" TEXT,\n  CONSTRAINT \"projects_pkey\" PRIMARY KEY (\"id\")\n) WITHOUT ROWID;\n",
       "CREATE TABLE \"tasks\" (\n  \"id\" TEXT NOT NULL,\n  \"slug\" TEXT NOT NULL,\n  \"markdown\" TEXT,\n  \"summary\" TEXT NOT NULL,\n  \"type\" TEXT NOT NULL,\n  \"impact\" INTEGER,\n  \"status\" INTEGER NOT NULL,\n  \"project_id\" TEXT NOT NULL,\n  \"created_at\" TEXT NOT NULL,\n  \"created_by\" TEXT NOT NULL,\n  \"assigned_by\" TEXT,\n  \"assigned_at\" TEXT,\n  \"modified_at\" TEXT,\n  \"modified_by\" TEXT,\n  CONSTRAINT \"tasks_project_id_fkey\" FOREIGN KEY (\"project_id\") REFERENCES \"projects\" (\"id\") ON DELETE CASCADE,\n  CONSTRAINT \"tasks_pkey\" PRIMARY KEY (\"id\")\n) WITHOUT ROWID;\n",
       "INSERT OR IGNORE INTO _electric_trigger_settings(tablename,flag) VALUES ('main.projects', 1);",
@@ -26,6 +26,6 @@ export default [
       "DROP TRIGGER IF EXISTS compensation_update_main_tasks_project_id_into_oplog;",
       "CREATE TRIGGER compensation_update_main_tasks_project_id_into_oplog\n   AFTER UPDATE ON \"main\".\"tasks\"\n   WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.projects') AND\n        1 == (SELECT value from _electric_meta WHERE key == 'compensations')\nBEGIN\n  INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)\n  SELECT 'main', 'projects', 'COMPENSATION', json_object('id', \"id\"), json_object('id', \"id\"), NULL, NULL\n  FROM \"main\".\"projects\" WHERE \"id\" = new.\"project_id\";\nEND;"
     ],
-    "version": "20240502074527_487"
+    version: "20240502074527_487"
   }
 ]

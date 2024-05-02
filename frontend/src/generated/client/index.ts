@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Prisma } from './prismaClient';
-import { type TableSchema, DbSchema, Relation, ElectricClient, type HKT } from 'electric-sql/client/model';
+import { type TableSchema, DbSchema, Relation, type ElectricClient, type HKT } from 'electric-sql/client/model';
 import migrations from './migrations';
 
 /////////////////////////////////////////
@@ -1567,8 +1567,10 @@ export const tableSchemas = {
     relations: [
       new Relation("tasks", "", "", "tasks", "ProjectsToTasks", "many"),
     ],
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     modelSchema: (ProjectsCreateInputSchema as any)
       .partial()
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       .or((ProjectsUncheckedCreateInputSchema as any).partial()),
     createSchema: ProjectsCreateArgsSchema,
     createManySchema: ProjectsCreateManyArgsSchema,
@@ -1579,7 +1581,7 @@ export const tableSchemas = {
     upsertSchema: ProjectsUpsertArgsSchema,
     deleteSchema: ProjectsDeleteArgsSchema,
     deleteManySchema: ProjectsDeleteManyArgsSchema
-  } as TableSchema<
+  } as unknown as TableSchema<
     z.infer<typeof ProjectsUncheckedCreateInputSchema>,
     Prisma.ProjectsCreateArgs['data'],
     Prisma.ProjectsUpdateArgs['data'],
@@ -1653,8 +1655,10 @@ export const tableSchemas = {
     relations: [
       new Relation("projects", "project_id", "id", "projects", "ProjectsToTasks", "one"),
     ],
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     modelSchema: (TasksCreateInputSchema as any)
       .partial()
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       .or((TasksUncheckedCreateInputSchema as any).partial()),
     createSchema: TasksCreateArgsSchema,
     createManySchema: TasksCreateManyArgsSchema,
@@ -1665,7 +1669,7 @@ export const tableSchemas = {
     upsertSchema: TasksUpsertArgsSchema,
     deleteSchema: TasksDeleteArgsSchema,
     deleteManySchema: TasksDeleteManyArgsSchema
-  } as TableSchema<
+  } as unknown as unknown as TableSchema<
     z.infer<typeof TasksUncheckedCreateInputSchema>,
     Prisma.TasksCreateArgs['data'],
     Prisma.TasksUpdateArgs['data'],
