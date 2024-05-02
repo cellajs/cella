@@ -1,19 +1,7 @@
 import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-
-import {
-  type Announcements,
-  DndContext,
-  type DragEndEvent,
-  type DragOverEvent,
-  DragOverlay,
-  type DragStartEvent,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
+import type { Announcements, DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
+import { DndContext, DragOverlay, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { BoardColumn, BoardContainer, type Column } from './board-column';
@@ -32,6 +20,7 @@ export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
   const { projects, tasks } = useContext(WorkspaceContext);
+
   const pickedUpTaskColumn = useRef<string | null>(null);
 
   const [innerProject, setInnerProject] = useState<Project[]>(projects || []);
@@ -58,10 +47,6 @@ export default function Board() {
       column,
     };
   }
-
-  useEffect(() => {
-    setInnerProject(projects);
-  }, [projects]);
 
   const announcements: Announcements = {
     onDragStart({ active }) {
@@ -120,6 +105,10 @@ export default function Board() {
     },
   };
 
+  useEffect(() => {
+    setInnerProject(projects);
+  }, [projects]);
+
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
@@ -143,10 +132,18 @@ export default function Board() {
 
       {'document' in window &&
         createPortal(
-          <DragOverlay>
-            {activeProject && <BoardColumn isOverlay column={activeProject} />}
-            {activeTask && <TaskCard task={activeTask} isOverlay />}
-          </DragOverlay>,
+          <>
+            {activeTask && (
+              <DragOverlay>
+                <TaskCard task={activeTask} isOverlay />
+              </DragOverlay>
+            )}
+            {activeProject && (
+              <DragOverlay>
+                <BoardColumn isOverlay column={activeProject} />
+              </DragOverlay>
+            )}
+          </>,
           document.body,
         )}
     </DndContext>
@@ -194,6 +191,12 @@ export default function Board() {
 
   function onDragOver(event: DragOverEvent) {
     const { active, over } = event;
+    const data = active.data.current;
+
+    if (data?.type === 'Column') setActiveProject(data.column);
+
+    if (data?.type === 'Task') setActiveTask(data.task);
+
     if (!over) return;
 
     const activeId = active.id;

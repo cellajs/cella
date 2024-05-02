@@ -9,6 +9,7 @@ import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { TaskCard } from './task-card';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
+import type { Task } from '~/mocks/workspaces';
 
 export interface Column {
   id: string;
@@ -28,12 +29,27 @@ interface BoardColumnProps {
 export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const { tasks = [] } = useContext(ProjectContext);
 
-  const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
-  const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
-  const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
+  const [innerTasks, setInnerTasks] = useState(tasks);
+
+  const tasksIds = useMemo(() => innerTasks.map((task) => task.id), [innerTasks]);
+  const acceptedCount = useMemo(() => innerTasks?.filter((t) => t.status === 6).length, [innerTasks]);
+  const icedCount = useMemo(() => innerTasks?.filter((t) => t.status === 0).length, [innerTasks]);
 
   const [showIced, setShowIced] = useState(false);
   const [showAccepted, setShowAccepted] = useState(false);
+
+  const handleTaskChange = (task: Task) => {
+    if (!innerTasks.find((t) => t.id === task.id)) {
+      const updatedTasks = [...innerTasks, task];
+      return setInnerTasks(updatedTasks.sort((a, b) => b.status - a.status));
+    }
+    // Update existing task
+    const updatedTasks = innerTasks.map((t: Task) => {
+      if (t.id !== task.id) return t;
+      return { ...t, ...task };
+    });
+    setInnerTasks(updatedTasks.sort((a, b) => b.status - a.status));
+  };
 
   return (
     <BoardColumnHeader column={column} isOverlay={isOverlay}>
@@ -54,15 +70,16 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
                   <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
                 )}
               </Button>
+
               <SortableContext items={tasksIds}>
-                {tasks
+                {innerTasks
                   .filter((t) => {
                     if (showAccepted && t.status === 6) return true;
                     if (showIced && t.status === 0) return true;
                     return t.status !== 0 && t.status !== 6;
                   })
                   .map((task) => (
-                    <TaskCard task={task} key={task.id} />
+                    <TaskCard task={task} key={task.id} updateTasks={handleTaskChange} />
                   ))}
               </SortableContext>
               <Button

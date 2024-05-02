@@ -15,9 +15,8 @@ import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import SelectStatus from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
-import { WorkspaceContext } from '../workspaces/index.tsx';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn } from '~/lib/utils.ts';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -25,6 +24,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 interface TaskCardProps {
   task: Task;
   isOverlay?: boolean;
+  updateTasks?: (task: Task) => void;
 }
 
 export interface TaskDragData {
@@ -32,7 +32,7 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, isOverlay }: TaskCardProps) {
+export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
 
@@ -40,16 +40,17 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const { updateTasks } = useContext(WorkspaceContext);
-
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any) => {
     const updatedTask = { ...innerTask, [field]: value };
     setInnerTask(updatedTask);
-    console.log(!!updateTasks);
+
     // TODO: we should only replace the array when absolutely necessary due to performance reasons
     // Instead, can we move the
+    //const { updateTasks } = useContext(WorkspaceContext);
     // updateTasks(updatedTask);
+    // Temporary fix to not lose functional
+    updateTasks?.(updatedTask);
   };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
