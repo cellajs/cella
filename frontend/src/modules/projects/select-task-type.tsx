@@ -20,10 +20,13 @@ const types = [
   { value: 'bug', label: 'Bug', icon: () => <Bug size={16} className="fill-red-400 text-red-500" /> },
 ] as const;
 
-export const SelectTaskType = ({
-  currentType,
-  changeTaskType,
-}: { currentType: TaskType; className?: string; changeTaskType?: (value: TaskType) => void }) => {
+export interface SelectTaskTypeProps {
+  currentType: TaskType;
+  className?: string;
+  changeTaskType?: (value: TaskType) => void;
+}
+
+export const SelectTaskType = ({ currentType, changeTaskType }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
 
   const [openPopover, setOpenPopover] = useState(false);

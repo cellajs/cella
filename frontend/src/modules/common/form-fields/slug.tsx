@@ -83,7 +83,6 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // In create forms, auto-generate slug from name
   useEffect(() => {
     if (previousSlug || isDeviating) return;
-
     form.setValue('slug', slugify(nameValue || '', { lower: true }));
   }, [nameValue]);
 
@@ -99,6 +98,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
       inputClassName={isSlugAvailable && isValidSlug(slug) ? 'ring-2 ring-green-500 focus-visible:ring-2 focus-visible:ring-green-500' : ''}
       onFocus={() => setDeviating(true)}
       label={label}
+      prefix={type.toLowerCase()}
       description={description}
       required
       subComponent={

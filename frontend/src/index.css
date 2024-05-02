@@ -24,7 +24,7 @@
     --input: 240 6% 92%;
     --ring: 240 6% 10%;
     --radius: 0.5rem;
-    --success: 120 100% 27%;
+    --success: 120 100% 30%;
   }
 
   .dark {
@@ -47,7 +47,7 @@
     --border: 240 3.7% 20%;
     --input: 240 3.7% 25%;
     --ring: 240 4.9% 83.9%;
-    --success: 120 100% 50%;
+    --success: 120 100% 40%;
   }
 
   .theme-rose.light {

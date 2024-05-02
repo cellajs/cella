@@ -240,6 +240,7 @@
   "password": "Password",
   "password_confirmation": "Password confirmation",
   "placeholder.assign": "Assign to ...",
+  "placeholder.create_with_status": "Create with status ...",
   "placeholder.email_domains": "Add email domains",
   "placeholder.impact": "Set impact ...",
   "placeholder.search": "Search",
@@ -317,6 +318,7 @@
   "success.create_newsletter": "Newsletter has been sent.",
   "success.create_organization": "Organization has been created",
   "success.create_project": "Project has been created",
+  "success.create_task": "Task has been created",
   "success.create_workspace": "Workspace has been created",
   "success.delete_account": "Account deleted",
   "success.delete_members": "Members have been removed",
@@ -333,7 +335,7 @@
   "success.send_reset_password_email": "An email has been sent to {{email}}",
   "success.restore_organization": "Organization has been restored.",
   "success.signed_out": "You have been signed out",
-  "success.task_updated": "Task has been updated to {{name}}",
+  "success.new_status": "Task has been updated to {{status}}",
   "success.unmute_organization": "Organization has been unmuted.",
   "success.update_organization": "Organization has been updated",
   "success.update_project": "Project has been updated",
@@ -392,6 +394,6 @@
   "workspaces": "Workspaces",
   "year": "year",
   "your_role": "Your role",
-  "less_info": "Less info",
-  "more_info": "More info"
+  "less": "Less",
+  "more": "More"
 }

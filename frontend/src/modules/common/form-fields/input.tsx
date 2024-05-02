@@ -15,6 +15,7 @@ interface Props<TFieldValues extends FieldValues> {
   placeholder?: string;
   onFocus?: () => void;
   minimal?: boolean;
+  prefix?: string;
   subComponent?: React.ReactNode;
   required?: boolean;
   disabled?: boolean;
@@ -34,52 +35,64 @@ const InputFormField = <TFieldValues extends FieldValues>({
   placeholder,
   subComponent,
   required,
+  prefix,
   disabled,
   icon,
   inputClassName,
-}: Props<TFieldValues>) => (
-  <FormField
-    control={disabled ? undefined : control}
-    name={name as Path<TFieldValues>}
-    render={({ field: { value: formFieldValue, ...rest } }) => (
-      <FormItem name={name?.toString()}>
-        <FormLabel>
-          {label}
-          {required && <span className="ml-1 opacity-50">*</span>}
-        </FormLabel>
-        {description && <FormDescription>{description}</FormDescription>}
-        <FormControl>
-          <div className="relative flex w-full items-center ">
-            {icon && <div className="pr-2 ">{icon}</div>}
-            {type === 'textarea' ? (
-              <Textarea
-                placeholder={placeholder}
-                onFocus={onFocus}
-                autoResize={true}
-                defaultValue={defaultValue}
-                value={value || formFieldValue || ''}
-                disabled={disabled}
-                {...rest}
-              />
-            ) : (
-              <Input
-                className={inputClassName}
-                type={type}
-                onFocus={onFocus}
-                placeholder={placeholder}
-                defaultValue={defaultValue}
-                value={value || formFieldValue || ''}
-                disabled={disabled}
-                {...rest}
-              />
-            )}
-            {subComponent}
-          </div>
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-    )}
-  />
-);
+}: Props<TFieldValues>) => {
+  const havePrefix = prefix !== 'unknown' && prefix;
+  const spanPrefix = document.querySelector(`#${prefix}-prefix`);
+  const prefixPadding = havePrefix && spanPrefix && 'offsetWidth' in spanPrefix ? `${Number(spanPrefix.offsetWidth) + 16}px` : '12px';
+  return (
+    <FormField
+      control={disabled ? undefined : control}
+      name={name as Path<TFieldValues>}
+      render={({ field: { value: formFieldValue, ...rest } }) => (
+        <FormItem name={name?.toString()}>
+          <FormLabel>
+            {label}
+            {required && <span className="ml-1 opacity-50">*</span>}
+          </FormLabel>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormControl>
+            <div className="relative flex w-full items-center ">
+              {icon && <div className="pr-2 ">{icon}</div>}
+              {havePrefix && (
+                <span id={`${prefix}-prefix`} className="absolute font-light left-3 text-sm opacity-50">{`cellajs.com/${
+                  prefix === 'organization' ? '' : `${prefix}/`
+                }`}</span>
+              )}
+              {type === 'textarea' ? (
+                <Textarea
+                  placeholder={placeholder}
+                  onFocus={onFocus}
+                  autoResize={true}
+                  defaultValue={defaultValue}
+                  value={value || formFieldValue || ''}
+                  disabled={disabled}
+                  {...rest}
+                />
+              ) : (
+                <Input
+                  className={inputClassName}
+                  style={{ paddingLeft: prefixPadding }}
+                  type={type}
+                  onFocus={onFocus}
+                  placeholder={placeholder}
+                  defaultValue={defaultValue}
+                  value={value || formFieldValue || ''}
+                  disabled={disabled}
+                  {...rest}
+                />
+              )}
+              {subComponent}
+            </div>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
 
 export default InputFormField;

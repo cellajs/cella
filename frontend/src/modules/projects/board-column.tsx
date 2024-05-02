@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-react';
 import { useContext, useMemo, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { CardContent } from '~/modules/ui/card';
-import { ScrollArea } from '~/modules/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { TaskCard } from './task-card';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
@@ -49,41 +49,45 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   return (
     <BoardColumnHeader column={column} isOverlay={isOverlay}>
       <ScrollArea id={column.id} size="indicatorVertical">
+        <ScrollBar size="indicatorVertical" />
         <CardContent className="flex flex-grow flex-col p-0 group/column">
           {!!tasks.length && (
-            <SortableContext items={tasksIds}>
+            <>
               <Button
                 onClick={() => setShowAccepted(!showAccepted)}
                 variant="ghost"
                 disabled={!acceptedCount}
                 size="sm"
-                className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
+                className="w-full rounded-none gap-1 border-b ring-inset opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
               >
                 <span className="text-xs">{acceptedCount} accepted</span>
                 {!!acceptedCount && (
                   <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
                 )}
               </Button>
-              {tasks
-                .filter((t) => {
-                  if (showAccepted && t.status === 6) return true;
-                  if (showIced && t.status === 0) return true;
-                  return t.status !== 0 && t.status !== 6;
-                })
-                .map((task) => (
-                  <TaskCard task={task} key={task.id} />
-                ))}
+
+              <SortableContext items={tasksIds}>
+                {tasks
+                  .filter((t) => {
+                    if (showAccepted && t.status === 6) return true;
+                    if (showIced && t.status === 0) return true;
+                    return t.status !== 0 && t.status !== 6;
+                  })
+                  .map((task) => (
+                    <TaskCard task={task} key={task.id} />
+                  ))}
+              </SortableContext>
               <Button
                 onClick={() => setShowIced(!showIced)}
                 variant="ghost"
                 disabled={!icedCount}
                 size="sm"
-                className="w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5 text-sm -mt-[1px]"
+                className="w-full rounded-none gap-1 ring-inset opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5 text-sm -mt-[1px]"
               >
                 <span className="text-xs">{icedCount} iced</span>
                 {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
               </Button>
-            </SortableContext>
+            </>
           )}
         </CardContent>
       </ScrollArea>
@@ -97,7 +101,7 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
   const variations = cva('h-[calc(100vh-64px-64px)] md:h-[calc(100vh-88px)]', {
     variants: {
       dragging: {
-        default: 'snap-x snap-mandatory',
+        default: 'snap-y snap-mandatory',
         active: 'snap-none',
       },
     },

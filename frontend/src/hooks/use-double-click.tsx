@@ -10,7 +10,7 @@ import { type RefObject, useEffect } from 'react';
  */
 
 interface UseDoubleClickOptions {
-  ref: RefObject<HTMLButtonElement>;
+  ref: RefObject<HTMLButtonElement | HTMLElement>;
   latency?: number;
   onSingleClick?: (event: MouseEvent) => void;
   onDoubleClick?: (event: MouseEvent) => void;
@@ -22,12 +22,12 @@ const useDoubleClick = ({ ref, latency = 300, onSingleClick = () => null, onDoub
     if (!clickRef) return;
 
     let clickCount = 0;
-    const handleClick = (e: MouseEvent) => {
+    const handleClick = (e: Event) => { // Update the type of the event parameter to Event
       clickCount += 1;
 
       setTimeout(() => {
-        if (clickCount === 1) onSingleClick(e);
-        else if (clickCount === 2) onDoubleClick(e);
+        if (clickCount === 1) onSingleClick(e as MouseEvent); // Cast the event to MouseEvent
+        else if (clickCount === 2) onDoubleClick(e as MouseEvent); // Cast the event to MouseEvent
 
         clickCount = 0;
       }, latency);

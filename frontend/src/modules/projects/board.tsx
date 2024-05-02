@@ -1,19 +1,7 @@
 import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-
-import {
-  type Announcements,
-  DndContext,
-  type DragEndEvent,
-  type DragOverEvent,
-  DragOverlay,
-  type DragStartEvent,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
+import type { Announcements, DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
+import { DndContext, DragOverlay, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { BoardColumn, BoardContainer, type Column } from './board-column';
@@ -36,11 +24,11 @@ export default function Board() {
   const { searchQuery } = useContext(ProjectsContext);
   const pickedUpTaskColumn = useRef<string | null>(null);
 
-  const [innerColumns, setInnerColumns] = useState<Project[]>(projects || []);
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+  const [innerProject, setInnerProject] = useState<Project[]>(projects || []);
+  const [activeProject, setActiveProject] = useState<Column | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  const columnsId = useMemo(() => innerColumns.map((col) => col.id), [innerColumns]);
+  const columnsId = useMemo(() => innerProject.map((col) => col.id), [innerProject]);
 
   const filteredTasks = useMemo(() => {
     if (!searchQuery) return tasks;
@@ -60,10 +48,10 @@ export default function Board() {
     }),
   );
 
-  function getDraggingTaskData(taskId: string, columnId: string) {
-    const tasksInColumn = filteredTasks.filter((task) => task.project_id === columnId);
+  function getDraggingTaskData(taskId: string, projectId: string) {
+    const tasksInColumn = filteredTasks.filter((task) => task.project_id === projectId);
     const taskPosition = tasksInColumn.findIndex((task) => task.id === taskId);
-    const column = innerColumns.find((col) => col.id === columnId);
+    const column = innerProject.find((col) => col.id === projectId);
     return {
       tasksInColumn,
       taskPosition,
@@ -71,16 +59,12 @@ export default function Board() {
     };
   }
 
-  useEffect(() => {
-    setInnerColumns(projects);
-  }, [projects]);
-
   const announcements: Announcements = {
     onDragStart({ active }) {
       if (!hasDraggableData(active)) return;
       if (active.data.current?.type === 'Column') {
         const startColumnIdx = columnsId.findIndex((id) => id === active.id);
-        const startColumn = innerColumns[startColumnIdx];
+        const startColumn = innerProject[startColumnIdx];
         return `Picked up Column ${startColumn?.name} at position: ${startColumnIdx + 1} of ${columnsId.length}`;
       }
       if (active.data.current?.type === 'Task') {
@@ -132,6 +116,10 @@ export default function Board() {
     },
   };
 
+  useEffect(() => {
+    setInnerProject(projects);
+  }, [projects]);
+
   return (
     <DndContext accessibility={{ announcements }} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
       <BoardContainer>
@@ -144,8 +132,8 @@ export default function Board() {
                     <BoardColumn column={{ id: project.id, name: project.name }} key={`${project.id}-column`} />
                   </ProjectContext.Provider>
                 </ResizablePanel>
-                {innerColumns.length > index + 1 && (
-                  <ResizableHandle className="w-[4px] border border-background -mx-[6px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
+                {innerProject.length > index + 1 && (
+                  <ResizableHandle className="w-[6px] border border-background -mx-[7px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
                 )}
               </Fragment>
             ))}
@@ -155,10 +143,18 @@ export default function Board() {
 
       {'document' in window &&
         createPortal(
-          <DragOverlay>
-            {activeColumn && <BoardColumn isOverlay column={activeColumn} />}
-            {activeTask && <TaskCard task={activeTask} isOverlay />}
-          </DragOverlay>,
+          <>
+            {activeTask && (
+              <DragOverlay>
+                <TaskCard task={activeTask} isOverlay />
+              </DragOverlay>
+            )}
+            {activeProject && (
+              <DragOverlay>
+                <BoardColumn isOverlay column={activeProject} />
+              </DragOverlay>
+            )}
+          </>,
           document.body,
         )}
     </DndContext>
@@ -168,7 +164,7 @@ export default function Board() {
     if (!hasDraggableData(event.active)) return;
     const data = event.active.data.current;
     if (data?.type === 'Column') {
-      setActiveColumn(data.column);
+      setActiveProject(data.column);
       return;
     }
 
@@ -179,7 +175,7 @@ export default function Board() {
   }
 
   function onDragEnd(event: DragEndEvent) {
-    setActiveColumn(null);
+    setActiveProject(null);
     setActiveTask(null);
 
     const { active, over } = event;
@@ -197,17 +193,21 @@ export default function Board() {
     const isActiveAColumn = activeData?.type === 'Column';
     if (!isActiveAColumn) return;
 
-    setInnerColumns((innerColumns) => {
-      const activeColumnIndex = innerColumns.findIndex((col) => col.id === activeId);
-
-      const overColumnIndex = innerColumns.findIndex((col) => col.id === overId);
-
-      return arrayMove(innerColumns, activeColumnIndex, overColumnIndex);
+    setInnerProject((innerProject) => {
+      const activeColumnIndex = innerProject.findIndex((col) => col.id === activeId);
+      const overColumnIndex = innerProject.findIndex((col) => col.id === overId);
+      return arrayMove(innerProject, activeColumnIndex, overColumnIndex);
     });
   }
 
   function onDragOver(event: DragOverEvent) {
     const { active, over } = event;
+    const data = active.data.current;
+
+    if (data?.type === 'Column') setActiveProject(data.column);
+
+    if (data?.type === 'Task') setActiveTask(data.task);
+
     if (!over) return;
 
     const activeId = active.id;

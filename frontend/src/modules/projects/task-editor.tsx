@@ -21,15 +21,18 @@ export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState 
   };
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback((event) => {
-    if (event.key !== 'Escape') return;
+    if (event.key === 'Escape' || (event.key === 'Enter' && event.ctrlKey) || (event.key === 'Enter' && event.metaKey)) handleUpdateMarkdown();
+  }, []);
+
+  const handleHotKeys = useCallback(() => {
     handleUpdateMarkdown();
   }, []);
 
-  const handleHotKeysEsc = useCallback(() => {
-    handleUpdateMarkdown();
-  }, []);
-
-  useHotkeys([['Escape', handleHotKeysEsc]]);
+  useHotkeys([
+    ['Escape', handleHotKeys],
+    ['ctrl+enter', handleHotKeys],
+    ['meta+enter', handleHotKeys],
+  ]);
 
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {

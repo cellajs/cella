@@ -21,6 +21,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { ProjectContext } from './board.tsx';
 import { useElectric } from '../common/root/electric.ts';
 import { Input } from '../ui/input.tsx';
+import SelectStatus from './select-status.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -76,11 +77,11 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     handleCloseForm();
   }, []);
 
-  const handleHotKeysEscKeyPress = useCallback(() => {
+  const handleHotKeysKeyPress = useCallback(() => {
     handleCloseForm();
   }, []);
 
-  useHotkeys([['Escape', handleHotKeysEscKeyPress]]);
+  useHotkeys([['Escape', handleHotKeysKeyPress]]);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -158,7 +159,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   // Fix types
   return (
     <Form {...form}>
-      <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-4 border-b flex gap-2 flex-col shadow-inner">
+      <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 border-b flex gap-2 flex-col shadow-inner">
         <FormField
           control={form.control}
           name="summary"
@@ -290,9 +291,39 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button size={'xs'} type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+          <Button
+            size={'xs'}
+            type="submit"
+            disabled={!form.formState.isDirty}
+            loading={isPending}
+            className={`${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'}`}
+          >
             {t('common:create')}
           </Button>
+          {form.formState.isDirty && (
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field: { onChange } }) => {
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <SelectStatus
+                        taskStatus={1}
+                        changeTaskStatus={(newStatus) => {
+                          onChange(newStatus);
+                          onSubmit(form.getValues());
+                        }}
+                        mode="create"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          )}
+
           <Button
             size={'xs'}
             type="reset"
