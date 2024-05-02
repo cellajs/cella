@@ -1,17 +1,16 @@
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { cva } from 'class-variance-authority';
 import { GripVertical, Plus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
-import { Card, CardHeader } from '~/modules/ui/card';
+import { CardHeader } from '~/modules/ui/card';
 import ToolTipButtons from './tooltip-buttons';
 import CreateTaskForm from './task-form';
 import { sheet } from '../common/sheeter/state';
 import { ProjectSettings } from './project-settings';
 import { useTranslation } from 'react-i18next';
 import type { Column } from './board-column';
+import type { DraggableAttributes } from '@dnd-kit/core';
+import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
 
 export interface ColumnDragData {
   type: 'Column';
@@ -20,11 +19,11 @@ export interface ColumnDragData {
 
 interface BoardColumnHeaderProps {
   column: Column;
-  isOverlay?: boolean;
-  children?: React.ReactNode;
+  attributes: DraggableAttributes;
+  listeners: SyntheticListenerMap | undefined;
 }
 
-export function BoardColumnHeader({ column, children, isOverlay }: BoardColumnHeaderProps) {
+export function BoardColumnHeader({ column, attributes, listeners }: BoardColumnHeaderProps) {
   const { t } = useTranslation();
   const containerRef = useRef(null);
   const [createForm, setCreateForm] = useState(false);
@@ -46,44 +45,12 @@ export function BoardColumnHeader({ column, children, isOverlay }: BoardColumnHe
     setCreateForm(!createForm);
   };
 
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: column.id,
-    data: {
-      type: 'Column',
-      column,
-    } satisfies ColumnDragData,
-    attributes: {
-      roleDescription: `Column: ${column.name}`,
-    },
-  });
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
-  };
-
-  const variants = cva('h-full max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center', {
-    variants: {
-      dragging: {
-        default: 'border-2 border-transparent',
-        over: 'ring-2 opacity-30',
-        overlay: 'ring-2 ring-primary',
-      },
-    },
-  });
   // TODO
   const [background, setBackground] = useState('#ff75c3');
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={variants({
-        dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
-      })}
-    >
-      <CardHeader
-        className="p-3 text-normal leading-4 font-semibold border-b flex flex-row gap-2 space-between items-center"
-      >
+    <>
+      <CardHeader className="p-3 text-normal leading-4 font-semibold border-b flex flex-row gap-2 space-between items-center">
         <Button variant={'ghost'} {...attributes} {...listeners} size="xs" className="max-xs:hidden px-0 text-primary/50 -ml-1 cursor-grab relative">
           <span className="sr-only">{`Move column: ${column.name}`}</span>
           <GripVertical size={16} />
@@ -104,7 +71,6 @@ export function BoardColumnHeader({ column, children, isOverlay }: BoardColumnHe
       </CardHeader>
       <div ref={containerRef} />
       {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
-      {children && children}
-    </Card>
+    </>
   );
 }

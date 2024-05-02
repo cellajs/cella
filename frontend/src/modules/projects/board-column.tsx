@@ -1,16 +1,17 @@
 import { useDndContext } from '@dnd-kit/core';
-import { SortableContext } from '@dnd-kit/sortable';
+import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { cva } from 'class-variance-authority';
 import { ChevronDown } from 'lucide-react';
 import { useContext, useMemo, useState } from 'react';
 import { Button } from '~/modules/ui/button';
-import { CardContent } from '~/modules/ui/card';
+import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { TaskCard } from './task-card';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
 import type { Task } from '~/mocks/workspaces';
 import type { TaskStatus } from './task-form';
+import { CSS } from '@dnd-kit/utilities';
 
 export interface Column {
   id: string;
@@ -43,7 +44,6 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
     if (!task) return;
 
     // The first task in the project column with matching status
-
     // Add new task
     if (isNew) {
       setInnerTasks((currentTasks) => {
@@ -62,10 +62,9 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
         newTasks.splice(oldIndex, 1);
 
         // TODO if status is higher than the current status, add it to the end
-      //   return tasks.reduce((lastIndex, currentTask, index) => {
-      //     return (currentTask.status === toStatus && currentTask.projectId === task.projectId) ? index : lastIndex;
-      // }, -1);
-
+        //   return tasks.reduce((lastIndex, currentTask, index) => {
+        //     return (currentTask.status === toStatus && currentTask.projectId === task.projectId) ? index : lastIndex;
+        // }, -1);
 
         const statusIndex = tasks.findIndex((t) => t.status === toStatus);
         newTasks.splice(statusIndex, 0, task);
@@ -83,9 +82,40 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
     });
   };
 
+  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
+    id: column.id,
+    data: {
+      type: 'Column',
+      column,
+    } satisfies ColumnDragData,
+    attributes: {
+      roleDescription: `Column: ${column.name}`,
+    },
+  });
+  const style = {
+    transition,
+    transform: CSS.Translate.toString(transform),
+  };
+
+  const variants = cva('h-full max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center', {
+    variants: {
+      dragging: {
+        default: 'border-2 border-transparent',
+        over: 'ring-2 opacity-30',
+        overlay: 'ring-2 ring-primary',
+      },
+    },
+  });
 
   return (
-    <BoardColumnHeader column={column} isOverlay={isOverlay}>
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={variants({
+        dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
+      })}
+    >
+      <BoardColumnHeader column={column} attributes={attributes} listeners={listeners} />
       <ScrollArea id={column.id} size="indicatorVertical">
         <ScrollBar size="indicatorVertical" />
         <CardContent className="flex flex-grow flex-col p-0 group/column">
@@ -129,7 +159,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
           )}
         </CardContent>
       </ScrollArea>
-    </BoardColumnHeader>
+    </Card>
   );
 }
 

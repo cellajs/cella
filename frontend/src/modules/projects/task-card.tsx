@@ -48,9 +48,7 @@ export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
     const updatedTask = { ...innerTask, [field]: value };
     const toStatus = field === 'status' ? updatedTask.status : undefined;
     setInnerTask(updatedTask);
-    if (updateTasks) {
-      updateTasks(updatedTask, false, toStatus);
-    }
+    if (updateTasks) updateTasks(updatedTask, false, toStatus);
   };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
