@@ -120,7 +120,7 @@ export const getLabels = (): Label[] => {
 // This is the mocked API response to get all tasks for a workspace
 export const getTasks = (projects: Project[]) => {
   const executor = usersInTask(1)[0];
-  const numberOfTasks = Math.floor(Math.random() * (18 - 4 + 1)) + 12 * projects.length;
+  const numberOfTasks = 1;
 
   const tasks: Task[] = [];
 

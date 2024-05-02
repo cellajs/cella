@@ -38,6 +38,7 @@ export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
   const { mode } = useThemeStore();
 
   const [innerTask, setInnerTask] = useState(task);
+  const [summary, setSummary] = useState(task.summary);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -122,6 +123,12 @@ export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
     setIsExpanded(false);
   }, [isDragging]);
 
+  useEffect(() => {
+    if (!innerTask.markdown) return;
+    const summaryFromMarkDown = innerTask.markdown.split('\n')[0];
+    setSummary(summaryFromMarkDown);
+  }, [innerTask.markdown]);
+
   return (
     <Card
       ref={setNodeRef}
@@ -161,7 +168,7 @@ export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
                     className="w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <MDEditor.Markdown
-                      source={innerTask.markdown}
+                      source={summary}
                       style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
                       className="prose font-light text-start max-w-none"
                     />
@@ -172,7 +179,11 @@ export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
                     style={{ display: isExpanded ? 'none' : '' }}
                     className="w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
-                    <span className="font-light">{innerTask.markdown}</span>
+                    <MDEditor.Markdown
+                      source={summary}
+                      style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                      className="prose font-light text-start max-w-none"
+                    />
                     <div className="opacity-50 group-hover/task:opacity-70 text-xs inline-block font-light ml-1 gap-1">
                       <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
                         {t('common:more').toLowerCase()}
