@@ -47,7 +47,10 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const handleChange = (field: keyof Task, value: any) => {
     const updatedTask = { ...innerTask, [field]: value };
     setInnerTask(updatedTask);
-    updateTasks(updatedTask);
+    console.log(!!updateTasks)
+    // TODO: we should only replace the array when absolutely necessary due to performance reasons
+    // Instead, can we move the
+   // updateTasks(updatedTask);
   };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -118,7 +121,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
           dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
           status: innerTask.status,
         }),
-        isExpanded && 'border-l border-primary/50',
+        isExpanded ? 'border-l border-primary/50' : 'border-l border-transparent',
       )}
     >
       <CardContent
