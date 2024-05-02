@@ -87,7 +87,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: 'gfdgdfgsf43t54',
+        id: Math.random().toString(36).substring(7),
         markdown: '',
         type: 'feature',
         impact: null,
@@ -124,7 +124,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
       status: values.status as TaskStatus,
       projectId: project.id,
     };
-    updateTasks(task as Task);
+    updateTasks(task as Task, true, task.status);
     form.reset();
     toast.success(t('common:success.create_task'));
     onCloseForm?.();

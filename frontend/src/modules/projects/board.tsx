@@ -122,7 +122,7 @@ export default function Board() {
                   </ProjectContext.Provider>
                 </ResizablePanel>
                 {innerProject.length > index + 1 && (
-                  <ResizableHandle className="w-[4px] border border-background -mx-[6px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
+                  <ResizableHandle className="w-[6px] border border-background -mx-[7px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
                 )}
               </Fragment>
             ))}

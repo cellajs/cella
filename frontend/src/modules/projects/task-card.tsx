@@ -20,11 +20,12 @@ import { SelectTaskType } from './select-task-type.tsx';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn } from '~/lib/utils.ts';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import type { TaskStatus } from './task-form.tsx';
 
 interface TaskCardProps {
   task: Task;
   isOverlay?: boolean;
-  updateTasks?: (task: Task) => void;
+  updateTasks?: (task: Task, isNew?: boolean, toStatus?: TaskStatus) => void;
 }
 
 export interface TaskDragData {
@@ -40,17 +41,16 @@ export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  console.log(innerTask.slug);
+
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any) => {
     const updatedTask = { ...innerTask, [field]: value };
+    const toStatus = field === 'status' ? updatedTask.status : undefined;
     setInnerTask(updatedTask);
-
-    // TODO: we should only replace the array when absolutely necessary due to performance reasons
-    // Instead, can we move the
-    //const { updateTasks } = useContext(WorkspaceContext);
-    // updateTasks(updatedTask);
-    // Temporary fix to not lose functional
-    updateTasks?.(updatedTask);
+    if (updateTasks) {
+      updateTasks(updatedTask, false, toStatus);
+    }
   };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({

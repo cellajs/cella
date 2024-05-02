@@ -10,6 +10,7 @@ import { TaskCard } from './task-card';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
 import type { Task } from '~/mocks/workspaces';
+import type { TaskStatus } from './task-form';
 
 export interface Column {
   id: string;
@@ -38,18 +39,50 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const [showIced, setShowIced] = useState(false);
   const [showAccepted, setShowAccepted] = useState(false);
 
-  const handleTaskChange = (task: Task) => {
-    if (!innerTasks.find((t) => t.id === task.id)) {
-      const updatedTasks = [...innerTasks, task];
-      return setInnerTasks(updatedTasks.sort((a, b) => b.status - a.status));
+  const handleTaskChange = (task: Task, isNew = false, toStatus?: TaskStatus) => {
+    if (!task) return;
+
+    // The first task in the project column with matching status
+
+    // Add new task
+    if (isNew) {
+      setInnerTasks((currentTasks) => {
+        const newTasks = [...currentTasks];
+        const statusIndex = tasks.findIndex((t) => t.status === toStatus);
+        newTasks.splice(statusIndex, 0, task);
+        return newTasks;
+      });
     }
-    // Update existing task
-    const updatedTasks = innerTasks.map((t: Task) => {
-      if (t.id !== task.id) return t;
-      return { ...t, ...task };
+
+    // Reposition existing task on status change
+    if (toStatus) {
+      return setInnerTasks((currentTasks) => {
+        const newTasks = [...currentTasks];
+        const oldIndex = currentTasks.findIndex((t: Task) => t.id === task.id);
+        newTasks.splice(oldIndex, 1);
+
+        // TODO if status is higher than the current status, add it to the end
+      //   return tasks.reduce((lastIndex, currentTask, index) => {
+      //     return (currentTask.status === toStatus && currentTask.projectId === task.projectId) ? index : lastIndex;
+      // }, -1);
+
+
+        const statusIndex = tasks.findIndex((t) => t.status === toStatus);
+        newTasks.splice(statusIndex, 0, task);
+        return newTasks;
+      });
+    }
+
+    // Update existing task for other mutations
+    return setInnerTasks((currentTasks) => {
+      const newTasks = [...currentTasks];
+      return newTasks.map((t: Task) => {
+        if (t.id !== task.id) return t;
+        return { ...t, ...task };
+      });
     });
-    setInnerTasks(updatedTasks.sort((a, b) => b.status - a.status));
   };
+
 
   return (
     <BoardColumnHeader column={column} isOverlay={isOverlay}>
