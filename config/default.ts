@@ -5,7 +5,7 @@ export const config = {
 
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:4000',
-  electricUrl: 'https://electric-z2us.onrender.com',
+  electricUrl: 'https://cella-electric-dev.onrender.com',
 
   defaultRedirectPath: '/home',
 

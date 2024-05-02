@@ -13,8 +13,9 @@
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
     "generate": "drizzle-kit generate:pg",
-    "generate:client": "pnpx electric-sql generate --service http://localhost:5133 --proxy postgresql://prisma:proxy_password@localhost:65432/postgres",
-    "migrate": "tsx src/db/migrate.ts"
+    "generate:client": "pnpm electric-sql generate --service https://cella-electric-dev.onrender.com:5133 --proxy postgresql://prisma:proxy_password@localhost:65432/postgres",
+    "migrate": "tsx src/db/migrate.ts",
+    "proxy": "pnpm electric-sql proxy-tunnel --service https://cella-electric-dev.onrender.com --local-port 65431"
   },
   "dependencies": {
     "@databases/pg-migrations": "^5.0.3",
