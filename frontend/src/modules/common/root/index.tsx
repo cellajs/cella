@@ -111,6 +111,7 @@ function Root() {
   }, []);
 
   if (electric === undefined) {
+    // TODO: Add a loading spinner
     return (
       <div>
         <h1>Electric is initializing...</h1>
