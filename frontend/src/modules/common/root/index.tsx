@@ -111,8 +111,7 @@ function Root() {
   }, []);
 
   if (electric === undefined) {
-    console.log('Electric is not ready yet');
-    return null;
+    throw new Error('Electric is not ready yet');
   }
 
   return (
