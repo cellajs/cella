@@ -4,7 +4,7 @@ import type { Mode } from '~/store/theme';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 
 interface TaskEditorProps {
-  markdown: string;
+  markdown?: string | null;
   setMarkdown: (newValue: string) => void;
   id: string;
   mode: Mode;
@@ -12,7 +12,7 @@ interface TaskEditorProps {
 }
 
 export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState }: TaskEditorProps) => {
-  const [markdownValue, setMarkdownValue] = useState(markdown);
+  const [markdownValue] = useState(markdown);
   const handleUpdateMarkdown = () => {
     const editorTextAria = document.getElementById(id);
     if (!editorTextAria) return toggleEditorState();
@@ -50,14 +50,14 @@ export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState 
       <MDEditor
         onKeyDown={handleMDEscKeyPress}
         onBlur={() => {
-          setMarkdown(markdownValue);
+          setMarkdown(markdownValue || '');
           toggleEditorState();
         }}
         textareaProps={{ id: id }}
-        value={markdownValue}
+        value={markdown || ''}
         preview={'edit'}
         onChange={(newValue) => {
-          if (newValue) setMarkdownValue(newValue);
+          if (typeof newValue === 'string') setMarkdown(newValue);
         }}
         defaultTabEnable={true}
         hideToolbar={true}

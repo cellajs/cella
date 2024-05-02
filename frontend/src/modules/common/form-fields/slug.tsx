@@ -9,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { Undo } from 'lucide-react';
 import slugify from 'slugify';
 import type { PageResourceType } from 'backend/types/common';
+import { useElectric } from '../root/electric';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -31,9 +32,28 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });
 
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
+
   // Check if slug is available
   const { mutate: checkAvailability } = useMutation({
-    mutationFn: checkSlugAvailable,
+    mutationFn: async (params: {
+      slug: string;
+      type: PageResourceType;
+    }) => {
+      if (params.type === 'PROJECT') {
+        const project = await db.projects.findFirst({
+          where: {
+            slug: {
+              contains: slug,
+            },
+          },
+        });
+        return !project;
+      }
+
+      return checkSlugAvailable(params);
+    },
     onSuccess: (isAvailable) => {
       if (isValidSlug(slug)) form.clearErrors('slug');
       if (previousSlug && slug === previousSlug) return setSlugAvailable(false);

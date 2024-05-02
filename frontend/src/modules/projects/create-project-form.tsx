@@ -23,6 +23,8 @@ import { Form } from '../ui/form';
 import { Badge } from '../ui/badge';
 import type { Workspace } from '~/types';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
+import { useElectric } from '../common/root/electric';
+import { useUserStore } from '~/store/user';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -31,7 +33,6 @@ interface CreateProjectFormProps {
 }
 
 const formSchema = createWorkspaceJsonSchema.extend({
-  organization: z.string().min(1),
   workspace: z.string().min(1),
 });
 
@@ -39,8 +40,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
+  const { user } = useUserStore(({ user }) => ({ user }));
   // const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
+
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -48,7 +53,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       defaultValues: {
         name: '',
         slug: '',
-        organization: workspace.organizationId,
         workspace: workspace.id,
       },
     }),
@@ -60,8 +64,21 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
-  const { mutate: _, isPending } = useMutation({
-    // mutationFn: createWorkspace,
+  const { mutate: create, isPending } = useMutation({
+    mutationFn: (values: FormValues) => {
+      return db.projects.create({
+        data: {
+          id: window.crypto.randomUUID(),
+          name: values.name,
+          slug: values.slug,
+          workspace_id: values.workspace,
+          // TODO: Add color picker
+          color: '#000000',
+          created_at: new Date(),
+          created_by: user.id,
+        },
+      });
+    },
     onSuccess: () => {
       form.reset();
       toast.success(t('common:success.create_project'));
@@ -77,8 +94,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   });
 
   const onSubmit = (values: FormValues) => {
-    console.log('values:', values);
-    // create(values);
+    create(values);
   };
 
   // Update dialog title with unsaved changes
@@ -114,7 +130,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
           description={t('common:project_handle.text')}
           nameValue={name}
         />
-        <SelectParentFormField collection="organizations" control={form.control} label={t('common:organization')} name="organization" disabled />
         <SelectParentFormField collection="workspaces" control={form.control} label={t('common:workspace')} name="workspace" disabled />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>

@@ -8,24 +8,22 @@ import { Card, CardContent } from '~/modules/ui/card';
 import { Checkbox } from '../ui/checkbox';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
-import type { Task } from '~/mocks/workspaces.ts';
 import { SelectImpact } from './select-impact.tsx';
-import AssignMembers from './select-members.tsx';
-import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
-import SelectStatus from './select-status.tsx';
+import SelectStatus, { type TaskStatus } from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
-import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn } from '~/lib/utils.ts';
+import { useElectric, type Task } from '../common/root/electric.ts';
+import type { TaskImpact, TaskType } from './task-form.tsx';
+import { ProjectsContext } from './index.tsx';
+import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import type { TaskStatus } from './task-form.tsx';
 
 interface TaskCardProps {
   task: Task;
   isOverlay?: boolean;
-  updateTasks?: (task: Task, isNew?: boolean, toStatus?: TaskStatus) => void;
 }
 
 export interface TaskDragData {
@@ -33,27 +31,33 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
+export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+  const { setSelectedTasks } = useContext(ProjectsContext);
 
-  const [innerTask, setInnerTask] = useState(task);
+  const [innerTask] = useState(task);
   const [summary, setSummary] = useState(task.summary);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  console.log(innerTask.slug);
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any) => {
-    const updatedTask = { ...innerTask, [field]: value };
-    const toStatus = field === 'status' ? updatedTask.status : undefined;
-    setInnerTask(updatedTask);
-    if (updateTasks) updateTasks(updatedTask, false, toStatus);
+    db.tasks.update({
+      data: {
+        [field]: value,
+      },
+      where: {
+        id: task.id,
+      },
+    });
   };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: innerTask.id,
+    id: task.id,
     data: {
       type: 'Task',
       task,
@@ -136,27 +140,37 @@ export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
       className={cn(
         variants({
           dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
-          status: innerTask.status,
+          status: task.status as TaskStatus,
         }),
         isExpanded ? 'border-l border-primary/50' : 'border-l border-transparent',
       )}
     >
-      <CardContent id={`${innerTask.id}-content`} className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative')}>
+      <CardContent id={`${task.id}-content`} className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative')}>
         <div className="flex flex-col gap-1">
           <div className="flex gap-2 w-full">
             <div className="flex flex-col gap-2 mt-[2px]">
-              <SelectTaskType currentType={innerTask.type} changeTaskType={(newType) => handleChange('type', newType)} />
+              <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType)} />
 
-              {isExpanded && <Checkbox className="" />}
+              <Checkbox
+                className="opacity-0 transition-opacity duration-700 group-hover/task:opacity-100"
+                onCheckedChange={(checked) => {
+                  setSelectedTasks((prev) => {
+                    if (checked) {
+                      return [...prev, task.id];
+                    }
+                    return prev.filter((id) => id !== task.id);
+                  });
+                }}
+              />
             </div>
-            <div className="flex flex-col grow">
+            <div className="flex flex-col grow gap-2">
               {isEditing && (
                 <TaskEditor
                   mode={mode}
-                  markdown={innerTask.markdown}
+                  markdown={task.markdown}
                   setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown)}
                   toggleEditorState={toggleEditorState}
-                  id={innerTask.id}
+                  id={task.id}
                 />
               )}
               {!isEditing && (
@@ -224,21 +238,21 @@ export function TaskCard({ task, isOverlay, updateTasks }: TaskCardProps) {
               <GripVertical size={16} />
             </Button>
 
-            {innerTask.type !== 'bug' && (
-              <SelectImpact viewValue={innerTask.impact} mode="edit" changeTaskImpact={(newImpact) => handleChange('impact', newImpact)} />
+            {task.type !== 'bug' && (
+              <SelectImpact viewValue={task.impact as TaskImpact} mode="edit" changeTaskImpact={(newImpact) => handleChange('impact', newImpact)} />
             )}
 
-            <SetLabels
+            {/* <SetLabels
               projectId={task.projectId}
               changeLabels={(newLabels) => handleChange('labels', newLabels)}
               viewValue={innerTask.labels}
               mode="edit"
-            />
+            /> */}
             <div className="grow h-0" />
 
-            <div className="flex gap-2">
-              <AssignMembers mode="edit" viewValue={innerTask.assignedTo} changeAssignedTo={(newMembers) => handleChange('assignedTo', newMembers)} />
-              <SelectStatus taskStatus={innerTask.status} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
+            <div className="flex gap-2 ml-auto">
+              {/* <AssignMembers mode="edit" viewValue={innerTask.assignedTo} changeAssignedTo={(newMembers) => handleChange('assignedTo', newMembers)} /> */}
+              <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
             </div>
           </div>
         </div>
