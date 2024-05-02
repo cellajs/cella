@@ -26,6 +26,7 @@ const Pricing = () => {
 
   const openContactForm = () => {
     dialog(<ContactForm dialog />, {
+      id: 'contact-form',
       drawerOnMobile: false,
       className: 'sm:max-w-[64rem]',
       title: t('common:contact_us'),
