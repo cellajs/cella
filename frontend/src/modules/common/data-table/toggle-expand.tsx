@@ -10,12 +10,13 @@ export const toggleExpand = <
   indexes: number[],
 ) => {
   let rows = [...changedRows];
-  const row = rows[indexes[0]];
+  const index = indexes[0];
+  const row = rows[index];
 
   if (row._type === 'MASTER') {
     if (row._expanded) {
       const detailId = `${row.id}-detail`;
-      rows.splice(indexes[0] + 1, 0, {
+      rows.splice(index + 1, 0, {
         _type: 'DETAIL',
         id: detailId,
         _parent: row,
@@ -28,7 +29,7 @@ export const toggleExpand = <
         }
         return {
           ...r,
-          expanded: false,
+          _expanded: false,
         };
       });
 
