@@ -15,11 +15,12 @@ import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import SelectStatus from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
-import { useContext, useRef, useState } from 'react';
+import { useCallback, useContext, useRef, useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn } from '~/lib/utils.ts';
+import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 
 interface TaskCardProps {
   task: Task;
@@ -39,7 +40,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  console.log(innerTask)
+  console.log(innerTask);
 
   const { updateTasks } = useContext(WorkspaceContext);
 
@@ -47,10 +48,10 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const handleChange = (field: keyof Task, value: any) => {
     const updatedTask = { ...innerTask, [field]: value };
     setInnerTask(updatedTask);
-    console.log(!!updateTasks)
+    console.log(!!updateTasks);
     // TODO: we should only replace the array when absolutely necessary due to performance reasons
     // Instead, can we move the
-   // updateTasks(updatedTask);
+    // updateTasks(updatedTask);
   };
 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -112,6 +113,12 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     latency: 250,
   });
 
+  const handleEscKeyPress = useCallback(() => {
+    setIsExpanded(false);
+  }, []);
+
+  useHotkeys([['Escape', handleEscKeyPress]]);
+
   return (
     <Card
       ref={setNodeRef}
@@ -124,10 +131,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
         isExpanded ? 'border-l border-primary/50' : 'border-l border-transparent',
       )}
     >
-      <CardContent
-        id={`${innerTask.id}-content`}
-        className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative')}
-      >
+      <CardContent id={`${innerTask.id}-content`} className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative')}>
         <div className="flex flex-col gap-1">
           <div className="flex gap-2 w-full">
             <div className="flex flex-col gap-2 mt-[2px]">
@@ -206,7 +210,9 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               <GripVertical size={16} />
             </Button>
 
-            {innerTask.type !== 'bug' && <SelectImpact viewValue={innerTask.impact} mode="edit" changeTaskImpact={(newImpact) => handleChange('impact', newImpact)} />}
+            {innerTask.type !== 'bug' && (
+              <SelectImpact viewValue={innerTask.impact} mode="edit" changeTaskImpact={(newImpact) => handleChange('impact', newImpact)} />
+            )}
 
             <SetLabels
               projectId={task.projectId}
