@@ -202,12 +202,6 @@ export default function Board() {
 
   function onDragOver(event: DragOverEvent) {
     const { active, over } = event;
-    const data = active.data.current;
-
-    if (data?.type === 'Column') setActiveProject(data.column);
-
-    if (data?.type === 'Task') setActiveTask(data.task);
-
     if (!over) return;
 
     const activeId = active.id;
