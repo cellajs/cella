@@ -2,7 +2,7 @@ import { useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { cva } from 'class-variance-authority';
 import { ChevronDown } from 'lucide-react';
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useMemo, useRef, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
@@ -12,6 +12,10 @@ import { BoardColumnHeader } from './board-column-header';
 import type { Task } from '~/mocks/workspaces';
 import type { TaskStatus } from './task-form';
 import { CSS } from '@dnd-kit/utilities';
+import { ProjectSettings } from './project-settings';
+import { sheet } from '../common/sheeter/state';
+import CreateTaskForm from './task-form';
+import { useTranslation } from 'react-i18next';
 
 export interface Column {
   id: string;
@@ -29,6 +33,8 @@ interface BoardColumnProps {
 }
 
 export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
+  const { t } = useTranslation();
+  const containerRef = useRef(null);
   const { tasks = [] } = useContext(ProjectContext);
 
   const [innerTasks, setInnerTasks] = useState(tasks);
@@ -39,6 +45,23 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
 
   const [showIced, setShowIced] = useState(false);
   const [showAccepted, setShowAccepted] = useState(false);
+  const [createForm, setCreateForm] = useState(false);
+
+  const openSettingsSheet = () => {
+    sheet(<ProjectSettings />, {
+      className: 'sm:max-w-[64rem]',
+      title: t('common:project_settings'),
+      text: t('common:project_settings.text'),
+      id: 'project_settings',
+    });
+  };
+
+  const handleTaskFormClick = () => {
+    if (createForm) return;
+    const container = document.getElementById(`${column.id}-viewport`);
+    container?.scrollTo({ top: 0, behavior: 'smooth' });
+    setCreateForm(!createForm);
+  };
 
   const handleTaskChange = (task: Task, isNew = false, toStatus?: TaskStatus) => {
     if (!task) return;
@@ -115,7 +138,17 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
         dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
       })}
     >
-      <BoardColumnHeader column={column} attributes={attributes} listeners={listeners} />
+      <BoardColumnHeader
+        column={column}
+        attributes={attributes}
+        listeners={listeners}
+        createFormClick={handleTaskFormClick}
+        openSettings={openSettingsSheet}
+        createFormOpen={createForm}
+      >
+        {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} onFormSubmit={handleTaskChange} />}
+      </BoardColumnHeader>
+      <div ref={containerRef} />
       <ScrollArea id={column.id} size="indicatorVertical">
         <ScrollBar size="indicatorVertical" />
         <CardContent className="flex flex-grow flex-col p-0 group/column">

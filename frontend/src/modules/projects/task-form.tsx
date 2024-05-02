@@ -21,7 +21,6 @@ import type { Task, TaskUser } from '~/mocks/workspaces.ts';
 import AssignMembers from './select-members.tsx';
 import SetLabels from './select-labels.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { WorkspaceContext } from '../workspaces/index.tsx';
 import { ProjectContext } from './board.tsx';
 import SelectStatus from './select-status.tsx';
 
@@ -32,6 +31,7 @@ export type TaskImpact = 0 | 1 | 2 | 3 | null;
 interface CreateTaskFormProps {
   dialog?: boolean;
   onCloseForm?: () => void;
+  onFormSubmit?: (task: Task, isNew?: boolean, toStatus?: TaskStatus) => void;
 }
 
 const formSchema = z.object({
@@ -59,12 +59,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onCloseForm }) => {
+const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onCloseForm, onFormSubmit }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { register } = useForm<FormValues>();
 
-  const { updateTasks } = useContext(WorkspaceContext);
   const { project } = useContext(ProjectContext);
 
   const handleCloseForm = () => {
@@ -124,10 +123,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
       status: values.status as TaskStatus,
       projectId: project.id,
     };
-    updateTasks(task as Task, true, task.status);
     form.reset();
     toast.success(t('common:success.create_task'));
     onCloseForm?.();
+    onFormSubmit?.(task as Task, true, task.status);
   };
   // Fix types
   return (

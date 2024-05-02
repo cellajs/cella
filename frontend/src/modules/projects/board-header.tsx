@@ -18,7 +18,7 @@ function BoardHeader() {
   const { t } = useTranslation();
   const { labels } = useContext(WorkspaceContext);
 
-  const openSettingsSheet = () => {    
+  const openSettingsSheet = () => {
     sheet(<WorkspaceSettings />, {
       className: 'sm:max-w-[64rem]',
       title: t('common:workspace_settings'),
@@ -32,7 +32,7 @@ function BoardHeader() {
       className: 'sm:max-w-[48rem]',
       title: 'Labels',
       // text: '',
-      id: 'workspace_settings',
+      id: 'workspace_labels',
     });
   };
 

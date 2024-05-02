@@ -1,13 +1,9 @@
 import { GripVertical, Plus } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { CardHeader } from '~/modules/ui/card';
 import ToolTipButtons from './tooltip-buttons';
-import CreateTaskForm from './task-form';
-import { sheet } from '../common/sheeter/state';
-import { ProjectSettings } from './project-settings';
-import { useTranslation } from 'react-i18next';
 import type { Column } from './board-column';
 import type { DraggableAttributes } from '@dnd-kit/core';
 import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
@@ -21,30 +17,21 @@ interface BoardColumnHeaderProps {
   column: Column;
   attributes: DraggableAttributes;
   listeners: SyntheticListenerMap | undefined;
+  createFormOpen: boolean;
+  openSettings: () => void;
+  createFormClick: () => void;
+  children?: React.ReactNode;
 }
 
-export function BoardColumnHeader({ column, attributes, listeners }: BoardColumnHeaderProps) {
-  const { t } = useTranslation();
-  const containerRef = useRef(null);
-  const [createForm, setCreateForm] = useState(false);
-
-  const openSettingsSheet = () => {
-    sheet(<ProjectSettings />, {
-      className: 'sm:max-w-[64rem]',
-      title: t('common:project_settings'),
-      text: t('common:project_settings.text'),
-      id: 'project_settings',
-    });
-  };
-
-  const handleTaskFormClick = () => {
-    if (!createForm) {
-      const container = document.getElementById(`${column.id}-viewport`);
-      container?.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    setCreateForm(!createForm);
-  };
-
+export function BoardColumnHeader({
+  column,
+  attributes,
+  listeners,
+  createFormOpen,
+  openSettings,
+  createFormClick,
+  children,
+}: BoardColumnHeaderProps) {
   // TODO
   const [background, setBackground] = useState('#ff75c3');
 
@@ -62,15 +49,14 @@ export function BoardColumnHeader({ column, attributes, listeners }: BoardColumn
 
         <div className="grow" />
 
-        <ToolTipButtons key={column.id} rolledUp={false} onSettingsClick={openSettingsSheet} />
+        <ToolTipButtons key={column.id} rolledUp={false} onSettingsClick={openSettings} />
 
-        <Button variant="plain" size="xs" className="rounded" onClick={handleTaskFormClick}>
-          <Plus size={16} className={`transition-transform ${createForm ? 'rotate-45 scale-125' : 'rotate-0'}`} />
+        <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>
+          <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />
           <span className="ml-1">Task</span>
         </Button>
       </CardHeader>
-      <div ref={containerRef} />
-      {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
+      {children && children}
     </>
   );
 }
