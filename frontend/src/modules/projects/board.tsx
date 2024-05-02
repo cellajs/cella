@@ -22,6 +22,7 @@ import { TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
 import { WorkspaceContext } from '../workspaces';
 import type { Project, Task } from '../common/root/electric';
+import { ProjectsContext } from '.';
 
 interface ProjectContextValue {
   tasks: Task[];
@@ -32,6 +33,7 @@ export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
   const { projects, tasks } = useContext(WorkspaceContext);
+  const { searchQuery } = useContext(ProjectsContext);
   const pickedUpTaskColumn = useRef<string | null>(null);
 
   const [innerColumns, setInnerColumns] = useState<Project[]>(projects || []);
@@ -39,6 +41,16 @@ export default function Board() {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const columnsId = useMemo(() => innerColumns.map((col) => col.id), [innerColumns]);
+
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery) return tasks;
+    return tasks.filter(
+      (task) =>
+        task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [searchQuery, tasks]);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -49,7 +61,7 @@ export default function Board() {
   );
 
   function getDraggingTaskData(taskId: string, columnId: string) {
-    const tasksInColumn = tasks.filter((task) => task.project_id === columnId);
+    const tasksInColumn = filteredTasks.filter((task) => task.project_id === columnId);
     const taskPosition = tasksInColumn.findIndex((task) => task.id === taskId);
     const column = innerColumns.find((col) => col.id === columnId);
     return {
@@ -128,7 +140,7 @@ export default function Board() {
             {projects.map((project, index) => (
               <Fragment key={project.id}>
                 <ResizablePanel key={`${project.id}-panel`}>
-                  <ProjectContext.Provider value={{ tasks: tasks.filter((t) => t.project_id === project.id), project }}>
+                  <ProjectContext.Provider value={{ tasks: filteredTasks.filter((t) => t.project_id === project.id), project }}>
                     <BoardColumn column={{ id: project.id, name: project.name }} key={`${project.id}-column`} />
                   </ProjectContext.Provider>
                 </ResizablePanel>
@@ -215,29 +227,29 @@ export default function Board() {
 
     // Im dropping a Task over another Task
     if (isActiveATask && isOverATask) {
-      const activeIndex = tasks.findIndex((t) => t.id === activeId);
-      const overIndex = tasks.findIndex((t) => t.id === overId);
-      const activeTask = tasks[activeIndex];
-      const overTask = tasks[overIndex];
+      const activeIndex = filteredTasks.findIndex((t) => t.id === activeId);
+      const overIndex = filteredTasks.findIndex((t) => t.id === overId);
+      const activeTask = filteredTasks[activeIndex];
+      const overTask = filteredTasks[overIndex];
       if (activeTask && overTask && activeTask.project_id !== overTask.project_id) {
         activeTask.project_id = overTask.project_id;
-        return arrayMove(tasks, activeIndex, overIndex - 1);
+        return arrayMove(filteredTasks, activeIndex, overIndex - 1);
       }
 
-      return arrayMove(tasks, activeIndex, overIndex);
+      return arrayMove(filteredTasks, activeIndex, overIndex);
     }
 
     const isOverAColumn = overData?.type === 'Column';
 
     // Im dropping a Task over a column
     if (isActiveATask && isOverAColumn) {
-      const activeIndex = tasks.findIndex((t) => t.id === activeId);
-      const activeTask = tasks[activeIndex];
+      const activeIndex = filteredTasks.findIndex((t) => t.id === activeId);
+      const activeTask = filteredTasks[activeIndex];
       if (activeTask) {
         activeTask.project_id = String(overId);
-        return arrayMove(tasks, activeIndex, activeIndex);
+        return arrayMove(filteredTasks, activeIndex, activeIndex);
       }
-      return tasks;
+      return filteredTasks;
     }
   }
 }

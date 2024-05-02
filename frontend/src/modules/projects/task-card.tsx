@@ -9,13 +9,11 @@ import { Checkbox } from '../ui/checkbox';
 import './style.css';
 import { useThemeStore } from '~/store/theme';
 import { SelectImpact } from './select-impact.tsx';
-import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import SelectStatus, { type TaskStatus } from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
-import { useContext, useRef, useState } from 'react';
+import { useContext, useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
-import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn } from '~/lib/utils.ts';
 import { useElectric, type Task } from '../common/root/electric.ts';
 import type { TaskImpact, TaskType } from './task-form.tsx';
@@ -95,17 +93,6 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     setIsEditing(!isEditing);
   };
 
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  useDoubleClick({
-    onDoubleClick: (e) => {
-      console.log(e, 'double click');
-      toggleEditorState();
-    },
-    ref: buttonRef,
-    latency: 250,
-  });
-
   return (
     <Card
       ref={setNodeRef}
@@ -137,7 +124,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                 }}
               />
             </div>
-            <div className="flex flex-col grow">
+            <div className="flex flex-col grow gap-2">
               {isEditing ? (
                 <TaskEditor
                   mode={mode}
@@ -147,13 +134,18 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                   id={task.id}
                 />
               ) : (
-                <button type="button" ref={buttonRef} className="w-full">
+                <div
+                  className="h-full"
+                  onDoubleClick={() => {
+                    toggleEditorState();
+                  }}
+                >
                   <MDEditor.Markdown
                     source={task.markdown || undefined}
                     style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
                     className="prose font-light text-start max-w-none"
                   />
-                </button>
+                </div>
               )}
               {isExpanded && <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>}
               <div className="opacity-50 group-hover/task:opacity-75 text-xs items-center font-light flex gap-1">
@@ -180,7 +172,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1">
             <Button
               variant={'ghost'}
               {...attributes}
@@ -200,16 +192,16 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                 mode="edit"
               />
             )}
-            <div className="grow">
+            {/* <div className="grow">
               <SetLabels
                 projectId={task.project_id}
                 // changeLabels={(newLabels) => handleChange('labels', newLabels)}
                 // viewValue={innerTask.labels}
                 mode="edit"
               />
-            </div>
+            </div> */}
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 ml-auto">
               {/* <AssignMembers mode="edit" viewValue={innerTask.assignedTo} changeAssignedTo={(newMembers) => handleChange('assignedTo', newMembers)} /> */}
               <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
             </div>

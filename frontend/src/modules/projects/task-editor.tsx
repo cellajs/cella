@@ -14,7 +14,7 @@ interface TaskEditorProps {
 export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState }: TaskEditorProps) => {
   const handleUpdateMarkdown = () => {
     const editorTextAria = document.getElementById(id);
-    if (!editorTextAria) return toggleEditorState();;
+    if (!editorTextAria) return toggleEditorState();
     const newValue = (editorTextAria as HTMLTextAreaElement).value;
     setMarkdown(newValue);
     toggleEditorState();
@@ -22,7 +22,7 @@ export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState 
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback((event) => {
     if (event.key !== 'Escape') return;
-    handleUpdateMarkdown()
+    handleUpdateMarkdown();
   }, []);
 
   const handleHotKeysEsc = useCallback(() => {
@@ -54,7 +54,7 @@ export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState 
         value={markdown || ''}
         preview={'edit'}
         onChange={(newValue) => {
-          if (newValue) setMarkdown(newValue);
+          if (typeof newValue === 'string') setMarkdown(newValue);
         }}
         defaultTabEnable={true}
         hideToolbar={true}

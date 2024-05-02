@@ -64,7 +64,18 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
           size={mode === 'create' ? 'sm' : 'micro'}
           className={mode === 'create' ? 'w-full text-left font-light flex gap-2 justify-start border' : 'group-hover/task:opacity-100 opacity-70'}
         >
-          {mode === 'create' ? (
+          {selectedImpact !== null ? (
+                <>
+                  <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />
+                  {mode === 'create' && selectedImpact.label}
+                </>
+              ) : (
+                <>
+                  <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+                  {mode === 'create' && 'Set impact'}
+                </>
+              )}
+          {/* {mode === 'create' ? (
             <>
               {selectedImpact !== null ? (
                 <>
@@ -80,7 +91,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
             </>
           ) : (
             <>{selectedImpact && <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />}</>
-          )}
+          )} */}
         </Button>
       </PopoverTrigger>
 
