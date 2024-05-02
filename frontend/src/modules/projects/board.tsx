@@ -34,11 +34,11 @@ export default function Board() {
   const { projects, tasks } = useContext(WorkspaceContext);
   const pickedUpTaskColumn = useRef<string | null>(null);
 
-  const [innerColumns, setInnerColumns] = useState<Project[]>(projects || []);
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+  const [innerProject, setInnerProject] = useState<Project[]>(projects || []);
+  const [activeProject, setActiveProject] = useState<Column | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  const columnsId = useMemo(() => innerColumns.map((col) => col.id), [innerColumns]);
+  const columnsId = useMemo(() => innerProject.map((col) => col.id), [innerProject]);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -48,10 +48,10 @@ export default function Board() {
     }),
   );
 
-  function getDraggingTaskData(taskId: string, columnId: string) {
-    const tasksInColumn = tasks.filter((task) => task.projectId === columnId);
+  function getDraggingTaskData(taskId: string, projectId: string) {
+    const tasksInColumn = tasks.filter((task) => task.projectId === projectId);
     const taskPosition = tasksInColumn.findIndex((task) => task.id === taskId);
-    const column = innerColumns.find((col) => col.id === columnId);
+    const column = innerProject.find((col) => col.id === projectId);
     return {
       tasksInColumn,
       taskPosition,
@@ -60,7 +60,7 @@ export default function Board() {
   }
 
   useEffect(() => {
-    setInnerColumns(projects);
+    setInnerProject(projects);
   }, [projects]);
 
   const announcements: Announcements = {
@@ -68,7 +68,7 @@ export default function Board() {
       if (!hasDraggableData(active)) return;
       if (active.data.current?.type === 'Column') {
         const startColumnIdx = columnsId.findIndex((id) => id === active.id);
-        const startColumn = innerColumns[startColumnIdx];
+        const startColumn = innerProject[startColumnIdx];
         return `Picked up Column ${startColumn?.name} at position: ${startColumnIdx + 1} of ${columnsId.length}`;
       }
       if (active.data.current?.type === 'Task') {
@@ -132,7 +132,7 @@ export default function Board() {
                     <BoardColumn column={{ id: project.id, name: project.name }} key={`${project.id}-column`} />
                   </ProjectContext.Provider>
                 </ResizablePanel>
-                {innerColumns.length > index + 1 && (
+                {innerProject.length > index + 1 && (
                   <ResizableHandle className="w-[4px] border border-background -mx-[6px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
                 )}
               </Fragment>
@@ -144,7 +144,7 @@ export default function Board() {
       {'document' in window &&
         createPortal(
           <DragOverlay>
-            {activeColumn && <BoardColumn isOverlay column={activeColumn} />}
+            {activeProject && <BoardColumn isOverlay column={activeProject} />}
             {activeTask && <TaskCard task={activeTask} isOverlay />}
           </DragOverlay>,
           document.body,
@@ -156,7 +156,7 @@ export default function Board() {
     if (!hasDraggableData(event.active)) return;
     const data = event.active.data.current;
     if (data?.type === 'Column') {
-      setActiveColumn(data.column);
+      setActiveProject(data.column);
       return;
     }
 
@@ -167,7 +167,7 @@ export default function Board() {
   }
 
   function onDragEnd(event: DragEndEvent) {
-    setActiveColumn(null);
+    setActiveProject(null);
     setActiveTask(null);
 
     const { active, over } = event;
@@ -185,12 +185,10 @@ export default function Board() {
     const isActiveAColumn = activeData?.type === 'Column';
     if (!isActiveAColumn) return;
 
-    setInnerColumns((innerColumns) => {
-      const activeColumnIndex = innerColumns.findIndex((col) => col.id === activeId);
-
-      const overColumnIndex = innerColumns.findIndex((col) => col.id === overId);
-
-      return arrayMove(innerColumns, activeColumnIndex, overColumnIndex);
+    setInnerProject((innerProject) => {
+      const activeColumnIndex = innerProject.findIndex((col) => col.id === activeId);
+      const overColumnIndex = innerProject.findIndex((col) => col.id === overId);
+      return arrayMove(innerProject, activeColumnIndex, overColumnIndex);
     });
   }
 

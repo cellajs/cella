@@ -40,7 +40,7 @@ export type Task = {
   type: TaskType;
   impact: TaskImpact;
   status: TaskStatus;
-  labels: TaskLabel[]; 
+  labels: TaskLabel[];
   projectId: string;
   workspaceId: string;
   organizationId: string;
@@ -80,7 +80,7 @@ export const getProjects = (number: number): Project[] => {
     const user = users[Math.floor(Math.random() * users.length)];
     const projectId = faker.string.uuid();
     const canBeAssignedToNumber = Math.floor(Math.random() * (8 - 2 + 1)) + 2;
-    
+
     finalArray.push({
       id: projectId,
       slug: faker.animal.cat(),
@@ -118,9 +118,9 @@ export const getLabels = (): Label[] => {
 };
 
 // This is the mocked API response to get all tasks for a workspace
-export const getTasks  = (projects: Project[]) => {
+export const getTasks = (projects: Project[]) => {
   const executor = usersInTask(1)[0];
-  const numberOfTasks = Math.floor(Math.random() * (18 - 4 + 1)) + 12 * projects.length * 10;
+  const numberOfTasks = Math.floor(Math.random() * (18 - 4 + 1)) + 12 * projects.length;
 
   const tasks: Task[] = [];
 
@@ -153,8 +153,8 @@ export const getTasks  = (projects: Project[]) => {
         organizationId: faker.string.uuid(),
       });
     }
-  
-  tasks.push(...returnedArray);
+
+    tasks.push(...returnedArray);
   }
 
   return tasks.sort((a, b) => b.status - a.status);

@@ -15,7 +15,7 @@ import SetLabels from './select-labels.tsx';
 import { useTranslation } from 'react-i18next';
 import SelectStatus from './select-status.tsx';
 import { TaskEditor } from './task-editor.tsx';
-import { useCallback, useContext, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
@@ -39,8 +39,6 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const [innerTask, setInnerTask] = useState(task);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-
-  console.log(innerTask);
 
   const { updateTasks } = useContext(WorkspaceContext);
 
@@ -118,6 +116,12 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   }, []);
 
   useHotkeys([['Escape', handleEscKeyPress]]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    setIsEditing(false);
+    setIsExpanded(false);
+  }, [isDragging]);
 
   return (
     <Card
