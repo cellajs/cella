@@ -69,7 +69,7 @@ function Root() {
         const conn = await ElectricDatabase.init(scopedDbName);
         const electric = await electrify(conn, schema, {
           debug: config.debug,
-          url: 'http://localhost:5133',
+          url: config.electricUrl,
         });
 
         const token = await unsignedJWT(user.id);
@@ -111,7 +111,11 @@ function Root() {
   }, []);
 
   if (electric === undefined) {
-    throw new Error('Electric is not ready yet');
+    return (
+      <div>
+        <h1>Electric is initializing...</h1>
+      </div>
+    );
   }
 
   return (
