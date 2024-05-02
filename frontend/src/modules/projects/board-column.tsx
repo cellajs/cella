@@ -53,9 +53,10 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   };
 
   const handleTaskFormClick = () => {
-    if (createForm) return;
-    const container = document.getElementById(`${column.id}-viewport`);
-    container?.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!createForm) {
+      const container = document.getElementById(`${column.id}-viewport`);
+      container?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     setCreateForm(!createForm);
   };
 
