@@ -1,13 +1,12 @@
 import { Search } from 'lucide-react';
-import React from 'react';
+import {useRef} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
 
 const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (value: string) => void }) => {
   const { t } = useTranslation();
 
-  // Reference with `useRef` to persist the same ref object during re-renders
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
     inputRef.current?.focus();

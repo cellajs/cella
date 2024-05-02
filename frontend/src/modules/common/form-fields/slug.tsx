@@ -10,6 +10,7 @@ import { Undo } from 'lucide-react';
 import slugify from 'slugify';
 import type { PageResourceType } from 'backend/types/common';
 import { useElectric } from '../root/electric';
+import { config } from 'config';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -98,7 +99,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
       inputClassName={isSlugAvailable && isValidSlug(slug) ? 'ring-2 ring-green-500 focus-visible:ring-2 focus-visible:ring-green-500' : ''}
       onFocus={() => setDeviating(true)}
       label={label}
-      prefix={type.toLowerCase()}
+      prefix={`${config.frontendUrl.replace('https://', '')}/${type === 'ORGANIZATION' ? '' : `${type.toLowerCase()}/`}`}
       description={description}
       required
       subComponent={

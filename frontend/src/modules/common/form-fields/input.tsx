@@ -40,15 +40,19 @@ const InputFormField = <TFieldValues extends FieldValues>({
   icon,
   inputClassName,
 }: Props<TFieldValues>) => {
-  const havePrefix = prefix !== 'unknown' && prefix;
-  const spanPrefix = document.querySelector(`#${prefix}-prefix`);
-  const prefixPadding = havePrefix && spanPrefix && 'offsetWidth' in spanPrefix ? `${Number(spanPrefix.offsetWidth) + 16}px` : '12px';
+  let prefixPadding = '0px';
+
+  if (prefix) {
+    const spanPrefix = document.querySelector(`#${name.toString()}-prefix`);
+    prefixPadding = prefix && spanPrefix && 'offsetWidth' in spanPrefix ? `${Number(spanPrefix.offsetWidth) + 16}px` : '12px';
+  }
+
   return (
     <FormField
       control={disabled ? undefined : control}
       name={name as Path<TFieldValues>}
       render={({ field: { value: formFieldValue, ...rest } }) => (
-        <FormItem name={name?.toString()}>
+        <FormItem name={name.toString()}>
           <FormLabel>
             {label}
             {required && <span className="ml-1 opacity-50">*</span>}
@@ -56,14 +60,19 @@ const InputFormField = <TFieldValues extends FieldValues>({
           {description && <FormDescription>{description}</FormDescription>}
           <FormControl>
             <div className="relative flex w-full items-center ">
-              {icon && <div className="pr-2 ">{icon}</div>}
-              {havePrefix && (
-                <span id={`${prefix}-prefix`} className="absolute font-light left-3 text-sm opacity-50">{`cellajs.com/${
-                  prefix === 'organization' ? '' : `${prefix}/`
-                }`}</span>
-              )}
+              {!!prefix ||
+                (icon && (
+                  <span
+                    id={`${name.toString()}-prefix`}
+                    className="absolute font-light left-3 text-sm"
+                    style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
+                  >
+                    {prefix || icon}
+                  </span>
+                ))}
               {type === 'textarea' ? (
                 <Textarea
+                  style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '' }}
                   placeholder={placeholder}
                   onFocus={onFocus}
                   autoResize={true}
@@ -75,7 +84,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
               ) : (
                 <Input
                   className={inputClassName}
-                  style={{ paddingLeft: prefixPadding }}
+                  style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '' }}
                   type={type}
                   onFocus={onFocus}
                   placeholder={placeholder}
