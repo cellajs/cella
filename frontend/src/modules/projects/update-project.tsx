@@ -16,7 +16,7 @@ import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { useEffect } from 'react';
-import UnsavedChangesBadge from '../common/unsaved-changes';
+import UnsavedChangesBadge from '../common/unsaved-changes-badge';
 
 interface Project {
   id: string;

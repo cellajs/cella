@@ -20,7 +20,7 @@ import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
-import UnsavedChangesBadge from '~/modules/common/unsaved-changes';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 import { type LabelDirectionType, Form } from '../ui/form';
 
 interface CreateOrganizationFormProps {

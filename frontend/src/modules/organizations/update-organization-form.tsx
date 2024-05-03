@@ -22,7 +22,7 @@ import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import DomainsFormField from '../common/form-fields/domains';
-import UnsavedChangesBadge from '../common/unsaved-changes';
+import UnsavedChangesBadge from '../common/unsaved-changes-badge';
 
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));

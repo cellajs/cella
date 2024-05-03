@@ -24,7 +24,7 @@ import { Form } from '../ui/form';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import CreateOrganizationForm from '../organizations/create-organization-form';
-import UnsavedChangesBadge from '~/modules/common/unsaved-changes';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;

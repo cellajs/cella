@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../form-fields/input';
-import UnsavedChangesBadge from '~/modules/common/unsaved-changes';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 

@@ -26,7 +26,7 @@ import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
-import UnsavedChangesBadge from '~/modules/common/unsaved-changes';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 
 interface UpdateUserFormProps {
   user: User;

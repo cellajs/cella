@@ -23,7 +23,7 @@ import type { Workspace } from '~/types';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { useElectric } from '../common/root/electric';
 import { useUserStore } from '~/store/user';
-import UnsavedChangesBadge from '~/modules/common/unsaved-changes';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 
 interface CreateProjectFormProps {
   workspace: Workspace;

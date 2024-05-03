@@ -19,7 +19,7 @@ import { updateWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
 import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { useEffect } from 'react';
-import UnsavedChangesBadge from '../common/unsaved-changes';
+import UnsavedChangesBadge from '../common/unsaved-changes-badge';
 
 interface Props {
   workspace: Workspace;
