@@ -74,14 +74,17 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     onCloseForm?.();
   };
 
-  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback((event) => {
-    if (event.key !== 'Escape') return;
-    handleCloseForm();
-  }, []);
+  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
+    (event) => {
+      if (event.key !== 'Escape') return;
+      handleCloseForm();
+    },
+    [handleCloseForm],
+  );
 
   const handleHotKeysKeyPress = useCallback(() => {
     handleCloseForm();
-  }, []);
+  }, [handleCloseForm]);
 
   useHotkeys([['Escape', handleHotKeysKeyPress]]);
 

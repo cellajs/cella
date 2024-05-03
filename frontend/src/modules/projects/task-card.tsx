@@ -36,10 +36,11 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const { mode } = useThemeStore();
   const { setSelectedTasks } = useContext(ProjectsContext);
 
-  const [innerTask] = useState(task);
-  const [summary, setSummary] = useState(task.summary);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const expandedRef = useRef<HTMLDivElement>(null);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
@@ -72,6 +73,16 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     transform: CSS.Translate.toString(transform),
   };
 
+  function CollapsedMD({ value }: { value: string }) {
+    return (
+      <MDEditor.Markdown
+        source={value}
+        style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+        className="prose font-light text-start max-w-none"
+      />
+    );
+  }
+
   const variants = cva(
     'group/task rounded-none border-0 text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
     {
@@ -96,9 +107,6 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const toggleEditorState = () => {
     setIsEditing(!isEditing);
   };
-
-  const summaryRef = useRef<HTMLDivElement>(null);
-  const expandedRef = useRef<HTMLDivElement>(null);
 
   useDoubleClick({
     onDoubleClick: () => {
@@ -127,12 +135,6 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     setIsExpanded(false);
   }, [isDragging]);
 
-  useEffect(() => {
-    if (!innerTask.markdown) return;
-    const summaryFromMarkDown = innerTask.markdown.split('\n')[0];
-    setSummary(summaryFromMarkDown);
-  }, [innerTask.markdown]);
-
   return (
     <Card
       ref={setNodeRef}
@@ -152,7 +154,11 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType)} />
 
               <Checkbox
-                className={cn('transition-all duration-700 bg-background', !isExpanded && 'opacity-0 mt-[-18px] ml-[-6px] scale-[.6]', isExpanded && 'opacity-100')}
+                className={cn(
+                  'transition-all duration-700 bg-background',
+                  !isExpanded && 'opacity-0 mt-[-18px] ml-[-6px] scale-[.6]',
+                  isExpanded && 'opacity-100',
+                )}
                 onCheckedChange={(checked) => {
                   setSelectedTasks((prev) => {
                     if (checked) {
@@ -167,37 +173,20 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               {isEditing && (
                 <TaskEditor
                   mode={mode}
-                  markdown={task.markdown}
+                  markdown={task.markdown || ' '}
                   setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown)}
+                  setSummary={(newSummary) => handleChange('summary', newSummary)}
                   toggleEditorState={toggleEditorState}
                   id={task.id}
                 />
               )}
               {!isEditing && (
-                <>
-                  <div
-                    ref={expandedRef}
-                    tabIndex={isExpanded ? 0 : -1}
-                    style={{ display: isExpanded ? '' : 'none' }}
-                    className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <MDEditor.Markdown
-                      source={task.markdown || ''}
-                      style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                      className="prose font-light text-start max-w-none"
-                    />
+                <div className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <div ref={expandedRef} tabIndex={isExpanded ? 0 : -1} style={{ display: isExpanded ? '' : 'none' }}>
+                    <CollapsedMD value={task.markdown || ''} />
                   </div>
-                  <div
-                    ref={summaryRef}
-                    tabIndex={isExpanded ? -1 : 0}
-                    style={{ display: isExpanded ? 'none' : '' }}
-                    className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <MDEditor.Markdown
-                      source={summary}
-                      style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                      className="inline-flex prose font-light text-start max-w-none"
-                    />
+                  <div ref={summaryRef} tabIndex={isExpanded ? -1 : 0} style={{ display: isExpanded ? 'none' : '' }}>
+                    <CollapsedMD value={task.summary} />
                     <div className="opacity-50 group-hover/task:opacity-70 text-xs inline-block font-light ml-1 gap-1">
                       <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
                         {t('common:more').toLowerCase()}
@@ -213,7 +202,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                       </Button>
                     </div>
                   </div>
-                </>
+                </div>
               )}
 
               {isExpanded && (
