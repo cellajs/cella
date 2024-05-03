@@ -1,4 +1,4 @@
-import { Settings, Plus, Tag, Trash } from 'lucide-react';
+import { Settings, Plus, Tag, Trash, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import WorkspaceView from '~/modules/projects/view-options';
 import DisplayOptions from '~/modules/projects/display-options';
@@ -18,12 +18,20 @@ import { Badge } from '../ui/badge';
 import { useElectric } from '../common/root/electric';
 import { PageHeader } from '../common/page-header';
 import WorkspaceJoinLeaveButton from '../workspaces/join-leave-button';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { organizationQueryOptions } from '../organizations/organization';
+import { useNavigate } from '@tanstack/react-router';
 
 function BoardHeader() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
   const { labels, workspace } = useContext(WorkspaceContext);
   const { selectedTasks, setSelectedTasks } = useContext(ProjectsContext);
   const [showPageCover, setShowPageCover] = useState(false);
+
+  const organizationQuery = useSuspenseQuery(organizationQueryOptions(workspace.organizationId));
+  const organization = organizationQuery.data;
 
   const handleShowPageCoverToggle = () => {
     setShowPageCover(!showPageCover);
@@ -72,6 +80,18 @@ function BoardHeader() {
     });
   };
 
+  const renderSemiTitle = () => {
+    return (
+      <div className="flex items-center gap-1">
+        <button type="button" className="hover:opacity-70" aria-label="Go to organization" onClick={() => navigate({ to: `/${organization.slug}` })}>
+          {organization.name}
+        </button>
+        <ChevronRight className="opacity-50" size={16} />
+        <span>Workspace</span>
+      </div>
+    );
+  };
+
   return (
     <>
       {showPageCover && (
@@ -81,6 +101,7 @@ function BoardHeader() {
           title={workspace.name}
           thumbnailUrl={workspace.thumbnailUrl}
           bannerUrl={workspace.bannerUrl}
+          semiTitle={renderSemiTitle()}
           panel={
             <div className="flex items-center p-2">
               <WorkspaceJoinLeaveButton workspace={workspace} />

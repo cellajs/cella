@@ -38,7 +38,7 @@ export const projects = pgTable('projects', {
 // type: TaskType;
 // impact: TaskImpact;
 // status: TaskStatus;
-// labels: TaskLabel[]; 
+// labels: TaskLabel[];
 // projectId: string;
 
 export const tasks = pgTable('tasks', {
@@ -47,13 +47,15 @@ export const tasks = pgTable('tasks', {
   markdown: varchar('markdown'),
   summary: varchar('summary').notNull(),
   type: varchar('type', {
-    enum: ['bug', 'feature', 'chore']
+    enum: ['bug', 'feature', 'chore'],
   }).notNull(),
   impact: integer('impact'),
   status: integer('status').notNull(),
-  projectId: uuid('project_id').notNull().references(() => projects.id, {
-    onDelete: 'cascade'
-  }),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, {
+      onDelete: 'cascade',
+    }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by').notNull(),
   assignedBy: varchar('assigned_by'),

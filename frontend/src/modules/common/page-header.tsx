@@ -14,10 +14,11 @@ interface PageHeaderProps {
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;
+  semiTitle?: React.ReactNode;
 }
 
 // PageHeader Component
-const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel }: PageHeaderProps) => {
+const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, semiTitle }: PageHeaderProps) => {
   const { t } = useTranslation();
   const scrollToRef = useRef<HTMLDivElement>(null);
   // Scroll to page header on load
@@ -34,13 +35,16 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel }: PageHea
             {/* Page title */}
             <h1 className="md:text-xl leading-4 md:-mt-1 font-semibold">{title}</h1>
 
-            {/* Breadcrumb */}
-
-            <Breadcrumb className="flex">
-              <BreadcrumbItem>
-                <strong className="text-sm leading-4 font-light">{t(type.toLowerCase())}</strong>
-              </BreadcrumbItem>
-            </Breadcrumb>
+            {semiTitle ? (
+              semiTitle
+            ) : (
+              // Breadcrumb
+              <Breadcrumb className="flex">
+                <BreadcrumbItem>
+                  <strong className="text-sm leading-4 font-light">{t(type.toLowerCase())}</strong>
+                </BreadcrumbItem>
+              </Breadcrumb>
+            )}
           </div>
         </div>
         <div className="flex ml-auto items-center">{panel}</div>
