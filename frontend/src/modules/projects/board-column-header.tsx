@@ -7,6 +7,7 @@ import ToolTipButtons from './tooltip-buttons';
 import type { Column } from './board-column';
 import type { DraggableAttributes } from '@dnd-kit/core';
 import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
+import { useWorkspaceStore } from '~/store/workspace';
 
 export interface ColumnDragData {
   type: 'Column';
@@ -15,6 +16,7 @@ export interface ColumnDragData {
 
 interface BoardColumnHeaderProps {
   column: Column;
+  workspaceId: string;
   attributes: DraggableAttributes;
   listeners: SyntheticListenerMap | undefined;
   createFormOpen: boolean;
@@ -22,7 +24,25 @@ interface BoardColumnHeaderProps {
   createFormClick: () => void;
 }
 
-export function BoardColumnHeader({ column, attributes, listeners, createFormOpen, openSettings, createFormClick }: BoardColumnHeaderProps) {
+export function BoardColumnHeader({
+  column,
+  attributes,
+  listeners,
+  createFormOpen,
+  workspaceId,
+  openSettings,
+  createFormClick,
+}: BoardColumnHeaderProps) {
+  const [minimize, setMinimize] = useState(false);
+  const { changeColumn } = useWorkspaceStore();
+
+  const MinimizeClick = () => {
+    setMinimize(!minimize);
+    changeColumn(workspaceId, column.id, {
+      minimized: !minimize,
+    });
+  };
+
   // TODO
   const [background, setBackground] = useState('#ff75c3');
 
@@ -39,7 +59,7 @@ export function BoardColumnHeader({ column, attributes, listeners, createFormOpe
 
       <div className="grow" />
 
-      <ToolTipButtons key={column.id} rolledUp={false} onSettingsClick={openSettings} />
+      <ToolTipButtons key={column.id} rolledUp={false} onSettingsClick={openSettings} onMinimizeClick={MinimizeClick} />
 
       <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>
         <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />

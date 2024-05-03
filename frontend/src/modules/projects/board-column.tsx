@@ -14,6 +14,8 @@ import { ProjectSettings } from './project-settings';
 import { sheet } from '../common/sheeter/state';
 import CreateTaskForm from './create-task-form';
 import { useTranslation } from 'react-i18next';
+import { useWorkspaceStore } from '~/store/workspace';
+import { WorkspaceContext } from '../workspaces';
 
 export interface Column {
   id: string;
@@ -33,15 +35,32 @@ interface BoardColumnProps {
 export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const { t } = useTranslation();
   const containerRef = useRef(null);
+  const { workspaces, changeColumn } = useWorkspaceStore();
+
+  const { workspace } = useContext(WorkspaceContext);
   const { tasks = [] } = useContext(ProjectContext);
 
   const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
 
-  const [showIced, setShowIced] = useState(false);
-  const [showAccepted, setShowAccepted] = useState(false);
+  const currentProjectSettings = workspaces[workspace.id].columns.find((el) => el.columnId === column.id);
+  const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
+  const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [createForm, setCreateForm] = useState(false);
+
+  const handleIcedClick = () => {
+    setShowIced(!showIced);
+    changeColumn(workspace.id, column.id, {
+      expandIced: !showIced,
+    });
+  };
+  const handleAcceptedClick = () => {
+    setShowAccepted(!showAccepted);
+    changeColumn(workspace.id, column.id, {
+      expandAccepted: !showAccepted,
+    });
+  };
 
   const openSettingsSheet = () => {
     sheet(<ProjectSettings sheet />, {
@@ -106,6 +125,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
     >
       <BoardColumnHeader
         column={column}
+        workspaceId={workspace.id}
         attributes={attributes}
         listeners={listeners}
         createFormClick={handleTaskFormClick}
@@ -122,7 +142,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
           {!!tasks.length && (
             <>
               <Button
-                onClick={() => setShowAccepted(!showAccepted)}
+                onClick={handleAcceptedClick}
                 variant="ghost"
                 disabled={!acceptedCount}
                 size="sm"
@@ -146,7 +166,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
                   ))}
               </SortableContext>
               <Button
-                onClick={() => setShowIced(!showIced)}
+                onClick={handleIcedClick}
                 variant="ghost"
                 disabled={!icedCount}
                 size="sm"

@@ -5,14 +5,13 @@ import { immer } from 'zustand/middleware/immer';
 import type { TaskLabel } from '~/mocks/workspaces';
 
 type Column = {
-  [key: string]: {
-    width: string;
-    minimized: boolean;
-    expandAccepted: boolean;
-    expandIced: boolean;
-    recentLabels: TaskLabel[];
-    taskIds: string[];
-  };
+  columnId: string;
+  width: string;
+  minimized: boolean;
+  expandAccepted: boolean;
+  expandIced: boolean;
+  recentLabels: TaskLabel[];
+  taskIds: string[];
 };
 
 type ViewOptions = {
@@ -29,7 +28,7 @@ type WorkspaceStorage = {
 
 interface WorkspaceState {
   workspaces: WorkspaceStorage;
-  changeColumn: (workspaceId: string, column: Column) => void;
+  changeColumn: (workspaceId: string, columnId: string, column: Partial<Column>) => void;
   addNewColumn: (workspaceId: string, column: Column) => void;
   changeDisplayOption: (workspaceId: string, newDisplayOption: DisplayOption) => void;
   changeViewOptionsLabels: (workspaceId: string, newLabels: ('primary' | 'secondary')[]) => void;
@@ -40,14 +39,14 @@ interface WorkspaceState {
   changeViewOptionsTypes: (workspaceId: string, newTypes: ('feature' | 'bug' | 'chore')[]) => void;
 }
 
-// const defaultColumn = {
-//   width: '200px',
-//   minimized: false,
-//   expandAccepted: false,
-//   expandIced: false,
-//   recentLabels: [] as TaskLabel[],
-//   taskIds: [] as string[],
-// };
+const defaultColumnValues = {
+  width: '200px',
+  minimized: false,
+  expandAccepted: false,
+  expandIced: false,
+  recentLabels: [] as TaskLabel[],
+  taskIds: [] as string[],
+};
 
 export const useWorkspaceStore = create<WorkspaceState>()(
   devtools(
@@ -127,19 +126,22 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             }
           });
         },
-        changeColumn: (workspaceId: string, newColumn: Column) => {
+        changeColumn: (workspaceId: string, columnId: string, newColumn: Partial<Column>) => {
           set((state) => {
             const workspace = state.workspaces[workspaceId];
-            for (const column of workspace.columns) {
-              if (column.id === newColumn.id) {
-                column.width = newColumn.width;
-                column.minimized = newColumn.minimized;
-                column.expandAccepted = newColumn.expandAccepted;
-                column.expandIced = newColumn.expandIced;
-                column.recentLabels = newColumn.recentLabels;
-                column.taskIds = newColumn.taskIds;
-                break;
-              }
+            if (!workspace) return;
+
+            const columnIndex = workspace.columns.findIndex((column) => column.columnId === columnId);
+            if (columnIndex === -1) {
+              // If the column doesn't exist, create a new one
+              state.workspaces[workspaceId].columns.push({ columnId, ...defaultColumnValues, ...newColumn });
+            } else {
+              // If the column exists, update it
+              const updatedColumn = {
+                ...workspace.columns[columnIndex],
+                ...newColumn,
+              };
+              state.workspaces[workspaceId].columns[columnIndex] = updatedColumn;
             }
           });
         },
