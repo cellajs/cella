@@ -8,26 +8,16 @@ import Workspace, { workspaceQueryOptions } from '~/modules/workspaces';
 import { IndexRoute } from './routeTree';
 
 // Lazy-loaded components
-const Projects = lazy(() => import('~/modules/projects'));
+const Board = lazy(() => import('~/modules/projects/board'));
+const TasksTable = lazy(() => import('~/modules/projects/tasks-table'));
 
 export const WorkspaceRoute = createRoute({
   path: 'workspace/$idOrSlug',
   staticData: { pageTitle: 'Workspace', hideFooter: true },
-  beforeLoad: ({ location, params }) =>  noDirectAccess(location.pathname, params.idOrSlug, '/projects'),
+  beforeLoad: ({ location, params }) =>  noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => IndexRoute,
   loader: async ({ params: { idOrSlug } }) => {
     queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
-
-    // const { worker } = await import('~/mocks/worker')
- 
-    // `worker.start()` returns a Promise that resolves
-    // once the Service Worker is up and ready to intercept requests.
-    // return worker.start()
-  },
-  onLeave: async () => {
-    console.log('Stopping worker')
-    const { worker } = await import('~/mocks/worker')
-    return worker.stop()
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
@@ -37,13 +27,25 @@ export const WorkspaceRoute = createRoute({
   ),
 });
 
-export const WorkspaceProjectsRoute = createRoute({
-  path: '/projects',
-  staticData: { pageTitle: 'Projects', hideFooter: true },
+export const WorkspaceBoardRoute = createRoute({
+  path: '/board',
+  staticData: { pageTitle: 'Board', hideFooter: true },
   getParentRoute: () => WorkspaceRoute,
   component: () => (
     <Suspense>
-      <Projects />
+      <Board />
     </Suspense>
   ),
 });
+
+export const WorkspaceTableRoute = createRoute({
+  path: '/table',
+  staticData: { pageTitle: 'Table' },
+  getParentRoute: () => WorkspaceRoute,
+  component: () => (
+    <Suspense>
+      <TasksTable />
+    </Suspense>
+  ),
+});
+

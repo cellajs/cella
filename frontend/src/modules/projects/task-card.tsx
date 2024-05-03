@@ -17,9 +17,9 @@ import { SelectTaskType } from './select-task-type.tsx';
 import { cn } from '~/lib/utils.ts';
 import { useElectric, type Task } from '../common/root/electric.ts';
 import type { TaskImpact, TaskType } from './task-form.tsx';
-import { ProjectsContext } from './index.tsx';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import { WorkspaceContext } from '../workspaces';
 
 interface TaskCardProps {
   task: Task;
@@ -34,7 +34,7 @@ export interface TaskDragData {
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { setSelectedTasks } = useContext(ProjectsContext);
+  const { setSelectedTasks } = useContext(WorkspaceContext);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);

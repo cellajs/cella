@@ -13,7 +13,6 @@ import { AvatarWrap } from '../common/avatar-wrap';
 import LabelsTable from './labels-table';
 import { WorkspaceContext } from '../workspaces';
 import { useContext } from 'react';
-import { ProjectsContext } from '.';
 import { Badge } from '../ui/badge';
 import { useElectric } from '../common/root/electric';
 
@@ -25,8 +24,7 @@ interface BoardHeaderProps {
 const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps) => {
   const { t } = useTranslation();
 
-  const { labels, workspace } = useContext(WorkspaceContext);
-  const { selectedTasks, setSelectedTasks } = useContext(ProjectsContext);
+  const { labels, workspace, selectedTasks, setSelectedTasks } = useContext(WorkspaceContext);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;

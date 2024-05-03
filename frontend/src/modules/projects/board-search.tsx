@@ -2,11 +2,11 @@ import { Search } from 'lucide-react';
 import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
-import { ProjectsContext } from '.';
+import { WorkspaceContext } from '../workspaces';
 
 const BoardSearch = () => {
   const { t } = useTranslation();
-  const { searchQuery, setSearchQuery } = useContext(ProjectsContext);
+  const { searchQuery, setSearchQuery } = useContext(WorkspaceContext);
 
   // Reference with `useRef` to persist the same ref object during re-renders
   const inputRef = React.useRef<HTMLInputElement>(null);

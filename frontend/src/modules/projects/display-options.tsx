@@ -1,18 +1,15 @@
 import { cn } from '~/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { SquareKanban, Rows4, Grid2X2 } from 'lucide-react';
-import { useContext } from 'react';
-import { ProjectsContext } from '.';
 
 interface Props {
   className?: string;
 }
 
 const DisplayOptions = ({ className = '' }: Props) => {
-  const { setDisplayMode } = useContext(ProjectsContext);
 
   return (
-    <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)} onValueChange={setDisplayMode}>
+    <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)}>
       <ToggleGroupItem value="board">
         <SquareKanban size={16} />
       </ToggleGroupItem>

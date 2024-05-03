@@ -1,18 +1,25 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import type { Label } from '~/mocks/workspaces';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import type { Workspace } from '~/types';
 import { type Project, useElectric, type Task } from '../common/root/electric';
 import { useLiveQuery } from 'electric-sql/react';
+import BoardHeader from '~/modules/projects/board-header';
+import { PageHeader } from '../common/page-header';
+import { useNavigationStore } from '~/store/navigation';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
   projects: Project[];
   labels: Label[];
   tasks: Task[];
+  selectedTasks: string[];
+  setSelectedTasks: Dispatch<SetStateAction<string[]>>;
+  searchQuery: string;
+  setSearchQuery: Dispatch<SetStateAction<string>>;
 }
 
 export const WorkspaceContext = createContext({} as WorkspaceContextValue);
@@ -24,6 +31,17 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
   });
 
 const WorkspacePage = () => {
+  const { setFocusView } = useNavigationStore();
+
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showPageHeader, setShowPageHeader] = useState(false);
+
+  const togglePageHeader = () => {
+    if (!showPageHeader) setFocusView(false);
+    setShowPageHeader(!showPageHeader);
+  };
+
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
@@ -80,7 +98,15 @@ const WorkspacePage = () => {
   }, [workspace]);
 
   return (
-    <WorkspaceContext.Provider value={{ workspace, projects, labels, tasks }}>
+    <WorkspaceContext.Provider value={{ workspace, projects, labels, tasks, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery }}>
+      {showPageHeader && (
+        <PageHeader type="WORKSPACE" id={workspace.id} title={workspace.name} thumbnailUrl={workspace.thumbnailUrl} bannerUrl={workspace.bannerUrl} />
+      )}
+
+      <div className="flex flex-col gap-2 md:gap-4 p-2 md:p-4">
+        <BoardHeader showPageHeader={showPageHeader} handleShowPageHeader={togglePageHeader} />
+        <Outlet />
+      </div>
       <Outlet />
     </WorkspaceContext.Provider>
   );

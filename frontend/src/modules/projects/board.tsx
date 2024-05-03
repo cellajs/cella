@@ -10,7 +10,6 @@ import { TaskCard } from './task-card';
 import { hasDraggableData } from './utils';
 import { WorkspaceContext } from '../workspaces';
 import type { Project, Task } from '../common/root/electric';
-import { ProjectsContext } from '.';
 
 interface ProjectContextValue {
   tasks: Task[];
@@ -20,8 +19,7 @@ interface ProjectContextValue {
 export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
-  const { projects, tasks } = useContext(WorkspaceContext);
-  const { searchQuery } = useContext(ProjectsContext);
+  const { projects, tasks, searchQuery } = useContext(WorkspaceContext);
   const pickedUpTaskColumn = useRef<string | null>(null);
 
   const [innerProject, setInnerProject] = useState<Project[]>(projects || []);

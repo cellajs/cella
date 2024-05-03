@@ -111,9 +111,10 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
         createFormClick={handleTaskFormClick}
         openSettings={openSettingsSheet}
         createFormOpen={createForm}
-      >
-        {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
-      </BoardColumnHeader>
+      />
+
+      {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
+
       <div ref={containerRef} />
       <ScrollArea id={column.id} size="indicatorVertical">
         <ScrollBar size="indicatorVertical" />

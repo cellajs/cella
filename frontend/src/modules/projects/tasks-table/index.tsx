@@ -14,7 +14,7 @@ interface ProjectContextValue {
 
 export const ProjectContext = createContext({} as ProjectContextValue);
 
-export default function Table() {
+export default function TasksTable() {
   const { tasks } = useContext(WorkspaceContext);
   const [rows, setRows] = useState<TaskRow[]>([]);
 
