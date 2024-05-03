@@ -127,7 +127,6 @@ const WorkspacePage = () => {
         <BoardHeader showPageHeader={showPageHeader} handleShowPageHeader={togglePageHeader} />
         <Outlet />
       </div>
-      <Outlet />
     </WorkspaceContext.Provider>
   );
 };
