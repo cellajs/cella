@@ -1,5 +1,5 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { Outlet, useNavigate, useParams } from '@tanstack/react-router';
+import { Outlet, useParams } from '@tanstack/react-router';
 import { createContext, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import type { Label } from '~/mocks/workspaces';
@@ -10,8 +10,6 @@ import { useLiveQuery } from 'electric-sql/react';
 import BoardHeader from '~/modules/projects/board-header';
 import { PageHeader } from '../common/page-header';
 import { useNavigationStore } from '~/store/navigation';
-import { organizationQueryOptions } from '../organizations/organization';
-import { ChevronRight } from 'lucide-react';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
@@ -34,7 +32,6 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
 
 const WorkspacePage = () => {
   const { setFocusView } = useNavigationStore();
-  const navigate = useNavigate();
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPageHeader, setShowPageHeader] = useState(false);
@@ -47,9 +44,6 @@ const WorkspacePage = () => {
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
-
-  const organizationQuery = useSuspenseQuery(organizationQueryOptions(workspace.organizationId));
-  const organization = organizationQuery.data;
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
@@ -111,15 +105,7 @@ const WorkspacePage = () => {
           title={workspace.name}
           thumbnailUrl={workspace.thumbnailUrl}
           bannerUrl={workspace.bannerUrl}
-          breadcrumbContent={
-            <>
-              <button type="button" className="hover:opacity-70" onClick={() => navigate({ to: `/${organization.slug}/` })}>
-                {organization.name}
-              </button>
-              <ChevronRight size={16} />
-              <strong>Workspace</strong>
-            </>
-          }
+          organizationId={workspace.organizationId}
         />
       )}
 

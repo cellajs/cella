@@ -1,4 +1,4 @@
-import { Settings, Plus, Tag, Trash, FoldVertical } from 'lucide-react';
+import { Settings, Plus, Tag, Trash, PanelTopClose } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import WorkspaceView from '~/modules/projects/view-options';
 import DisplayOptions from '~/modules/projects/display-options';
@@ -74,7 +74,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
     <div className={'flex items-center w-full max-sm:justify-between gap-2'}>
       <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleShowPageHeader}>
         {showPageHeader ? (
-          <FoldVertical size={16} />
+          <PanelTopClose size={16} />
         ) : (
           <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
         )}
