@@ -20,8 +20,8 @@ import SetLabels from './select-labels.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { ProjectContext } from './board.tsx';
 import { type Task, useElectric } from '../common/root/electric.ts';
-import { Input } from '../ui/input.tsx';
 import SelectStatus from './select-status.tsx';
+import { useUserStore } from '~/store/user.ts';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -62,6 +62,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+  const { user } = useUserStore(({ user }) => ({ user }));
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
@@ -107,11 +108,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   const { isPending, mutate: create } = useMutation({
     // mutate: create
     mutationFn: (values: FormValues) => {
+      const summary = values.markdown.split('\n')[0];
+      const slug = summary.toLowerCase().replace(/ /g, '-');
       return db.tasks.create({
         data: {
           id: values.id,
           markdown: values.markdown,
-          summary: values.summary,
+          summary: summary,
           type: values.type as TaskType,
           impact: values.impact as TaskImpact,
           // assignedTo: values.assignedTo as TaskUser[],
@@ -119,8 +122,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           status: 1,
           project_id: project.id,
           created_at: new Date(),
-          created_by: 'user.id',
-          slug: values.summary.toLowerCase().replace(/ /g, '-'),
+          created_by: user.id,
+          slug: slug,
         },
       });
     },
@@ -133,13 +136,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
 
   const onSubmit = (values: FormValues) => {
     create(values);
-
+    const summary = values.markdown.split('\n')[0];
+    const slug = summary.toLowerCase().replace(/ /g, '-');
     db.tasks
       .create({
         data: {
           id: values.id,
           markdown: values.markdown,
-          summary: values.summary,
+          summary: summary,
           type: values.type as TaskType,
           impact: values.impact as TaskImpact,
           // assignedTo: values.assignedTo as TaskUser[],
@@ -147,8 +151,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           status: 1,
           project_id: project.id,
           created_at: new Date(),
-          created_by: 'user.id',
-          slug: values.summary.toLowerCase().replace(/ /g, '-'),
+          created_by: user.id,
+          slug: slug,
         },
       })
       .then(() => {
@@ -161,27 +165,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   return (
     <Form {...form}>
       <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 border-b flex gap-2 flex-col shadow-inner">
-        <FormField
-          control={form.control}
-          name="summary"
-          render={({ field: { value, onChange } }) => {
-            return (
-              <FormItem>
-                <FormControl>
-                  <Input
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    placeholder={t('common:summary')}
-                    className="w-full text-sm"
-                    required
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-
         <FormField
           control={form.control}
           name="type"
