@@ -49,3 +49,14 @@ export const WorkspaceTableRoute = createRoute({
   ),
 });
 
+export const WorkspaceOverviewRoute = createRoute({
+  path: '/overview',
+  staticData: { pageTitle: 'Overview' },
+  getParentRoute: () => WorkspaceRoute,
+  component: () => (
+    <div>
+      <h1>Here will be an overview with stats</h1>
+    </div>
+  ),
+});
+
