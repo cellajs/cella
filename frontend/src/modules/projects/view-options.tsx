@@ -5,6 +5,9 @@ import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
+import { useWorkspaceStore } from '~/store/workspace.ts';
+import { useContext } from 'react';
+import { WorkspaceContext } from '../workspaces/index.tsx';
 
 interface Props {
   className?: string;
@@ -12,38 +15,31 @@ interface Props {
 
 const viewOptions = [
   {
-    id: 'type',
-    options: [
-      { id: 'feature', label: 'feature' },
-      { id: 'bug', label: 'bug' },
-      { id: 'chore', label: 'chore' },
-    ],
+    id: 'type' as const,
+    options: ['feature', 'bug', 'chore'],
   },
   {
-    id: 'status',
-    options: [
-      { id: '1', label: 'unstarted' },
-      { id: '2', label: 'started' },
-      { id: '4', label: 'delivered' },
-      { id: '5', label: 'reviewed' },
-    ],
+    id: 'status' as const,
+    options: ['iced', 'unstarted', 'started', 'finished', 'delivered', 'reviewed', 'accepted'],
   },
   {
-    id: 'labels',
-    options: [
-      { id: 'primary', label: 'primary' },
-      { id: 'secondary', label: 'secondary' },
-      { id: 'colors', label: 'colors' },
-    ],
+    id: 'labels' as const,
+    options: ['primary', 'secondary'],
   },
 ];
 
 const WorkspaceView = ({ className = '' }: Props) => {
   const { t } = useTranslation();
-
+  const { workspaces, changeViewOptionsLabels, changeViewOptionsStatus, changeViewOptionsTypes } = useWorkspaceStore();
+  const { workspace } = useContext(WorkspaceContext);
+  const workspaceId = workspace.id;
   const handleValueChange = (viewOption: string, values: string[]) => {
-    console.log(viewOption, values);
+    if (viewOption === 'type') changeViewOptionsTypes(workspaceId, values as ('feature' | 'bug' | 'chore')[]);
+    if (viewOption === 'status')
+      changeViewOptionsStatus(workspaceId, values as ('iced' | 'unstarted' | 'started' | 'finished' | 'delivered' | 'reviewed' | 'accepted')[]);
+    if (viewOption === 'labels') changeViewOptionsLabels(workspaceId, values as ('primary' | 'secondary')[]);
   };
+
   return (
     <DropdownMenu>
       <TooltipButton toolTipContent={t('common:view_options')}>
@@ -60,13 +56,13 @@ const WorkspaceView = ({ className = '' }: Props) => {
             key={viewOption.id}
             type="multiple"
             variant="merged"
-            //TODO: add value from zustand here                value={}
+            value={workspaces[workspaceId].viewOptions[`${viewOption.id}`]}
             className={cn('gap-0 w-full', className)}
             onValueChange={(values) => handleValueChange(viewOption.id, values)}
           >
-            {viewOption.options.map(({ id, label }) => (
-              <ToggleGroupItem key={id} size="sm" value={id} className="w-full">
-                <span className="ml-2 text-xs font-normal">{t(`common:${label}`)}</span>
+            {viewOption.options.map((option) => (
+              <ToggleGroupItem key={option} size="sm" value={option} className="w-full">
+                <span className="ml-2 text-xs font-normal">{t(`common:${option}`)}</span>
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
