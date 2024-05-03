@@ -275,38 +275,40 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            size={'xs'}
-            type="submit"
-            disabled={!form.formState.isDirty}
-            loading={isPending}
-            className={`${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'}`}
-          >
-            {t('common:create')}
-          </Button>
-          {form.formState.isDirty && (
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field: { onChange } }) => {
-                return (
-                  <FormItem>
-                    <FormControl>
-                      <SelectStatus
-                        taskStatus={1}
-                        changeTaskStatus={(newStatus) => {
-                          onChange(newStatus);
-                          onSubmit(form.getValues());
-                        }}
-                        mode="create"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-          )}
+          <div className="flex">
+            <Button
+              size={'xs'}
+              type="submit"
+              disabled={!form.formState.isDirty}
+              loading={isPending}
+              className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'}`}
+            >
+              <span className="pr-3">{t('common:create')}</span>
+            </Button>
+            {form.formState.isDirty && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field: { onChange } }) => {
+                  return (
+                    <FormItem className="gap-0 w-8">
+                      <FormControl>
+                        <SelectStatus
+                          taskStatus={1}
+                          changeTaskStatus={(newStatus) => {
+                            onChange(newStatus);
+                            onSubmit(form.getValues());
+                          }}
+                          mode="create"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+            )}
+          </div>
 
           <Button
             size={'xs'}
