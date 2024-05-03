@@ -84,7 +84,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
 
       setSheet(null);
       // navigate({
-      //   to: '/workspace/$idOrSlug/projects',
+      //   to: '/workspace/$idOrSlug/board',
       //   params: { idOrSlug: result.slug },
       // });
 

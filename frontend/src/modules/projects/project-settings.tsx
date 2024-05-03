@@ -55,7 +55,7 @@ export const ProjectSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
             callback={(project) => {
               if (idOrSlug !== project.slug) {
                 // navigate({
-                //   to: '/Project/$idOrSlug/projects',
+                //   to: '/Project/$idOrSlug/board',
                 //   params: { idOrSlug: project.slug },
                 //   replace: true,
                 // });

@@ -51,7 +51,7 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
             callback={(workspace) => {
               if (idOrSlug !== workspace.slug) {
                 navigate({
-                  to: '/workspace/$idOrSlug/projects',
+                  to: '/workspace/$idOrSlug/board',
                   params: { idOrSlug: workspace.slug },
                   replace: true,
                 });

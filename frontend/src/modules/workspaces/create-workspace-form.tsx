@@ -70,7 +70,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
       setSheet(null);
       navigate({
-        to: '/workspace/$idOrSlug/projects',
+        to: '/workspace/$idOrSlug/board',
         params: { idOrSlug: result.slug },
       });
 
