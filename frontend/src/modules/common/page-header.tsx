@@ -1,10 +1,12 @@
 import { useRef } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { Breadcrumb, BreadcrumbItem } from '~/modules/ui/breadcrumb';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { PageCover } from './page-cover';
 import type { PageResourceType } from 'backend/types/common';
 import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
+import { ChevronRight, Home } from 'lucide-react';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
@@ -14,11 +16,11 @@ interface PageHeaderProps {
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;
-  breadcrumbContent?: React.ReactNode;
+  organizationId?: string;
 }
 
 // PageHeader Component
-const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, breadcrumbContent }: PageHeaderProps) => {
+const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizationId }: PageHeaderProps) => {
   const { t } = useTranslation();
   const scrollToRef = useRef<HTMLDivElement>(null);
   // Scroll to page header on load
@@ -33,12 +35,33 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, breadcrum
           <AvatarWrap className="m-2" type={type} id={id} name={title} url={thumbnailUrl} />
           <div className="my-auto">
             {/* Page title */}
-            <h1 className="md:text-xl leading-4 md:-mt-1 font-semibold">{title}</h1>
+            <h1 className="md:text-xl leading-3 md:-mt-1 font-semibold">{title}</h1>
             {/* Breadcrumb */}
-            <Breadcrumb className="flex">
-              <BreadcrumbItem className="text-sm leading-4 font-light">
-                {breadcrumbContent ? breadcrumbContent : <strong>{t(type.toLowerCase())}</strong>}
-              </BreadcrumbItem>
+
+            <Breadcrumb className="mt-1">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to="/home"><Home size={12} /></Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <ChevronRight size={12} />
+                </BreadcrumbSeparator>
+                {!!organizationId && <>
+               <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to="/$idOrSlug/members" params={{idOrSlug: organizationId }}>{t('common:organization').toLowerCase()}</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <ChevronRight size={12} />
+                </BreadcrumbSeparator>
+                </>}
+                <BreadcrumbItem>
+                  {t(type.toLowerCase()).toLowerCase()}
+                </BreadcrumbItem>
+              </BreadcrumbList>
             </Breadcrumb>
           </div>
         </div>
