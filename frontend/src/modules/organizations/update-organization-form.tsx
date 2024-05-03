@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
 import type { Organization } from '~/types';
 
-import { Loader2, SquarePen } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { lazy, Suspense, useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -22,7 +22,7 @@ import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import DomainsFormField from '../common/form-fields/domains';
-import { Badge } from '../ui/badge';
+import UnsavedChangesBadge from '../common/unsaved-changes';
 
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
@@ -117,15 +117,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       const targetDialog = dialog.get('edit-organization');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('edit-organization', {
-          title: (
-            <div className="flex flex-row gap-2">
-              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
-              <Badge variant="plain" className="w-fit">
-                <SquarePen size={12} className="mr-2" />
-                <span className="font-light">{t('common:unsaved_changes')}</span>
-              </Badge>
-            </div>
-          ),
+          title: <UnsavedChangesBadge title={targetDialog?.title} />,
         });
       }
       return;

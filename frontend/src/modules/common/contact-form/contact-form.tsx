@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { config } from 'config';
 
-import { Mail, MessageSquare, Send, User, SquarePen } from 'lucide-react';
+import { Mail, MessageSquare, Send, User } from 'lucide-react';
 import type { SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../form-fields/input';
-import { Badge } from '~/modules/ui/badge';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
@@ -81,15 +81,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
       const targetDialog = dialog.get('contact-form');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('contact-form', {
-          title: (
-            <div className="flex flex-row gap-2">
-              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
-              <Badge variant="plain" className="w-fit">
-                <SquarePen size={12} className="mr-2" />
-                <span className="font-light">{t('common:unsaved_changes')}</span>
-              </Badge>
-            </div>
-          ),
+          title: <UnsavedChangesBadge title={targetDialog?.title} />,
         });
       }
       return;

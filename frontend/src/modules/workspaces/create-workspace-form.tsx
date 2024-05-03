@@ -20,12 +20,11 @@ import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import { useNavigate } from '@tanstack/react-router';
-import { SquarePen } from 'lucide-react';
 import { Form } from '../ui/form';
-import { Badge } from '../ui/badge';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import CreateOrganizationForm from '../organizations/create-organization-form';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -93,15 +92,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       const targetDialog = dialog.get('create-workspace');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('create-workspace', {
-          title: (
-            <div className="flex flex-row gap-2">
-              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
-              <Badge variant="plain" className="w-fit">
-                <SquarePen size={12} className="mr-2" />
-                <span className="font-light">{t('common:unsaved_changes')}</span>
-              </Badge>
-            </div>
-          ),
+          title: <UnsavedChangesBadge title={targetDialog?.title} />,
         });
       }
       return;

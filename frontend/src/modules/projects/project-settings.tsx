@@ -19,7 +19,7 @@ const projectPlug = [
   },
 ];
 
-export const ProjectSettings = () => {
+export const ProjectSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -61,6 +61,7 @@ export const ProjectSettings = () => {
                 // });
               }
             }}
+            sheet={isSheet}
           />
         </CardContent>
       </Card>

@@ -9,11 +9,14 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 // import { queryClient } from '~/lib/router';
 import { dialog } from '~/modules/common/dialoger/state';
+import { sheet, isSheet as checkSheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import SelectParentFormField from '../common/form-fields/select-parent';
+import { useEffect } from 'react';
+import UnsavedChangesBadge from '../common/unsaved-changes';
 
 interface Project {
   id: string;
@@ -27,6 +30,7 @@ interface Props {
   project: Project;
   callback?: (project: Project) => void;
   dialog?: boolean;
+  sheet?: boolean;
 }
 
 const formSchema = z.object({
@@ -55,7 +59,7 @@ export const useUpdateProjectMutation = (idOrSlug: string) => {
   //   });
 };
 
-const UpdateProjectForm = ({ project, callback, dialog: isDialog }: Props) => {
+const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet }: Props) => {
   const { t } = useTranslation();
 
   const { mutate, isPending } = useUpdateProjectMutation(project.id);
@@ -90,6 +94,21 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog }: Props) => {
     //   },
     // });
   };
+
+  // Update sheet title with unsaved changes
+  useEffect(() => {
+    if (!isSheet) return;
+    if (form.unsavedChanges) {
+      const targetSheet = sheet.get('edit-project');
+      if (targetSheet && checkSheet(targetSheet)) {
+        sheet.update('edit-project', {
+          title: <UnsavedChangesBadge title={targetSheet?.title} />,
+        });
+        return;
+      }
+    }
+    sheet.reset('edit-project');
+  }, [form.unsavedChanges]);
 
   return (
     <Form {...form}>

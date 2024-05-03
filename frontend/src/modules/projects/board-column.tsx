@@ -44,11 +44,11 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const [createForm, setCreateForm] = useState(false);
 
   const openSettingsSheet = () => {
-    sheet(<ProjectSettings />, {
+    sheet(<ProjectSettings sheet />, {
       className: 'sm:max-w-[64rem]',
       title: t('common:project_settings'),
       text: t('common:project_settings.text'),
-      id: 'project_settings',
+      id: 'edit-project',
     });
   };
 

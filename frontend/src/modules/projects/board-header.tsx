@@ -30,12 +30,13 @@ function BoardHeader() {
   };
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
+
   const openSettingsSheet = () => {
-    sheet(<WorkspaceSettings />, {
+    sheet(<WorkspaceSettings sheet />, {
       className: 'sm:max-w-[64rem]',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),
-      id: 'workspace_settings',
+      id: 'edit-workspace',
     });
   };
 

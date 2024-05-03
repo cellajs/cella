@@ -18,13 +18,12 @@ import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 // import { useNavigate } from '@tanstack/react-router';
-import { SquarePen } from 'lucide-react';
 import { Form } from '../ui/form';
-import { Badge } from '../ui/badge';
 import type { Workspace } from '~/types';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { useElectric } from '../common/root/electric';
 import { useUserStore } from '~/store/user';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -103,15 +102,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       const targetDialog = dialog.get('create-project');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('create-project', {
-          title: (
-            <div className="flex flex-row gap-2">
-              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
-              <Badge variant="plain" className="w-fit">
-                <SquarePen size={12} className="mr-2" />
-                <span className="font-light">{t('common:unsaved_changes')}</span>
-              </Badge>
-            </div>
-          ),
+          title: <UnsavedChangesBadge title={targetDialog?.title} />,
         });
       }
       return;

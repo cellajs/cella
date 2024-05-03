@@ -26,8 +26,7 @@ import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
-import { SquarePen } from 'lucide-react';
-import { Badge } from '../ui/badge';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes';
 
 interface UpdateUserFormProps {
   user: User;
@@ -116,15 +115,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
       const targetDialog = dialog.get('edit-user');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('edit-user', {
-          title: (
-            <div className="flex flex-row gap-2">
-              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
-              <Badge variant="plain" className="w-fit">
-                <SquarePen size={12} className="mr-2" />
-                <span className="font-light">{t('common:unsaved_changes')}</span>
-              </Badge>
-            </div>
-          ),
+          title: <UnsavedChangesBadge title={targetDialog?.title} />,
         });
       }
       return;
