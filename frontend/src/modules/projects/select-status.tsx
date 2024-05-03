@@ -80,9 +80,9 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
           aria-label="Set status"
           variant={mode === 'edit' ? 'outlineGhost' : 'default'}
           size={mode === 'edit' ? 'micro' : 'xs'}
-          className="rounded-none rounded-r -ml-2"
+          className={mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25'}
         >
-          <ChevronDown size={12} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
+            <ChevronDown size={mode === 'edit' ? 12 : 16} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
       <PopoverContent

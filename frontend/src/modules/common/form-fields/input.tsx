@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Control, FieldValues, Path } from 'react-hook-form';
+import { useFormContext, type Control, type FieldValues, type Path } from 'react-hook-form';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
@@ -40,11 +40,17 @@ const InputFormField = <TFieldValues extends FieldValues>({
   icon,
   inputClassName,
 }: Props<TFieldValues>) => {
+  const { setFocus } = useFormContext();
+
   let prefixPadding = '0px';
 
   if (prefix) {
     const spanPrefix = document.querySelector(`#${name.toString()}-prefix`);
     prefixPadding = prefix && spanPrefix && 'offsetWidth' in spanPrefix ? `${Number(spanPrefix.offsetWidth) + 16}px` : '12px';
+  }
+
+  const prefixClick = () => {
+    setFocus(name.toString());
   }
 
   return (
@@ -61,8 +67,10 @@ const InputFormField = <TFieldValues extends FieldValues>({
           <FormControl>
             <div className="relative flex w-full items-center ">
               {(prefix || icon) && (
-                  <span
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+<span
                     id={`${name.toString()}-prefix`}
+                    onClick={prefixClick}
                     className="absolute font-light left-3 text-sm"
                     style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
                   >
