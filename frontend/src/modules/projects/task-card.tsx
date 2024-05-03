@@ -39,8 +39,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const summaryRef = useRef<HTMLDivElement>(null);
-  const expandedRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
@@ -73,16 +72,6 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     transform: CSS.Translate.toString(transform),
   };
 
-  function CollapsedMD({ value }: { value: string }) {
-    return (
-      <MDEditor.Markdown
-        source={value}
-        style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-        className="prose font-light text-start max-w-none"
-      />
-    );
-  }
-
   const variants = cva(
     'group/task rounded-none border-0 text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
     {
@@ -113,13 +102,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
       toggleEditorState();
       setIsExpanded(true);
     },
-    ref: summaryRef,
-    latency: 250,
-  });
-
-  useDoubleClick({
-    onDoubleClick: () => toggleEditorState(),
-    ref: expandedRef,
+    ref: contentRef,
     latency: 250,
   });
 
@@ -173,7 +156,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               {isEditing && (
                 <TaskEditor
                   mode={mode}
-                  markdown={task.markdown || ' '}
+                  markdown={task.markdown || ''}
                   setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown)}
                   setSummary={(newSummary) => handleChange('summary', newSummary)}
                   toggleEditorState={toggleEditorState}
@@ -182,25 +165,30 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               )}
               {!isEditing && (
                 <div className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
-                  <div ref={expandedRef} tabIndex={isExpanded ? 0 : -1} style={{ display: isExpanded ? '' : 'none' }}>
-                    <CollapsedMD value={task.markdown || ''} />
-                  </div>
-                  <div ref={summaryRef} tabIndex={isExpanded ? -1 : 0} style={{ display: isExpanded ? 'none' : '' }}>
-                    <CollapsedMD value={task.summary} />
-                    <div className="opacity-50 group-hover/task:opacity-70 text-xs inline-block font-light ml-1 gap-1">
-                      <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
-                        {t('common:more').toLowerCase()}
-                      </Button>
-                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
-                        <span className="text-success">1</span>
-                        <span className="font-light">/</span>
-                        <span className="font-light">3</span>
-                      </Button>
-                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
-                        <Paperclip size={10} className="transition-transform -rotate-45" />
-                        <span>3</span>
-                      </Button>
-                    </div>
+                  {/* biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation> */}
+                  <div ref={contentRef} tabIndex={0} className="flex">
+                    <MDEditor.Markdown
+                      source={isExpanded ? task.markdown || '' : task.summary}
+                      style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                      className="inline-flex prose font-light text-start max-w-none"
+                    />
+
+                    {!isExpanded && (
+                      <div className="opacity-50 group-hover/task:opacity-70 text-xs inline-block font-light ml-1 gap-1">
+                        <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
+                          {t('common:more').toLowerCase()}
+                        </Button>
+                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
+                          <span className="text-success">1</span>
+                          <span className="font-light">/</span>
+                          <span className="font-light">3</span>
+                        </Button>
+                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
+                          <Paperclip size={10} className="transition-transform -rotate-45" />
+                          <span>3</span>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
