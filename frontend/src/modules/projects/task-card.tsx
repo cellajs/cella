@@ -179,10 +179,10 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                     ref={expandedRef}
                     tabIndex={isExpanded ? 0 : -1}
                     style={{ display: isExpanded ? '' : 'none' }}
-                    className="w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <MDEditor.Markdown
-                      source={summary}
+                      source={task.markdown || ''}
                       style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
                       className="prose font-light text-start max-w-none"
                     />
@@ -191,12 +191,12 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                     ref={summaryRef}
                     tabIndex={isExpanded ? -1 : 0}
                     style={{ display: isExpanded ? 'none' : '' }}
-                    className="w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <MDEditor.Markdown
                       source={summary}
                       style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                      className="prose font-light text-start max-w-none"
+                      className="inline-flex prose font-light text-start max-w-none"
                     />
                     <div className="opacity-50 group-hover/task:opacity-70 text-xs inline-block font-light ml-1 gap-1">
                       <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
