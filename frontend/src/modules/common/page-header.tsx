@@ -5,6 +5,7 @@ import { Breadcrumb, BreadcrumbItem } from '~/modules/ui/breadcrumb';
 import { PageCover } from './page-cover';
 import type { PageResourceType } from 'backend/types/common';
 import { useTranslation } from 'react-i18next';
+import { cn } from '~/lib/utils';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
@@ -14,10 +15,12 @@ interface PageHeaderProps {
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;
+  panelClassName?: string;
+  avatarClickToggle?: () => void;
 }
 
 // PageHeader Component
-const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel }: PageHeaderProps) => {
+const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, panelClassName, avatarClickToggle }: PageHeaderProps) => {
   const { t } = useTranslation();
   const scrollToRef = useRef<HTMLDivElement>(null);
   // Scroll to page header on load
@@ -29,20 +32,29 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel }: PageHea
 
       <div className="absolute flex bottom-0 w-full bg-background/50 backdrop-blur-sm p-1" ref={scrollToRef}>
         <div className="flex items-stretch">
-          <AvatarWrap className="m-2" type={type} id={id} name={title} url={thumbnailUrl} />
+          <AvatarWrap
+            onClick={avatarClickToggle}
+            className={`${avatarClickToggle ? 'm-2 cursor-pointer' : 'm-2'}`}
+            type={type}
+            id={id}
+            name={title}
+            url={thumbnailUrl}
+          />
           <div className="my-auto">
             {/* Page title */}
             <h1 className="md:text-xl leading-4 md:-mt-1 font-semibold">{title}</h1>
 
             {/* Breadcrumb */}
-            <Breadcrumb className="flex">
-              <BreadcrumbItem>
-                <strong className="text-sm leading-4 font-light">{t(type.toLowerCase())}</strong>
-              </BreadcrumbItem>
-            </Breadcrumb>
+            {type !== 'WORKSPACE' && (
+              <Breadcrumb className="flex">
+                <BreadcrumbItem>
+                  <strong className="text-sm leading-4 font-light">{t(type.toLowerCase())}</strong>
+                </BreadcrumbItem>
+              </Breadcrumb>
+            )}
           </div>
         </div>
-        <div className="flex ml-auto items-center">{panel}</div>
+        <div className={cn('flex ml-auto items-center', panelClassName ? panelClassName : '')}>{panel}</div>
       </div>
     </div>
   );

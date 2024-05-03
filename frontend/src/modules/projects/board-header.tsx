@@ -12,19 +12,23 @@ import AddProjects from './add-projects';
 import { AvatarWrap } from '../common/avatar-wrap';
 import LabelsTable from './labels-table';
 import { WorkspaceContext } from '../workspaces';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { ProjectsContext } from '.';
 import { Badge } from '../ui/badge';
 import { useElectric } from '../common/root/electric';
+import { PageHeader } from '../common/page-header';
 
 function BoardHeader() {
   const { t } = useTranslation();
-  const { labels } = useContext(WorkspaceContext);
+  const { labels, workspace } = useContext(WorkspaceContext);
   const { selectedTasks, setSelectedTasks } = useContext(ProjectsContext);
+  const [showPageCover, setShowPageCover] = useState(false);
 
+  const handleShowPageCoverToggle = () => {
+    setShowPageCover(!showPageCover);
+  };
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
-
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings />, {
       className: 'sm:max-w-[64rem]',
@@ -57,11 +61,47 @@ function BoardHeader() {
       });
   };
 
-  return (
-    <>
-      <div className="flex items-center max-sm:justify-between gap-2">
-        <AvatarWrap type="WORKSPACE" id="sdfsdfsdf" name="dfsdfsdf" url={null} />
+  const handleAddProjects = () => {
+    dialog(<AddProjects dialog />, {
+      //callback={(project) => callback([project], 'create')} dialog
+      className: 'md:max-w-4xl',
+      id: 'add-projects',
+      title: t('common:add_projects'),
+    });
+  };
 
+  const renderActionButtons = () => (
+    <>
+      <Button variant="plain" onClick={handleAddProjects}>
+        <Plus size={16} />
+        <span className="max-sm:hidden ml-1">{t('common:add')}</span>
+      </Button>
+
+      <Button variant="outline" onClick={openSettingsSheet}>
+        <Settings size={16} />
+        <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
+      </Button>
+
+      <Button variant="outline" onClick={openLabelsSheet}>
+        <Tag size={16} />
+        <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
+      </Button>
+    </>
+  );
+
+  const renderBoardHeaderPanel = (withAvatar: boolean) => {
+    return (
+      <div className={`flex items-center w-full max-sm:justify-between gap-2 ${withAvatar ? 'p-1' : ''}`}>
+        {withAvatar && (
+          <AvatarWrap
+            onClick={handleShowPageCoverToggle}
+            className="my-2 ml-2 mr-0 cursor-pointer"
+            type="WORKSPACE"
+            id={workspace.id}
+            name={workspace.name}
+            url={workspace.thumbnailUrl}
+          />
+        )}
         {selectedTasks.length > 0 ? (
           <Button variant="destructive" className="relative" onClick={onRemove}>
             <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedTasks.length}</Badge>
@@ -69,39 +109,31 @@ function BoardHeader() {
             <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
           </Button>
         ) : (
-          <>
-            <Button
-              variant="plain"
-              onClick={() => {
-                dialog(<AddProjects dialog />, {
-                  //callback={(project) => callback([project], 'create')} dialog
-                  className: 'md:max-w-4xl',
-                  id: 'add-projects',
-                  title: t('common:add_projects'),
-                });
-              }}
-            >
-              <Plus size={16} />
-              <span className="max-sm:hidden ml-1">{t('common:add')}</span>
-            </Button>
-
-            <Button variant="outline" onClick={openSettingsSheet}>
-              <Settings size={16} />
-              <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
-            </Button>
-
-            <Button variant="outline" onClick={openLabelsSheet}>
-              <Tag size={16} />
-              <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
-            </Button>
-          </>
+          renderActionButtons()
         )}
-
         <BoardSearch />
         <WorkspaceView className="max-sm:hidden" />
         <DisplayOptions className="max-sm:hidden" />
         <FocusView iconOnly />
       </div>
+    );
+  };
+
+  return (
+    <>
+      {showPageCover ? (
+        <PageHeader
+          type="WORKSPACE"
+          id={workspace.id}
+          thumbnailUrl={workspace.thumbnailUrl}
+          bannerUrl={workspace.bannerUrl}
+          panel={renderBoardHeaderPanel(false)}
+          panelClassName="w-full"
+          avatarClickToggle={handleShowPageCoverToggle}
+        />
+      ) : (
+        renderBoardHeaderPanel(true)
+      )}
     </>
   );
 }
