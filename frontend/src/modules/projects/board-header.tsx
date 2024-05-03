@@ -1,4 +1,4 @@
-import { Settings, Plus, Tag, Trash, ChevronRight } from 'lucide-react';
+import { Settings, Plus, Tag, Trash, FoldVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import WorkspaceView from '~/modules/projects/view-options';
 import DisplayOptions from '~/modules/projects/display-options';
@@ -12,30 +12,22 @@ import AddProjects from './add-projects';
 import { AvatarWrap } from '../common/avatar-wrap';
 import LabelsTable from './labels-table';
 import { WorkspaceContext } from '../workspaces';
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { ProjectsContext } from '.';
 import { Badge } from '../ui/badge';
 import { useElectric } from '../common/root/electric';
-import { PageHeader } from '../common/page-header';
-import WorkspaceJoinLeaveButton from '../workspaces/join-leave-button';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { organizationQueryOptions } from '../organizations/organization';
-import { useNavigate } from '@tanstack/react-router';
 
-function BoardHeader() {
+interface BoardHeaderProps {
+  showPageHeader: boolean;
+  handleShowPageHeader?: () => void;
+}
+
+const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const { labels, workspace } = useContext(WorkspaceContext);
   const { selectedTasks, setSelectedTasks } = useContext(ProjectsContext);
-  const [showPageCover, setShowPageCover] = useState(false);
 
-  const organizationQuery = useSuspenseQuery(organizationQueryOptions(workspace.organizationId));
-  const organization = organizationQuery.data;
-
-  const handleShowPageCoverToggle = () => {
-    setShowPageCover(!showPageCover);
-  };
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
 
@@ -80,76 +72,46 @@ function BoardHeader() {
     });
   };
 
-  const renderSemiTitle = () => {
-    return (
-      <div className="flex items-center gap-1">
-        <button type="button" className="hover:opacity-70" aria-label="Go to organization" onClick={() => navigate({ to: `/${organization.slug}` })}>
-          {organization.name}
-        </button>
-        <ChevronRight className="opacity-50" size={16} />
-        <span>Workspace</span>
-      </div>
-    );
-  };
-
   return (
-    <>
-      {showPageCover && (
-        <PageHeader
-          type="WORKSPACE"
-          id={workspace.id}
-          title={workspace.name}
-          thumbnailUrl={workspace.thumbnailUrl}
-          bannerUrl={workspace.bannerUrl}
-          semiTitle={renderSemiTitle()}
-          panel={
-            <div className="flex items-center p-2">
-              <WorkspaceJoinLeaveButton workspace={workspace} />
-            </div>
-          }
-        />
-      )}
-
-      <div className={'flex items-center w-full max-sm:justify-between gap-2 p-2'}>
-        <AvatarWrap
-          onClick={handleShowPageCoverToggle}
-          className="my-2 ml-2 mr-0 cursor-pointer"
-          type="WORKSPACE"
-          id={workspace.id}
-          name={workspace.name}
-          url={workspace.thumbnailUrl}
-        />
-        {selectedTasks.length > 0 ? (
-          <Button variant="destructive" className="relative" onClick={onRemove}>
-            <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedTasks.length}</Badge>
-            <Trash size={16} />
-            <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
-          </Button>
+    <div className={'flex items-center w-full max-sm:justify-between gap-2'}>
+      <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleShowPageHeader}>
+        {showPageHeader ? (
+          <FoldVertical size={16} />
         ) : (
-          <>
-            <Button variant="plain" onClick={handleAddProjects}>
-              <Plus size={16} />
-              <span className="max-sm:hidden ml-1">{t('common:add')}</span>
-            </Button>
-
-            <Button variant="outline" onClick={openSettingsSheet}>
-              <Settings size={16} />
-              <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
-            </Button>
-
-            <Button variant="outline" onClick={openLabelsSheet}>
-              <Tag size={16} />
-              <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
-            </Button>
-          </>
+          <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
         )}
-        <BoardSearch />
-        <WorkspaceView className="max-sm:hidden" />
-        <DisplayOptions className="max-sm:hidden" />
-        <FocusView iconOnly />
-      </div>
-    </>
+      </Button>
+
+      {selectedTasks.length > 0 ? (
+        <Button variant="destructive" className="relative" onClick={onRemove}>
+          <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedTasks.length}</Badge>
+          <Trash size={16} />
+          <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+        </Button>
+      ) : (
+        <>
+          <Button variant="plain" onClick={handleAddProjects}>
+            <Plus size={16} />
+            <span className="max-sm:hidden ml-1">{t('common:add')}</span>
+          </Button>
+
+          <Button variant="outline" onClick={openSettingsSheet}>
+            <Settings size={16} />
+            <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
+          </Button>
+
+          <Button variant="outline" onClick={openLabelsSheet}>
+            <Tag size={16} />
+            <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
+          </Button>
+        </>
+      )}
+      <BoardSearch />
+      <WorkspaceView className="max-sm:hidden" />
+      <DisplayOptions className="max-sm:hidden" />
+      <FocusView iconOnly />
+    </div>
   );
-}
+};
 
 export default BoardHeader;
