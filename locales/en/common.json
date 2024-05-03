@@ -352,7 +352,6 @@
   "success.sessions_terminated": "All sessions have been terminated",
   "system_panel": "System panel",
   "system_panel.text": "System admins can manage and monitor all organizations and their members.",
-
   "terminate": "Terminate",
   "terminate_all": "Terminate all",
   "terms": "Terms",
@@ -395,5 +394,6 @@
   "year": "year",
   "your_role": "Your role",
   "less": "Less",
-  "more": "More"
+  "more": "More",
+  "joined": "Joined"
 }

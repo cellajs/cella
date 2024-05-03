@@ -60,8 +60,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
           {description && <FormDescription>{description}</FormDescription>}
           <FormControl>
             <div className="relative flex w-full items-center ">
-              {!!prefix ||
-                (icon && (
+              {(prefix || icon) && (
                   <span
                     id={`${name.toString()}-prefix`}
                     className="absolute font-light left-3 text-sm"
@@ -69,7 +68,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                   >
                     {prefix || icon}
                   </span>
-                ))}
+                )}
               {type === 'textarea' ? (
                 <Textarea
                   style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '' }}

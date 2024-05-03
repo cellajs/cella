@@ -59,11 +59,11 @@ const JoinLeaveButton = ({ organization }: Props) => {
       <PopoverTrigger asChild>
         <Button size="sm" variant="darkSuccess" aria-label="Leave" className="items-center gap-1">
           <Check size={16} />
-          <span className="ml-1">{t('common:leave')}</span>
+          <span className="ml-1">{t('common:joined')}</span>
           <ChevronDown size={14} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-32 p-0 rounded-lg pointer" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
+      <PopoverContent className="w-44 p-0 rounded-lg pointer" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4} align="end">
         <Command className="relative rounded-lg">
           <CommandList>
             <CommandGroup>

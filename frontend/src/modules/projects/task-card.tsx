@@ -152,7 +152,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType)} />
 
               <Checkbox
-                className="opacity-0 transition-opacity duration-700 group-hover/task:opacity-100"
+                className={cn('transition-all duration-700 bg-background', !isExpanded && 'opacity-0 mt-[-18px] ml-[-6px] scale-[.6]', isExpanded && 'opacity-100')}
                 onCheckedChange={(checked) => {
                   setSelectedTasks((prev) => {
                     if (checked) {

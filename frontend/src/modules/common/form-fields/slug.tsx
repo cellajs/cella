@@ -99,7 +99,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
       inputClassName={isSlugAvailable && isValidSlug(slug) ? 'ring-2 ring-green-500 focus-visible:ring-2 focus-visible:ring-green-500' : ''}
       onFocus={() => setDeviating(true)}
       label={label}
-      prefix={`${config.frontendUrl.replace('https://', '')}/${type === 'ORGANIZATION' ? '' : `${type.toLowerCase()}/`}`}
+      prefix={`${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'ORGANIZATION' ? '' : `${type.toLowerCase()}/`}`}
       description={description}
       required
       subComponent={
@@ -107,7 +107,8 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
         previousSlug !== slug && (
           <div className="absolute inset-y-1 right-1 flex justify-end">
             <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
-              <Undo size={16} className="mr-2" /> {t('common:revert_to')} <strong className="ml-1">{previousSlug}</strong>
+              <Undo size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert_to')}</span>
+              <strong className="max-sm:hidden ml-1">{previousSlug}</strong>
             </Button>
           </div>
         )
