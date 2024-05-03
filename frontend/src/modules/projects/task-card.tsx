@@ -16,7 +16,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { SelectTaskType } from './select-task-type.tsx';
 import { cn } from '~/lib/utils.ts';
 import { useElectric, type Task } from '../common/root/electric.ts';
-import type { TaskImpact, TaskType } from './task-form.tsx';
+import type { TaskImpact, TaskType } from './create-task-form.tsx';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { WorkspaceContext } from '../workspaces';

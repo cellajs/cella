@@ -11,13 +11,10 @@ import { useFormContext } from 'react-hook-form';
 import { faker } from '@faker-js/faker';
 import type { TaskLabel } from '~/mocks/workspaces.ts';
 import { WorkspaceContext } from '../workspaces/index.tsx';
-import { useWorkspaceStore } from '~/store/workspace';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
-
-  return {
-  };
+  return {};
 };
 
 interface SetLabelsProps {
@@ -27,12 +24,11 @@ interface SetLabelsProps {
   changeLabels?: (labels: TaskLabel[]) => void;
 }
 
-const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps) => {
+const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
   const { t } = useTranslation();
   const { labels } = useContext(WorkspaceContext);
-  const { columns, setColumnRecentLabel } = useWorkspaceStore();
   const formValue = useFormContext?.()?.getValues('labels');
-  const [labelsForMap, setLabelsForMap] = useState<TaskLabel[]>(labels);
+  const [labelsForMap, _] = useState<TaskLabel[]>(labels);
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
@@ -47,7 +43,6 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
     }
     const newLabel = labels.find((label) => label.value === value);
     if (newLabel) {
-      setColumnRecentLabel(projectId, newLabel);
       setSelectedLabels([...selectedLabels, newLabel]);
       return;
     }
@@ -78,16 +73,6 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
     setSelectedLabels(formValue || []);
   }, [formValue]);
 
-  useEffect(() => {
-    const recent = columns[projectId]?.recentLabels || [];
-    if (!isSearching && recent.length > 0) {
-      setLabelsForMap(recent);
-      return;
-    }
-
-    setLabelsForMap(labels);
-  }, [isSearching, columns]);
-
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
@@ -95,9 +80,9 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
           aria-label="Set labels"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex h-auto justify-start font-light ${mode === 'create' ? 'w-full text-left py-1 border' : 'py-[2px] group-hover/task:opacity-70 opacity-50'} ${
-            mode === 'edit' && selectedLabels.length && ''
-          }`}
+          className={`flex h-auto justify-start font-light ${
+            mode === 'create' ? 'w-full text-left py-1 border' : 'py-[2px] group-hover/task:opacity-70 opacity-50'
+          } ${mode === 'edit' && selectedLabels.length && ''}`}
         >
           {!selectedLabels.length && <Tag size={16} className="opacity-50" />}
           <div className="flex truncate flex-wrap gap-[1px]">
@@ -105,7 +90,12 @@ const SetLabels = ({ mode, projectId, viewValue, changeLabels }: SetLabelsProps)
             {selectedLabels.length > 0 &&
               selectedLabels.map(({ value, id, color }) => {
                 return (
-                  <Badge variant="outline" key={id} className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm mr-1 h-6' : 'h-5'} last:mr-0 bg-transparent`} style={badgeStyle(color)}>
+                  <Badge
+                    variant="outline"
+                    key={id}
+                    className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm mr-1 h-6' : 'h-5'} last:mr-0 bg-transparent`}
+                    style={badgeStyle(color)}
+                  >
                     {value}
                   </Badge>
                 );
@@ -182,7 +172,10 @@ const CommandItemCreate = ({ searchValue, labels, onSelect }: CommandItemCreateP
   // BUG: whenever a space is appended, the Create-Button will not be shown.
   return (
     <CommandItem key={`${searchValue}`} value={`${searchValue}`} className="text-sm m-1 flex justify-center items-center" onSelect={onSelect}>
-      {t('common:create_label')} <Badge className="ml-2 px-2 py-0 font-light" variant="plain">{searchValue}</Badge>
+      {t('common:create_label')}{' '}
+      <Badge className="ml-2 px-2 py-0 font-light" variant="plain">
+        {searchValue}
+      </Badge>
     </CommandItem>
   );
 };

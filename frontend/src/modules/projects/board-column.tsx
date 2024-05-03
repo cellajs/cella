@@ -12,7 +12,7 @@ import { BoardColumnHeader } from './board-column-header';
 import { CSS } from '@dnd-kit/utilities';
 import { ProjectSettings } from './project-settings';
 import { sheet } from '../common/sheeter/state';
-import CreateTaskForm from './task-form';
+import CreateTaskForm from './create-task-form';
 import { useTranslation } from 'react-i18next';
 
 export interface Column {

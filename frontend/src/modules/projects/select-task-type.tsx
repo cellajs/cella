@@ -5,7 +5,7 @@ import { Kbd } from '~/modules/common/kbd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bolt, Bug, Star, Check } from 'lucide-react';
-import type { TaskType } from './task-form';
+import type { TaskType } from './create-task-form';
 import { Button } from '../ui/button';
 
 type Type = {

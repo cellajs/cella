@@ -14,7 +14,7 @@ import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFormContext } from 'react-hook-form';
-import type { TaskImpact } from './task-form';
+import type { TaskImpact } from './create-task-form';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -65,16 +65,16 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
           className={mode === 'create' ? 'w-full text-left font-light flex gap-2 justify-start border' : 'group-hover/task:opacity-100 opacity-70'}
         >
           {selectedImpact !== null ? (
-                <>
-                  <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />
-                  {mode === 'create' && selectedImpact.label}
-                </>
-              ) : (
-                <>
-                  <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
-                  {mode === 'create' && 'Set impact'}
-                </>
-              )}
+            <>
+              <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />
+              {mode === 'create' && selectedImpact.label}
+            </>
+          ) : (
+            <>
+              <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+              {mode === 'create' && 'Set impact'}
+            </>
+          )}
           {/* {mode === 'create' ? (
             <>
               {selectedImpact !== null ? (

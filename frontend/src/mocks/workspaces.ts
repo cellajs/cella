@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { TaskImpact, TaskStatus, TaskType } from '~/modules/projects/task-form';
+import type { TaskImpact, TaskStatus, TaskType } from '~/modules/projects/create-task-form';
 
 const roles = ['MEMBER', 'ADMIN'] as const;
 
