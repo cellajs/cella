@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { TaskLabel } from '~/mocks/workspaces';
+import { viewOptions, type ViewOptions } from '~/modules/projects/view-options';
 
 type Column = {
   columnId: string;
@@ -14,12 +15,6 @@ type Column = {
   taskIds: string[];
 };
 
-type ViewOptions = {
-  status: ('iced' | 'unstarted' | 'started' | 'finished' | 'delivered' | 'reviewed' | 'accepted')[];
-  type: ('feature' | 'bug' | 'chore')[];
-  labels: ('primary' | 'secondary')[];
-};
-
 type WorkspaceStorage = {
   [key: string]: { viewOptions: ViewOptions; columns: Column[] };
 };
@@ -28,12 +23,8 @@ interface WorkspaceState {
   workspaces: WorkspaceStorage;
   changeColumn: (workspaceId: string, columnId: string, column: Partial<Column>) => void;
   addNewColumn: (workspaceId: string, column: Column) => void;
-  changeViewOptionsLabels: (workspaceId: string, newLabels: ('primary' | 'secondary')[]) => void;
-  changeViewOptionsStatus: (
-    workspaceId: string,
-    newStatuses: ('iced' | 'unstarted' | 'started' | 'finished' | 'delivered' | 'reviewed' | 'accepted')[],
-  ) => void;
-  changeViewOptionsTypes: (workspaceId: string, newTypes: ('feature' | 'bug' | 'chore')[]) => void;
+  getWorkspaceViewOptions: (workspaceId: string) => ViewOptions;
+  setWorkspaceViewOptions: (workspaceId: string, viewOption: keyof ViewOptions, values: string[]) => void;
 }
 
 const defaultColumnValues = {
@@ -48,48 +39,28 @@ const defaultColumnValues = {
 export const useWorkspaceStore = create<WorkspaceState>()(
   devtools(
     persist(
-      immer((set) => ({
+      immer((set, get) => ({
         workspaces: {},
-     
-        changeViewOptionsStatus: (
-          workspaceId: string,
-          newStatuses: ('iced' | 'unstarted' | 'started' | 'finished' | 'delivered' | 'reviewed' | 'accepted')[],
-        ) => {
+        getWorkspaceViewOptions: (workspaceId: string) => {
+          const workspace = get().workspaces[workspaceId];
+          if (workspace) return workspace.viewOptions;
+
+          // If the workspace doesn't exist, create a new one
           set((state) => {
-            const workspace = state.workspaces[workspaceId];
-            if (!workspace) {
-              state.workspaces[workspaceId] = {
-                viewOptions: { status: newStatuses, type: [], labels: [] },
-                columns: [],
-              };
-            } else {
-              workspace.viewOptions.status = newStatuses;
-            }
+            state.workspaces[workspaceId] = { viewOptions: viewOptions, columns: [] };
           });
+
+          return viewOptions;
         },
-        changeViewOptionsTypes: (workspaceId: string, newTypes: ('feature' | 'bug' | 'chore')[]) => {
+
+        setWorkspaceViewOptions: (workspaceId: string, viewOption: keyof ViewOptions, values: string[]) => {
           set((state) => {
             const workspace = state.workspaces[workspaceId];
             if (!workspace) {
-              state.workspaces[workspaceId] = {
-                viewOptions: { status: [], type: newTypes, labels: [] },
-                columns: [],
-              };
+              state.workspaces[workspaceId] = { viewOptions: viewOptions, columns: [] };
+              state.workspaces[workspaceId].viewOptions[viewOption] = values;
             } else {
-              workspace.viewOptions.type = newTypes;
-            }
-          });
-        },
-        changeViewOptionsLabels: (workspaceId: string, newLabels: ('primary' | 'secondary')[]) => {
-          set((state) => {
-            const workspace = state.workspaces[workspaceId];
-            if (!workspace) {
-              state.workspaces[workspaceId] = {
-                viewOptions: { status: [], type: [], labels: newLabels },
-                columns: [],
-              };
-            } else {
-              workspace.viewOptions.labels = newLabels;
+              workspace.viewOptions[viewOption] = values;
             }
           });
         },

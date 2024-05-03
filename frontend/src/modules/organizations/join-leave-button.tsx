@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ChevronDown, UserRoundCheck, Check, UserRoundX } from 'lucide-react';
+import { UserRoundCheck, Check, UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { invite as baseInvite } from '~/api/general';
@@ -59,8 +59,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
       <PopoverTrigger asChild>
         <Button size="sm" variant="darkSuccess" aria-label="Leave" className="items-center gap-1">
           <Check size={16} />
-          <span className="ml-1">{t('common:joined')}</span>
-          <ChevronDown size={14} />
+          <span>{t('common:joined')}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-0 rounded-lg pointer" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4} align="end">

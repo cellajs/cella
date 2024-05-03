@@ -11,18 +11,18 @@ import { toast } from 'sonner';
 type Status = {
   value: (typeof statuses)[number]['value'];
   status: string;
-  button: string;
+  action: string;
   icon: LucideIcon;
 };
 
 const statuses = [
-  { value: 0, button: 'Iced', status: 'Iced', icon: Snowflake },
-  { value: 1, button: 'Start', status: 'Unstarted', icon: Dot },
-  { value: 2, button: 'Finish', status: 'Started', icon: CircleDashed },
-  { value: 3, button: 'Deliver', status: 'Finished', icon: Circle },
-  { value: 4, button: 'Review', status: 'Delivered', icon: CircleDotDashed },
-  { value: 5, button: 'Accept', status: 'Reviewed', icon: CircleDot },
-  { value: 6, button: 'Accepted', status: 'Accepted', icon: CircleCheck },
+  { value: 0, action: 'iced', status: 'iced', icon: Snowflake },
+  { value: 1, action: 'start', status: 'unstarted', icon: Dot },
+  { value: 2, action: 'finish', status: 'started', icon: CircleDashed },
+  { value: 3, action: 'deliver', status: 'finished', icon: Circle },
+  { value: 4, action: 'review', status: 'delivered', icon: CircleDotDashed },
+  { value: 5, action: 'accept', status: 'reviewed', icon: CircleDot },
+  { value: 6, action: 'accepted', status: 'accepted', icon: CircleCheck },
 ] as const;
 
 export type TaskStatus = (typeof statuses)[number]['value'];
@@ -47,7 +47,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
     const newStatus = statuses[index];
     setSelectedStatus(newStatus);
     changeTaskStatus(index);
-    if (mode === 'edit') toast.success(t('common:success.new_status', { status: newStatus.status }));
+    if (mode === 'edit') toast.success(t('common:success.new_status', { status: t(newStatus.status).toLowerCase() }));
   };
 
   const nextStatusClick = () => {
@@ -71,7 +71,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
           onClick={nextStatusClick}
           disabled={selectedStatus.value === 6}
         >
-          {statuses[selectedStatus.value].button}
+          {t(statuses[selectedStatus.value].action)}
         </Button>
       )}
 
@@ -121,7 +121,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
                   >
                     <div className="flex items-center">
                       <status.icon size={16} className="mr-2 size-4 " />
-                      <span>{status.status}</span>
+                      <span>{t(status.status)}</span>
                     </div>
                     <div className="flex items-center">
                       {selectedStatus.value === status.value && <Check size={16} className="text-success" />}

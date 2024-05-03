@@ -140,8 +140,9 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
 
     const [options, setOptions] = React.useState<Option[]>(arrayDefaultOptions || []);
     const [selected, setSelected] = React.useState<Option[]>(value || options.filter(o => {
+      const selectedValue = formValue || [];
       if (onSearch) return true;
-      const values = formValue.filter((v: string | null) => v !== '' && v !== null);
+      const values = selectedValue.filter((v: string | null) => v !== '' && v !== null);
      return o.value && values.includes(o.value)
     }) || []);
     const [inputValue, setInputValue] = React.useState('');
@@ -156,7 +157,8 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         }) || [])
       };
       setSelected(options.filter(o => {
-        const values = formValue.filter((v: string | null) => v !== '' && v !== null);
+        const selectedValue = formValue || [];
+        const values = selectedValue.filter((v: string | null) => v !== '' && v !== null);
        return o.value && values.includes(o.value)
       }) || []);
     }, [formValue]);

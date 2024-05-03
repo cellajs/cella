@@ -8,6 +8,7 @@ import type { Column } from './board-column';
 import type { DraggableAttributes } from '@dnd-kit/core';
 import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
 import { useWorkspaceStore } from '~/store/workspace';
+import { useTranslation } from 'react-i18next';
 
 export interface ColumnDragData {
   type: 'Column';
@@ -33,6 +34,7 @@ export function BoardColumnHeader({
   openSettings,
   createFormClick,
 }: BoardColumnHeaderProps) {
+  const { t } = useTranslation();
   const [minimize, setMinimize] = useState(false);
   const { changeColumn } = useWorkspaceStore();
 
@@ -47,7 +49,7 @@ export function BoardColumnHeader({
   const [background, setBackground] = useState('#ff75c3');
 
   return (
-    <CardHeader className="p-3 text-normal leading-4 font-semibold border-b flex flex-row gap-2 space-between items-center">
+    <CardHeader className="p-3 border-b rounded-lg rounded-b-none text-normal leading-4 font-semibold flex flex-row gap-2 space-between items-center">
       <Button variant={'ghost'} {...attributes} {...listeners} size="xs" className="max-xs:hidden px-0 text-primary/50 -ml-1 cursor-grab relative">
         <span className="sr-only">{`Move column: ${column.name}`}</span>
         <GripVertical size={16} />
@@ -63,7 +65,7 @@ export function BoardColumnHeader({
 
       <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>
         <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />
-        <span className="ml-1">Task</span>
+        <span className="ml-1">{t('common:task')}</span>
       </Button>
     </CardHeader>
   );

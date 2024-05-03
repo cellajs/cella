@@ -16,6 +16,7 @@ import CreateTaskForm from './create-task-form';
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
 import { WorkspaceContext } from '../workspaces';
+import { cn } from '~/lib/utils';
 
 export interface Column {
   id: string;
@@ -44,7 +45,7 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
 
-  const currentProjectSettings = workspaces[workspace.id].columns.find((el) => el.columnId === column.id);
+  const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === column.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [createForm, setCreateForm] = useState(false);
@@ -119,9 +120,12 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
     <Card
       ref={setNodeRef}
       style={style}
-      className={variants({
-        dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
-      })}
+      className={cn(
+        'rounded-b-none',
+        variants({
+          dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
+        }),
+      )}
     >
       <BoardColumnHeader
         column={column}
@@ -136,49 +140,50 @@ export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
       {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
       <div ref={containerRef} />
-      <ScrollArea id={column.id} size="indicatorVertical">
-        <ScrollBar size="indicatorVertical" />
-        <CardContent className="flex flex-grow flex-col p-0 group/column">
-          {!!tasks.length && (
-            <>
-              <Button
-                onClick={handleAcceptedClick}
-                variant="ghost"
-                disabled={!acceptedCount}
-                size="sm"
-                className="w-full rounded-none gap-1 border-b ring-inset opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
-              >
-                <span className="text-xs">{acceptedCount} accepted</span>
-                {!!acceptedCount && (
-                  <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
-                )}
-              </Button>
 
-              <SortableContext items={tasksIds}>
-                {tasks
-                  .filter((t) => {
-                    if (showAccepted && t.status === 6) return true;
-                    if (showIced && t.status === 0) return true;
-                    return t.status !== 0 && t.status !== 6;
-                  })
-                  .map((task) => (
-                    <TaskCard task={task} key={task.id} />
-                  ))}
-              </SortableContext>
-              <Button
-                onClick={handleIcedClick}
-                variant="ghost"
-                disabled={!icedCount}
-                size="sm"
-                className="w-full rounded-none gap-1 ring-inset opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5 text-sm -mt-[1px]"
-              >
-                <span className="text-xs">{icedCount} iced</span>
-                {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
-              </Button>
-            </>
-          )}
-        </CardContent>
-      </ScrollArea>
+      {!!tasks.length && (
+        <ScrollArea id={column.id} size="indicatorVertical" className="mx-[-1px]">
+          <ScrollBar size="indicatorVertical" />
+          <CardContent className="flex flex-grow flex-col p-0 group/column">
+            <Button
+              onClick={handleAcceptedClick}
+              variant="ghost"
+              disabled={!acceptedCount}
+              size="sm"
+              className="w-full rounded-none gap-1 border-b ring-inset opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
+            >
+              <span className="text-xs">
+                {acceptedCount} {t('common:accepted').toLowerCase()}
+              </span>
+              {!!acceptedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />}
+            </Button>
+
+            <SortableContext items={tasksIds}>
+              {tasks
+                .filter((t) => {
+                  if (showAccepted && t.status === 6) return true;
+                  if (showIced && t.status === 0) return true;
+                  return t.status !== 0 && t.status !== 6;
+                })
+                .map((task) => (
+                  <TaskCard task={task} key={task.id} />
+                ))}
+            </SortableContext>
+            <Button
+              onClick={handleIcedClick}
+              variant="ghost"
+              disabled={!icedCount}
+              size="sm"
+              className="w-full rounded-none gap-1 ring-inset opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5 text-sm -mt-[1px]"
+            >
+              <span className="text-xs">
+                {icedCount} {t('common:iced').toLowerCase()}
+              </span>
+              {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
+            </Button>
+          </CardContent>
+        </ScrollArea>
+      )}
     </Card>
   );
 }

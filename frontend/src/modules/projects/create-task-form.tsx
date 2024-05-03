@@ -27,6 +27,8 @@ export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
 
+export const taskTypes = ['feature', 'chore', 'bug'];
+
 interface CreateTaskFormProps {
   dialog?: boolean;
   onCloseForm?: () => void;
@@ -184,7 +186,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                       onChange(value);
                     }}
                   >
-                    {['feature', 'chore', 'bug'].map((type) => (
+                    {taskTypes.map((type) => (
                       <ToggleGroupItem size="sm" value={type} className="w-full" key={type}>
                         {type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500" />}
                         {type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500" />}
@@ -286,7 +288,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               loading={isPending}
               className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'}`}
             >
-              <span className="pr-3">{t('common:create')}</span>
+              <span>{t('common:create')}</span>
             </Button>
             {form.formState.isDirty && (
               <FormField

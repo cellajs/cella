@@ -8,36 +8,24 @@ import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import { useContext } from 'react';
 import { WorkspaceContext } from '../workspaces/index.tsx';
+import { taskTypes } from './create-task-form.tsx';
 
 interface Props {
   className?: string;
 }
 
-const viewOptions = [
-  {
-    id: 'type' as const,
-    options: ['feature', 'bug', 'chore'],
-  },
-  {
-    id: 'status' as const,
-    options: ['iced', 'unstarted', 'started', 'finished', 'delivered', 'reviewed', 'accepted'],
-  },
-  {
-    id: 'labels' as const,
-    options: ['primary', 'secondary'],
-  },
-];
+
+export const viewOptions = { type: taskTypes, labels: ['primary', 'secondary'], status: ['unstarted', 'started', 'finished', 'delivered', 'reviewed'] };
+
+export type ViewOptions = typeof viewOptions;
 
 const WorkspaceView = ({ className = '' }: Props) => {
   const { t } = useTranslation();
-  const { workspaces, changeViewOptionsLabels, changeViewOptionsStatus, changeViewOptionsTypes } = useWorkspaceStore();
+  const { getWorkspaceViewOptions, setWorkspaceViewOptions } = useWorkspaceStore();
   const { workspace } = useContext(WorkspaceContext);
   const workspaceId = workspace.id;
-  const handleValueChange = (viewOption: string, values: string[]) => {
-    if (viewOption === 'type') changeViewOptionsTypes(workspaceId, values as ('feature' | 'bug' | 'chore')[]);
-    if (viewOption === 'status')
-      changeViewOptionsStatus(workspaceId, values as ('iced' | 'unstarted' | 'started' | 'finished' | 'delivered' | 'reviewed' | 'accepted')[]);
-    if (viewOption === 'labels') changeViewOptionsLabels(workspaceId, values as ('primary' | 'secondary')[]);
+  const handViewOptionsChange = (viewOption: keyof ViewOptions , values: string[]) => {
+    setWorkspaceViewOptions(workspaceId, viewOption, values);
   };
 
   return (
@@ -51,18 +39,18 @@ const WorkspaceView = ({ className = '' }: Props) => {
         </DropdownMenuTrigger>
       </TooltipButton>
       <DropdownMenuContent align="end" className="min-w-[320px] p-2 gap-2 flex flex-col">
-        {viewOptions.map((viewOption) => (
+      {Object.entries(viewOptions).map(([key, options]) => (
           <ToggleGroup
-            key={viewOption.id}
+            key={key}
             type="multiple"
             variant="merged"
-            value={workspaces[workspaceId]?.viewOptions[`${viewOption.id}`]}
+            value={getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]}
             className={cn('gap-0 w-full', className)}
-            onValueChange={(values) => handleValueChange(viewOption.id, values)}
+            onValueChange={(values) => handViewOptionsChange(key as keyof ViewOptions, values)}
           >
-            {viewOption.options.map((option) => (
+            {options.map((option) => (
               <ToggleGroupItem key={option} size="sm" value={option} className="w-full">
-                <span className="ml-2 text-xs font-normal">{t(`common:${option}`)}</span>
+                <span className="text-xs font-normal">{t(`common:${option}`)}</span>
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
