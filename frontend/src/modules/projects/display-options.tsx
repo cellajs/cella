@@ -1,42 +1,33 @@
 import { cn } from '~/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { SquareKanban, Rows4, Grid2X2 } from 'lucide-react';
-import { useWorkspaceStore } from '~/store/workspace';
-import { useContext } from 'react';
-import { WorkspaceContext } from '../workspaces';
+import { Link, useParams } from '@tanstack/react-router';
 
 interface Props {
   className?: string;
 }
 
 const DisplayOptions = ({ className = '' }: Props) => {
-  const { workspaces, changeDisplayOption } = useWorkspaceStore();
-  const { workspace } = useContext(WorkspaceContext);
-
-  const handleChangeDisplayOption = (value: string | undefined) => {
-    const newValue = (value ? value : 'table') as 'table' | 'board' | 'list';
-
-    changeDisplayOption(workspace.id, newValue);
-  };
+  const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
 
   return (
-    <ToggleGroup
-      type="single"
-      variant="merged"
-      value={workspaces[workspace.id].displayOption}
-      className={cn('gap-0', className)}
-      onValueChange={handleChangeDisplayOption}
-    >
-      <ToggleGroupItem value="board">
-        <SquareKanban size={16} />
-      </ToggleGroupItem>
-      <ToggleGroupItem value="list">
-        <Rows4 size={16} />
-      </ToggleGroupItem>
-      <ToggleGroupItem value="table">
-        <Grid2X2 size={16} />
-      </ToggleGroupItem>
+    <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)}>
+      {['board', 'table', 'overview'].map((value) => (
+        <ToggleGroupItem value={value} asChild key={value}>
+          <Link
+            to={`/workspace/${idOrSlug}/${value}`}
+            params={{ idOrSlug }}
+            activeOptions={{ exact: true, includeSearch: false }}
+            activeProps={{ className: '!bg-accent' }}
+          >
+            {value === 'board' && <SquareKanban size={16} />}
+            {value === 'table' && <Rows4 size={16} />}
+            {value === 'overview' && <Grid2X2 size={16} />}
+          </Link>
+        </ToggleGroupItem>
+      ))}
     </ToggleGroup>
   );
 };
+
 export default DisplayOptions;

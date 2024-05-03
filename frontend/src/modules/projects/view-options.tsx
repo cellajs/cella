@@ -56,7 +56,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
             key={viewOption.id}
             type="multiple"
             variant="merged"
-            value={workspaces[workspaceId].viewOptions[`${viewOption.id}`]}
+            value={workspaces[workspaceId]?.viewOptions[`${viewOption.id}`]}
             className={cn('gap-0 w-full', className)}
             onValueChange={(values) => handleValueChange(viewOption.id, values)}
           >

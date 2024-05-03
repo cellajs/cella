@@ -20,17 +20,14 @@ type ViewOptions = {
   labels: ('primary' | 'secondary')[];
 };
 
-type DisplayOption = 'table' | 'board' | 'list';
-
 type WorkspaceStorage = {
-  [key: string]: { viewOptions: ViewOptions; displayOption: DisplayOption; columns: Column[] };
+  [key: string]: { viewOptions: ViewOptions; columns: Column[] };
 };
 
 interface WorkspaceState {
   workspaces: WorkspaceStorage;
   changeColumn: (workspaceId: string, columnId: string, column: Partial<Column>) => void;
   addNewColumn: (workspaceId: string, column: Column) => void;
-  changeDisplayOption: (workspaceId: string, newDisplayOption: DisplayOption) => void;
   changeViewOptionsLabels: (workspaceId: string, newLabels: ('primary' | 'secondary')[]) => void;
   changeViewOptionsStatus: (
     workspaceId: string,
@@ -53,20 +50,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     persist(
       immer((set) => ({
         workspaces: {},
-        changeDisplayOption: (workspaceId: string, newDisplayOption: DisplayOption) => {
-          set((state) => {
-            const workspace = state.workspaces[workspaceId];
-            if (!workspace) {
-              state.workspaces[workspaceId] = {
-                viewOptions: { status: [], type: [], labels: [] },
-                displayOption: newDisplayOption,
-                columns: [],
-              };
-            } else {
-              workspace.displayOption = newDisplayOption;
-            }
-          });
-        },
+     
         changeViewOptionsStatus: (
           workspaceId: string,
           newStatuses: ('iced' | 'unstarted' | 'started' | 'finished' | 'delivered' | 'reviewed' | 'accepted')[],
@@ -76,7 +60,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             if (!workspace) {
               state.workspaces[workspaceId] = {
                 viewOptions: { status: newStatuses, type: [], labels: [] },
-                displayOption: 'table',
                 columns: [],
               };
             } else {
@@ -90,7 +73,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             if (!workspace) {
               state.workspaces[workspaceId] = {
                 viewOptions: { status: [], type: newTypes, labels: [] },
-                displayOption: 'table',
                 columns: [],
               };
             } else {
@@ -104,7 +86,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             if (!workspace) {
               state.workspaces[workspaceId] = {
                 viewOptions: { status: [], type: [], labels: newLabels },
-                displayOption: 'table',
                 columns: [],
               };
             } else {
@@ -118,7 +99,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             if (!workspace) {
               state.workspaces[workspaceId] = {
                 viewOptions: { status: [], type: [], labels: [] },
-                displayOption: 'table',
                 columns: [column],
               };
             } else {
