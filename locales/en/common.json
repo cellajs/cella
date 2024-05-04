@@ -335,7 +335,7 @@
   "success.send_reset_password_email": "An email has been sent to {{email}}",
   "success.restore_organization": "Organization has been restored.",
   "success.signed_out": "You have been signed out",
-  "success.new_status": "Task has been updated to {{status}}",
+  "success.new_status": "Task has been {{status}}",
   "success.unmute_organization": "Organization has been unmuted.",
   "success.update_organization": "Organization has been updated",
   "success.update_project": "Project has been updated",

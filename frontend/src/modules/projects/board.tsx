@@ -29,7 +29,7 @@ export default function Board() {
   }, [projects]);
 
   return (
-    <div className="h-[calc(100vh-64px-64px)] md:h-[calc(100vh-88px)]">
+    <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)]">
       <ResizablePanelGroup direction="horizontal" className="flex gap-2" id="project-panels">
         {projects.map((project, index) => (
           <Fragment key={project.id}>
@@ -39,7 +39,7 @@ export default function Board() {
               </ProjectContext.Provider>
             </ResizablePanel>
             {innerProject.length > index + 1 && (
-              <ResizableHandle className="w-[6px] rounded my-2 border border-background -mx-[7px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
+              <ResizableHandle className="w-[6px] rounded border border-background -mx-[7px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
             )}
           </Fragment>
         ))}

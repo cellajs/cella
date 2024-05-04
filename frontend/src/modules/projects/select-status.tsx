@@ -35,11 +35,11 @@ interface SelectStatusProps {
   mode?: 'create' | 'edit';
 }
 
-const variants = cva('text-foreground/80', {
+const variants = cva('', {
   variants: {
     status: {
       0: 'bg-background/50 border-sky-500/40 hover:bg-sky-500/10 hover:border-sky-500/60 text-sky-600',
-      1: '',
+      1: 'border-slate-300/40 hover:bg-slate-300/10 hover:border-slate-300/60',
       2: 'bg-background/50 border-slate-500/40 hover:bg-slate-500/10 hover:border-slate-500/60',
       3: 'bg-background/50 border-lime-500/40 hover:bg-lime-500/10 hover:border-lime-500/60',
       4: 'bg-background/50 border-yellow-500/40 hover:bg-yellow-500/10 hover:border-yellow-500/60',
@@ -97,7 +97,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
           variant={mode === 'edit' ? 'outlineGhost' : 'default'}
           size={mode === 'edit' ? 'micro' : 'xs'}
           className={cn(
-            variants({ status: selectedStatus.value }),
+            mode === 'edit' && variants({ status: selectedStatus.value }),
             mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25',
           )}
         >

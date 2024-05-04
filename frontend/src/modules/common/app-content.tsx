@@ -42,7 +42,7 @@ export const AppContent = () => {
   }, [matches]);
 
   return (
-    <div ref={clickContentRef} id="app-content" className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding} ${focusView && 'is-focused'}`}>
+    <div ref={clickContentRef} id="app-content" className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding} ${focusView && 'addPadding'}`}>
       <div
         className={`flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-[100vh] transition duration-300 ease-in-out ${
           !focusView && 'mt-16 md:ml-16'
