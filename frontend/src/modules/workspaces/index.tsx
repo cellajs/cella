@@ -64,7 +64,6 @@ const WorkspacePage = () => {
     }),
   );
 
-  // TODO: move to react-query
   // const [projects, setProjects] = useState<Project[]>([]);
   const [labels] = useState<Label[]>([]);
   // const [tasks, setTasks] = useState<Task[]>([]);

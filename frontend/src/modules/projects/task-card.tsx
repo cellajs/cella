@@ -73,21 +73,20 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   };
 
   const variants = cva(
-    'group/task rounded-none border-0 text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
-    {
+    'task-card', {
       variants: {
         dragging: {
           over: 'ring-2 opacity-30',
           overlay: 'ring-2 ring-primary',
         },
         status: {
-          0: 'to-sky-600/10',
+          0: 'to-sky-500/10 border-b-sky-500/20',
           1: '',
-          2: 'to-slate-600/10',
-          3: 'to-lime-600/10',
-          4: 'to-yellow-600/10',
-          5: 'to-orange-600/10',
-          6: 'to-green-600/10',
+          2: 'to-slate-500/10 border-b-slate-500/20',
+          3: 'to-lime-500/10 border-b-lime-500/20',
+          4: 'to-yellow-500/10 border-b-yellow-500/20',
+          5: 'to-orange-500/10 border-b-orange-500/20',
+          6: 'to-green-500/10 border-b-green-500/20',
         },
       },
     },
@@ -122,15 +121,15 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     <Card
       ref={setNodeRef}
       style={style}
-      className={cn(
+      className={cn('group/task rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
         variants({
           dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
           status: task.status as TaskStatus,
         }),
-        isExpanded ? 'border-l border-primary/50' : 'border-l border-transparent',
+        isExpanded ? 'border-l border-l-primary/50' : 'border-l border-l-transparent',
       )}
     >
-      <CardContent id={`${task.id}-content`} className={cn('p-2 space-between gap-1 flex flex-col border-b border-secondary relative')}>
+      <CardContent id={`${task.id}-content`} className="p-2 space-between gap-1 flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-2 w-full">
             <div className="flex flex-col gap-2 mt-[2px]">

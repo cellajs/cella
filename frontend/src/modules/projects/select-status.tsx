@@ -7,6 +7,8 @@ import { Kbd } from '../common/kbd';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { toast } from 'sonner';
+import { cva } from 'class-variance-authority';
+import { cn } from '~/lib/utils';
 
 type Status = {
   value: (typeof statuses)[number]['value'];
@@ -32,6 +34,20 @@ interface SelectStatusProps {
   changeTaskStatus: (newStatus: number) => void;
   mode?: 'create' | 'edit';
 }
+
+const variants = cva('text-foreground/80', {
+  variants: {
+    status: {
+      0: 'bg-background/50 border-sky-500/40 hover:bg-sky-500/10 hover:border-sky-500/60 text-sky-600',
+      1: '',
+      2: 'bg-background/50 border-slate-500/40 hover:bg-slate-500/10 hover:border-slate-500/60',
+      3: 'bg-background/50 border-lime-500/40 hover:bg-lime-500/10 hover:border-lime-500/60',
+      4: 'bg-background/50 border-yellow-500/40 hover:bg-yellow-500/10 hover:border-yellow-500/60',
+      5: 'bg-background/50 border-orange-500/40 hover:bg-orange-500/10 hover:border-orange-500/60',
+      6: 'bg-background/50 border-green-500/40 hover:bg-green-500/10 hover:border-green-500/60 text-green-600',
+    },
+  },
+});
 
 const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectStatusProps) => {
   const { t } = useTranslation();
@@ -67,7 +83,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
         <Button
           variant="outlineGhost"
           size="micro"
-          className="border-r-0 rounded-r-none"
+          className={cn('border-r-0 rounded-r-none', variants({ status: selectedStatus.value }))}
           onClick={nextStatusClick}
           disabled={selectedStatus.value === 6}
         >
@@ -80,9 +96,12 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
           aria-label="Set status"
           variant={mode === 'edit' ? 'outlineGhost' : 'default'}
           size={mode === 'edit' ? 'micro' : 'xs'}
-          className={mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25'}
+          className={cn(
+            variants({ status: selectedStatus.value }),
+            mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25',
+          )}
         >
-            <ChevronDown size={mode === 'edit' ? 12 : 16} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
+          <ChevronDown size={mode === 'edit' ? 12 : 16} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
       <PopoverContent
