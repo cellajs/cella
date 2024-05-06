@@ -25,14 +25,25 @@ interface ComboboxProps {
   searchPlaceholder?: string;
   renderOption?: (option: ComboBoxOption) => React.ReactNode;
   contentWidthMatchInput?: boolean;
+  disabled?: boolean;
 }
 
-const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholder, searchPlaceholder, renderOption, contentWidthMatchInput }) => {
+const Combobox: React.FC<ComboboxProps> = ({
+  options,
+  name,
+  onChange,
+  placeholder,
+  searchPlaceholder,
+  renderOption,
+  contentWidthMatchInput,
+  disabled,
+}) => {
   const formValue = useFormContext?.()?.getValues(name);
   const { ref, bounds } = useMeasure();
   const isMobile = useBreakpoints('max', 'sm');
   const [open, setOpen] = React.useState(false);
   const [selectedOption, setSelectedOption] = React.useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
+  console.log('selectedOption:', selectedOption);
   const [searchValue, setSearchValue] = React.useState('');
 
   const handleSelect = (newResult: string) => {
@@ -59,6 +70,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between font-normal"
+          disabled={disabled}
         >
           {selectedOption ? <div>{renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}</div> : placeholder || ''}
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

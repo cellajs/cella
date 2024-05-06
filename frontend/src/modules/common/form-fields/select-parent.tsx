@@ -34,6 +34,7 @@ const SelectParentFormField = ({ collection, control, name, label, placeholder, 
               options={options}
               name={`${collection.slice(0, -1)}Id`}
               onChange={onChange}
+              disabled={disabled}
               placeholder={t('common:choose_from', { option: collection })}
               searchPlaceholder={placeholder ? placeholder : t('common:search')}
             />
