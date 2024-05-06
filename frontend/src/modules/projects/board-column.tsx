@@ -1,18 +1,18 @@
 import { cva } from 'class-variance-authority';
 import { ChevronDown } from 'lucide-react';
 import { useContext, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { TaskCard } from './task-card';
-import { BoardColumnHeader } from './board-column-header';
-import { ProjectSettings } from './project-settings';
-import { sheet } from '../common/sheeter/state';
-import CreateTaskForm from './create-task-form';
-import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task } from '../common/root/electric';
+import type { Task } from '../common/app/electric';
+import { sheet } from '../common/sheeter/state';
 import { ProjectContext } from './board';
+import { BoardColumnHeader } from './board-column-header';
+import CreateTaskForm from './create-task-form';
+import { ProjectSettings } from './project-settings';
+import { TaskCard } from './task-card';
 
 interface BoardColumnProps {
   tasks?: Task[];

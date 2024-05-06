@@ -16,24 +16,16 @@ const VerifyEmail = () => {
     mutationFn: baseVerifyEmail,
     onSuccess: () => {
       toast.success(t('common:success.email_verified'));
-      navigate({
-        to: '/home',
-      });
+      navigate({ to: '/home' });
     },
   });
 
   const resendEmail = () => {
-    verifyEmail({
-      token,
-      resend: true,
-    });
+    verifyEmail({ token, resend: true });
   };
 
   useEffect(() => {
-    if (!token) {
-      return;
-    }
-
+    if (!token) return;
     verifyEmail({ token });
   }, []);
 

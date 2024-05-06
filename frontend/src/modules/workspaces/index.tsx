@@ -1,15 +1,15 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
+import { useLiveQuery } from 'electric-sql/react';
 import { createContext, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import type { Label } from '~/mocks/workspaces';
-import { WorkspaceRoute } from '~/routes/workspaces';
-import type { Workspace } from '~/types';
-import { type Project, useElectric, type Task } from '../common/root/electric';
-import { useLiveQuery } from 'electric-sql/react';
 import BoardHeader from '~/modules/projects/board-header';
-import { PageHeader } from '../common/page-header';
+import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
+import type { Workspace } from '~/types';
+import { useElectric, type Project, type Task } from '../common/app/electric';
+import { PageHeader } from '../common/page-header';
 
 interface WorkspaceContextValue {
   workspace: Workspace;

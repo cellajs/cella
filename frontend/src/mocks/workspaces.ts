@@ -21,8 +21,9 @@ export type Label = {
   value: string;
   color: string | null;
   count: number;
-  groupId: string;
+  groupId: string | null;
   lastActive: Date;
+  // workspaceId: string;
 };
 
 export type Task = {
@@ -42,6 +43,8 @@ export type Task = {
   status: TaskStatus;
   labels: TaskLabel[];
   projectId: string;
+  // workspaceId: string;
+  // organizationId: string;
 };
 
 export type Project = {
@@ -55,6 +58,7 @@ export type Project = {
   modifiedBy: string;
   modifiedAt: Date;
   workspaceId: string;
+  organizationId: string;
   members: TaskUser[];
 };
 
@@ -109,6 +113,7 @@ export const getLabels = (): Label[] => {
       value: faker.hacker.noun().toLowerCase(),
       groupId: faker.string.uuid(),
       lastActive: faker.date.anytime(),
+      // workspaceId: faker.string.uuid(),
     });
   }
   return returnedArray;
@@ -146,6 +151,8 @@ export const getTasks = (projects: Project[]) => {
         status: status[Math.floor(Math.random() * status.length)] as TaskStatus,
         labels: labels,
         projectId: project.id,
+        // workspaceId: project.workspaceId,
+        //  organizationId: project.id,
       });
     }
 

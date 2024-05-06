@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { WorkspaceContext } from '../../workspaces';
-import type { Project } from '~/mocks/workspaces';
-import { DataTable } from '~/modules/common/data-table';
-import { type TaskRow, useColumns } from './columns';
 import type { RowsChangeData } from 'react-data-grid';
+import type { Project } from '~/mocks/workspaces';
+import type { Task } from '~/modules/common/app/electric';
+import { DataTable } from '~/modules/common/data-table';
 import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
-import type { Task } from '~/modules/common/root/electric';
+import { WorkspaceContext } from '../../workspaces';
+import { useColumns, type TaskRow } from './columns';
 
 interface ProjectContextValue {
   tasks: Task[];
