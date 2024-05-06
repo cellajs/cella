@@ -5,6 +5,7 @@ import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useUserStore } from '~/store/user';
 import CountryFlag from './country-flag';
+import { toast } from 'sonner';
 
 interface Props {
   size?: number;
@@ -34,7 +35,14 @@ const UserLanguage = ({ align = 'end', className = '' }: Props) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-48">
         {config.languages.map((item) => (
-          <DropdownMenuCheckboxItem key={item.value} checked={language === item.value} onCheckedChange={() => changeLanguage(item.value)}>
+          <DropdownMenuCheckboxItem
+            key={item.value}
+            checked={language === item.value}
+            onCheckedChange={() => {
+              if (item.value === 'nl') toast.info('NL (Dutch) language will be available upon release.');
+              changeLanguage(item.value);
+            }}
+          >
             <CountryFlag countryCode={item.value} imgType="png" />
             <span className="ml-2">{item.label}</span>
           </DropdownMenuCheckboxItem>

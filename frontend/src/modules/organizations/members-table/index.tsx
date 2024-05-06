@@ -143,10 +143,9 @@ const MembersTable = () => {
     setRows(records);
   };
 
-  const isFiltered = role !== undefined || !!debounceQuery;
+  const isFiltered = role !== undefined;
 
   const onResetFilters = () => {
-    setQuery('');
     setSelectedRows(new Set<string>());
     setRole(undefined);
   };

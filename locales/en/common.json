@@ -205,6 +205,8 @@
   "newsletter.text": "Create a newsletter and send it to specific users in the selected organizations.",
   "no_color": "No color",
   "no_labels": "No labels yet",
+  "no_tasks": "No tasks yet. Click 'Task' to add the first one.",
+  "no_projects": "No projects yet. Click 'Add' your first project.",
   "no_members": "No members yet.",
   "no_organization": "No organization",
   "no_organizations": "No organizations yet.",

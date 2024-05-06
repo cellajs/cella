@@ -3,6 +3,7 @@ import type { Project } from '../common/app/electric';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';
+import { useTranslation } from 'react-i18next';
 
 interface ProjectContextValue {
   project: Project;
@@ -11,6 +12,7 @@ interface ProjectContextValue {
 export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
+  const { t } = useTranslation();
   const { projects, tasks, searchQuery } = useContext(WorkspaceContext);
   const [innerProject, setInnerProject] = useState<Project[]>(projects || []);
 
@@ -31,6 +33,7 @@ export default function Board() {
   return (
     <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)]">
       <ResizablePanelGroup direction="horizontal" className="flex gap-2" id="project-panels">
+        {!projects.length && <div className="flex flex-col items-center justify-start w-full p-8">{t('common:no_projects')}</div>}
         {projects.map((project, index) => (
           <Fragment key={project.id}>
             <ResizablePanel key={`${project.id}-panel`}>

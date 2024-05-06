@@ -1,5 +1,5 @@
-import { Search } from 'lucide-react';
-import {useRef} from 'react';
+import { Search, XCircle } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
 
@@ -24,6 +24,13 @@ const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (valu
           className="h-10 w-full"
           ref={inputRef}
         />
+        {!!value.length && (
+          <XCircle
+            size={16}
+            className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+            onClick={() => setQuery('')}
+          />
+        )}
       </div>
     </>
   );

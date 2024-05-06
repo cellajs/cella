@@ -86,15 +86,13 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
   });
 
   return (
-    <Card
-      className={variants({dragging: undefined})}
-    >
+    <Card className={variants({ dragging: undefined })}>
       <BoardColumnHeader createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
 
       {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
       <div ref={containerRef} />
-
+      {!tasks.length && <div className="flex flex-col items-center justify-start w-full p-8">{t('common:no_tasks')}</div>}
       {!!tasks.length && (
         <ScrollArea id={project.id} size="indicatorVertical" className="mx-[-1px]">
           <ScrollBar size="indicatorVertical" />
