@@ -6,7 +6,7 @@ compatibility_date = "2023-11-09"
 BACKEND_RENDER_URL = "https://cella-backend.onrender.com"
 FRONTEND_RENDER_URL = "https://cella-frontend.onrender.com"
 TUS_RENDER_URL = "https://cella-tus.onrender.com"
-ELECTRIC_RENDER_URL = "https://electric-z2us.onrender.com"
+ELECTRIC_RENDER_URL = "https://cella-electric-dev.onrender.com"
 
 workers_dev = false
 

@@ -26,6 +26,25 @@ export default [
       "DROP TRIGGER IF EXISTS compensation_update_main_tasks_project_id_into_oplog;",
       "CREATE TRIGGER compensation_update_main_tasks_project_id_into_oplog\n   AFTER UPDATE ON \"main\".\"tasks\"\n   WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.projects') AND\n        1 == (SELECT value from _electric_meta WHERE key == 'compensations')\nBEGIN\n  INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)\n  SELECT 'main', 'projects', 'COMPENSATION', json_object('id', \"id\"), json_object('id', \"id\"), NULL, NULL\n  FROM \"main\".\"projects\" WHERE \"id\" = new.\"project_id\";\nEND;"
     ],
-    version: "20240502074527_487"
+    version: "20240502195944_591"
+  },
+  {
+    statements: [
+      "CREATE TABLE \"labels\" (\n  \"id\" TEXT NOT NULL,\n  \"name\" TEXT NOT NULL,\n  \"color\" TEXT,\n  \"project_id\" TEXT NOT NULL,\n  CONSTRAINT \"labels_project_id_fkey\" FOREIGN KEY (\"project_id\") REFERENCES \"projects\" (\"id\") ON DELETE CASCADE,\n  CONSTRAINT \"labels_pkey\" PRIMARY KEY (\"id\")\n) WITHOUT ROWID;\n",
+      "INSERT OR IGNORE INTO _electric_trigger_settings(tablename,flag) VALUES ('main.labels', 1);",
+      "DROP TRIGGER IF EXISTS update_ensure_main_labels_primarykey;",
+      "CREATE TRIGGER update_ensure_main_labels_primarykey\n  BEFORE UPDATE ON \"main\".\"labels\"\nBEGIN\n  SELECT\n    CASE\n      WHEN old.\"id\" != new.\"id\" THEN\n      \t\tRAISE (ABORT, 'cannot change the value of column id as it belongs to the primary key')\n    END;\nEND;",
+      "DROP TRIGGER IF EXISTS insert_main_labels_into_oplog;",
+      "CREATE TRIGGER insert_main_labels_into_oplog\n   AFTER INSERT ON \"main\".\"labels\"\n   WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.labels')\nBEGIN\n  INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)\n  VALUES ('main', 'labels', 'INSERT', json_object('id', new.\"id\"), json_object('color', new.\"color\", 'id', new.\"id\", 'name', new.\"name\", 'project_id', new.\"project_id\"), NULL, NULL);\nEND;",
+      "DROP TRIGGER IF EXISTS update_main_labels_into_oplog;",
+      "CREATE TRIGGER update_main_labels_into_oplog\n   AFTER UPDATE ON \"main\".\"labels\"\n   WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.labels')\nBEGIN\n  INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)\n  VALUES ('main', 'labels', 'UPDATE', json_object('id', new.\"id\"), json_object('color', new.\"color\", 'id', new.\"id\", 'name', new.\"name\", 'project_id', new.\"project_id\"), json_object('color', old.\"color\", 'id', old.\"id\", 'name', old.\"name\", 'project_id', old.\"project_id\"), NULL);\nEND;",
+      "DROP TRIGGER IF EXISTS delete_main_labels_into_oplog;",
+      "CREATE TRIGGER delete_main_labels_into_oplog\n   AFTER DELETE ON \"main\".\"labels\"\n   WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.labels')\nBEGIN\n  INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)\n  VALUES ('main', 'labels', 'DELETE', json_object('id', old.\"id\"), NULL, json_object('color', old.\"color\", 'id', old.\"id\", 'name', old.\"name\", 'project_id', old.\"project_id\"), NULL);\nEND;",
+      "DROP TRIGGER IF EXISTS compensation_insert_main_labels_project_id_into_oplog;",
+      "CREATE TRIGGER compensation_insert_main_labels_project_id_into_oplog\n  AFTER INSERT ON \"main\".\"labels\"\n  WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.projects') AND\n       1 == (SELECT value from _electric_meta WHERE key == 'compensations')\nBEGIN\n  INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)\n  SELECT 'main', 'projects', 'COMPENSATION', json_object('id', \"id\"), json_object('id', \"id\"), NULL, NULL\n  FROM \"main\".\"projects\" WHERE \"id\" = new.\"project_id\";\nEND;",
+      "DROP TRIGGER IF EXISTS compensation_update_main_labels_project_id_into_oplog;",
+      "CREATE TRIGGER compensation_update_main_labels_project_id_into_oplog\n   AFTER UPDATE ON \"main\".\"labels\"\n   WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.projects') AND\n        1 == (SELECT value from _electric_meta WHERE key == 'compensations')\nBEGIN\n  INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)\n  SELECT 'main', 'projects', 'COMPENSATION', json_object('id', \"id\"), json_object('id', \"id\"), NULL, NULL\n  FROM \"main\".\"projects\" WHERE \"id\" = new.\"project_id\";\nEND;"
+    ],
+    version: "20240506083647_715"
   }
 ]

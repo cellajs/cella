@@ -74,7 +74,7 @@ export const tasks = pgTable('tasks', {
 
 export const labels = pgTable('labels', {
   id: uuid('id').primaryKey(),
-  value: varchar('value').notNull(),
+  name: varchar('name').notNull(),
   color: varchar('color'),
   projectId: uuid('project_id')
     .notNull()

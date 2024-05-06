@@ -13,6 +13,23 @@ type UnwrapTuple<Tuple extends readonly unknown[]> = {
 
 
 /**
+ * Model Labels
+ * 
+ */
+export type Labels = {
+  /**
+   * @zod.string.uuid()
+   */
+  id: string
+  name: string
+  color: string | null
+  /**
+   * @zod.string.uuid()
+   */
+  project_id: string
+}
+
+/**
  * Model Projects
  * 
  */
@@ -72,8 +89,8 @@ export type Tasks = {
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Projects
- * const projects = await prisma.projects.findMany()
+ * // Fetch zero or more Labels
+ * const labels = await prisma.labels.findMany()
  * ```
  *
  * 
@@ -93,8 +110,8 @@ export class PrismaClient<
    * @example
    * ```
    * const prisma = new PrismaClient()
-   * // Fetch zero or more Projects
-   * const projects = await prisma.projects.findMany()
+   * // Fetch zero or more Labels
+   * const labels = await prisma.labels.findMany()
    * ```
    *
    * 
@@ -183,6 +200,16 @@ export class PrismaClient<
   $transaction<R>(fn: (prisma: Prisma.TransactionClient) => Promise<R>, options?: {maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel}): Promise<R>;
 
       /**
+   * `prisma.labels`: Exposes CRUD operations for the **Labels** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Labels
+    * const labels = await prisma.labels.findMany()
+    * ```
+    */
+  get labels(): Prisma.LabelsDelegate<GlobalReject>;
+
+  /**
    * `prisma.projects`: Exposes CRUD operations for the **Projects** model.
     * Example usage:
     * ```ts
@@ -685,6 +712,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   }
 
   export const ModelName: {
+    Labels: 'Labels',
     Projects: 'Projects',
     Tasks: 'Tasks'
   };
@@ -857,10 +885,12 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
 
   export type ProjectsCountOutputType = {
+    labels: number
     tasks: number
   }
 
   export type ProjectsCountOutputTypeSelect = {
+    labels?: boolean
     tasks?: boolean
   }
 
@@ -898,6 +928,986 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   /**
    * Models
    */
+
+  /**
+   * Model Labels
+   */
+
+
+  export type AggregateLabels = {
+    _count: LabelsCountAggregateOutputType | null
+    _min: LabelsMinAggregateOutputType | null
+    _max: LabelsMaxAggregateOutputType | null
+  }
+
+  export type LabelsMinAggregateOutputType = {
+    id: string | null
+    name: string | null
+    color: string | null
+    project_id: string | null
+  }
+
+  export type LabelsMaxAggregateOutputType = {
+    id: string | null
+    name: string | null
+    color: string | null
+    project_id: string | null
+  }
+
+  export type LabelsCountAggregateOutputType = {
+    id: number
+    name: number
+    color: number
+    project_id: number
+    _all: number
+  }
+
+
+  export type LabelsMinAggregateInputType = {
+    id?: true
+    name?: true
+    color?: true
+    project_id?: true
+  }
+
+  export type LabelsMaxAggregateInputType = {
+    id?: true
+    name?: true
+    color?: true
+    project_id?: true
+  }
+
+  export type LabelsCountAggregateInputType = {
+    id?: true
+    name?: true
+    color?: true
+    project_id?: true
+    _all?: true
+  }
+
+  export type LabelsAggregateArgs = {
+    /**
+     * Filter which Labels to aggregate.
+     * 
+    **/
+    where?: LabelsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Labels to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<LabelsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     * 
+    **/
+    cursor?: LabelsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Labels from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Labels.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Labels
+    **/
+    _count?: true | LabelsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: LabelsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: LabelsMaxAggregateInputType
+  }
+
+  export type GetLabelsAggregateType<T extends LabelsAggregateArgs> = {
+        [P in keyof T & keyof AggregateLabels]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateLabels[P]>
+      : GetScalarType<T[P], AggregateLabels[P]>
+  }
+
+
+
+
+  export type LabelsGroupByArgs = {
+    where?: LabelsWhereInput
+    orderBy?: Enumerable<LabelsOrderByWithAggregationInput>
+    by: Array<LabelsScalarFieldEnum>
+    having?: LabelsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: LabelsCountAggregateInputType | true
+    _min?: LabelsMinAggregateInputType
+    _max?: LabelsMaxAggregateInputType
+  }
+
+
+  export type LabelsGroupByOutputType = {
+    id: string
+    name: string
+    color: string | null
+    project_id: string
+    _count: LabelsCountAggregateOutputType | null
+    _min: LabelsMinAggregateOutputType | null
+    _max: LabelsMaxAggregateOutputType | null
+  }
+
+  type GetLabelsGroupByPayload<T extends LabelsGroupByArgs> = PrismaPromise<
+    Array<
+      PickArray<LabelsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof LabelsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], LabelsGroupByOutputType[P]>
+            : GetScalarType<T[P], LabelsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type LabelsSelect = {
+    id?: boolean
+    name?: boolean
+    color?: boolean
+    project_id?: boolean
+    projects?: boolean | ProjectsArgs
+  }
+
+
+  export type LabelsInclude = {
+    projects?: boolean | ProjectsArgs
+  } 
+
+  export type LabelsGetPayload<S extends boolean | null | undefined | LabelsArgs> =
+    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
+    S extends true ? Labels :
+    S extends undefined ? never :
+    S extends { include: any } & (LabelsArgs | LabelsFindManyArgs)
+    ? Labels  & {
+    [P in TruthyKeys<S['include']>]:
+        P extends 'projects' ? ProjectsGetPayload<S['include'][P]> :  never
+  } 
+    : S extends { select: any } & (LabelsArgs | LabelsFindManyArgs)
+      ? {
+    [P in TruthyKeys<S['select']>]:
+        P extends 'projects' ? ProjectsGetPayload<S['select'][P]> :  P extends keyof Labels ? Labels[P] : never
+  } 
+      : Labels
+
+
+  type LabelsCountArgs = Merge<
+    Omit<LabelsFindManyArgs, 'select' | 'include'> & {
+      select?: LabelsCountAggregateInputType | true
+    }
+  >
+
+  export interface LabelsDelegate<GlobalRejectSettings extends Prisma.RejectOnNotFound | Prisma.RejectPerOperation | false | undefined> {
+    /**
+     * Find zero or one Labels that matches the filter.
+     * @param {LabelsFindUniqueArgs} args - Arguments to find a Labels
+     * @example
+     * // Get one Labels
+     * const labels = await prisma.labels.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends LabelsFindUniqueArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args: SelectSubset<T, LabelsFindUniqueArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findUnique', 'Labels'> extends True ? Prisma__LabelsClient<LabelsGetPayload<T>> : Prisma__LabelsClient<LabelsGetPayload<T> | null, null>
+
+    /**
+     * Find one Labels that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {LabelsFindUniqueOrThrowArgs} args - Arguments to find a Labels
+     * @example
+     * // Get one Labels
+     * const labels = await prisma.labels.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends LabelsFindUniqueOrThrowArgs>(
+      args?: SelectSubset<T, LabelsFindUniqueOrThrowArgs>
+    ): Prisma__LabelsClient<LabelsGetPayload<T>>
+
+    /**
+     * Find the first Labels that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LabelsFindFirstArgs} args - Arguments to find a Labels
+     * @example
+     * // Get one Labels
+     * const labels = await prisma.labels.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends LabelsFindFirstArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args?: SelectSubset<T, LabelsFindFirstArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findFirst', 'Labels'> extends True ? Prisma__LabelsClient<LabelsGetPayload<T>> : Prisma__LabelsClient<LabelsGetPayload<T> | null, null>
+
+    /**
+     * Find the first Labels that matches the filter or
+     * throw `NotFoundError` if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LabelsFindFirstOrThrowArgs} args - Arguments to find a Labels
+     * @example
+     * // Get one Labels
+     * const labels = await prisma.labels.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends LabelsFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, LabelsFindFirstOrThrowArgs>
+    ): Prisma__LabelsClient<LabelsGetPayload<T>>
+
+    /**
+     * Find zero or more Labels that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LabelsFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Labels
+     * const labels = await prisma.labels.findMany()
+     * 
+     * // Get first 10 Labels
+     * const labels = await prisma.labels.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const labelsWithIdOnly = await prisma.labels.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends LabelsFindManyArgs>(
+      args?: SelectSubset<T, LabelsFindManyArgs>
+    ): PrismaPromise<Array<LabelsGetPayload<T>>>
+
+    /**
+     * Create a Labels.
+     * @param {LabelsCreateArgs} args - Arguments to create a Labels.
+     * @example
+     * // Create one Labels
+     * const Labels = await prisma.labels.create({
+     *   data: {
+     *     // ... data to create a Labels
+     *   }
+     * })
+     * 
+    **/
+    create<T extends LabelsCreateArgs>(
+      args: SelectSubset<T, LabelsCreateArgs>
+    ): Prisma__LabelsClient<LabelsGetPayload<T>>
+
+    /**
+     * Create many Labels.
+     *     @param {LabelsCreateManyArgs} args - Arguments to create many Labels.
+     *     @example
+     *     // Create many Labels
+     *     const labels = await prisma.labels.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends LabelsCreateManyArgs>(
+      args?: SelectSubset<T, LabelsCreateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Labels.
+     * @param {LabelsDeleteArgs} args - Arguments to delete one Labels.
+     * @example
+     * // Delete one Labels
+     * const Labels = await prisma.labels.delete({
+     *   where: {
+     *     // ... filter to delete one Labels
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends LabelsDeleteArgs>(
+      args: SelectSubset<T, LabelsDeleteArgs>
+    ): Prisma__LabelsClient<LabelsGetPayload<T>>
+
+    /**
+     * Update one Labels.
+     * @param {LabelsUpdateArgs} args - Arguments to update one Labels.
+     * @example
+     * // Update one Labels
+     * const labels = await prisma.labels.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends LabelsUpdateArgs>(
+      args: SelectSubset<T, LabelsUpdateArgs>
+    ): Prisma__LabelsClient<LabelsGetPayload<T>>
+
+    /**
+     * Delete zero or more Labels.
+     * @param {LabelsDeleteManyArgs} args - Arguments to filter Labels to delete.
+     * @example
+     * // Delete a few Labels
+     * const { count } = await prisma.labels.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends LabelsDeleteManyArgs>(
+      args?: SelectSubset<T, LabelsDeleteManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Labels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LabelsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Labels
+     * const labels = await prisma.labels.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends LabelsUpdateManyArgs>(
+      args: SelectSubset<T, LabelsUpdateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Labels.
+     * @param {LabelsUpsertArgs} args - Arguments to update or create a Labels.
+     * @example
+     * // Update or create a Labels
+     * const labels = await prisma.labels.upsert({
+     *   create: {
+     *     // ... data to create a Labels
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Labels we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends LabelsUpsertArgs>(
+      args: SelectSubset<T, LabelsUpsertArgs>
+    ): Prisma__LabelsClient<LabelsGetPayload<T>>
+
+    /**
+     * Count the number of Labels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LabelsCountArgs} args - Arguments to filter Labels to count.
+     * @example
+     * // Count the number of Labels
+     * const count = await prisma.labels.count({
+     *   where: {
+     *     // ... the filter for the Labels we want to count
+     *   }
+     * })
+    **/
+    count<T extends LabelsCountArgs>(
+      args?: Subset<T, LabelsCountArgs>,
+    ): PrismaPromise<
+      T extends _Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], LabelsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Labels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LabelsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends LabelsAggregateArgs>(args: Subset<T, LabelsAggregateArgs>): PrismaPromise<GetLabelsAggregateType<T>>
+
+    /**
+     * Group by Labels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LabelsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends LabelsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: LabelsGroupByArgs['orderBy'] }
+        : { orderBy?: LabelsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends TupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, LabelsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetLabelsGroupByPayload<T> : PrismaPromise<InputErrors>
+
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Labels.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export class Prisma__LabelsClient<T, Null = never> implements PrismaPromise<T> {
+    [prisma]: true;
+    private readonly _dmmf;
+    private readonly _fetcher;
+    private readonly _queryType;
+    private readonly _rootField;
+    private readonly _clientMethod;
+    private readonly _args;
+    private readonly _dataPath;
+    private readonly _errorFormat;
+    private readonly _measurePerformance?;
+    private _isList;
+    private _callsite;
+    private _requestPromise?;
+    constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
+    readonly [Symbol.toStringTag]: 'PrismaClientPromise';
+
+    projects<T extends ProjectsArgs= {}>(args?: Subset<T, ProjectsArgs>): Prisma__ProjectsClient<ProjectsGetPayload<T> | Null>;
+
+    private get _document();
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): Promise<T>;
+  }
+
+
+
+  // Custom InputTypes
+
+  /**
+   * Labels base type for findUnique actions
+   */
+  export type LabelsFindUniqueArgsBase = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    /**
+     * Filter, which Labels to fetch.
+     * 
+    **/
+    where: LabelsWhereUniqueInput
+  }
+
+  /**
+   * Labels findUnique
+   */
+  export interface LabelsFindUniqueArgs extends LabelsFindUniqueArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findUniqueOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * Labels findUniqueOrThrow
+   */
+  export type LabelsFindUniqueOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    /**
+     * Filter, which Labels to fetch.
+     * 
+    **/
+    where: LabelsWhereUniqueInput
+  }
+
+
+  /**
+   * Labels base type for findFirst actions
+   */
+  export type LabelsFindFirstArgsBase = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    /**
+     * Filter, which Labels to fetch.
+     * 
+    **/
+    where?: LabelsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Labels to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<LabelsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Labels.
+     * 
+    **/
+    cursor?: LabelsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Labels from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Labels.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Labels.
+     * 
+    **/
+    distinct?: Enumerable<LabelsScalarFieldEnum>
+  }
+
+  /**
+   * Labels findFirst
+   */
+  export interface LabelsFindFirstArgs extends LabelsFindFirstArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findFirstOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * Labels findFirstOrThrow
+   */
+  export type LabelsFindFirstOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    /**
+     * Filter, which Labels to fetch.
+     * 
+    **/
+    where?: LabelsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Labels to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<LabelsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Labels.
+     * 
+    **/
+    cursor?: LabelsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Labels from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Labels.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Labels.
+     * 
+    **/
+    distinct?: Enumerable<LabelsScalarFieldEnum>
+  }
+
+
+  /**
+   * Labels findMany
+   */
+  export type LabelsFindManyArgs = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    /**
+     * Filter, which Labels to fetch.
+     * 
+    **/
+    where?: LabelsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Labels to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<LabelsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Labels.
+     * 
+    **/
+    cursor?: LabelsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Labels from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Labels.
+     * 
+    **/
+    skip?: number
+    distinct?: Enumerable<LabelsScalarFieldEnum>
+  }
+
+
+  /**
+   * Labels create
+   */
+  export type LabelsCreateArgs = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    /**
+     * The data needed to create a Labels.
+     * 
+    **/
+    data: XOR<LabelsCreateInput, LabelsUncheckedCreateInput>
+  }
+
+
+  /**
+   * Labels createMany
+   */
+  export type LabelsCreateManyArgs = {
+    /**
+     * The data used to create many Labels.
+     * 
+    **/
+    data: Enumerable<LabelsCreateManyInput>
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * Labels update
+   */
+  export type LabelsUpdateArgs = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    /**
+     * The data needed to update a Labels.
+     * 
+    **/
+    data: XOR<LabelsUpdateInput, LabelsUncheckedUpdateInput>
+    /**
+     * Choose, which Labels to update.
+     * 
+    **/
+    where: LabelsWhereUniqueInput
+  }
+
+
+  /**
+   * Labels updateMany
+   */
+  export type LabelsUpdateManyArgs = {
+    /**
+     * The data used to update Labels.
+     * 
+    **/
+    data: XOR<LabelsUpdateManyMutationInput, LabelsUncheckedUpdateManyInput>
+    /**
+     * Filter which Labels to update
+     * 
+    **/
+    where?: LabelsWhereInput
+  }
+
+
+  /**
+   * Labels upsert
+   */
+  export type LabelsUpsertArgs = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    /**
+     * The filter to search for the Labels to update in case it exists.
+     * 
+    **/
+    where: LabelsWhereUniqueInput
+    /**
+     * In case the Labels found by the `where` argument doesn't exist, create a new Labels with this data.
+     * 
+    **/
+    create: XOR<LabelsCreateInput, LabelsUncheckedCreateInput>
+    /**
+     * In case the Labels was found with the provided `where` argument, update it with this data.
+     * 
+    **/
+    update: XOR<LabelsUpdateInput, LabelsUncheckedUpdateInput>
+  }
+
+
+  /**
+   * Labels delete
+   */
+  export type LabelsDeleteArgs = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    /**
+     * Filter which Labels to delete.
+     * 
+    **/
+    where: LabelsWhereUniqueInput
+  }
+
+
+  /**
+   * Labels deleteMany
+   */
+  export type LabelsDeleteManyArgs = {
+    /**
+     * Filter which Labels to delete
+     * 
+    **/
+    where?: LabelsWhereInput
+  }
+
+
+  /**
+   * Labels without action
+   */
+  export type LabelsArgs = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+  }
+
+
 
   /**
    * Model Projects
@@ -1102,12 +2112,14 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by?: boolean
     modified_at?: boolean
     modified_by?: boolean
+    labels?: boolean | Projects$labelsArgs
     tasks?: boolean | Projects$tasksArgs
     _count?: boolean | ProjectsCountOutputTypeArgs
   }
 
 
   export type ProjectsInclude = {
+    labels?: boolean | Projects$labelsArgs
     tasks?: boolean | Projects$tasksArgs
     _count?: boolean | ProjectsCountOutputTypeArgs
   } 
@@ -1119,12 +2131,14 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     S extends { include: any } & (ProjectsArgs | ProjectsFindManyArgs)
     ? Projects  & {
     [P in TruthyKeys<S['include']>]:
+        P extends 'labels' ? Array < LabelsGetPayload<S['include'][P]>>  :
         P extends 'tasks' ? Array < TasksGetPayload<S['include'][P]>>  :
         P extends '_count' ? ProjectsCountOutputTypeGetPayload<S['include'][P]> :  never
   } 
     : S extends { select: any } & (ProjectsArgs | ProjectsFindManyArgs)
       ? {
     [P in TruthyKeys<S['select']>]:
+        P extends 'labels' ? Array < LabelsGetPayload<S['select'][P]>>  :
         P extends 'tasks' ? Array < TasksGetPayload<S['select'][P]>>  :
         P extends '_count' ? ProjectsCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof Projects ? Projects[P] : never
   } 
@@ -1499,6 +2513,8 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     private _requestPromise?;
     constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
     readonly [Symbol.toStringTag]: 'PrismaClientPromise';
+
+    labels<T extends Projects$labelsArgs= {}>(args?: Subset<T, Projects$labelsArgs>): PrismaPromise<Array<LabelsGetPayload<T>>| Null>;
 
     tasks<T extends Projects$tasksArgs= {}>(args?: Subset<T, Projects$tasksArgs>): PrismaPromise<Array<TasksGetPayload<T>>| Null>;
 
@@ -1902,6 +2918,29 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
      * 
     **/
     where?: ProjectsWhereInput
+  }
+
+
+  /**
+   * Projects.labels
+   */
+  export type Projects$labelsArgs = {
+    /**
+     * Select specific fields to fetch from the Labels
+     * 
+    **/
+    select?: LabelsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: LabelsInclude | null
+    where?: LabelsWhereInput
+    orderBy?: Enumerable<LabelsOrderByWithRelationInput>
+    cursor?: LabelsWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<LabelsScalarFieldEnum>
   }
 
 
@@ -3051,6 +4090,16 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   // Based on
   // https://github.com/microsoft/TypeScript/issues/3192#issuecomment-261720275
 
+  export const LabelsScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    color: 'color',
+    project_id: 'project_id'
+  };
+
+  export type LabelsScalarFieldEnum = (typeof LabelsScalarFieldEnum)[keyof typeof LabelsScalarFieldEnum]
+
+
   export const ProjectsScalarFieldEnum: {
     id: 'id',
     slug: 'slug',
@@ -3117,6 +4166,49 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
    */
 
 
+  export type LabelsWhereInput = {
+    AND?: Enumerable<LabelsWhereInput>
+    OR?: Enumerable<LabelsWhereInput>
+    NOT?: Enumerable<LabelsWhereInput>
+    id?: UuidFilter | string
+    name?: StringFilter | string
+    color?: StringNullableFilter | string | null
+    project_id?: UuidFilter | string
+    projects?: XOR<ProjectsRelationFilter, ProjectsWhereInput>
+  }
+
+  export type LabelsOrderByWithRelationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    color?: SortOrder
+    project_id?: SortOrder
+    projects?: ProjectsOrderByWithRelationInput
+  }
+
+  export type LabelsWhereUniqueInput = {
+    id?: string
+  }
+
+  export type LabelsOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    color?: SortOrder
+    project_id?: SortOrder
+    _count?: LabelsCountOrderByAggregateInput
+    _max?: LabelsMaxOrderByAggregateInput
+    _min?: LabelsMinOrderByAggregateInput
+  }
+
+  export type LabelsScalarWhereWithAggregatesInput = {
+    AND?: Enumerable<LabelsScalarWhereWithAggregatesInput>
+    OR?: Enumerable<LabelsScalarWhereWithAggregatesInput>
+    NOT?: Enumerable<LabelsScalarWhereWithAggregatesInput>
+    id?: UuidWithAggregatesFilter | string
+    name?: StringWithAggregatesFilter | string
+    color?: StringNullableWithAggregatesFilter | string | null
+    project_id?: UuidWithAggregatesFilter | string
+  }
+
   export type ProjectsWhereInput = {
     AND?: Enumerable<ProjectsWhereInput>
     OR?: Enumerable<ProjectsWhereInput>
@@ -3130,6 +4222,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by?: StringFilter | string
     modified_at?: DateTimeNullableFilter | Date | string | null
     modified_by?: StringNullableFilter | string | null
+    labels?: LabelsListRelationFilter
     tasks?: TasksListRelationFilter
   }
 
@@ -3143,6 +4236,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
+    labels?: LabelsOrderByRelationAggregateInput
     tasks?: TasksOrderByRelationAggregateInput
   }
 
@@ -3265,6 +4359,54 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     modified_by?: StringNullableWithAggregatesFilter | string | null
   }
 
+  export type LabelsCreateInput = {
+    id: string
+    name: string
+    color?: string | null
+    projects: ProjectsCreateNestedOneWithoutLabelsInput
+  }
+
+  export type LabelsUncheckedCreateInput = {
+    id: string
+    name: string
+    color?: string | null
+    project_id: string
+  }
+
+  export type LabelsUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    projects?: ProjectsUpdateOneRequiredWithoutLabelsNestedInput
+  }
+
+  export type LabelsUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    project_id?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type LabelsCreateManyInput = {
+    id: string
+    name: string
+    color?: string | null
+    project_id: string
+  }
+
+  export type LabelsUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type LabelsUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    project_id?: StringFieldUpdateOperationsInput | string
+  }
+
   export type ProjectsCreateInput = {
     id: string
     slug: string
@@ -3275,6 +4417,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by: string
     modified_at?: Date | string | null
     modified_by?: string | null
+    labels?: LabelsCreateNestedManyWithoutProjectsInput
     tasks?: TasksCreateNestedManyWithoutProjectsInput
   }
 
@@ -3288,6 +4431,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by: string
     modified_at?: Date | string | null
     modified_by?: string | null
+    labels?: LabelsUncheckedCreateNestedManyWithoutProjectsInput
     tasks?: TasksUncheckedCreateNestedManyWithoutProjectsInput
   }
 
@@ -3301,6 +4445,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    labels?: LabelsUpdateManyWithoutProjectsNestedInput
     tasks?: TasksUpdateManyWithoutProjectsNestedInput
   }
 
@@ -3314,6 +4459,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    labels?: LabelsUncheckedUpdateManyWithoutProjectsNestedInput
     tasks?: TasksUncheckedUpdateManyWithoutProjectsNestedInput
   }
 
@@ -3498,6 +4644,98 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedStringFilter | string
   }
 
+  export type StringNullableFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | null
+    notIn?: Enumerable<string> | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    mode?: QueryMode
+    not?: NestedStringNullableFilter | string | null
+  }
+
+  export type ProjectsRelationFilter = {
+    is?: ProjectsWhereInput
+    isNot?: ProjectsWhereInput
+  }
+
+  export type LabelsCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    color?: SortOrder
+    project_id?: SortOrder
+  }
+
+  export type LabelsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    color?: SortOrder
+    project_id?: SortOrder
+  }
+
+  export type LabelsMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    color?: SortOrder
+    project_id?: SortOrder
+  }
+
+  export type UuidWithAggregatesFilter = {
+    equals?: string
+    in?: Enumerable<string>
+    notIn?: Enumerable<string>
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    mode?: QueryMode
+    not?: NestedUuidWithAggregatesFilter | string
+    _count?: NestedIntFilter
+    _min?: NestedStringFilter
+    _max?: NestedStringFilter
+  }
+
+  export type StringWithAggregatesFilter = {
+    equals?: string
+    in?: Enumerable<string>
+    notIn?: Enumerable<string>
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    mode?: QueryMode
+    not?: NestedStringWithAggregatesFilter | string
+    _count?: NestedIntFilter
+    _min?: NestedStringFilter
+    _max?: NestedStringFilter
+  }
+
+  export type StringNullableWithAggregatesFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | null
+    notIn?: Enumerable<string> | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter | string | null
+    _count?: NestedIntNullableFilter
+    _min?: NestedStringNullableFilter
+    _max?: NestedStringNullableFilter
+  }
+
   export type DateTimeFilter = {
     equals?: Date | string
     in?: Enumerable<Date> | Enumerable<string>
@@ -3520,25 +4758,20 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedDateTimeNullableFilter | Date | string | null
   }
 
-  export type StringNullableFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    mode?: QueryMode
-    not?: NestedStringNullableFilter | string | null
+  export type LabelsListRelationFilter = {
+    every?: LabelsWhereInput
+    some?: LabelsWhereInput
+    none?: LabelsWhereInput
   }
 
   export type TasksListRelationFilter = {
     every?: TasksWhereInput
     some?: TasksWhereInput
     none?: TasksWhereInput
+  }
+
+  export type LabelsOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type TasksOrderByRelationAggregateInput = {
@@ -3581,39 +4814,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     modified_by?: SortOrder
   }
 
-  export type UuidWithAggregatesFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    mode?: QueryMode
-    not?: NestedUuidWithAggregatesFilter | string
-    _count?: NestedIntFilter
-    _min?: NestedStringFilter
-    _max?: NestedStringFilter
-  }
-
-  export type StringWithAggregatesFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    mode?: QueryMode
-    not?: NestedStringWithAggregatesFilter | string
-    _count?: NestedIntFilter
-    _min?: NestedStringFilter
-    _max?: NestedStringFilter
-  }
-
   export type DateTimeWithAggregatesFilter = {
     equals?: Date | string
     in?: Enumerable<Date> | Enumerable<string>
@@ -3642,24 +4842,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     _max?: NestedDateTimeNullableFilter
   }
 
-  export type StringNullableWithAggregatesFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    mode?: QueryMode
-    not?: NestedStringNullableWithAggregatesFilter | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedStringNullableFilter
-    _max?: NestedStringNullableFilter
-  }
-
   export type IntNullableFilter = {
     equals?: number | null
     in?: Enumerable<number> | null
@@ -3680,11 +4862,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     gt?: number
     gte?: number
     not?: NestedIntFilter | number
-  }
-
-  export type ProjectsRelationFilter = {
-    is?: ProjectsWhereInput
-    isNot?: ProjectsWhereInput
   }
 
   export type TasksCountOrderByAggregateInput = {
@@ -3780,6 +4957,35 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     _max?: NestedIntFilter
   }
 
+  export type ProjectsCreateNestedOneWithoutLabelsInput = {
+    create?: XOR<ProjectsCreateWithoutLabelsInput, ProjectsUncheckedCreateWithoutLabelsInput>
+    connectOrCreate?: ProjectsCreateOrConnectWithoutLabelsInput
+    connect?: ProjectsWhereUniqueInput
+  }
+
+  export type StringFieldUpdateOperationsInput = {
+    set?: string
+  }
+
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
+  }
+
+  export type ProjectsUpdateOneRequiredWithoutLabelsNestedInput = {
+    create?: XOR<ProjectsCreateWithoutLabelsInput, ProjectsUncheckedCreateWithoutLabelsInput>
+    connectOrCreate?: ProjectsCreateOrConnectWithoutLabelsInput
+    upsert?: ProjectsUpsertWithoutLabelsInput
+    connect?: ProjectsWhereUniqueInput
+    update?: XOR<ProjectsUpdateWithoutLabelsInput, ProjectsUncheckedUpdateWithoutLabelsInput>
+  }
+
+  export type LabelsCreateNestedManyWithoutProjectsInput = {
+    create?: XOR<Enumerable<LabelsCreateWithoutProjectsInput>, Enumerable<LabelsUncheckedCreateWithoutProjectsInput>>
+    connectOrCreate?: Enumerable<LabelsCreateOrConnectWithoutProjectsInput>
+    createMany?: LabelsCreateManyProjectsInputEnvelope
+    connect?: Enumerable<LabelsWhereUniqueInput>
+  }
+
   export type TasksCreateNestedManyWithoutProjectsInput = {
     create?: XOR<Enumerable<TasksCreateWithoutProjectsInput>, Enumerable<TasksUncheckedCreateWithoutProjectsInput>>
     connectOrCreate?: Enumerable<TasksCreateOrConnectWithoutProjectsInput>
@@ -3787,15 +4993,18 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     connect?: Enumerable<TasksWhereUniqueInput>
   }
 
+  export type LabelsUncheckedCreateNestedManyWithoutProjectsInput = {
+    create?: XOR<Enumerable<LabelsCreateWithoutProjectsInput>, Enumerable<LabelsUncheckedCreateWithoutProjectsInput>>
+    connectOrCreate?: Enumerable<LabelsCreateOrConnectWithoutProjectsInput>
+    createMany?: LabelsCreateManyProjectsInputEnvelope
+    connect?: Enumerable<LabelsWhereUniqueInput>
+  }
+
   export type TasksUncheckedCreateNestedManyWithoutProjectsInput = {
     create?: XOR<Enumerable<TasksCreateWithoutProjectsInput>, Enumerable<TasksUncheckedCreateWithoutProjectsInput>>
     connectOrCreate?: Enumerable<TasksCreateOrConnectWithoutProjectsInput>
     createMany?: TasksCreateManyProjectsInputEnvelope
     connect?: Enumerable<TasksWhereUniqueInput>
-  }
-
-  export type StringFieldUpdateOperationsInput = {
-    set?: string
   }
 
   export type DateTimeFieldUpdateOperationsInput = {
@@ -3806,8 +5015,18 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     set?: Date | string | null
   }
 
-  export type NullableStringFieldUpdateOperationsInput = {
-    set?: string | null
+  export type LabelsUpdateManyWithoutProjectsNestedInput = {
+    create?: XOR<Enumerable<LabelsCreateWithoutProjectsInput>, Enumerable<LabelsUncheckedCreateWithoutProjectsInput>>
+    connectOrCreate?: Enumerable<LabelsCreateOrConnectWithoutProjectsInput>
+    upsert?: Enumerable<LabelsUpsertWithWhereUniqueWithoutProjectsInput>
+    createMany?: LabelsCreateManyProjectsInputEnvelope
+    set?: Enumerable<LabelsWhereUniqueInput>
+    disconnect?: Enumerable<LabelsWhereUniqueInput>
+    delete?: Enumerable<LabelsWhereUniqueInput>
+    connect?: Enumerable<LabelsWhereUniqueInput>
+    update?: Enumerable<LabelsUpdateWithWhereUniqueWithoutProjectsInput>
+    updateMany?: Enumerable<LabelsUpdateManyWithWhereWithoutProjectsInput>
+    deleteMany?: Enumerable<LabelsScalarWhereInput>
   }
 
   export type TasksUpdateManyWithoutProjectsNestedInput = {
@@ -3822,6 +5041,20 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     update?: Enumerable<TasksUpdateWithWhereUniqueWithoutProjectsInput>
     updateMany?: Enumerable<TasksUpdateManyWithWhereWithoutProjectsInput>
     deleteMany?: Enumerable<TasksScalarWhereInput>
+  }
+
+  export type LabelsUncheckedUpdateManyWithoutProjectsNestedInput = {
+    create?: XOR<Enumerable<LabelsCreateWithoutProjectsInput>, Enumerable<LabelsUncheckedCreateWithoutProjectsInput>>
+    connectOrCreate?: Enumerable<LabelsCreateOrConnectWithoutProjectsInput>
+    upsert?: Enumerable<LabelsUpsertWithWhereUniqueWithoutProjectsInput>
+    createMany?: LabelsCreateManyProjectsInputEnvelope
+    set?: Enumerable<LabelsWhereUniqueInput>
+    disconnect?: Enumerable<LabelsWhereUniqueInput>
+    delete?: Enumerable<LabelsWhereUniqueInput>
+    connect?: Enumerable<LabelsWhereUniqueInput>
+    update?: Enumerable<LabelsUpdateWithWhereUniqueWithoutProjectsInput>
+    updateMany?: Enumerable<LabelsUpdateManyWithWhereWithoutProjectsInput>
+    deleteMany?: Enumerable<LabelsScalarWhereInput>
   }
 
   export type TasksUncheckedUpdateManyWithoutProjectsNestedInput = {
@@ -3893,28 +5126,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedStringFilter | string
   }
 
-  export type NestedDateTimeFilter = {
-    equals?: Date | string
-    in?: Enumerable<Date> | Enumerable<string>
-    notIn?: Enumerable<Date> | Enumerable<string>
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeFilter | Date | string
-  }
-
-  export type NestedDateTimeNullableFilter = {
-    equals?: Date | string | null
-    in?: Enumerable<Date> | Enumerable<string> | null
-    notIn?: Enumerable<Date> | Enumerable<string> | null
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeNullableFilter | Date | string | null
-  }
-
   export type NestedStringNullableFilter = {
     equals?: string | null
     in?: Enumerable<string> | null
@@ -3971,6 +5182,56 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     _max?: NestedStringFilter
   }
 
+  export type NestedStringNullableWithAggregatesFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | null
+    notIn?: Enumerable<string> | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    not?: NestedStringNullableWithAggregatesFilter | string | null
+    _count?: NestedIntNullableFilter
+    _min?: NestedStringNullableFilter
+    _max?: NestedStringNullableFilter
+  }
+
+  export type NestedIntNullableFilter = {
+    equals?: number | null
+    in?: Enumerable<number> | null
+    notIn?: Enumerable<number> | null
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedIntNullableFilter | number | null
+  }
+
+  export type NestedDateTimeFilter = {
+    equals?: Date | string
+    in?: Enumerable<Date> | Enumerable<string>
+    notIn?: Enumerable<Date> | Enumerable<string>
+    lt?: Date | string
+    lte?: Date | string
+    gt?: Date | string
+    gte?: Date | string
+    not?: NestedDateTimeFilter | Date | string
+  }
+
+  export type NestedDateTimeNullableFilter = {
+    equals?: Date | string | null
+    in?: Enumerable<Date> | Enumerable<string> | null
+    notIn?: Enumerable<Date> | Enumerable<string> | null
+    lt?: Date | string
+    lte?: Date | string
+    gt?: Date | string
+    gte?: Date | string
+    not?: NestedDateTimeNullableFilter | Date | string | null
+  }
+
   export type NestedDateTimeWithAggregatesFilter = {
     equals?: Date | string
     in?: Enumerable<Date> | Enumerable<string>
@@ -3997,34 +5258,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     _count?: NestedIntNullableFilter
     _min?: NestedDateTimeNullableFilter
     _max?: NestedDateTimeNullableFilter
-  }
-
-  export type NestedIntNullableFilter = {
-    equals?: number | null
-    in?: Enumerable<number> | null
-    notIn?: Enumerable<number> | null
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntNullableFilter | number | null
-  }
-
-  export type NestedStringNullableWithAggregatesFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    not?: NestedStringNullableWithAggregatesFilter | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedStringNullableFilter
-    _max?: NestedStringNullableFilter
   }
 
   export type NestedIntNullableWithAggregatesFilter = {
@@ -4081,6 +5314,90 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedFloatFilter | number
   }
 
+  export type ProjectsCreateWithoutLabelsInput = {
+    id: string
+    slug: string
+    name: string
+    color: string
+    workspace_id: string
+    created_at: Date | string
+    created_by: string
+    modified_at?: Date | string | null
+    modified_by?: string | null
+    tasks?: TasksCreateNestedManyWithoutProjectsInput
+  }
+
+  export type ProjectsUncheckedCreateWithoutLabelsInput = {
+    id: string
+    slug: string
+    name: string
+    color: string
+    workspace_id: string
+    created_at: Date | string
+    created_by: string
+    modified_at?: Date | string | null
+    modified_by?: string | null
+    tasks?: TasksUncheckedCreateNestedManyWithoutProjectsInput
+  }
+
+  export type ProjectsCreateOrConnectWithoutLabelsInput = {
+    where: ProjectsWhereUniqueInput
+    create: XOR<ProjectsCreateWithoutLabelsInput, ProjectsUncheckedCreateWithoutLabelsInput>
+  }
+
+  export type ProjectsUpsertWithoutLabelsInput = {
+    update: XOR<ProjectsUpdateWithoutLabelsInput, ProjectsUncheckedUpdateWithoutLabelsInput>
+    create: XOR<ProjectsCreateWithoutLabelsInput, ProjectsUncheckedCreateWithoutLabelsInput>
+  }
+
+  export type ProjectsUpdateWithoutLabelsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: StringFieldUpdateOperationsInput | string
+    workspace_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    created_by?: StringFieldUpdateOperationsInput | string
+    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    tasks?: TasksUpdateManyWithoutProjectsNestedInput
+  }
+
+  export type ProjectsUncheckedUpdateWithoutLabelsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: StringFieldUpdateOperationsInput | string
+    workspace_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    created_by?: StringFieldUpdateOperationsInput | string
+    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    tasks?: TasksUncheckedUpdateManyWithoutProjectsNestedInput
+  }
+
+  export type LabelsCreateWithoutProjectsInput = {
+    id: string
+    name: string
+    color?: string | null
+  }
+
+  export type LabelsUncheckedCreateWithoutProjectsInput = {
+    id: string
+    name: string
+    color?: string | null
+  }
+
+  export type LabelsCreateOrConnectWithoutProjectsInput = {
+    where: LabelsWhereUniqueInput
+    create: XOR<LabelsCreateWithoutProjectsInput, LabelsUncheckedCreateWithoutProjectsInput>
+  }
+
+  export type LabelsCreateManyProjectsInputEnvelope = {
+    data: Enumerable<LabelsCreateManyProjectsInput>
+    skipDuplicates?: boolean
+  }
+
   export type TasksCreateWithoutProjectsInput = {
     id: string
     slug: string
@@ -4121,6 +5438,32 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   export type TasksCreateManyProjectsInputEnvelope = {
     data: Enumerable<TasksCreateManyProjectsInput>
     skipDuplicates?: boolean
+  }
+
+  export type LabelsUpsertWithWhereUniqueWithoutProjectsInput = {
+    where: LabelsWhereUniqueInput
+    update: XOR<LabelsUpdateWithoutProjectsInput, LabelsUncheckedUpdateWithoutProjectsInput>
+    create: XOR<LabelsCreateWithoutProjectsInput, LabelsUncheckedCreateWithoutProjectsInput>
+  }
+
+  export type LabelsUpdateWithWhereUniqueWithoutProjectsInput = {
+    where: LabelsWhereUniqueInput
+    data: XOR<LabelsUpdateWithoutProjectsInput, LabelsUncheckedUpdateWithoutProjectsInput>
+  }
+
+  export type LabelsUpdateManyWithWhereWithoutProjectsInput = {
+    where: LabelsScalarWhereInput
+    data: XOR<LabelsUpdateManyMutationInput, LabelsUncheckedUpdateManyWithoutLabelsInput>
+  }
+
+  export type LabelsScalarWhereInput = {
+    AND?: Enumerable<LabelsScalarWhereInput>
+    OR?: Enumerable<LabelsScalarWhereInput>
+    NOT?: Enumerable<LabelsScalarWhereInput>
+    id?: UuidFilter | string
+    name?: StringFilter | string
+    color?: StringNullableFilter | string | null
+    project_id?: UuidFilter | string
   }
 
   export type TasksUpsertWithWhereUniqueWithoutProjectsInput = {
@@ -4169,6 +5512,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by: string
     modified_at?: Date | string | null
     modified_by?: string | null
+    labels?: LabelsCreateNestedManyWithoutProjectsInput
   }
 
   export type ProjectsUncheckedCreateWithoutTasksInput = {
@@ -4181,6 +5525,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by: string
     modified_at?: Date | string | null
     modified_by?: string | null
+    labels?: LabelsUncheckedCreateNestedManyWithoutProjectsInput
   }
 
   export type ProjectsCreateOrConnectWithoutTasksInput = {
@@ -4203,6 +5548,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    labels?: LabelsUpdateManyWithoutProjectsNestedInput
   }
 
   export type ProjectsUncheckedUpdateWithoutTasksInput = {
@@ -4215,6 +5561,13 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     created_by?: StringFieldUpdateOperationsInput | string
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    labels?: LabelsUncheckedUpdateManyWithoutProjectsNestedInput
+  }
+
+  export type LabelsCreateManyProjectsInput = {
+    id: string
+    name: string
+    color?: string | null
   }
 
   export type TasksCreateManyProjectsInput = {
@@ -4231,6 +5584,24 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+  }
+
+  export type LabelsUpdateWithoutProjectsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type LabelsUncheckedUpdateWithoutProjectsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type LabelsUncheckedUpdateManyWithoutLabelsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type TasksUpdateWithoutProjectsInput = {
