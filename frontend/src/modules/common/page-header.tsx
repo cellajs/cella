@@ -6,7 +6,7 @@ import { PageCover } from './page-cover';
 import type { PageResourceType } from 'backend/types/common';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { ChevronRight, Home } from 'lucide-react';
+import { Building, ChevronRight, Home, Layers } from 'lucide-react';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
@@ -40,26 +40,34 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizat
 
             <Breadcrumb className="mt-1">
               <BreadcrumbList>
-                <BreadcrumbItem>
+                <BreadcrumbItem className="max-sm:hidden">
                   <BreadcrumbLink asChild>
-                    <Link to="/home"><Home size={12} /></Link>
+                    <Link to="/home">
+                      <Home size={12} />
+                    </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator>
+                <BreadcrumbSeparator className="max-sm:hidden">
                   <ChevronRight size={12} />
                 </BreadcrumbSeparator>
-                {!!organizationId && <>
-               <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link to="/$idOrSlug/members" params={{idOrSlug: organizationId }}>{t('common:organization').toLowerCase()}</Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator>
-                  <ChevronRight size={12} />
-                </BreadcrumbSeparator>
-                </>}
-                <BreadcrumbItem>
-                  {t(type.toLowerCase()).toLowerCase()}
+                {!!organizationId && (
+                  <>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink className="flex items-center" asChild>
+                        <Link to="/$idOrSlug/members" params={{ idOrSlug: organizationId }}>
+                          <Building size={12} />
+                          <span className="ml-1">{t('common:organization').toLowerCase()}</span>
+                        </Link>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator>
+                      <ChevronRight size={12} />
+                    </BreadcrumbSeparator>
+                  </>
+                )}
+                <BreadcrumbItem className="flex items-center">
+                  <Layers size={12} />
+                  <span className="ml-1">{t(type.toLowerCase()).toLowerCase()}</span>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
