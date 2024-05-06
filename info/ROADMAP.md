@@ -15,8 +15,8 @@ We maintain a very rough roadmap here. Its a work in progress and things will ge
 * Automated security audit / testing solution
 * Perf testing with K6 / Grafana
 
-## 💾 &nbsp; Local-first
-For app-specific data and endpoints that require a reactive, realtime UX with offline accessibility, we consider [Electric-SQL](https://electric-sql.com/). We are planning to look into their [pglite](https://github.com/electric-sql/pglite) project too.
+## ⚡ &nbsp; Local-first, instant & realtime
+Cella uses [ElectricSQL](https://electric-sql.com/) for app-specific data and endpoints that require a instant, realtime UX with offline accessibility. We are planning to look into their [pglite](https://github.com/electric-sql/pglite) project too.
 
 ## ☁️ &nbsp; Hosting options
 We support only render.com out of the box at the moment. More should follow:
