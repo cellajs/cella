@@ -6,6 +6,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
+    "postinstall": "concurrently --kill-others --success first \"pnpm proxy\" \"pnpm generate:electric\"",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
     "build": "tsc && vite build",
@@ -13,9 +14,9 @@
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
     "generate": "drizzle-kit generate:pg",
-    "generate:client": "pnpm electric-sql generate --service https://cella-electric-dev.onrender.com --proxy postgresql://prisma:proxy_password@localhost:65431/postgres",
+    "generate:electric": "if test \"$NODE_ENV\" = \"development\"; then electric-sql generate --service https://cella-electric-dev.onrender.com --proxy postgresql://prisma:proxy_password@localhost:65431/postgres; else electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://prisma:proxy_password@localhost:65431/postgres; fi",
     "migrate": "tsx src/db/migrate.ts",
-    "proxy": "pnpm electric-sql proxy-tunnel --service https://cella-electric-dev.onrender.com --local-port 65431"
+    "proxy": "if test \"$NODE_ENV\" = \"development\"; then electric-sql proxy-tunnel --service https://cella-electric-dev.onrender.com --local-port 65431; else electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65431; fi"
   },
   "dependencies": {
     "@databases/pg-migrations": "^5.0.3",
@@ -170,6 +171,7 @@
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
     "drizzle-kit": "^0.20.17",
     "msw": "^2.2.14",
     "postcss": "^8.4.38",
