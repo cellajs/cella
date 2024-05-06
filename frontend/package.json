@@ -6,7 +6,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "prepare:electric": "concurrently --kill-others --success first \"pnpm proxy\" \"pnpm generate:electric\"",
+    "prepare:electric": "concurrently --kill-others --success command-2 \"pnpm proxy\" \"pnpm migrate\" \"pnpm generate:electric\"",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
     "build": "tsc && vite build",
