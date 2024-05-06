@@ -52,6 +52,9 @@ const WorkspaceView = ({ className = '' }: Props) => {
     setWorkspaceViewOptions(workspaceId, viewOption, values);
   };
 
+  // const handleSelectAll = () => {
+  //   Object.entries(viewOptions).map(([key, value]) => setWorkspaceViewOptions(workspaceId, key as keyof ViewOptions, value));
+  // };
   return (
     <DropdownMenu>
       <TooltipButton toolTipContent={t('common:view_options')}>
@@ -86,6 +89,9 @@ const WorkspaceView = ({ className = '' }: Props) => {
             ))}
           </ToggleGroup>
         ))}
+        {/* <Button onClick={handleSelectAll} variant="outlineGhost" key="select all" size="sm">
+          <span className="text-xs font-normal">{'Select All'}</span>
+        </Button> */}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -15,10 +15,10 @@ const SelectRole = ({ roles, onChange, value, className }: SelectRoleProps) => {
   return (
     <RadioGroup value={value} onValueChange={onChange} className={cn('inline-flex gap-2 items-center', className)}>
       {roles.map(({ key, value: roleName }) => (
-        <>
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{t(roleName)}</label>
+        <label className="inline-flex gap-1 items-center cursor-pointer ">
           <RadioGroupItem key={key} value={key} />
-        </>
+          <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{t(roleName)}</span>
+        </label>
       ))}
     </RadioGroup>
   );
