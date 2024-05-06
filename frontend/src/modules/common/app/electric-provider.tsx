@@ -1,20 +1,15 @@
-import { Outlet, ScrollRestoration } from '@tanstack/react-router';
-import { config } from 'config';
-import { Suspense, lazy, useEffect, useState } from 'react';
-
-import { Dialoger } from '~/modules/common/dialoger';
-import ReloadPrompt from '~/modules/common/reload-prompt';
-import { Sheeter } from '~/modules/common/sheeter';
-import { Toaster } from '~/modules/ui/sonner';
-import { TooltipProvider } from '~/modules/ui/tooltip';
-import { DownAlert } from '../down-alert';
-
+import { useEffect, useState } from 'react';
+import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electric';
+import { useUserStore } from '~/store/user';
 import { uniqueTabId } from 'electric-sql/util';
 import { LIB_VERSION } from 'electric-sql/version';
-import { ElectricDatabase, electrify } from 'electric-sql/wa-sqlite';
+import { ElectricDatabase, electrify } from 'electric-sql/browser';
+import { config } from 'config';
 import * as jose from 'jose';
-import { useUserStore } from '~/store/user';
-import { ElectricProvider, schema, type Electric } from './electric';
+
+interface Props {
+  children: React.ReactNode;
+}
 
 async function unsignedJWT(userId: string, customClaims?: object) {
   const textEncoder = new TextEncoder();
@@ -29,19 +24,6 @@ async function unsignedJWT(userId: string, customClaims?: object) {
   return jwt;
 }
 
-// Lazy load Tanstack dev tools in development
-const TanStackRouterDevtools =
-  config.mode === 'production'
-    ? () => null
-    : lazy(() =>
-        import('@tanstack/router-devtools').then((res) => ({
-          default: res.TanStackRouterDevtools,
-        })),
-      );
-
-// Lazy load gleap chat support
-const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gleap')) : () => null;
-
 function deleteDB(dbName: string) {
   console.log("Deleting DB as schema doesn't match server's");
   const DBDeleteRequest = window.indexedDB.deleteDatabase(dbName);
@@ -54,7 +36,7 @@ function deleteDB(dbName: string) {
   window.location.reload();
 }
 
-function Root() {
+const ElectricProvider = ({ children }: Props) => {
   const user = useUserStore((state) => state.user);
   const [electric, setElectric] = useState<Electric>();
 
@@ -72,7 +54,7 @@ function Root() {
           url: config.electricUrl,
         });
 
-        const token = await unsignedJWT(user.id);
+        const token = await unsignedJWT(user.id || '0');
         await electric.connect(token);
 
         if (!isMounted) {
@@ -119,26 +101,7 @@ function Root() {
     );
   }
 
-  return (
-    <ElectricProvider db={electric}>
-      <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
-        <ScrollRestoration />
-        <Outlet />
-        <Toaster richColors />
-        <Dialoger />
-        <Sheeter />
-        <ReloadPrompt />
-        <Suspense fallback={null}>
-          <TanStackRouterDevtools />
-        </Suspense>
-        <DownAlert />
+  return <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>;
+};
 
-        <Suspense fallback={null}>
-          <GleapSupport />
-        </Suspense>
-      </TooltipProvider>
-    </ElectricProvider>
-  );
-}
-
-export { Root };
+export default ElectricProvider;

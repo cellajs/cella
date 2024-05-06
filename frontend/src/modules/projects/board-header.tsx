@@ -1,20 +1,20 @@
-import { Settings, Plus, Tag, Trash, PanelTopClose } from 'lucide-react';
+import { PanelTopClose, Plus, Settings, Tag, Trash } from 'lucide-react';
+import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import WorkspaceView from '~/modules/projects/view-options';
-import DisplayOptions from '~/modules/projects/display-options';
-import BoardSearch from '~/modules/projects/board-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
+import BoardSearch from '~/modules/projects/board-search';
+import DisplayOptions from '~/modules/projects/display-options';
+import WorkspaceView from '~/modules/projects/view-options';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
-import AddProjects from './add-projects';
+import { useElectric } from '../common/app/electric';
 import { AvatarWrap } from '../common/avatar-wrap';
-import LabelsTable from './labels-table';
-import { WorkspaceContext } from '../workspaces';
-import { useContext } from 'react';
 import { Badge } from '../ui/badge';
-import { useElectric } from '../common/root/electric';
+import { WorkspaceContext } from '../workspaces';
+import AddProjects from './add-projects';
+import LabelsTable from './labels-table';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;

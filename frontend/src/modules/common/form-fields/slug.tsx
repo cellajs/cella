@@ -1,16 +1,16 @@
 import { useMutation } from '@tanstack/react-query';
+import type { PageResourceType } from 'backend/types/common';
+import { config } from 'config';
+import { Undo } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { Control } from 'react-hook-form';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { checkSlugAvailable } from '~/api/general';
-import InputFormField from './input';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '~/modules/ui/button';
-import { Undo } from 'lucide-react';
 import slugify from 'slugify';
-import type { PageResourceType } from 'backend/types/common';
-import { useElectric } from '../root/electric';
-import { config } from 'config';
+import { checkSlugAvailable } from '~/api/general';
+import { Button } from '~/modules/ui/button';
+import { useElectric } from '../app/electric';
+import InputFormField from './input';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

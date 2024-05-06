@@ -1,8 +1,8 @@
-import { createContext, Fragment, useContext, useEffect, useMemo, useState } from 'react';
+import { Fragment, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { Project } from '../common/app/electric';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
-import { BoardColumn } from './board-column';
 import { WorkspaceContext } from '../workspaces';
-import type { Project } from '../common/root/electric';
+import { BoardColumn } from './board-column';
 
 interface ProjectContextValue {
   project: Project;

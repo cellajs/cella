@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
-import { type UseFormProps, useWatch } from 'react-hook-form';
+import { useWatch, type UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
@@ -12,18 +12,18 @@ import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
+import SelectParentFormField from '~/modules/common/form-fields/select-parent';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
+import { useUserStore } from '~/store/user';
+import type { Workspace } from '~/types';
+import { useElectric } from '../common/app/electric';
+import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 // import { useNavigate } from '@tanstack/react-router';
 import { Form } from '../ui/form';
-import type { Workspace } from '~/types';
-import SelectParentFormField from '~/modules/common/form-fields/select-parent';
-import { useElectric } from '../common/root/electric';
-import { useUserStore } from '~/store/user';
-import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
