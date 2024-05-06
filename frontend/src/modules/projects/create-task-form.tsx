@@ -280,13 +280,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex">
+          <div className="flex [&:not(.absolute)]:active:translate-y-px">
             <Button
               size={'xs'}
               type="submit"
               disabled={!form.formState.isDirty}
               loading={isPending}
-              className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'}`}
+              className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'} [&:not(.absolute)]:active:translate-y-0`}
             >
               <span>{t('common:create')}</span>
             </Button>

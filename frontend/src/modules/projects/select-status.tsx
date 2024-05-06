@@ -33,6 +33,7 @@ interface SelectStatusProps {
   taskStatus: TaskStatus;
   changeTaskStatus: (newStatus: number) => void;
   mode?: 'create' | 'edit';
+  className?: string;
 }
 
 const variants = cva('', {
@@ -79,31 +80,34 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      {mode === 'edit' && (
-        <Button
-          variant="outlineGhost"
-          size="micro"
-          className={cn('border-r-0 rounded-r-none', variants({ status: selectedStatus.value }))}
-          onClick={nextStatusClick}
-          disabled={selectedStatus.value === 6}
-        >
-          {t(statuses[selectedStatus.value].action)}
-        </Button>
-      )}
+      <div className="flex gap-2 [&:not(.absolute)]:active:translate-y-px">
+        {mode === 'edit' && (
+          <Button
+            variant="outlineGhost"
+            size="micro"
+            className={cn('border-r-0 rounded-r-none [&:not(.absolute)]:active:translate-y-0', variants({ status: selectedStatus.value }))}
+            onClick={nextStatusClick}
+            disabled={selectedStatus.value === 6}
+          >
+            {t(statuses[selectedStatus.value].action)}
+          </Button>
+        )}
+        <PopoverTrigger asChild>
+          <Button
+            aria-label="Set status"
+            variant={mode === 'edit' ? 'outlineGhost' : 'default'}
+            size={mode === 'edit' ? 'micro' : 'xs'}
+            className={cn(
+              mode === 'edit' && variants({ status: selectedStatus.value }),
+              mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25',
+              '[&:not(.absolute)]:active:translate-y-0',
+            )}
+          >
+            <ChevronDown size={mode === 'edit' ? 12 : 16} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
+          </Button>
+        </PopoverTrigger>
+      </div>
 
-      <PopoverTrigger asChild>
-        <Button
-          aria-label="Set status"
-          variant={mode === 'edit' ? 'outlineGhost' : 'default'}
-          size={mode === 'edit' ? 'micro' : 'xs'}
-          className={cn(
-            mode === 'edit' && variants({ status: selectedStatus.value }),
-            mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25',
-          )}
-        >
-          <ChevronDown size={mode === 'edit' ? 12 : 16} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
-        </Button>
-      </PopoverTrigger>
       <PopoverContent
         className="w-60 p-0 rounded-lg"
         align={mode === 'edit' ? 'end' : 'start'}
