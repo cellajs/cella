@@ -24,10 +24,10 @@ interface ComboboxProps {
   placeholder?: string;
   searchPlaceholder?: string;
   renderOption?: (option: ComboBoxOption) => React.ReactNode;
-  ContentWidthMatchInput?: boolean;
+  contentWidthMatchInput?: boolean;
 }
 
-const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholder, searchPlaceholder, renderOption, ContentWidthMatchInput }) => {
+const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholder, searchPlaceholder, renderOption, contentWidthMatchInput }) => {
   const formValue = useFormContext?.()?.getValues(name);
   const { ref, bounds } = useMeasure();
   const isMobile = useBreakpoints('max', 'sm');
@@ -65,7 +65,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" className={`w-[${ContentWidthMatchInput ? `${Math.round(bounds.width)}px` : 'full'}] p-0`}>
+      <PopoverContent align="start" style={{ width: `${contentWidthMatchInput ? `${Math.round(bounds.width)}px` : '100%'}` }} className={'p-0'}>
         <Command>
           {!isMobile && (
             <CommandInput

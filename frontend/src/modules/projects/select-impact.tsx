@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFormContext } from 'react-hook-form';
 import type { TaskImpact } from './create-task-form';
+import { useMeasure } from '~/hooks/use-measure';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -46,6 +47,8 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
+  const { ref, bounds } = useMeasure();
+
   // Open on key press
   useHotkeys([['p', () => setOpenPopover(true)]]);
 
@@ -59,6 +62,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
         <Button
+          ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Set impact"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
@@ -95,7 +99,13 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-48 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
+      <PopoverContent
+        style={{ width: `${mode === 'create' ? `${Math.round(bounds.width)}` : '192'}px` }}
+        className="p-0 rounded-lg"
+        align="start"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        sideOffset={4}
+      >
         <Command className="relative rounded-lg">
           <CommandInput
             clearValue={setSearchValue}
