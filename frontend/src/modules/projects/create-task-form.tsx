@@ -182,8 +182,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                     variant="merged"
                     className="gap-0 w-full"
                     value={value}
-                    onValueChange={(value) => {
-                      onChange(value);
+                    onValueChange={(newValue) => {
+                      if (newValue.length > 0) onChange(newValue);
                     }}
                   >
                     {taskTypes.map((type) => (
