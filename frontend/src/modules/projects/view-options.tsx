@@ -9,14 +9,37 @@ import { useWorkspaceStore } from '~/store/workspace.ts';
 import { useContext } from 'react';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import { taskTypes } from './create-task-form.tsx';
+import { cva } from 'class-variance-authority';
 
 interface Props {
   className?: string;
 }
 
-
 // View options for the workspace
-export const viewOptions = { type: taskTypes, labels: ['primary', 'secondary'], status: ['unstarted', 'started', 'finished', 'delivered', 'reviewed'] };
+export const viewOptions = {
+  type: taskTypes,
+  labels: ['primary', 'secondary'],
+  status: ['unstarted', 'started', 'finished', 'delivered', 'reviewed'],
+};
+
+// Variants for bottom border highlight
+const variants = cva('', {
+  variants: {
+    labels: { primary: 'border-b-foreground  hover:border-b-foreground/70', secondary: 'border-b-foreground/50 hover:border-b-foreground/20' },
+    type: {
+      feature: 'border-b-amber-400 hover:border-b-amber-400/60',
+      chore: 'border-b-slate-400 hover:border-b-slate-400/60',
+      bug: 'border-b-red-400 hover:border-b-red-400/60',
+    },
+    status: {
+      unstarted: 'border-b-slate-300/60 hover:border-b-slate-300/40',
+      started: 'border-b-slate-500/60 hover:border-b-slate-500/40',
+      finished: 'border-b-lime-500/60 hover:border-b-lime-500/40',
+      delivered: 'border-b-yellow-500/60 hover:border-b-yellow-500/40',
+      reviewed: 'border-b-orange-500/60 hover:border-b-orange-500/40',
+    },
+  },
+});
 
 export type ViewOptions = typeof viewOptions;
 
@@ -25,7 +48,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
   const { getWorkspaceViewOptions, setWorkspaceViewOptions } = useWorkspaceStore();
   const { workspace } = useContext(WorkspaceContext);
   const workspaceId = workspace.id;
-  const handViewOptionsChange = (viewOption: keyof ViewOptions , values: string[]) => {
+  const handViewOptionsChange = (viewOption: keyof ViewOptions, values: string[]) => {
     setWorkspaceViewOptions(workspaceId, viewOption, values);
   };
 
@@ -40,7 +63,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
         </DropdownMenuTrigger>
       </TooltipButton>
       <DropdownMenuContent align="end" className="min-w-[320px] p-2 gap-2 flex flex-col">
-      {Object.entries(viewOptions).map(([key, options]) => (
+        {Object.entries(viewOptions).map(([key, options]) => (
           <ToggleGroup
             key={key}
             type="multiple"
@@ -50,7 +73,14 @@ const WorkspaceView = ({ className = '' }: Props) => {
             onValueChange={(values) => handViewOptionsChange(key as keyof ViewOptions, values)}
           >
             {options.map((option) => (
-              <ToggleGroupItem key={option} size="sm" value={option} className="w-full">
+              <ToggleGroupItem
+                key={option}
+                size="sm"
+                value={option}
+                className={`w-full ${
+                  getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]?.includes(option) ? variants({ [key]: option }) : ''
+                }`}
+              >
                 <span className="text-xs font-normal">{t(`common:${option}`)}</span>
               </ToggleGroupItem>
             ))}
