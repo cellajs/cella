@@ -7,10 +7,12 @@ import { Button } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { AvatarWrap } from '../common/avatar-wrap';
 
 interface ComboBoxOption {
   value: string;
   label: string;
+  url?: string | null;
 }
 
 interface ComboboxProps {
@@ -54,7 +56,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
       </PopoverTrigger>
 
       <PopoverContent align="start" className="w-full p-0">
-        <Command>
+        <Command className="overflow-visible">
           <CommandInput
             value={searchValue}
             onValueChange={(searchValue) => {
@@ -63,7 +65,8 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
             clearValue={setSearchValue}
             placeholder={searchPlaceholder || ''}
           />
-          <ScrollArea className="max-h-[30vh] overflow-auto">
+
+          <ScrollArea className="h-[30vh] overflow-y-auto">
             <CommandList>
               <CommandEmpty>No option found</CommandEmpty>
               <CommandGroup>
@@ -74,6 +77,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
                     onSelect={handleSelect}
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
+                    <AvatarWrap type="UNKNOWN" id={option.value} name={name} url={option.url} />
                     <div>{renderOption ? renderOption(option) : <> {option.label}</>}</div>
                     <Check size={16} className={cn('text-success', formValue === option.value ? 'opacity-100' : 'opacity-0')} />
                   </CommandItem>

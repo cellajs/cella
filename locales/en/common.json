@@ -27,6 +27,7 @@
   "call": "Call",
   "cancel": "Cancel",
   "chore": "Chore",
+  "choose_from": "Choose from {{option}}",
   "clear": "Clear",
   "clear_filter": "Clear filter",
   "close": "Close",

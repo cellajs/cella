@@ -2,6 +2,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modu
 import { useNavigationStore } from '~/store/navigation';
 import type { Control } from 'react-hook-form';
 import Combobox from '~/modules/ui/combobox';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -16,7 +17,8 @@ interface Props {
 
 const SelectParentFormField = ({ collection, control, name, label, placeholder, required, disabled }: Props) => {
   const { menu } = useNavigationStore();
-  const options = menu[collection].items.map((item) => ({ value: item.id, label: item.name }));
+  const { t } = useTranslation();
+  const options = menu[collection].items.map((item) => ({ value: item.id, label: item.name, url: item.thumbnailUrl }));
   return (
     <FormField
       control={control}
@@ -28,19 +30,13 @@ const SelectParentFormField = ({ collection, control, name, label, placeholder, 
             {required && <span className="ml-1 opacity-50">*</span>}
           </FormLabel>
           <FormControl>
-            <Combobox options={options} name="select-parent" onChange={onChange} searchPlaceholder={placeholder ? placeholder : undefined} />
-            {/* <Select onValueChange={onChange} value={value} required disabled={disabled}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={placeholder ? placeholder : ''} />
-              </SelectTrigger>
-              <SelectContent>
-                {menu[collection].items.map((item) => (
-                  <SelectItem onClick={() => onChange(item.id)} className="cursor-pointer" key={item.id} value={item.id}>
-                    {item.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select> */}
+            <Combobox
+              options={options}
+              name={`${collection.slice(0, -1)}Id`}
+              onChange={onChange}
+              placeholder={t('common:choose_from', { option: collection })}
+              searchPlaceholder={placeholder ? placeholder : t('common:choose_from', { option: collection })}
+            />
           </FormControl>
           <FormMessage />
         </FormItem>
