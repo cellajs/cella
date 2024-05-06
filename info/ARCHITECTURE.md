@@ -15,12 +15,15 @@ This document describes the high-level architecture of Cella.
 - [Lucia Auth](https://lucia-auth.com/)
 - [React Email](https://react.email/)
 
-### Frontend / UI
+### Frontend
 - [React](https://reactjs.org)
 - [Tanstack Router](https://github.com/tanstack/router)
 - [Tanstack Query](https://github.com/tanstack/query)
-- [React Data Grid](https://github.com/adazzle/react-data-grid)
+- [Electric SQL](https://github.com/electric-sql/electric)
 - [Zustand](https://github.com/pmndrs/zustand)
+
+### Frontend / UI
+- [React Data Grid](https://github.com/adazzle/react-data-grid)
 - [Shadcn UI](https://ui.shadcn.com)
 - [I18next](https://www.i18next.com)
 - [Lucide icons](https://lucide.dev)
