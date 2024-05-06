@@ -16,7 +16,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Badge } from '../ui/badge';
-import SelectRole from './form-fields/select-role';
+import SelectRole from './form-fields/select-role-radio';
 import MultipleSelector from './multi-select';
 
 interface Props {
@@ -84,8 +84,8 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
             <FormItem>
               <FormControl>
                 <MultipleSelector
-                formControlName='emails'
-                value={value ? value.map((val: string) => ({ label: val, value: val })) : []}
+                  formControlName="emails"
+                  value={value ? value.map((val: string) => ({ label: val, value: val })) : []}
                   onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
                     const data = await getSuggestions(query, 'USER');
@@ -111,7 +111,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem className="flex-row gap-4 items-center">
-              <FormLabel>{t('common:role')}</FormLabel>
+              <FormLabel>{t('common:role')}:</FormLabel>
               <FormControl>
                 <SelectRole roles={roles} value={value} onChange={onChange} />
               </FormControl>

@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Badge } from '../ui/badge';
 import { useStepper } from '../common/stepper/use-stepper';
-import SelectRole from './form-fields/select-role';
+import SelectRole from './form-fields/select-role-radio';
 import { MultiEmail } from './multi-email';
 
 interface Props {
@@ -98,7 +98,7 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem className="flex-row gap-4 items-center">
-              <FormLabel>{t('common:role')}</FormLabel>
+              <FormLabel>{t('common:role')}:</FormLabel>
               <FormControl>
                 <SelectRole roles={roles} value={value} onChange={onChange} />
               </FormControl>
@@ -118,7 +118,7 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
           </Button>
           {!children && form.formState.isDirty && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()}>
-            {t('common:cancel')}
+              {t('common:cancel')}
             </Button>
           )}
         </div>
