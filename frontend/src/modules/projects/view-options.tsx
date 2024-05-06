@@ -15,6 +15,7 @@ interface Props {
 }
 
 
+// View options for the workspace
 export const viewOptions = { type: taskTypes, labels: ['primary', 'secondary'], status: ['unstarted', 'started', 'finished', 'delivered', 'reviewed'] };
 
 export type ViewOptions = typeof viewOptions;
