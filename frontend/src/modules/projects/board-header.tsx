@@ -93,14 +93,14 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
             <span className="max-sm:hidden ml-1">{t('common:add')}</span>
           </Button>
 
+          <Button variant="outlinePrimary" onClick={openLabelsSheet}>
+            <Tag size={16} />
+            <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
+          </Button>
+
           <Button variant="outline" onClick={openSettingsSheet}>
             <Settings size={16} />
             <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
-          </Button>
-
-          <Button variant="outline" onClick={openLabelsSheet}>
-            <Tag size={16} />
-            <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
           </Button>
         </>
       )}
