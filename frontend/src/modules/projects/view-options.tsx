@@ -116,7 +116,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
           </ToggleGroup>
         ))}
         <ThreeStateSwitch
-          defaultValue={switchState}
+          value={switchState}
           switchValues={[
             { id: 0, value: 'none', label: 'Selected none' },
             { id: 1, value: 'partly', label: 'Partly secelted' },
