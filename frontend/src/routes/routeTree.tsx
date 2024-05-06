@@ -7,7 +7,7 @@ import { useUserStore } from '~/store/user';
 
 import { getMe, getUserMenu } from '~/api/users';
 
-import App from '~/modules/common/app/app';
+import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
 
 import { queryClient } from '~/lib/router';

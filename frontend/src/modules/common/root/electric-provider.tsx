@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electric';
-import { useUserStore } from '~/store/user';
+import { config } from 'config';
+import { ElectricDatabase, electrify } from 'electric-sql/browser';
 import { uniqueTabId } from 'electric-sql/util';
 import { LIB_VERSION } from 'electric-sql/version';
-import { ElectricDatabase, electrify } from 'electric-sql/browser';
-import { config } from 'config';
 import * as jose from 'jose';
+import { useEffect, useState } from 'react';
+import { useUserStore } from '~/store/user';
+import type { User } from '~/types';
+import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electric';
 
 interface Props {
   children: React.ReactNode;
@@ -37,7 +38,7 @@ function deleteDB(dbName: string) {
 }
 
 const ElectricProvider = ({ children }: Props) => {
-  const user = useUserStore((state) => state.user);
+  const user = useUserStore((state) => state.user) as User | null;
   const [electric, setElectric] = useState<Electric>();
 
   useEffect(() => {
@@ -54,7 +55,7 @@ const ElectricProvider = ({ children }: Props) => {
           url: config.electricUrl,
         });
 
-        const token = await unsignedJWT(user.id || '0');
+        const token = await unsignedJWT(user?.id || '0');
         await electric.connect(token);
 
         if (!isMounted) {

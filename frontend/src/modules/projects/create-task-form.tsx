@@ -14,7 +14,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import { useElectric, type Task } from '../common/app/electric.ts';
+import { useElectric, type Task } from '../common/root/electric.ts';
 import { dialog } from '../common/dialoger/state.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';

@@ -9,12 +9,12 @@ import DisplayOptions from '~/modules/projects/display-options';
 import WorkspaceView from '~/modules/projects/view-options';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
-import { useElectric } from '../common/app/electric';
-import { AvatarWrap } from '../common/avatar-wrap';
 import { Badge } from '../ui/badge';
 import { WorkspaceContext } from '../workspaces';
 import AddProjects from './add-projects';
 import LabelsTable from './labels-table';
+import { useElectric } from '../common/root/electric';
+import { AvatarWrap } from '../common/avatar-wrap';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;

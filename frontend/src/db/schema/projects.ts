@@ -63,3 +63,22 @@ export const tasks = pgTable('tasks', {
   modifiedAt: timestamp('modified_at'),
   modifiedBy: varchar('modified_by'),
 });
+
+// id: string;
+// value: string;
+// color: string | null;
+// count: number;
+// groupId: string | null;
+// lastActive: Date;
+// projectId: string;
+
+export const labels = pgTable('labels', {
+  id: uuid('id').primaryKey(),
+  value: varchar('value').notNull(),
+  color: varchar('color'),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, {
+      onDelete: 'cascade',
+    }),
+});

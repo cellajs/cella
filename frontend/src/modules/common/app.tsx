@@ -2,9 +2,8 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { AppContent } from '~/modules/common/app-content';
 
 import { Suspense, lazy } from 'react';
-import ErrorNotice from '../error-notice';
-import { SSEProvider } from '../sse/provider';
-import ElectricProvider from './electric-provider';
+import ErrorNotice from './error-notice';
+import { SSEProvider } from './sse/provider';
 
 // Lazy load App navigation
 const AppNav = lazy(() => import('~/modules/common/app-nav'));
@@ -20,9 +19,7 @@ const App = () => {
           <AppNav />
           <SSE />
         </Suspense>
-        <ElectricProvider>
-          <AppContent />
-        </ElectricProvider>
+        <AppContent />
       </SSEProvider>
     </ErrorBoundary>
   );

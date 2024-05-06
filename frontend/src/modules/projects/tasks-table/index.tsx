@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import type { Project } from '~/mocks/workspaces';
-import type { Task } from '~/modules/common/app/electric';
+import type { Task } from '~/modules/common/root/electric';
 import { DataTable } from '~/modules/common/data-table';
 import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
 import { WorkspaceContext } from '../../workspaces';

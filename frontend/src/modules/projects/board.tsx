@@ -1,5 +1,5 @@
 import { Fragment, createContext, useContext, useEffect, useMemo, useState } from 'react';
-import type { Project } from '../common/app/electric';
+import type { Project } from '../common/root/electric';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';

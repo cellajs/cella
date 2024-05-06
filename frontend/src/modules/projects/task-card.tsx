@@ -11,7 +11,7 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { useElectric, type Task } from '../common/app/electric.ts';
+import { useElectric, type Task } from '../common/root/electric.ts';
 import { Checkbox } from '../ui/checkbox';
 import { WorkspaceContext } from '../workspaces';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
@@ -72,25 +72,23 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva(
-    'task-card', {
-      variants: {
-        dragging: {
-          over: 'ring-2 opacity-30',
-          overlay: 'ring-2 ring-primary',
-        },
-        status: {
-          0: 'to-sky-500/10 border-b-sky-500/20',
-          1: '',
-          2: 'to-slate-500/10 border-b-slate-500/20',
-          3: 'to-lime-500/10 border-b-lime-500/20',
-          4: 'to-yellow-500/10 border-b-yellow-500/20',
-          5: 'to-orange-500/10 border-b-orange-500/20',
-          6: 'to-green-500/10 border-b-green-500/20',
-        },
+  const variants = cva('task-card', {
+    variants: {
+      dragging: {
+        over: 'ring-2 opacity-30',
+        overlay: 'ring-2 ring-primary',
+      },
+      status: {
+        0: 'to-sky-500/10 border-b-sky-500/20',
+        1: '',
+        2: 'to-slate-500/10 border-b-slate-500/20',
+        3: 'to-lime-500/10 border-b-lime-500/20',
+        4: 'to-yellow-500/10 border-b-yellow-500/20',
+        5: 'to-orange-500/10 border-b-orange-500/20',
+        6: 'to-green-500/10 border-b-green-500/20',
       },
     },
-  );
+  });
 
   const toggleEditorState = () => {
     setIsEditing(!isEditing);
@@ -121,7 +119,8 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     <Card
       ref={setNodeRef}
       style={style}
-      className={cn('group/task rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
+      className={cn(
+        'group/task rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
         variants({
           dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
           status: task.status as TaskStatus,
