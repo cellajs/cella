@@ -1,12 +1,12 @@
-import { Fragment, createContext, useContext, useEffect, useMemo, useState } from 'react';
-import type { Project } from '../common/root/electric';
+import { Fragment, createContext, useContext, useMemo } from 'react';
+import type { ProjectWithLabels } from '../common/root/electric';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';
 import { useTranslation } from 'react-i18next';
 
 interface ProjectContextValue {
-  project: Project;
+  project: ProjectWithLabels;
 }
 
 export const ProjectContext = createContext({} as ProjectContextValue);
@@ -14,7 +14,6 @@ export const ProjectContext = createContext({} as ProjectContextValue);
 export default function Board() {
   const { t } = useTranslation();
   const { projects, tasks, searchQuery } = useContext(WorkspaceContext);
-  const [innerProject, setInnerProject] = useState<Project[]>(projects || []);
 
   const filteredTasks = useMemo(() => {
     if (!searchQuery) return tasks;
@@ -25,10 +24,6 @@ export default function Board() {
         task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [searchQuery, tasks]);
-
-  useEffect(() => {
-    setInnerProject(projects);
-  }, [projects]);
 
   return (
     <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)]">
@@ -41,7 +36,7 @@ export default function Board() {
                 <BoardColumn tasks={filteredTasks.filter((t) => t.project_id === project.id)} key={`${project.id}-column`} />
               </ProjectContext.Provider>
             </ResizablePanel>
-            {innerProject.length > index + 1 && (
+            {projects.length > index + 1 && (
               <ResizableHandle className="w-[6px] rounded border border-background -mx-[7px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
             )}
           </Fragment>

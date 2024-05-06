@@ -9,8 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Bird } from 'lucide-react';
 import { DataTable } from '../common/data-table';
 import type { SortColumn } from 'react-data-grid';
-import { dateShort } from '~/lib/utils';
-import type { Label } from '~/mocks/workspaces';
+import type { Label } from '../common/root/electric';
 
 interface Props {
   query?: string;
@@ -49,24 +48,24 @@ const useColumns = () => {
       visible: true,
       sortable: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => t(row.value),
+      renderCell: ({ row }) => t(row.name),
     },
-    {
-      key: 'count',
-      sortable: true,
-      visible: true,
-      renderHeaderCell: HeaderCell,
-      name: 'Count',
-      renderCell: ({ row }) => t(row.count.toString()),
-    },
-    {
-      key: 'lastAdd',
-      sortable: true,
-      visible: true,
-      renderHeaderCell: HeaderCell,
-      name: 'Last active',
-      renderCell: ({ row }) => dateShort(row.lastActive.toString()),
-    },
+    // {
+    //   key: 'count',
+    //   sortable: true,
+    //   visible: true,
+    //   renderHeaderCell: HeaderCell,
+    //   name: 'Count',
+    //   renderCell: ({ row }) => t(row.count.toString()),
+    // },
+    // {
+    //   key: 'lastAdd',
+    //   sortable: true,
+    //   visible: true,
+    //   renderHeaderCell: HeaderCell,
+    //   name: 'Last active',
+    //   renderCell: ({ row }) => dateShort(row.lastActive.toString()),
+    // },
   ];
 
   return useState<ColumnOrColumnGroup<Label>[]>(mobileColumns);

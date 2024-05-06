@@ -3,19 +3,17 @@ import { Outlet, useParams } from '@tanstack/react-router';
 import { useLiveQuery } from 'electric-sql/react';
 import { type Dispatch, type SetStateAction, createContext, useEffect, useState } from 'react';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
-import type { Label } from '~/mocks/workspaces';
 import BoardHeader from '~/modules/projects/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types';
 import { PageHeader } from '../common/page-header';
-import { type Project, type Task, useElectric } from '../common/root/electric';
+import { useElectric, type ProjectWithLabels, type TaskWithLabels } from '../common/root/electric';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
-  projects: Project[];
-  labels: Label[];
-  tasks: Task[];
+  projects: ProjectWithLabels[];
+  tasks: TaskWithLabels[];
   selectedTasks: string[];
   setSelectedTasks: Dispatch<SetStateAction<string[]>>;
   searchQuery: string;
@@ -51,6 +49,7 @@ const WorkspacePage = () => {
   const { results: projects = [] } = useLiveQuery(
     db.projects.liveMany({
       where: { workspace_id: workspace.id },
+      include: { labels: true },
     }),
   );
 
@@ -61,11 +60,11 @@ const WorkspacePage = () => {
           in: projects.map((project) => project.id),
         },
       },
+      include: { task_labels: true },
     }),
   );
 
   // const [projects, setProjects] = useState<Project[]>([]);
-  const [labels] = useState<Label[]>([]);
   // const [tasks, setTasks] = useState<Task[]>([]);
 
   // const updateTasks = (task: Task) => {
@@ -96,7 +95,7 @@ const WorkspacePage = () => {
   }, [workspace]);
 
   return (
-    <WorkspaceContext.Provider value={{ workspace, projects, labels, tasks, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery }}>
+    <WorkspaceContext.Provider value={{ workspace, projects, tasks, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery }}>
       {showPageHeader && (
         <PageHeader
           type="WORKSPACE"

@@ -52,8 +52,9 @@ const formSchema = z.object({
   labels: z.array(
     z.object({
       id: z.string(),
-      value: z.string(),
+      name: z.string(),
       color: z.string(),
+      project_id: z.string(),
     }),
   ),
   status: z.number(),
@@ -100,6 +101,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
         type: 'feature',
         impact: null,
         assignedTo: [],
+        task_labels: [],
         labels: [],
         status: 1,
       },
@@ -110,7 +112,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>(`create-task-${project.id}`, formOptions);
 
-  const { isPending, mutate: create } = useMutation({
+  const { isPending } = useMutation({
     // mutate: create
     mutationFn: (values: FormValues) => {
       const summary = values.markdown.split('\n')[0];
@@ -140,7 +142,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   });
 
   const onSubmit = (values: FormValues) => {
-    create(values);
+    // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
     db.tasks
@@ -151,8 +153,17 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           summary: summary,
           type: values.type as TaskType,
           impact: values.impact as TaskImpact,
-          // assignedTo: values.assignedTo as TaskUser[],
-          // labels: values.labels,
+          task_labels:
+            values.labels.length > 0
+              ? {
+                  create: values.labels.map((label) => ({
+                    label_id: label.id,
+                    labels: {
+                      connectOrCreate: label,
+                    },
+                  })),
+                }
+              : undefined,
           status: 1,
           project_id: project.id,
           created_at: new Date(),

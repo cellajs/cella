@@ -9,8 +9,8 @@ import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
 import { faker } from '@faker-js/faker';
-import type { TaskLabel } from '~/mocks/workspaces.ts';
-import { WorkspaceContext } from '../workspaces/index.tsx';
+import type { Label } from '../common/root/electric.ts';
+import { ProjectContext } from './board.tsx';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -20,28 +20,29 @@ const badgeStyle = (color?: string | null) => {
 interface SetLabelsProps {
   mode: 'create' | 'edit';
   projectId: string;
-  viewValue?: TaskLabel[];
-  changeLabels?: (labels: TaskLabel[]) => void;
+  viewValue?: Label[];
+  changeLabels?: (labels: Label[]) => void;
 }
 
-const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
+const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps) => {
   const { t } = useTranslation();
-  const { labels } = useContext(WorkspaceContext);
+  const { project } = useContext(ProjectContext);
   const formValue = useFormContext?.()?.getValues('labels');
-  const [labelsForMap, _] = useState<TaskLabel[]>(labels);
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>(viewValue ? viewValue : formValue || []);
+  const [selectedLabels, setSelectedLabels] = useState<Label[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
-  const handleSelectClick = (value: string) => {
+  // const { db } = useElectric()!;
+
+  const handleSelectClick = (value?: string) => {
     if (!value) return;
-    const existingLabel = selectedLabels.find((label) => label.value === value);
+    const existingLabel = selectedLabels.find((label) => label.name === value);
     if (existingLabel) {
-      setSelectedLabels(selectedLabels.filter((label) => label.value !== value));
+      setSelectedLabels(selectedLabels.filter((label) => label.name !== value));
       return;
     }
-    const newLabel = labels.find((label) => label.value === value);
+    const newLabel = project.labels?.find((label) => label.name === value);
     if (newLabel) {
       setSelectedLabels([...selectedLabels, newLabel]);
       return;
@@ -49,13 +50,19 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
   };
 
   const createLabel = (value: string) => {
-    const newLabel: TaskLabel = {
+    const newLabel: Label = {
       id: faker.string.uuid(),
-      value,
+      name: value,
       color: null,
+      project_id: projectId,
     };
     setSelectedLabels((prev) => [...prev, newLabel]);
     setSearchValue('');
+
+    // TODO: Implement the following
+    // Save the new label to the database
+    // db.labels.create({ data: newLabel });
+
     //  changeLabels?.([...passedLabels, newLabel]);
   };
 
@@ -88,7 +95,7 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
           <div className="flex truncate flex-wrap gap-[1px]">
             {mode === 'create' && selectedLabels.length === 0 && <span className="ml-2">Choose labels</span>}
             {selectedLabels.length > 0 &&
-              selectedLabels.map(({ value, id, color }) => {
+              selectedLabels.map(({ name, id, color }) => {
                 return (
                   <Badge
                     variant="outline"
@@ -96,7 +103,7 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
                     className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm mr-1 h-6' : 'h-5'} last:mr-0 bg-transparent`}
                     style={badgeStyle(color)}
                   >
-                    {value}
+                    {name}
                   </Badge>
                 );
               })}
@@ -111,7 +118,7 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
             onValueChange={(searchValue) => {
               // If the label types a number, select the label like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(Number.parseInt(searchValue))) {
-                handleSelectClick(labels[Number.parseInt(searchValue)]?.value);
+                handleSelectClick(project.labels?.[Number.parseInt(searchValue)]?.name);
                 setSearchValue('');
                 return;
               }
@@ -124,10 +131,10 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
           {!isSearching && <Kbd value="L" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
-              {labelsForMap.map((label, index) => (
+              {project.labels?.map((label, index) => (
                 <CommandItem
                   key={label.id}
-                  value={label.value}
+                  value={label.name}
                   onSelect={(value) => {
                     handleSelectClick(value);
                     setSearchValue('');
@@ -136,7 +143,7 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
                 >
                   <div className="flex items-center gap-2">
                     {isSearching ? <Dot size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
-                    <span>{label.value}</span>
+                    <span>{label.name}</span>
                   </div>
                   <div className="flex items-center">
                     {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
@@ -145,7 +152,7 @@ const SetLabels = ({ mode, viewValue, changeLabels }: SetLabelsProps) => {
                 </CommandItem>
               ))}
             </CommandGroup>
-            <CommandItemCreate onSelect={() => createLabel(searchValue)} {...{ searchValue, labels }} />
+            <CommandItemCreate onSelect={() => createLabel(searchValue)} {...{ searchValue, labels: project.labels || [] }} />
           </CommandList>
         </Command>
       </PopoverContent>
@@ -157,7 +164,7 @@ export default SetLabels;
 
 interface CommandItemCreateProps {
   searchValue: string;
-  labels: TaskLabel[];
+  labels: Label[];
   onSelect: () => void;
 }
 

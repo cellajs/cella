@@ -11,7 +11,7 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { useElectric, type Task } from '../common/root/electric.ts';
+import { type TaskWithLabels, useElectric, type Task } from '../common/root/electric.ts';
 import { Checkbox } from '../ui/checkbox';
 import { WorkspaceContext } from '../workspaces';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
@@ -20,9 +20,10 @@ import SelectStatus, { type TaskStatus } from './select-status.tsx';
 import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
+import SetLabels from './select-labels.tsx';
 
 interface TaskCardProps {
-  task: Task;
+  task: TaskWithLabels;
   isOverlay?: boolean;
 }
 
@@ -45,7 +46,20 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const { db } = useElectric()!;
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const handleChange = (field: keyof Task, value: any) => {
+  const handleChange = (field: keyof TaskWithLabels, value: any) => {
+    // TODO: Implement this
+    if (field === 'task_labels' && Array.isArray(value)) {
+      return;
+      // db.tasks.update({
+      //   where: { id: task.id },
+      //   data: {
+      //     task_labels: {
+            
+      //     },
+      //   },
+      // });
+    }
+
     db.tasks.update({
       data: {
         [field]: value,
@@ -217,12 +231,12 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
               <SelectImpact viewValue={task.impact as TaskImpact} mode="edit" changeTaskImpact={(newImpact) => handleChange('impact', newImpact)} />
             )}
 
-            {/* <SetLabels
+            <SetLabels
               projectId={task.project_id}
-              changeLabels={(newLabels) => handleChange('labels', newLabels)}
-              viewValue={task.labels}
+              changeLabels={(newLabels) => handleChange('task_labels', newLabels)}
+              viewValue={task.task_labels}
               mode="edit"
-            /> */}
+            />
             <div className="grow h-0" />
 
             <div className="flex gap-2 ml-auto">
