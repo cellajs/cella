@@ -28,8 +28,8 @@ services:
       no_cache: true
     restart: always
     volumes:
-    - ./:/app
-    - /app/node_modules
+      - ./:/app
+      - /app/node_modules
     ports:
       - 3000:3000
     env_file:
@@ -60,6 +60,19 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - 5432:5432
+    command:
+      - "-c"
+      - "wal_level=logical"
+
+  electric:
+    container_name: electric-sync-service
+    image: electricsql/electric
+    init: true
+    env_file:
+      - ./env/.env.electric
+    ports:
+      - 5133:5133
+      - 65432:65432
 
 volumes:
   postgres-data:

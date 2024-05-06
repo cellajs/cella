@@ -1,14 +1,16 @@
 import { useMutation } from '@tanstack/react-query';
+import type { PageResourceType } from 'backend/types/common';
+import { config } from 'config';
+import { Undo } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { Control } from 'react-hook-form';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { checkSlugAvailable } from '~/api/general';
-import InputFormField from './input';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '~/modules/ui/button';
-import { Undo } from 'lucide-react';
 import slugify from 'slugify';
-import type { PageResourceType } from 'backend/types/common';
+import { checkSlugAvailable } from '~/api/general';
+import { Button } from '~/modules/ui/button';
+import { useElectric } from '../root/electric';
+import InputFormField from './input';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -31,9 +33,28 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });
 
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
+
   // Check if slug is available
   const { mutate: checkAvailability } = useMutation({
-    mutationFn: checkSlugAvailable,
+    mutationFn: async (params: {
+      slug: string;
+      type: PageResourceType;
+    }) => {
+      if (params.type === 'PROJECT') {
+        const project = await db.projects.findFirst({
+          where: {
+            slug: {
+              contains: slug,
+            },
+          },
+        });
+        return !project;
+      }
+
+      return checkSlugAvailable(params);
+    },
     onSuccess: (isAvailable) => {
       if (isValidSlug(slug)) form.clearErrors('slug');
       if (previousSlug && slug === previousSlug) return setSlugAvailable(false);
@@ -63,7 +84,6 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // In create forms, auto-generate slug from name
   useEffect(() => {
     if (previousSlug || isDeviating) return;
-
     form.setValue('slug', slugify(nameValue || '', { lower: true }));
   }, [nameValue]);
 
@@ -79,6 +99,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
       inputClassName={isSlugAvailable && isValidSlug(slug) ? 'ring-2 ring-green-500 focus-visible:ring-2 focus-visible:ring-green-500' : ''}
       onFocus={() => setDeviating(true)}
       label={label}
+      prefix={`${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'ORGANIZATION' ? '' : `${type.toLowerCase()}/`}`}
       description={description}
       required
       subComponent={
@@ -86,7 +107,8 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
         previousSlug !== slug && (
           <div className="absolute inset-y-1 right-1 flex justify-end">
             <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
-              <Undo size={16} className="mr-2" /> {t('common:revert_to')} <strong className="ml-1">{previousSlug}</strong>
+              <Undo size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert_to')}</span>
+              <strong className="max-sm:hidden ml-1">{previousSlug}</strong>
             </Button>
           </div>
         )

@@ -20,6 +20,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const toggleFocus = () => {
     toast.success(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'));
     setFocusView(!focusView);
+    window.scrollTo(0, 0)
   };
 
   return (

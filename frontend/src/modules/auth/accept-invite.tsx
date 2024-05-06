@@ -85,7 +85,7 @@ const Accept = () => {
               <ArrowRight size={16} className="ml-2" />
             </Button>
 
-            {/* <OauthOptions actionType="acceptInvite" /> */}
+            {/* TODO <OauthOptions actionType="acceptInvite" /> */}
           </div>
         ) : (
           <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">

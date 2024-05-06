@@ -3,34 +3,31 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { TaskLabel } from '~/mocks/workspaces';
+import { viewOptions, type ViewOptions } from '~/modules/projects/view-options';
 
 type Column = {
-  [key: string]: {
-    width: string;
-    minimized: boolean;
-    expandAccepted: boolean;
-    expandIced: boolean;
-    recentLabels: TaskLabel[];
-    taskIds: string[];
-  };
+  columnId: string;
+  width: string;
+  minimized: boolean;
+  expandAccepted: boolean;
+  expandIced: boolean;
+  recentLabels: TaskLabel[];
+  taskIds: string[];
 };
 
-type ViewOptions = {
-  status: ('iced' | 'unstarted' | 'started' | 'finished' | 'delivered' | 'reviewed' | 'accepted')[];
-  type: ('feature' | 'bug' | 'chore')[];
+type WorkspaceStorage = {
+  [key: string]: { viewOptions: ViewOptions; columns: Column[] };
 };
 
 interface WorkspaceState {
-  viewOptions: ViewOptions;
-  displayOption: 'table' | 'board' | 'tiles';
-  columns: Column;
-  setColumnRecentLabel: (columnId: string, label: TaskLabel) => void;
-  setColumn: (columnId: string, data: Partial<Column[string]>) => void;
-  setDisplayOption: (option: 'table' | 'board' | 'tiles') => void;
-  changeViewOptions: (newViewOptions: ViewOptions) => void;
+  workspaces: WorkspaceStorage;
+  changeColumn: (workspaceId: string, columnId: string, column: Partial<Column>) => void;
+  addNewColumn: (workspaceId: string, column: Column) => void;
+  getWorkspaceViewOptions: (workspaceId: string) => ViewOptions;
+  setWorkspaceViewOptions: (workspaceId: string, viewOption: keyof ViewOptions, values: string[]) => void;
 }
 
-const defaultColumn = {
+const defaultColumnValues = {
   width: '200px',
   minimized: false,
   expandAccepted: false,
@@ -42,39 +39,61 @@ const defaultColumn = {
 export const useWorkspaceStore = create<WorkspaceState>()(
   devtools(
     persist(
-      immer((set) => ({
-        viewOptions: {
-          status: [],
-          type: [],
-        },
-        displayOption: 'table',
-        columns: {},
-        setColumn: (columnId: string, data: Partial<Column[string]>) => {
+      immer((set, get) => ({
+        workspaces: {},
+        getWorkspaceViewOptions: (workspaceId: string) => {
+          const workspace = get().workspaces[workspaceId];
+          if (workspace) return workspace.viewOptions;
+
+          // If the workspace doesn't exist, create a new one
           set((state) => {
-            state.columns[columnId] = { ...defaultColumn, ...data };
+            state.workspaces[workspaceId] = { viewOptions: viewOptions, columns: [] };
           });
+
+          return viewOptions;
         },
-        setColumnRecentLabel: (columnId: string, label: TaskLabel) => {
+
+        setWorkspaceViewOptions: (workspaceId: string, viewOption: keyof ViewOptions, values: string[]) => {
           set((state) => {
-            const column = state.columns[columnId];
-            if (!column) {
-              state.columns[columnId] = { ...defaultColumn, recentLabels: [label] };
-              return;
+            const workspace = state.workspaces[workspaceId];
+            if (!workspace) {
+              state.workspaces[workspaceId] = { viewOptions: viewOptions, columns: [] };
+              state.workspaces[workspaceId].viewOptions[viewOption] = values;
+            } else {
+              workspace.viewOptions[viewOption] = values;
             }
-            if (!column.recentLabels.some((l) => l.id === label.id)) {
-              column.recentLabels.push(label);
-              return;
+          });
+        },
+        addNewColumn: (workspaceId: string, column: Column) => {
+          set((state) => {
+            const workspace = state.workspaces[workspaceId];
+            if (!workspace) {
+              state.workspaces[workspaceId] = {
+                viewOptions: { status: [], type: [], labels: [] },
+                columns: [column],
+              };
+            } else {
+              workspace.columns.push(column);
             }
           });
         },
-        setDisplayOption: (option: 'table' | 'board' | 'tiles') => {
+        changeColumn: (workspaceId: string, columnId: string, newColumn: Partial<Column>) => {
           set((state) => {
-            state.displayOption = option;
-          });
-        },
-        changeViewOptions: (newViewOptions: ViewOptions) => {
-          set((state) => {
-            state.viewOptions = newViewOptions;
+            const workspace = state.workspaces[workspaceId];
+            if (!workspace) return;
+
+            const columnIndex = workspace.columns.findIndex((column) => column.columnId === columnId);
+            if (columnIndex === -1) {
+              // If the column doesn't exist, create a new one
+              state.workspaces[workspaceId].columns.push({ columnId, ...defaultColumnValues, ...newColumn });
+            } else {
+              // If the column exists, update it
+              const updatedColumn = {
+                ...workspace.columns[columnIndex],
+                ...newColumn,
+              };
+              state.workspaces[workspaceId].columns[columnIndex] = updatedColumn;
+            }
           });
         },
       })),
@@ -83,7 +102,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         version: 1,
         name: `${config.slug}-workspace`,
         partialize: (state) => ({
-          columns: state.columns,
+          workspaces: state.workspaces,
         }),
         storage: createJSONStorage(() => localStorage),
       },

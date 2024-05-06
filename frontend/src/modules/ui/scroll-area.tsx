@@ -13,8 +13,8 @@ const scrollbarVariants = cva('flex touch-none transition-colors', {
     size: {
       defaultVertical: 'h-full w-2.5 border-l border-l-transparent p-[1px]',
       defaultHorizontal: 'h-2.5 flex-col border-t border-t-transparent p-[1px]',
-      indicatorVertical: 'h-full w-[3px] border-l border-l-transparent',
-      indicatorHorizontal: 'h-[3px] w-full border-t border-t-transparent',
+      indicatorVertical: 'h-full w-[2px]',
+      indicatorHorizontal: 'h-[2px] w-full border-t border-t-transparent',
     },
   },
   defaultVariants: {
@@ -47,7 +47,7 @@ const ScrollBar = React.forwardRef<
     className={cn(scrollbarVariants({ orientation, size }), className)}
     {...props}
   >
-    <ScrollAreaPrimitive.ScrollAreaThumb className="bg-border relative flex-1 rounded-full" />
+    <ScrollAreaPrimitive.ScrollAreaThumb className={`${size === 'indicatorVertical' ? 'bg-muted' : 'bg-border'} relative flex-1 rounded-full`} />
   </ScrollAreaPrimitive.ScrollAreaScrollbar>
 ));
 ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;

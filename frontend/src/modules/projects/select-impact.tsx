@@ -5,16 +5,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn } from '~/lib/utils';
 import { HighIcon } from './impact-icons/high';
-import { NotSelected } from './impact-icons/notSelected';
+import { NoneIcon } from './impact-icons/none';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
-import { NoneIcon } from './impact-icons/none';
+import { NotSelected } from './impact-icons/not-selected';
 import { Kbd } from '../common/kbd';
 import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFormContext } from 'react-hook-form';
-import type { TaskImpact } from './task-form';
+import type { TaskImpact } from './create-task-form';
+import { useMeasure } from '~/hooks/use-measure';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -32,7 +33,7 @@ const impacts = [
 
 interface SelectImpactProps {
   mode: 'edit' | 'create';
-  viewValue?: TaskImpact;
+  viewValue?: TaskImpact | null;
   changeTaskImpact?: (value: TaskImpact) => void;
 }
 
@@ -45,6 +46,8 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
   );
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
+
+  const { ref, bounds } = useMeasure();
 
   // Open on key press
   useHotkeys([['p', () => setOpenPopover(true)]]);
@@ -59,12 +62,24 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
         <Button
+          ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Set impact"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
           className={mode === 'create' ? 'w-full text-left font-light flex gap-2 justify-start border' : 'group-hover/task:opacity-100 opacity-70'}
         >
-          {mode === 'create' ? (
+          {selectedImpact !== null ? (
+            <>
+              <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />
+              {mode === 'create' && selectedImpact.label}
+            </>
+          ) : (
+            <>
+              <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+              {mode === 'create' && 'Set impact'}
+            </>
+          )}
+          {/* {mode === 'create' ? (
             <>
               {selectedImpact !== null ? (
                 <>
@@ -80,11 +95,17 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
             </>
           ) : (
             <>{selectedImpact && <selectedImpact.icon className={cn('size-4 fill-primary')} aria-hidden="true" />}</>
-          )}
+          )} */}
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-48 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
+      <PopoverContent
+        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right)}` : '192'}px` }}
+        className="p-0 rounded-lg"
+        align="start"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        sideOffset={4}
+      >
         <Command className="relative rounded-lg">
           <CommandInput
             clearValue={setSearchValue}

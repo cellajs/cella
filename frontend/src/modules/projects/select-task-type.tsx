@@ -5,7 +5,7 @@ import { Kbd } from '~/modules/common/kbd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bolt, Bug, Star, Check } from 'lucide-react';
-import type { TaskType } from './task-form';
+import type { TaskType } from './create-task-form';
 import { Button } from '../ui/button';
 
 type Type = {
@@ -16,14 +16,17 @@ type Type = {
 
 const types = [
   { value: 'feature', label: 'Feature', icon: () => <Star size={16} className="fill-amber-400 text-amber-500" /> },
-  { value: 'bug', label: 'Bug', icon: () => <Bug size={16} className="fill-red-400 text-red-500" /> },
   { value: 'chore', label: 'Chore', icon: () => <Bolt size={16} className="fill-slate-400 text-slate-500" /> },
+  { value: 'bug', label: 'Bug', icon: () => <Bug size={16} className="fill-red-400 text-red-500" /> },
 ] as const;
 
-export const SelectTaskType = ({
-  currentType,
-  changeTaskType,
-}: { currentType: TaskType; className?: string; changeTaskType?: (value: TaskType) => void }) => {
+export interface SelectTaskTypeProps {
+  currentType: TaskType;
+  className?: string;
+  changeTaskType?: (value: TaskType) => void;
+}
+
+export const SelectTaskType = ({ currentType, changeTaskType }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
 
   const [openPopover, setOpenPopover] = useState(false);

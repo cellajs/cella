@@ -29,18 +29,19 @@ const ResetPassword = () => {
   const [email, setEmail] = useState('');
   const [tokenError, setError] = useState<ApiError | null>(null);
 
+  // Check reset password token and get email
   const { mutate: checkToken } = useMutation({
     mutationFn: baseCheckToken,
     onSuccess: (data) => setEmail(data.email),
     onError: (error) => setError(error),
   });
+  
+  // Reset password and sign in
   const { mutate: resetPassword, isPending } = useMutation({
     mutationFn: baseResetPassword,
     onSuccess: () => {
       toast.success(t('common:success.password_reset'));
-      navigate({
-        to: '/home',
-      });
+      navigate({ to: '/home' });
     },
   });
 
@@ -51,6 +52,7 @@ const ResetPassword = () => {
     },
   });
 
+  // Submit new password
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     resetPassword({
       token,
@@ -59,6 +61,8 @@ const ResetPassword = () => {
   };
 
   useEffect(() => {
+    if (!token) return;
+  
     checkToken(token);
   }, [token]);
 

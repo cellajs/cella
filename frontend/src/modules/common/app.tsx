@@ -11,7 +11,9 @@ const SSE = lazy(() => import('~/modules/common/sse'));
 
 const App = () => {
   return (
-    <ErrorBoundary fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} isRootLevel resetErrorBoundary={resetErrorBoundary} />}>
+    <ErrorBoundary
+      fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} isRootLevel resetErrorBoundary={resetErrorBoundary} />}
+    >
       <SSEProvider>
         <Suspense>
           <AppNav />

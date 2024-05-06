@@ -51,6 +51,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
           aria-label="Open contact form"
           onClick={() => {
             dialog(<ContactForm dialog />, {
+              id: 'contact-form',
               drawerOnMobile: false,
               className: 'sm:max-w-[64rem]',
               title: t('common:contact_us'),

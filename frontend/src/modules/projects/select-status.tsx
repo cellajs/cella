@@ -6,30 +6,51 @@ import { ChevronDown, Check, Snowflake, CircleDashed, Circle, CircleDot, CircleD
 import { Kbd } from '../common/kbd';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys';
+import { toast } from 'sonner';
+import { cva } from 'class-variance-authority';
+import { cn } from '~/lib/utils';
 
 type Status = {
   value: (typeof statuses)[number]['value'];
   status: string;
-  button: string;
+  action: string;
   icon: LucideIcon;
 };
 
 const statuses = [
-  { value: 0, button: 'Iced', status: 'Iced', icon: Snowflake },
-  { value: 1, button: 'Start', status: 'Unstarted', icon: Dot },
-  { value: 2, button: 'Finish', status: 'Started', icon: CircleDashed },
-  { value: 3, button: 'Deliver', status: 'Finished', icon: Circle },
-  { value: 4, button: 'Review', status: 'Delivered', icon: CircleDotDashed },
-  { value: 5, button: 'Accept', status: 'Reviewed', icon: CircleDot },
-  { value: 6, button: 'Accepted', status: 'Accepted', icon: CircleCheck },
+  { value: 0, action: 'iced', status: 'iced', icon: Snowflake },
+  { value: 1, action: 'start', status: 'unstarted', icon: Dot },
+  { value: 2, action: 'finish', status: 'started', icon: CircleDashed },
+  { value: 3, action: 'deliver', status: 'finished', icon: Circle },
+  { value: 4, action: 'review', status: 'delivered', icon: CircleDotDashed },
+  { value: 5, action: 'accept', status: 'reviewed', icon: CircleDot },
+  { value: 6, action: 'accepted', status: 'accepted', icon: CircleCheck },
 ] as const;
 
+export type TaskStatus = (typeof statuses)[number]['value'];
+
 interface SelectStatusProps {
-  taskStatus: (typeof statuses)[number]['value'];
+  taskStatus: TaskStatus;
   changeTaskStatus: (newStatus: number) => void;
+  mode?: 'create' | 'edit';
+  className?: string;
 }
 
-const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
+const variants = cva('', {
+  variants: {
+    status: {
+      0: 'bg-background/50 border-sky-500/40 hover:bg-sky-500/10 hover:border-sky-500/60 text-sky-600',
+      1: 'border-slate-300/40 hover:bg-slate-300/10 hover:border-slate-300/60',
+      2: 'bg-background/50 border-slate-500/40 hover:bg-slate-500/10 hover:border-slate-500/60',
+      3: 'bg-background/50 border-lime-500/40 hover:bg-lime-500/10 hover:border-lime-500/60',
+      4: 'bg-background/50 border-yellow-500/40 hover:bg-yellow-500/10 hover:border-yellow-500/60',
+      5: 'bg-background/50 border-orange-500/40 hover:bg-orange-500/10 hover:border-orange-500/60',
+      6: 'bg-background/50 border-green-500/40 hover:bg-green-500/10 hover:border-green-500/60 text-green-600',
+    },
+  },
+});
+
+const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectStatusProps) => {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -39,24 +60,60 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
   // Open on key press
   useHotkeys([['s', () => setOpenPopover(true)]]);
 
+  const statusChange = (index: number) => {
+    const newStatus = statuses[index];
+    setSelectedStatus(newStatus);
+    changeTaskStatus(index);
+    if (mode === 'edit') toast.success(t('common:success.new_status', { status: t(newStatus.status).toLowerCase() }));
+  };
+
   const nextStatusClick = () => {
     const statusIndex = selectedStatus.value;
-    setSelectedStatus(statuses[statusIndex + 1]);
-    changeTaskStatus(statusIndex + 1);
+    statusChange(statusIndex + 1);
+  };
+
+  const handleStatusChangeClick = (index: number) => {
+    statusChange(index);
+    setOpenPopover(false);
+    setSearchValue('');
   };
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <Button variant="outlineGhost" size="micro" className="border-r-0 rounded-r-none" onClick={nextStatusClick} disabled={selectedStatus.value === 6}>
-        {statuses[selectedStatus.value].button}
-      </Button>
+      <div className="flex gap-2 [&:not(.absolute)]:active:translate-y-px">
+        {mode === 'edit' && (
+          <Button
+            variant="outlineGhost"
+            size="micro"
+            className={cn('border-r-0 rounded-r-none [&:not(.absolute)]:active:translate-y-0', variants({ status: selectedStatus.value }))}
+            onClick={nextStatusClick}
+            disabled={selectedStatus.value === 6}
+          >
+            {t(statuses[selectedStatus.value].action)}
+          </Button>
+        )}
+        <PopoverTrigger asChild>
+          <Button
+            aria-label="Set status"
+            variant={mode === 'edit' ? 'outlineGhost' : 'default'}
+            size={mode === 'edit' ? 'micro' : 'xs'}
+            className={cn(
+              mode === 'edit' && variants({ status: selectedStatus.value }),
+              mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25',
+              '[&:not(.absolute)]:active:translate-y-0',
+            )}
+          >
+            <ChevronDown size={mode === 'edit' ? 12 : 16} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
+          </Button>
+        </PopoverTrigger>
+      </div>
 
-      <PopoverTrigger asChild>
-        <Button aria-label="Set status" variant="outlineGhost" size="micro" className="rounded-none rounded-r -ml-2">
-          <ChevronDown size={12} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-48 p-0 rounded-lg" align="end" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
+      <PopoverContent
+        className="w-60 p-0 rounded-lg"
+        align={mode === 'edit' ? 'end' : 'start'}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        sideOffset={4}
+      >
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
@@ -64,42 +121,40 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
             onValueChange={(searchValue) => {
               // If the user types a number, select status like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
-                setSelectedStatus(statuses[Number.parseInt(searchValue)]);
-                setOpenPopover(false);
-                setSearchValue('');
+                handleStatusChangeClick(Number.parseInt(searchValue));
                 return;
               }
               setSearchValue(searchValue);
             }}
-            placeholder={t('common:placeholder.set_status')}
+            placeholder={mode === 'edit' ? t('common:placeholder.set_status') : t('common:placeholder.create_with_status')}
           />
           {!isSearching && <Kbd value="S" className="absolute top-3 right-[10px]" />}
-          <CommandList>
-            <CommandGroup>
-              {statuses.map((status, index) => (
-                <CommandItem
-                  key={status.value}
-                  value={status.status}
-                  onSelect={() => {
-                    setSelectedStatus(statuses[index]);
-                    setOpenPopover(false);
-                    setSearchValue('');
-                    changeTaskStatus(index);
-                  }}
-                  className="group rounded-md flex justify-between items-center w-full leading-normal"
-                >
-                  <div className="flex items-center">
-                    <status.icon size={16} className="mr-2 size-4 " />
-                    <span>{status.status}</span>
-                  </div>
-                  <div className="flex items-center">
-                    {selectedStatus.value === status.value && <Check size={16} className="text-success" />}
-                    {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
+
+          <CommandGroup>
+            <CommandList>
+              {statuses.map((status, index) => {
+                return (
+                  <CommandItem
+                    key={status.value}
+                    value={status.status}
+                    onSelect={() => {
+                      handleStatusChangeClick(index);
+                    }}
+                    className="group rounded-md flex justify-between items-center w-full leading-normal"
+                  >
+                    <div className="flex items-center">
+                      <status.icon size={16} className="mr-2 size-4 " />
+                      <span>{t(status.status)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      {selectedStatus.value === status.value && <Check size={16} className="text-success" />}
+                      {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandList>
+          </CommandGroup>
         </Command>
       </PopoverContent>
     </Popover>

@@ -11,7 +11,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { sheet } from '~/modules/common/sheeter/state';
 
-export const WorkspaceSettings = () => {
+export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -38,6 +38,7 @@ export const WorkspaceSettings = () => {
       },
     );
   };
+
   return (
     <div className="flex flex-col gap-8">
       <Card>
@@ -50,12 +51,13 @@ export const WorkspaceSettings = () => {
             callback={(workspace) => {
               if (idOrSlug !== workspace.slug) {
                 navigate({
-                  to: '/workspace/$idOrSlug/projects',
+                  to: '/workspace/$idOrSlug/board',
                   params: { idOrSlug: workspace.slug },
                   replace: true,
                 });
               }
             }}
+            sheet={isSheet}
           />
         </CardContent>
       </Card>

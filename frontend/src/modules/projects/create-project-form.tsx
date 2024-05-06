@@ -12,17 +12,17 @@ import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
+import SelectParentFormField from '~/modules/common/form-fields/select-parent';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
+import { useUserStore } from '~/store/user';
+import type { Workspace } from '~/types';
+import { useElectric } from '../common/root/electric';
+import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
-// import { useNavigate } from '@tanstack/react-router';
-import { SquarePen } from 'lucide-react';
 import { Form } from '../ui/form';
-import { Badge } from '../ui/badge';
-import type { Workspace } from '~/types';
-import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -31,7 +31,6 @@ interface CreateProjectFormProps {
 }
 
 const formSchema = createWorkspaceJsonSchema.extend({
-  organization: z.string().min(1),
   workspace: z.string().min(1),
 });
 
@@ -39,8 +38,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
+  const { user } = useUserStore(({ user }) => ({ user }));
   // const navigate = useNavigate();
   const { setSheet } = useNavigationStore();
+
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -48,7 +51,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       defaultValues: {
         name: '',
         slug: '',
-        organization: workspace.organizationId,
         workspace: workspace.id,
       },
     }),
@@ -60,15 +62,28 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
-  const { mutate: _, isPending } = useMutation({
-    // mutationFn: createWorkspace,
+  const { mutate: create, isPending } = useMutation({
+    mutationFn: (values: FormValues) => {
+      return db.projects.create({
+        data: {
+          id: window.crypto.randomUUID(),
+          name: values.name,
+          slug: values.slug,
+          workspace_id: values.workspace,
+          // TODO: Add color picker
+          color: '#000000',
+          created_at: new Date(),
+          created_by: user.id,
+        },
+      });
+    },
     onSuccess: () => {
       form.reset();
       toast.success(t('common:success.create_project'));
 
       setSheet(null);
       // navigate({
-      //   to: '/workspace/$idOrSlug/projects',
+      //   to: '/workspace/$idOrSlug/board',
       //   params: { idOrSlug: result.slug },
       // });
 
@@ -77,8 +92,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   });
 
   const onSubmit = (values: FormValues) => {
-    console.log('values:', values);
-    // create(values);
+    create(values);
   };
 
   // Update dialog title with unsaved changes
@@ -87,15 +101,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       const targetDialog = dialog.get('create-project');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('create-project', {
-          title: (
-            <div className="flex flex-row gap-2">
-              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
-              <Badge variant="plain" className="w-fit">
-                <SquarePen size={12} className="mr-2" />
-                <span className="font-light">{t('common:unsaved_changes')}</span>
-              </Badge>
-            </div>
-          ),
+          title: <UnsavedChangesBadge title={targetDialog?.title} />,
         });
       }
       return;
@@ -114,7 +120,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
           description={t('common:project_handle.text')}
           nameValue={name}
         />
-        <SelectParentFormField collection="organizations" control={form.control} label={t('common:organization')} name="organization" disabled />
         <SelectParentFormField collection="workspaces" control={form.control} label={t('common:workspace')} name="workspace" disabled />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>

@@ -19,8 +19,8 @@ export const NoneIcon = ({
 	>
 		{desc ? <desc id={descId}>{desc}</desc> : null}
 		<title id={titleId}>{title}</title>
-		<rect width={3} height={1.5} x={1.5} y={7.25} opacity={0.4} rx={0.5} />
-		<rect width={3} height={1.5} x={6.5} y={7.25} opacity={0.4} rx={0.5} />
-		<rect width={3} height={1.5} x={11.5} y={7.25} opacity={0.4} rx={0.5} />
+    <rect width={3} height={6} x={1.5} y={8} fillOpacity={0.4} rx={1} />
+    <rect width={3} height={9} x={6.5} y={5} fillOpacity={0.4} rx={1} />
+    <rect width={3} height={12} x={11.5} y={2} fillOpacity={0.4} rx={1} />
 	</svg>
 );

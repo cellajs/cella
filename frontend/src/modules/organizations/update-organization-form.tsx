@@ -14,7 +14,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
-import { dialog } from '~/modules/common/dialoger/state';
+import { dialog, isDialog as checkDialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import AvatarFormField from '../common/form-fields/avatar';
@@ -22,6 +22,7 @@ import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import DomainsFormField from '../common/form-fields/domains';
+import UnsavedChangesBadge from '../common/unsaved-changes-badge';
 
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
@@ -77,9 +78,8 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
     mutate(values, {
       onSuccess: (data) => {
         callback?.(data);
-        if (isDialog) {
-          dialog.remove();
-        }
+        if (isDialog) dialog.remove(true, 'edit-organization');
+
         toast.success(t('common:success.update_organization'));
       },
     });
@@ -110,6 +110,20 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   //     form.reset(form.getValues());
   //   }
   // }, [form.formState.isSubmitSuccessful]);
+
+  // Update dialog title with unsaved changes
+  useEffect(() => {
+    if (form.unsavedChanges) {
+      const targetDialog = dialog.get('edit-organization');
+      if (targetDialog && checkDialog(targetDialog)) {
+        dialog.update('edit-organization', {
+          title: <UnsavedChangesBadge title={targetDialog?.title} />,
+        });
+      }
+      return;
+    }
+    dialog.reset('edit-organization');
+  }, [form.unsavedChanges]);
 
   return (
     <Form {...form}>

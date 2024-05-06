@@ -19,7 +19,7 @@ const projectPlug = [
   },
 ];
 
-export const ProjectSettings = () => {
+export const ProjectSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -55,12 +55,13 @@ export const ProjectSettings = () => {
             callback={(project) => {
               if (idOrSlug !== project.slug) {
                 // navigate({
-                //   to: '/Project/$idOrSlug/projects',
+                //   to: '/Project/$idOrSlug/board',
                 //   params: { idOrSlug: project.slug },
                 //   replace: true,
                 // });
               }
             }}
+            sheet={isSheet}
           />
         </CardContent>
       </Card>

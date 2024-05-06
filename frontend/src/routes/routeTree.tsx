@@ -11,14 +11,14 @@ import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
 
 import { queryClient } from '~/lib/router';
+import AcceptInvite from '~/modules/common/accept-invite';
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
-import { OrganizationRoute, OrganizationMembersRoute, OrganizationSettingsRoute } from './organizations';
-import { WorkspaceRoute, WorkspaceProjectsRoute } from './workspaces'; //WorkspaceMembersRoute,
+import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
 import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
-import AcceptInvite from '~/modules/common/accept-invite';
+import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
 
 export const getAndSetMe = async () => {
   const user = await getMe();
@@ -111,7 +111,7 @@ export const routeTree = rootRoute.addChildren([
     SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute]),
     UserProfileRoute,
     UserSettingsRoute,
-    WorkspaceRoute.addChildren([WorkspaceProjectsRoute]), // WorkspaceMembersRoute,
+    WorkspaceRoute.addChildren([WorkspaceBoardRoute, WorkspaceTableRoute, WorkspaceOverviewRoute]),
     OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),
   ]),
 ]);

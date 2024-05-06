@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { TaskImpact, TaskStatus, TaskType } from '~/modules/projects/task-form';
+import type { TaskImpact, TaskStatus, TaskType } from '~/modules/projects/create-task-form';
 
 const roles = ['MEMBER', 'ADMIN'] as const;
 
@@ -13,16 +13,17 @@ export type TaskUser = {
 export type TaskLabel = {
   id: string;
   value: string;
-  color: string;
+  color: string | null;
 };
 
 export type Label = {
   id: string;
   value: string;
-  color: string;
+  color: string | null;
   count: number;
-  groupId: string;
+  groupId: string | null;
   lastActive: Date;
+  // workspaceId: string;
 };
 
 export type Task = {
@@ -40,10 +41,10 @@ export type Task = {
   type: TaskType;
   impact: TaskImpact;
   status: TaskStatus;
-  labels: TaskLabel[]; 
+  labels: TaskLabel[];
   projectId: string;
-  workspaceId: string;
-  organizationId: string;
+  // workspaceId: string;
+  // organizationId: string;
 };
 
 export type Project = {
@@ -80,7 +81,7 @@ export const getProjects = (number: number): Project[] => {
     const user = users[Math.floor(Math.random() * users.length)];
     const projectId = faker.string.uuid();
     const canBeAssignedToNumber = Math.floor(Math.random() * (8 - 2 + 1)) + 2;
-    
+
     finalArray.push({
       id: projectId,
       slug: faker.animal.cat(),
@@ -112,15 +113,16 @@ export const getLabels = (): Label[] => {
       value: faker.hacker.noun().toLowerCase(),
       groupId: faker.string.uuid(),
       lastActive: faker.date.anytime(),
+      // workspaceId: faker.string.uuid(),
     });
   }
   return returnedArray;
 };
 
 // This is the mocked API response to get all tasks for a workspace
-export const getTasks  = (projects: Project[]) => {
+export const getTasks = (projects: Project[]) => {
   const executor = usersInTask(1)[0];
-  const numberOfTasks = Math.floor(Math.random() * (18 - 4 + 1)) + 4;
+  const numberOfTasks = Math.floor(Math.random() * (18 - 4 + 1)) + 12 * projects.length;
 
   const tasks: Task[] = [];
 
@@ -149,12 +151,12 @@ export const getTasks  = (projects: Project[]) => {
         status: status[Math.floor(Math.random() * status.length)] as TaskStatus,
         labels: labels,
         projectId: project.id,
-        workspaceId: faker.string.uuid(),
-        organizationId: faker.string.uuid(),
+        // workspaceId: project.workspaceId,
+        //  organizationId: project.id,
       });
     }
-  
-  tasks.push(...returnedArray);
+
+    tasks.push(...returnedArray);
   }
 
   return tasks.sort((a, b) => b.status - a.status);

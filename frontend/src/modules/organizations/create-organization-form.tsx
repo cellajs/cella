@@ -20,9 +20,8 @@ import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
-import { SquarePen } from 'lucide-react';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 import { type LabelDirectionType, Form } from '../ui/form';
-import { Badge } from '../ui/badge';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -89,15 +88,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       const targetDialog = dialog.get('create-organization');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('create-organization', {
-          title: (
-            <div className="flex flex-row gap-2">
-              {typeof targetDialog?.title === 'string' ? <span>{targetDialog.title}</span> : targetDialog?.title}
-              <Badge variant="plain" className="w-fit">
-                <SquarePen size={12} className="mr-2" />
-                <span className="font-light">{t('common:unsaved_changes')}</span>
-              </Badge>
-            </div>
-          ),
+          title: <UnsavedChangesBadge title={targetDialog?.title} />,
         });
       }
       return;

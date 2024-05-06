@@ -68,7 +68,7 @@ export function Sheeter() {
             {sheet.title || sheet.text ? (
               <SheetHeader className="text-left">
                 {existingSheet?.title ? (
-                  existingSheet.title
+                  <SheetTitle>{existingSheet.title}</SheetTitle>
                 ) : sheet.title ? (
                   <SheetTitle>{typeof sheet.title === 'string' ? <span>{sheet.title}</span> : sheet.title}</SheetTitle>
                 ) : null}

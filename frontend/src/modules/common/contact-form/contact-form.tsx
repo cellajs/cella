@@ -5,9 +5,9 @@ import { Mail, MessageSquare, Send, User } from 'lucide-react';
 import type { SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { dialog } from '~/modules/common/dialoger/state';
+import { dialog, isDialog as checkDialog } from '~/modules/common/dialoger/state';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -16,6 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../form-fields/input';
+import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
@@ -73,6 +74,20 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
       toast.error(t('common:error.reported_try_later'));
     }
   };
+
+  // Update dialog title with unsaved changes
+  useEffect(() => {
+    if (form.unsavedChanges) {
+      const targetDialog = dialog.get('contact-form');
+      if (targetDialog && checkDialog(targetDialog)) {
+        dialog.update('contact-form', {
+          title: <UnsavedChangesBadge title={targetDialog?.title} />,
+        });
+      }
+      return;
+    }
+    dialog.reset('contact-form');
+  }, [form.unsavedChanges]);
 
   return (
     <div className="flex w-full gap-8 flex-col md:flex-row">

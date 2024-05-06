@@ -10,6 +10,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
 import { dialog } from '~/modules/common/dialoger/state';
+import { sheet, isSheet as checkSheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import InputFormField from '../common/form-fields/input';
@@ -17,11 +18,14 @@ import { SlugFormField } from '../common/form-fields/slug';
 import { updateWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
 import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
 import SelectParentFormField from '../common/form-fields/select-parent';
+import { useEffect } from 'react';
+import UnsavedChangesBadge from '../common/unsaved-changes-badge';
 
 interface Props {
   workspace: Workspace;
   callback?: (workspace: Workspace) => void;
   dialog?: boolean;
+  sheet?: boolean;
 }
 
 const formSchema = updateWorkspaceJsonSchema;
@@ -39,7 +43,7 @@ export const useUpdateWorkspaceMutation = (idOrSlug: string) => {
   });
 };
 
-const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog }: Props) => {
+const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isSheet }: Props) => {
   const { t } = useTranslation();
 
   const { mutate, isPending } = useUpdateWorkspaceMutation(workspace.id);
@@ -67,6 +71,21 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog }: Props) =
       },
     });
   };
+
+  // Update sheet title with unsaved changes
+  useEffect(() => {
+    if (!isSheet) return;
+    if (form.unsavedChanges) {
+      const targetSheet = sheet.get('edit-workspace');
+      if (targetSheet && checkSheet(targetSheet)) {
+        sheet.update('edit-workspace', {
+          title: <UnsavedChangesBadge title={targetSheet?.title} />,
+        });
+        return;
+      }
+    }
+    sheet.reset('edit-workspace');
+  }, [form.unsavedChanges]);
 
   return (
     <Form {...form}>

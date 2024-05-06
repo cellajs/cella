@@ -7,10 +7,14 @@ import { Button } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { AvatarWrap } from '../common/avatar-wrap';
+import { useMeasure } from '~/hooks/use-measure';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 
 interface ComboBoxOption {
   value: string;
   label: string;
+  url?: string | null;
 }
 
 interface ComboboxProps {
@@ -20,11 +24,13 @@ interface ComboboxProps {
   placeholder?: string;
   searchPlaceholder?: string;
   renderOption?: (option: ComboBoxOption) => React.ReactNode;
+  contentWidthMatchInput?: boolean;
 }
 
-const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholder, searchPlaceholder, renderOption }) => {
+const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholder, searchPlaceholder, renderOption, contentWidthMatchInput }) => {
   const formValue = useFormContext?.()?.getValues(name);
-
+  const { ref, bounds } = useMeasure();
+  const isMobile = useBreakpoints('max', 'sm');
   const [open, setOpen] = React.useState(false);
   const [selectedOption, setSelectedOption] = React.useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
   const [searchValue, setSearchValue] = React.useState('');
@@ -47,23 +53,32 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+        <Button
+          ref={ref as React.LegacyRef<HTMLButtonElement>}
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
           {selectedOption ? <div>{renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}</div> : placeholder || ''}
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" className="w-full p-1">
+      <PopoverContent align="start" style={{ width: `${contentWidthMatchInput ? `${bounds.left + bounds.right}px` : '100%'}` }} className={'p-0'}>
         <Command>
-          <CommandInput
-            value={searchValue}
-            onValueChange={(searchValue) => {
-              setSearchValue(searchValue);
-            }}
-            clearValue={setSearchValue}
-            placeholder={searchPlaceholder || ''}
-          />
-          <ScrollArea className="max-h-[30vh] overflow-auto">
+          {!isMobile && (
+            <CommandInput
+              value={searchValue}
+              onValueChange={(searchValue) => {
+                setSearchValue(searchValue);
+              }}
+              clearValue={setSearchValue}
+              placeholder={searchPlaceholder || ''}
+            />
+          )}
+
+          <ScrollArea className="h-[30vh] overflow-y-auto">
             <CommandList>
               <CommandEmpty>No option found</CommandEmpty>
               <CommandGroup>
@@ -74,6 +89,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
                     onSelect={handleSelect}
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
+                    {name !== 'timezone' && name !== 'country' && <AvatarWrap type="UNKNOWN" id={option.value} name={name} url={option.url} />}
                     <div>{renderOption ? renderOption(option) : <> {option.label}</>}</div>
                     <Check size={16} className={cn('text-success', formValue === option.value ? 'opacity-100' : 'opacity-0')} />
                   </CommandItem>

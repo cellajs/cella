@@ -4,12 +4,12 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { healthCheck } from '~/lib/health-check';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
-import { useAlertsStore } from '~/store/alerts';
+import { useAlertStore } from '~/store/alert';
 import { Button } from '../ui/button';
 
 export const DownAlert = () => {
   const { t } = useTranslation();
-  const { downAlert, setDownAlert } = useAlertsStore();
+  const { downAlert, setDownAlert } = useAlertStore();
 
   // Check if the user is offline or online and handle accordingly
   useEffect(() => {

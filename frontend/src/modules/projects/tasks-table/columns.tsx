@@ -6,13 +6,13 @@ import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
+import type { Task } from '~/modules/common/root/electric';
 import { Button } from '~/modules/ui/button';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
+import SelectStatus, { type TaskStatus } from '../select-status';
 import Expand from './expand';
-import type { Task } from '~/mocks/workspaces';
-import SelectStatus from '../select-status';
 
 export type TaskRow = Task & { _type: 'MASTER' | 'DETAIL'; _expanded?: boolean; _parent?: Task };
 
@@ -94,7 +94,7 @@ export const useColumns = () => {
               row._type === 'MASTER' && (
                 <div className="flex gap-2">
                   <SelectStatus
-                    taskStatus={row.status}
+                    taskStatus={row.status as TaskStatus}
                     changeTaskStatus={(newStatus) => {
                       console.log(newStatus);
                     }}
@@ -109,7 +109,7 @@ export const useColumns = () => {
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row._type === 'MASTER' && row.projectId,
+            renderCell: ({ row }) => row._type === 'MASTER' && row.project_id,
             minWidth: 180,
           },
           {
@@ -118,7 +118,7 @@ export const useColumns = () => {
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row._type === 'MASTER' && dateShort(row.createdAt),
+            renderCell: ({ row }) => row._type === 'MASTER' && dateShort(row.created_at),
             minWidth: 180,
           },
         ],

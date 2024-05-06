@@ -97,3 +97,4 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
   if (!pathname.endsWith(param)) return;
   throw redirect({ to: pathname + redirectLocation, replace: true });
 };
+

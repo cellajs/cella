@@ -2,7 +2,7 @@ import i18next from 'i18next';
 import { toast } from 'sonner';
 import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
-import { useAlertsStore } from '~/store/alerts';
+import { useAlertStore } from '~/store/alert';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
 import router from './router';
@@ -35,8 +35,8 @@ const onError = (error: Error) => {
     toast.error(errorMessage || error.message);
 
     // Set down alerts
-    if (error.status === 503) useAlertsStore.getState().setDownAlert('maintenance');
-    else if (error.status === 504) useAlertsStore.getState().setDownAlert('offline');
+    if (error.status === 503) useAlertStore.getState().setDownAlert('maintenance');
+    else if (error.status === 504) useAlertStore.getState().setDownAlert('offline');
 
     if (error.status === 401) {
       // Redirect to sign-in page if the user is not authenticated (except for /me)
@@ -55,7 +55,7 @@ const onError = (error: Error) => {
 
 const onSuccess = () => {
   // Clear down alerts
-  useAlertsStore.getState().setDownAlert(null);
+  useAlertStore.getState().setDownAlert(null);
 };
 
 export const queryClientConfig = { onError, onSuccess };

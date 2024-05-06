@@ -1,96 +1,139 @@
-import { useDndContext } from '@dnd-kit/core';
-import { SortableContext } from '@dnd-kit/sortable';
 import { cva } from 'class-variance-authority';
 import { ChevronDown } from 'lucide-react';
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
-import { CardContent } from '~/modules/ui/card';
-import { ScrollArea } from '~/modules/ui/scroll-area';
-import { TaskCard } from './task-card';
+import { Card, CardContent } from '~/modules/ui/card';
+import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { useWorkspaceStore } from '~/store/workspace';
+import type { Task } from '../common/root/electric';
+import { sheet } from '../common/sheeter/state';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
-
-export interface Column {
-  id: string;
-  name: string;
-}
-
-export interface ColumnDragData {
-  type: 'Column';
-  column: Column;
-}
+import CreateTaskForm from './create-task-form';
+import { ProjectSettings } from './project-settings';
+import { TaskCard } from './task-card';
 
 interface BoardColumnProps {
-  column: Column;
-  isOverlay?: boolean;
+  tasks?: Task[];
 }
 
-export function BoardColumn({ column, isOverlay }: BoardColumnProps) {
-  const { tasks = [] } = useContext(ProjectContext);
+export function BoardColumn({ tasks = [] }: BoardColumnProps) {
+  const { t } = useTranslation();
 
-  const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+  const containerRef = useRef(null);
+
+  const { project } = useContext(ProjectContext);
+  const { workspaces, changeColumn } = useWorkspaceStore();
+  const currentProjectSettings = workspaces[project.workspace_id]?.columns.find((el) => el.columnId === project.id);
+
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
 
-  const [showIced, setShowIced] = useState(false);
-  const [showAccepted, setShowAccepted] = useState(false);
+  const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
+  const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
+  const [createForm, setCreateForm] = useState(false);
 
-  return (
-    <BoardColumnHeader column={column} isOverlay={isOverlay}>
-      <ScrollArea id={column.id} size="indicatorVertical">
-        <CardContent className="flex flex-grow flex-col p-0 group/column">
-          {!!tasks.length && (
-            <SortableContext items={tasksIds}>
-              <Button
-                onClick={() => setShowAccepted(!showAccepted)}
-                variant="ghost"
-                disabled={!acceptedCount}
-                size="sm"
-                className="w-full rounded-none gap-1 border-b opacity-75 hover:opacity-100 hover:bg-green-500/5 text-green-500 text-sm -mt-[1px]"
-              >
-                <span className="text-xs">{acceptedCount} accepted</span>
-                {!!acceptedCount && (
-                  <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
-                )}
-              </Button>
-              {tasks
-                .filter((t) => {
-                  if (showAccepted && t.status === 6) return true;
-                  if (showIced && t.status === 0) return true;
-                  return t.status !== 0 && t.status !== 6;
-                })
-                .map((task) => (
-                  <TaskCard task={task} key={task.id} />
-                ))}
-              <Button
-                onClick={() => setShowIced(!showIced)}
-                variant="ghost"
-                disabled={!icedCount}
-                size="sm"
-                className="w-full rounded-none gap-1 opacity-75 hover:opacity-100 text-sky-500 hover:bg-sky-500/5 text-sm -mt-[1px]"
-              >
-                <span className="text-xs">{icedCount} iced</span>
-                {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
-              </Button>
-            </SortableContext>
-          )}
-        </CardContent>
-      </ScrollArea>
-    </BoardColumnHeader>
-  );
-}
+  const handleIcedClick = () => {
+    setShowIced(!showIced);
+    changeColumn(project.workspace_id, project.id, {
+      expandIced: !showIced,
+    });
+  };
+  const handleAcceptedClick = () => {
+    setShowAccepted(!showAccepted);
+    changeColumn(project.workspace_id, project.id, {
+      expandAccepted: !showAccepted,
+    });
+  };
 
-export function BoardContainer({ children }: { children: React.ReactNode }) {
-  const dndContext = useDndContext();
+  const openSettingsSheet = () => {
+    sheet(<ProjectSettings sheet />, {
+      className: 'sm:max-w-[64rem]',
+      title: t('common:project_settings'),
+      text: t('common:project_settings.text'),
+      id: 'edit-project',
+    });
+  };
 
-  const variations = cva('h-[calc(100vh-64px-64px)] md:h-[calc(100vh-88px)]', {
+  const handleTaskFormClick = () => {
+    if (!createForm) {
+      const container = document.getElementById(`${project.id}-viewport`);
+      container?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setCreateForm(!createForm);
+  };
+
+  // const createTask = () => {
+  //   dialog(<CreateTaskForm project={project} dialog />, {
+  //     className: 'md:max-w-xl',
+  //     title: t('common:create_task'),
+  //   });
+  // };
+
+  // const onDelete = () => {
+  //   db.projects.delete({ where: { id: project.id } });
+  // };
+
+  const variants = cva('h-full rounded-b-none max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center', {
     variants: {
       dragging: {
-        default: 'snap-x snap-mandatory',
-        active: 'snap-none',
+        default: 'border-2 border-transparent',
+        over: 'ring-2 opacity-30',
+        overlay: 'ring-2 ring-primary',
       },
     },
   });
 
-  return <div className={variations({ dragging: dndContext.active ? 'active' : 'default' })}>{children}</div>;
+  return (
+    <Card className={variants({ dragging: undefined })}>
+      <BoardColumnHeader createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
+
+      {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
+
+      <div ref={containerRef} />
+      {!tasks.length && <div className="flex flex-col items-center justify-start w-full p-8">{t('common:no_tasks')}</div>}
+      {!!tasks.length && (
+        <ScrollArea id={project.id} size="indicatorVertical" className="mx-[-1px]">
+          <ScrollBar size="indicatorVertical" />
+          <CardContent className="flex flex-grow flex-col p-0 group/column">
+            <Button
+              onClick={handleAcceptedClick}
+              variant="ghost"
+              disabled={!acceptedCount}
+              size="sm"
+              className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[1px]"
+            >
+              <span className="text-xs">
+                {acceptedCount} {t('common:accepted').toLowerCase()}
+              </span>
+              {!!acceptedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />}
+            </Button>
+
+            {tasks
+              .filter((t) => {
+                if (showAccepted && t.status === 6) return true;
+                if (showIced && t.status === 0) return true;
+                return t.status !== 0 && t.status !== 6;
+              })
+              .map((task) => (
+                <TaskCard task={task} key={task.id} />
+              ))}
+            <Button
+              onClick={handleIcedClick}
+              variant="ghost"
+              disabled={!icedCount}
+              size="sm"
+              className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[1px]"
+            >
+              <span className="text-xs">
+                {icedCount} {t('common:iced').toLowerCase()}
+              </span>
+              {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
+            </Button>
+          </CardContent>
+        </ScrollArea>
+      )}
+    </Card>
+  );
 }

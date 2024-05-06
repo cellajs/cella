@@ -1,35 +1,44 @@
 import MDEditor from '@uiw/react-md-editor';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Mode } from '~/store/theme';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 
 interface TaskEditorProps {
-  markdown: string;
-  setMarkdown: (newValue: string) => void;
   id: string;
   mode: Mode;
+  markdown: string;
+  setMarkdown: (newValue: string) => void;
+  setSummary: (newValue: string) => void;
   toggleEditorState: () => void;
 }
 
-export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState }: TaskEditorProps) => {
+export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, toggleEditorState }: TaskEditorProps) => {
+  const [markdownValue, setMarkdownValue] = useState(markdown);
+
   const handleUpdateMarkdown = () => {
-    const editorTextAria = document.getElementById(id);
-    if (!editorTextAria) return toggleEditorState();;
-    const newValue = (editorTextAria as HTMLTextAreaElement).value;
-    setMarkdown(newValue);
+    const summaryFromMarkDown = markdownValue.split('\n')[0];
+    setMarkdown(markdownValue);
+    setSummary(summaryFromMarkDown);
     toggleEditorState();
   };
 
-  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback((event) => {
-    if (event.key !== 'Escape') return;
-    handleUpdateMarkdown()
-  }, []);
+  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
+    (event) => {
+      if (event.key !== 'Escape' && !(event.key === 'Enter' && (event.ctrlKey || event.metaKey))) return;
+      handleUpdateMarkdown();
+    },
+    [handleUpdateMarkdown],
+  );
 
-  const handleHotKeysEsc = useCallback(() => {
+  const handleHotKeys = useCallback(() => {
     handleUpdateMarkdown();
-  }, []);
+  }, [handleUpdateMarkdown]);
 
-  useHotkeys([['Escape', handleHotKeysEsc]]);
+  useHotkeys([
+    ['Escape', handleHotKeys],
+    ['ctrl+enter', handleHotKeys],
+    ['meta+enter', handleHotKeys],
+  ]);
 
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {
@@ -44,17 +53,13 @@ export const TaskEditor = ({ markdown, setMarkdown, id, mode, toggleEditorState 
   return (
     <>
       <MDEditor
+        onBlur={handleUpdateMarkdown}
         onKeyDown={handleMDEscKeyPress}
-        onBlur={(event) => {
-          const newValue = (event as unknown as React.FocusEvent<HTMLTextAreaElement>).target.value;
-          setMarkdown(newValue);
-          toggleEditorState();
-        }}
         textareaProps={{ id: id }}
-        value={markdown}
+        value={markdownValue}
         preview={'edit'}
         onChange={(newValue) => {
-          if (newValue) setMarkdown(newValue);
+          if (typeof newValue === 'string') setMarkdownValue(newValue);
         }}
         defaultTabEnable={true}
         hideToolbar={true}
