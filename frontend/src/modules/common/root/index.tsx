@@ -7,7 +7,8 @@ import ReloadPrompt from '~/modules/common/reload-prompt';
 import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
-import { DownAlert } from './down-alert';
+import { DownAlert } from '../down-alert';
+import ElectricProvider from './electric-provider';
 
 // Lazy load Tanstack dev tools in development
 const TanStackRouterDevtools =
@@ -24,22 +25,24 @@ const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gle
 
 function Root() {
   return (
-    <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
-      <ScrollRestoration />
-      <Outlet />
-      <Toaster richColors />
-      <Dialoger />
-      <Sheeter />
-      <ReloadPrompt />
-      <Suspense fallback={null}>
-        <TanStackRouterDevtools />
-      </Suspense>
-      <DownAlert />
+    <ElectricProvider>
+      <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
+        <ScrollRestoration />
+        <Outlet />
+        <Toaster richColors />
+        <Dialoger />
+        <Sheeter />
+        <ReloadPrompt />
+        <Suspense fallback={null}>
+          <TanStackRouterDevtools />
+        </Suspense>
+        <DownAlert />
 
-      <Suspense fallback={null}>
-        <GleapSupport />
-      </Suspense>
-    </TooltipProvider>
+        <Suspense fallback={null}>
+          <GleapSupport />
+        </Suspense>
+      </TooltipProvider>
+    </ElectricProvider>
   );
 }
 

@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { checkSlugAvailable } from '~/api/general';
 import { Button } from '~/modules/ui/button';
-import { useElectric } from '../app/electric';
+import { useElectric } from '../root/electric';
 import InputFormField from './input';
 
 interface SlugFieldProps {

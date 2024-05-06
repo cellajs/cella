@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
-import { useWatch, type UseFormProps } from 'react-hook-form';
+import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
@@ -18,11 +18,10 @@ import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { Workspace } from '~/types';
-import { useElectric } from '../common/app/electric';
+import { useElectric } from '../common/root/electric';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
-// import { useNavigate } from '@tanstack/react-router';
 import { Form } from '../ui/form';
 
 interface CreateProjectFormProps {
