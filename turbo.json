@@ -1,19 +1,35 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["NODE_ENV"],
-  "globalDotEnv": ["env/.env"],
-  "globalDependencies": ["config"],
+  "globalEnv": [
+    "NODE_ENV"
+  ],
+  "globalDotEnv": [
+    "env/.env"
+  ],
+  "globalDependencies": [
+    "config"
+  ],
   "pipeline": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "build:dev": {
-      "dependsOn": ["^build:dev"],
-      "outputs": ["dist/**"]
+      "dependsOn": [
+        "^build:dev"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "start": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "dev": {
       "cache": false,
@@ -25,6 +41,8 @@
     "studio": {},
     "seed:users": {},
     "seed:organizations": {},
-    "check:types": {}
+    "check:types": {},
+    "prepare:electric": {},
+    "prepare:electric:dev": {}
   }
 }
