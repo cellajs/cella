@@ -8,8 +8,6 @@ async function main() {
   await migrate(db, { migrationsFolder: 'drizzle' });
 
   console.info('Migrated successfully');
-
-  process.exit(0);
 }
 
 main().catch((e) => {
