@@ -1,4 +1,4 @@
-import { integer, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { integer, pgTable, primaryKey, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 // id: string;
 // slug: string;
@@ -82,3 +82,48 @@ export const labels = pgTable('labels', {
       onDelete: 'cascade',
     }),
 });
+
+export const taskLabels = pgTable(
+  'task_labels',
+  {
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, {
+        onDelete: 'cascade',
+      }),
+    labelId: uuid('label_id')
+      .notNull()
+      .references(() => labels.id, {
+        onDelete: 'cascade',
+      }),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({
+        columns: [table.labelId, table.taskId],
+      }),
+    };
+  },
+);
+
+export const taskUsers = pgTable(
+  'task_users',
+  {
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, {
+        onDelete: 'cascade',
+      }),
+    userId: uuid('user_id').notNull(),
+    role: varchar('role', {
+      enum: ['ASSIGNED', 'CREATED'],
+    }).notNull(),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({
+        columns: [table.userId, table.taskId],
+      }),
+    };
+  },
+);

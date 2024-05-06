@@ -218,9 +218,9 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
             )}
 
             {/* <SetLabels
-              projectId={task.projectId}
+              projectId={task.project_id}
               changeLabels={(newLabels) => handleChange('labels', newLabels)}
-              viewValue={innerTask.labels}
+              viewValue={task.labels}
               mode="edit"
             /> */}
             <div className="grow h-0" />
