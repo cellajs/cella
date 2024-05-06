@@ -6,10 +6,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/module
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import { taskTypes } from './create-task-form.tsx';
 import { cva } from 'class-variance-authority';
+import ThreeStateSwitch from '../ui/three-state-switch.tsx';
 
 interface Props {
   className?: string;
@@ -48,13 +49,38 @@ const WorkspaceView = ({ className = '' }: Props) => {
   const { getWorkspaceViewOptions, setWorkspaceViewOptions } = useWorkspaceStore();
   const { workspace } = useContext(WorkspaceContext);
   const workspaceId = workspace.id;
-  const handViewOptionsChange = (viewOption: keyof ViewOptions, values: string[]) => {
+  const [switchState, setSwitchState] = useState<'none' | 'partly' | 'all'>('partly');
+  const [innerViewOptions, setInnerViewOptions] = useState(getWorkspaceViewOptions(workspaceId));
+
+  const handleViewOptionsChange = (viewOption: keyof ViewOptions, values: string[]) => {
+    const newInnerViewOptions = { ...innerViewOptions };
+    newInnerViewOptions[viewOption] = values;
+    setInnerViewOptions(newInnerViewOptions);
     setWorkspaceViewOptions(workspaceId, viewOption, values);
   };
 
-  // const handleSelectAll = () => {
-  //   Object.entries(viewOptions).map(([key, value]) => setWorkspaceViewOptions(workspaceId, key as keyof ViewOptions, value));
-  // };
+  useEffect(() => {
+    const currentLength = Object.values(innerViewOptions).flat().length;
+    const totalLength = Object.values(viewOptions).flat().length;
+
+    if (currentLength === 0) {
+      setSwitchState('none');
+    } else if (currentLength === totalLength) {
+      setSwitchState('all');
+    } else {
+      setSwitchState('partly');
+    }
+  }, [innerViewOptions]);
+
+  useEffect(() => {
+    if (switchState === 'partly') return;
+
+    Object.entries(viewOptions).map(([key, value]) =>
+      setWorkspaceViewOptions(workspaceId, key as keyof ViewOptions, switchState === 'all' ? value : []),
+    );
+    return;
+  }, [switchState]);
+
   return (
     <DropdownMenu>
       <TooltipButton toolTipContent={t('common:view_options')}>
@@ -73,7 +99,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
             variant="merged"
             value={getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]}
             className={cn('gap-0 w-full', className)}
-            onValueChange={(values) => handViewOptionsChange(key as keyof ViewOptions, values)}
+            onValueChange={(values) => handleViewOptionsChange(key as keyof ViewOptions, values)}
           >
             {options.map((option) => (
               <ToggleGroupItem
@@ -89,9 +115,15 @@ const WorkspaceView = ({ className = '' }: Props) => {
             ))}
           </ToggleGroup>
         ))}
-        {/* <Button onClick={handleSelectAll} variant="outlineGhost" key="select all" size="sm">
-          <span className="text-xs font-normal">{'Select All'}</span>
-        </Button> */}
+        <ThreeStateSwitch
+          defaultValue={switchState}
+          switchValues={[
+            { id: 0, value: 'none', label: 'Selected none' },
+            { id: 1, value: 'partly', label: 'Partly secelted' },
+            { id: 2, value: 'all', label: 'Selected all' },
+          ]}
+          onChange={(newValue: string) => setSwitchState(newValue as 'none' | 'partly' | 'all')}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   );
