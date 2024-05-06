@@ -65,7 +65,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" style={{ width: `${contentWidthMatchInput ? `${Math.round(bounds.width)}px` : '100%'}` }} className={'p-0'}>
+      <PopoverContent align="start" style={{ width: `${contentWidthMatchInput ? `${bounds.left + bounds.right}px` : '100%'}` }} className={'p-0'}>
         <Command>
           {!isMobile && (
             <CommandInput

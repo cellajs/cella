@@ -100,7 +100,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
       </PopoverTrigger>
 
       <PopoverContent
-        style={{ width: `${mode === 'create' ? `${Math.round(bounds.width)}` : '192'}px` }}
+        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right)}` : '192'}px` }}
         className="p-0 rounded-lg"
         align="start"
         onCloseAutoFocus={(e) => e.preventDefault()}
