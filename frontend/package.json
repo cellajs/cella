@@ -6,7 +6,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "prepare:electric": "NODE_ENV=production concurrently --names migration,generation --kill-others --success command-generation \"pnpm migrate\" \"pnpm generate:electric\"",
+    "prepare:electric": "NODE_ENV=production concurrently --names proxy,migration,generation --kill-others --success command-generation \"pnpm proxy\" \"pnpm migrate\" \"pnpm generate:electric\"",
     "prepare:electric:dev": "NODE_ENV=development concurrently --names proxy,migration,generation --kill-others --success command-generation \"pnpm proxy\" \"pnpm migrate\" \"pnpm generate:electric\"",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
@@ -15,7 +15,7 @@
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
     "generate": "drizzle-kit generate:pg",
-    "generate:electric": "if test \"$NODE_ENV\" = \"production\"; then electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://prisma:proxy_password@3.75.158.163:65432/postgres; else electric-sql generate --service https://cella-electric-dev.onrender.com --proxy postgresql://prisma:proxy_password@0.0.0.0:65431/postgres; fi",
+    "generate:electric": "if test \"$NODE_ENV\" = \"production\"; then electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://prisma:proxy_password@0.0.0.0:65431/postgres; else electric-sql generate --service https://cella-electric-dev.onrender.com --proxy postgresql://prisma:proxy_password@localhost:65431/postgres; fi",
     "migrate": "tsx src/db/migrate.ts",
     "proxy": "if test \"$NODE_ENV\" = \"production\"; then electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65431; else electric-sql proxy-tunnel --service https://cella-electric-dev.onrender.com --local-port 65431; fi"
   },
