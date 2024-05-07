@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { Search, XCircle } from 'lucide-react';
 import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
@@ -18,7 +18,7 @@ const BoardSearch = () => {
   return (
     <>
       <div className="relative flex w-full sm:min-w-44 items-center " onClick={handleClick} onKeyDown={undefined}>
-        <Search size={16} className="absolute left-3" style={{ opacity: 1 }} />
+        <Search size={16} className="absolute left-3" style={{ opacity: `${searchQuery.length ? 1 : 0.5}` }} />
         <Input
           placeholder={t('common:placeholder.search')}
           style={{ paddingLeft: '2rem' }}
@@ -31,6 +31,13 @@ const BoardSearch = () => {
             setSearchQuery(searchValue);
           }}
         />
+        {!!searchQuery.length && (
+          <XCircle
+            size={16}
+            className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+            onClick={() => setSearchQuery('')}
+          />
+        )}
       </div>
     </>
   );
