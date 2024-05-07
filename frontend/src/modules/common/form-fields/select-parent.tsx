@@ -32,7 +32,7 @@ const SelectParentFormField = ({ collection, control, name, label, placeholder, 
           <FormControl>
             <Combobox
               options={options}
-              name={`${collection.slice(0, -1)}Id`}
+              name={name}
               onChange={onChange}
               disabled={disabled}
               placeholder={t('common:choose_from', { option: collection })}

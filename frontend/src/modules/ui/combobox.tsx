@@ -39,11 +39,12 @@ const Combobox: React.FC<ComboboxProps> = ({
   disabled,
 }) => {
   const formValue = useFormContext?.()?.getValues(name);
+  console.log('useFormContext:', useFormContext());
   const { ref, bounds } = useMeasure();
   const isMobile = useBreakpoints('max', 'sm');
   const [open, setOpen] = React.useState(false);
   const [selectedOption, setSelectedOption] = React.useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
-  console.log('selectedOption:', selectedOption);
+
   const [searchValue, setSearchValue] = React.useState('');
 
   const handleSelect = (newResult: string) => {
