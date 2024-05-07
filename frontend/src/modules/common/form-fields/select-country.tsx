@@ -15,6 +15,7 @@ const SelectCountry = ({ onChange }: { onChange: (value: string) => void }) => {
   );
   return (
     <Combobox
+      contentWidthMatchInput={true}
       options={options}
       name="country"
       onChange={onChange}

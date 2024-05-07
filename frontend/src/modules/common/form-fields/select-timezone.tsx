@@ -8,6 +8,7 @@ const SelectTimezone = ({ onChange }: { onChange: (value: string) => void }) => 
 
   return (
     <Combobox
+      contentWidthMatchInput={true}
       options={options}
       name="timezone"
       onChange={onChange}
