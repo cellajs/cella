@@ -11,6 +11,7 @@ import { WorkspaceContext } from '../workspaces/index.tsx';
 import { taskTypes } from './create-task-form.tsx';
 import { cva } from 'class-variance-authority';
 import ThreeStateSwitch from '../ui/three-state-switch.tsx';
+import { Badge } from '../ui/badge.tsx';
 
 interface Props {
   className?: string;
@@ -49,8 +50,10 @@ const WorkspaceView = ({ className = '' }: Props) => {
   const { getWorkspaceViewOptions, setWorkspaceViewOptions } = useWorkspaceStore();
   const { workspace } = useContext(WorkspaceContext);
   const workspaceId = workspace.id;
-  const [switchState, setSwitchState] = useState<'none' | 'partly' | 'all'>('partly');
   const [innerViewOptions, setInnerViewOptions] = useState(getWorkspaceViewOptions(workspaceId));
+  const currentLength = Object.values(innerViewOptions).flat().length;
+
+  const [switchState, setSwitchState] = useState<'none' | 'partly' | 'all'>(currentLength < 1 ? 'none' : currentLength === 10 ? 'all' : 'partly');
 
   const handleViewOptionsChange = (viewOption: keyof ViewOptions, values: string[]) => {
     const newInnerViewOptions = { ...innerViewOptions };
@@ -86,6 +89,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
       <TooltipButton toolTipContent={t('common:view_options')}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className={cn('relative flex', className)}>
+            {switchState !== 'all' && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0" />}
             <SlidersHorizontal className="h-4 w-4" />
             <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
           </Button>
@@ -116,6 +120,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
           </ToggleGroup>
         ))}
         <ThreeStateSwitch
+          disableIndex={switchState === 'all' || switchState === 'none' ? [1] : []}
           value={switchState}
           switchValues={[
             { id: 0, value: 'none', label: 'Selected none' },
