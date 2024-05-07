@@ -6,8 +6,8 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "prepare:electric": "NODE_ENV=production concurrently --names proxy,migration,generation --kill-others --success command-generation \"pnpm proxy\" \"pnpm migrate\" \"pnpm generate:electric\"",
-    "prepare:electric:dev": "NODE_ENV=development concurrently --names proxy,migration,generation --kill-others --success command-generation \"pnpm proxy\" \"pnpm migrate\" \"pnpm generate:electric\"",
+    "prepare:electric": "NODE_ENV=production concurrently --names proxy,migration,generation,prepare --kill-others --success command-prepare \"pnpm proxy\" \"pnpm migrate\" \"pnpm generate:electric\" \"tsx prepare-file.ts\"",
+    "prepare:electric:dev": "NODE_ENV=development concurrently --names proxy,migration,generation,prepare --kill-others --success command-prepare \"pnpm proxy\" \"pnpm migrate\" \"pnpm generate:electric\" \"tsx prepare-file.ts\"",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
     "build": "tsc --exclude src/generated && vite build",
