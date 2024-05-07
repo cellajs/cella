@@ -85,6 +85,7 @@ const WorkspacePage = () => {
   // };
 
   useEffect(() => {
+    setSearchQuery('');
     // fetch('/mock/workspace-data')
     //   .then((response) => response.json())
     //   .then((data) => {
