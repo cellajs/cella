@@ -10,7 +10,7 @@
     "prepare:electric:dev": "NODE_ENV=development concurrently --names proxy,migration,generation --kill-others --success command-generation \"pnpm proxy\" \"pnpm migrate\" \"pnpm generate:electric\"",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
-    "build": "tsc && vite build",
+    "build": "tsc -p tsconfig.json && vite build",
     "check:types": "tsc",
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
