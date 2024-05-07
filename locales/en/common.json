@@ -208,6 +208,7 @@
   "no_color": "No color",
   "no_labels": "No labels yet",
   "no_tasks": "No tasks yet. Click 'Task' to add the first one.",
+  "no_tasks_found": "No matching tasks found.",
   "no_projects": "No projects yet. Click 'Add' your first project.",
   "no_members": "No members yet.",
   "no_organization": "No organization",
