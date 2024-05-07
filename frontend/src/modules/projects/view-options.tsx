@@ -49,10 +49,10 @@ const WorkspaceView = ({ className = '' }: Props) => {
   const { t } = useTranslation();
   const { getWorkspaceViewOptions, setWorkspaceViewOptions } = useWorkspaceStore();
   const { workspace } = useContext(WorkspaceContext);
-  const workspaceId = workspace.id;
+  const [workspaceId, setWorkspaceId] = useState(workspace.id);
   const [innerViewOptions, setInnerViewOptions] = useState(getWorkspaceViewOptions(workspaceId));
-  const currentLength = Object.values(innerViewOptions).flat().length;
 
+  const currentLength = Object.values(innerViewOptions).flat().length;
   const [switchState, setSwitchState] = useState<'none' | 'partly' | 'all'>(currentLength < 1 ? 'none' : currentLength === 10 ? 'all' : 'partly');
 
   const handleViewOptionsChange = (viewOption: keyof ViewOptions, values: string[]) => {
@@ -77,12 +77,16 @@ const WorkspaceView = ({ className = '' }: Props) => {
 
   useEffect(() => {
     if (switchState === 'partly') return;
-
     Object.entries(viewOptions).map(([key, value]) =>
       setWorkspaceViewOptions(workspaceId, key as keyof ViewOptions, switchState === 'all' ? value : []),
     );
     return;
   }, [switchState]);
+
+  useEffect(() => {
+    setWorkspaceId(workspace.id);
+    setInnerViewOptions(getWorkspaceViewOptions(workspace.id));
+  }, [workspace]);
 
   return (
     <DropdownMenu>
