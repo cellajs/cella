@@ -9,6 +9,7 @@ import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types';
 import { PageHeader } from '../common/page-header';
 import { useElectric, type ProjectWithLabels, type TaskWithLabels } from '../common/root/electric';
+import { FocusViewContainer } from '../common/focus-view';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
@@ -106,11 +107,12 @@ const WorkspacePage = () => {
           organizationId={workspace.organizationId}
         />
       )}
-
-      <div className="flex flex-col gap-2 md:gap-4 p-2 md:p-4">
-        <BoardHeader showPageHeader={showPageHeader} handleShowPageHeader={togglePageHeader} />
-        <Outlet />
-      </div>
+      <FocusViewContainer>
+        <div className="flex flex-col gap-2 md:gap-4 p-2 md:p-4">
+          <BoardHeader showPageHeader={showPageHeader} handleShowPageHeader={togglePageHeader} />
+          <Outlet />
+        </div>
+      </FocusViewContainer>
     </WorkspaceContext.Provider>
   );
 };
