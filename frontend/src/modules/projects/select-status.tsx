@@ -9,7 +9,6 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { toast } from 'sonner';
 import { cva } from 'class-variance-authority';
 import { cn } from '~/lib/utils';
-import { useMeasure } from '~/hooks/use-measure';
 
 type Status = {
   value: (typeof statuses)[number]['value'];
@@ -57,7 +56,6 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(statuses[taskStatus]);
   const isSearching = searchValue.length > 0;
-  const { ref, bounds } = useMeasure();
   // Open on key press
   useHotkeys([['s', () => setOpenPopover(true)]]);
 
@@ -95,7 +93,6 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
         )}
         <PopoverTrigger asChild>
           <Button
-            ref={ref as React.LegacyRef<HTMLButtonElement>}
             aria-label="Set status"
             variant={mode === 'edit' ? 'outlineGhost' : 'default'}
             size={mode === 'edit' ? 'micro' : 'xs'}
@@ -111,8 +108,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
       </div>
 
       <PopoverContent
-        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right)}` : '240'}px` }}
-        className="p-0 rounded-lg"
+        className="w-60 p-0 rounded-lg"
         align={mode === 'edit' ? 'end' : 'start'}
         onCloseAutoFocus={(e) => e.preventDefault()}
         sideOffset={4}
