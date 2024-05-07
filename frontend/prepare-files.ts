@@ -10,5 +10,3 @@ for (const file of files) {
     fs.writeFileSync(filePath, `// @ts-nocheck\n${content}`);
   }
 }
-
-process.exit(0);
