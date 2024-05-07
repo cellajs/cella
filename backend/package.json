@@ -11,7 +11,7 @@
     "build:sourcemaps": "NODE_ENV=production tsup && pnpm run sentry:sourcemaps",
     "build:dev": "NODE_ENV=development tsup",
     "check:types": "tsc",
-    "dev": "set NODE_ENV=development& tsup --watch --onSuccess \"tsx dist/src/index.cjs\"",
+    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/src/index.cjs\"",
     "seed:users": "tsx seed/users.ts",
     "seed:organizations": "tsx seed/organizations.ts",
     "generate": "drizzle-kit generate:pg",
