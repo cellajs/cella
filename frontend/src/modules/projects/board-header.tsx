@@ -1,5 +1,5 @@
-import { PanelTopClose, Plus, Settings, Tag, Trash } from 'lucide-react';
-import { useContext } from 'react';
+import { PanelTopClose, Plus, Settings, Tag, Trash, XSquare, SearchX } from 'lucide-react';
+import { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
@@ -15,6 +15,7 @@ import AddProjects from './add-projects';
 import LabelsTable from './labels-table';
 import { type Label, useElectric } from '../common/root/electric';
 import { AvatarWrap } from '../common/avatar-wrap';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;
@@ -24,7 +25,7 @@ interface BoardHeaderProps {
 const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps) => {
   const { t } = useTranslation();
 
-  const { workspace, selectedTasks, setSelectedTasks, projects } = useContext(WorkspaceContext);
+  const { workspace, selectedTasks, setSelectedTasks, projects, searchQuery, tasks, setSearchQuery } = useContext(WorkspaceContext);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
@@ -72,41 +73,84 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
     });
   };
 
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery) return tasks;
+    return tasks.filter(
+      (task) =>
+        task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [searchQuery, tasks]);
+
   return (
     <div className={'flex items-center w-full max-sm:justify-between gap-2'}>
-      <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleShowPageHeader}>
-        {showPageHeader ? (
-          <PanelTopClose size={16} />
-        ) : (
-          <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+      <TableFilterBar
+        onResetFilters={() => {
+          setSearchQuery('');
+          setSelectedTasks([]);
+        }}
+        isFiltered={!!selectedTasks.length || !!searchQuery.length}
+      >
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleShowPageHeader}>
+            {showPageHeader ? (
+              <PanelTopClose size={16} />
+            ) : (
+              <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+            )}
+          </Button>
+          <FilterBarActions>
+            {!selectedTasks.length && !searchQuery.length && (
+              <div className="flex gap-1">
+                <Button variant="plain" onClick={handleAddProjects}>
+                  <Plus size={16} />
+                  <span className="max-sm:hidden ml-1">{t('common:add')}</span>
+                </Button>
+
+                <Button variant="outlinePrimary" onClick={openLabelsSheet}>
+                  <Tag size={16} />
+                  <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
+                </Button>
+
+                <Button variant="outline" onClick={openSettingsSheet}>
+                  <Settings size={16} />
+                  <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
+                </Button>
+              </div>
+            )}
+          </FilterBarActions>
+        </div>
+        {!!searchQuery.length && (
+          <div className="inline-flex align-center items-center gap-2">
+            <Button className="max-xs:hidden" variant="ghost" onClick={() => setSearchQuery('')}>
+              <SearchX size={16} />
+              <span className="ml-1">{t('common:clear_search')}</span>
+            </Button>
+            <div className="w-max mx-2 max-xs:text-sm">
+              {filteredTasks.length}
+              {searchQuery && ' task '}
+              {searchQuery && t('common:found')}
+            </div>
+          </div>
         )}
-      </Button>
-
-      {selectedTasks.length > 0 ? (
-        <Button variant="destructive" className="relative" onClick={onRemove}>
-          <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedTasks.length}</Badge>
-          <Trash size={16} />
-          <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
-        </Button>
-      ) : (
-        <>
-          <Button variant="plain" onClick={handleAddProjects}>
-            <Plus size={16} />
-            <span className="max-sm:hidden ml-1">{t('common:add')}</span>
-          </Button>
-
-          <Button variant="outlinePrimary" onClick={openLabelsSheet}>
-            <Tag size={16} />
-            <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
-          </Button>
-
-          <Button variant="outline" onClick={openSettingsSheet}>
-            <Settings size={16} />
-            <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
-          </Button>
-        </>
-      )}
-      <BoardSearch />
+        {!!selectedTasks.length && (
+          <div className="inline-flex align-center items-center gap-2">
+            <Button variant="destructive" className="relative" onClick={onRemove}>
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedTasks.length}</Badge>
+              <Trash size={16} />
+              <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+            </Button>
+            <Button variant="ghost" className="relative" onClick={() => setSelectedTasks([])}>
+              <XSquare size={16} />
+              <span className="ml-1 max-xs:hidden">{t('common:clear')}</span>
+            </Button>
+          </div>
+        )}
+        <FilterBarContent className="max-sm:ml-1 w-full">
+          <BoardSearch />
+        </FilterBarContent>
+      </TableFilterBar>
       <WorkspaceView className="max-sm:hidden" />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />

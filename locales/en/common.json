@@ -30,6 +30,7 @@
   "choose_from": "Choose from {{option}}",
   "clear": "Clear",
   "clear_filter": "Clear filter",
+  "clear_search": "Clear search",
   "close": "Close",
   "columns_view": "Change column view",
   "configure_menu.text": "Configure your menu items. Changes will be saved automatically.",

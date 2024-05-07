@@ -6,7 +6,7 @@ import { WorkspaceContext } from '../workspaces';
 
 const BoardSearch = () => {
   const { t } = useTranslation();
-  const { searchQuery, setSearchQuery } = useContext(WorkspaceContext);
+  const { searchQuery, setSearchQuery, setSelectedTasks } = useContext(WorkspaceContext);
 
   // Reference with `useRef` to persist the same ref object during re-renders
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -25,7 +25,11 @@ const BoardSearch = () => {
           className="h-10 w-full"
           ref={inputRef}
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            const searchValue = e.target.value;
+            if (searchValue.length) setSelectedTasks([]);
+            setSearchQuery(searchValue);
+          }}
         />
       </div>
     </>

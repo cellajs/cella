@@ -35,7 +35,7 @@ export interface TaskDragData {
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { setSelectedTasks } = useContext(WorkspaceContext);
+  const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -54,7 +54,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
       //   where: { id: task.id },
       //   data: {
       //     task_labels: {
-            
+
       //     },
       //   },
       // });
@@ -154,6 +154,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                   !isExpanded && 'opacity-0 mt-[-18px] ml-[-6px] scale-[.6]',
                   isExpanded && 'opacity-100',
                 )}
+                checked={selectedTasks.includes(task.id)}
                 onCheckedChange={(checked) => {
                   setSelectedTasks((prev) => {
                     if (checked) {
