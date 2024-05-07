@@ -26,7 +26,7 @@ const buttonVariants = cva(
         glow: 'outline-glow-button bg-background !rounded-full relative active:bk-background',
         gradient:
           'before:bg-primary before:rounded-md after:rounded-md z-0 bg-transparent relative text-primary-foreground gradient-button hover:before:bg-primary/80',
-        none: ' bg-transparent border-none',
+        none: 'bg-transparent border-none',
       },
       size: {
         default: 'h-10 px-3 py-2',

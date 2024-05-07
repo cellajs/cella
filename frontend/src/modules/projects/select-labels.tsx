@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
-import { Check, Dot, History, Tag } from 'lucide-react';
+import { Check, Dot, History, Tag, X } from 'lucide-react';
 import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { Kbd } from '../common/kbd.tsx';
@@ -12,6 +12,7 @@ import { faker } from '@faker-js/faker';
 import type { Label } from '../common/root/electric.ts';
 import { ProjectContext } from './board.tsx';
 import { useMeasure } from '~/hooks/use-measure.tsx';
+import { CommandEmpty } from 'cmdk';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -67,6 +68,33 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
     //  changeLabels?.([...passedLabels, newLabel]);
   };
 
+  const renderLabels = (labels: Label[]) => {
+    return (
+      <>
+        {labels.map((label, index) => (
+          <CommandItem
+            key={label.id}
+            value={label.name}
+            onSelect={(value) => {
+              handleSelectClick(value);
+              setSearchValue('');
+            }}
+            className="group rounded-md flex justify-between items-center w-full leading-normal"
+          >
+            <div className="flex items-center gap-2">
+              {isSearching ? <Dot size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
+              <span>{label.name}</span>
+            </div>
+            <div className="flex items-center">
+              {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
+              {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
+            </div>
+          </CommandItem>
+        ))}
+      </>
+    );
+  };
+
   // Open on key press
   useHotkeys([['l', () => setOpenPopover(true)]]);
 
@@ -90,7 +118,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
           className={`flex h-auto justify-start font-light ${
-            mode === 'create' ? 'w-full text-left py-1 border' : 'py-[2px] group-hover/task:opacity-70 opacity-50'
+            mode === 'create' ? 'w-full text-left py-1 border hover:bg-accent/20' : 'py-[2px] group-hover/task:opacity-70 opacity-50'
           } ${mode === 'edit' && selectedLabels.length && ''}`}
         >
           {!selectedLabels.length && <Tag size={16} className="opacity-50" />}
@@ -99,14 +127,29 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
             {selectedLabels.length > 0 &&
               selectedLabels.map(({ name, id, color }) => {
                 return (
-                  <Badge
-                    variant="outline"
-                    key={id}
-                    className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm mr-1 h-6' : 'h-5'} last:mr-0 bg-transparent`}
-                    style={badgeStyle(color)}
-                  >
-                    {name}
-                  </Badge>
+                  <div className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1">
+                    <Badge
+                      variant="outline"
+                      key={id}
+                      className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm  h-6' : 'h-5'} last:mr-0 bg-transparent`}
+                      style={badgeStyle(color)}
+                    >
+                      {name}
+                    </Badge>
+                    {mode === 'create' && (
+                      <Button
+                        className="hover:bg-transparent"
+                        size="micro"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleSelectClick(name);
+                        }}
+                      >
+                        <X size={16} />
+                      </Button>
+                    )}
+                  </div>
                 );
               })}
           </div>
@@ -114,7 +157,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
       </PopoverTrigger>
 
       <PopoverContent
-        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right)}` : '240'}px` }}
+        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right)}` : '260'}px` }}
         className="p-0 rounded-lg"
         align="start"
         onCloseAutoFocus={(e) => e.preventDefault()}
@@ -139,26 +182,16 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
           {!isSearching && <Kbd value="L" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
-              {project.labels?.map((label, index) => (
-                <CommandItem
-                  key={label.id}
-                  value={label.name}
-                  onSelect={(value) => {
-                    handleSelectClick(value);
-                    setSearchValue('');
-                  }}
-                  className="group rounded-md flex justify-between items-center w-full leading-normal"
-                >
-                  <div className="flex items-center gap-2">
-                    {isSearching ? <Dot size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
-                    <span>{label.name}</span>
-                  </div>
-                  <div className="flex items-center">
-                    {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
-                    {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
-                  </div>
-                </CommandItem>
-              ))}
+              {!searchValue.length && (
+                <>
+                  {!project.labels && (
+                    <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center">{`${t(
+                      'common:no_labels',
+                    )}. Type to create labels.`}</CommandEmpty>
+                  )}
+                  {mode === 'edit' ? renderLabels(selectedLabels) : renderLabels(project.labels || [])}
+                </>
+              )}
             </CommandGroup>
             <CommandItemCreate onSelect={() => createLabel(searchValue)} {...{ searchValue, labels: project.labels || [] }} />
           </CommandList>
