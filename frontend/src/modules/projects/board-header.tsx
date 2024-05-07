@@ -16,6 +16,7 @@ import LabelsTable from './labels-table';
 import { type Label, useElectric } from '../common/root/electric';
 import { AvatarWrap } from '../common/avatar-wrap';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
+import { TooltipButton } from '../common/tooltip-button';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;
@@ -93,40 +94,48 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
         isFiltered={!!selectedTasks.length || !!searchQuery.length}
       >
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleShowPageHeader}>
-            {showPageHeader ? (
-              <PanelTopClose size={16} />
-            ) : (
-              <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
-            )}
-          </Button>
+          <TooltipButton toolTipContent={t('common:toggle_workspace_background')}>
+            <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleShowPageHeader}>
+              {showPageHeader ? (
+                <PanelTopClose size={16} />
+              ) : (
+                <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+              )}
+            </Button>
+          </TooltipButton>
           <FilterBarActions>
             {!selectedTasks.length && !searchQuery.length && (
               <div className="flex gap-1">
-                <Button variant="plain" onClick={handleAddProjects}>
-                  <Plus size={16} />
-                  <span className="max-sm:hidden ml-1">{t('common:add')}</span>
-                </Button>
-
-                <Button variant="outlinePrimary" onClick={openLabelsSheet}>
-                  <Tag size={16} />
-                  <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
-                </Button>
-
-                <Button variant="outline" onClick={openSettingsSheet}>
-                  <Settings size={16} />
-                  <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
-                </Button>
+                <TooltipButton toolTipContent={t('common:add_project')}>
+                  <Button variant="plain" onClick={handleAddProjects}>
+                    <Plus size={16} />
+                    <span className="max-sm:hidden ml-1">{t('common:add')}</span>
+                  </Button>
+                </TooltipButton>
+                <TooltipButton toolTipContent={t('common:labels')}>
+                  <Button variant="outlinePrimary" onClick={openLabelsSheet}>
+                    <Tag size={16} />
+                    <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
+                  </Button>
+                </TooltipButton>
+                <TooltipButton toolTipContent={t('common:workspace_settings')}>
+                  <Button variant="outline" onClick={openSettingsSheet}>
+                    <Settings size={16} />
+                    <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
+                  </Button>
+                </TooltipButton>
               </div>
             )}
           </FilterBarActions>
         </div>
         {!!searchQuery.length && (
           <div className="inline-flex align-center text-muted-foreground text-sm  items-center gap-2 max-xs:hidden">
-            <Button variant="ghost" onClick={() => setSearchQuery('')}>
-              <SearchX size={16} />
-              <span className="ml-1">{t('common:clear_search')}</span>
-            </Button>
+            <TooltipButton toolTipContent={t('common:clear_search')}>
+              <Button variant="ghost" onClick={() => setSearchQuery('')}>
+                <SearchX size={16} />
+                <span className="ml-1">{t('common:clear_search')}</span>
+              </Button>
+            </TooltipButton>
             <div className="w-max mx-2">
               {`${filteredTasks.length} ${filteredTasks.length > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}
             </div>
@@ -134,22 +143,28 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
         )}
         {!!selectedTasks.length && (
           <div className="inline-flex align-center items-center gap-2">
-            <Button variant="destructive" className="relative" onClick={onRemove}>
-              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedTasks.length}</Badge>
-              <Trash size={16} />
-              <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
-            </Button>
-            <Button variant="ghost" className="relative" onClick={() => setSelectedTasks([])}>
-              <XSquare size={16} />
-              <span className="ml-1 max-xs:hidden">{t('common:clear')}</span>
-            </Button>
+            <TooltipButton toolTipContent={t('common:remove_task')}>
+              <Button variant="destructive" className="relative" onClick={onRemove}>
+                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedTasks.length}</Badge>
+                <Trash size={16} />
+                <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+              </Button>
+            </TooltipButton>
+            <TooltipButton toolTipContent={t('common:clear_selected_task')}>
+              <Button variant="ghost" className="relative" onClick={() => setSelectedTasks([])}>
+                <XSquare size={16} />
+                <span className="ml-1 max-xs:hidden">{t('common:clear')}</span>
+              </Button>
+            </TooltipButton>
           </div>
         )}
         <FilterBarContent className="max-sm:ml-1 w-full">
           <BoardSearch />
         </FilterBarContent>
       </TableFilterBar>
-      <WorkspaceView className="max-sm:hidden" />
+      <TooltipButton toolTipContent={t('common:workspace_view')}>
+        <WorkspaceView className="max-sm:hidden" />
+      </TooltipButton>
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />
     </div>
