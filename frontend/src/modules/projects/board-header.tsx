@@ -122,15 +122,13 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
           </FilterBarActions>
         </div>
         {!!searchQuery.length && (
-          <div className="inline-flex align-center items-center gap-2">
-            <Button className="max-xs:hidden" variant="ghost" onClick={() => setSearchQuery('')}>
+          <div className="inline-flex align-center text-muted-foreground text-sm  items-center gap-2 max-xs:hidden">
+            <Button variant="ghost" onClick={() => setSearchQuery('')}>
               <SearchX size={16} />
               <span className="ml-1">{t('common:clear_search')}</span>
             </Button>
-            <div className="w-max mx-2 max-xs:text-sm">
-              {filteredTasks.length}
-              {searchQuery && ' task '}
-              {searchQuery && t('common:found')}
+            <div className="w-max mx-2">
+              {`${filteredTasks.length} ${filteredTasks.length > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}
             </div>
           </div>
         )}

@@ -6,10 +6,11 @@ interface TableCountProps {
   count?: number;
   type: string;
   isFiltered?: boolean;
+  isSearch?: boolean;
   onResetFilters?: () => void;
 }
 
-const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps) => {
+const TableCount = ({ count, type, isFiltered, isSearch, onResetFilters }: TableCountProps) => {
   const { t } = useTranslation();
 
   return (
@@ -24,8 +25,8 @@ const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps
           )}
           <div className="w-max ml-2">
             {new Intl.NumberFormat('de-DE').format(count)} {count === 1 ? t(`common:${type}`).toLowerCase() : t(`common:${type}s`).toLowerCase()}
-            {isFiltered && ' '}
-            {isFiltered && t('common:found')}
+            {(isFiltered || isSearch) && ' '}
+            {(isFiltered || isSearch) && t('common:found')}
           </div>
         </>
       )}

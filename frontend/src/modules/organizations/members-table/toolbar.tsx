@@ -133,7 +133,9 @@ function Toolbar({
                 </Button>
               )
             )}
-            {selectedMembers.length === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {selectedMembers.length === 0 && (
+              <TableCount count={total} type="member" isSearch={!!query?.length} isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            )}
           </FilterBarActions>
 
           <div className="sm:grow" />
