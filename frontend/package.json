@@ -6,8 +6,8 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "prepare:electric": "concurrently --names proxy,migration,generation --kill-others --success command-generation \"pnpm proxy\" \"pnpm migrate\" \"pnpm generate:electric\"",
-    "prepare:electric:dev": "NODE_ENV=development pnpm prepare:electric",
+    "prepare:electric": "NODE_ENV=production pnpm proxy & (NODE_ENV=production pnpm migrate && NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",
+    "prepare:electric:dev": "NODE_ENV=development pnpm proxy & (NODE_ENV=development pnpm migrate && NODE_ENV=development pnpm generate:electric && tsx prepare-files.ts)",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
     "build": "tsc && vite build",
@@ -15,9 +15,9 @@
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
     "generate": "drizzle-kit generate:pg",
-    "generate:electric": "if test \"$NODE_ENV\" = \"development\"; then electric-sql generate --service https://cella-electric-dev.onrender.com --proxy postgresql://prisma:proxy_password@localhost:65431/postgres; else electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://prisma:proxy_password@localhost:65431/postgres; fi",
+    "generate:electric": "if test \"$NODE_ENV\" = \"production\"; then electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://prisma:proxy_password@0.0.0.0:65431/postgres; else electric-sql generate --service https://cella-electric-dev.onrender.com --proxy postgresql://prisma:proxy_password@localhost:65431/postgres; fi",
     "migrate": "tsx src/db/migrate.ts",
-    "proxy": "if test \"$NODE_ENV\" = \"development\"; then electric-sql proxy-tunnel --service https://cella-electric-dev.onrender.com --local-port 65431; else electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65431; fi"
+    "proxy": "if test \"$NODE_ENV\" = \"production\"; then electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65431; else electric-sql proxy-tunnel --service https://cella-electric-dev.onrender.com --local-port 65431; fi"
   },
   "dependencies": {
     "@databases/pg-migrations": "^5.0.3",
@@ -181,6 +181,7 @@
     "postgres": "^3.4.4",
     "rollup-plugin-visualizer": "^5.12.0",
     "tailwindcss": "^3.4.3",
+    "tsx": "^4.9.3",
     "typescript": "^5.4.5",
     "vite": "5.2.6",
     "vite-plugin-html": "^3.2.2",
