@@ -11,6 +11,6 @@
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src", "vite.config.ts"],
-  "exclude": ["generated"]
+  "include": ["src/**/*", "vite.config.ts"],
+  "exclude": ["generated/**/*"]
 }
