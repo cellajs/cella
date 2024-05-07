@@ -31,6 +31,7 @@ const SelectParentFormField = ({ collection, control, name, label, placeholder, 
           </FormLabel>
           <FormControl>
             <Combobox
+              contentWidthMatchInput={true}
               options={options}
               name={name}
               onChange={onChange}

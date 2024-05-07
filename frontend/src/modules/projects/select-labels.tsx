@@ -11,6 +11,7 @@ import { useFormContext } from 'react-hook-form';
 import { faker } from '@faker-js/faker';
 import type { Label } from '../common/root/electric.ts';
 import { ProjectContext } from './board.tsx';
+import { useMeasure } from '~/hooks/use-measure.tsx';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -32,7 +33,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
-
+  const { ref, bounds } = useMeasure();
   // const { db } = useElectric()!;
 
   const handleSelectClick = (value?: string) => {
@@ -84,6 +85,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
         <Button
+          ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Set labels"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
@@ -111,7 +113,13 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-60 p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
+      <PopoverContent
+        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right)}` : '240'}px` }}
+        className="p-0 rounded-lg"
+        align="start"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        sideOffset={4}
+      >
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}

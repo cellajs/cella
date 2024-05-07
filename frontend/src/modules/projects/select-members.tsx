@@ -10,6 +10,7 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
+import { useMeasure } from '~/hooks/use-measure.tsx';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';
@@ -25,7 +26,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
   const [selectedUsers, setSelectedUsers] = useState<TaskUser[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
-
+  const { ref, bounds } = useMeasure();
   // const handleSelectClick = (name: string) => {
   // if (!name) return;
   // const existingUser = selectedUsers.find((user) => user.name === name);
@@ -56,6 +57,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
         <Button
+          ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Assign"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
@@ -85,7 +87,13 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-60 p-0 rounded-lg" align="end" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
+      <PopoverContent
+        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right)}` : '240'}px` }}
+        className="p-0 rounded-lg"
+        align="end"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        sideOffset={4}
+      >
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
