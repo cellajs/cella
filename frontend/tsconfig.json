@@ -12,5 +12,5 @@
     }
   },
   "include": ["src/**/*", "vite.config.ts"],
-  "exclude": ["generated/**/*"]
+  "exclude": ["src/generated/**/*"]
 }
