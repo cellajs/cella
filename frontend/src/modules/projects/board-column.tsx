@@ -14,6 +14,7 @@ import CreateTaskForm from './create-task-form';
 import { ProjectSettings } from './project-settings';
 import { TaskCard } from './task-card';
 import { WorkspaceContext } from '../workspaces';
+import ContentPlaceholder from '../common/content-placeholder';
 
 interface BoardColumnProps {
   tasks?: Task[];
@@ -90,19 +91,8 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
       {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
       <div ref={containerRef} />
-      {!tasks.length && !searchQuery && (
-        <div className="flex flex-col items-center justify-start w-full p-8">
-          <Palmtree strokeWidth={0.7} size={80} className="opacity-50" />
-          <p className="mt-6 text-sm">{t('common:no_tasks')}</p>
-          <p className="mt-6 text-sm font-medium">{t('common:no_tasks.text')}</p>
-        </div>
-      )}
-      {!tasks.length && searchQuery && (
-        <div className="flex flex-col items-center justify-start w-full p-8">
-          <Search strokeWidth={0.7} size={80} className="opacity-50" />
-          <p className="mt-6 text-sm">{t('common:no_tasks_found')}</p>
-        </div>
-      )}
+      {!tasks.length && !searchQuery && <ContentPlaceholder Icon={Palmtree} title={t('common:no_tasks')} text={t('common:no_tasks.text')} />}
+      {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
       {!!tasks.length && (
         <ScrollArea id={project.id} size="indicatorVertical" className="mx-[-1px]">
           <ScrollBar size="indicatorVertical" />
