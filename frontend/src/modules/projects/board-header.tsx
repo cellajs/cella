@@ -35,7 +35,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet />, {
-      className: 'sm:max-w-[64rem]',
+      className: 'sm:max-w-[52rem]',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),
       id: 'edit-workspace',
@@ -45,7 +45,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   const openLabelsSheet = () => {
     sheet(<LabelsTable labels={labels} />, {
       className: 'sm:max-w-[48rem]',
-      title: 'Labels',
+      title: t('common:manage_labels'),
       // text: '',
       id: 'workspace_settings',
     });
@@ -112,7 +112,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
                   <span className="max-sm:hidden ml-1">{t('common:add')}</span>
                 </Button>
               </TooltipButton>
-              <TooltipButton toolTipContent={t('common:labels')}>
+              <TooltipButton toolTipContent={t('common:manage_labels')}>
                 <Button variant="outlinePrimary" onClick={openLabelsSheet}>
                   <Tag size={16} />
                   <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>

@@ -5,11 +5,9 @@ import { useNavigationStore } from '~/store/navigation';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { Menu } from 'lucide-react';
 import { createWorkspace } from '~/api/workspaces';
-import { useNavigate } from '@tanstack/react-router';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { menu, setSheet } = useNavigationStore();
   const [isExploding, _] = useState(true);
 
@@ -22,9 +20,6 @@ export const OnboardingCompleted = () => {
       organization: organization.id,
     });
     setTimeout(() => {
-      navigate({
-        to: '/home',
-      });
       setSheet({ id: 'menu', sheet: <SheetMenu />, icon: Menu });
     }, 4000);
   }, []);

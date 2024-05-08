@@ -29,7 +29,7 @@ interface Props {
 
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
-  role: z.enum(['ADMIN', 'USER', 'MEMBER']).optional(),
+  role: z.enum(['USER', 'MEMBER', 'ADMIN']).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -97,8 +97,8 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
           control={form.control}
           name="role"
           render={({ field: { value, onChange } }) => (
-            <FormItem className="flex-row gap-4 items-center">
-              <FormLabel>{t('common:role')}:</FormLabel>
+            <FormItem className="flex-row ml-3 gap-4 items-center">
+              <FormLabel>{t('common:role')}</FormLabel>
               <FormControl>
                 <SelectRole roles={roles} value={value} onChange={onChange} />
               </FormControl>

@@ -51,7 +51,7 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
 
   const openSettingsSheet = () => {
     sheet(<ProjectSettings sheet />, {
-      className: 'sm:max-w-[64rem]',
+      className: 'sm:max-w-[52rem]',
       title: t('common:project_settings'),
       text: t('common:project_settings.text'),
       id: 'edit-project',
@@ -71,10 +71,6 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
   //     className: 'md:max-w-xl',
   //     title: t('common:create_task'),
   //   });
-  // };
-
-  // const onDelete = () => {
-  //   db.projects.delete({ where: { id: project.id } });
   // };
 
   const variants = cva('h-full rounded-b-none max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center', {

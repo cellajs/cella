@@ -118,7 +118,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
           className={`flex h-auto justify-start font-light ${
-            mode === 'create' ? 'w-full text-left py-1 border hover:bg-accent/20' : 'py-[2px] group-hover/task:opacity-70 opacity-50'
+            mode === 'create' ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20' : 'py-[2px] group-hover/task:opacity-70 opacity-50'
           } ${mode === 'edit' && selectedLabels.length && ''}`}
         >
           {!selectedLabels.length && <Tag size={16} className="opacity-50" />}
@@ -127,18 +127,18 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
             {selectedLabels.length > 0 &&
               selectedLabels.map(({ name, id, color }) => {
                 return (
-                  <div className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1">
+                  <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
                     <Badge
                       variant="outline"
                       key={id}
-                      className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm  h-6' : 'h-5'} last:mr-0 bg-transparent`}
+                      className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm h-6' : 'h-5 bg-transparent'} last:mr-0`}
                       style={badgeStyle(color)}
                     >
                       {name}
                     </Badge>
                     {mode === 'create' && (
                       <Button
-                        className="hover:bg-transparent"
+                        className="opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:!ring-offset-0"
                         size="micro"
                         variant="ghost"
                         onClick={(e) => {
@@ -146,7 +146,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
                           handleSelectClick(name);
                         }}
                       >
-                        <X size={16} />
+                        <X size={16} strokeWidth={3} />
                       </Button>
                     )}
                   </div>

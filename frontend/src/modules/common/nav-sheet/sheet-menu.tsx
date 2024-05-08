@@ -26,7 +26,7 @@ export type SectionItem = {
 export const menuSections: SectionItem[] = [
   { id: 'organizations', type: 'ORGANIZATION', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
   { id: 'workspaces', type: 'WORKSPACE', label: 'common:workspaces', createForm: <CreateWorkspaceForm dialog /> },
-  { id: 'projects', type: 'PROJECT', label: 'common:projects' },
+  // { id: 'projects', type: 'PROJECT', label: 'common:projects' },
 ];
 
 // Set search results to empty array for each menu type
@@ -43,7 +43,7 @@ export type SearchResultsType = typeof initialSearchResults;
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
-  const isSmallScreen = useBreakpoints('max', 'md');
+  const isSmallScreen = useBreakpoints('max', 'lg');
 
   const { keepMenuOpen, toggleKeepMenu, setSheet } = useNavigationStore();
 
@@ -94,17 +94,16 @@ export const SheetMenu = memo(() => {
       {!searchTerm && <div className="mt-2">{renderedSections}</div>}
 
       {!searchTerm && (
-        <div className="my-4 flex items-center justify-center space-x-2">
+        <div className="max-xl:hidden my-4 flex items-center justify-center space-x-2">
           <Checkbox
             id="keepMenuOpen"
             checked={keepMenuOpen}
             onCheckedChange={toggleKeepMenu}
             aria-label={t('common:keep_menu_open')}
-            className="duration-250 opacity-0 transition-opacity ease-in-out lg:translate-x-0 lg:opacity-100"
           />
           <label
             htmlFor="keepMenuOpen"
-            className="duration-250 cursor-pointer select-none text-sm font-medium leading-none opacity-0 transition-opacity ease-in-out lg:translate-x-0 lg:opacity-100"
+            className="cursor-pointer select-none text-sm font-medium leading-none"
           >
             {t('common:keep_menu_open')}
           </label>

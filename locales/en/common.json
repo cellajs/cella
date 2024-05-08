@@ -423,5 +423,6 @@
   "primary": "Primary labels",
   "secondary": "Secondary labels",
   "minimize": "minimize",
-  "task": "Task"
+  "task": "Task",
+  "manage_labels": "Manage labels"
 }

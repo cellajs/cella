@@ -61,7 +61,7 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
 
                     <CardContent>
                       {id === 'profile' && (
-                        <UpdateUserForm user={user} hiddenFields={['email', 'bio', 'newsletter']}>
+                        <UpdateUserForm user={user} hiddenFields={['email', 'bio', 'newsletter', 'slug']}>
                           <StepperFooter setOnboarding={setOnboarding} />
                         </UpdateUserForm>
                       )}

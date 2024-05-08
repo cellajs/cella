@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ChevronDown, Check, ChevronRight } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { cn } from '~/lib/utils';
@@ -76,14 +76,14 @@ const Combobox: React.FC<ComboboxProps> = ({
           {selectedOption ? (
             <div className="flex items-center gap-2">
               {name !== 'timezone' && name !== 'country' && (
-                <AvatarWrap className="h-8 w-8" type="UNKNOWN" id={selectedOption.value} name={name} url={selectedOption.url} />
+                <AvatarWrap className="h-6 w-6 text-xs" type="UNKNOWN" id={selectedOption.value} name={name} url={selectedOption.url} />
               )}
               {renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}
             </div>
           ) : (
             placeholder || ''
           )}
-          {open ? <ChevronRight className="ml-2 h-4 w-4 shrink-0 opacity-50" /> : <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
 
