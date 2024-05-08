@@ -121,8 +121,8 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
           description={t('common:project_handle.text')}
           previousSlug={project.slug}
         />
-        <SelectParentFormField collection="organizations" control={form.control} label={t('common:organization')} name="organizationId" required />
-        <SelectParentFormField collection="workspaces" control={form.control} label={t('common:workspace')} name="workspaceId" required />
+        <SelectParentFormField collection="organizations" type="ORGANIZATION" control={form.control} label={t('common:organization')} name="organizationId" required />
+        <SelectParentFormField collection="workspaces" type="WORKSPACE" control={form.control} label={t('common:workspace')} name="workspaceId" required />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}

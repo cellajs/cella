@@ -120,7 +120,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
           description={t('common:project_handle.text')}
           nameValue={name}
         />
-        <SelectParentFormField collection="workspaces" control={form.control} label={t('common:workspace')} name="workspace" disabled />
+        <SelectParentFormField collection="workspaces" type="WORKSPACE" control={form.control} label={t('common:workspace')} name="workspace" disabled />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}

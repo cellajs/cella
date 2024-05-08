@@ -98,7 +98,14 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
           description={t('common:workspace_handle.text')}
           previousSlug={workspace.slug}
         />
-        <SelectParentFormField collection="organizations" control={form.control} label={t('common:organization')} name="organizationId" required />
+        <SelectParentFormField
+          collection="organizations"
+          type="ORGANIZATION"
+          control={form.control}
+          label={t('common:organization')}
+          name="organizationId"
+          required
+        />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}

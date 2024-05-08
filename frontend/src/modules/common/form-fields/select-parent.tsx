@@ -10,12 +10,13 @@ interface Props {
   name: string;
   label: string;
   collection: 'organizations' | 'workspaces' | 'projects';
+  type: 'ORGANIZATION' | 'WORKSPACE' | 'PROJECT';
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
 }
 
-const SelectParentFormField = ({ collection, control, name, label, placeholder, required, disabled }: Props) => {
+const SelectParentFormField = ({ collection, control, name, label, type, placeholder, required, disabled }: Props) => {
   const { menu } = useNavigationStore();
   const { t } = useTranslation();
   const options = menu[collection].items.map((item) => ({ value: item.id, label: item.name, url: item.thumbnailUrl }));
@@ -36,7 +37,7 @@ const SelectParentFormField = ({ collection, control, name, label, placeholder, 
               name={name}
               onChange={onChange}
               disabled={disabled}
-              placeholder={t('common:choose_from', { option: collection })}
+              placeholder={t('common:select_resource', { resource: t(`common:${type.toLowerCase()}`).toLowerCase() })}
               searchPlaceholder={placeholder ? placeholder : t('common:search')}
             />
           </FormControl>
