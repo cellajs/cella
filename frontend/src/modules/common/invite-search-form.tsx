@@ -28,7 +28,7 @@ interface Props {
 
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
-  role: z.enum(['ADMIN', 'USER', 'MEMBER']).optional(),
+  role: z.enum(['USER', 'MEMBER', 'ADMIN']).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -41,7 +41,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
       resolver: zodResolver(formSchema),
       defaultValues: {
         emails: [],
-        role: config.rolesByType[type][config.rolesByType[type].length - 1].key,
+        role: config.rolesByType[type][0].key,
       },
     }),
     [],

@@ -43,7 +43,7 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
       resolver: zodResolver(formSchema),
       defaultValues: {
         emails: [],
-        role: config.rolesByType[type][config.rolesByType[type].length - 1].key,
+        role: config.rolesByType[type][0].key,
       },
     }),
     [],
