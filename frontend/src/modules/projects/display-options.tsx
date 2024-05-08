@@ -15,8 +15,8 @@ const DisplayOptions = ({ className = '' }: Props) => {
   return (
     <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)}>
       {['board', 'table', 'overview'].map((value) => (
-        <TooltipButton toolTipContent={t(`common:${value}_view`)}>
-          <ToggleGroupItem value={value} asChild key={value}>
+        <TooltipButton key={value} portal={true} toolTipContent={t(`common:${value}_view`)}>
+          <ToggleGroupItem key={value} value={value} asChild>
             <Link
               to={`/workspace/${idOrSlug}/${value}`}
               params={{ idOrSlug }}
