@@ -2,6 +2,7 @@ import MDEditor from '@uiw/react-md-editor';
 import { useCallback, useEffect, useState } from 'react';
 import type { Mode } from '~/store/theme';
 import { useHotkeys } from '~/hooks/use-hot-keys';
+import { useTranslation } from 'react-i18next';
 
 interface TaskEditorProps {
   id: string;
@@ -13,6 +14,7 @@ interface TaskEditorProps {
 }
 
 export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, toggleEditorState }: TaskEditorProps) => {
+  const { t } = useTranslation();
   const [markdownValue, setMarkdownValue] = useState(markdown);
 
   const handleUpdateMarkdown = () => {
@@ -55,7 +57,7 @@ export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, toggle
       <MDEditor
         onBlur={handleUpdateMarkdown}
         onKeyDown={handleMDEscKeyPress}
-        textareaProps={{ id: id }}
+        textareaProps={{ id: id, placeholder: t('common:placeholder.mdEditor') }}
         value={markdownValue}
         preview={'edit'}
         onChange={(newValue) => {

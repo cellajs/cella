@@ -91,7 +91,13 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
       {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
       <div ref={containerRef} />
-      {!tasks.length && !searchQuery && <ContentPlaceholder Icon={Palmtree} title={t('common:no_tasks')} text={t('common:no_tasks.text')} />}
+      {!tasks.length && !searchQuery && (
+        <ContentPlaceholder
+          Icon={Palmtree}
+          title={t('common:no_tasks')}
+          text={t('common:no_tasks.main_text', { buttonText: t('common:no_tasks.text') })}
+        />
+      )}
       {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
       {!!tasks.length && (
         <ScrollArea id={project.id} size="indicatorVertical" className="mx-[-1px]">

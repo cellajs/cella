@@ -223,6 +223,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                   <MDEditor
                     onKeyDown={handleMDEscKeyPress}
                     value={value}
+                    textareaProps={{ placeholder: t('common:placeholder.mdEditor') }}
                     defaultTabEnable={true}
                     preview={'edit'}
                     onChange={(newValue) => {
