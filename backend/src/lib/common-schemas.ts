@@ -91,4 +91,10 @@ export const nameSchema = z
   .max(100)
   .refine((s) => /^[a-z ,.'-]+$/i.test(s), "Name may only contain letters, spaces and these characters: ,.'-");
 
+export const colorSchema = z
+  .string()
+  .min(3)
+  .max(6)
+  .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, 'Color may only contain letters, numbers & starts with #');
+
 export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');
