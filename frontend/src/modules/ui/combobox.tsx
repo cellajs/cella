@@ -73,7 +73,16 @@ const Combobox: React.FC<ComboboxProps> = ({
           className="w-full justify-between font-normal"
           disabled={disabled}
         >
-          {selectedOption ? <div>{renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}</div> : placeholder || ''}
+          {selectedOption ? (
+            <div className="flex items-center gap-2">
+              {name !== 'timezone' && name !== 'country' && (
+                <AvatarWrap className="h-8 w-8" type="UNKNOWN" id={selectedOption.value} name={name} url={selectedOption.url} />
+              )}
+              {renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}
+            </div>
+          ) : (
+            placeholder || ''
+          )}
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -91,9 +100,9 @@ const Combobox: React.FC<ComboboxProps> = ({
             />
           )}
 
-          <ScrollArea className="h-[30vh] overflow-y-auto">
-            <CommandList>
-              <CommandEmpty>No option found</CommandEmpty>
+          <CommandList>
+            <CommandEmpty>No option found</CommandEmpty>
+            <ScrollArea className="max-h-[30vh] h-fit overflow-y-auto">
               <CommandGroup>
                 {options.map((option) => (
                   <CommandItem
@@ -102,14 +111,16 @@ const Combobox: React.FC<ComboboxProps> = ({
                     onSelect={handleSelect}
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
-                    {name !== 'timezone' && name !== 'country' && <AvatarWrap type="UNKNOWN" id={option.value} name={name} url={option.url} />}
-                    <div>{renderOption ? renderOption(option) : <> {option.label}</>}</div>
+                    <div className="flex items-center gap-2">
+                      {name !== 'timezone' && name !== 'country' && <AvatarWrap type="UNKNOWN" id={option.value} name={name} url={option.url} />}
+                      {renderOption ? renderOption(option) : <> {option.label}</>}
+                    </div>
                     <Check size={16} className={cn('text-success', formValue === option.value ? 'opacity-100' : 'opacity-0')} />
                   </CommandItem>
                 ))}
               </CommandGroup>
-            </CommandList>
-          </ScrollArea>
+            </ScrollArea>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
