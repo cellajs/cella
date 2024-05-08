@@ -234,7 +234,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                     visibleDragbar={false}
                     height={'auto'}
                     minHeight={40}
-                    className="text-sm"
+                    className="text-sm my-1"
                     style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', padding: '0' }}
                   />
                 </FormControl>

@@ -252,7 +252,7 @@
   "placeholder.create_with_status": "Create with status ...",
   "placeholder.email_domains": "Add email domains",
   "placeholder.impact": "Set impact ...",
-  "placeholder.mdEditor": "First paragraph will be summary",
+  "placeholder.mdEditor": "Type your task here ... \nFirst paragraph = summary",
   "placeholder.search": "Search",
   "placeholder.search-label": "Search label..",
   "placeholder.search_labels": "Search labels ...",
