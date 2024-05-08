@@ -50,6 +50,8 @@ export const tasks = pgTable('tasks', {
     enum: ['bug', 'feature', 'chore'],
   }).notNull(),
   impact: integer('impact'),
+  // order is a reserved keyword in Postgres, so we need to use a different name
+  order: integer('sort_order'),
   status: integer('status').notNull(),
   projectId: uuid('project_id')
     .notNull()
