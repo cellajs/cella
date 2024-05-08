@@ -88,7 +88,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
       </PopoverTrigger>
 
       <PopoverContent
-        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right)}` : '240'}px` }}
+        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right + 2)}` : '240'}px` }}
         className="p-0 rounded-lg"
         align="end"
         onCloseAutoFocus={(e) => e.preventDefault()}

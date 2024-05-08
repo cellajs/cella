@@ -157,7 +157,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
       </PopoverTrigger>
 
       <PopoverContent
-        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right)}` : '260'}px` }}
+        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right + 2)}` : '260'}px` }}
         className="p-0 rounded-lg"
         align="start"
         onCloseAutoFocus={(e) => e.preventDefault()}
@@ -185,7 +185,9 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
               {!searchValue.length && (
                 <>
                   {!project.labels && (
-                    <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">{t('common:no_labels')}</CommandEmpty>
+                    <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
+                      {t('common:no_labels')}
+                    </CommandEmpty>
                   )}
                   {mode === 'edit' ? renderLabels(selectedLabels) : renderLabels(project.labels || [])}
                 </>

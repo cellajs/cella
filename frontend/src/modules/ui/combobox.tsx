@@ -39,7 +39,7 @@ const Combobox: React.FC<ComboboxProps> = ({
   disabled,
 }) => {
   const formValue = useFormContext?.()?.getValues(name);
-  console.log('useFormContext:', useFormContext());
+
   const { ref, bounds } = useMeasure();
   const isMobile = useBreakpoints('max', 'sm');
   const [open, setOpen] = React.useState(false);
@@ -78,7 +78,7 @@ const Combobox: React.FC<ComboboxProps> = ({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" style={{ width: `${contentWidthMatchInput ? `${bounds.left + bounds.right}px` : '100%'}` }} className={'p-0'}>
+      <PopoverContent align="start" style={{ width: `${contentWidthMatchInput ? `${bounds.left + bounds.right + 2}px` : '100%'}` }} className={'p-0'}>
         <Command>
           {!isMobile && (
             <CommandInput
