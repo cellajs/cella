@@ -1,16 +1,23 @@
 import { Search, XCircle } from 'lucide-react';
-import { useRef } from 'react';
+import { useContext, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
+import { TableFilterBarContext } from './table-filter-bar';
 
 const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (value: string) => void }) => {
   const { t } = useTranslation();
+  const { isFilterActive } = useContext(TableFilterBarContext);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
     inputRef.current?.focus();
   };
+
+  // Focus input  when filter button clicked(mobile)
+  useEffect(() => {
+    if (isFilterActive) inputRef.current?.focus();
+  }, [isFilterActive]);
 
   return (
     <>

@@ -1,12 +1,14 @@
 import { Search, XCircle } from 'lucide-react';
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
 import { WorkspaceContext } from '../workspaces';
+import { TableFilterBarContext } from '../common/data-table/table-filter-bar';
 
 const BoardSearch = () => {
   const { t } = useTranslation();
   const { searchQuery, setSearchQuery, setSelectedTasks } = useContext(WorkspaceContext);
+  const { isFilterActive } = useContext(TableFilterBarContext);
 
   // Reference with `useRef` to persist the same ref object during re-renders
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -14,6 +16,11 @@ const BoardSearch = () => {
   const handleClick = () => {
     inputRef.current?.focus();
   };
+
+  // Focus input  when filter button clicked(mobile)
+  useEffect(() => {
+    if (isFilterActive) inputRef.current?.focus();
+  }, [isFilterActive]);
 
   return (
     <>
