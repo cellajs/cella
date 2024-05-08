@@ -173,7 +173,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
                 setSearchValue('');
                 return;
               }
-              setSearchValue(searchValue);
+              setSearchValue(searchValue.toLowerCase());
             }}
             clearValue={setSearchValue}
             className="leading-normal"
@@ -211,7 +211,7 @@ interface CommandItemCreateProps {
 
 const CommandItemCreate = ({ searchValue, labels, onSelect }: CommandItemCreateProps) => {
   const { t } = useTranslation();
-  const hasNoLabel = !labels.map(({ id }) => id).includes(`${searchValue.toLowerCase()}`);
+  const hasNoLabel = !labels.map(({ id }) => id).includes(`${searchValue}`);
 
   const render = searchValue !== '' && hasNoLabel;
 
