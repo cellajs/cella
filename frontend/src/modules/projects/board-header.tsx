@@ -161,7 +161,9 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
           <BoardSearch />
         </FilterBarContent>
       </TableFilterBar>
-      <WorkspaceView className="max-sm:hidden" />
+      <TooltipButton toolTipContent={t('common:view_options')}>
+        <WorkspaceView className="max-sm:hidden" />
+      </TooltipButton>
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />
     </div>

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { TooltipButton } from '~/modules/common/tooltip-button';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import { useContext, useEffect, useState } from 'react';
@@ -90,15 +89,14 @@ const WorkspaceView = ({ className = '' }: Props) => {
 
   return (
     <DropdownMenu>
-      <TooltipButton toolTipContent={t('common:view_options')}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className={cn('relative flex', className)}>
-            {switchState !== 'all' && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0" />}
-            <SlidersHorizontal className="h-4 w-4" />
-            <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
-          </Button>
-        </DropdownMenuTrigger>
-      </TooltipButton>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className={cn('relative flex', className)}>
+          {switchState !== 'all' && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0" />}
+          <SlidersHorizontal className="h-4 w-4" />
+          <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
+        </Button>
+      </DropdownMenuTrigger>
+
       <DropdownMenuContent align="end" className="min-w-[320px] p-2 gap-2 flex flex-col">
         {Object.entries(viewOptions).map(([key, options]) => (
           <ToggleGroup
