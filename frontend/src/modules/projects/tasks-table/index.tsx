@@ -15,7 +15,7 @@ interface ProjectContextValue {
 export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function TasksTable() {
-  const { tasks, searchQuery } = useContext(WorkspaceContext);
+  const { tasks, searchQuery, selectedTasks, setSelectedTasks } = useContext(WorkspaceContext);
   const [rows, setRows] = useState<TaskRow[]>([]);
 
   const filteredTasks = useMemo(() => {
@@ -36,6 +36,10 @@ export default function TasksTable() {
     setRows(rows);
   };
 
+  const handleSelectedRowsChange = (selectedRows: Set<string>) => {
+    setSelectedTasks(Array.from(selectedRows));
+  };
+
   useEffect(() => {
     const rows = filteredTasks.map((item) => ({ ...item, _type: 'MASTER' as const, _expanded: false }));
     if (rows) setRows(rows);
@@ -50,6 +54,8 @@ export default function TasksTable() {
           limit: 10,
           rowHeight: 42,
           onRowsChange,
+          selectedRows: new Set<string>(selectedTasks),
+          onSelectedRowsChange: handleSelectedRowsChange,
           rowKeyGetter: (row) => row.id,
           enableVirtualization: false,
         }}
