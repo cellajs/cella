@@ -122,7 +122,7 @@ function Toolbar({
                 <Button variant="ghost" onClick={onResetSelectedRows}>
                   <XSquare size={16} />
                   <span className="ml-1">{t('common:clear')}</span>
-                </Button>
+                </Button> 
               </>
             ) : (
               !isFiltered &&
@@ -134,7 +134,7 @@ function Toolbar({
               )
             )}
             {selectedMembers.length === 0 && (
-              <TableCount count={total} type="member" isSearch={!!query?.length} isFiltered={isFiltered} onResetFilters={onResetFilters} />
+              <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>
 

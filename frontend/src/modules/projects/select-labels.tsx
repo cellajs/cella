@@ -185,9 +185,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
               {!searchValue.length && (
                 <>
                   {!project.labels && (
-                    <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center">{`${t(
-                      'common:no_labels',
-                    )}. Type to create labels.`}</CommandEmpty>
+                    <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">{t('common:no_labels')}</CommandEmpty>
                   )}
                   {mode === 'edit' ? renderLabels(selectedLabels) : renderLabels(project.labels || [])}
                 </>

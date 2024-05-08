@@ -146,8 +146,8 @@ const OrganizationsTable = () => {
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: (
             <>
-              <Bird strokeWidth={1} className="w-20 h-20" />
-              <div className="mt-6 text-sm font-light">{t('common:no_organizations')}</div>
+              <Bird strokeWidth={0.7} size={80} className="opacity-50" />
+              <div className="mt-6 text-sm">{t('common:no_organizations')}</div>
             </>
           ),
         }}

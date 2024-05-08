@@ -1,4 +1,4 @@
-import { PanelTopClose, Plus, Settings, Tag, Trash, XSquare, SearchX } from 'lucide-react';
+import { PanelTopClose, Plus, Settings, Tag, Trash, XSquare, FilterX } from 'lucide-react';
 import { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -93,8 +93,8 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
         }}
         isFiltered={!!selectedTasks.length || !!searchQuery.length}
       >
-        <div className="flex items-center gap-2">
-          <TooltipButton toolTipContent={t('common:toggle_workspace_background')}>
+        <FilterBarActions>
+          <TooltipButton toolTipContent={t('common:page_view')}>
             <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleShowPageHeader}>
               {showPageHeader ? (
                 <PanelTopClose size={16} />
@@ -103,37 +103,36 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
               )}
             </Button>
           </TooltipButton>
-          <FilterBarActions>
-            {!selectedTasks.length && !searchQuery.length && (
-              <div className="flex gap-1">
-                <TooltipButton toolTipContent={t('common:add_project')}>
-                  <Button variant="plain" onClick={handleAddProjects}>
-                    <Plus size={16} />
-                    <span className="max-sm:hidden ml-1">{t('common:add')}</span>
-                  </Button>
-                </TooltipButton>
-                <TooltipButton toolTipContent={t('common:labels')}>
-                  <Button variant="outlinePrimary" onClick={openLabelsSheet}>
-                    <Tag size={16} />
-                    <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
-                  </Button>
-                </TooltipButton>
-                <TooltipButton toolTipContent={t('common:workspace_settings')}>
-                  <Button variant="outline" onClick={openSettingsSheet}>
-                    <Settings size={16} />
-                    <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
-                  </Button>
-                </TooltipButton>
-              </div>
-            )}
-          </FilterBarActions>
-        </div>
+
+          {!selectedTasks.length && !searchQuery.length && (
+            <div className="flex gap-2">
+              <TooltipButton toolTipContent={t('common:add_project')}>
+                <Button variant="plain" onClick={handleAddProjects}>
+                  <Plus size={16} />
+                  <span className="max-sm:hidden ml-1">{t('common:add')}</span>
+                </Button>
+              </TooltipButton>
+              <TooltipButton toolTipContent={t('common:labels')}>
+                <Button variant="outlinePrimary" onClick={openLabelsSheet}>
+                  <Tag size={16} />
+                  <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
+                </Button>
+              </TooltipButton>
+              <TooltipButton toolTipContent={t('common:workspace_settings')}>
+                <Button variant="outline" onClick={openSettingsSheet}>
+                  <Settings size={16} />
+                  <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
+                </Button>
+              </TooltipButton>
+            </div>
+          )}
+        </FilterBarActions>
         {!!searchQuery.length && (
-          <div className="inline-flex align-center text-muted-foreground text-sm  items-center gap-2 max-xs:hidden">
-            <TooltipButton toolTipContent={t('common:clear_search')}>
+          <div className="inline-flex align-center text-muted-foreground text-sm  items-center gap-2 max-sm:hidden">
+            <TooltipButton toolTipContent={t('common:clear_filter')}>
               <Button variant="ghost" onClick={() => setSearchQuery('')}>
-                <SearchX size={16} />
-                <span className="ml-1">{t('common:clear_search')}</span>
+                <FilterX size={16} />
+                <span className="ml-1">{t('common:clear')}</span>
               </Button>
             </TooltipButton>
             <div className="w-max mx-2">

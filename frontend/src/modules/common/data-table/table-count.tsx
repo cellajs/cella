@@ -6,11 +6,10 @@ interface TableCountProps {
   count?: number;
   type: string;
   isFiltered?: boolean;
-  isSearch?: boolean;
   onResetFilters?: () => void;
 }
 
-const TableCount = ({ count, type, isFiltered, isSearch, onResetFilters }: TableCountProps) => {
+const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps) => {
   const { t } = useTranslation();
 
   return (
@@ -20,13 +19,13 @@ const TableCount = ({ count, type, isFiltered, isSearch, onResetFilters }: Table
           {isFiltered && (
             <Button variant="ghost" onClick={onResetFilters} className="max-sm:hidden">
               <FilterX size={16} className="mr-1" />
-              {t('common:clear_filter')}
+              {t('common:clear')}
             </Button>
           )}
           <div className="w-max ml-2">
             {new Intl.NumberFormat('de-DE').format(count)} {count === 1 ? t(`common:${type}`).toLowerCase() : t(`common:${type}s`).toLowerCase()}
-            {(isFiltered || isSearch) && ' '}
-            {(isFiltered || isSearch) && t('common:found')}
+            {isFiltered && ' '}
+            {isFiltered && t('common:found')}
           </div>
         </>
       )}

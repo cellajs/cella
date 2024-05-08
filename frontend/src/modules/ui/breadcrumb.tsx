@@ -13,7 +13,7 @@ const Breadcrumb = React.forwardRef<
 Breadcrumb.displayName = 'Breadcrumb';
 
 const BreadcrumbList = React.forwardRef<HTMLOListElement, React.ComponentPropsWithoutRef<'ol'>>(({ className, ...props }, ref) => (
-  <ol ref={ref} className={cn('flex flex-wrap items-center gap-1 break-words text-sm text-muted-foreground md:gap-2', className)} {...props} />
+  <ol ref={ref} className={cn('flex flex-wrap items-center gap-1 break-words text-sm text-foreground/75 md:gap-2', className)} {...props} />
 ));
 BreadcrumbList.displayName = 'BreadcrumbList';
 

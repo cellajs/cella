@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Palmtree, Search } from 'lucide-react';
 import { useContext, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -94,8 +94,19 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
       {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
       <div ref={containerRef} />
-      {!tasks.length && !searchQuery && <div className="flex flex-col items-center justify-start w-full p-8">{t('common:no_tasks')}</div>}
-      {!tasks.length && searchQuery && <div className="flex flex-col items-center justify-start w-full p-8">{t('common:no_tasks_found')}</div>}
+      {!tasks.length && !searchQuery && (
+        <div className="flex flex-col items-center justify-start w-full p-8">
+          <Palmtree strokeWidth={0.7} size={80} className="opacity-50" />
+          <p className="mt-6 text-sm">{t('common:no_tasks')}</p>
+          <p className="mt-6 text-sm font-medium">{t('common:no_tasks.text')}</p>
+        </div>
+      )}
+      {!tasks.length && searchQuery && (
+        <div className="flex flex-col items-center justify-start w-full p-8">
+          <Search strokeWidth={0.7} size={80} className="opacity-50" />
+          <p className="mt-6 text-sm">{t('common:no_tasks_found')}</p>
+        </div>
+      )}
       {!!tasks.length && (
         <ScrollArea id={project.id} size="indicatorVertical" className="mx-[-1px]">
           <ScrollBar size="indicatorVertical" />

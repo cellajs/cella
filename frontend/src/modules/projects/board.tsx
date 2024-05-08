@@ -4,6 +4,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resi
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';
 import { useTranslation } from 'react-i18next';
+import { Bird } from 'lucide-react';
 
 interface ProjectContextValue {
   project: ProjectWithLabels;
@@ -28,7 +29,13 @@ export default function Board() {
   return (
     <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)]">
       <ResizablePanelGroup direction="horizontal" className="flex gap-2" id="project-panels">
-        {!projects.length && <div className="flex flex-col items-center justify-start w-full p-8">{t('common:no_projects')}</div>}
+        {!projects.length && (
+          <div className="flex flex-col items-center justify-start w-full p-8">
+            <Bird strokeWidth={0.7} size={80} className="opacity-50" />
+            <p className="mt-6 text-sm">{t('common:no_projects')}</p>
+            <p className="mt-6 text-sm font-medium">{t('common:no_projects.text')}</p>
+          </div>
+        )}
         {projects.map((project, index) => (
           <Fragment key={project.id}>
             <ResizablePanel key={`${project.id}-panel`}>

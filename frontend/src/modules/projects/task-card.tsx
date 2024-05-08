@@ -24,7 +24,6 @@ import SetLabels from './select-labels.tsx';
 
 interface TaskCardProps {
   task: TaskWithLabels;
-  isOverlay?: boolean;
 }
 
 export interface TaskDragData {
@@ -32,7 +31,7 @@ export interface TaskDragData {
   task: Task;
 }
 
-export function TaskCard({ task, isOverlay }: TaskCardProps) {
+export function TaskCard({ task }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
@@ -136,7 +135,6 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
       className={cn(
         'group/task rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
         variants({
-          dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
           status: task.status as TaskStatus,
         }),
         isExpanded ? 'border-l border-l-primary/50' : 'border-l border-l-transparent',

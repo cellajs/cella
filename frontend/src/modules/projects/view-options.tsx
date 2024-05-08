@@ -25,9 +25,9 @@ export const viewOptions = {
 };
 
 // Variants for bottom border highlight
-const variants = cva('', {
+const variants = cva('border-b-2', {
   variants: {
-    labels: { primary: 'border-b-foreground  hover:border-b-foreground/70', secondary: 'border-b-foreground/50 hover:border-b-foreground/20' },
+    labels: { primary: 'border-b-foreground hover:border-b-foreground/70', secondary: 'border-b-foreground/50 hover:border-b-foreground/20' },
     type: {
       feature: 'border-b-amber-400 hover:border-b-amber-400/60',
       chore: 'border-b-slate-400 hover:border-b-slate-400/60',
@@ -115,7 +115,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
                 size="sm"
                 value={option}
                 className={`w-full ${
-                  getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]?.includes(option) ? variants({ [key]: option }) : ''
+                  getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]?.includes(option) ? variants({ [key]: option }) : 'pb-[1px]'
                 }`}
               >
                 <span className="text-xs font-normal">{t(`common:${option}`)}</span>
