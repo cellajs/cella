@@ -1,11 +1,12 @@
 import countries from '~/json/countries.json';
+import commonCountries from '~/json/commonCountries.json';
 import { useTranslation } from 'react-i18next';
 import Combobox from '~/modules/ui/combobox';
 import CountryFlag from '../country-flag';
 
-const SelectCountry = ({ onChange }: { onChange: (value: string) => void }) => {
+const SelectCountry = ({ listGroup = 'all', onChange }: { listGroup?: 'all' | 'common'; onChange: (value: string) => void }) => {
   const { t } = useTranslation();
-  const options = countries.map((country) => ({ value: country.code, label: country.name }));
+  const options = listGroup === 'all' ? getCountries(countries) : getCountries(commonCountries);
 
   const renderCountryOption = (option: { value: string; label: string }) => (
     <div className="flex items-center">
@@ -27,3 +28,7 @@ const SelectCountry = ({ onChange }: { onChange: (value: string) => void }) => {
 };
 
 export default SelectCountry;
+
+const getCountries = (countriesArray: { code: string; name: string }[]) => {
+  return countriesArray.map((country) => ({ value: country.code, label: country.name }));
+};
