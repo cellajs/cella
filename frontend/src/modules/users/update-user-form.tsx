@@ -26,7 +26,7 @@ import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
-import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 
 interface UpdateUserFormProps {
   user: User;
@@ -115,7 +115,7 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
       const targetDialog = dialog.get('edit-user');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('edit-user', {
-          title: <UnsavedChangesBadge title={targetDialog?.title} />,
+          title: <UnsavedBadge title={targetDialog?.title} />,
         });
       }
       return;

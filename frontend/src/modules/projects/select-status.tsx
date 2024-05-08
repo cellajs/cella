@@ -56,7 +56,6 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(statuses[taskStatus]);
   const isSearching = searchValue.length > 0;
-
   // Open on key press
   useHotkeys([['s', () => setOpenPopover(true)]]);
 

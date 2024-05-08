@@ -10,13 +10,13 @@ import { useNavigationStore } from '~/store/navigation';
 export const AppContent = () => {
   const { t } = useTranslation();
   const { activeSheet, keepMenuOpen, setSheet, focusView } = useNavigationStore();
-  const isLargeScreen = useBreakpoints('min', 'lg');
+  const isLargeScreen = useBreakpoints('min', 'xl');
 
   const clickContentRef = useRef<HTMLDivElement>(null);
   const [showFooter, setShowFooter] = useState(true);
 
   // Move content to the right when the menu is open
-  const addPadding = keepMenuOpen && activeSheet?.id === 'menu' ? 'lg:pl-80' : 'pl-0';
+  const addPadding = keepMenuOpen && activeSheet?.id === 'menu' ? 'xl:pl-80' : 'pl-0';
 
   // Close the sheet when clicking in content
   useEffect(() => {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 
 /**
  * Client
@@ -110,6 +111,10 @@ export type Tasks = {
   assigned_at: Date | null
   modified_at: Date | null
   modified_by: string | null
+  /**
+   * @zod.number.int().gte(-2147483648).lte(2147483647)
+   */
+  sort_order: number | null
 }
 
 
@@ -5119,11 +5124,13 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   export type TasksAvgAggregateOutputType = {
     impact: number | null
     status: number | null
+    sort_order: number | null
   }
 
   export type TasksSumAggregateOutputType = {
     impact: number | null
     status: number | null
+    sort_order: number | null
   }
 
   export type TasksMinAggregateOutputType = {
@@ -5141,6 +5148,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at: Date | null
     modified_at: Date | null
     modified_by: string | null
+    sort_order: number | null
   }
 
   export type TasksMaxAggregateOutputType = {
@@ -5158,6 +5166,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at: Date | null
     modified_at: Date | null
     modified_by: string | null
+    sort_order: number | null
   }
 
   export type TasksCountAggregateOutputType = {
@@ -5175,6 +5184,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at: number
     modified_at: number
     modified_by: number
+    sort_order: number
     _all: number
   }
 
@@ -5182,11 +5192,13 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   export type TasksAvgAggregateInputType = {
     impact?: true
     status?: true
+    sort_order?: true
   }
 
   export type TasksSumAggregateInputType = {
     impact?: true
     status?: true
+    sort_order?: true
   }
 
   export type TasksMinAggregateInputType = {
@@ -5204,6 +5216,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: true
     modified_at?: true
     modified_by?: true
+    sort_order?: true
   }
 
   export type TasksMaxAggregateInputType = {
@@ -5221,6 +5234,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: true
     modified_at?: true
     modified_by?: true
+    sort_order?: true
   }
 
   export type TasksCountAggregateInputType = {
@@ -5238,6 +5252,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: true
     modified_at?: true
     modified_by?: true
+    sort_order?: true
     _all?: true
   }
 
@@ -5348,6 +5363,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at: Date | null
     modified_at: Date | null
     modified_by: string | null
+    sort_order: number | null
     _count: TasksCountAggregateOutputType | null
     _avg: TasksAvgAggregateOutputType | null
     _sum: TasksSumAggregateOutputType | null
@@ -5384,6 +5400,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: boolean
     modified_at?: boolean
     modified_by?: boolean
+    sort_order?: boolean
     task_labels?: boolean | Tasks$task_labelsArgs
     task_users?: boolean | Tasks$task_usersArgs
     projects?: boolean | ProjectsArgs
@@ -6342,7 +6359,8 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_by: 'assigned_by',
     assigned_at: 'assigned_at',
     modified_at: 'modified_at',
-    modified_by: 'modified_by'
+    modified_by: 'modified_by',
+    sort_order: 'sort_order'
   };
 
   export type TasksScalarFieldEnum = (typeof TasksScalarFieldEnum)[keyof typeof TasksScalarFieldEnum]
@@ -6567,6 +6585,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: DateTimeNullableFilter | Date | string | null
     modified_at?: DateTimeNullableFilter | Date | string | null
     modified_by?: StringNullableFilter | string | null
+    sort_order?: IntNullableFilter | number | null
     task_labels?: Task_labelsListRelationFilter
     task_users?: Task_usersListRelationFilter
     projects?: XOR<ProjectsRelationFilter, ProjectsWhereInput>
@@ -6587,6 +6606,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
+    sort_order?: SortOrder
     task_labels?: Task_labelsOrderByRelationAggregateInput
     task_users?: Task_usersOrderByRelationAggregateInput
     projects?: ProjectsOrderByWithRelationInput
@@ -6611,6 +6631,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
+    sort_order?: SortOrder
     _count?: TasksCountOrderByAggregateInput
     _avg?: TasksAvgOrderByAggregateInput
     _max?: TasksMaxOrderByAggregateInput
@@ -6636,6 +6657,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
     modified_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
     modified_by?: StringNullableWithAggregatesFilter | string | null
+    sort_order?: IntNullableWithAggregatesFilter | number | null
   }
 
   export type LabelsCreateInput = {
@@ -6871,6 +6893,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
     task_labels?: Task_labelsCreateNestedManyWithoutTasksInput
     task_users?: Task_usersCreateNestedManyWithoutTasksInput
     projects: ProjectsCreateNestedOneWithoutTasksInput
@@ -6891,6 +6914,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
     task_labels?: Task_labelsUncheckedCreateNestedManyWithoutTasksInput
     task_users?: Task_usersUncheckedCreateNestedManyWithoutTasksInput
   }
@@ -6909,6 +6933,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUpdateManyWithoutTasksNestedInput
     task_users?: Task_usersUpdateManyWithoutTasksNestedInput
     projects?: ProjectsUpdateOneRequiredWithoutTasksNestedInput
@@ -6929,6 +6954,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUncheckedUpdateManyWithoutTasksNestedInput
     task_users?: Task_usersUncheckedUpdateManyWithoutTasksNestedInput
   }
@@ -6948,6 +6974,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
   }
 
   export type TasksUpdateManyMutationInput = {
@@ -6964,6 +6991,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type TasksUncheckedUpdateManyInput = {
@@ -6981,6 +7009,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type UuidFilter = {
@@ -7318,11 +7347,13 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
+    sort_order?: SortOrder
   }
 
   export type TasksAvgOrderByAggregateInput = {
     impact?: SortOrder
     status?: SortOrder
+    sort_order?: SortOrder
   }
 
   export type TasksMaxOrderByAggregateInput = {
@@ -7340,6 +7371,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
+    sort_order?: SortOrder
   }
 
   export type TasksMinOrderByAggregateInput = {
@@ -7357,11 +7389,13 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
+    sort_order?: SortOrder
   }
 
   export type TasksSumOrderByAggregateInput = {
     impact?: SortOrder
     status?: SortOrder
+    sort_order?: SortOrder
   }
 
   export type IntNullableWithAggregatesFilter = {
@@ -8063,6 +8097,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
     task_labels?: Task_labelsCreateNestedManyWithoutTasksInput
     task_users?: Task_usersCreateNestedManyWithoutTasksInput
   }
@@ -8081,6 +8116,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
     task_labels?: Task_labelsUncheckedCreateNestedManyWithoutTasksInput
     task_users?: Task_usersUncheckedCreateNestedManyWithoutTasksInput
   }
@@ -8155,6 +8191,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: DateTimeNullableFilter | Date | string | null
     modified_at?: DateTimeNullableFilter | Date | string | null
     modified_by?: StringNullableFilter | string | null
+    sort_order?: IntNullableFilter | number | null
   }
 
   export type LabelsCreateWithoutTask_labelsInput = {
@@ -8190,6 +8227,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
     task_users?: Task_usersCreateNestedManyWithoutTasksInput
     projects: ProjectsCreateNestedOneWithoutTasksInput
   }
@@ -8209,6 +8247,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
     task_users?: Task_usersUncheckedCreateNestedManyWithoutTasksInput
   }
 
@@ -8255,6 +8294,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_users?: Task_usersUpdateManyWithoutTasksNestedInput
     projects?: ProjectsUpdateOneRequiredWithoutTasksNestedInput
   }
@@ -8274,6 +8314,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_users?: Task_usersUncheckedUpdateManyWithoutTasksNestedInput
   }
 
@@ -8291,6 +8332,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
     task_labels?: Task_labelsCreateNestedManyWithoutTasksInput
     projects: ProjectsCreateNestedOneWithoutTasksInput
   }
@@ -8310,6 +8352,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
     task_labels?: Task_labelsUncheckedCreateNestedManyWithoutTasksInput
   }
 
@@ -8337,6 +8380,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUpdateManyWithoutTasksNestedInput
     projects?: ProjectsUpdateOneRequiredWithoutTasksNestedInput
   }
@@ -8356,6 +8400,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUncheckedUpdateManyWithoutTasksNestedInput
   }
 
@@ -8536,6 +8581,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
+    sort_order?: number | null
   }
 
   export type LabelsUpdateWithoutProjectsInput = {
@@ -8572,6 +8618,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUpdateManyWithoutTasksNestedInput
     task_users?: Task_usersUpdateManyWithoutTasksNestedInput
   }
@@ -8590,6 +8637,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUncheckedUpdateManyWithoutTasksNestedInput
     task_users?: Task_usersUncheckedUpdateManyWithoutTasksNestedInput
   }
@@ -8608,6 +8656,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type Task_labelsCreateManyTasksInput = {

@@ -1,10 +1,12 @@
 import { Search, XCircle } from 'lucide-react';
-import { useRef } from 'react';
+import { useContext, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
+import { TableFilterBarContext } from './table-filter-bar';
 
 const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (value: string) => void }) => {
   const { t } = useTranslation();
+  const { isFilterActive } = useContext(TableFilterBarContext);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -12,9 +14,14 @@ const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (valu
     inputRef.current?.focus();
   };
 
+  // Focus input  when filter button clicked(mobile)
+  useEffect(() => {
+    if (isFilterActive) inputRef.current?.focus();
+  }, [isFilterActive]);
+
   return (
     <>
-      <div className="relative flex w-full sm:min-w-44 lg:min-w-56 items-center " onClick={handleClick} onKeyDown={undefined}>
+      <div className="relative flex w-full sm:min-w-44 md:min-w-56 lg:min-w-64 items-center " onClick={handleClick} onKeyDown={undefined}>
         <Search size={16} className="relative left-7 top-2 transform -translate-y-1/2" style={{ opacity: value ? 1 : 0.5 }} />
         <Input
           placeholder={t('common:placeholder.search')}

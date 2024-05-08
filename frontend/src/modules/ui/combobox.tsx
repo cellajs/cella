@@ -25,14 +25,26 @@ interface ComboboxProps {
   searchPlaceholder?: string;
   renderOption?: (option: ComboBoxOption) => React.ReactNode;
   contentWidthMatchInput?: boolean;
+  disabled?: boolean;
 }
 
-const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholder, searchPlaceholder, renderOption, contentWidthMatchInput }) => {
+const Combobox: React.FC<ComboboxProps> = ({
+  options,
+  name,
+  onChange,
+  placeholder,
+  searchPlaceholder,
+  renderOption,
+  contentWidthMatchInput,
+  disabled,
+}) => {
   const formValue = useFormContext?.()?.getValues(name);
+
   const { ref, bounds } = useMeasure();
   const isMobile = useBreakpoints('max', 'sm');
   const [open, setOpen] = React.useState(false);
   const [selectedOption, setSelectedOption] = React.useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
+
   const [searchValue, setSearchValue] = React.useState('');
 
   const handleSelect = (newResult: string) => {
@@ -55,17 +67,27 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
       <PopoverTrigger asChild>
         <Button
           ref={ref as React.LegacyRef<HTMLButtonElement>}
-          variant="outline"
+          variant="input"
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between font-normal"
+          disabled={disabled}
         >
-          {selectedOption ? <div>{renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}</div> : placeholder || ''}
+          {selectedOption ? (
+            <div className="flex items-center gap-2">
+              {name !== 'timezone' && name !== 'country' && (
+                <AvatarWrap className="h-6 w-6 text-xs" type="UNKNOWN" id={selectedOption.value} name={name} url={selectedOption.url} />
+              )}
+              {renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}
+            </div>
+          ) : (
+            placeholder || ''
+          )}
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" style={{ width: `${contentWidthMatchInput ? `${bounds.left + bounds.right}px` : '100%'}` }} className={'p-0'}>
+      <PopoverContent align="start" style={{ width: `${contentWidthMatchInput ? `${bounds.left + bounds.right + 2}px` : '100%'}` }} className={'p-0'}>
         <Command>
           {!isMobile && (
             <CommandInput
@@ -78,9 +100,9 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
             />
           )}
 
-          <ScrollArea className="h-[30vh] overflow-y-auto">
-            <CommandList>
-              <CommandEmpty>No option found</CommandEmpty>
+          <CommandList>
+            <CommandEmpty>No option found</CommandEmpty>
+            <ScrollArea className="max-h-[30vh] h-fit overflow-y-auto">
               <CommandGroup>
                 {options.map((option) => (
                   <CommandItem
@@ -89,14 +111,16 @@ const Combobox: React.FC<ComboboxProps> = ({ options, name, onChange, placeholde
                     onSelect={handleSelect}
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
-                    {name !== 'timezone' && name !== 'country' && <AvatarWrap type="UNKNOWN" id={option.value} name={name} url={option.url} />}
-                    <div>{renderOption ? renderOption(option) : <> {option.label}</>}</div>
+                    <div className="flex items-center gap-2">
+                      {name !== 'timezone' && name !== 'country' && <AvatarWrap type="UNKNOWN" id={option.value} name={name} url={option.url} />}
+                      {renderOption ? renderOption(option) : <> {option.label}</>}
+                    </div>
                     <Check size={16} className={cn('text-success', formValue === option.value ? 'opacity-100' : 'opacity-0')} />
                   </CommandItem>
                 ))}
               </CommandGroup>
-            </CommandList>
-          </ScrollArea>
+            </ScrollArea>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

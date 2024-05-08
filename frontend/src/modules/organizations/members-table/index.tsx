@@ -143,9 +143,10 @@ const MembersTable = () => {
     setRows(records);
   };
 
-  const isFiltered = role !== undefined;
+  const isFiltered = role !== undefined || !!debounceQuery;
 
   const onResetFilters = () => {
+    setQuery('');
     setSelectedRows(new Set<string>());
     setRole(undefined);
   };
@@ -200,8 +201,8 @@ const MembersTable = () => {
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: (
             <>
-              <Bird strokeWidth={1} className="w-20 h-20" />
-              <div className="mt-6 text-sm font-light">{t('common:no_members')}</div>
+              <Bird strokeWidth={0.7} size={80} className="opacity-50" />
+              <div className="mt-6 text-sm">{t('common:no_members')}</div>
             </>
           ),
         }}

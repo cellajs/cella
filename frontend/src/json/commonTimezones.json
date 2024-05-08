@@ -1,0 +1,437 @@
+[
+  {
+    "value": "E. Europe Standard Time",
+    "abbr": "EEDT",
+    "offset": 3,
+    "isdst": true,
+    "text": "(UTC+02:00) E. Europe",
+    "utc": [
+      "Asia/Nicosia",
+      "Europe/Athens",
+      "Europe/Bucharest",
+      "Europe/Chisinau",
+      "Europe/Helsinki",
+      "Europe/Kyiv",
+      "Europe/Mariehamn",
+      "Europe/Nicosia",
+      "Europe/Riga",
+      "Europe/Sofia",
+      "Europe/Tallinn",
+      "Europe/Uzhgorod",
+      "Europe/Vilnius",
+      "Europe/Zaporozhye"
+    ]
+  },
+  {
+    "value": "Alaskan Standard Time",
+    "abbr": "AKDT",
+    "offset": -8,
+    "isdst": true,
+    "text": "(UTC-09:00) Alaska",
+    "utc": ["America/Anchorage", "America/Juneau", "America/Nome", "America/Sitka", "America/Yakutat"]
+  },
+  {
+    "value": "Pacific Standard Time (Mexico)",
+    "abbr": "PDT",
+    "offset": -7,
+    "isdst": true,
+    "text": "(UTC-08:00) Baja California",
+    "utc": ["America/Santa_Isabel"]
+  },
+  {
+    "value": "Pacific Daylight Time",
+    "abbr": "PDT",
+    "offset": -7,
+    "isdst": true,
+    "text": "(UTC-07:00) Pacific Daylight Time (US & Canada)",
+    "utc": ["America/Los_Angeles", "America/Tijuana", "America/Vancouver"]
+  },
+  {
+    "value": "Pacific Standard Time",
+    "abbr": "PST",
+    "offset": -8,
+    "isdst": false,
+    "text": "(UTC-08:00) Pacific Standard Time (US & Canada)",
+    "utc": ["America/Los_Angeles", "America/Tijuana", "America/Vancouver", "PST8PDT"]
+  },
+  {
+    "value": "US Mountain Standard Time",
+    "abbr": "UMST",
+    "offset": -7,
+    "isdst": false,
+    "text": "(UTC-07:00) Arizona",
+    "utc": ["America/Creston", "America/Dawson", "America/Dawson_Creek", "America/Hermosillo", "America/Phoenix", "America/Whitehorse", "Etc/GMT+7"]
+  },
+  {
+    "value": "Mountain Standard Time (Mexico)",
+    "abbr": "MDT",
+    "offset": -6,
+    "isdst": true,
+    "text": "(UTC-07:00) Chihuahua, La Paz, Mazatlan",
+    "utc": ["America/Chihuahua", "America/Mazatlan"]
+  },
+  {
+    "value": "Mountain Standard Time",
+    "abbr": "MDT",
+    "offset": -6,
+    "isdst": true,
+    "text": "(UTC-07:00) Mountain Time (US & Canada)",
+    "utc": [
+      "America/Boise",
+      "America/Cambridge_Bay",
+      "America/Denver",
+      "America/Edmonton",
+      "America/Inuvik",
+      "America/Ojinaga",
+      "America/Yellowknife",
+      "MST7MDT"
+    ]
+  },
+  {
+    "value": "Central America Standard Time",
+    "abbr": "CAST",
+    "offset": -6,
+    "isdst": false,
+    "text": "(UTC-06:00) Central America",
+    "utc": [
+      "America/Belize",
+      "America/Costa_Rica",
+      "America/El_Salvador",
+      "America/Guatemala",
+      "America/Managua",
+      "America/Tegucigalpa",
+      "Etc/GMT+6",
+      "Pacific/Galapagos"
+    ]
+  },
+  {
+    "value": "Central Standard Time",
+    "abbr": "CDT",
+    "offset": -5,
+    "isdst": true,
+    "text": "(UTC-06:00) Central Time (US & Canada)",
+    "utc": [
+      "America/Chicago",
+      "America/Indiana/Knox",
+      "America/Indiana/Tell_City",
+      "America/Matamoros",
+      "America/Menominee",
+      "America/North_Dakota/Beulah",
+      "America/North_Dakota/Center",
+      "America/North_Dakota/New_Salem",
+      "America/Rainy_River",
+      "America/Rankin_Inlet",
+      "America/Resolute",
+      "America/Winnipeg",
+      "CST6CDT"
+    ]
+  },
+  {
+    "value": "Central Standard Time (Mexico)",
+    "abbr": "CDT",
+    "offset": -5,
+    "isdst": true,
+    "text": "(UTC-06:00) Guadalajara, Mexico City, Monterrey",
+    "utc": ["America/Bahia_Banderas", "America/Cancun", "America/Merida", "America/Mexico_City", "America/Monterrey"]
+  },
+  {
+    "value": "Canada Central Standard Time",
+    "abbr": "CCST",
+    "offset": -6,
+    "isdst": false,
+    "text": "(UTC-06:00) Saskatchewan",
+    "utc": ["America/Regina", "America/Swift_Current"]
+  },
+  {
+    "value": "SA Pacific Standard Time",
+    "abbr": "SPST",
+    "offset": -5,
+    "isdst": false,
+    "text": "(UTC-05:00) Bogota, Lima, Quito",
+    "utc": [
+      "America/Bogota",
+      "America/Cayman",
+      "America/Coral_Harbour",
+      "America/Eirunepe",
+      "America/Guayaquil",
+      "America/Jamaica",
+      "America/Lima",
+      "America/Panama",
+      "America/Rio_Branco",
+      "Etc/GMT+5"
+    ]
+  },
+  {
+    "value": "Eastern Standard Time",
+    "abbr": "EST",
+    "offset": -5,
+    "isdst": false,
+    "text": "(UTC-05:00) Eastern Time (US & Canada)",
+    "utc": [
+      "America/Detroit",
+      "America/Havana",
+      "America/Indiana/Petersburg",
+      "America/Indiana/Vincennes",
+      "America/Indiana/Winamac",
+      "America/Iqaluit",
+      "America/Kentucky/Monticello",
+      "America/Louisville",
+      "America/Montreal",
+      "America/Nassau",
+      "America/New_York",
+      "America/Nipigon",
+      "America/Pangnirtung",
+      "America/Port-au-Prince",
+      "America/Thunder_Bay",
+      "America/Toronto"
+    ]
+  },
+  {
+    "value": "Eastern Daylight Time",
+    "abbr": "EDT",
+    "offset": -4,
+    "isdst": true,
+    "text": "(UTC-04:00) Eastern Daylight Time (US & Canada)",
+    "utc": [
+      "America/Detroit",
+      "America/Havana",
+      "America/Indiana/Petersburg",
+      "America/Indiana/Vincennes",
+      "America/Indiana/Winamac",
+      "America/Iqaluit",
+      "America/Kentucky/Monticello",
+      "America/Louisville",
+      "America/Montreal",
+      "America/Nassau",
+      "America/New_York",
+      "America/Nipigon",
+      "America/Pangnirtung",
+      "America/Port-au-Prince",
+      "America/Thunder_Bay",
+      "America/Toronto"
+    ]
+  },
+  {
+    "value": "US Eastern Standard Time",
+    "abbr": "UEDT",
+    "offset": -5,
+    "isdst": false,
+    "text": "(UTC-05:00) Indiana (East)",
+    "utc": ["America/Indiana/Marengo", "America/Indiana/Vevay", "America/Indianapolis"]
+  },
+  {
+    "value": "Venezuela Standard Time",
+    "abbr": "VST",
+    "offset": -4.5,
+    "isdst": false,
+    "text": "(UTC-04:30) Caracas",
+    "utc": ["America/Caracas"]
+  },
+  {
+    "value": "Paraguay Standard Time",
+    "abbr": "PYT",
+    "offset": -4,
+    "isdst": false,
+    "text": "(UTC-04:00) Asuncion",
+    "utc": ["America/Asuncion"]
+  },
+  {
+    "value": "Atlantic Standard Time",
+    "abbr": "ADT",
+    "offset": -3,
+    "isdst": true,
+    "text": "(UTC-04:00) Atlantic Time (Canada)",
+    "utc": ["America/Glace_Bay", "America/Goose_Bay", "America/Halifax", "America/Moncton", "America/Thule", "Atlantic/Bermuda"]
+  },
+  {
+    "value": "Central Brazilian Standard Time",
+    "abbr": "CBST",
+    "offset": -4,
+    "isdst": false,
+    "text": "(UTC-04:00) Cuiaba",
+    "utc": ["America/Campo_Grande", "America/Cuiaba"]
+  },
+  {
+    "value": "SA Western Standard Time",
+    "abbr": "SWST",
+    "offset": -4,
+    "isdst": false,
+    "text": "(UTC-04:00) Georgetown, La Paz, Manaus, San Juan",
+    "utc": [
+      "America/Anguilla",
+      "America/Antigua",
+      "America/Aruba",
+      "America/Barbados",
+      "America/Blanc-Sablon",
+      "America/Boa_Vista",
+      "America/Curacao",
+      "America/Dominica",
+      "America/Grand_Turk",
+      "America/Grenada",
+      "America/Guadeloupe",
+      "America/Guyana",
+      "America/Kralendijk",
+      "America/La_Paz",
+      "America/Lower_Princes",
+      "America/Manaus",
+      "America/Marigot",
+      "America/Martinique",
+      "America/Montserrat",
+      "America/Port_of_Spain",
+      "America/Porto_Velho",
+      "America/Puerto_Rico",
+      "America/Santo_Domingo",
+      "America/St_Barthelemy",
+      "America/St_Kitts",
+      "America/St_Lucia",
+      "America/St_Thomas",
+      "America/St_Vincent",
+      "America/Tortola",
+      "Etc/GMT+4"
+    ]
+  },
+  {
+    "value": "Pacific SA Standard Time",
+    "abbr": "PSST",
+    "offset": -4,
+    "isdst": false,
+    "text": "(UTC-04:00) Santiago",
+    "utc": ["America/Santiago", "Antarctica/Palmer"]
+  },
+  {
+    "value": "Newfoundland Standard Time",
+    "abbr": "NDT",
+    "offset": -2.5,
+    "isdst": true,
+    "text": "(UTC-03:30) Newfoundland",
+    "utc": ["America/St_Johns"]
+  },
+  {
+    "value": "E. South America Standard Time",
+    "abbr": "ESAST",
+    "offset": -3,
+    "isdst": false,
+    "text": "(UTC-03:00) Brasilia",
+    "utc": ["America/Sao_Paulo"]
+  },
+  {
+    "value": "Argentina Standard Time",
+    "abbr": "AST",
+    "offset": -3,
+    "isdst": false,
+    "text": "(UTC-03:00) Buenos Aires",
+    "utc": [
+      "America/Argentina/Buenos_Aires",
+      "America/Argentina/Catamarca",
+      "America/Argentina/Cordoba",
+      "America/Argentina/Jujuy",
+      "America/Argentina/La_Rioja",
+      "America/Argentina/Mendoza",
+      "America/Argentina/Rio_Gallegos",
+      "America/Argentina/Salta",
+      "America/Argentina/San_Juan",
+      "America/Argentina/San_Luis",
+      "America/Argentina/Tucuman",
+      "America/Argentina/Ushuaia",
+      "America/Buenos_Aires",
+      "America/Catamarca",
+      "America/Cordoba",
+      "America/Jujuy",
+      "America/Mendoza"
+    ]
+  },
+  {
+    "value": "SA Eastern Standard Time",
+    "abbr": "SEST",
+    "offset": -3,
+    "isdst": false,
+    "text": "(UTC-03:00) Cayenne, Fortaleza",
+    "utc": [
+      "America/Araguaina",
+      "America/Belem",
+      "America/Cayenne",
+      "America/Fortaleza",
+      "America/Maceio",
+      "America/Paramaribo",
+      "America/Recife",
+      "America/Santarem",
+      "Antarctica/Rothera",
+      "Atlantic/Stanley",
+      "Etc/GMT+3"
+    ]
+  },
+  {
+    "value": "Greenland Standard Time",
+    "abbr": "GDT",
+    "offset": -3,
+    "isdst": true,
+    "text": "(UTC-03:00) Greenland",
+    "utc": ["America/Godthab"]
+  },
+  {
+    "value": "Montevideo Standard Time",
+    "abbr": "MST",
+    "offset": -3,
+    "isdst": false,
+    "text": "(UTC-03:00) Montevideo",
+    "utc": ["America/Montevideo"]
+  },
+  {
+    "value": "Bahia Standard Time",
+    "abbr": "BST",
+    "offset": -3,
+    "isdst": false,
+    "text": "(UTC-03:00) Salvador",
+    "utc": ["America/Bahia"]
+  },
+  {
+    "value": "UTC-02",
+    "abbr": "U",
+    "offset": -2,
+    "isdst": false,
+    "text": "(UTC-02:00) Coordinated Universal Time-02",
+    "utc": ["America/Noronha", "Atlantic/South_Georgia", "Etc/GMT+2"]
+  },
+  {
+    "value": "Azores Standard Time",
+    "abbr": "ADT",
+    "offset": 0,
+    "isdst": true,
+    "text": "(UTC-01:00) Azores",
+    "utc": ["America/Scoresbysund", "Atlantic/Azores"]
+  },
+  {
+    "value": "Romance Standard Time",
+    "abbr": "RDT",
+    "offset": 2,
+    "isdst": true,
+    "text": "(UTC+01:00) Brussels, Copenhagen, Madrid, Paris",
+    "utc": ["Africa/Ceuta", "Europe/Brussels", "Europe/Copenhagen", "Europe/Madrid", "Europe/Paris"]
+  },
+  {
+    "value": "W. Europe Standard Time",
+    "abbr": "WEDT",
+    "offset": 2,
+    "isdst": true,
+    "text": "(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna",
+    "utc": [
+      "Arctic/Longyearbyen",
+      "Europe/Amsterdam",
+      "Europe/Andorra",
+      "Europe/Berlin",
+      "Europe/Busingen",
+      "Europe/Gibraltar",
+      "Europe/Luxembourg",
+      "Europe/Malta",
+      "Europe/Monaco",
+      "Europe/Oslo",
+      "Europe/Rome",
+      "Europe/San_Marino",
+      "Europe/Stockholm",
+      "Europe/Vaduz",
+      "Europe/Vatican",
+      "Europe/Vienna",
+      "Europe/Zurich"
+    ]
+  }
+]

@@ -113,7 +113,7 @@ pnpm run dev
 </details>
 
 <details>
-  <summary>C: As basic docker container (Recommended for quick start)</summary>
+  <summary>C: As basic docker container (Not yet stable)</summary>
 
 #### Prerequisites
 - [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/)

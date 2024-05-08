@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Palmtree, Search } from 'lucide-react';
 import { useContext, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -13,6 +13,8 @@ import { BoardColumnHeader } from './board-column-header';
 import CreateTaskForm from './create-task-form';
 import { ProjectSettings } from './project-settings';
 import { TaskCard } from './task-card';
+import { WorkspaceContext } from '../workspaces';
+import ContentPlaceholder from '../common/content-placeholder';
 
 interface BoardColumnProps {
   tasks?: Task[];
@@ -24,6 +26,7 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
   const containerRef = useRef(null);
 
   const { project } = useContext(ProjectContext);
+  const { searchQuery } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[project.workspace_id]?.columns.find((el) => el.columnId === project.id);
 
@@ -49,7 +52,7 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
 
   const openSettingsSheet = () => {
     sheet(<ProjectSettings sheet />, {
-      className: 'sm:max-w-[64rem]',
+      className: 'sm:max-w-[52rem]',
       title: t('common:project_settings'),
       text: t('common:project_settings.text'),
       id: 'edit-project',
@@ -71,10 +74,6 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
   //   });
   // };
 
-  // const onDelete = () => {
-  //   db.projects.delete({ where: { id: project.id } });
-  // };
-
   const variants = cva('h-full rounded-b-none max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center', {
     variants: {
       dragging: {
@@ -92,7 +91,20 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
       {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
       <div ref={containerRef} />
-      {!tasks.length && <div className="flex flex-col items-center justify-start w-full p-8">{t('common:no_tasks')}</div>}
+      {!tasks.length && !searchQuery && (
+        <ContentPlaceholder
+          Icon={Palmtree}
+          title={t('common:no_tasks')}
+          text={
+            <p className="inline-flex gap-1">
+              <span>{t('common:click')}</span>
+              <span className="text-primary">{`+ ${t('common:task')}`}</span>
+              <span>{t('common:no_tasks.text')}</span>
+            </p>
+          }
+        />
+      )}
+      {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
       {!!tasks.length && (
         <ScrollArea id={project.id} size="indicatorVertical" className="mx-[-1px]">
           <ScrollBar size="indicatorVertical" />

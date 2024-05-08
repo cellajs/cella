@@ -50,7 +50,7 @@ const NoRows = ({
     <div className="flex flex-col items-center justify-center w-full p-8">
       {isFiltered && !isFetching && (
         <>
-          <Search className="w-20 h-20" />
+          <Search strokeWidth={0.7} size={80} className="opacity-50" />
           <div className="text-sm mt-6">{t('common:no_results_found')}</div>
         </>
       )}

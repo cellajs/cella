@@ -43,6 +43,13 @@
       "when": 1714987633679,
       "tag": "0005_furry_redwing",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1715170738553,
+      "tag": "0006_living_guardian",
+      "breakpoints": true
     }
   ]
 }

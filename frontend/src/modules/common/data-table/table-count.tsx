@@ -19,7 +19,7 @@ const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps
           {isFiltered && (
             <Button variant="ghost" onClick={onResetFilters} className="max-sm:hidden">
               <FilterX size={16} className="mr-1" />
-              {t('common:clear_filter')}
+              {t('common:clear')}
             </Button>
           )}
           <div className="w-max ml-2">

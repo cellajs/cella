@@ -36,7 +36,7 @@ export const navItems: NavItem[] = [
 const AppNav = () => {
   const navigate = useNavigate();
   const { hasStarted } = useMounted();
-  const isSmallScreen = useBreakpoints('max', 'lg');
+  const isSmallScreen = useBreakpoints('max', 'xl');
   const { activeSheet, setSheet, keepMenuOpen, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
 

@@ -110,12 +110,12 @@ export const config = {
   // TODO, make dynamic and type safe, for now it's hardcoded
   rolesByType: {
     system: [
-      { key: 'ADMIN', value: 'common:admin' },
       { key: 'USER', value: 'common:user' },
+      { key: 'ADMIN', value: 'common:admin' },
     ],
     organization: [
-      { key: 'ADMIN', value: 'common:admin' },
       { key: 'MEMBER', value: 'common:member' },
+      { key: 'ADMIN', value: 'common:admin' },
     ],
   } as const,
 };

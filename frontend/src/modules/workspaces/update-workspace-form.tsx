@@ -19,7 +19,7 @@ import { updateWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
 import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { useEffect } from 'react';
-import UnsavedChangesBadge from '../common/unsaved-changes-badge';
+import UnsavedBadge from '../common/unsaved-badge';
 
 interface Props {
   workspace: Workspace;
@@ -79,7 +79,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
       const targetSheet = sheet.get('edit-workspace');
       if (targetSheet && checkSheet(targetSheet)) {
         sheet.update('edit-workspace', {
-          title: <UnsavedChangesBadge title={targetSheet?.title} />,
+          title: <UnsavedBadge title={targetSheet?.title} />,
         });
         return;
       }
@@ -98,7 +98,14 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
           description={t('common:workspace_handle.text')}
           previousSlug={workspace.slug}
         />
-        <SelectParentFormField collection="organizations" control={form.control} label={t('common:organization')} name="organizationId" required />
+        <SelectParentFormField
+          collection="organizations"
+          type="ORGANIZATION"
+          control={form.control}
+          label={t('common:organization')}
+          name="organizationId"
+          required
+        />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}

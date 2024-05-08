@@ -16,7 +16,7 @@ import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { useEffect } from 'react';
-import UnsavedChangesBadge from '../common/unsaved-changes-badge';
+import UnsavedBadge from '../common/unsaved-badge';
 
 interface Project {
   id: string;
@@ -102,7 +102,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
       const targetSheet = sheet.get('edit-project');
       if (targetSheet && checkSheet(targetSheet)) {
         sheet.update('edit-project', {
-          title: <UnsavedChangesBadge title={targetSheet?.title} />,
+          title: <UnsavedBadge title={targetSheet?.title} />,
         });
         return;
       }
@@ -121,8 +121,8 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
           description={t('common:project_handle.text')}
           previousSlug={project.slug}
         />
-        <SelectParentFormField collection="organizations" control={form.control} label={t('common:organization')} name="organizationId" required />
-        <SelectParentFormField collection="workspaces" control={form.control} label={t('common:workspace')} name="workspaceId" required />
+        <SelectParentFormField collection="organizations" type="ORGANIZATION" control={form.control} label={t('common:organization')} name="organizationId" required />
+        <SelectParentFormField collection="workspaces" type="WORKSPACE" control={form.control} label={t('common:workspace')} name="workspaceId" required />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}

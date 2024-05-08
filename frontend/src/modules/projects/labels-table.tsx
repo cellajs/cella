@@ -79,6 +79,8 @@ interface LabelsParam {
 }
 
 const LabelsTable = ({ labels }: { labels: Label[] }) => {
+  const { t } = useTranslation();
+
   const [columns] = useColumns();
   const defaultSearch: LabelsParam = { sort: 'name', order: 'asc' };
   const [search] = useState(defaultSearch);
@@ -130,8 +132,8 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: (
             <>
-              <Bird strokeWidth={1} className="w-20 h-20" />
-              <div className="mt-6 text-sm font-light">No labels</div>
+              <Bird strokeWidth={0.7} size={80} className="opacity-50" />
+              <div className="mt-6 text-sm">{t('common:no_labels')}</div>
             </>
           ),
         }}
