@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, ChevronRight } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { cn } from '~/lib/utils';
@@ -67,7 +67,7 @@ const Combobox: React.FC<ComboboxProps> = ({
       <PopoverTrigger asChild>
         <Button
           ref={ref as React.LegacyRef<HTMLButtonElement>}
-          variant="outline"
+          variant="input"
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between font-normal"
@@ -83,7 +83,7 @@ const Combobox: React.FC<ComboboxProps> = ({
           ) : (
             placeholder || ''
           )}
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          {open ? <ChevronRight className="ml-2 h-4 w-4 shrink-0 opacity-50" /> : <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
         </Button>
       </PopoverTrigger>
 
