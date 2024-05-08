@@ -20,7 +20,7 @@ import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
-import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { type LabelDirectionType, Form } from '../ui/form';
 
 interface CreateOrganizationFormProps {
@@ -88,7 +88,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       const targetDialog = dialog.get('create-organization');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('create-organization', {
-          title: <UnsavedChangesBadge title={targetDialog?.title} />,
+          title: <UnsavedBadge title={targetDialog?.title} />,
         });
       }
       return;

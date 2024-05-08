@@ -22,7 +22,7 @@ import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import DomainsFormField from '../common/form-fields/domains';
-import UnsavedChangesBadge from '../common/unsaved-changes-badge';
+import UnsavedBadge from '../common/unsaved-badge';
 
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
@@ -117,7 +117,7 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
       const targetDialog = dialog.get('edit-organization');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('edit-organization', {
-          title: <UnsavedChangesBadge title={targetDialog?.title} />,
+          title: <UnsavedBadge title={targetDialog?.title} />,
         });
       }
       return;

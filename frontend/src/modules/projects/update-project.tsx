@@ -16,7 +16,7 @@ import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { useEffect } from 'react';
-import UnsavedChangesBadge from '../common/unsaved-changes-badge';
+import UnsavedBadge from '../common/unsaved-badge';
 
 interface Project {
   id: string;
@@ -102,7 +102,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
       const targetSheet = sheet.get('edit-project');
       if (targetSheet && checkSheet(targetSheet)) {
         sheet.update('edit-project', {
-          title: <UnsavedChangesBadge title={targetSheet?.title} />,
+          title: <UnsavedBadge title={targetSheet?.title} />,
         });
         return;
       }

@@ -2,7 +2,7 @@ import { Badge } from '../ui/badge';
 import { SquarePen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-function UnsavedChangesBadge({ title }: { title?: string | React.ReactNode }) {
+function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-row gap-2">
@@ -15,4 +15,4 @@ function UnsavedChangesBadge({ title }: { title?: string | React.ReactNode }) {
   );
 }
 
-export default UnsavedChangesBadge;
+export default UnsavedBadge;

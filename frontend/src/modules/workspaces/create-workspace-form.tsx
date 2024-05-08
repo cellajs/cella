@@ -24,7 +24,7 @@ import { Form } from '../ui/form';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import CreateOrganizationForm from '../organizations/create-organization-form';
-import UnsavedChangesBadge from '~/modules/common/unsaved-changes-badge';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -92,7 +92,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       const targetDialog = dialog.get('create-workspace');
       if (targetDialog && checkDialog(targetDialog)) {
         dialog.update('create-workspace', {
-          title: <UnsavedChangesBadge title={targetDialog?.title} />,
+          title: <UnsavedBadge title={targetDialog?.title} />,
         });
       }
       return;
