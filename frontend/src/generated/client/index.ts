@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { z } from 'zod';
 import type { Prisma } from './prismaClient';
-import { type TableSchema, DbSchema, Relation, type ElectricClient, type HKT } from 'electric-sql/client/model';
+import { type TableSchema, DbSchema, Relation, ElectricClient, type HKT } from 'electric-sql/client/model';
 import migrations from './migrations';
 
 /////////////////////////////////////////
@@ -24,7 +25,7 @@ export const Task_labelsScalarFieldEnumSchema = z.enum(['task_id','label_id']);
 
 export const Task_usersScalarFieldEnumSchema = z.enum(['task_id','user_id','role']);
 
-export const TasksScalarFieldEnumSchema = z.enum(['id','slug','markdown','summary','type','impact','status','project_id','created_at','created_by','assigned_by','assigned_at','modified_at','modified_by']);
+export const TasksScalarFieldEnumSchema = z.enum(['id','slug','markdown','summary','type','impact','status','project_id','created_at','created_by','assigned_by','assigned_at','modified_at','modified_by','sort_order']);
 
 export const TransactionIsolationLevelSchema = z.enum(['ReadUncommitted','ReadCommitted','RepeatableRead','Serializable']);
 /////////////////////////////////////////
@@ -104,6 +105,7 @@ export const TasksSchema = z.object({
   assigned_at: z.coerce.date().nullable(),
   modified_at: z.coerce.date().nullable(),
   modified_by: z.string().nullable(),
+  sort_order: z.number().int().gte(-2147483648).lte(2147483647).nullable(),
 })
 
 export type Tasks = z.infer<typeof TasksSchema>
@@ -260,6 +262,7 @@ export const TasksSelectSchema: z.ZodType<Prisma.TasksSelect> = z.object({
   assigned_at: z.boolean().optional(),
   modified_at: z.boolean().optional(),
   modified_by: z.boolean().optional(),
+  sort_order: z.boolean().optional(),
   task_labels: z.union([z.boolean(),z.lazy(() => Task_labelsFindManyArgsSchema)]).optional(),
   task_users: z.union([z.boolean(),z.lazy(() => Task_usersFindManyArgsSchema)]).optional(),
   projects: z.union([z.boolean(),z.lazy(() => ProjectsArgsSchema)]).optional(),
@@ -475,6 +478,7 @@ export const TasksWhereInputSchema: z.ZodType<Prisma.TasksWhereInput> = z.object
   assigned_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   modified_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   modified_by: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  sort_order: z.union([ z.lazy(() => IntNullableFilterSchema),z.number() ]).optional().nullable(),
   task_labels: z.lazy(() => Task_labelsListRelationFilterSchema).optional(),
   task_users: z.lazy(() => Task_usersListRelationFilterSchema).optional(),
   projects: z.union([ z.lazy(() => ProjectsRelationFilterSchema),z.lazy(() => ProjectsWhereInputSchema) ]).optional(),
@@ -495,6 +499,7 @@ export const TasksOrderByWithRelationInputSchema: z.ZodType<Prisma.TasksOrderByW
   assigned_at: z.lazy(() => SortOrderSchema).optional(),
   modified_at: z.lazy(() => SortOrderSchema).optional(),
   modified_by: z.lazy(() => SortOrderSchema).optional(),
+  sort_order: z.lazy(() => SortOrderSchema).optional(),
   task_labels: z.lazy(() => Task_labelsOrderByRelationAggregateInputSchema).optional(),
   task_users: z.lazy(() => Task_usersOrderByRelationAggregateInputSchema).optional(),
   projects: z.lazy(() => ProjectsOrderByWithRelationInputSchema).optional()
@@ -519,6 +524,7 @@ export const TasksOrderByWithAggregationInputSchema: z.ZodType<Prisma.TasksOrder
   assigned_at: z.lazy(() => SortOrderSchema).optional(),
   modified_at: z.lazy(() => SortOrderSchema).optional(),
   modified_by: z.lazy(() => SortOrderSchema).optional(),
+  sort_order: z.lazy(() => SortOrderSchema).optional(),
   _count: z.lazy(() => TasksCountOrderByAggregateInputSchema).optional(),
   _avg: z.lazy(() => TasksAvgOrderByAggregateInputSchema).optional(),
   _max: z.lazy(() => TasksMaxOrderByAggregateInputSchema).optional(),
@@ -544,6 +550,7 @@ export const TasksScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.TasksSc
   assigned_at: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema),z.coerce.date() ]).optional().nullable(),
   modified_at: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema),z.coerce.date() ]).optional().nullable(),
   modified_by: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  sort_order: z.union([ z.lazy(() => IntNullableWithAggregatesFilterSchema),z.number() ]).optional().nullable(),
 }).strict();
 
 export const LabelsCreateInputSchema: z.ZodType<Prisma.LabelsCreateInput> = z.object({
@@ -778,6 +785,7 @@ export const TasksCreateInputSchema: z.ZodType<Prisma.TasksCreateInput> = z.obje
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
   modified_by: z.string().optional().nullable(),
+  sort_order: z.number().int().gte(-2147483648).lte(2147483647).optional().nullable(),
   task_labels: z.lazy(() => Task_labelsCreateNestedManyWithoutTasksInputSchema).optional(),
   task_users: z.lazy(() => Task_usersCreateNestedManyWithoutTasksInputSchema).optional(),
   projects: z.lazy(() => ProjectsCreateNestedOneWithoutTasksInputSchema)
@@ -798,6 +806,7 @@ export const TasksUncheckedCreateInputSchema: z.ZodType<Prisma.TasksUncheckedCre
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
   modified_by: z.string().optional().nullable(),
+  sort_order: z.number().int().gte(-2147483648).lte(2147483647).optional().nullable(),
   task_labels: z.lazy(() => Task_labelsUncheckedCreateNestedManyWithoutTasksInputSchema).optional(),
   task_users: z.lazy(() => Task_usersUncheckedCreateNestedManyWithoutTasksInputSchema).optional()
 }).strict();
@@ -816,6 +825,7 @@ export const TasksUpdateInputSchema: z.ZodType<Prisma.TasksUpdateInput> = z.obje
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number().int().gte(-2147483648).lte(2147483647),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   task_labels: z.lazy(() => Task_labelsUpdateManyWithoutTasksNestedInputSchema).optional(),
   task_users: z.lazy(() => Task_usersUpdateManyWithoutTasksNestedInputSchema).optional(),
   projects: z.lazy(() => ProjectsUpdateOneRequiredWithoutTasksNestedInputSchema).optional()
@@ -836,6 +846,7 @@ export const TasksUncheckedUpdateInputSchema: z.ZodType<Prisma.TasksUncheckedUpd
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number().int().gte(-2147483648).lte(2147483647),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   task_labels: z.lazy(() => Task_labelsUncheckedUpdateManyWithoutTasksNestedInputSchema).optional(),
   task_users: z.lazy(() => Task_usersUncheckedUpdateManyWithoutTasksNestedInputSchema).optional()
 }).strict();
@@ -854,7 +865,8 @@ export const TasksCreateManyInputSchema: z.ZodType<Prisma.TasksCreateManyInput> 
   assigned_by: z.string().optional().nullable(),
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
-  modified_by: z.string().optional().nullable()
+  modified_by: z.string().optional().nullable(),
+  sort_order: z.number().int().gte(-2147483648).lte(2147483647).optional().nullable()
 }).strict();
 
 export const TasksUpdateManyMutationInputSchema: z.ZodType<Prisma.TasksUpdateManyMutationInput> = z.object({
@@ -871,6 +883,7 @@ export const TasksUpdateManyMutationInputSchema: z.ZodType<Prisma.TasksUpdateMan
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number().int().gte(-2147483648).lte(2147483647),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 }).strict();
 
 export const TasksUncheckedUpdateManyInputSchema: z.ZodType<Prisma.TasksUncheckedUpdateManyInput> = z.object({
@@ -888,6 +901,7 @@ export const TasksUncheckedUpdateManyInputSchema: z.ZodType<Prisma.TasksUnchecke
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number().int().gte(-2147483648).lte(2147483647),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 }).strict();
 
 export const UuidFilterSchema: z.ZodType<Prisma.UuidFilter> = z.object({
@@ -1224,12 +1238,14 @@ export const TasksCountOrderByAggregateInputSchema: z.ZodType<Prisma.TasksCountO
   assigned_by: z.lazy(() => SortOrderSchema).optional(),
   assigned_at: z.lazy(() => SortOrderSchema).optional(),
   modified_at: z.lazy(() => SortOrderSchema).optional(),
-  modified_by: z.lazy(() => SortOrderSchema).optional()
+  modified_by: z.lazy(() => SortOrderSchema).optional(),
+  sort_order: z.lazy(() => SortOrderSchema).optional()
 }).strict();
 
 export const TasksAvgOrderByAggregateInputSchema: z.ZodType<Prisma.TasksAvgOrderByAggregateInput> = z.object({
   impact: z.lazy(() => SortOrderSchema).optional(),
-  status: z.lazy(() => SortOrderSchema).optional()
+  status: z.lazy(() => SortOrderSchema).optional(),
+  sort_order: z.lazy(() => SortOrderSchema).optional()
 }).strict();
 
 export const TasksMaxOrderByAggregateInputSchema: z.ZodType<Prisma.TasksMaxOrderByAggregateInput> = z.object({
@@ -1246,7 +1262,8 @@ export const TasksMaxOrderByAggregateInputSchema: z.ZodType<Prisma.TasksMaxOrder
   assigned_by: z.lazy(() => SortOrderSchema).optional(),
   assigned_at: z.lazy(() => SortOrderSchema).optional(),
   modified_at: z.lazy(() => SortOrderSchema).optional(),
-  modified_by: z.lazy(() => SortOrderSchema).optional()
+  modified_by: z.lazy(() => SortOrderSchema).optional(),
+  sort_order: z.lazy(() => SortOrderSchema).optional()
 }).strict();
 
 export const TasksMinOrderByAggregateInputSchema: z.ZodType<Prisma.TasksMinOrderByAggregateInput> = z.object({
@@ -1263,12 +1280,14 @@ export const TasksMinOrderByAggregateInputSchema: z.ZodType<Prisma.TasksMinOrder
   assigned_by: z.lazy(() => SortOrderSchema).optional(),
   assigned_at: z.lazy(() => SortOrderSchema).optional(),
   modified_at: z.lazy(() => SortOrderSchema).optional(),
-  modified_by: z.lazy(() => SortOrderSchema).optional()
+  modified_by: z.lazy(() => SortOrderSchema).optional(),
+  sort_order: z.lazy(() => SortOrderSchema).optional()
 }).strict();
 
 export const TasksSumOrderByAggregateInputSchema: z.ZodType<Prisma.TasksSumOrderByAggregateInput> = z.object({
   impact: z.lazy(() => SortOrderSchema).optional(),
-  status: z.lazy(() => SortOrderSchema).optional()
+  status: z.lazy(() => SortOrderSchema).optional(),
+  sort_order: z.lazy(() => SortOrderSchema).optional()
 }).strict();
 
 export const IntNullableWithAggregatesFilterSchema: z.ZodType<Prisma.IntNullableWithAggregatesFilter> = z.object({
@@ -1970,6 +1989,7 @@ export const TasksCreateWithoutProjectsInputSchema: z.ZodType<Prisma.TasksCreate
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
   modified_by: z.string().optional().nullable(),
+  sort_order: z.number().optional().nullable(),
   task_labels: z.lazy(() => Task_labelsCreateNestedManyWithoutTasksInputSchema).optional(),
   task_users: z.lazy(() => Task_usersCreateNestedManyWithoutTasksInputSchema).optional()
 }).strict();
@@ -1988,6 +2008,7 @@ export const TasksUncheckedCreateWithoutProjectsInputSchema: z.ZodType<Prisma.Ta
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
   modified_by: z.string().optional().nullable(),
+  sort_order: z.number().optional().nullable(),
   task_labels: z.lazy(() => Task_labelsUncheckedCreateNestedManyWithoutTasksInputSchema).optional(),
   task_users: z.lazy(() => Task_usersUncheckedCreateNestedManyWithoutTasksInputSchema).optional()
 }).strict();
@@ -2062,6 +2083,7 @@ export const TasksScalarWhereInputSchema: z.ZodType<Prisma.TasksScalarWhereInput
   assigned_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   modified_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   modified_by: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  sort_order: z.union([ z.lazy(() => IntNullableFilterSchema),z.number() ]).optional().nullable(),
 }).strict();
 
 export const LabelsCreateWithoutTask_labelsInputSchema: z.ZodType<Prisma.LabelsCreateWithoutTask_labelsInput> = z.object({
@@ -2097,6 +2119,7 @@ export const TasksCreateWithoutTask_labelsInputSchema: z.ZodType<Prisma.TasksCre
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
   modified_by: z.string().optional().nullable(),
+  sort_order: z.number().optional().nullable(),
   task_users: z.lazy(() => Task_usersCreateNestedManyWithoutTasksInputSchema).optional(),
   projects: z.lazy(() => ProjectsCreateNestedOneWithoutTasksInputSchema)
 }).strict();
@@ -2116,6 +2139,7 @@ export const TasksUncheckedCreateWithoutTask_labelsInputSchema: z.ZodType<Prisma
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
   modified_by: z.string().optional().nullable(),
+  sort_order: z.number().optional().nullable(),
   task_users: z.lazy(() => Task_usersUncheckedCreateNestedManyWithoutTasksInputSchema).optional()
 }).strict();
 
@@ -2162,6 +2186,7 @@ export const TasksUpdateWithoutTask_labelsInputSchema: z.ZodType<Prisma.TasksUpd
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   task_users: z.lazy(() => Task_usersUpdateManyWithoutTasksNestedInputSchema).optional(),
   projects: z.lazy(() => ProjectsUpdateOneRequiredWithoutTasksNestedInputSchema).optional()
 }).strict();
@@ -2181,6 +2206,7 @@ export const TasksUncheckedUpdateWithoutTask_labelsInputSchema: z.ZodType<Prisma
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   task_users: z.lazy(() => Task_usersUncheckedUpdateManyWithoutTasksNestedInputSchema).optional()
 }).strict();
 
@@ -2198,6 +2224,7 @@ export const TasksCreateWithoutTask_usersInputSchema: z.ZodType<Prisma.TasksCrea
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
   modified_by: z.string().optional().nullable(),
+  sort_order: z.number().optional().nullable(),
   task_labels: z.lazy(() => Task_labelsCreateNestedManyWithoutTasksInputSchema).optional(),
   projects: z.lazy(() => ProjectsCreateNestedOneWithoutTasksInputSchema)
 }).strict();
@@ -2217,6 +2244,7 @@ export const TasksUncheckedCreateWithoutTask_usersInputSchema: z.ZodType<Prisma.
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
   modified_by: z.string().optional().nullable(),
+  sort_order: z.number().optional().nullable(),
   task_labels: z.lazy(() => Task_labelsUncheckedCreateNestedManyWithoutTasksInputSchema).optional()
 }).strict();
 
@@ -2244,6 +2272,7 @@ export const TasksUpdateWithoutTask_usersInputSchema: z.ZodType<Prisma.TasksUpda
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   task_labels: z.lazy(() => Task_labelsUpdateManyWithoutTasksNestedInputSchema).optional(),
   projects: z.lazy(() => ProjectsUpdateOneRequiredWithoutTasksNestedInputSchema).optional()
 }).strict();
@@ -2263,6 +2292,7 @@ export const TasksUncheckedUpdateWithoutTask_usersInputSchema: z.ZodType<Prisma.
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   task_labels: z.lazy(() => Task_labelsUncheckedUpdateManyWithoutTasksNestedInputSchema).optional()
 }).strict();
 
@@ -2442,7 +2472,8 @@ export const TasksCreateManyProjectsInputSchema: z.ZodType<Prisma.TasksCreateMan
   assigned_by: z.string().optional().nullable(),
   assigned_at: z.coerce.date().optional().nullable(),
   modified_at: z.coerce.date().optional().nullable(),
-  modified_by: z.string().optional().nullable()
+  modified_by: z.string().optional().nullable(),
+  sort_order: z.number().int().gte(-2147483648).lte(2147483647).optional().nullable()
 }).strict();
 
 export const LabelsUpdateWithoutProjectsInputSchema: z.ZodType<Prisma.LabelsUpdateWithoutProjectsInput> = z.object({
@@ -2479,6 +2510,7 @@ export const TasksUpdateWithoutProjectsInputSchema: z.ZodType<Prisma.TasksUpdate
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   task_labels: z.lazy(() => Task_labelsUpdateManyWithoutTasksNestedInputSchema).optional(),
   task_users: z.lazy(() => Task_usersUpdateManyWithoutTasksNestedInputSchema).optional()
 }).strict();
@@ -2497,6 +2529,7 @@ export const TasksUncheckedUpdateWithoutProjectsInputSchema: z.ZodType<Prisma.Ta
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   task_labels: z.lazy(() => Task_labelsUncheckedUpdateManyWithoutTasksNestedInputSchema).optional(),
   task_users: z.lazy(() => Task_usersUncheckedUpdateManyWithoutTasksNestedInputSchema).optional()
 }).strict();
@@ -2515,6 +2548,7 @@ export const TasksUncheckedUpdateManyWithoutTasksInputSchema: z.ZodType<Prisma.T
   assigned_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   modified_by: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  sort_order: z.union([ z.number().int().gte(-2147483648).lte(2147483647),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
 }).strict();
 
 export const Task_labelsCreateManyTasksInputSchema: z.ZodType<Prisma.Task_labelsCreateManyTasksInput> = z.object({
@@ -3117,10 +3151,8 @@ export const tableSchemas = {
       new Relation("projects", "project_id", "id", "projects", "LabelsToProjects", "one"),
       new Relation("task_labels", "", "", "task_labels", "LabelsToTask_labels", "many"),
     ],
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     modelSchema: (LabelsCreateInputSchema as any)
       .partial()
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       .or((LabelsUncheckedCreateInputSchema as any).partial()),
     createSchema: LabelsCreateArgsSchema,
     createManySchema: LabelsCreateManyArgsSchema,
@@ -3131,7 +3163,7 @@ export const tableSchemas = {
     upsertSchema: LabelsUpsertArgsSchema,
     deleteSchema: LabelsDeleteArgsSchema,
     deleteManySchema: LabelsDeleteManyArgsSchema
-  } as unknown as TableSchema<
+  } as TableSchema<
     z.infer<typeof LabelsUncheckedCreateInputSchema>,
     Prisma.LabelsCreateArgs['data'],
     Prisma.LabelsUpdateArgs['data'],
@@ -3186,10 +3218,8 @@ export const tableSchemas = {
       new Relation("labels", "", "", "labels", "LabelsToProjects", "many"),
       new Relation("tasks", "", "", "tasks", "ProjectsToTasks", "many"),
     ],
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     modelSchema: (ProjectsCreateInputSchema as any)
       .partial()
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       .or((ProjectsUncheckedCreateInputSchema as any).partial()),
     createSchema: ProjectsCreateArgsSchema,
     createManySchema: ProjectsCreateManyArgsSchema,
@@ -3200,7 +3230,7 @@ export const tableSchemas = {
     upsertSchema: ProjectsUpsertArgsSchema,
     deleteSchema: ProjectsDeleteArgsSchema,
     deleteManySchema: ProjectsDeleteManyArgsSchema
-  } as unknown as TableSchema<
+  } as TableSchema<
     z.infer<typeof ProjectsUncheckedCreateInputSchema>,
     Prisma.ProjectsCreateArgs['data'],
     Prisma.ProjectsUpdateArgs['data'],
@@ -3227,10 +3257,8 @@ export const tableSchemas = {
       new Relation("labels", "label_id", "id", "labels", "LabelsToTask_labels", "one"),
       new Relation("tasks", "task_id", "id", "tasks", "Task_labelsToTasks", "one"),
     ],
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     modelSchema: (Task_labelsCreateInputSchema as any)
       .partial()
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       .or((Task_labelsUncheckedCreateInputSchema as any).partial()),
     createSchema: Task_labelsCreateArgsSchema,
     createManySchema: Task_labelsCreateManyArgsSchema,
@@ -3241,7 +3269,7 @@ export const tableSchemas = {
     upsertSchema: Task_labelsUpsertArgsSchema,
     deleteSchema: Task_labelsDeleteArgsSchema,
     deleteManySchema: Task_labelsDeleteManyArgsSchema
-  } as unknown as TableSchema<
+  } as TableSchema<
     z.infer<typeof Task_labelsUncheckedCreateInputSchema>,
     Prisma.Task_labelsCreateArgs['data'],
     Prisma.Task_labelsUpdateArgs['data'],
@@ -3271,10 +3299,8 @@ export const tableSchemas = {
     relations: [
       new Relation("tasks", "task_id", "id", "tasks", "Task_usersToTasks", "one"),
     ],
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     modelSchema: (Task_usersCreateInputSchema as any)
       .partial()
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       .or((Task_usersUncheckedCreateInputSchema as any).partial()),
     createSchema: Task_usersCreateArgsSchema,
     createManySchema: Task_usersCreateManyArgsSchema,
@@ -3285,7 +3311,7 @@ export const tableSchemas = {
     upsertSchema: Task_usersUpsertArgsSchema,
     deleteSchema: Task_usersDeleteArgsSchema,
     deleteManySchema: Task_usersDeleteManyArgsSchema
-  } as unknown as TableSchema<
+  } as TableSchema<
     z.infer<typeof Task_usersUncheckedCreateInputSchema>,
     Prisma.Task_usersCreateArgs['data'],
     Prisma.Task_usersUpdateArgs['data'],
@@ -3354,6 +3380,10 @@ export const tableSchemas = {
       [
         "modified_by",
         "VARCHAR"
+      ],
+      [
+        "sort_order",
+        "INT4"
       ]
     ]),
     relations: [
@@ -3361,10 +3391,8 @@ export const tableSchemas = {
       new Relation("task_users", "", "", "task_users", "Task_usersToTasks", "many"),
       new Relation("projects", "project_id", "id", "projects", "ProjectsToTasks", "one"),
     ],
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     modelSchema: (TasksCreateInputSchema as any)
       .partial()
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       .or((TasksUncheckedCreateInputSchema as any).partial()),
     createSchema: TasksCreateArgsSchema,
     createManySchema: TasksCreateManyArgsSchema,
@@ -3375,7 +3403,7 @@ export const tableSchemas = {
     upsertSchema: TasksUpsertArgsSchema,
     deleteSchema: TasksDeleteArgsSchema,
     deleteManySchema: TasksDeleteManyArgsSchema
-  } as unknown as TableSchema<
+  } as TableSchema<
     z.infer<typeof TasksUncheckedCreateInputSchema>,
     Prisma.TasksCreateArgs['data'],
     Prisma.TasksUpdateArgs['data'],
