@@ -46,17 +46,47 @@ export function TaskCard({ task }: TaskCardProps) {
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof TaskWithLabels, value: any) => {
-    // TODO: Implement this
-    if (field === 'task_labels' && Array.isArray(value)) {
-      return;
-      // db.tasks.update({
-      //   where: { id: task.id },
-      //   data: {
-      //     task_labels: {
+    // TODO: Review this
+    if (field === 'labels' && Array.isArray(value)) {
+      const currentLabels = task.labels?.map((label) => label.id) || [];
+      const newLabels = value.map((label) => label.id);
 
-      //     },
-      //   },
-      // });
+      const labelsToRemove = currentLabels.filter((label) => !newLabels.includes(label));
+
+      const labelsToAdd = newLabels.filter((label) => !currentLabels.includes(label));
+
+      if (labelsToRemove.length > 0) {
+        db.task_labels.deleteMany({
+          where: {
+            task_id: task.id,
+            label_id: {
+              in: labelsToRemove,
+            },
+          },
+        });
+      }
+
+      for (const label of labelsToAdd) {
+        const labelData = value.find((l) => l.id === label);
+        db.labels
+          .upsert({
+            where: {
+              id: label,
+            },
+            create: labelData,
+            update: labelData,
+          })
+          .then((label) => {
+            db.task_labels.create({
+              data: {
+                task_id: task.id,
+                label_id: label.id,
+              },
+            });
+          });
+      }
+
+      return;
     }
 
     db.tasks.update({
@@ -232,8 +262,8 @@ export function TaskCard({ task }: TaskCardProps) {
 
             <SetLabels
               projectId={task.project_id}
-              changeLabels={(newLabels) => handleChange('task_labels', newLabels)}
-              viewValue={task.task_labels}
+              changeLabels={(newLabels) => handleChange('labels', newLabels)}
+              viewValue={task.labels}
               mode="edit"
             />
             <div className="grow h-0" />

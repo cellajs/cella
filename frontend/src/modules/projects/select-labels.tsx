@@ -100,7 +100,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
 
   // callback to change labels in task card
   useEffect(() => {
-    if (changeLabels && selectedLabels.length > 0) changeLabels(selectedLabels);
+    if (changeLabels && JSON.stringify(selectedLabels) !== JSON.stringify(viewValue)) changeLabels(selectedLabels);
   }, [selectedLabels]);
 
   // Whenever the form value changes (also on reset), update the internal state
@@ -189,7 +189,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
                       {t('common:no_labels')}
                     </CommandEmpty>
                   )}
-                  {mode === 'edit' ? renderLabels(selectedLabels) : renderLabels(project.labels || [])}
+                  {renderLabels(project.labels || [])}
                 </>
               )}
             </CommandGroup>
