@@ -13,7 +13,6 @@ import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
 import { TooltipButton } from '../tooltip-button';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
 interface MenuSectionProps {
   key: string;
@@ -100,11 +99,11 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     }
     if (list[0].archived) return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />);
     return (
-      <SortableContext items={list} strategy={verticalListSortingStrategy}>
+      <>
         {list.map((item: Page) => (
           <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />
         ))}
-      </SortableContext>
+      </>
     );
   };
 

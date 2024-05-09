@@ -81,12 +81,13 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
       });
   };
 
+  // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const element = dragRef.current;
     const data = getItemData(item, activeItemsOrder[sectionName]);
     if (!element) return;
 
-    combine(
+    return combine(
       draggable({
         element,
         getInitialData: () => data,
@@ -131,6 +132,10 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
         getAllowedAxis: () => 'vertical',
       }),
     );
+  }, [item, activeItemsOrder[sectionName]]);
+
+  // monitoring drop event
+  useEffect(() => {
     return monitorForElements({
       canMonitor({ source }) {
         return isItemData(source.data) && source.data.item.id === item.id;
@@ -144,7 +149,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
         const indexOfTarget = activeItemsOrder[sectionName].findIndex((item) => item === targetData.item.id);
         if (indexOfTarget < 0) return;
 
-        const newItemOrder = arrayMove(activeItemsOrder[sectionName], Number(sourceData.index), indexOfTarget);
+        const newItemOrder = arrayMove(activeItemsOrder[sectionName], sourceData.index, indexOfTarget);
         setActiveItemsOrder(sectionName, newItemOrder);
       },
     });
@@ -195,7 +200,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
             )}
           </Button>
         </div>
-      </div>{' '}
+      </div>
       {closestEdge && <DropIndicator edge={closestEdge} gap="2px" />}
       {!isItemArchived && (
         <div className="p-2 cursor-grab">

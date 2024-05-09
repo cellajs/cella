@@ -1,5 +1,3 @@
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
@@ -21,6 +19,11 @@ import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
 import SetLabels from './select-labels.tsx';
+import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 
 interface TaskCardProps {
   task: TaskWithLabels;
@@ -31,8 +34,35 @@ export interface TaskDragData {
   task: Task;
 }
 
+const itemKey = Symbol('item');
+
+type DraggableItemData = {
+  task: Task;
+  [itemKey]: true;
+  index: number;
+};
+
+// const arrayMove = (array: string[], startIndex: number, endIndex: number) => {
+//   const newArray = [...array];
+//   const [removedElement] = newArray.splice(startIndex, 1);
+//   newArray.splice(endIndex, 0, removedElement);
+//   return newArray;
+// };
+
+const getItemData = (task: Task, items: string[]): DraggableItemData => {
+  return { [itemKey]: true, task: task, index: items.findIndex((el) => el === task.id) };
+};
+
+const isItemData = (data: Record<string | symbol, unknown>): data is DraggableItemData => {
+  return data[itemKey] === true;
+};
+
 export function TaskCard({ task }: TaskCardProps) {
+  const dragRef = useRef(null);
   const { t } = useTranslation();
+  const [dragging, setDragging] = useState(false);
+  const [isDraggedOver, setIsDraggedOver] = useState(false);
+  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
 
@@ -69,21 +99,80 @@ export function TaskCard({ task }: TaskCardProps) {
     });
   };
 
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: task.id,
-    data: {
-      type: 'Task',
-      task,
-    } satisfies TaskDragData,
-    attributes: {
-      roleDescription: 'Task',
-    },
-  });
+  // create draggable & dropTarget elements and auto scroll
+  useEffect(() => {
+    const element = dragRef.current;
+    const data = getItemData(task, []);
+    if (!element) return;
 
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
-  };
+    return combine(
+      draggable({
+        element,
+        getInitialData: () => data,
+        onDragStart: () => setDragging(true),
+        onDrop: () => setDragging(false),
+      }),
+      dropTargetForElements({
+        element,
+        canDrop({ source }) {
+          return isItemData(source.data) && source.data.task.id !== task.id;
+        },
+        getData({ input }) {
+          return attachClosestEdge(data, {
+            element,
+            input,
+            allowedEdges: ['top', 'bottom'],
+          });
+        },
+        onDrag({ self, source }) {
+          setIsEditing(false);
+          setIsExpanded(false);
+          if (source.element === element) {
+            setClosestEdge(null);
+            return;
+          }
+          const closestEdge = extractClosestEdge(self.data);
+          setClosestEdge(closestEdge);
+        },
+        onDragLeave() {
+          setClosestEdge(null);
+          setIsDraggedOver(false);
+        },
+        onDrop() {
+          setClosestEdge(null);
+          setIsDraggedOver(false);
+        },
+        onDragEnter: () => setIsDraggedOver(true),
+      }),
+      autoScrollForElements({
+        element,
+        getConfiguration: () => ({
+          maxScrollSpeed: 'standard',
+        }),
+        getAllowedAxis: () => 'vertical',
+      }),
+    );
+  }, [task]);
+
+  // monitoring drop event
+  useEffect(() => {
+    return monitorForElements({
+      canMonitor({ source }) {
+        return isItemData(source.data) && source.data.task.id === task.id;
+      },
+      onDrop({ location, source }) {
+        const target = location.current.dropTargets[0];
+        const sourceData = source.data;
+        if (!target || !isItemData(sourceData) || !isItemData(target.data)) return;
+        // const targetData = target.data;
+        // const indexOfTarget = activeItemsOrder[sectionName].findIndex((item) => item === targetData.item.id);
+        // if (indexOfTarget < 0) return;
+
+        // const newItemOrder = arrayMove(activeItemsOrder[sectionName], sourceData.index, indexOfTarget);
+        // setActiveItemsOrder(sectionName, newItemOrder);
+      },
+    });
+  }, [task]);
 
   const variants = cva('task-card', {
     variants: {
@@ -122,18 +211,12 @@ export function TaskCard({ task }: TaskCardProps) {
 
   useHotkeys([['Escape', handleEscKeyPress]]);
 
-  useEffect(() => {
-    if (!isDragging) return;
-    setIsEditing(false);
-    setIsExpanded(false);
-  }, [isDragging]);
-
   return (
     <Card
-      ref={setNodeRef}
-      style={style}
+      ref={dragRef}
       className={cn(
-        'group/task rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
+        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent 
+        via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
         variants({
           status: task.status as TaskStatus,
         }),
@@ -218,8 +301,6 @@ export function TaskCard({ task }: TaskCardProps) {
           <div className="max-sm:-ml-1 flex items-center justify-between gap-1">
             <Button
               variant={'ghost'}
-              {...attributes}
-              {...listeners}
               className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35"
             >
               <span className="sr-only"> {t('common:move_task')}</span>
@@ -245,6 +326,7 @@ export function TaskCard({ task }: TaskCardProps) {
           </div>
         </div>
       </CardContent>
+      {closestEdge && <DropIndicator edge={closestEdge} gap="2px" />}
     </Card>
   );
 }
