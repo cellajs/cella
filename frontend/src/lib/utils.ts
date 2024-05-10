@@ -106,6 +106,6 @@ export const arrayMove = (array: string[], startIndex: number, endIndex: number)
   return newArray;
 };
 
-export const getDraggableItemData = <T>(item: T, itemIndex: number): DraggableItemData<T> => {
-  return { dragItem: true, item, index: itemIndex };
+export const getDraggableItemData = <T>(item: T, itemIndex: number, type: 'task' | 'column' | 'menuItem'): DraggableItemData<T> => {
+  return { dragItem: true, item, index: itemIndex, type };
 };

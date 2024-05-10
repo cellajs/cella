@@ -1,12 +1,11 @@
-import { cva } from 'class-variance-authority';
 import { ChevronDown, Palmtree, Search } from 'lucide-react';
-import { useContext, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task } from '../common/root/electric';
+import type { ProjectWithLabels, Task } from '../common/root/electric';
 import { sheet } from '../common/sheeter/state';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
@@ -15,6 +14,14 @@ import { ProjectSettings } from './project-settings';
 import { TaskCard } from './task-card';
 import { WorkspaceContext } from '../workspaces';
 import ContentPlaceholder from '../common/content-placeholder';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
+import type { DraggableItemData } from '~/types/index.ts';
+import { getDraggableItemData } from '~/lib/utils';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { token } from '@atlaskit/tokens';
 
 interface BoardColumnProps {
   tasks?: Task[];
@@ -23,21 +30,33 @@ interface BoardColumnProps {
 const sortTaskOrder = (task1: Task, task2: Task) => {
   if (task1.status !== task2.status) return task2.status - task1.status;
   // same status, sort by sort_order
-  if (task1.sort_order && task2.sort_order) return task2.sort_order - task1.sort_order;
+  if (task1.sort_order !== null && task2.sort_order !== null) return task2.sort_order - task1.sort_order;
   // sort_order is null
   return 0;
 };
 
+type ProjectDraggableItemData = DraggableItemData<ProjectWithLabels>;
+
+const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
+  return data.dragItem === true && typeof data.index === 'number';
+};
+
 export function BoardColumn({ tasks = [] }: BoardColumnProps) {
   const { t } = useTranslation();
-
+  const columnRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLButtonElement | null>(null);
+  const cardListRef = useRef<HTMLDivElement | null>(null);
+  const scrollableRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
 
+  const [dragging, setDragging] = useState(false);
+  const [isDraggedOver, setIsDraggedOver] = useState(false);
+  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+
   const { project } = useContext(ProjectContext);
-  const { searchQuery } = useContext(WorkspaceContext);
+  const { searchQuery, projects } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[project.workspace_id]?.columns.find((el) => el.columnId === project.id);
-
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
 
@@ -75,6 +94,16 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
     setCreateForm(!createForm);
   };
 
+  const dragIsOver = () => {
+    setClosestEdge(null);
+    setIsDraggedOver(false);
+  };
+
+  const dragStarted = (data: Record<string | symbol, unknown>) => {
+    setClosestEdge(extractClosestEdge(data));
+    setIsDraggedOver(true);
+  };
+
   // const createTask = () => {
   //   dialog(<CreateTaskForm project={project} dialog />, {
   //     className: 'md:max-w-xl',
@@ -82,19 +111,74 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
   //   });
   // };
 
-  const variants = cva('h-full rounded-b-none max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center', {
-    variants: {
-      dragging: {
-        default: 'border-2 border-transparent',
-        over: 'ring-2 opacity-30',
-        overlay: 'ring-2 ring-primary',
-      },
-    },
-  });
+  // create draggable & dropTarget elements and auto scroll
+  useEffect(() => {
+    const column = columnRef.current;
+    const headerDragButton = headerRef.current;
+    const cardList = cardListRef.current;
+    const scrollable = scrollableRef.current;
+
+    const data = getDraggableItemData<ProjectWithLabels>(
+      project,
+      projects.findIndex((el) => el.id === project.id),
+      'column',
+    );
+    if (!column || !headerDragButton || !cardList || !scrollable) return;
+
+    return combine(
+      draggable({
+        element: column,
+        dragHandle: headerDragButton,
+        getInitialData: () => data,
+        onDragStart: () => setDragging(true),
+        onDrop: () => setDragging(false),
+      }),
+      dropTargetForElements({
+        element: cardList,
+        getData: () => data,
+        canDrop({ source }) {
+          const data = source.data;
+          return isProjectData(data) && data.item.id !== project.id && data.type === 'column';
+        },
+        getIsSticky: () => true,
+        onDragEnter: ({ self }) => dragStarted(self.data),
+        onDragStart: ({ self }) => dragStarted(self.data),
+        onDragLeave: () => dragIsOver(),
+        onDrop: () => dragIsOver(),
+      }),
+      dropTargetForElements({
+        element: column,
+        canDrop: ({ source }) => {
+          const data = source.data;
+          return isProjectData(data) && source.data.type === 'column';
+        },
+        getIsSticky: () => true,
+        getData: ({ input }) => {
+          return attachClosestEdge(data, {
+            input,
+            element: column,
+            allowedEdges: ['right', 'left'],
+          });
+        },
+        onDragEnter: ({ self }) => dragStarted(self.data),
+        onDrag: ({ self }) => dragStarted(self.data),
+        onDragLeave: () => dragIsOver(),
+        onDrop: () => dragIsOver(),
+      }),
+      autoScrollForElements({
+        element: scrollable,
+        canScroll: ({ source }) => isProjectData(data) && source.data.type === 'column',
+      }),
+    );
+  }, [project, projects, tasks]);
 
   return (
-    <Card className={variants({ dragging: undefined })}>
-      <BoardColumnHeader createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
+    <Card
+      ref={columnRef}
+      className={` h-full rounded-b-none max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center
+      opacity-${dragging ? '30' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`}
+    >
+      <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
 
       {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
@@ -112,11 +196,12 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
           }
         />
       )}
+
       {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
       {!!tasks.length && (
-        <ScrollArea id={project.id} size="indicatorVertical" className="mx-[-1px]">
+        <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="mx-[-1px]">
           <ScrollBar size="indicatorVertical" />
-          <CardContent className="flex flex-grow flex-col p-0 group/column">
+          <CardContent ref={cardListRef} className="flex flex-grow flex-col p-0 group/column">
             <Button
               onClick={handleAcceptedClick}
               variant="ghost"
@@ -155,6 +240,7 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
           </CardContent>
         </ScrollArea>
       )}
+      {closestEdge && <DropIndicator edge={closestEdge} gap={token('space.200', '')} />}
     </Card>
   );
 }

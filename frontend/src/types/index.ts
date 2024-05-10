@@ -18,6 +18,7 @@ export enum UserRole {
 }
 
 export type DraggableItemData<T> = {
+  type: string;
   item: T;
   dragItem: true;
   index: number;

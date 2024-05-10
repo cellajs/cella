@@ -19,26 +19,23 @@ import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
 import SetLabels from './select-labels.tsx';
-import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
+import { draggable, dropTargetForElements, type ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import type { DraggableItemData } from '~/types/index.ts';
+import type { DropTargetRecord } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 
 interface TaskCardProps {
   task: TaskWithLabels;
 }
 
-export interface TaskDragData {
-  type: 'Task';
-  task: Task;
-}
-
-type TaskDraggableItemData = DraggableItemData<Task>;
+type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
 const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-  return data.dragItem === true && typeof data.index === 'number';
+  return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
 };
 
 export function TaskCard({ task }: TaskCardProps) {
@@ -51,6 +48,7 @@ export function TaskCard({ task }: TaskCardProps) {
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
 
+  const { tasks } = useContext(WorkspaceContext);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -84,13 +82,27 @@ export function TaskCard({ task }: TaskCardProps) {
     });
   };
 
+  const dragIsOn = () => {
+    setClosestEdge(null);
+    setIsDraggedOver(false);
+  };
+
+  const dragIsOver = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
+    setIsDraggedOver(true);
+    if (isTaskData(source.data) && source.data.item.id !== task.id) {
+      const closestEdge = extractClosestEdge(self.data);
+      setClosestEdge(closestEdge);
+    }
+  };
+
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const element = dragRef.current;
     const dragButton = dragButtonRef.current;
     const data = getDraggableItemData<Task>(
       task,
-      [].findIndex((el) => el === task.id),
+      tasks.findIndex((el) => el.id === task.id),
+      'task',
     );
     if (!element || !dragButton) return;
 
@@ -102,11 +114,14 @@ export function TaskCard({ task }: TaskCardProps) {
         onDragStart: () => setDragging(true),
         onDrop: () => setDragging(false),
       }),
+      dropTargetForExternal({
+        element: element,
+      }),
       dropTargetForElements({
         element,
         canDrop({ source }) {
           const data = source.data;
-          return isTaskData(data) && data.item.id !== task.id && data.item.status === task.status;
+          return isTaskData(data) && data.item.id !== task.id && data.item.status === task.status && data.type === 'task';
         },
         getData({ input }) {
           return attachClosestEdge(data, {
@@ -115,25 +130,14 @@ export function TaskCard({ task }: TaskCardProps) {
             allowedEdges: ['top', 'bottom'],
           });
         },
-        onDrag({ self, source }) {
+        onDragEnter: ({ self, source }) => dragIsOver({ self, source }),
+        onDragStart: () => {
           setIsEditing(false);
           setIsExpanded(false);
-          if (source.element === element) {
-            setClosestEdge(null);
-            return;
-          }
-          const closestEdge = extractClosestEdge(self.data);
-          setClosestEdge(closestEdge);
         },
-        onDragLeave() {
-          setClosestEdge(null);
-          setIsDraggedOver(false);
-        },
-        onDrop() {
-          setClosestEdge(null);
-          setIsDraggedOver(false);
-        },
-        onDragEnter: () => setIsDraggedOver(true),
+        onDrag: ({ self, source }) => dragIsOver({ self, source }),
+        onDragLeave: () => dragIsOn(),
+        onDrop: () => dragIsOn(),
       }),
       autoScrollForElements({
         element,
@@ -143,46 +147,6 @@ export function TaskCard({ task }: TaskCardProps) {
         getAllowedAxis: () => 'vertical',
       }),
     );
-  }, [task]);
-
-  // monitoring drop event
-  useEffect(() => {
-    return monitorForElements({
-      canMonitor({ source }) {
-        return isTaskData(source.data) && source.data.item.id === task.id;
-      },
-      onDrop({ location, source }) {
-        const target = location.current.dropTargets[0];
-        const sourceData = source.data;
-        if (!target || !isTaskData(sourceData) || !isTaskData(target.data)) return;
-
-        // const newSortOrder = target.data.item.sort_order;
-        // const movedTaskId = sourceData.item.id;
-
-        // // Update the sort order of all tasks with the same status
-        // db.tasks.updateMany({
-        //   where: {
-        //     status: sourceData.item.status,
-        //     sort_order: { gte: newSortOrder },
-        //   },
-        //   data: {
-        //     sort_order: {
-        //       increment: 1,
-        //     },
-        //   },
-        // });
-
-        // // Update the sort order of the moved task
-        // db.tasks.update({
-        //   where: {
-        //     id: movedTaskId,
-        //   },
-        //   data: {
-        //     sort_order: newSortOrder,
-        //   },
-        // });
-      },
-    });
   }, [task]);
 
   const variants = cva('task-card', {

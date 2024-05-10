@@ -10,9 +10,8 @@ import { useUserStore } from '~/store/user';
 import type { DraggableItemData, Page } from '~/types';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { attachClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
-import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { getDraggableItemData, arrayMove } from '~/lib/utils';
 
 interface SheetMenuItemProps {
@@ -66,6 +65,11 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
       });
   };
 
+  const onDragOver = () => {
+    setClosestEdge(null);
+    setIsDraggedOver(false);
+  };
+
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const element = dragRef.current;
@@ -73,6 +77,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
     const data = getDraggableItemData(
       item,
       activeItemsOrder[sectionName].findIndex((el) => el === item.id),
+      'menuItem',
     );
 
     if (!element || !dragButton) return;
@@ -88,7 +93,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
       dropTargetForElements({
         element,
         canDrop({ source }) {
-          return isPageData(source.data) && source.data.item.id !== item.id && source.data.item.type === item.type;
+          return isPageData(source.data) && source.data.item.id !== item.id && source.data.item.type === item.type && source.data.type === 'menuItem';
         },
         getData({ input }) {
           return attachClosestEdge(data, {
@@ -97,30 +102,10 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
             allowedEdges: ['top', 'bottom'],
           });
         },
-        onDrag({ self, source }) {
-          if (source.element === element) {
-            setClosestEdge(null);
-            return;
-          }
-          const closestEdge = extractClosestEdge(self.data);
-          setClosestEdge(closestEdge);
-        },
-        onDragLeave() {
-          setClosestEdge(null);
-          setIsDraggedOver(false);
-        },
-        onDrop() {
-          setClosestEdge(null);
-          setIsDraggedOver(false);
-        },
+        onDrag: () => setClosestEdge('bottom'),
         onDragEnter: () => setIsDraggedOver(true),
-      }),
-      autoScrollForElements({
-        element,
-        getConfiguration: () => ({
-          maxScrollSpeed: 'standard',
-        }),
-        getAllowedAxis: () => 'vertical',
+        onDrop: () => onDragOver(),
+        onDragLeave: () => onDragOver(),
       }),
     );
   }, [item, activeItemsOrder[sectionName]]);
