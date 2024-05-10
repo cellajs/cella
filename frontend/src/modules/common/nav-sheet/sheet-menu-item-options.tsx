@@ -7,43 +7,28 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { Page } from '~/types';
+import type { DraggableItemData, Page } from '~/types';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { getDraggableItemData, arrayMove } from '~/lib/utils';
 
 interface SheetMenuItemProps {
   item: Page;
   sectionName: 'organizations' | 'projects' | 'workspaces';
 }
 
-const itemKey = Symbol('item');
+type PageDraggableItemData = DraggableItemData<Page>;
 
-type ItemData = {
-  [itemKey]: true;
-  item: Page;
-  index: number;
+const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
+  return data.dragItem === true && typeof data.index === 'number';
 };
-
-const arrayMove = (array: string[], startIndex: number, endIndex: number) => {
-  const newArray = [...array];
-  const [removedElement] = newArray.splice(startIndex, 1);
-  newArray.splice(endIndex, 0, removedElement);
-  return newArray;
-};
-
-const getItemData = (item: Page, items: string[]): ItemData => {
-  return { [itemKey]: true, item: item, index: items.findIndex((el) => el === item.id) };
-};
-
-function isItemData(data: Record<string | symbol, unknown>): data is ItemData {
-  return data[itemKey] === true;
-}
 
 export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) => {
   const dragRef = useRef(null);
+  const dragButtonRef = useRef<HTMLButtonElement>(null);
   const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
@@ -84,12 +69,18 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const element = dragRef.current;
-    const data = getItemData(item, activeItemsOrder[sectionName]);
-    if (!element) return;
+    const dragButton = dragButtonRef.current;
+    const data = getDraggableItemData(
+      item,
+      activeItemsOrder[sectionName].findIndex((el) => el === item.id),
+    );
+
+    if (!element || !dragButton) return;
 
     return combine(
       draggable({
         element,
+        dragHandle: dragButton,
         getInitialData: () => data,
         onDragStart: () => setDragging(true),
         onDrop: () => setDragging(false),
@@ -97,7 +88,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
       dropTargetForElements({
         element,
         canDrop({ source }) {
-          return isItemData(source.data) && source.data.item.id !== item.id && source.data.item.type === item.type;
+          return isPageData(source.data) && source.data.item.id !== item.id && source.data.item.type === item.type;
         },
         getData({ input }) {
           return attachClosestEdge(data, {
@@ -138,12 +129,12 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
   useEffect(() => {
     return monitorForElements({
       canMonitor({ source }) {
-        return isItemData(source.data) && source.data.item.id === item.id;
+        return isPageData(source.data) && source.data.item.id === item.id;
       },
       onDrop({ location, source }) {
         const target = location.current.dropTargets[0];
         const sourceData = source.data;
-        if (!target || !isItemData(sourceData) || !isItemData(target.data)) return;
+        if (!target || !isPageData(sourceData) || !isPageData(target.data)) return;
 
         const targetData = target.data;
         const indexOfTarget = activeItemsOrder[sectionName].findIndex((item) => item === targetData.item.id);
@@ -159,7 +150,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
     <div
       ref={dragRef}
       style={{ opacity: `${dragging ? 0.3 : 1}` }}
-      className={`group mb-0.5 flex relative sm:max-w-[18rem] h-14 w-full cursor-pointer items-start justify-start rounded p-0 focus:outline-none
+      className={`group mb-0.5 flex relative items-center sm:max-w-[18rem] h-14 w-full cursor-pointer items-start justify-start rounded p-0 focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground 
       ${!isItemArchived ? 'ring-1' : ''} ${isDraggedOver ? 'bg-accent/80' : ''} `}
     >
@@ -203,9 +194,9 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
       </div>
       {closestEdge && <DropIndicator edge={closestEdge} gap="2px" />}
       {!isItemArchived && (
-        <div className="p-2 cursor-grab">
-          <GripVertical size={16} className="mt-3 mr-1 opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
-        </div>
+        <Button size="xs" variant="none" ref={dragButtonRef} className="p-2 cursor-grab">
+          <GripVertical size={16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
+        </Button>
       )}
     </div>
   );

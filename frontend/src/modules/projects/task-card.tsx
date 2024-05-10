@@ -5,7 +5,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { cn } from '~/lib/utils.ts';
+import { cn, getDraggableItemData } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
@@ -24,6 +24,7 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import type { DraggableItemData } from '~/types/index.ts';
 
 interface TaskCardProps {
   task: TaskWithLabels;
@@ -34,31 +35,15 @@ export interface TaskDragData {
   task: Task;
 }
 
-const itemKey = Symbol('item');
+type TaskDraggableItemData = DraggableItemData<Task>;
 
-type DraggableItemData = {
-  task: Task;
-  [itemKey]: true;
-  index: number;
-};
-
-// const arrayMove = (array: string[], startIndex: number, endIndex: number) => {
-//   const newArray = [...array];
-//   const [removedElement] = newArray.splice(startIndex, 1);
-//   newArray.splice(endIndex, 0, removedElement);
-//   return newArray;
-// };
-
-const getItemData = (task: Task, items: string[]): DraggableItemData => {
-  return { [itemKey]: true, task: task, index: items.findIndex((el) => el === task.id) };
-};
-
-const isItemData = (data: Record<string | symbol, unknown>): data is DraggableItemData => {
-  return data[itemKey] === true;
+const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
+  return data.dragItem === true && typeof data.index === 'number';
 };
 
 export function TaskCard({ task }: TaskCardProps) {
   const dragRef = useRef(null);
+  const dragButtonRef = useRef<HTMLButtonElement>(null);
   const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
@@ -102,12 +87,17 @@ export function TaskCard({ task }: TaskCardProps) {
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const element = dragRef.current;
-    const data = getItemData(task, []);
-    if (!element) return;
+    const dragButton = dragButtonRef.current;
+    const data = getDraggableItemData<Task>(
+      task,
+      [].findIndex((el) => el === task.id),
+    );
+    if (!element || !dragButton) return;
 
     return combine(
       draggable({
         element,
+        dragHandle: dragButton,
         getInitialData: () => data,
         onDragStart: () => setDragging(true),
         onDrop: () => setDragging(false),
@@ -115,7 +105,8 @@ export function TaskCard({ task }: TaskCardProps) {
       dropTargetForElements({
         element,
         canDrop({ source }) {
-          return isItemData(source.data) && source.data.task.id !== task.id;
+          const data = source.data;
+          return isTaskData(data) && data.item.id !== task.id && data.item.status === task.status;
         },
         getData({ input }) {
           return attachClosestEdge(data, {
@@ -158,18 +149,38 @@ export function TaskCard({ task }: TaskCardProps) {
   useEffect(() => {
     return monitorForElements({
       canMonitor({ source }) {
-        return isItemData(source.data) && source.data.task.id === task.id;
+        return isTaskData(source.data) && source.data.item.id === task.id;
       },
       onDrop({ location, source }) {
         const target = location.current.dropTargets[0];
         const sourceData = source.data;
-        if (!target || !isItemData(sourceData) || !isItemData(target.data)) return;
-        // const targetData = target.data;
-        // const indexOfTarget = activeItemsOrder[sectionName].findIndex((item) => item === targetData.item.id);
-        // if (indexOfTarget < 0) return;
+        if (!target || !isTaskData(sourceData) || !isTaskData(target.data)) return;
 
-        // const newItemOrder = arrayMove(activeItemsOrder[sectionName], sourceData.index, indexOfTarget);
-        // setActiveItemsOrder(sectionName, newItemOrder);
+        // const newSortOrder = target.data.item.sort_order;
+        // const movedTaskId = sourceData.item.id;
+
+        // // Update the sort order of all tasks with the same status
+        // db.tasks.updateMany({
+        //   where: {
+        //     status: sourceData.item.status,
+        //     sort_order: { gte: newSortOrder },
+        //   },
+        //   data: {
+        //     sort_order: {
+        //       increment: 1,
+        //     },
+        //   },
+        // });
+
+        // // Update the sort order of the moved task
+        // db.tasks.update({
+        //   where: {
+        //     id: movedTaskId,
+        //   },
+        //   data: {
+        //     sort_order: newSortOrder,
+        //   },
+        // });
       },
     });
   }, [task]);
@@ -300,6 +311,7 @@ export function TaskCard({ task }: TaskCardProps) {
 
           <div className="max-sm:-ml-1 flex items-center justify-between gap-1">
             <Button
+              ref={dragButtonRef}
               variant={'ghost'}
               className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35"
             >

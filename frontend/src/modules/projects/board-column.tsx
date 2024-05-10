@@ -20,6 +20,14 @@ interface BoardColumnProps {
   tasks?: Task[];
 }
 
+const sortTaskOrder = (task1: Task, task2: Task) => {
+  if (task1.status !== task2.status) return task2.status - task1.status;
+  // same status, sort by sort_order
+  if (task1.sort_order && task2.sort_order) return task2.sort_order - task1.sort_order;
+  // sort_order is null
+  return 0;
+};
+
 export function BoardColumn({ tasks = [] }: BoardColumnProps) {
   const { t } = useTranslation();
 
@@ -128,6 +136,7 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
                 if (showIced && t.status === 0) return true;
                 return t.status !== 0 && t.status !== 6;
               })
+              .sort((a, b) => sortTaskOrder(a, b))
               .map((task) => (
                 <TaskCard task={task} key={task.id} />
               ))}
