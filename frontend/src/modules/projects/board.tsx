@@ -39,7 +39,6 @@ export default function Board() {
           if (!location.current.dropTargets.length) return;
 
           if (source.data.type === 'column') {
-            console.log(22);
             //TODO Dragging a column
           }
 

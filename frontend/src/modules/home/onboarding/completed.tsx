@@ -18,13 +18,13 @@ export const OnboardingCompleted = () => {
   const { db } = useElectric()!;
 
   useEffect(() => {
-    const organizations = menu.organizations.items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    const organization = organizations[0];
+    const sortedOrganizations = [...menu.organizations.items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const lastCreatedOrganization = sortedOrganizations[0];
     if (!state.finishOnboarding) {
       createWorkspace({
-        name: `${organization.name}-DEMOworkspace`,
-        slug: `${organization.slug}-workspace`,
-        organization: organization.id,
+        name: `${lastCreatedOrganization.name}-DEMOworkspace`,
+        slug: `${lastCreatedOrganization.slug}-workspace`,
+        organization: lastCreatedOrganization.id,
       }).then((workspace) => {
         for (let i = 3; i !== 0; i--) {
           db.projects.create({

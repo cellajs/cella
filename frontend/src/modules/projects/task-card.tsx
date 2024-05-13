@@ -19,8 +19,6 @@ import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
 import SetLabels from './select-labels.tsx';
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 
 interface TaskCardProps {
   task: TaskWithLabels;
@@ -28,10 +26,9 @@ interface TaskCardProps {
   taskDragButtonRef: React.RefObject<HTMLButtonElement>;
   dragging?: boolean;
   dragOver?: boolean;
-  closestEdge: Edge | null;
 }
 
-export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver, closestEdge }: TaskCardProps) {
+export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
@@ -258,7 +255,6 @@ export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver,
           </div>
         </div>
       </CardContent>
-      {closestEdge && <DropIndicator edge={closestEdge} gap="2px" />}
     </Card>
   );
 }

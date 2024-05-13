@@ -19,8 +19,9 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { attachClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DraggableTaskCard } from './draggable-task-card';
+import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 
 interface BoardColumnProps {
   tasks: Task[];
@@ -100,9 +101,12 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
     setIsDraggedOver(false);
   };
 
-  const dragStarted = (data: Record<string | symbol, unknown>) => {
-    setClosestEdge(extractClosestEdge(data));
+  const dragStarted = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
     setIsDraggedOver(true);
+    if (!isProjectData(source.data) || !isProjectData(self.data) || source.data.item.id === project.id) return;
+    const srcIndx = source.data.index;
+    const slfIndx = self.data.index;
+    setClosestEdge(srcIndx > slfIndx ? 'left' : 'right');
   };
 
   // const createTask = () => {
@@ -143,8 +147,8 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
           return isProjectData(data) && data.item.id !== project.id && data.type === 'column';
         },
         getIsSticky: () => true,
-        onDragEnter: ({ self }) => dragStarted(self.data),
-        onDragStart: ({ self }) => dragStarted(self.data),
+        onDragEnter: ({ self, source }) => dragStarted({ self, source }),
+        onDragStart: ({ self, source }) => dragStarted({ self, source }),
         onDragLeave: () => dragIsOver(),
         onDrop: () => dragIsOver(),
       }),
@@ -162,8 +166,8 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
             allowedEdges: ['right', 'left'],
           });
         },
-        onDragEnter: ({ self }) => dragStarted(self.data),
-        onDrag: ({ self }) => dragStarted(self.data),
+        onDragEnter: ({ self, source }) => dragStarted({ self, source }),
+        onDrag: ({ self, source }) => dragStarted({ self, source }),
         onDragLeave: () => dragIsOver(),
         onDrop: () => dragIsOver(),
       }),
@@ -247,7 +251,11 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
         )}
         {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
       </div>
-      {closestEdge && <DropIndicator edge={closestEdge} />}
+      {closestEdge && (
+        <div className="bg-primary border-[red]">
+          <DropIndicator edge={closestEdge} />
+        </div>
+      )}
     </Card>
   );
 }
