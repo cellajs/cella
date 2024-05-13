@@ -1,5 +1,3 @@
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
@@ -11,7 +9,7 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { type TaskWithLabels, useElectric, type Task } from '../common/root/electric.ts';
+import { type TaskWithLabels, useElectric } from '../common/root/electric.ts';
 import { Checkbox } from '../ui/checkbox';
 import { WorkspaceContext } from '../workspaces';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
@@ -21,18 +19,29 @@ import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
 import SetLabels from './select-labels.tsx';
+// import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
+// import { draggable, dropTargetForElements, type ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+// import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
+// import type { DropTargetRecord } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
+// import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+// import type { DraggableItemData } from '~/types/index.ts';
 
 interface TaskCardProps {
   task: TaskWithLabels;
+  taskRef: React.RefObject<HTMLDivElement>;
+  taskDragButtonRef: React.RefObject<HTMLButtonElement>;
+  dragging?: boolean;
+  dragOver?: boolean;
+  closestEdge: Edge | null;
 }
 
-export interface TaskDragData {
-  type: 'Task';
-  task: Task;
-}
-
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver, closestEdge }: TaskCardProps) {
   const { t } = useTranslation();
+  // const [dragging, setDragging] = useState(false);
+  // const [isDraggedOver, setIsDraggedOver] = useState(false);
+  // const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
 
@@ -99,22 +108,6 @@ export function TaskCard({ task }: TaskCardProps) {
     });
   };
 
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: task.id,
-    data: {
-      type: 'Task',
-      task,
-    } satisfies TaskDragData,
-    attributes: {
-      roleDescription: 'Task',
-    },
-  });
-
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
-  };
-
   const variants = cva('task-card', {
     variants: {
       dragging: {
@@ -153,17 +146,17 @@ export function TaskCard({ task }: TaskCardProps) {
   useHotkeys([['Escape', handleEscKeyPress]]);
 
   useEffect(() => {
-    if (!isDragging) return;
+    if (!dragging) return;
     setIsEditing(false);
     setIsExpanded(false);
-  }, [isDragging]);
+  }, [dragging]);
 
   return (
     <Card
-      ref={setNodeRef}
-      style={style}
+      ref={taskRef}
       className={cn(
-        'group/task rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
+        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent 
+        via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''}`,
         variants({
           status: task.status as TaskStatus,
         }),
@@ -247,9 +240,8 @@ export function TaskCard({ task }: TaskCardProps) {
 
           <div className="max-sm:-ml-1 flex items-center justify-between gap-1">
             <Button
+              ref={taskDragButtonRef}
               variant={'ghost'}
-              {...attributes}
-              {...listeners}
               className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35"
             >
               <span className="sr-only"> {t('common:move_task')}</span>
@@ -275,6 +267,7 @@ export function TaskCard({ task }: TaskCardProps) {
           </div>
         </div>
       </CardContent>
+      {closestEdge && <DropIndicator edge={closestEdge} gap="2px" />}
     </Card>
   );
 }

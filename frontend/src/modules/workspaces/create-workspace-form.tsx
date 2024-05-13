@@ -133,7 +133,14 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
           nameValue={name}
         />
 
-        <SelectParentFormField collection="organizations" type="ORGANIZATION" control={form.control} label={t('common:organization')} name="organization" required />
+        <SelectParentFormField
+          collection="organizations"
+          type="ORGANIZATION"
+          control={form.control}
+          label={t('common:organization')}
+          name="organization"
+          required
+        />
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
