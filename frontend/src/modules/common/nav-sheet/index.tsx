@@ -14,7 +14,6 @@ const NavSheet = () => {
   const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [sheetSide, setSheetSide] = useState<SheetSideType>('left');
-
   const onKeyPress = () => {
     const isFocusedWithin = containerRef?.current?.contains(document.activeElement as Node);
     if (isFocusedWithin && activeSheet) setSheet(null);

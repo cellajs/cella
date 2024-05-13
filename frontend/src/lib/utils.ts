@@ -7,6 +7,7 @@ import i18next from 'i18next';
 import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { twMerge } from 'tailwind-merge';
+import type { DraggableItemData } from '~/types';
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
@@ -98,3 +99,13 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
   throw redirect({ to: pathname + redirectLocation, replace: true });
 };
 
+export const arrayMove = (array: string[], startIndex: number, endIndex: number) => {
+  const newArray = [...array];
+  const [removedElement] = newArray.splice(startIndex, 1);
+  newArray.splice(endIndex, 0, removedElement);
+  return newArray;
+};
+
+export const getDraggableItemData = <T>(item: T, itemIndex: number, type: 'task' | 'column' | 'menuItem'): DraggableItemData<T> => {
+  return { dragItem: true, item, index: itemIndex, type };
+};

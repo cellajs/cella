@@ -17,6 +17,7 @@ import { type Label, useElectric } from '../common/root/electric';
 import { AvatarWrap } from '../common/avatar-wrap';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
 import { TooltipButton } from '../common/tooltip-button';
+import { toast } from 'sonner';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;
@@ -61,6 +62,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
         },
       })
       .then(() => {
+        toast.success(t(`common:success.delete_${selectedTasks.length > 1 ? 'tasks' : 'task'}`));
         setSelectedTasks([]);
       });
   };
@@ -161,9 +163,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
           <BoardSearch />
         </FilterBarContent>
       </TableFilterBar>
-      <TooltipButton toolTipContent={t('common:view_options')}>
-        <WorkspaceView className="max-sm:hidden" />
-      </TooltipButton>
+      <WorkspaceView className="max-sm:hidden" />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />
     </div>

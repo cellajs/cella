@@ -11,6 +11,7 @@ import { taskTypes } from './create-task-form.tsx';
 import { cva } from 'class-variance-authority';
 import ThreeStateSwitch from '../ui/three-state-switch.tsx';
 import { Badge } from '../ui/badge.tsx';
+import { TooltipButton } from '../common/tooltip-button.tsx';
 
 interface Props {
   className?: string;
@@ -89,13 +90,17 @@ const WorkspaceView = ({ className = '' }: Props) => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className={cn('relative flex', className)}>
-          {switchState !== 'all' && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0" />}
-          <SlidersHorizontal className="h-4 w-4" />
-          <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <TooltipButton toolTipContent={t('common:view_options')}>
+        <DropdownMenuTrigger asChild>
+          <div>
+            <Button variant="outline" className={cn('relative flex', className)}>
+              {switchState !== 'all' && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0" />}
+              <SlidersHorizontal className="h-4 w-4" />
+              <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
+            </Button>
+          </div>
+        </DropdownMenuTrigger>
+      </TooltipButton>
 
       <DropdownMenuContent align="end" className="min-w-[320px] p-2 gap-2 flex flex-col">
         {Object.entries(viewOptions).map(([key, options]) => (

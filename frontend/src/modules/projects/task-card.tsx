@@ -1,5 +1,3 @@
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
@@ -11,7 +9,7 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { type TaskWithLabels, useElectric, type Task } from '../common/root/electric.ts';
+import { type TaskWithLabels, useElectric } from '../common/root/electric.ts';
 import { Checkbox } from '../ui/checkbox';
 import { WorkspaceContext } from '../workspaces';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
@@ -24,14 +22,13 @@ import SetLabels from './select-labels.tsx';
 
 interface TaskCardProps {
   task: TaskWithLabels;
+  taskRef: React.RefObject<HTMLDivElement>;
+  taskDragButtonRef: React.RefObject<HTMLButtonElement>;
+  dragging?: boolean;
+  dragOver?: boolean;
 }
 
-export interface TaskDragData {
-  type: 'Task';
-  task: Task;
-}
-
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
@@ -46,17 +43,47 @@ export function TaskCard({ task }: TaskCardProps) {
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof TaskWithLabels, value: any) => {
-    // TODO: Implement this
-    if (field === 'task_labels' && Array.isArray(value)) {
-      return;
-      // db.tasks.update({
-      //   where: { id: task.id },
-      //   data: {
-      //     task_labels: {
+    // TODO: Review this
+    if (field === 'labels' && Array.isArray(value)) {
+      const currentLabels = task.labels?.map((label) => label.id) || [];
+      const newLabels = value.map((label) => label.id);
 
-      //     },
-      //   },
-      // });
+      const labelsToRemove = currentLabels.filter((label) => !newLabels.includes(label));
+
+      const labelsToAdd = newLabels.filter((label) => !currentLabels.includes(label));
+
+      if (labelsToRemove.length > 0) {
+        db.task_labels.deleteMany({
+          where: {
+            task_id: task.id,
+            label_id: {
+              in: labelsToRemove,
+            },
+          },
+        });
+      }
+
+      for (const label of labelsToAdd) {
+        const labelData = value.find((l) => l.id === label);
+        db.labels
+          .upsert({
+            where: {
+              id: label,
+            },
+            create: labelData,
+            update: labelData,
+          })
+          .then((label) => {
+            db.task_labels.create({
+              data: {
+                task_id: task.id,
+                label_id: label.id,
+              },
+            });
+          });
+      }
+
+      return;
     }
 
     db.tasks.update({
@@ -67,22 +94,6 @@ export function TaskCard({ task }: TaskCardProps) {
         id: task.id,
       },
     });
-  };
-
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: task.id,
-    data: {
-      type: 'Task',
-      task,
-    } satisfies TaskDragData,
-    attributes: {
-      roleDescription: 'Task',
-    },
-  });
-
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
   };
 
   const variants = cva('task-card', {
@@ -123,17 +134,17 @@ export function TaskCard({ task }: TaskCardProps) {
   useHotkeys([['Escape', handleEscKeyPress]]);
 
   useEffect(() => {
-    if (!isDragging) return;
+    if (!dragging) return;
     setIsEditing(false);
     setIsExpanded(false);
-  }, [isDragging]);
+  }, [dragging]);
 
   return (
     <Card
-      ref={setNodeRef}
-      style={style}
+      ref={taskRef}
       className={cn(
-        'group/task rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
+        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent 
+        via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''}`,
         variants({
           status: task.status as TaskStatus,
         }),
@@ -217,9 +228,8 @@ export function TaskCard({ task }: TaskCardProps) {
 
           <div className="max-sm:-ml-1 flex items-center justify-between gap-1">
             <Button
+              ref={taskDragButtonRef}
               variant={'ghost'}
-              {...attributes}
-              {...listeners}
               className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35"
             >
               <span className="sr-only"> {t('common:move_task')}</span>
@@ -232,8 +242,8 @@ export function TaskCard({ task }: TaskCardProps) {
 
             <SetLabels
               projectId={task.project_id}
-              changeLabels={(newLabels) => handleChange('task_labels', newLabels)}
-              viewValue={task.task_labels}
+              changeLabels={(newLabels) => handleChange('labels', newLabels)}
+              viewValue={task.labels}
               mode="edit"
             />
             <div className="grow h-0" />
