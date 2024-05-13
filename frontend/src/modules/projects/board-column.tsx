@@ -14,13 +14,15 @@ import { ProjectSettings } from './project-settings';
 import { TaskCard } from './task-card';
 import { WorkspaceContext } from '../workspaces';
 import ContentPlaceholder from '../common/content-placeholder';
-import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import type { DraggableItemData } from '~/types/index.ts';
 import { getDraggableItemData } from '~/lib/utils';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
+import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
+import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 
 interface BoardColumnProps {
   tasks: Task[];
@@ -34,7 +36,7 @@ const sortTaskOrder = (task1: Task, task2: Task) => {
   return 0;
 };
 
-type ProjectDraggableItemData = DraggableItemData<ProjectWithLabels>;
+type ProjectDraggableItemData = DraggableItemData<ProjectWithLabels> & { type: 'column' };
 
 const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
   return data.dragItem === true && typeof data.index === 'number';
@@ -46,6 +48,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
   const headerRef = useRef<HTMLButtonElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
   const scrollableRef = useRef<HTMLDivElement | null>(null);
+
   const containerRef = useRef(null);
 
   const [dragging, setDragging] = useState(false);
@@ -191,7 +194,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
         {!!tasks.length && (
           <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-1px]">
             <ScrollBar size="indicatorVertical" />
-            <CardContent className="flex flex-grow flex-col p-0 group/column">
+            <CardContent className="flex flex-col px-0 pb-14 ">
               <Button
                 onClick={handleAcceptedClick}
                 variant="ghost"
@@ -214,7 +217,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
                 })
                 .sort((a, b) => sortTaskOrder(a, b))
                 .map((task) => (
-                  <TaskCard task={task} key={task.id} />
+                  <DraggableTaskCard key={task.id} task={task} taskIndex={tasks.findIndex((t) => t.id === task.id)} />
                 ))}
               <Button
                 onClick={handleIcedClick}
@@ -250,3 +253,77 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
     </Card>
   );
 }
+
+const DraggableTaskCard = ({ task, taskIndex }: { task: Task; taskIndex: number }) => {
+  const taskDragRef = useRef(null);
+  const taskDragButtonRef = useRef<HTMLButtonElement>(null);
+
+  const [dragging, setDragging] = useState(false);
+  const [isDraggedOver, setIsDraggedOver] = useState(false);
+  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+
+  type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
+
+  const dragIsOn = () => {
+    setClosestEdge(null);
+    setIsDraggedOver(false);
+  };
+
+  const dragIsOver = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
+    setIsDraggedOver(true);
+    if (isTaskData(source.data) && source.data.item.id !== task.id) setClosestEdge(extractClosestEdge(self.data));
+  };
+
+  const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
+    return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
+  };
+
+  // create draggable & dropTarget elements and auto scroll
+  useEffect(() => {
+    const element = taskDragRef.current;
+    const dragButton = taskDragButtonRef.current;
+    const data = getDraggableItemData<Task>(task, taskIndex, 'task');
+    if (!element || !dragButton) return;
+
+    return combine(
+      draggable({
+        element,
+        dragHandle: dragButton,
+        getInitialData: () => data,
+        onDragStart: () => setDragging(true),
+        onDrop: () => setDragging(false),
+      }),
+      dropTargetForExternal({
+        element: element,
+      }),
+      dropTargetForElements({
+        element,
+        canDrop({ source }) {
+          const data = source.data;
+          return isTaskData(data) && data.item.id !== task.id && data.item.status === task.status && data.type === 'task';
+        },
+        getData({ input }) {
+          return attachClosestEdge(data, {
+            element,
+            input,
+            allowedEdges: ['top', 'bottom'],
+          });
+        },
+        onDragEnter: ({ self, source }) => dragIsOver({ self, source }),
+        onDrag: ({ self, source }) => dragIsOver({ self, source }),
+        onDragLeave: () => dragIsOn(),
+        onDrop: () => dragIsOn(),
+      }),
+    );
+  }, [task]);
+  return (
+    <TaskCard
+      task={task}
+      taskRef={taskDragRef}
+      taskDragButtonRef={taskDragButtonRef}
+      dragging={dragging}
+      dragOver={isDraggedOver}
+      closestEdge={closestEdge}
+    />
+  );
+};

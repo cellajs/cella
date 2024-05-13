@@ -5,11 +5,11 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { cn, getDraggableItemData } from '~/lib/utils.ts';
+import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { type TaskWithLabels, useElectric, type Task } from '../common/root/electric.ts';
+import { type TaskWithLabels, useElectric } from '../common/root/electric.ts';
 import { Checkbox } from '../ui/checkbox';
 import { WorkspaceContext } from '../workspaces';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
@@ -19,36 +19,32 @@ import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
 import SetLabels from './select-labels.tsx';
-import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
-import { draggable, dropTargetForElements, type ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+// import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
+// import { draggable, dropTargetForElements, type ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+// import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
-import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
-import type { DraggableItemData } from '~/types/index.ts';
-import type { DropTargetRecord } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
+// import type { DropTargetRecord } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
+// import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+// import type { DraggableItemData } from '~/types/index.ts';
 
 interface TaskCardProps {
   task: TaskWithLabels;
+  taskRef: React.RefObject<HTMLDivElement>;
+  taskDragButtonRef: React.RefObject<HTMLButtonElement>;
+  dragging?: boolean;
+  dragOver?: boolean;
+  closestEdge: Edge | null;
 }
 
-type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
-
-const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-  return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
-};
-
-export function TaskCard({ task }: TaskCardProps) {
-  const dragRef = useRef(null);
-  const dragButtonRef = useRef<HTMLButtonElement>(null);
+export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver, closestEdge }: TaskCardProps) {
   const { t } = useTranslation();
-  const [dragging, setDragging] = useState(false);
-  const [isDraggedOver, setIsDraggedOver] = useState(false);
-  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+  // const [dragging, setDragging] = useState(false);
+  // const [isDraggedOver, setIsDraggedOver] = useState(false);
+  // const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
 
-  const { tasks } = useContext(WorkspaceContext);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -81,73 +77,6 @@ export function TaskCard({ task }: TaskCardProps) {
       },
     });
   };
-
-  const dragIsOn = () => {
-    setClosestEdge(null);
-    setIsDraggedOver(false);
-  };
-
-  const dragIsOver = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
-    setIsDraggedOver(true);
-    if (isTaskData(source.data) && source.data.item.id !== task.id) {
-      const closestEdge = extractClosestEdge(self.data);
-      setClosestEdge(closestEdge);
-    }
-  };
-
-  // create draggable & dropTarget elements and auto scroll
-  useEffect(() => {
-    const element = dragRef.current;
-    const dragButton = dragButtonRef.current;
-    const data = getDraggableItemData<Task>(
-      task,
-      tasks.findIndex((el) => el.id === task.id),
-      'task',
-    );
-    if (!element || !dragButton) return;
-
-    return combine(
-      draggable({
-        element,
-        dragHandle: dragButton,
-        getInitialData: () => data,
-        onDragStart: () => setDragging(true),
-        onDrop: () => setDragging(false),
-      }),
-      dropTargetForExternal({
-        element: element,
-      }),
-      dropTargetForElements({
-        element,
-        canDrop({ source }) {
-          const data = source.data;
-          return isTaskData(data) && data.item.id !== task.id && data.item.status === task.status && data.type === 'task';
-        },
-        getData({ input }) {
-          return attachClosestEdge(data, {
-            element,
-            input,
-            allowedEdges: ['top', 'bottom'],
-          });
-        },
-        onDragEnter: ({ self, source }) => dragIsOver({ self, source }),
-        onDragStart: () => {
-          setIsEditing(false);
-          setIsExpanded(false);
-        },
-        onDrag: ({ self, source }) => dragIsOver({ self, source }),
-        onDragLeave: () => dragIsOn(),
-        onDrop: () => dragIsOn(),
-      }),
-      autoScrollForElements({
-        element,
-        getConfiguration: () => ({
-          maxScrollSpeed: 'standard',
-        }),
-        getAllowedAxis: () => 'vertical',
-      }),
-    );
-  }, [task]);
 
   const variants = cva('task-card', {
     variants: {
@@ -186,12 +115,18 @@ export function TaskCard({ task }: TaskCardProps) {
 
   useHotkeys([['Escape', handleEscKeyPress]]);
 
+  useEffect(() => {
+    if (!dragging) return;
+    setIsEditing(false);
+    setIsExpanded(false);
+  }, [dragging]);
+
   return (
     <Card
-      ref={dragRef}
+      ref={taskRef}
       className={cn(
         `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent 
-        via-transparent via-60% to-100% opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
+        via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''}`,
         variants({
           status: task.status as TaskStatus,
         }),
@@ -275,7 +210,7 @@ export function TaskCard({ task }: TaskCardProps) {
 
           <div className="max-sm:-ml-1 flex items-center justify-between gap-1">
             <Button
-              ref={dragButtonRef}
+              ref={taskDragButtonRef}
               variant={'ghost'}
               className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35"
             >
