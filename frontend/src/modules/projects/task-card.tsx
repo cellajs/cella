@@ -19,14 +19,8 @@ import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
 import SetLabels from './select-labels.tsx';
-// import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
-// import { draggable, dropTargetForElements, type ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-// import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
-// import type { DropTargetRecord } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
-// import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
-// import type { DraggableItemData } from '~/types/index.ts';
 
 interface TaskCardProps {
   task: TaskWithLabels;
@@ -39,9 +33,6 @@ interface TaskCardProps {
 
 export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver, closestEdge }: TaskCardProps) {
   const { t } = useTranslation();
-  // const [dragging, setDragging] = useState(false);
-  // const [isDraggedOver, setIsDraggedOver] = useState(false);
-  // const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
 
