@@ -22,6 +22,7 @@ import { ProjectContext } from './board.tsx';
 import { SelectImpact } from './select-impact.tsx';
 import SetLabels from './select-labels.tsx';
 import SelectStatus from './select-status.tsx';
+import { WorkspaceContext } from '../workspaces/index.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -53,7 +54,7 @@ const formSchema = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
-      color: z.string(),
+      color: z.string().nullable(),
       project_id: z.string(),
     }),
   ),
@@ -67,6 +68,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   const { mode } = useThemeStore();
   const { user } = useUserStore(({ user }) => ({ user }));
 
+  const { tasks } = useContext(WorkspaceContext);
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
 
@@ -126,7 +128,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           impact: values.impact as TaskImpact,
           // assignedTo: values.assignedTo as TaskUser[],
           // labels: values.labels,
-          status: 1,
+          status: values.status,
           project_id: project.id,
           created_at: new Date(),
           created_by: user.id,
@@ -158,17 +160,15 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               ? {
                   create: values.labels.map((label) => ({
                     label_id: label.id,
-                    labels: {
-                      connectOrCreate: label,
-                    },
                   })),
                 }
               : undefined,
-          status: 1,
+          status: values.status,
           project_id: project.id,
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
+          sort_order: tasks.filter((t) => t.project_id === project.id && t.status === values.status).length,
         },
       })
       .then(() => {

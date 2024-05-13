@@ -4,7 +4,7 @@
   "private": false,
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
-  "description": "Your last TypeScript template to build modern web apps. Implementation-ready. MIT licensed.",
+  "description": "Intuivive TypeScript template to build local-first web apps. Implementation-ready. MIT licensed.",
   "keywords": [
     "template",
     "monorepo",

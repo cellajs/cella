@@ -11,10 +11,12 @@ interface Props {
 
 const ContentPlaceholder = ({ title, Icon, text, className = '' }: Props) => {
   return (
-    <div className={cn('flex flex-col items-center w-full p-8 h-full justify-center', className)}>
+    <div className={cn('flex flex-col items-center w-full p-8 h-full justify-center relative', className)}>
       {Icon && <Icon strokeWidth={0.7} size={80} className="opacity-50" />}
-      <p className="mt-6 text-sm">{title}</p>
-      {text && <p className="mt-6 text-sm font-medium">{text}</p>}
+      <p className="mt-4 text-sm opacity-60">{title}</p>
+      {text && <div className="mt-12 text-sm font-medium">
+        {text}
+        </div>}
     </div>
   );
 };

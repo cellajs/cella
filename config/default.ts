@@ -14,7 +14,7 @@ export const config = {
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
 
-  description: 'Your last TypeScript template to build modern web apps. Implementation-ready. MIT licensed.',
+  description: 'Intuitive TypeScript template to build local-first web apps. Implementation-ready. MIT licensed.',
   keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
 
   notificationsEmail: 'notifications@cellajs.com',
