@@ -160,9 +160,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               ? {
                   create: values.labels.map((label) => ({
                     label_id: label.id,
-                    labels: {
-                      connectOrCreate: label,
-                    },
                   })),
                 }
               : undefined,

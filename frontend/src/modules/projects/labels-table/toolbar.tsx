@@ -6,6 +6,8 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { Plus, Trash, XSquare } from 'lucide-react';
 import { Badge } from '~/modules/ui/badge';
+import { toast } from 'sonner';
+import { useElectric } from '~/modules/common/root/electric';
 
 interface Props {
   searchQuery: string;
@@ -20,6 +22,24 @@ interface Props {
 
 export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelectedLabels, isFiltered, onResetFilters }: Props) => {
   const { t } = useTranslation();
+
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
+
+  const removeLabel = () => {
+    db.labels
+      .deleteMany({
+        where: {
+          id: {
+            in: selectedLabels,
+          },
+        },
+      })
+      .then(() => {
+        toast.success(t(`common:success.delete_${selectedLabels.length > 1 ? 'labels' : 'label'}`));
+        setSelectedLabels([]);
+      });
+  };
 
   return (
     <div className={'flex  w-full max-sm:justify-between gap-2'}>
@@ -42,13 +62,7 @@ export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelect
         {!!selectedLabels.length && (
           <div className="inline-flex align-center items-center gap-2">
             <TooltipButton toolTipContent={t('common:remove_task')}>
-              <Button
-                variant="destructive"
-                className="relative"
-                onClick={() => {
-                  console.log('labels removed');
-                }}
-              >
+              <Button variant="destructive" className="relative" onClick={removeLabel}>
                 <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedLabels.length}</Badge>
                 <Trash size={16} />
                 <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>

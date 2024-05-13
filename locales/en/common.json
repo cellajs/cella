@@ -342,6 +342,8 @@
   "success.delete_tasks": "Tasks have been deleted",
   "success.delete_project": "Project has been deleted",
   "success.delete_projects": "Projects have been deleted",
+  "success.delete_label": "Label has been deleted",
+  "success.delete_labels": "Labels have been deleted",
   "success.email_verified": "Email verified and signed in!",
   "success.mute_organization": "Organization has been muted.",
   "success.newsletter_sign_up": "Thanks for requesting info about Cella!",
