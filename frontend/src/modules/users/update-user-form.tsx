@@ -21,17 +21,17 @@ import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import { useUserStore } from '~/store/user';
-import { dialog, isDialog as checkDialog } from '../common/dialoger/state';
-import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { useStepper } from '../common/stepper/use-stepper';
 import { SlugFormField } from '../common/form-fields/slug';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
+import InputFormField from '../common/form-fields/input';
 
 interface UpdateUserFormProps {
   user: User;
   callback?: (user: User) => void;
-  dialog?: boolean;
+  sheet?: boolean;
   hiddenFields?: string[];
   children?: React.ReactNode;
 }
@@ -51,7 +51,7 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
   });
 };
 
-const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, children }: UpdateUserFormProps) => {
+const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
@@ -97,30 +97,29 @@ const UpdateUserForm = ({ user, callback, dialog: isDialog, hiddenFields, childr
         } else {
           toast.success(t('common:success.updated_user'));
         }
+        //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
+        if (isSheet) sheet.remove('edit-user');
 
         form.reset(data);
         callback?.(data);
 
         nextStep?.();
-
-        //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
-        if (isDialog) dialog.remove(true, 'edit-user');
       },
     });
   };
 
-  // Update dialog title with unsaved changes
+  // Update sheet title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
-      const targetDialog = dialog.get('edit-user');
-      if (targetDialog && checkDialog(targetDialog)) {
-        dialog.update('edit-user', {
-          title: <UnsavedBadge title={targetDialog?.title} />,
+      const targetSheet = sheet.get('edit-user');
+      if (targetSheet && checkSheet(targetSheet)) {
+        sheet.update('edit-user', {
+          title: <UnsavedBadge title={targetSheet?.title} />,
         });
       }
       return;
     }
-    dialog.reset('edit-user');
+    sheet.reset('edit-user');
   }, [form.unsavedChanges]);
 
   const setImageUrl = (url: string) => {
