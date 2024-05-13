@@ -54,7 +54,7 @@ const formSchema = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
-      color: z.string(),
+      color: z.string().nullable(),
       project_id: z.string(),
     }),
   ),

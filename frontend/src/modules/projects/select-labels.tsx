@@ -56,7 +56,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
     const newLabel: Label = {
       id: faker.string.uuid(),
       name: value,
-      color: null,
+      color: '#fff',
       project_id: projectId,
     };
     setSelectedLabels((prev) => [...prev, newLabel]);
