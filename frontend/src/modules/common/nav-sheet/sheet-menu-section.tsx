@@ -16,6 +16,7 @@ import { TooltipButton } from '../tooltip-button';
 import { closestCorners, DndContext, type DragEndEvent, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { coordinateGetter } from '~/modules/projects/keyboard-preset';
+import { makeTransition } from '~/lib/utils';
 
 interface MenuSectionProps {
   key: string;
@@ -170,9 +171,21 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     <>
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
-          <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
+          <Button
+            style={{
+              viewTransitionName: `section-${section.id}`,
+            }}
+            onClick={() => makeTransition(() => toggleSection(section.id))}
+            className="w-full justify-between transition-transform"
+            variant="secondary"
+          >
             <div className="flex items-center">
-              <span className="flex items-center">
+              <span
+                style={{
+                  viewTransitionName: `section-text-${section.id}`,
+                }}
+                className="flex items-center"
+              >
                 {section.icon && <section.icon className="mr-2 w-5 h-5" />}
                 {t(section.label)}
               </span>
@@ -185,7 +198,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
             <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
               <Button
                 disabled={!archived.length && !unarchive.length}
-                className="w-12 transition duration-300 px-3 ease-in-out }"
+                className={`w-12 px-3 duration-300 ${isSectionVisible ? 'animate-in fade-in slide-in-from-right' : ''}`}
                 variant="secondary"
                 size="icon"
                 onClick={() => toggleOptionsView(!optionsView)}
@@ -197,7 +210,12 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
 
           {isSectionVisible && data.canCreate && section.createForm && (
             <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
-              <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
+              <Button
+                className={`w-12 px-3 duration-300 ${isSectionVisible ? 'animate-in fade-in slide-in-from-right' : ''}`}
+                variant="secondary"
+                size="icon"
+                onClick={createDialog}
+              >
                 <Plus size={16} />
               </Button>
             </TooltipButton>
