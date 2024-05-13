@@ -235,7 +235,7 @@
   "onboarding_step2": "Let's get started by creating your organization.",
   "onboarding_step3": "Invite one or more team members of {{organizationName}} to Cella.",
   "onboarding_welcome": "Welcome to Cella",
-  "onboarding_welcome.text": "A no-nonsense TypeScript template to build modern web apps in a matter of weeks. Ready to implement. MIT license.",
+  "onboarding_welcome.text": "An intuitive TypeScript template to build local-first web apps in a matter of weeks. Ready to implement. MIT license.",
   "options": "Options",
   "or": "Or",
   "organization": "Organization",
