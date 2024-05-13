@@ -21,10 +21,9 @@ import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indi
 import type { DraggableItemData } from '~/types/index.ts';
 import { getDraggableItemData } from '~/lib/utils';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
-import { token } from '@atlaskit/tokens';
 
 interface BoardColumnProps {
-  tasks?: Task[];
+  tasks: Task[];
 }
 
 const sortTaskOrder = (task1: Task, task2: Task) => {
@@ -41,7 +40,7 @@ const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectD
   return data.dragItem === true && typeof data.index === 'number';
 };
 
-export function BoardColumn({ tasks = [] }: BoardColumnProps) {
+export function BoardColumn({ tasks }: BoardColumnProps) {
   const { t } = useTranslation();
   const columnRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLButtonElement | null>(null);
@@ -57,6 +56,7 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
   const { searchQuery, projects } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[project.workspace_id]?.columns.find((el) => el.columnId === project.id);
+
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
 
@@ -123,8 +123,9 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
       projects.findIndex((el) => el.id === project.id),
       'column',
     );
-    if (!column || !headerDragButton || !cardList || !scrollable) return;
-
+    if (!column || !headerDragButton || !cardList) return;
+    // Don't start drag if only 1 project
+    if (projects.length <= 1) return;
     return combine(
       draggable({
         element: column,
@@ -165,82 +166,87 @@ export function BoardColumn({ tasks = [] }: BoardColumnProps) {
         onDragLeave: () => dragIsOver(),
         onDrop: () => dragIsOver(),
       }),
-      autoScrollForElements({
-        element: scrollable,
-        canScroll: ({ source }) => isProjectData(data) && source.data.type === 'column',
-      }),
+      scrollable
+        ? autoScrollForElements({
+            element: scrollable,
+            canScroll: ({ source }) => isProjectData(data) && source.data.type === 'column',
+          })
+        : () => {},
     );
   }, [project, projects, tasks]);
 
   return (
     <Card
       ref={columnRef}
-      className={` h-full rounded-b-none max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center
-      opacity-${dragging ? '30' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`}
+      className={`h-full relative rounded-b-none max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center
+      opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`}
     >
       <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
 
       {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
       <div ref={containerRef} />
-      {!tasks.length && !searchQuery && (
-        <ContentPlaceholder
-          Icon={Palmtree}
-          title={t('common:no_tasks')}
-          text={
-            <p className="inline-flex gap-1">
-              <span>{t('common:click')}</span>
-              <span className="text-primary">{`+ ${t('common:task')}`}</span>
-              <span>{t('common:no_tasks.text')}</span>
-            </p>
-          }
-        />
-      )}
 
-      {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
-      {!!tasks.length && (
-        <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="mx-[-1px]">
-          <ScrollBar size="indicatorVertical" />
-          <CardContent ref={cardListRef} className="flex flex-grow flex-col p-0 group/column">
-            <Button
-              onClick={handleAcceptedClick}
-              variant="ghost"
-              disabled={!acceptedCount}
-              size="sm"
-              className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[1px]"
-            >
-              <span className="text-xs">
-                {acceptedCount} {t('common:accepted').toLowerCase()}
-              </span>
-              {!!acceptedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />}
-            </Button>
-
-            {tasks
-              .filter((t) => {
-                if (showAccepted && t.status === 6) return true;
-                if (showIced && t.status === 0) return true;
-                return t.status !== 0 && t.status !== 6;
-              })
-              .sort((a, b) => sortTaskOrder(a, b))
-              .map((task) => (
-                <TaskCard task={task} key={task.id} />
-              ))}
-            <Button
-              onClick={handleIcedClick}
-              variant="ghost"
-              disabled={!icedCount}
-              size="sm"
-              className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[1px]"
-            >
-              <span className="text-xs">
-                {icedCount} {t('common:iced').toLowerCase()}
-              </span>
-              {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
-            </Button>
-          </CardContent>
-        </ScrollArea>
-      )}
-      {closestEdge && <DropIndicator edge={closestEdge} gap={token('space.200', '')} />}
+      <div className="h-full" ref={cardListRef}>
+        {!!tasks.length && (
+          <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-1px]">
+            <ScrollBar size="indicatorVertical" />
+            <CardContent className="flex flex-grow flex-col p-0 group/column">
+              <Button
+                onClick={handleAcceptedClick}
+                variant="ghost"
+                disabled={!acceptedCount}
+                size="sm"
+                className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[1px]"
+              >
+                <span className="text-xs">
+                  {acceptedCount} {t('common:accepted').toLowerCase()}
+                </span>
+                {!!acceptedCount && (
+                  <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+                )}
+              </Button>
+              {tasks
+                .filter((t) => {
+                  if (showAccepted && t.status === 6) return true;
+                  if (showIced && t.status === 0) return true;
+                  return t.status !== 0 && t.status !== 6;
+                })
+                .sort((a, b) => sortTaskOrder(a, b))
+                .map((task) => (
+                  <TaskCard task={task} key={task.id} />
+                ))}
+              <Button
+                onClick={handleIcedClick}
+                variant="ghost"
+                disabled={!icedCount}
+                size="sm"
+                className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[1px]"
+              >
+                <span className="text-xs">
+                  {icedCount} {t('common:iced').toLowerCase()}
+                </span>
+                {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
+              </Button>
+            </CardContent>
+          </ScrollArea>
+        )}
+        {!tasks.length && !searchQuery && (
+          <ContentPlaceholder
+            Icon={Palmtree}
+            title={t('common:no_tasks')}
+            text={
+              <p className="inline-flex gap-1">
+                <span>{t('common:click')}</span>
+                <span className="text-primary">{`+ ${t('common:task')}`}</span>
+                <span>{t('common:no_tasks.text')}</span>
+              </p>
+            }
+          />
+        )}
+        {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
+      </div>
+      {closestEdge && <DropIndicator edge={closestEdge} />}
     </Card>
   );
 }

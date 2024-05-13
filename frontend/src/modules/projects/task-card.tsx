@@ -191,7 +191,7 @@ export function TaskCard({ task }: TaskCardProps) {
       ref={dragRef}
       className={cn(
         `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent 
-        via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
+        via-transparent via-60% to-100% opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
         variants({
           status: task.status as TaskStatus,
         }),
