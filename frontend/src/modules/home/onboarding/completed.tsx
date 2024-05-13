@@ -6,6 +6,7 @@ import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { Menu } from 'lucide-react';
 import { createWorkspace } from '~/api/workspaces';
 import { useUserStore } from '~/store/user';
+import { useElectric } from '~/modules/common/root/electric';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
@@ -13,14 +14,31 @@ export const OnboardingCompleted = () => {
   const [isExploding, _] = useState(true);
   const state = useUserStore();
 
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
+
   useEffect(() => {
-    const organizations = menu.organizations.items;
-    const organization = organizations[organizations.length - 1];
+    const organizations = menu.organizations.items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const organization = organizations[0];
     if (!state.finishOnboarding) {
       createWorkspace({
         name: `${organization.name}-DEMOworkspace`,
         slug: `${organization.slug}-workspace`,
         organization: organization.id,
+      }).then((workspace) => {
+        for (let i = 3; i !== 0; i--) {
+          db.projects.create({
+            data: {
+              id: window.crypto.randomUUID(),
+              name: `DEMO-test-project-${i}`,
+              slug: `${i}test-project-${workspace.id}`,
+              workspace_id: workspace.id,
+              color: '#000000',
+              created_at: new Date(),
+              created_by: state.user.id,
+            },
+          });
+        }
       });
     }
     setTimeout(
