@@ -17,6 +17,7 @@ import { type Label, useElectric } from '../common/root/electric';
 import { AvatarWrap } from '../common/avatar-wrap';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
 import { TooltipButton } from '../common/tooltip-button';
+import { toast } from 'sonner';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;
@@ -61,6 +62,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
         },
       })
       .then(() => {
+        toast.success(t(`common:success.delete_${selectedTasks.length > 1 ? 'tasks' : 'task'}`));
         setSelectedTasks([]);
       });
   };
