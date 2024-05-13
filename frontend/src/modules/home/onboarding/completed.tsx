@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import ConfettiExplosion from 'react-confetti-explosion';
 import { useNavigationStore } from '~/store/navigation';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
-import { Menu } from 'lucide-react';
+import { Menu, Undo } from 'lucide-react';
 import { createWorkspace } from '~/api/workspaces';
 import { useUserStore } from '~/store/user';
 import { useElectric } from '~/modules/common/root/electric';
@@ -22,7 +22,7 @@ export const OnboardingCompleted = () => {
     const lastCreatedOrganization = sortedOrganizations[0];
     if (!state.finishOnboarding) {
       createWorkspace({
-        name: `${lastCreatedOrganization.name}-DEMOworkspace`,
+        name: 'Demo workspace',
         slug: `${lastCreatedOrganization.slug}-workspace`,
         organization: lastCreatedOrganization.id,
       }).then((workspace) => {
@@ -30,8 +30,8 @@ export const OnboardingCompleted = () => {
           db.projects.create({
             data: {
               id: window.crypto.randomUUID(),
-              name: `DEMO-test-project-${i}`,
-              slug: `${i}test-project-${workspace.id}`,
+              name: `Demo project ${i}`,
+              slug: `${lastCreatedOrganization.slug}-project-${i}`,
               workspace_id: workspace.id,
               color: '#000000',
               created_at: new Date(),
@@ -54,6 +54,10 @@ export const OnboardingCompleted = () => {
     <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-[1] max-w-[700px]">
       {isExploding && !state.finishOnboarding && (
         <ConfettiExplosion zIndex={0} duration={5000} force={0.8} particleCount={250} height={'100vh'} width={1500} />
+      )}
+
+      {state.finishOnboarding && (
+        <Undo size={400} strokeWidth={0.1} className="max-xl:hidden scale-y-75 -mt-40 -mb-12 -translate-x-32 text-primary rotate-[30deg]" />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>
       <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">{t('common:onboarding_completed.text')}</p>
