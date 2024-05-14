@@ -205,6 +205,20 @@ class WebGLRenderer {
 
 let webGLRenderer = null;
 
+// Configuration for circles on background
+// Maximum number of circles allowed
+const maxAmountOfCircles = 2000;
+
+// Minimum radius for circles
+const minCircleRadius = 0.0625;
+
+// Maximum radius for circles
+const maxCircleRadius = 0.15;
+
+// Minimum distance for touch detection
+const touchDistance = minCircleRadius;
+
+// Calculations
 const rand = (min_or_max, max) => (min_or_max ? (max ? min_or_max + (max - min_or_max) * Math.random() : min_or_max * Math.random()) : Math.random());
 const normalize = (v) => {
   const mag = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
@@ -220,16 +234,16 @@ const distortion_push_dir_2 = distortion_dot_dir_1.map((e) => -e);
 const distortion_power_1 = rand(0.1, 1);
 const distortion_power_2 = rand(0.1, 1);
 const circles = [];
-for (let i = 0; i < 2000; i++) {
-  const pos = [rand(0.0625 - 1, 1 - 0.0625), rand(0.0625 - 1, 1 - 0.0625)];
+for (let i = 0; i < maxAmountOfCircles; i++) {
+  const pos = [rand(minCircleRadius - 1, 1 - minCircleRadius), rand(minCircleRadius - 1, 1 - minCircleRadius)];
   let touch_dist = Math.min(1 - Math.abs(pos[0]), 1 - Math.abs(pos[1]));
   for (const circle of circles) {
     const dx = pos[0] - circle[0];
     const dy = pos[1] - circle[1];
     touch_dist = Math.min(touch_dist, Math.sqrt(dx * dx + dy * dy) - (0.00390625 + circle[2]));
   }
-  if (touch_dist > 0.0625) {
-    const radius = rand(Math.min(touch_dist, 0.0625), Math.min(touch_dist, 0.15));
+  if (touch_dist > touchDistance) {
+    const radius = rand(Math.min(touch_dist, minCircleRadius), Math.min(touch_dist, maxCircleRadius));
     pos.push(radius);
     circles.push(pos);
   }
