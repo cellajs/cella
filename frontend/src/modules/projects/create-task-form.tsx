@@ -72,7 +72,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
 
-  const { project } = useContext(ProjectContext);
+  const { project, labels } = useContext(ProjectContext);
 
   const handleCloseForm = () => {
     if (isDialog) dialog.remove();
@@ -286,7 +286,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels projectId={project.id} mode="create" changeLabels={onChange} />
+                  <SetLabels labels={labels} projectId={project.id} mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

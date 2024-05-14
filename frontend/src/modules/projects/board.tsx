@@ -1,5 +1,5 @@
 import { Fragment, createContext, useContext, useEffect, useMemo } from 'react';
-import type { ProjectWithLabels, Task } from '../common/root/electric';
+import type { Label, Task } from '../common/root/electric';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';
@@ -8,16 +8,18 @@ import { Bird } from 'lucide-react';
 import ContentPlaceholder from '../common/content-placeholder';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import type { Project } from '~/types';
 
 interface ProjectContextValue {
-  project: ProjectWithLabels;
+  project: Project;
+  labels: Label[];
 }
 
 export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
   const { t } = useTranslation();
-  const { projects, tasks, searchQuery } = useContext(WorkspaceContext);
+  const { projects, tasks, searchQuery, labels } = useContext(WorkspaceContext);
 
   const filteredTasks = useMemo(() => {
     if (!searchQuery) return tasks;
@@ -82,7 +84,7 @@ export default function Board() {
         {projects.map((project, index) => (
           <Fragment key={project.id}>
             <ResizablePanel key={`${project.id}-panel`}>
-              <ProjectContext.Provider value={{ project }}>
+              <ProjectContext.Provider value={{ project, labels: labels.filter((l) => l.project_id === project.id) }}>
                 <BoardColumn tasks={filteredTasks.filter((t) => t.project_id === project.id)} key={`${project.id}-column`} />
               </ProjectContext.Provider>
             </ResizablePanel>

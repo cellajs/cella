@@ -19,6 +19,7 @@ import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
 import SetLabels from './select-labels.tsx';
+import { ProjectContext } from './board.tsx';
 
 interface TaskCardProps {
   task: TaskWithLabels;
@@ -32,6 +33,7 @@ export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver 
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
+  const { labels } = useContext(ProjectContext);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -241,6 +243,7 @@ export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver 
             )}
 
             <SetLabels
+              labels={labels}
               projectId={task.project_id}
               changeLabels={(newLabels) => handleChange('labels', newLabels)}
               viewValue={task.labels}

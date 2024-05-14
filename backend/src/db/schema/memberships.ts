@@ -1,21 +1,24 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, timestamp, varchar, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, timestamp, varchar, boolean, uuid } from 'drizzle-orm/pg-core';
 import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
 import { nanoid } from '../../lib/nanoid';
+import { projectsTable } from './projects';
 
+const typeEnum = ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const;
 const roleEnum = ['MEMBER', 'ADMIN'] as const;
 
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
-  organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   type: varchar('type', {
-    enum: ['ORGANIZATION', 'WORKSPACE'],
+    enum: typeEnum,
   })
     .notNull()
     .default('ORGANIZATION'),
+  organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
   userId: varchar('user_id')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),

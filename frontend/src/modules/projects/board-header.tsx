@@ -13,7 +13,7 @@ import { Badge } from '../ui/badge';
 import { WorkspaceContext } from '../workspaces';
 import AddProjects from './add-projects';
 import LabelsTable from './labels-table';
-import { type Label, useElectric } from '../common/root/electric';
+import { useElectric } from '../common/root/electric';
 import { AvatarWrap } from '../common/avatar-wrap';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
 import { TooltipButton } from '../common/tooltip-button';
@@ -27,12 +27,10 @@ interface BoardHeaderProps {
 const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps) => {
   const { t } = useTranslation();
 
-  const { workspace, selectedTasks, setSelectedTasks, projects, searchQuery, tasks, setSearchQuery } = useContext(WorkspaceContext);
+  const { workspace, selectedTasks, setSelectedTasks, searchQuery, tasks, setSearchQuery, labels } = useContext(WorkspaceContext);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
-
-  const labels = projects.flatMap((project) => project.labels).filter(Boolean) as Label[];
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet />, {

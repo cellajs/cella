@@ -5,7 +5,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { ProjectWithLabels, Task } from '../common/root/electric';
+import type { Task } from '../common/root/electric';
 import { sheet } from '../common/sheeter/state';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
@@ -13,7 +13,7 @@ import CreateTaskForm from './create-task-form';
 import { ProjectSettings } from './project-settings';
 import { WorkspaceContext } from '../workspaces';
 import ContentPlaceholder from '../common/content-placeholder';
-import type { DraggableItemData } from '~/types/index.ts';
+import type { DraggableItemData, Project } from '~/types/index.ts';
 import { getDraggableItemData } from '~/lib/utils';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
@@ -35,7 +35,7 @@ const sortTaskOrder = (task1: Task, task2: Task) => {
   return 0;
 };
 
-type ProjectDraggableItemData = DraggableItemData<ProjectWithLabels> & { type: 'column' };
+type ProjectDraggableItemData = DraggableItemData<Project> & { type: 'column' };
 
 const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
   return data.dragItem === true && typeof data.index === 'number';
@@ -57,7 +57,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
   const { project } = useContext(ProjectContext);
   const { searchQuery, projects } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
-  const currentProjectSettings = workspaces[project.workspace_id]?.columns.find((el) => el.columnId === project.id);
+  const currentProjectSettings = workspaces[project.workspaceId]?.columns.find((el) => el.columnId === project.id);
 
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
@@ -68,13 +68,13 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
-    changeColumn(project.workspace_id, project.id, {
+    changeColumn(project.workspaceId, project.id, {
       expandIced: !showIced,
     });
   };
   const handleAcceptedClick = () => {
     setShowAccepted(!showAccepted);
-    changeColumn(project.workspace_id, project.id, {
+    changeColumn(project.workspaceId, project.id, {
       expandAccepted: !showAccepted,
     });
   };
@@ -123,7 +123,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
     const cardList = cardListRef.current;
     const scrollable = scrollableRef.current;
 
-    const data = getDraggableItemData<ProjectWithLabels>(
+    const data = getDraggableItemData<Project>(
       project,
       projects.findIndex((el) => el.id === project.id),
       'column',

@@ -25,6 +25,7 @@
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.3",
     "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator": "^1.1.1",
     "@databases/pg-migrations": "^5.0.3",
+    "@dnd-kit/core": "^6.1.0",
     "@github/mini-throttle": "^2.1.1",
     "@hocuspocus/provider": "^2.12.2",
     "@hookform/resolvers": "^3.3.4",
@@ -189,7 +190,11 @@
     "vite-plugin-static-copy": "^1.0.4",
     "workbox-window": "^7.1.0"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},

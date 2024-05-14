@@ -80,6 +80,10 @@ export const workspaceParamSchema = z.object({
   workspace: idSchema.or(slugSchema),
 });
 
+export const projectParamSchema = z.object({
+  project: idSchema.or(slugSchema),
+});
+
 export const imageUrlSchema = z
   .string()
   .url()
