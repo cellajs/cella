@@ -4,7 +4,6 @@ import { GripVertical, Paperclip } from 'lucide-react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
@@ -35,6 +34,7 @@ export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver 
 
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -127,11 +127,21 @@ export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver 
     latency: 250,
   });
 
-  const handleEscKeyPress = useCallback(() => {
-    setIsExpanded(false);
-  }, []);
+  // const handleEscKeyPress = useCallback(() => {
+  //   setIsExpanded(false);
+  // }, []);
 
-  useHotkeys([['Escape', handleEscKeyPress]]);
+  // useHotkeys([['Escape', handleEscKeyPress]]);
+
+  const handleEscKeyPress = useCallback(
+    (event: KeyboardEvent) => {
+      event.stopPropagation();
+      event.preventDefault();
+      if (event.key !== 'Escape') return;
+      if (isHovered) setIsExpanded(false);
+    },
+    [isHovered],
+  );
 
   useEffect(() => {
     if (!dragging) return;
@@ -139,9 +149,18 @@ export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver 
     setIsExpanded(false);
   }, [dragging]);
 
+  useEffect(() => {
+    document.addEventListener('keydown', handleEscKeyPress);
+    return () => {
+      document.removeEventListener('keydown', handleEscKeyPress);
+    };
+  }, [handleEscKeyPress]);
+
   return (
     <Card
       ref={taskRef}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={cn(
         `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent 
         via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''}`,
