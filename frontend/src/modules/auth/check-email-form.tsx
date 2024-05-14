@@ -33,6 +33,9 @@ export const CheckEmailForm = ({ tokenData, setStep }: { tokenData: TokenData | 
       if (config.has.signUp) {
         const nextStep = result.exists ? 'signIn' : 'signUp';
         setStep(nextStep, form.getValues('email'));
+      } else if (config.has.waitList && !config.has.signUp) {
+        const nextStep = result.exists ? 'signIn' : 'waitList';
+        setStep(nextStep, form.getValues('email'));
       } else {
         const nextStep = result.exists ? 'signIn' : 'inviteOnly';
         setStep(nextStep, form.getValues('email'));

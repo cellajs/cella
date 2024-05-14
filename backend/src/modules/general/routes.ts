@@ -1,9 +1,17 @@
 import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
-import { anyTenantGuard, authGuard, publicGuard } from '../../middlewares/guard';
+import { anyTenantGuard, authGuard, publicGuard, systemGuard } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
-import { acceptInviteJsonSchema, inviteJsonSchema, inviteQuerySchema, suggestionsSchema, tokensSchema } from './schema';
+import {
+  acceptInviteJsonSchema,
+  accessReqSchema,
+  accessRequestSchema,
+  inviteJsonSchema,
+  inviteQuerySchema,
+  suggestionsSchema,
+  tokensSchema,
+} from './schema';
 import { resourceTypeSchema } from '../../lib/common-schemas';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
@@ -217,6 +225,59 @@ export const suggestionsConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(suggestionsSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const requestAccessConfig = createRouteConfig({
+  method: 'post',
+  path: '/access-request',
+  guard: publicGuard,
+  middleware: [authRateLimiter],
+  tags: ['general'],
+  summary: 'Create access-request',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: accessRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Access requests',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(accessRequestSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const accessRequestsConfig = createRouteConfig({
+  method: 'get',
+  path: '/access-requests',
+  guard: systemGuard,
+  tags: ['general'],
+  summary: 'Get access-requests',
+  request: {
+    query: z.object({
+      type: accessReqSchema.shape.type,
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Access requests',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(accessRequestSchema),
         },
       },
     },

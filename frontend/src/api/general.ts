@@ -99,3 +99,31 @@ export const acceptInvite = async ({
   if ('error' in json) throw new ApiError(json.error);
   return json.success;
 };
+
+interface AccessRequestProp {
+  userId: string | null;
+  email: string;
+  organizationId: string | null;
+  type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST';
+}
+// Access request
+export const requestAccess = async ({ email, userId, organizationId, type }: AccessRequestProp) => {
+  const response = await client['access-request'].$post({
+    json: { email, userId, organizationId, type },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return;
+};
+
+// Get Access requests
+export const accessRequests = async (type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST') => {
+  const response = await client['access-requests'].$get({
+    query: { type },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return;
+};

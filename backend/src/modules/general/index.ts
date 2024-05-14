@@ -28,15 +28,18 @@ import { apiUserSchema } from '../users/schema';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
   acceptInviteRouteConfig,
+  requestAccessConfig,
   checkSlugRouteConfig,
   checkTokenRouteConfig,
   getUploadTokenRouteConfig,
   inviteRouteConfig,
   paddleWebhookRouteConfig,
   suggestionsConfig,
+  accessRequestsConfig,
 } from './routes';
 import { checkRole } from './helpers/check-role';
 import { apiMembershipSchema } from '../memberships/schema';
+import { accessRequestsTable } from '../../db/schema/access-requests';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -441,6 +444,50 @@ const generalRoutes = app
         organizations: organizationsResult,
         workspaces: workspacesResult,
         total: usersResult.length + workspacesResult.length + organizationsResult.length,
+      },
+    });
+  })
+  /*
+   *  Create access-request
+   */
+  .openapi(requestAccessConfig, async (ctx) => {
+    const { email, userId, organizationId, type } = ctx.req.valid('json');
+
+    const [createdAccessRequest] = await db
+      .insert(accessRequestsTable)
+      .values({
+        email,
+        type,
+        user_id: userId,
+        organization_id: organizationId,
+      })
+      .returning();
+
+    return ctx.json({
+      success: true,
+      data: {
+        email: createdAccessRequest.email,
+        type: createdAccessRequest.type,
+        userId: createdAccessRequest.user_id,
+        organizationId: createdAccessRequest.organization_id,
+      },
+    });
+  })
+  /*
+   *  Get access-requests
+   */
+  .openapi(accessRequestsConfig, async (ctx) => {
+    const { type } = ctx.req.valid('query');
+
+    const [accessRequests] = await db.select().from(accessRequestsTable).where(eq(accessRequestsTable.type, type));
+
+    return ctx.json({
+      success: true,
+      data: {
+        email: accessRequests.email,
+        type: accessRequests.type,
+        userId: accessRequests.user_id,
+        organizationId: accessRequests.organization_id,
       },
     });
   })

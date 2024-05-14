@@ -5,6 +5,7 @@ import { apiUserSchema } from '../users/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '../../db/schema/tokens';
 import { apiMembershipSchema } from '../memberships/schema';
+import { accessRequestsTable } from '../../db/schema/access-requests';
 
 export const tokensSchema = createSelectSchema(tokensTable);
 
@@ -43,4 +44,13 @@ export const suggestionsSchema = z.object({
   organizations: z.array(organizationSuggestionSchema),
   workspaces: z.array(workspaceSuggestionSchema),
   total: z.number(),
+});
+
+export const accessReqSchema = createSelectSchema(accessRequestsTable);
+
+export const accessRequestSchema = z.object({
+  userId: idSchema.nullable(),
+  organizationId: idSchema.nullable(),
+  email: z.string().min(1).email(),
+  type: accessReqSchema.shape.type,
 });
