@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
-import useMutateQueryData from '~/hooks/use-mutate-query-data';
+import {useMutateInfiniteQueryData} from '~/hooks/use-mutate-query-data';
 import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
@@ -72,7 +72,7 @@ const OrganizationsTable = () => {
     refetchOnWindowFocus: false,
   });
 
-  const callback = useMutateQueryData(['organizations', debounceQuery, sortColumns]);
+  const callback = useMutateInfiniteQueryData(['organizations', debounceQuery, sortColumns]);
   const [columns, setColumns] = useColumns(callback);
 
   const onRowsChange = async (records: Organization[], { column, indexes }: RowsChangeData<Organization>) => {

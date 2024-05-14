@@ -13,7 +13,7 @@ import { Bird } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
-import useMutateQueryData from '~/hooks/use-mutate-query-data';
+import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { OrganizationMembersRoute } from '~/routes/organizations';
@@ -112,7 +112,7 @@ const MembersTable = () => {
     order: 'desc',
   });
 
-  const callback = useMutateQueryData([
+  const callback = useMutateInfiniteQueryData([
     'members',
     organization.slug,
     debounceQuery,

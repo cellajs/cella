@@ -80,7 +80,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
   };
 
   const openSettingsSheet = () => {
-    sheet(<ProjectSettings sheet />, {
+    sheet(<ProjectSettings sheet project={project} />, {
       className: 'sm:max-w-[52rem]',
       title: t('common:project_settings'),
       text: t('common:project_settings.text'),
