@@ -260,11 +260,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
         )}
         {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
       </div>
-      {closestEdge && (
-        <div className="bg-primary border-[red]">
-          <DropIndicator edge={closestEdge} />
-        </div>
-      )}
+      {closestEdge && <DropIndicator edge={closestEdge} />}
     </Card>
   );
 }
