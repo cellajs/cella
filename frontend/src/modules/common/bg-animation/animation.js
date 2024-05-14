@@ -67,10 +67,23 @@ class WebGLRenderer {
   }
 
   /**
+   * Checks if the WebGL context is available.
+   * If not, stops the rendering process.
+   */
+  checkContext() {
+    if (!gl && this.isRunning) {
+      this.stop();
+    }
+  }
+
+  /**
    * The main render loop.
    */
   renderLoop() {
     try {
+      this.checkContext();
+      if (!this.isRunning) return;
+
       this.sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
       this.startTime = performance.now();
       this.renderTask();
@@ -86,6 +99,9 @@ class WebGLRenderer {
    */
   checkSync() {
     try {
+      this.checkContext();
+      if (!this.isRunning) return;
+
       const status = gl.clientWaitSync(this.sync, 0, 0);
       if (status === gl.CONDITION_SATISFIED || status === gl.ALREADY_SIGNALED) {
         const endTime = performance.now();
@@ -135,7 +151,6 @@ class WebGLRenderer {
   adjustFrameRate() {
     try {
       // Lower frame rate or apply other optimizations
-      console.log("Adjusting frame rate...");
       // Example: reduce frame rate by setting a longer timeout
       setTimeout(() => this.requestNextFrame(), this.adjustmentTimeoutDuration);
     } catch (error) {
@@ -150,7 +165,6 @@ class WebGLRenderer {
   handlePerformanceFallback() {
     try {
       // Switch to fallback mechanism
-      console.log("Handling performance fallback...");
       // Example: switch to a static image or other fallback mechanism
 
       // Stops the WebGL rendering process.
