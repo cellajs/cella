@@ -1,4 +1,4 @@
-import { ChevronDown, Palmtree, Search } from 'lucide-react';
+import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -19,8 +19,9 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { attachClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DraggableTaskCard } from './draggable-task-card';
+import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 
 interface BoardColumnProps {
   tasks: Task[];
@@ -100,9 +101,12 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
     setIsDraggedOver(false);
   };
 
-  const dragStarted = (data: Record<string | symbol, unknown>) => {
-    setClosestEdge(extractClosestEdge(data));
+  const dragStarted = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
     setIsDraggedOver(true);
+    if (!isProjectData(source.data) || !isProjectData(self.data) || source.data.item.id === project.id) return;
+    const srcIndx = source.data.index;
+    const slfIndx = self.data.index;
+    setClosestEdge(srcIndx > slfIndx ? 'left' : 'right');
   };
 
   // const createTask = () => {
@@ -143,8 +147,8 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
           return isProjectData(data) && data.item.id !== project.id && data.type === 'column';
         },
         getIsSticky: () => true,
-        onDragEnter: ({ self }) => dragStarted(self.data),
-        onDragStart: ({ self }) => dragStarted(self.data),
+        onDragEnter: ({ self, source }) => dragStarted({ self, source }),
+        onDragStart: ({ self, source }) => dragStarted({ self, source }),
         onDragLeave: () => dragIsOver(),
         onDrop: () => dragIsOver(),
       }),
@@ -162,8 +166,8 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
             allowedEdges: ['right', 'left'],
           });
         },
-        onDragEnter: ({ self }) => dragStarted(self.data),
-        onDrag: ({ self }) => dragStarted(self.data),
+        onDragEnter: ({ self, source }) => dragStarted({ self, source }),
+        onDrag: ({ self, source }) => dragStarted({ self, source }),
         onDragLeave: () => dragIsOver(),
         onDrop: () => dragIsOver(),
       }),
@@ -179,7 +183,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
   return (
     <Card
       ref={columnRef}
-      className={`h-full relative rounded-b-none max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center
+      className={`h-full relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center
       opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`}
     >
       <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
@@ -237,17 +241,30 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
             Icon={Palmtree}
             title={t('common:no_tasks')}
             text={
-              <p className="inline-flex gap-1">
-                <span>{t('common:click')}</span>
-                <span className="text-primary">{`+ ${t('common:task')}`}</span>
-                <span>{t('common:no_tasks.text')}</span>
-              </p>
+              !createForm && (
+                <>
+                  <Undo
+                    size={200}
+                    strokeWidth={0.2}
+                    className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
+                  />
+                  <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
+                    <span>{t('common:click')}</span>
+                    <span className="text-primary">{`+${t('common:task')}`}</span>
+                    <span>{t('common:no_tasks.text')}</span>
+                  </p>
+                </>
+              )
             }
           />
         )}
         {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
       </div>
-      {closestEdge && <DropIndicator edge={closestEdge} />}
+      {closestEdge && (
+        <div className="bg-primary border-[red]">
+          <DropIndicator edge={closestEdge} />
+        </div>
+      )}
     </Card>
   );
 }

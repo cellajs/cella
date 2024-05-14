@@ -2,13 +2,13 @@ import { TaskCard } from './task-card';
 import { getDraggableItemData } from '~/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import type { DraggableItemData } from '~/types';
 import type { Task } from '../common/root/electric';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
-
 export const DraggableTaskCard = ({ task, taskIndex }: { task: Task; taskIndex: number }) => {
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
@@ -72,13 +72,10 @@ export const DraggableTaskCard = ({ task, taskIndex }: { task: Task; taskIndex: 
     );
   }, [task]);
   return (
-    <TaskCard
-      task={task}
-      taskRef={taskDragRef}
-      taskDragButtonRef={taskDragButtonRef}
-      dragging={dragging}
-      dragOver={isDraggedOver}
-      closestEdge={closestEdge}
-    />
+    <div className="relative">
+      <TaskCard task={task} taskRef={taskDragRef} taskDragButtonRef={taskDragButtonRef} dragging={dragging} dragOver={isDraggedOver} />
+
+      {closestEdge && <DropIndicator edge={closestEdge} gap="0px" />}
+    </div>
   );
 };
