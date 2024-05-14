@@ -33,10 +33,17 @@ class WebGLRenderer {
     // The number of cycles elapsed since monitoring started.
     this.cycles = 0;
 
+    // The number of consecutive adjusted cycles within a range.
+    // Each time a normal cycle occurs, this number decreases.
+    this.adjustedCycles = 0;
+
+    // The cycle after which the rendering starts.
+    this.renderStartCycle = 60; // Default value: 60 cycles (adjust as needed).
+
     // The maximum acceptable time per frame (in milliseconds) for maintaining target frame rate.
     this.maxFrameTime = 16.67; // milliseconds (for 60 FPS)
 
-    // The threshold for identifying a big lag (in number of cycles).
+    // The threshold for identifying a big lag (in adjusted cycles).
     this.bigLagThreshold = 50; // Threshold for identifying big lag (adjust as needed)
 
     // Timeout duration for adjusting frame rate (in milliseconds)
@@ -53,7 +60,7 @@ class WebGLRenderer {
    * Starts the WebGL rendering process if not already running.
    */
   start() {
-    if (!this.isRunning) {
+    if (!this.isRunning && gl) {
       this.isRunning = true;
       this.renderLoop();
     }
@@ -67,13 +74,26 @@ class WebGLRenderer {
   }
 
   /**
+   * Checks if the WebGL context is available.
+   * If not, stops the rendering process.
+   */
+  checkContext() {
+    if (!gl && this.isRunning) {
+      this.stop();
+    }
+  }
+
+  /**
    * The main render loop.
    */
   renderLoop() {
     try {
+      this.checkContext();
+      if (!this.isRunning) return;
+
       this.sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
       this.startTime = performance.now();
-      this.renderTask();
+      if (this.cycles >= this.renderStartCycle) this.renderTask();
       this.checkSync();
     } catch (error) {
       console.error("Error in render loop:", error);
@@ -86,6 +106,9 @@ class WebGLRenderer {
    */
   checkSync() {
     try {
+      this.checkContext();
+      if (!this.isRunning) return;
+
       const status = gl.clientWaitSync(this.sync, 0, 0);
       if (status === gl.CONDITION_SATISFIED || status === gl.ALREADY_SIGNALED) {
         const endTime = performance.now();
@@ -96,14 +119,16 @@ class WebGLRenderer {
 
         if (elapsedTime > this.maxFrameTime) {
           // Big lag detected, switch to fallback mechanism
-          if (this.cycles >= this.bigLagThreshold) {
+          if (this.adjustedCycles >= this.bigLagThreshold) {
             this.handlePerformanceFallback();
             return;
           }
           // Lag detected, adjust frame rate
+          this.updateCycleCounters(true)
           this.adjustFrameRate();
         } else {
           // No lag, continue with requestAnimationFrame
+          this.updateCycleCounters()
           this.requestNextFrame();
         }
       } else {
@@ -112,6 +137,25 @@ class WebGLRenderer {
       }
     } catch (error) {
       console.error("Error in checkSync:", error);
+      this.stop();
+    }
+  }
+
+  /**
+   * Updates cycle counters after each frame.
+   * @param {boolean} adjusted - Indicates if the cycle was adjusted due to lag.
+   */
+  updateCycleCounters(adjusted) {
+    try {
+      if (adjusted) {
+        this.adjustedCycles++;
+      } else if (this.adjustedCycles) {
+        this.adjustedCycles--;
+      }
+
+      this.cycles++;
+    } catch (error) {
+      console.error("Error in finishedCycle:", error);
       this.stop();
     }
   }
@@ -135,7 +179,6 @@ class WebGLRenderer {
   adjustFrameRate() {
     try {
       // Lower frame rate or apply other optimizations
-      console.log("Adjusting frame rate...");
       // Example: reduce frame rate by setting a longer timeout
       setTimeout(() => this.requestNextFrame(), this.adjustmentTimeoutDuration);
     } catch (error) {
@@ -150,9 +193,7 @@ class WebGLRenderer {
   handlePerformanceFallback() {
     try {
       // Switch to fallback mechanism
-      console.log("Handling performance fallback...");
       // Example: switch to a static image or other fallback mechanism
-
       // Stops the WebGL rendering process.
       this.stop();
     } catch (error) {
@@ -543,6 +584,8 @@ const renderTask = () => {
         gl.deleteTexture(old_texs[1]);
       }
     }
+    if (!texs) texs = [create_tex(width, height), create_tex(width, height)];
+
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texs[1], 0);
     gl.useProgram(trace_shader);
     gl.activeTexture(gl.TEXTURE0);
