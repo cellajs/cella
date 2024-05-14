@@ -6,6 +6,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import i18next from 'i18next';
 import { customAlphabet } from 'nanoid';
 import * as React from 'react';
+import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import type { DraggableItemData } from '~/types';
 
@@ -34,6 +35,21 @@ export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789');
 // Merge tailwind classes
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+// Start a View Transition
+export function makeTransition(transition: () => void) {
+  // @ts-ignore
+  if (document.startViewTransition) {
+    // @ts-ignore
+    document.startViewTransition(() => {
+      flushSync(() => {
+        transition();
+      });
+    });
+  } else {
+    transition();
+  }
 }
 
 const colors = [
