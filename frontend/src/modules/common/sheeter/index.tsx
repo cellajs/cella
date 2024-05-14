@@ -66,7 +66,7 @@ export function Sheeter() {
         <SheetPortal>
           <SheetContent className={sheet.className}>
             {sheet.title || sheet.text ? (
-              <SheetHeader className="text-left">
+              <SheetHeader>
                 {existingSheet?.title ? (
                   <SheetTitle>{existingSheet.title}</SheetTitle>
                 ) : sheet.title ? (
