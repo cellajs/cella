@@ -66,7 +66,7 @@ export function Sheeter() {
         <SheetPortal>
           <SheetContent className={sheet.className}>
             {sheet.title || sheet.text ? (
-              <SheetHeader className="text-left">
+              <SheetHeader>
                 {existingSheet?.title ? (
                   <SheetTitle>{existingSheet.title}</SheetTitle>
                 ) : sheet.title ? (
@@ -77,7 +77,7 @@ export function Sheeter() {
             ) : null}
             {sheet.content}
             <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-              <X className="h-6 w-6" />
+              <X size={24} strokeWidth={1.25} />
               <span className="sr-only">{t('common:close')}</span>
             </SheetClose>
           </SheetContent>

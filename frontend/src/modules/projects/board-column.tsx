@@ -1,4 +1,4 @@
-import { ChevronDown, Palmtree, Search } from 'lucide-react';
+import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -183,7 +183,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
   return (
     <Card
       ref={columnRef}
-      className={`h-full relative rounded-b-none max-w-full bg-transparent flex flex-col flex-shrink-0 snap-center
+      className={`h-full relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center
       opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`}
     >
       <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
@@ -241,11 +241,20 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
             Icon={Palmtree}
             title={t('common:no_tasks')}
             text={
-              <p className="inline-flex gap-1">
-                <span>{t('common:click')}</span>
-                <span className="text-primary">{`+ ${t('common:task')}`}</span>
-                <span>{t('common:no_tasks.text')}</span>
-              </p>
+              !createForm && (
+                <>
+                  <Undo
+                    size={200}
+                    strokeWidth={0.2}
+                    className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
+                  />
+                  <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
+                    <span>{t('common:click')}</span>
+                    <span className="text-primary">{`+${t('common:task')}`}</span>
+                    <span>{t('common:no_tasks.text')}</span>
+                  </p>
+                </>
+              )
             }
           />
         )}

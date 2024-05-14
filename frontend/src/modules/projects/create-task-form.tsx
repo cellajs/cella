@@ -54,7 +54,7 @@ const formSchema = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
-      color: z.string(),
+      color: z.string().nullable(),
       project_id: z.string(),
     }),
   ),
@@ -160,9 +160,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               ? {
                   create: values.labels.map((label) => ({
                     label_id: label.id,
-                    labels: {
-                      connectOrCreate: label,
-                    },
                   })),
                 }
               : undefined,
