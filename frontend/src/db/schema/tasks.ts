@@ -2,30 +2,6 @@ import { integer, pgTable, primaryKey, timestamp, uuid, varchar } from 'drizzle-
 
 // id: string;
 // slug: string;
-// name: string;
-// color: string;
-// workspaceId: string;
-// role: 'ADMIN' | 'MEMBER';
-// createdBy: string;
-// createdAt: Date;
-// modifiedBy: string;
-// modifiedAt: Date;
-// members: TaskUser[];
-
-export const projects = pgTable('projects', {
-  id: uuid('id').primaryKey(),
-  slug: varchar('slug').notNull(),
-  name: varchar('name').notNull(),
-  color: varchar('color').notNull(),
-  workspaceId: varchar('workspace_id').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  createdBy: varchar('created_by').notNull(),
-  modifiedAt: timestamp('modified_at'),
-  modifiedBy: varchar('modified_by'),
-});
-
-// id: string;
-// slug: string;
 // markdown: string;
 // summary: string;
 // createdBy: string;
@@ -54,10 +30,7 @@ export const tasks = pgTable('tasks', {
   order: integer('sort_order'),
   status: integer('status').notNull(),
   projectId: uuid('project_id')
-    .notNull()
-    .references(() => projects.id, {
-      onDelete: 'cascade',
-    }),
+    .notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by').notNull(),
   assignedBy: varchar('assigned_by'),
@@ -79,10 +52,7 @@ export const labels = pgTable('labels', {
   name: varchar('name').notNull(),
   color: varchar('color'),
   projectId: uuid('project_id')
-    .notNull()
-    .references(() => projects.id, {
-      onDelete: 'cascade',
-    }),
+    .notNull(),
 });
 
 export const taskLabels = pgTable(

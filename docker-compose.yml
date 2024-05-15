@@ -69,7 +69,7 @@ services:
     image: electricsql/electric
     init: true
     env_file:
-      - ./env/.env.electric
+      - ./env/.env.electric.local
     ports:
       - 5133:5133
       - 65432:65432
