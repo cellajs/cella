@@ -1,7 +1,7 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -19,20 +19,21 @@ import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
 import SetLabels from './select-labels.tsx';
+import { TaskContext } from './board-column.tsx';
 
 interface TaskCardProps {
-  task: TaskWithLabels;
   taskRef: React.RefObject<HTMLDivElement>;
   taskDragButtonRef: React.RefObject<HTMLButtonElement>;
   dragging?: boolean;
   dragOver?: boolean;
 }
 
-export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver }: TaskCardProps) {
+export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
 
+  const { task, focusedTaskId, setFocusedTask } = useContext(TaskContext);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -119,24 +120,35 @@ export function TaskCard({ task, taskRef, taskDragButtonRef, dragging, dragOver 
   };
 
   useDoubleClick({
+    onSingleClick: () => setFocusedTask(task.id),
     onDoubleClick: () => {
       toggleEditorState();
       setIsExpanded(true);
+      setFocusedTask(task.id);
     },
-    ref: contentRef,
+    ref: taskRef,
     latency: 250,
   });
 
-  const handleEscKeyPress = useCallback(() => {
+  const handleEscKeyPress = () => {
+    if (focusedTaskId !== task.id) return;
     setIsExpanded(false);
-  }, []);
+  };
+  const handleEnterKeyPress = () => {
+    if (focusedTaskId !== task.id) return;
+    setIsExpanded(true);
+  };
 
-  useHotkeys([['Escape', handleEscKeyPress]]);
+  useHotkeys([
+    ['Escape', handleEscKeyPress],
+    ['Enter', handleEnterKeyPress],
+  ]);
 
   useEffect(() => {
     if (!dragging) return;
     setIsEditing(false);
     setIsExpanded(false);
+    setFocusedTask(task.id);
   }, [dragging]);
 
   return (

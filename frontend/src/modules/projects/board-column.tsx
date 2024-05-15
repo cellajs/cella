@@ -1,11 +1,11 @@
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { ProjectWithLabels, Task } from '../common/root/electric';
+import type { ProjectWithLabels, Task, TaskWithLabels } from '../common/root/electric';
 import { sheet } from '../common/sheeter/state';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
@@ -29,6 +29,14 @@ interface BoardColumnProps {
   setFocusedTask: (taskId: string) => void;
   focusedTask: string | null;
 }
+
+interface TaskContextValue {
+  task: TaskWithLabels;
+  focusedTaskId: string | null;
+  setFocusedTask: (taskId: string) => void;
+}
+
+export const TaskContext = createContext({} as TaskContextValue);
 
 type ProjectDraggableItemData = DraggableItemData<ProjectWithLabels> & { type: 'column' };
 
@@ -61,11 +69,6 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [createForm, setCreateForm] = useState(false);
-
-  const isFocusedTask = (task: Task) => {
-    if (!focusedTask) return false;
-    return focusedTask === task.id;
-  };
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
@@ -245,12 +248,9 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
                   return t.status !== 0 && t.status !== 6;
                 })
                 .map((task) => (
-                  <DraggableTaskCard
-                    focusedTask={isFocusedTask(task)}
-                    key={task.id}
-                    task={task}
-                    taskIndex={sortedTasks.findIndex((t) => t.id === task.id)}
-                  />
+                  <TaskContext.Provider key={task.id} value={{ task, focusedTaskId: focusedTask, setFocusedTask }}>
+                    <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
+                  </TaskContext.Provider>
                 ))}
               <Button
                 onClick={handleIcedClick}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { Button } from '~/modules/ui/button';
 import { UserX } from 'lucide-react';
 import type { TaskUser } from '~/mocks/workspaces.ts';
@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
 import { useMeasure } from '~/hooks/use-measure.tsx';
+import { TaskContext } from './board-column';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';
@@ -27,6 +28,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
+  const { task, focusedTaskId } = useContext(TaskContext);
   // const handleSelectClick = (name: string) => {
   // if (!name) return;
   // const existingUser = selectedUsers.find((user) => user.name === name);
@@ -41,7 +43,14 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
   // }
   // };
   // Open on key press
-  useHotkeys([['a', () => setOpenPopover(true)]]);
+  useHotkeys([
+    [
+      'a',
+      () => {
+        if (focusedTaskId === task.id) setOpenPopover(true);
+      },
+    ],
+  ]);
 
   useEffect(() => {
     if (changeAssignedTo && selectedUsers.length > 0) changeAssignedTo(selectedUsers);

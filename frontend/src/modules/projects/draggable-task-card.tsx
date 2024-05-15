@@ -1,6 +1,6 @@
 import { TaskCard } from './task-card';
 import { getDraggableItemData } from '~/lib/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
@@ -9,11 +9,12 @@ import type { DraggableItemData } from '~/types';
 import type { Task } from '../common/root/electric';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { DropIndicator } from '../common/drop-indicator';
+import { TaskContext } from './board-column';
 
-export const DraggableTaskCard = ({ task, taskIndex, focusedTask }: { task: Task; taskIndex: number; focusedTask: boolean }) => {
+export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
-
+  const { task, focusedTaskId } = useContext(TaskContext);
   const [dragging, setDragging] = useState(false);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -73,8 +74,16 @@ export const DraggableTaskCard = ({ task, taskIndex, focusedTask }: { task: Task
     );
   }, [task]);
   return (
-    <div className={`relative border ${focusedTask ? 'border-primary' : 'border-transparent'}`}>
-      <TaskCard task={task} taskRef={taskDragRef} taskDragButtonRef={taskDragButtonRef} dragging={dragging} dragOver={isDraggedOver} />
+    <div className={`relative border ${focusedTaskId === task.id ? 'border-primary' : 'border-transparent'}`}>
+      <TaskCard
+        // focusedTask={focusedTask}
+        // setFocusedTask={setFocusedTask}
+        // task={task}
+        taskRef={taskDragRef}
+        taskDragButtonRef={taskDragButtonRef}
+        dragging={dragging}
+        dragOver={isDraggedOver}
+      />
 
       {closestEdge && <DropIndicator edge={closestEdge} />}
     </div>
