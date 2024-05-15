@@ -9,7 +9,8 @@ import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/prag
 import type { DraggableItemData } from '~/types';
 import type { Task } from '../common/root/electric';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
-export const DraggableTaskCard = ({ task, taskIndex }: { task: Task; taskIndex: number }) => {
+
+export const DraggableTaskCard = ({ task, taskIndex, focusedTask }: { task: Task; taskIndex: number; focusedTask: boolean }) => {
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -72,7 +73,7 @@ export const DraggableTaskCard = ({ task, taskIndex }: { task: Task; taskIndex: 
     );
   }, [task]);
   return (
-    <div className="relative">
+    <div className={`relative border ${focusedTask ? 'border-primary' : 'border-transparent'}`}>
       <TaskCard task={task} taskRef={taskDragRef} taskDragButtonRef={taskDragButtonRef} dragging={dragging} dragOver={isDraggedOver} />
 
       {closestEdge && <DropIndicator edge={closestEdge} gap="0px" />}
