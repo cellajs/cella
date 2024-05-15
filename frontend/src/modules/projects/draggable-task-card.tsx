@@ -74,7 +74,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
     );
   }, [task]);
   return (
-    <div className={`relative border ${focusedTaskId === task.id ? 'border-primary' : 'border-transparent'}`}>
+    <div className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary bg-card' : 'border-l-transparent'}`}>
       <TaskCard
         // focusedTask={focusedTask}
         // setFocusedTask={setFocusedTask}

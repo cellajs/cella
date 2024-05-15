@@ -160,7 +160,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: Tas
         variants({
           status: task.status as TaskStatus,
         }),
-        isExpanded ? 'border-l-2 border-l-primary' : 'border-l-2 border-l-transparent',
       )}
     >
       <CardContent id={`${task.id}-content`} className="p-2 space-between gap-1 flex flex-col relative">
