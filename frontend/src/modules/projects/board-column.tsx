@@ -291,7 +291,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
         )}
         {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
       </div>
-      {closestEdge && <DropIndicator edge={closestEdge} />}
+      {closestEdge && <DropIndicator edge={closestEdge} gap="8px" />}
     </Card>
   );
 }

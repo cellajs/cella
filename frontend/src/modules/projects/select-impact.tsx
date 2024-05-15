@@ -54,7 +54,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
   // Open on key press
   useHotkeys([
     [
-      'p',
+      'i',
       () => {
         if (focusedTaskId === task.id) setOpenPopover(true);
       },
@@ -132,7 +132,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
             className="leading-normal"
             placeholder={t('common:placeholder.impact')}
           />
-          {!isSearching && <Kbd value="P" className="absolute top-3 right-[10px]" />}
+          {!isSearching && <Kbd value="I" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
               {impacts.map((Impact, index) => (
