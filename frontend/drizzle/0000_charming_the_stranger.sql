@@ -1,3 +1,21 @@
+CREATE TABLE IF NOT EXISTS "tasks" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"slug" varchar NOT NULL,
+	"markdown" varchar,
+	"summary" varchar NOT NULL,
+	"type" varchar NOT NULL,
+	"impact" integer,
+	"sort_order" integer,
+	"status" integer NOT NULL,
+	"project_id" uuid NOT NULL,
+	"created_at" timestamp NOT NULL,
+	"created_by" varchar NOT NULL,
+	"assigned_by" varchar,
+	"assigned_at" timestamp,
+	"modified_at" timestamp,
+	"modified_by" varchar
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "labels" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"name" varchar NOT NULL,
@@ -18,24 +36,5 @@ CREATE TABLE IF NOT EXISTS "task_users" (
 	"user_id" uuid NOT NULL,
 	"role" varchar NOT NULL,
 	CONSTRAINT "task_users_user_id_task_id_pk" PRIMARY KEY("user_id","task_id"),
-	CONSTRAINT "task_users_task_id_users_id_fk" FOREIGN KEY("task_id") REFERENCES "tasks"("id") ON DELETE cascade ON UPDATE no action,
-	CONSTRAINT "task_users_user_id_users_id_fk" FOREIGN KEY("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "tasks" (
-	"id" uuid PRIMARY KEY NOT NULL,
-	"slug" varchar NOT NULL,
-	"markdown" varchar,
-	"summary" varchar NOT NULL,
-	"type" varchar NOT NULL,
-	"impact" integer,
-	"sort_order" integer,
-	"status" integer NOT NULL,
-	"project_id" uuid NOT NULL,
-	"created_at" timestamp NOT NULL,
-	"created_by" varchar NOT NULL,
-	"assigned_by" varchar,
-	"assigned_at" timestamp,
-	"modified_at" timestamp,
-	"modified_by" varchar
+	CONSTRAINT "task_users_task_id_users_id_fk" FOREIGN KEY("task_id") REFERENCES "tasks"("id") ON DELETE cascade ON UPDATE no action
 );

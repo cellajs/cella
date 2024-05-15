@@ -67,9 +67,10 @@ const ElectricProvider = ({ children }: Props) => {
         setElectric(electric);
 
         // Resolves when the shape subscription has been established.
-        const shape = await electric.db.projects.sync({
+        const shape = await electric.db.tasks.sync({
           include: {
-            tasks: true,
+            task_labels: true,
+            task_users: true,
           },
         });
 
