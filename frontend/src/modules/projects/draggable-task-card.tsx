@@ -83,7 +83,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
     );
   }, [task]);
   return (
-    <div className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary bg-card' : 'border-l-transparent'}`}>
+    <>
       <TaskCard
         // focusedTask={focusedTask}
         // setFocusedTask={setFocusedTask}
@@ -92,9 +92,10 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
         taskDragButtonRef={taskDragButtonRef}
         dragging={dragging}
         dragOver={isDraggedOver}
+        className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary' : 'border-l-transparent'}`}
       />
 
       {closestEdge && <DropIndicator edge={closestEdge} />}
-    </div>
+    </>
   );
 };

@@ -1,7 +1,7 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { type MouseEventHandler, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -24,11 +24,12 @@ import { TaskContext } from './board-column.tsx';
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
   taskDragButtonRef: React.RefObject<HTMLButtonElement>;
+  className?: string;
   dragging?: boolean;
   dragOver?: boolean;
 }
 
-export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: TaskCardProps) {
+export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
@@ -118,6 +119,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: Tas
   const toggleEditorState = () => {
     setIsEditing(!isEditing);
   };
+  
+  // Pressing ENTER on markdown when focused and expanded should set isEditing to true
+  const handleMarkdownClick: MouseEventHandler<HTMLDivElement> = (event) => {
+    if (!isExpanded) return;
+    if (document.activeElement === event.currentTarget) setIsEditing(true);
+  }
 
   useDoubleClick({
     onSingleClick: () => setFocusedTask(task.id),
@@ -160,6 +167,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: Tas
         variants({
           status: task.status as TaskStatus,
         }),
+        className,
       )}
     >
       <CardContent id={`${task.id}-content`} className="p-2 space-between gap-1 flex flex-col relative">
@@ -199,7 +207,8 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: Tas
               {!isEditing && (
                 <div className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
                   {/* biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation> */}
-                  <div ref={contentRef} tabIndex={0} className="flex">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                  <div ref={contentRef} tabIndex={0} onClick={handleMarkdownClick} className="flex ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
                     <MDEditor.Markdown
                       source={isExpanded ? task.markdown || '' : task.summary}
                       style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
