@@ -16,12 +16,12 @@ import ContentPlaceholder from '../common/content-placeholder';
 import type { DraggableItemData } from '~/types/index.ts';
 import { getDraggableItemData, sortTaskOrder } from '~/lib/utils';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { attachClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DraggableTaskCard } from './draggable-task-card';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
+import { DropIndicator } from '../common/drop-indicator';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 
 interface BoardColumnProps {

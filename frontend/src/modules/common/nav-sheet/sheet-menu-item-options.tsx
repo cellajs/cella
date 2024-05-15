@@ -11,8 +11,8 @@ import type { DraggableItemData, Page } from '~/types';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { attachClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { getDraggableItemData, arrayMove } from '~/lib/utils';
+import { DropIndicator } from '../drop-indicator';
 
 interface SheetMenuItemProps {
   item: Page;
@@ -135,7 +135,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
     <div
       ref={dragRef}
       style={{ opacity: `${dragging ? 0.3 : 1}` }}
-      className={`group mb-0.5 flex relative items-center sm:max-w-[18rem] h-14 w-full cursor-pointer items-start justify-start rounded p-0 focus:outline-none
+      className={`group mb-0.5 flex relative items-center sm:max-w-[18rem] h-14 w-full cursor-pointer justify-start rounded p-0 focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground 
       ${!isItemArchived ? 'ring-1' : ''} ${isDraggedOver ? 'bg-accent/80' : ''} `}
     >
@@ -177,9 +177,9 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
           </Button>
         </div>
       </div>
-      {closestEdge && <DropIndicator edge={closestEdge} gap="2px" />}
+      {closestEdge && <DropIndicator edge={closestEdge} />}
       {!isItemArchived && (
-        <Button size="xs" variant="none" ref={dragButtonRef} className="p-2 cursor-grab">
+        <Button size="xs" variant="none" ref={dragButtonRef} className="p-2 mr-1 cursor-grab focus-visible:ring-inset focus-visible:ring-offset-0">
           <GripVertical size={16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
         </Button>
       )}
