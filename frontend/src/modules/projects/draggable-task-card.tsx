@@ -28,7 +28,16 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
 
   const dragIsOver = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
     setIsDraggedOver(true);
-    if (isTaskData(source.data) && source.data.item.id !== task.id) setClosestEdge(extractClosestEdge(self.data));
+    if (!isTaskData(source.data) || !isTaskData(self.data)) return;
+    if (source.data.index === self.data.index - 1 && source.data.item.project_id === self.data.item.project_id) {
+      setClosestEdge('bottom');
+      return;
+    }
+    if (source.data.index === self.data.index + 1 && source.data.item.project_id === self.data.item.project_id) {
+      setClosestEdge('top');
+      return;
+    }
+    setClosestEdge(extractClosestEdge(self.data));
   };
 
   const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -75,17 +84,8 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   }, [task]);
   return (
     <div className={`relative border ${focusedTaskId === task.id ? 'border-primary' : 'border-transparent'}`}>
-      <TaskCard
-        // focusedTask={focusedTask}
-        // setFocusedTask={setFocusedTask}
-        // task={task}
-        taskRef={taskDragRef}
-        taskDragButtonRef={taskDragButtonRef}
-        dragging={dragging}
-        dragOver={isDraggedOver}
-      />
-
-      {closestEdge && <DropIndicator edge={closestEdge} />}
+      <TaskCard taskRef={taskDragRef} taskDragButtonRef={taskDragButtonRef} dragging={dragging} dragOver={isDraggedOver} />
+      {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} />}
     </div>
   );
 };

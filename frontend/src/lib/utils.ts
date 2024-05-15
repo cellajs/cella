@@ -1,3 +1,4 @@
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
@@ -134,4 +135,26 @@ export const arrayMove = (array: string[], startIndex: number, endIndex: number)
 
 export const getDraggableItemData = <T>(item: T, itemIndex: number, type: 'task' | 'column' | 'menuItem'): DraggableItemData<T> => {
   return { dragItem: true, item, index: itemIndex, type };
+};
+
+// To get target index for drop on DnD
+export const getReorderDestinationIndex = (
+  currentIndex: number,
+  closestEdgeOfTarget: Edge | null,
+  targetIndex: number,
+  axis: 'vertical' | 'horizontal',
+): number => {
+  // if (axis === 'horizontal') {
+  //   if (closestEdgeOfTarget === 'left') {
+  //     return indexOfTarget;
+  //   } else if (closestEdgeOfTarget === 'right') {
+  //     return indexOfTarget + 1;
+  //   }
+  // } else
+  if (axis === 'vertical') {
+    if (closestEdgeOfTarget === 'top') return targetIndex - 1;
+
+    if (closestEdgeOfTarget === 'bottom') return targetIndex;
+  }
+  return currentIndex;
 };

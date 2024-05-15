@@ -11,7 +11,7 @@ import type { DraggableItemData, Page } from '~/types';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { attachClosestEdge, extractClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { getDraggableItemData, arrayMove } from '~/lib/utils';
+import { getDraggableItemData, arrayMove, getReorderDestinationIndex } from '~/lib/utils';
 import { DropIndicator } from '../drop-indicator';
 
 interface SheetMenuItemProps {
@@ -93,8 +93,9 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
       dropTargetForElements({
         element,
         canDrop({ source }) {
-          return isPageData(source.data) && source.data.item.id !== item.id && source.data.item.type === item.type && source.data.type === 'menuItem';
+          return isPageData(source.data) && source.data.item.id !== item.id;
         },
+        getIsSticky: () => true,
         getData({ input }) {
           return attachClosestEdge(data, {
             element,
@@ -102,7 +103,17 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
             allowedEdges: ['top', 'bottom'],
           });
         },
-        onDrag: ({self}) => setClosestEdge(extractClosestEdge(self.data)),
+        onDrag: ({ self, source }) => {
+          if (isPageData(source.data) && isPageData(self.data) && source.data.index === self.data.index - 1) {
+            setClosestEdge('bottom');
+            return;
+          }
+          if (isPageData(source.data) && isPageData(self.data) && source.data.index === self.data.index + 1) {
+            setClosestEdge('top');
+            return;
+          }
+          setClosestEdge(extractClosestEdge(self.data));
+        },
         onDragEnter: () => setIsDraggedOver(true),
         onDrop: () => onDragOver(),
         onDragLeave: () => onDragOver(),
@@ -121,68 +132,70 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
         const sourceData = source.data;
         if (!target || !isPageData(sourceData) || !isPageData(target.data)) return;
 
-        const targetData = target.data;
-        const indexOfTarget = activeItemsOrder[sectionName].findIndex((item) => item === targetData.item.id);
-        if (indexOfTarget < 0) return;
+        const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
+        const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'vertical');
 
-        const newItemOrder = arrayMove(activeItemsOrder[sectionName], sourceData.index, indexOfTarget);
+        const newItemOrder = arrayMove(activeItemsOrder[sectionName], sourceData.index, destination);
         setActiveItemsOrder(sectionName, newItemOrder);
       },
     });
   }, [item, activeItemsOrder[sectionName]]);
 
   return (
-    <div
-      ref={dragRef}
-      style={{ opacity: `${dragging ? 0.3 : 1}` }}
-      className={`group mb-0.5 flex relative items-center sm:max-w-[18rem] h-14 w-full cursor-pointer justify-start rounded p-0 focus:outline-none
+    <div className="relative my-1" ref={dragRef}>
+      <div
+        ref={dragRef}
+        style={{ opacity: `${dragging ? 0.3 : 1}` }}
+        className={`group flex relative items-center sm:max-w-[18rem] h-14 w-full cursor-pointer justify-start rounded p-0 focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground 
       ${!isItemArchived ? 'ring-1' : ''} ${isDraggedOver ? 'bg-accent/80' : ''} `}
-    >
-      <AvatarWrap className="m-2" type={item.type} id={item.id} name={item.name} url={item.thumbnailUrl} />
-      <div className="truncate grow p-2 pl-2 text-left">
-        <div className="truncate text-foreground/50 leading-5">{item.name}</div>
-        <div className="flex items-center gap-4 mt-1">
-          <Button
-            variant="link"
-            size="sm"
-            className="p-0 font-light text-xs h-4 leading-3"
-            aria-label="Toggle archive"
-            onClick={itemArchiveStateHandle}
-          >
-            {isItemArchived ? (
-              <>
-                <ArchiveRestore size={14} className="mr-1" /> {t('common:restore')}
-              </>
-            ) : (
-              <>
-                <Archive size={14} className="mr-1" />
-                {t('common:archive')}
-              </>
-            )}
-          </Button>
+      >
+        <AvatarWrap className="m-2" type={item.type} id={item.id} name={item.name} url={item.thumbnailUrl} />
+        <div className="truncate grow p-2 pl-2 text-left">
+          <div className="truncate text-foreground/50 leading-5">{item.name}</div>
+          <div className="flex items-center gap-4 mt-1">
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 font-light text-xs h-4 leading-3"
+              aria-label="Toggle archive"
+              onClick={itemArchiveStateHandle}
+            >
+              {isItemArchived ? (
+                <>
+                  <ArchiveRestore size={14} className="mr-1" /> {t('common:restore')}
+                </>
+              ) : (
+                <>
+                  <Archive size={14} className="mr-1" />
+                  {t('common:archive')}
+                </>
+              )}
+            </Button>
 
-          <Button variant="link" size="sm" className="p-0 font-light text-xs h-4 leading-3" aria-label="Toggle Mute" onClick={itemMuteStateHandle}>
-            {isItemMuted ? (
-              <>
-                <Bell size={14} className="mr-1" />
-                {t('common:unmute')}
-              </>
-            ) : (
-              <>
-                <BellOff size={14} className="mr-1" />
-                {t('common:mute')}
-              </>
-            )}
-          </Button>
+            <Button variant="link" size="sm" className="p-0 font-light text-xs h-4 leading-3" aria-label="Toggle Mute" onClick={itemMuteStateHandle}>
+              {isItemMuted ? (
+                <>
+                  <Bell size={14} className="mr-1" />
+                  {t('common:unmute')}
+                </>
+              ) : (
+                <>
+                  <BellOff size={14} className="mr-1" />
+                  {t('common:mute')}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
+
+        {!isItemArchived && (
+          <Button size="xs" variant="none" ref={dragButtonRef} className="p-2 mr-1 cursor-grab focus-visible:ring-inset focus-visible:ring-offset-0">
+            <GripVertical size={16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
+          </Button>
+        )}
       </div>
-      {closestEdge && <DropIndicator edge={closestEdge} gap="2px" />}
-      {!isItemArchived && (
-        <Button size="xs" variant="none" ref={dragButtonRef} className="p-2 mr-1 cursor-grab focus-visible:ring-inset focus-visible:ring-offset-0">
-          <GripVertical size={16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
-        </Button>
-      )}
+      {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} gap="2px" />}
     </div>
   );
 };
