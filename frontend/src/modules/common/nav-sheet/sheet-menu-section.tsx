@@ -119,34 +119,27 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     setUnarchive(unarchive.sort((a, b) => sortById(a, b, activeItemsOrder[section.id])));
   }, [data, activeItemsOrder]);
 
-  useEffect(() => {
-    if (!sectionRef.current) return;
+  // Helper function to set or remove 'tabindex' attribute
+  const updateTabIndex = (ref: React.RefObject<HTMLElement>, isVisible: boolean) => {
+    if (!ref.current) return;
 
-    const elements = sectionRef.current.querySelectorAll('*');
-    for (const el of elements) {
-      if (el instanceof HTMLElement) {
-        if (!isSectionVisible) {
-          el.setAttribute('tabindex', '-1');
-        } else {
-          el.removeAttribute('tabindex');
-        }
+    const elements = ref.current.querySelectorAll<HTMLElement>('*');
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      if (isVisible) {
+        el.removeAttribute('tabindex');
+      } else {
+        el.setAttribute('tabindex', '-1');
       }
     }
+  };
+  
+  useEffect(() => {
+    updateTabIndex(sectionRef, isSectionVisible);
   }, [sectionRef, isSectionVisible]);
 
   useEffect(() => {
-    if (!archivedRef.current) return;
-
-    const elements = archivedRef.current.querySelectorAll('*');
-    for (const el of elements) {
-      if (el instanceof HTMLElement) {
-        if (!isArchivedVisible) {
-          el.setAttribute('tabindex', '-1');
-        } else {
-          el.removeAttribute('tabindex');
-        }
-      }
-    }
+    updateTabIndex(archivedRef, isArchivedVisible);
   }, [archivedRef, isArchivedVisible]);
 
   return (

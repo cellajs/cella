@@ -29,11 +29,12 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
   const { t } = useTranslation();
+
   const [dragging, setDragging] = useState(false);
-  const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [isItemArchived, setItemArchived] = useState(item.archived);
   const [isItemMuted, setItemMuted] = useState(item.muted);
+  
   const user = useUserStore((state) => state.user);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
@@ -67,7 +68,6 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
 
   const onDragOver = () => {
     setClosestEdge(null);
-    setIsDraggedOver(false);
   };
 
   // create draggable & dropTarget elements and auto scroll
@@ -114,7 +114,6 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
           }
           setClosestEdge(extractClosestEdge(self.data));
         },
-        onDragEnter: () => setIsDraggedOver(true),
         onDrop: () => onDragOver(),
         onDragLeave: () => onDragOver(),
       }),
@@ -148,7 +147,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
         className={`group flex relative items-center sm:max-w-[18rem] h-14 w-full cursor-pointer justify-start rounded p-0 focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground 
-      ${!isItemArchived ? 'ring-1' : ''} ${isDraggedOver ? 'bg-accent/80' : ''} `}
+      ${!isItemArchived && 'ring-1'} `}
       >
         <AvatarWrap className="m-2" type={item.type} id={item.id} name={item.name} url={item.thumbnailUrl} />
         <div className="truncate grow p-2 pl-2 text-left">
