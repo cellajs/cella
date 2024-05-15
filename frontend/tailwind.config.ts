@@ -17,6 +17,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        roboto: ['Open Sans', 'ui-sans-serif', 'sans-serif',],
+      },
       translate: {
         active: 'translate(0, 0)',
       },
