@@ -135,6 +135,8 @@ export const DataTable = <TData,>({
                 rows={rows}
                 onCellClick={onCellClick}
                 className="fill-grid"
+                // TODO Hack to rerender css by changing width
+                style={{ marginRight: columns.length % 2 === 0 ? '0px' : '1px' }}
                 selectedRows={selectedRows}
                 onSelectedRowsChange={onSelectedRowsChange}
                 sortColumns={sortColumns}

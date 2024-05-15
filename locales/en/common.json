@@ -379,7 +379,7 @@
   "terms_of_use": "Terms of use",
   "timezone": "Timezone",
   "title": "Title",
-  "under_construction.text": "Cella is a work in progress. This site shows how we are building a task board app with cella as a template. Currently, the development of both cella and the task board app are happening in the same repo. These developments and the code will be split once cella is stable and ready for releases. Stable means cella has passed a security audit, has a stable API, automated tests, proper versioning (currently its prerelease). Contact us if you are interested in collaborating!",
+  "under_construction.text": "Cella is a work in progress. This site shows how we are building an issue/task tracker app with cella as a template. Currently, the development of both cella and the app are happening in the same repo. These developments and the code will be split once cella is stable and ready for releases. Stable means cella has passed a security audit, has a stable API, automated tests, proper versioning (currently its prerelease). Contact us if you are interested in collaborating!",
   "unknown": "Unknown",
   "unknown_inviter": "Unknown inviter",
   "unknown_name": "Unknown name",

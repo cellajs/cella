@@ -2,11 +2,12 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Kbd } from '~/modules/common/kbd';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bolt, Bug, Star, Check } from 'lucide-react';
 import type { TaskType } from './create-task-form';
 import { Button } from '../ui/button';
+import { TaskContext } from './board-column';
 
 type Type = {
   value: (typeof types)[number]['value'];
@@ -32,10 +33,17 @@ export const SelectTaskType = ({ currentType, changeTaskType }: SelectTaskTypePr
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedType, setSelectedType] = useState<Type>(types[types.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
-
+  const { task, focusedTaskId } = useContext(TaskContext);
   const isSearching = searchValue.length > 0;
   // Open on key press
-  useHotkeys([['t', () => setOpenPopover(true)]]);
+  useHotkeys([
+    [
+      't',
+      () => {
+        if (focusedTaskId === task.id) setOpenPopover(true);
+      },
+    ],
+  ]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>

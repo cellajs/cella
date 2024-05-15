@@ -1,11 +1,11 @@
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { ProjectWithLabels, Task } from '../common/root/electric';
+import type { ProjectWithLabels, Task, TaskWithLabels } from '../common/root/electric';
 import { sheet } from '../common/sheeter/state';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
@@ -14,26 +14,29 @@ import { ProjectSettings } from './project-settings';
 import { WorkspaceContext } from '../workspaces';
 import ContentPlaceholder from '../common/content-placeholder';
 import type { DraggableItemData } from '~/types/index.ts';
-import { getDraggableItemData } from '~/lib/utils';
+import { getDraggableItemData, sortTaskOrder } from '~/lib/utils';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { attachClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { attachClosestEdge, extractClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DraggableTaskCard } from './draggable-task-card';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
+import { DropIndicator } from '../common/drop-indicator';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 
 interface BoardColumnProps {
   tasks: Task[];
+  setFocusedTask: (taskId: string) => void;
+  focusedTask: string | null;
 }
 
-const sortTaskOrder = (task1: Task, task2: Task) => {
-  if (task1.status !== task2.status) return task2.status - task1.status;
-  // same status, sort by sort_order
-  if (task1.sort_order !== null && task2.sort_order !== null) return task2.sort_order - task1.sort_order;
-  // sort_order is null
-  return 0;
-};
+interface TaskContextValue {
+  task: TaskWithLabels;
+  focusedTaskId: string | null;
+  setFocusedTask: (taskId: string) => void;
+}
+
+export const TaskContext = createContext({} as TaskContextValue);
 
 type ProjectDraggableItemData = DraggableItemData<ProjectWithLabels> & { type: 'column' };
 
@@ -41,7 +44,7 @@ const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectD
   return data.dragItem === true && typeof data.index === 'number';
 };
 
-export function BoardColumn({ tasks }: BoardColumnProps) {
+export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnProps) {
   const { t } = useTranslation();
   const columnRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLButtonElement | null>(null);
@@ -54,13 +57,14 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const { project } = useContext(ProjectContext);
+  const { project, focusedProject, setFocusedProjectIndex } = useContext(ProjectContext);
   const { searchQuery, projects } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[project.workspace_id]?.columns.find((el) => el.columnId === project.id);
 
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
+  const sortedTasks = useMemo(() => tasks?.sort((a, b) => sortTaskOrder(a, b)), [tasks]);
 
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
@@ -104,9 +108,15 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
   const dragStarted = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
     setIsDraggedOver(true);
     if (!isProjectData(source.data) || !isProjectData(self.data) || source.data.item.id === project.id) return;
-    const srcIndx = source.data.index;
-    const slfIndx = self.data.index;
-    setClosestEdge(srcIndx > slfIndx ? 'left' : 'right');
+    if (source.data.index === self.data.index - 1) {
+      setClosestEdge('right');
+      return;
+    }
+    if (source.data.index === self.data.index + 1) {
+      setClosestEdge('left');
+      return;
+    }
+    setClosestEdge(extractClosestEdge(self.data));
   };
 
   // const createTask = () => {
@@ -178,7 +188,33 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
           })
         : () => {},
     );
-  }, [project, projects, tasks]);
+  }, [project, projects, sortedTasks]);
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (focusedProject === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
+    if (projects[focusedProject || 0].id !== project.id) return;
+
+    let filteredTasks = sortedTasks;
+
+    if (!showAccepted) filteredTasks = filteredTasks.filter((t) => t.status !== 6); // if accepted tasks hidden do not focus on them
+    if (!showIced) filteredTasks = filteredTasks.filter((t) => t.status !== 0); // if iced tasks hidden do not focus on them
+
+    const currentIndex = filteredTasks.findIndex((t) => t.id === focusedTask);
+    let nextIndex = currentIndex;
+
+    if (event.key === 'ArrowDown') nextIndex = currentIndex === filteredTasks.length - 1 ? 0 : currentIndex + 1;
+    if (event.key === 'ArrowUp') nextIndex = currentIndex === 0 ? filteredTasks.length - 1 : currentIndex - 1;
+
+    // Ensure there are tasks in the filtered list before setting focused task
+    if (filteredTasks.length > 0) {
+      setFocusedTask(filteredTasks[nextIndex].id); // Set the focused task id
+    }
+  };
+
+  useHotkeys([
+    ['ArrowDown', handleKeyDown],
+    ['ArrowUp', handleKeyDown],
+  ]);
 
   return (
     <Card
@@ -211,15 +247,16 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
                   <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
                 )}
               </Button>
-              {tasks
+              {sortedTasks
                 .filter((t) => {
                   if (showAccepted && t.status === 6) return true;
                   if (showIced && t.status === 0) return true;
                   return t.status !== 0 && t.status !== 6;
                 })
-                .sort((a, b) => sortTaskOrder(a, b))
                 .map((task) => (
-                  <DraggableTaskCard key={task.id} task={task} taskIndex={tasks.findIndex((t) => t.id === task.id)} />
+                  <TaskContext.Provider key={task.id} value={{ task, focusedTaskId: focusedTask, setFocusedTask }}>
+                    <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
+                  </TaskContext.Provider>
                 ))}
               <Button
                 onClick={handleIcedClick}
@@ -260,11 +297,7 @@ export function BoardColumn({ tasks }: BoardColumnProps) {
         )}
         {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
       </div>
-      {closestEdge && (
-        <div className="bg-primary border-[red]">
-          <DropIndicator edge={closestEdge} />
-        </div>
-      )}
+      {closestEdge && <DropIndicator edge={closestEdge} gap="8px" />}
     </Card>
   );
 }

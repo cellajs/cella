@@ -18,7 +18,7 @@ const RowEdit = ({ user, callback, tabIndex }: Props) => {
   const openUpdateSheet = () => {
     sheet(<UpdateUserForm user={user} sheet callback={(user) => callback([user], 'update')} />, {
       id: 'edit-user',
-      className: 'sm:max-w-2xl my-4 sm:my-8',
+      className: 'sm:max-w-2xl',
       title: t('common:edit_user'),
     });
   };

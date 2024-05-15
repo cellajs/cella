@@ -74,6 +74,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         firstName: user.firstName,
         lastName: user.lastName,
         bio: user.bio,
+        email: user.email,
         language: user.language,
         newsletter: user.newsletter,
       },
