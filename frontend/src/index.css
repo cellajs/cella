@@ -165,6 +165,11 @@
     height: 100%;
     animation: none;
   }
+
+  ::view-transition-old(table-filter-bar-button),
+  ::view-transition-new(table-filter-bar-button) {
+    height: 100%;
+  }
 }
 
 .outline-glow-button:before {
