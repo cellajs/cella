@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@cellajs/imado": "^0.1.2",
+    "@cellajs/permission-manager": "^0.1.0",
     "@hono/node-server": "^1.11.1",
     "@hono/sentry": "^1.1.0",
     "@hono/zod-openapi": "^0.11.0",
@@ -69,7 +70,9 @@
     "tsx": "^4.9.3"
   },
   "babel": {
-    "presets": ["@babel/preset-typescript"]
+    "presets": [
+      "@babel/preset-typescript"
+    ]
   },
   "exports": {
     "./*": "./src/*.ts"

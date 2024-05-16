@@ -41,6 +41,9 @@ importers:
       '@cellajs/imado':
         specifier: ^0.1.2
         version: 0.1.2(postcss@8.4.38)
+      '@cellajs/permission-manager':
+        specifier: ^0.1.0
+        version: 0.1.0(postcss@8.4.38)
       '@hono/node-server':
         specifier: ^1.11.1
         version: 1.11.1
@@ -3432,6 +3435,20 @@ packages:
       - '@microsoft/api-extractor'
       - '@swc/core'
       - aws-crt
+      - postcss
+      - supports-color
+      - ts-node
+    dev: false
+
+  /@cellajs/permission-manager@0.1.0(postcss@8.4.38):
+    resolution: {integrity: sha512-+vGHLdGrR5Jez+dp6yHsgij8hIuZbdU88IU4JAV8nO4FzH1RDNkkj++O9RhMf3CKKDslYn7QiwI8D16u379+0A==}
+    engines: {node: '>=20.9.0'}
+    dependencies:
+      tsup: 8.0.2(postcss@8.4.38)(typescript@5.4.5)
+      typescript: 5.4.5
+    transitivePeerDependencies:
+      - '@microsoft/api-extractor'
+      - '@swc/core'
       - postcss
       - supports-color
       - ts-node
