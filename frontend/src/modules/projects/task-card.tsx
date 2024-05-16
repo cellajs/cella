@@ -121,12 +121,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   const toggleEditorState = () => {
     setIsEditing(!isEditing);
   };
-  
+
   // Pressing ENTER on markdown when focused and expanded should set isEditing to true
   const handleMarkdownClick: MouseEventHandler<HTMLDivElement> = (event) => {
     if (!isExpanded) return;
     if (document.activeElement === event.currentTarget) setIsEditing(true);
-  }
+  };
 
   useDoubleClick({
     onSingleClick: () => setFocusedTask(task.id),
@@ -160,11 +160,18 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     setFocusedTask(task.id);
   }, [dragging]);
 
+  useEffect(() => {
+    if (focusedTaskId !== task.id) return;
+    taskRef.current?.focus();
+  }, [focusedTaskId]);
+
   return (
     <Card
+      tabIndex={focusedTaskId === task.id ? 0 : -1}
       ref={taskRef}
       className={cn(
-        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent 
+        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
+        focus-visible:none
         via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''}`,
         variants({
           status: task.status as TaskStatus,
@@ -208,9 +215,14 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               )}
               {!isEditing && (
                 <div className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
-                  {/* biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation> */}
                   {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                  <div ref={contentRef} tabIndex={0} onClick={handleMarkdownClick} className="flex ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <div
+                    ref={contentRef}
+                    // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
+                    tabIndex={0}
+                    onClick={handleMarkdownClick}
+                    className="flex ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
                     <MDEditor.Markdown
                       source={isExpanded ? task.markdown || '' : task.summary}
                       style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}

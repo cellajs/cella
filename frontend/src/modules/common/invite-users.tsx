@@ -1,5 +1,5 @@
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
@@ -40,6 +40,10 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
       ),
     });
   };
+
+  useEffect(() => {
+    return updateMode(['search']);
+  }, [mode]);
 
   if (!inviteMode) {
     return (
