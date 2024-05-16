@@ -34,7 +34,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [isItemArchived, setItemArchived] = useState(item.archived);
   const [isItemMuted, setItemMuted] = useState(item.muted);
-  
+
   const user = useUserStore((state) => state.user);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
@@ -93,7 +93,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
       dropTargetForElements({
         element,
         canDrop({ source }) {
-          return isPageData(source.data) && source.data.item.id !== item.id;
+          return isPageData(source.data);
         },
         getIsSticky: () => true,
         getData({ input }) {
@@ -104,12 +104,8 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
           });
         },
         onDrag: ({ self, source }) => {
-          if (isPageData(source.data) && isPageData(self.data) && source.data.index === self.data.index - 1) {
-            setClosestEdge('bottom');
-            return;
-          }
-          if (isPageData(source.data) && isPageData(self.data) && source.data.index === self.data.index + 1) {
-            setClosestEdge('top');
+          if (isPageData(source.data) && source.data.item.id === item.id) {
+            setClosestEdge(null);
             return;
           }
           setClosestEdge(extractClosestEdge(self.data));
@@ -171,7 +167,6 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
                 </>
               )}
             </Button>
-
             <Button variant="link" size="sm" className="p-0 font-light text-xs h-4 leading-3" aria-label="Toggle Mute" onClick={itemMuteStateHandle}>
               {isItemMuted ? (
                 <>

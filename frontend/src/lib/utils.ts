@@ -144,6 +144,7 @@ export const getReorderDestinationIndex = (
   targetIndex: number,
   axis: 'vertical' | 'horizontal',
 ): number => {
+  if (targetIndex === currentIndex) return currentIndex;
   // if (axis === 'horizontal') {
   //   if (closestEdgeOfTarget === 'left') {
   //     return indexOfTarget;
@@ -151,10 +152,22 @@ export const getReorderDestinationIndex = (
   //     return indexOfTarget + 1;
   //   }
   // } else
-  if (axis === 'vertical') {
-    if (closestEdgeOfTarget === 'top') return targetIndex - 1;
 
-    if (closestEdgeOfTarget === 'bottom') return targetIndex;
+  if (axis === 'vertical') {
+    if (
+      (targetIndex === currentIndex - 1 && closestEdgeOfTarget === 'bottom') ||
+      (targetIndex === currentIndex + 1 && closestEdgeOfTarget === 'top')
+    ) {
+      return currentIndex;
+    }
+
+    if ((targetIndex === 0 && closestEdgeOfTarget === 'bottom') || (currentIndex > targetIndex && closestEdgeOfTarget === 'bottom')) {
+      return targetIndex + 1;
+    }
+    if (currentIndex < targetIndex && closestEdgeOfTarget === 'top') return targetIndex - 1;
+
+    return targetIndex;
   }
+
   return currentIndex;
 };
