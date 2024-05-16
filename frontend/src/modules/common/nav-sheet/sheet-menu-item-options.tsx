@@ -17,6 +17,8 @@ import { DropIndicator } from '../drop-indicator';
 interface SheetMenuItemProps {
   item: Page;
   sectionName: 'organizations' | 'projects' | 'workspaces';
+  isGlobalDragging: boolean;
+  setGlobalDragging: (dragging: boolean) => void;
 }
 
 type PageDraggableItemData = DraggableItemData<Page>;
@@ -25,11 +27,10 @@ const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggab
   return data.dragItem === true && typeof data.index === 'number';
 };
 
-export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) => {
+export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setGlobalDragging }: SheetMenuItemProps) => {
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
   const { t } = useTranslation();
-
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [isItemArchived, setItemArchived] = useState(item.archived);
@@ -87,8 +88,14 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
         element,
         dragHandle: dragButton,
         getInitialData: () => data,
-        onDragStart: () => setDragging(true),
-        onDrop: () => setDragging(false),
+        onDragStart: () => {
+          setDragging(true);
+          setGlobalDragging(true);
+        },
+        onDrop: () => {
+          setDragging(false);
+          setGlobalDragging(false);
+        },
       }),
       dropTargetForElements({
         element,
@@ -148,11 +155,11 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
         <AvatarWrap className="m-2" type={item.type} id={item.id} name={item.name} url={item.thumbnailUrl} />
         <div className="truncate grow p-2 pl-2 text-left">
           <div className="truncate text-foreground/50 leading-5">{item.name}</div>
-          <div className="flex items-center gap-4 mt-1">
+          <div className={`flex items-center gap-4 mt-1 ${isGlobalDragging ? 'h-4' : ''}`}>
             <Button
               variant="link"
               size="sm"
-              className="p-0 font-light text-xs h-4 leading-3"
+              className={`p-0 font-light text-xs h-4 leading-3 ${isGlobalDragging ? 'hidden' : ''}`}
               aria-label="Toggle archive"
               onClick={itemArchiveStateHandle}
             >
@@ -167,7 +174,13 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
                 </>
               )}
             </Button>
-            <Button variant="link" size="sm" className="p-0 font-light text-xs h-4 leading-3" aria-label="Toggle Mute" onClick={itemMuteStateHandle}>
+            <Button
+              variant="link"
+              size="sm"
+              className={`p-0 font-light text-xs h-4 leading-3 ${isGlobalDragging ? 'hidden' : ''}`}
+              aria-label="Toggle Mute"
+              onClick={itemMuteStateHandle}
+            >
               {isItemMuted ? (
                 <>
                   <Bell size={14} className="mr-1" />

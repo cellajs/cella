@@ -35,6 +35,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
+  const [globalDragging, setGlobalDragging] = useState(false);
   const { activeSections, toggleSection, activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
@@ -98,11 +99,26 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         </li>
       );
     }
-    if (list[0].archived) return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />);
+    if (list[0].archived)
+      return list.map((item: Page) => (
+        <SheetMenuItemOptions
+          key={item.id}
+          item={item}
+          sectionName={section.id}
+          isGlobalDragging={globalDragging}
+          setGlobalDragging={setGlobalDragging}
+        />
+      ));
     return (
       <>
         {list.map((item: Page) => (
-          <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />
+          <SheetMenuItemOptions
+            isGlobalDragging={globalDragging}
+            setGlobalDragging={setGlobalDragging}
+            key={item.id}
+            item={item}
+            sectionName={section.id}
+          />
         ))}
       </>
     );
@@ -133,7 +149,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
       }
     }
   };
-  
+
   useEffect(() => {
     updateTabIndex(sectionRef, isSectionVisible);
   }, [sectionRef, isSectionVisible]);
