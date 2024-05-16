@@ -13,6 +13,7 @@ import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
 import { TooltipButton } from '../tooltip-button';
+import { makeTransition } from '~/lib/utils';
 
 interface MenuSectionProps {
   key: string;
@@ -34,6 +35,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
+  const [globalDragging, setGlobalDragging] = useState(false);
   const { activeSections, toggleSection, activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
@@ -97,11 +99,26 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         </li>
       );
     }
-    if (list[0].archived) return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />);
+    if (list[0].archived)
+      return list.map((item: Page) => (
+        <SheetMenuItemOptions
+          key={item.id}
+          item={item}
+          sectionName={section.id}
+          isGlobalDragging={globalDragging}
+          setGlobalDragging={setGlobalDragging}
+        />
+      ));
     return (
       <>
         {list.map((item: Page) => (
-          <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />
+          <SheetMenuItemOptions
+            isGlobalDragging={globalDragging}
+            setGlobalDragging={setGlobalDragging}
+            key={item.id}
+            item={item}
+            sectionName={section.id}
+          />
         ))}
       </>
     );
@@ -118,43 +135,48 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     setUnarchive(unarchive.sort((a, b) => sortById(a, b, activeItemsOrder[section.id])));
   }, [data, activeItemsOrder]);
 
-  useEffect(() => {
-    if (!sectionRef.current) return;
+  // Helper function to set or remove 'tabindex' attribute
+  const updateTabIndex = (ref: React.RefObject<HTMLElement>, isVisible: boolean) => {
+    if (!ref.current) return;
 
-    const elements = sectionRef.current.querySelectorAll('*');
-    for (const el of elements) {
-      if (el instanceof HTMLElement) {
-        if (!isSectionVisible) {
-          el.setAttribute('tabindex', '-1');
-        } else {
-          el.removeAttribute('tabindex');
-        }
+    const elements = ref.current.querySelectorAll<HTMLElement>('*');
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      if (isVisible) {
+        el.removeAttribute('tabindex');
+      } else {
+        el.setAttribute('tabindex', '-1');
       }
     }
+  };
+
+  useEffect(() => {
+    updateTabIndex(sectionRef, isSectionVisible);
   }, [sectionRef, isSectionVisible]);
 
   useEffect(() => {
-    if (!archivedRef.current) return;
-
-    const elements = archivedRef.current.querySelectorAll('*');
-    for (const el of elements) {
-      if (el instanceof HTMLElement) {
-        if (!isArchivedVisible) {
-          el.setAttribute('tabindex', '-1');
-        } else {
-          el.removeAttribute('tabindex');
-        }
-      }
-    }
+    updateTabIndex(archivedRef, isArchivedVisible);
   }, [archivedRef, isArchivedVisible]);
 
   return (
     <>
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
-          <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
+          <Button
+            style={{
+              viewTransitionName: `section-${section.id}`,
+            }}
+            onClick={() => makeTransition(() => toggleSection(section.id))}
+            className="w-full justify-between transition-transform"
+            variant="secondary"
+          >
             <div className="flex items-center">
-              <span className="flex items-center">
+              <span
+                style={{
+                  viewTransitionName: `section-text-${section.id}`,
+                }}
+                className="flex items-center"
+              >
                 {section.icon && <section.icon className="mr-2 w-5 h-5" />}
                 {t(section.label)}
               </span>
@@ -167,7 +189,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
             <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
               <Button
                 disabled={!archived.length && !unarchive.length}
-                className="w-12 transition duration-300 px-3 ease-in-out }"
+                className={`w-12 px-3 duration-300 ${isSectionVisible ? 'animate-in fade-in slide-in-from-right' : ''}`}
                 variant="secondary"
                 size="icon"
                 onClick={() => toggleOptionsView(!optionsView)}
@@ -179,7 +201,12 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
 
           {isSectionVisible && data.canCreate && section.createForm && (
             <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
-              <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
+              <Button
+                className={`w-12 px-3 duration-300 ${isSectionVisible ? 'animate-in fade-in slide-in-from-right' : ''}`}
+                variant="secondary"
+                size="icon"
+                onClick={createDialog}
+              >
                 <Plus size={16} />
               </Button>
             </TooltipButton>

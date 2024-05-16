@@ -113,7 +113,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
                 </Button>
               </TooltipButton>
               <TooltipButton toolTipContent={t('common:manage_labels')}>
-                <Button variant="outlinePrimary" onClick={openLabelsSheet}>
+                <Button variant="outline" onClick={openLabelsSheet}>
                   <Tag size={16} />
                   <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
                 </Button>
@@ -121,7 +121,6 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
               <TooltipButton toolTipContent={t('common:workspace_settings')}>
                 <Button variant="outline" onClick={openSettingsSheet}>
                   <Settings size={16} />
-                  <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
                 </Button>
               </TooltipButton>
             </div>

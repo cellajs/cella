@@ -9,6 +9,216 @@ let trace_shader = null;
 let last_resolution = [0, 0];
 let cell_color = [1, 0, 0];
 
+// A placeholder function for renderTask when not provided
+const NOOP = () => {};
+
+/**
+ * A class for managing WebGL rendering process, monitoring performance, and adjusting rendering behavior dynamically.
+ */
+class WebGLRenderer {
+  /**
+   * Creates an instance of WebGLRenderer.
+   * @param {Function} renderTask - The function representing the rendering task.
+   */
+  constructor(renderTask) {
+    // Rendering task
+    this.renderTask = renderTask || NOOP;
+
+    // The sync object used to synchronize with GPU commands.
+    this.sync = null;
+
+    // The start time of the current performance measurement.
+    this.startTime = 0;
+
+    // The number of cycles elapsed since monitoring started.
+    this.cycles = 0;
+
+    // The number of consecutive adjusted cycles within a range.
+    // Each time a normal cycle occurs, this number decreases.
+    this.adjustedCycles = 0;
+
+    // The cycle after which the rendering starts.
+    this.renderStartCycle = 60; // Default value: 60 cycles (adjust as needed).
+
+    // The maximum acceptable time per frame (in milliseconds) for maintaining target frame rate.
+    this.maxFrameTime = 16.67; // milliseconds (for 60 FPS)
+
+    // The threshold for identifying a big lag (in adjusted cycles).
+    this.bigLagThreshold = 50; // Threshold for identifying big lag (adjust as needed)
+
+    // Timeout duration for adjusting frame rate (in milliseconds)
+    this.adjustmentTimeoutDuration = 100; // Adjust timeout as needed
+
+    // Timeout duration for checking sync (in milliseconds)
+    this.checkTimeoutDuration = 1; // Adjust timeout as needed
+
+    // Flag to indicate if the rendering loop is running
+    this.isRunning = false;
+  }
+
+  /**
+   * Starts the WebGL rendering process if not already running.
+   */
+  start() {
+    if (!this.isRunning && gl) {
+      this.isRunning = true;
+      this.renderLoop();
+    }
+  }
+
+  /**
+   * Stops the WebGL rendering process.
+   */
+  stop() {
+    this.isRunning = false;
+  }
+
+  /**
+   * Checks if the WebGL context is available.
+   * If not, stops the rendering process.
+   */
+  checkContext() {
+    if (!gl && this.isRunning) {
+      this.stop();
+    }
+  }
+
+  /**
+   * The main render loop.
+   */
+  renderLoop() {
+    try {
+      this.checkContext();
+      if (!this.isRunning) return;
+
+      this.sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      this.startTime = performance.now();
+      if (this.cycles >= this.renderStartCycle) this.renderTask();
+      this.checkSync();
+    } catch (error) {
+      console.error("Error in render loop:", error);
+      this.stop();
+    }
+  }
+
+  /**
+   * Checks if the GPU commands have been completed and adjusts rendering behavior accordingly.
+   */
+  checkSync() {
+    try {
+      this.checkContext();
+      if (!this.isRunning) return;
+
+      const status = gl.clientWaitSync(this.sync, 0, 0);
+      if (status === gl.CONDITION_SATISFIED || status === gl.ALREADY_SIGNALED) {
+        const endTime = performance.now();
+        const elapsedTime = endTime - this.startTime;
+
+        // Delete the sync object at the end of the cycle
+        gl.deleteSync(this.sync);
+
+        if (elapsedTime > this.maxFrameTime) {
+          // Big lag detected, switch to fallback mechanism
+          if (this.adjustedCycles >= this.bigLagThreshold) {
+            this.handlePerformanceFallback();
+            return;
+          }
+          // Lag detected, adjust frame rate
+          this.updateCycleCounters(true)
+          this.adjustFrameRate();
+        } else {
+          // No lag, continue with requestAnimationFrame
+          this.updateCycleCounters()
+          this.requestNextFrame();
+        }
+      } else {
+        // Not yet complete, continue checking
+        setTimeout(() => this.checkSync(), this.checkTimeoutDuration);
+      }
+    } catch (error) {
+      console.error("Error in checkSync:", error);
+      this.stop();
+    }
+  }
+
+  /**
+   * Updates cycle counters after each frame.
+   * @param {boolean} adjusted - Indicates if the cycle was adjusted due to lag.
+   */
+  updateCycleCounters(adjusted) {
+    try {
+      if (adjusted) {
+        this.adjustedCycles++;
+      } else if (this.adjustedCycles) {
+        this.adjustedCycles--;
+      }
+
+      this.cycles++;
+    } catch (error) {
+      console.error("Error in finishedCycle:", error);
+      this.stop();
+    }
+  }
+
+  /**
+   * Requests the next frame to be rendered.
+   */
+  requestNextFrame() {
+    try {
+      // Continue with next frame
+      requestAnimationFrame(() => this.renderLoop());
+    } catch (error) {
+      console.error("Error in requestNextFrame:", error);
+      this.stop();
+    }
+  }
+
+  /**
+   * Adjusts the frame rate or applies other optimizations based on detected lag.
+   */
+  adjustFrameRate() {
+    try {
+      // Lower frame rate or apply other optimizations
+      // Example: reduce frame rate by setting a longer timeout
+      setTimeout(() => this.requestNextFrame(), this.adjustmentTimeoutDuration);
+    } catch (error) {
+      console.error("Error in adjustFrameRate:", error);
+      this.stop();
+    }
+  }
+
+  /**
+   * Handles the fallback mechanism when a big lag is detected.
+   */
+  handlePerformanceFallback() {
+    try {
+      // Switch to fallback mechanism
+      // Example: switch to a static image or other fallback mechanism
+      // Stops the WebGL rendering process.
+      this.stop();
+    } catch (error) {
+      console.error("Error in handlePerformanceFallback:", error);
+      this.stop();
+    }
+  }
+}
+
+let webGLRenderer = null;
+
+// Configuration for circles on background
+// Maximum number of circles allowed
+const maxAmountOfCircles = 2000;
+
+// Minimum radius for circles
+const minCircleRadius = 0.0625;
+
+// Maximum radius for circles
+const maxCircleRadius = 0.15;
+
+// Minimum distance for touch detection
+const touchDistance = minCircleRadius;
+
+// Calculations
 const rand = (min_or_max, max) => (min_or_max ? (max ? min_or_max + (max - min_or_max) * Math.random() : min_or_max * Math.random()) : Math.random());
 const normalize = (v) => {
   const mag = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
@@ -24,16 +234,16 @@ const distortion_push_dir_2 = distortion_dot_dir_1.map((e) => -e);
 const distortion_power_1 = rand(0.1, 1);
 const distortion_power_2 = rand(0.1, 1);
 const circles = [];
-for (let i = 0; i < 2000; i++) {
-  const pos = [rand(0.0625 - 1, 1 - 0.0625), rand(0.0625 - 1, 1 - 0.0625)];
+for (let i = 0; i < maxAmountOfCircles; i++) {
+  const pos = [rand(minCircleRadius - 1, 1 - minCircleRadius), rand(minCircleRadius - 1, 1 - minCircleRadius)];
   let touch_dist = Math.min(1 - Math.abs(pos[0]), 1 - Math.abs(pos[1]));
   for (const circle of circles) {
     const dx = pos[0] - circle[0];
     const dy = pos[1] - circle[1];
     touch_dist = Math.min(touch_dist, Math.sqrt(dx * dx + dy * dy) - (0.00390625 + circle[2]));
   }
-  if (touch_dist > 0.0625) {
-    const radius = rand(Math.min(touch_dist, 0.0625), Math.min(touch_dist, 0.15));
+  if (touch_dist > touchDistance) {
+    const radius = rand(Math.min(touch_dist, minCircleRadius), Math.min(touch_dist, maxCircleRadius));
     pos.push(radius);
     circles.push(pos);
   }
@@ -342,10 +552,18 @@ void main()
   gl.uniform3fv(hash_shader.circles, circles.flat());
   gl.viewport(0, 0, 512, 512);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
-  update();
+  if (!webGLRenderer) {
+    webGLRenderer = new WebGLRenderer(renderTask);
+    webGLRenderer.start()
+  }
   return null;
 };
 const kill = () => {
+  if (webGLRenderer) {
+    webGLRenderer.stop()
+    webGLRenderer = null
+  }
+
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.clear(gl.COLOR_BUFFER_BIT);
   canvas = null;
@@ -357,7 +575,7 @@ const kill = () => {
   trace_shader = null;
   return null;
 };
-const update = () => {
+const renderTask = () => {
   if (canvas) {
     const width = canvas.width;
     const height = canvas.height;
@@ -380,6 +598,8 @@ const update = () => {
         gl.deleteTexture(old_texs[1]);
       }
     }
+    if (!texs) texs = [create_tex(width, height), create_tex(width, height)];
+
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texs[1], 0);
     gl.useProgram(trace_shader);
     gl.activeTexture(gl.TEXTURE0);
@@ -406,7 +626,6 @@ const update = () => {
     gl.uniform2fv(render_shader.resolution, [width, height]);
     gl.uniform3fv(render_shader.color, cell_color);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    requestAnimationFrame(update);
   }
   return null;
 };

@@ -3,7 +3,7 @@ import { createContext, useContext, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/lib/utils';
+import { cn, makeTransition } from '~/lib/utils';
 
 interface TableFilterBarProps {
   children: React.ReactNode;
@@ -44,7 +44,11 @@ export const FilterBarContent = ({ children, className = '' }: FilterBarChildPro
 export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFilterBarProps) => {
   const { t } = useTranslation();
 
-  const [isFilterActive, setFilterActive] = useState<boolean>(!!isFiltered);
+  const [isFilterActive, setFilterActiveWithoutTransition] = useState<boolean>(!!isFiltered);
+
+  const setFilterActive = (active: boolean) => {
+    makeTransition(() => setFilterActiveWithoutTransition(active));
+  };
 
   const clearFilters = () => {
     if (isFiltered) return onResetFilters();
@@ -55,14 +59,48 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
     <>
       <TableFilterBarContext.Provider value={{ isFilterActive, setFilterActive }}>{children}</TableFilterBarContext.Provider>
       {!isFilterActive && (
-        <Button className="sm:hidden" variant="secondary" onClick={() => setFilterActive(true)}>
-          <Filter width={16} height={16} />
+        <Button
+          style={{
+            viewTransitionName: 'table-filter-bar-button',
+          }}
+          className="sm:hidden"
+          variant="secondary"
+          onClick={() => setFilterActive(true)}
+        >
+          <Filter
+            style={{
+              viewTransitionName: 'table-filter-bar-icon',
+            }}
+            width={16}
+            height={16}
+          />
           <span className="ml-1">{t('common:filter')}</span>
         </Button>
       )}
       {isFilterActive && (
-        <Button className="sm:hidden" variant="secondary" onClick={clearFilters}>
-          {isFiltered ? <FilterX size={16} /> : <X size={16} />}
+        <Button
+          style={{
+            viewTransitionName: 'table-filter-bar-button',
+          }}
+          className="sm:hidden"
+          variant="secondary"
+          onClick={clearFilters}
+        >
+          {isFiltered ? (
+            <FilterX
+              style={{
+                viewTransitionName: 'table-filter-bar-icon',
+              }}
+              size={16}
+            />
+          ) : (
+            <X
+              size={16}
+              style={{
+                viewTransitionName: 'table-filter-bar-icon',
+              }}
+            />
+          )}
         </Button>
       )}
     </>

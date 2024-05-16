@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Button } from '../ui/button';
@@ -9,6 +9,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { toast } from 'sonner';
 import { cva } from 'class-variance-authority';
 import { cn } from '~/lib/utils';
+import { TaskContext } from './board-column';
 
 type Status = {
   value: (typeof statuses)[number]['value'];
@@ -55,9 +56,18 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(statuses[taskStatus]);
+  const { task, focusedTaskId } = useContext(TaskContext);
+
   const isSearching = searchValue.length > 0;
   // Open on key press
-  useHotkeys([['s', () => setOpenPopover(true)]]);
+  useHotkeys([
+    [
+      's',
+      () => {
+        if (focusedTaskId === task.id) setOpenPopover(true);
+      },
+    ],
+  ]);
 
   const statusChange = (index: number) => {
     const newStatus = statuses[index];

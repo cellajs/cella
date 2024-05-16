@@ -11,11 +11,12 @@ import { MediumIcon } from './impact-icons/medium';
 import { NotSelected } from './impact-icons/not-selected';
 import { Kbd } from '../common/kbd';
 import { Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFormContext } from 'react-hook-form';
 import type { TaskImpact } from './create-task-form';
 import { useMeasure } from '~/hooks/use-measure';
+import { TaskContext } from './board-column';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -41,6 +42,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('impact');
   const [openPopover, setOpenPopover] = useState(false);
+  const { task, focusedTaskId } = useContext(TaskContext);
   const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(
     viewValue !== undefined && viewValue !== null ? impacts[viewValue] : impacts[formValue] || null,
   );
@@ -50,7 +52,14 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
   const { ref, bounds } = useMeasure();
 
   // Open on key press
-  useHotkeys([['p', () => setOpenPopover(true)]]);
+  useHotkeys([
+    [
+      'i',
+      () => {
+        if (focusedTaskId === task.id) setOpenPopover(true);
+      },
+    ],
+  ]);
 
   // Whenever the form value changes (also on reset), update the internal state
   useEffect(() => {
@@ -123,7 +132,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
             className="leading-normal"
             placeholder={t('common:placeholder.impact')}
           />
-          {!isSearching && <Kbd value="P" className="absolute top-3 right-[10px]" />}
+          {!isSearching && <Kbd value="I" className="absolute top-3 right-[10px]" />}
           <CommandList>
             <CommandGroup>
               {impacts.map((Impact, index) => (

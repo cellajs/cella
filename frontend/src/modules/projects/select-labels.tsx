@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Check, Dot, History, Tag, X } from 'lucide-react';
 import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '../ui/command.tsx';
@@ -12,6 +12,7 @@ import { faker } from '@faker-js/faker';
 import { useElectric, type Label } from '../common/root/electric.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { CommandEmpty } from 'cmdk';
+import { TaskContext } from './board-column.tsx';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -32,6 +33,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
+  const { task, focusedTaskId } = useContext(TaskContext);
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
@@ -96,7 +98,14 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
   };
 
   // Open on key press
-  useHotkeys([['l', () => setOpenPopover(true)]]);
+  useHotkeys([
+    [
+      'l',
+      () => {
+        if (focusedTaskId === task.id) setOpenPopover(true);
+      },
+    ],
+  ]);
 
   // callback to change labels in task card
   useEffect(() => {

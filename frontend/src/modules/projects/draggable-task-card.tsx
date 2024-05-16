@@ -1,18 +1,20 @@
 import { TaskCard } from './task-card';
 import { getDraggableItemData } from '~/lib/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import type { DraggableItemData } from '~/types';
 import type { Task } from '../common/root/electric';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
-export const DraggableTaskCard = ({ task, taskIndex }: { task: Task; taskIndex: number }) => {
+import { DropIndicator } from '../common/drop-indicator';
+import { TaskContext } from './board-column';
+
+export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
-
+  const { task, focusedTaskId } = useContext(TaskContext);
   const [dragging, setDragging] = useState(false);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -26,7 +28,16 @@ export const DraggableTaskCard = ({ task, taskIndex }: { task: Task; taskIndex: 
 
   const dragIsOver = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
     setIsDraggedOver(true);
-    if (isTaskData(source.data) && source.data.item.id !== task.id) setClosestEdge(extractClosestEdge(self.data));
+    if (!isTaskData(source.data) || !isTaskData(self.data)) return;
+    if (source.data.index === self.data.index - 1 && source.data.item.project_id === self.data.item.project_id) {
+      setClosestEdge('bottom');
+      return;
+    }
+    if (source.data.index === self.data.index + 1 && source.data.item.project_id === self.data.item.project_id) {
+      setClosestEdge('top');
+      return;
+    }
+    setClosestEdge(extractClosestEdge(self.data));
   };
 
   const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -72,10 +83,19 @@ export const DraggableTaskCard = ({ task, taskIndex }: { task: Task; taskIndex: 
     );
   }, [task]);
   return (
-    <div className="relative">
-      <TaskCard task={task} taskRef={taskDragRef} taskDragButtonRef={taskDragButtonRef} dragging={dragging} dragOver={isDraggedOver} />
+    <>
+      <TaskCard
+        // focusedTask={focusedTask}
+        // setFocusedTask={setFocusedTask}
+        // task={task}
+        taskRef={taskDragRef}
+        taskDragButtonRef={taskDragButtonRef}
+        dragging={dragging}
+        dragOver={isDraggedOver}
+        className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary' : 'border-l-transparent'}`}
+      />
 
-      {closestEdge && <DropIndicator edge={closestEdge} gap="0px" />}
-    </div>
+      {closestEdge && <DropIndicator edge={closestEdge} />}
+    </>
   );
 };
