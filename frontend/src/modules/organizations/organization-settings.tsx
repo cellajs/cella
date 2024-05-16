@@ -6,7 +6,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
 import { useContext } from 'react';
-import Sticky from 'react-sticky-el';
+import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
 import { AsideNav } from '~/modules/common/aside-nav';
 import { OrganizationContext } from '~/modules/organizations/organization';
@@ -47,9 +47,9 @@ const OrganizationSettings = () => {
   return (
     <div className="md:flex md:flex-row mx-auto max-w-[1200px] gap-4">
       <div className="mx-auto md:min-w-[200px] md:w-[30%] flex h-auto flex-col">
-        <Sticky topOffset={-60} stickyClassName="md:mt-[60px] z-10 max-md:!relative">
+        <StickyBox offsetTop={60} className="md:mt-[60px] z-10 max-md:!relative">
           <AsideNav tabs={tabs} className="pb-2" />
-        </Sticky>
+        </StickyBox>
       </div>
 
       <div className="md:w-[70%]  flex flex-col gap-8">
