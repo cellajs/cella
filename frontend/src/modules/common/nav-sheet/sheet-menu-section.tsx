@@ -2,7 +2,7 @@ import { ChevronDown, Plus, Settings2 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Sticky from 'react-sticky-el';
+import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -160,7 +160,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
 
   return (
     <>
-      <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
+      <StickyBox className="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <Button
             style={{
@@ -212,7 +212,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
             </TooltipButton>
           )}
         </div>
-      </Sticky>
+      </StickyBox>
       <div
         ref={sectionRef}
         className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}

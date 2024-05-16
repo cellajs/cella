@@ -2,7 +2,7 @@ import PublicPage from '~/modules/marketing/page';
 import { AsideNav } from '../common/aside-nav';
 import { AsideAnchor } from '../common/aside-anchor';
 import { SimpleHeader } from '../common/simple-header';
-import Sticky from 'react-sticky-el/lib/basic-version';
+import StickyBox from 'react-sticky-box';
 import { useTranslation } from 'react-i18next';
 
 type LegalTypes = 'privacy' | 'terms';
@@ -33,15 +33,15 @@ export const LegalsMenu = () => {
     <PublicPage title={t('common:legal')}>
       <div className="container md:flex md:flex-row md:mt-8 mx-auto gap-4">
         <div className="mx-auto md:min-w-[200px] md:w-[30%] md:mt-2">
-          <Sticky stickyClassName="z-10 max-md:!relative">
-            <SimpleHeader className="p-3"  text={t('common:legal_text')} />
+          <StickyBox className="z-10 max-md:!relative">
+            <SimpleHeader className="p-3" text={t('common:legal_text')} />
             <AsideNav tabs={tabs} className="py-2" />
-          </Sticky>
+          </StickyBox>
         </div>
         <div className="md:w-[70%] flex flex-col gap-8">
           {tabs.map((tab) => {
             return (
-              <AsideAnchor id={tab.id}>
+              <AsideAnchor key={tab.id} id={tab.id}>
                 <Legal type={tab.id as LegalTypes} />
               </AsideAnchor>
             );
