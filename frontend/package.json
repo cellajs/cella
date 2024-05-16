@@ -15,7 +15,7 @@
     "build:dev": "tsc && cross-env NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
     "generate": "drizzle-kit generate:pg",
-    "generate:electric": "cross-env-shell pnpm generate:electric:${NODE_ENV:-development}",
+    "generate:electric": "cross-env-shell pnpm generate:electric:$NODE_ENV",
     "generate:electric:production": "electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres",
     "generate:electric:development": "electric-sql generate",
     "migrate": "tsx src/db/migrate.ts",
