@@ -19,6 +19,7 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -144,12 +145,7 @@ const OrganizationsTable = () => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <>
-              <Bird strokeWidth={0.7} size={80} className="opacity-50" />
-              <div className="mt-6 text-sm">{t('common:no_organizations')}</div>
-            </>
-          ),
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_organizations')} />,
         }}
       />
     </div>

@@ -20,6 +20,7 @@ import { OrganizationMembersRoute } from '~/routes/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 
 const LIMIT = 40;
 
@@ -199,12 +200,7 @@ const MembersTable = () => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <>
-              <Bird strokeWidth={0.7} size={80} className="opacity-50" />
-              <div className="mt-6 text-sm">{t('common:no_members')}</div>
-            </>
-          ),
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_members')} />,
         }}
       />
     </div>

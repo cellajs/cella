@@ -6,6 +6,7 @@ import { useColumns } from './columns';
 import type { Label } from '~/modules/common/root/electric';
 import { Toolbar } from './toolbar';
 import { DataTable } from '~/modules/common/data-table';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 
 export interface LabelsParam {
   role?: 'secondary' | 'primary' | undefined;
@@ -84,12 +85,7 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
           onSelectedRowsChange: handleSelectedRowsChange,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <>
-              <Bird strokeWidth={0.7} size={80} className="opacity-50" />
-              <div className="mt-6 text-sm">{t('common:no_labels')}</div>
-            </>
-          ),
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_labels')} />,
         }}
       />
     </div>
