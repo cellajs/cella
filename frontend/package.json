@@ -6,7 +6,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "prepare:electric": "NODE_ENV=production pnpm proxy & (pnpm migrate && NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",
+    "prepare:electric": "pnpm proxy & (pnpm migrate && NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",
     "prepare:electric:dev": "pnpm migrate && NODE_ENV=development pnpm generate:electric && tsx prepare-files.ts",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
@@ -15,9 +15,11 @@
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
     "generate": "drizzle-kit generate:pg",
-    "generate:electric": "if test \"$NODE_ENV\" = \"production\"; then electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres; else electric-sql generate; fi",
+    "generate:electric": "pnpm generate:electric:${NODE_ENV:-development}",
+    "generate:electric:production": "electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres",
+    "generate:electric:development": "electric-sql generate",
     "migrate": "tsx src/db/migrate.ts",
-    "proxy": "if test \"$NODE_ENV\" = \"production\"; then electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65432; else electric-sql proxy-tunnel --service https://cella-electric-dev.onrender.com --local-port 65432; fi"
+    "proxy": "electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65432"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.1.7",
