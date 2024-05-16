@@ -28,7 +28,6 @@ services:
       DATABASE_REQUIRE_SSL: false
       LOGICAL_PUBLISHER_HOST: electric
       PG_PROXY_PASSWORD: proxy_password
-      ELECTRIC_USE_IPV6: false
       AUTH_MODE: insecure
     ports:
       - 5133:5133
