@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import auth from './auth';
 import tenant from './tenant';
+import protect from './protect';
 
 type TenantAccessibleFor = Parameters<typeof tenant>[2];
 
@@ -22,3 +23,5 @@ export const systemGuard = auth(['ADMIN']);
 export const publicGuard: MiddlewareHandler = async (_, next) => {
   await next();
 };
+
+export { protect };
