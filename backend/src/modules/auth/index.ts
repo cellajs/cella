@@ -67,7 +67,7 @@ const authRoutes = app
     const isEmailVerified = tokenData?.email === email;
 
     // * create user and send verification email
-    return await handleCreateUser(
+    await handleCreateUser(
       ctx,
       {
         id: userId,
@@ -81,6 +81,10 @@ const authRoutes = app
         isEmailVerified,
       },
     );
+
+    return ctx.json({
+      success: true,
+    });
   })
   /*
    * Verify email
