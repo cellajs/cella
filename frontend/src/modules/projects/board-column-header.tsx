@@ -1,12 +1,12 @@
 import { GripVertical, Plus } from 'lucide-react';
 import { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { CardHeader } from '~/modules/ui/card';
-import ToolTipButtons from './tooltip-buttons';
 import { useWorkspaceStore } from '~/store/workspace';
-import { useTranslation } from 'react-i18next';
 import { ProjectContext } from './board';
+import ToolTipButtons from './tooltip-buttons';
 
 interface BoardColumnHeaderProps {
   createFormOpen: boolean;

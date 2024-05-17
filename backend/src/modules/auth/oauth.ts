@@ -13,6 +13,7 @@ import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { setSessionCookie } from './helpers/cookies';
+import { handleCreateUser } from './helpers/user';
 import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './oauth-helpers';
 import {
   githubSignInCallbackRouteConfig,
@@ -22,7 +23,6 @@ import {
   microsoftSignInCallbackRouteConfig,
   microsoftSignInRouteConfig,
 } from './routes';
-import { handleCreateUser } from './helpers/user';
 
 const app = new CustomHono();
 

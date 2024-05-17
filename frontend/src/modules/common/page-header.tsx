@@ -1,12 +1,12 @@
+import { Link } from '@tanstack/react-router';
+import type { PageResourceType } from 'backend/types/common';
+import { Building, ChevronRight, Home, Layers } from 'lucide-react';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { PageCover } from './page-cover';
-import type { PageResourceType } from 'backend/types/common';
-import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
-import { Building, ChevronRight, Home, Layers } from 'lucide-react';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {

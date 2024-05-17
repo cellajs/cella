@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { useMutation } from '~/hooks/use-mutations';
 import type { ApiError } from '~/api';
 import { acceptInvite as baseAcceptInvite } from '~/api/general';
 import { checkToken as baseCheckToken } from '~/api/general';
+import { useMutation } from '~/hooks/use-mutations';
 import AuthPage from '../auth/auth-page';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 const AcceptInvite = () => {
   const { t } = useTranslation();

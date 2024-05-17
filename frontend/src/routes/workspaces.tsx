@@ -14,7 +14,7 @@ const TasksTable = lazy(() => import('~/modules/projects/tasks-table'));
 export const WorkspaceRoute = createRoute({
   path: 'workspace/$idOrSlug',
   staticData: { pageTitle: 'Workspace', hideFooter: true },
-  beforeLoad: ({ location, params }) =>  noDirectAccess(location.pathname, params.idOrSlug, '/board'),
+  beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => IndexRoute,
   loader: async ({ params: { idOrSlug } }) => {
     queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
@@ -59,4 +59,3 @@ export const WorkspaceOverviewRoute = createRoute({
     </div>
   ),
 });
-

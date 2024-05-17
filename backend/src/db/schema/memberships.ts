@@ -1,10 +1,10 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, timestamp, varchar, boolean, uuid } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { nanoid } from '../../lib/nanoid';
 import { organizationsTable } from './organizations';
+import { projectsTable } from './projects';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
-import { nanoid } from '../../lib/nanoid';
-import { projectsTable } from './projects';
 
 const typeEnum = ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const;
 const roleEnum = ['MEMBER', 'ADMIN'] as const;

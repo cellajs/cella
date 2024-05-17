@@ -1,7 +1,7 @@
 import type { Control } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import MultipleSelector from '~/modules/common/multi-select';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { useTranslation } from 'react-i18next';
 
 type Props = {
   control: Control;

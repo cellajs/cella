@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { projectsTable } from '../../db/schema/projects';
-import { nameSchema, validSlugSchema, idSchema, colorSchema, paginationQuerySchema } from '../../lib/common-schemas';
+import { colorSchema, idSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
 
 import { apiMembershipSchema } from '../memberships/schema';
 

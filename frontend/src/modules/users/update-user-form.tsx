@@ -20,13 +20,13 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
-import { useUserStore } from '~/store/user';
-import LanguageFormField from '../common/form-fields/language';
-import { useStepper } from '../common/stepper/use-stepper';
-import { SlugFormField } from '../common/form-fields/slug';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
+import { useUserStore } from '~/store/user';
 import InputFormField from '../common/form-fields/input';
+import LanguageFormField from '../common/form-fields/language';
+import { SlugFormField } from '../common/form-fields/slug';
+import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
+import { useStepper } from '../common/stepper/use-stepper';
 
 interface UpdateUserFormProps {
   user: User;

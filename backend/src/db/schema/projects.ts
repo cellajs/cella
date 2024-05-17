@@ -1,6 +1,6 @@
 import { pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { workspacesTable } from './workspaces';
 import { usersTable } from './users';
+import { workspacesTable } from './workspaces';
 
 export const projectsTable = pgTable('projects', {
   id: uuid('id').primaryKey().defaultRandom(),

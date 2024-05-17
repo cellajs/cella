@@ -1,8 +1,8 @@
+import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { dropDownState, type DropDownT, type DropDownToRemove } from '../dropdowner/state';
 import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
-import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
+import { type DropDownT, type DropDownToRemove, dropDownState } from '../dropdowner/state';
 
 export function DropDowner() {
   const [dropDowns, setDropDowns] = useState<DropDownT[]>([]);

@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '../../db/schema/organizations';
 import { imageUrlSchema, nameSchema, paginationQuerySchema, validDomainsSchema, validSlugSchema, validUrlSchema } from '../../lib/common-schemas';
-import { apiUserSchema } from '../users/schema';
 import { apiMembershipSchema } from '../memberships/schema';
+import { apiUserSchema } from '../users/schema';
 
 export const apiOrganizationUserSchema = z.object({
   ...apiUserSchema.shape,

@@ -4,16 +4,16 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
+import { makeTransition } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { Page, UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
+import { TooltipButton } from '../tooltip-button';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
-import { TooltipButton } from '../tooltip-button';
-import { makeTransition } from '~/lib/utils';
 
 interface MenuSectionProps {
   key: string;

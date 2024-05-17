@@ -4,12 +4,12 @@ import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import authRoutes from './modules/auth';
 import generalRoutes from './modules/general';
+import membershipRoutes from './modules/memberships';
 import organizationsRoutes from './modules/organizations';
+import projectsRoutes from './modules/projects';
 import publicRoutes from './modules/public';
 import usersRoutes from './modules/users';
-import membershipRoutes from './modules/memberships';
 import workspacesRoutes from './modules/workspaces';
-import projectsRoutes from './modules/projects';
 
 import { CustomHono } from './types/common';
 

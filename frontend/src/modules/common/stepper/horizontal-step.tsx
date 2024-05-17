@@ -1,5 +1,5 @@
-import { cn } from '~/lib/utils';
 import * as React from 'react';
+import { cn } from '~/lib/utils';
 import { StepButtonContainer } from './step-button-container';
 import { StepIcon } from './step-icon';
 import { StepLabel } from './step-label';
@@ -46,7 +46,7 @@ const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>((props,
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-<div
+    <div
       aria-disabled={!hasVisited}
       className={cn(
         'stepper__horizontal-step',

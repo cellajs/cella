@@ -1,17 +1,17 @@
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { Bird, Redo } from 'lucide-react';
 import { Fragment, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+import { sortTaskOrder } from '~/lib/utils';
+import { useWorkspaceStore } from '~/store/workspace';
+import type { Project } from '~/types';
+import ContentPlaceholder from '../common/content-placeholder';
 import type { Label, Task } from '../common/root/electric';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';
-import { useTranslation } from 'react-i18next';
-import { Bird, Redo } from 'lucide-react';
-import ContentPlaceholder from '../common/content-placeholder';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { sortTaskOrder } from '~/lib/utils';
-import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useWorkspaceStore } from '~/store/workspace';
-import { Project } from '~/types';
 
 interface ProjectContextValue {
   project: Project;
@@ -128,7 +128,14 @@ export default function Board() {
         {projects.map((project, index) => (
           <Fragment key={project.id}>
             <ResizablePanel key={`${project.id}-panel`}>
-              <ProjectContext.Provider value={{ project, labels: labels.filter((l) => l.project_id === project.id), focusedProject: focusedProjectIndex, setFocusedProjectIndex }}>
+              <ProjectContext.Provider
+                value={{
+                  project,
+                  labels: labels.filter((l) => l.project_id === project.id),
+                  focusedProject: focusedProjectIndex,
+                  setFocusedProjectIndex,
+                }}
+              >
                 <BoardColumn
                   tasks={filteredTasks.filter((t) => t.project_id === project.id)}
                   key={`${project.id}-column`}

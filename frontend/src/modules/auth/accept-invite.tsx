@@ -6,6 +6,7 @@ import type * as z from 'zod';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import AuthPage from './auth-page';
 
+import { acceptInviteJsonSchema } from 'backend/modules/general/schema';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -16,7 +17,6 @@ import { useMutation } from '~/hooks/use-mutations';
 import { cn } from '~/lib/utils';
 import { Form } from '~/modules/ui/form';
 import { LegalNotice } from './sign-up-form';
-import { acceptInviteJsonSchema } from 'backend/modules/general/schema';
 
 const formSchema = acceptInviteJsonSchema;
 

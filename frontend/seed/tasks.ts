@@ -1,6 +1,6 @@
+import { faker } from '@faker-js/faker';
 import { db as mainDb } from 'backend/db/db';
 import { organizationsTable } from 'backend/db/schema/organizations';
-import { faker } from '@faker-js/faker';
 // import { db as electricDb } from '../src/db/db';
 import type { InsertWorkspaceModel } from 'backend/db/schema/workspaces';
 

@@ -1,7 +1,7 @@
+import typographyPlugin from '@tailwindcss/typography';
 import { config } from 'config';
 import type { Config } from 'tailwindcss';
 import animatePlugin from 'tailwindcss-animate';
-import typographyPlugin from '@tailwindcss/typography';
 /** @type {Config} */
 
 export default {
@@ -18,7 +18,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        roboto: ['Open Sans', 'ui-sans-serif', 'sans-serif',],
+        roboto: ['Open Sans', 'ui-sans-serif', 'sans-serif'],
       },
       translate: {
         active: 'translate(0, 0)',

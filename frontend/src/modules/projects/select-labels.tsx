@@ -1,17 +1,17 @@
-import { useContext, useEffect, useState } from 'react';
-import { Button } from '~/modules/ui/button';
+import { faker } from '@faker-js/faker';
+import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History, Tag, X } from 'lucide-react';
-import { CommandItem, CommandList, Command, CommandInput, CommandGroup } from '../ui/command.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
-import { Kbd } from '../common/kbd.tsx';
-import { Badge } from '../ui/badge.tsx';
+import { useContext, useEffect, useState } from 'react';
+import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { useFormContext } from 'react-hook-form';
-import { faker } from '@faker-js/faker';
-import { useElectric, type Label } from '../common/root/electric.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
-import { CommandEmpty } from 'cmdk';
+import { Button } from '~/modules/ui/button';
+import { Kbd } from '../common/kbd.tsx';
+import { type Label, useElectric } from '../common/root/electric.ts';
+import { Badge } from '../ui/badge.tsx';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { TaskContext } from './board-column.tsx';
 
 const badgeStyle = (color?: string | null) => {

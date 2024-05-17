@@ -1,14 +1,14 @@
 import { config } from 'config';
+import type { Context } from 'hono';
 import { db } from '../../../db/db';
 import { type InsertUserModel, usersTable } from '../../../db/schema/users';
-import { checkSlugAvailable } from '../../general/helpers/check-slug';
-import { sendVerificationEmail } from './verify-email';
-import type { Context } from 'hono';
 import { errorResponse } from '../../../lib/errors';
 import { logEvent } from '../../../middlewares/logger/log-event';
 import type { ProviderId } from '../../../types/common';
+import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { insertOauthAccount } from '../oauth-helpers';
 import { setSessionCookie } from './cookies';
+import { sendVerificationEmail } from './verify-email';
 
 // * Handle creating a user
 export const handleCreateUser = async (
@@ -33,15 +33,18 @@ export const handleCreateUser = async (
 
   try {
     // * Insert the user into the database
-    const [user] = await db.insert(usersTable).values({
-      id: data.id,
-      slug: slugAvailable ? data.slug : `${data.slug}-${data.id}`,
-      firstName: data.firstName,
-      email: data.email.toLowerCase(),
-      name: data.name,
-      language: config.defaultLanguage,
-      hashedPassword: data.hashedPassword,
-    }).returning();
+    const [user] = await db
+      .insert(usersTable)
+      .values({
+        id: data.id,
+        slug: slugAvailable ? data.slug : `${data.slug}-${data.id}`,
+        firstName: data.firstName,
+        email: data.email.toLowerCase(),
+        name: data.name,
+        language: config.defaultLanguage,
+        hashedPassword: data.hashedPassword,
+      })
+      .returning();
 
     // * If a provider is passed, insert the oauth account
     if (options?.provider) {

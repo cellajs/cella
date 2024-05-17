@@ -1,10 +1,10 @@
+import path from 'node:path';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
-import path from 'node:path';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig, splitVendorChunkPlugin, type PluginOption, type UserConfig } from 'vite';
+import { type PluginOption, type UserConfig, defineConfig, splitVendorChunkPlugin } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';

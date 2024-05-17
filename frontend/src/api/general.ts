@@ -1,6 +1,6 @@
-import { UploadType, type Member, type UploadParams, type User } from '~/types';
-import { ApiError, generalClient as client } from '.';
 import type { PageResourceType } from 'backend/types/common';
+import { type Member, type UploadParams, UploadType, type User } from '~/types';
+import { ApiError, generalClient as client } from '.';
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {

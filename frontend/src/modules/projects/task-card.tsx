@@ -17,10 +17,10 @@ import { SelectImpact } from './select-impact.tsx';
 import SelectStatus, { type TaskStatus } from './select-status.tsx';
 import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
-import { TaskEditor } from './task-editor.tsx';
-import SetLabels from './select-labels.tsx';
 import { TaskContext } from './board-column.tsx';
 import { ProjectContext } from './board.tsx';
+import SetLabels from './select-labels.tsx';
+import { TaskEditor } from './task-editor.tsx';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;

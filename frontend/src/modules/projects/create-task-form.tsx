@@ -14,15 +14,15 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import { useElectric, type Task } from '../common/root/electric.ts';
 import { dialog } from '../common/dialoger/state.ts';
+import { type Task, useElectric } from '../common/root/electric.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
+import { WorkspaceContext } from '../workspaces/index.tsx';
 import { ProjectContext } from './board.tsx';
 import { SelectImpact } from './select-impact.tsx';
 import SetLabels from './select-labels.tsx';
 import SelectStatus from './select-status.tsx';
-import { WorkspaceContext } from '../workspaces/index.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;

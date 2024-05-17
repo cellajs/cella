@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Bird } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
-import { useColumns } from './columns';
-import type { Label } from '~/modules/common/root/electric';
-import { Toolbar } from './toolbar';
-import { DataTable } from '~/modules/common/data-table';
+import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { DataTable } from '~/modules/common/data-table';
+import type { Label } from '~/modules/common/root/electric';
+import { useColumns } from './columns';
+import { Toolbar } from './toolbar';
 
 export interface LabelsParam {
   role?: 'secondary' | 'primary' | undefined;

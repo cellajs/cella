@@ -29,8 +29,7 @@ export const tasks = pgTable('tasks', {
   // order is a reserved keyword in Postgres, so we need to use a different name
   order: integer('sort_order'),
   status: integer('status').notNull(),
-  projectId: uuid('project_id')
-    .notNull(),
+  projectId: uuid('project_id').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by').notNull(),
   assignedBy: varchar('assigned_by'),
@@ -51,8 +50,7 @@ export const labels = pgTable('labels', {
   id: uuid('id').primaryKey(),
   name: varchar('name').notNull(),
   color: varchar('color'),
-  projectId: uuid('project_id')
-    .notNull(),
+  projectId: uuid('project_id').notNull(),
 });
 
 export const taskLabels = pgTable(

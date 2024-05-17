@@ -1,13 +1,13 @@
-import { SQL, and, eq, or } from 'drizzle-orm';
+import { type SQL, and, eq, or } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
 import { db } from '../../db/db';
-import { membershipsTable, type MembershipModel } from '../../db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { type ProjectModel, projectsTable } from '../../db/schema/projects';
+import { type WorkspaceModel, workspacesTable } from '../../db/schema/workspaces';
 import { errorResponse } from '../../lib/errors';
 import type { Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
-import { type WorkspaceModel, workspacesTable } from '../../db/schema/workspaces';
-import { type ProjectModel, projectsTable } from '../../db/schema/projects';
 
 type Entity = OrganizationModel | WorkspaceModel | ProjectModel;
 
@@ -101,12 +101,7 @@ const tenant =
     const [membership] = await db
       .select()
       .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.userId, user.id),
-          filter,
-        ),
-      );
+      .where(and(eq(membershipsTable.userId, user.id), filter));
 
     if ((!membership || (accessibleFor && !accessibleFor.includes(membership.role))) && user.role !== 'ADMIN') {
       return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id, idOrSlug, type });

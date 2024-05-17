@@ -1,6 +1,7 @@
-import { PanelTopClose, Plus, Settings, Tag, Trash, XSquare, FilterX } from 'lucide-react';
+import { FilterX, PanelTopClose, Plus, Settings, Tag, Trash, XSquare } from 'lucide-react';
 import { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -9,15 +10,14 @@ import DisplayOptions from '~/modules/projects/display-options';
 import WorkspaceView from '~/modules/projects/view-options';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
+import { AvatarWrap } from '../common/avatar-wrap';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
+import { useElectric } from '../common/root/electric';
+import { TooltipButton } from '../common/tooltip-button';
 import { Badge } from '../ui/badge';
 import { WorkspaceContext } from '../workspaces';
 import AddProjects from './add-projects';
 import LabelsTable from './labels-table';
-import { useElectric } from '../common/root/electric';
-import { AvatarWrap } from '../common/avatar-wrap';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
-import { TooltipButton } from '../common/tooltip-button';
-import { toast } from 'sonner';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;
