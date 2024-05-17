@@ -5,6 +5,7 @@ import { usersTable } from './users';
 import { membershipsTable } from './memberships';
 import { organizationsTable } from './organizations';
 
+// TODO: Add a 'type' column with a static value of "workspace" to directly identify the resource type from the data
 export const workspacesTable = pgTable(
   'workspaces',
   {

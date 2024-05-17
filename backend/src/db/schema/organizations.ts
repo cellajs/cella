@@ -5,6 +5,7 @@ import { nanoid } from '../../lib/nanoid';
 import { membershipsTable } from './memberships';
 import { usersTable } from './users';
 
+// TODO: Add a 'type' column with a static value of "organization" to directly identify the resource type from the data
 export const organizationsTable = pgTable(
   'organizations',
   {

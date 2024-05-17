@@ -7,6 +7,7 @@ import { nanoid } from '../../lib/nanoid';
 
 const roleEnum = ['MEMBER', 'ADMIN'] as const;
 
+// TODO: Store IDs of all ancestors to directly retrieve all user memberships in the hierarchy
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
