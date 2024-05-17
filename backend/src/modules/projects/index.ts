@@ -3,19 +3,19 @@ import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { projectsTable } from '../../db/schema/projects';
 
-import { createError, errorResponse, type ErrorType } from '../../lib/errors';
+import { type ErrorType, createError, errorResponse } from '../../lib/errors';
+import { getOrderColumn } from '../../lib/order-column';
 import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import {
   createProjectRouteConfig,
-  getProjectByIdOrSlugRouteConfig,
-  updateProjectRouteConfig,
   deleteProjectsRouteConfig,
+  getProjectByIdOrSlugRouteConfig,
   getProjectsRouteConfig,
+  updateProjectRouteConfig,
 } from './routes';
-import { getOrderColumn } from '../../lib/order-column';
 
 const app = new CustomHono();
 

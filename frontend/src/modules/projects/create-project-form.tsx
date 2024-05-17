@@ -10,7 +10,9 @@ import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
 // import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import { createProject } from '~/api/projects';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
@@ -21,8 +23,6 @@ import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import { Form } from '../ui/form';
-import { createProject } from '~/api/projects';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 
 interface CreateProjectFormProps {
   workspace: Workspace;

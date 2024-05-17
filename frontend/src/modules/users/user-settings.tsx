@@ -2,27 +2,27 @@ import { Trash2, Zap, ZapOff } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
+import { Send } from 'lucide-react';
 import { terminateMySessions as baseTerminateMySessions } from '~/api/users';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUsers from './delete-users';
-import { Send } from 'lucide-react';
 
 import { useNavigate } from '@tanstack/react-router';
+import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
+import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl, sendResetPasswordEmail } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
 import { AsideNav } from '~/modules/common/aside-nav';
 import UpdateUserForm from '~/modules/users/update-user-form';
+import { useThemeStore } from '~/store/theme';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
-import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl, sendResetPasswordEmail } from '~/api/authentication';
-import { config } from 'config';
-import { useThemeStore } from '~/store/theme';
 
 type Session = {
   id: string;

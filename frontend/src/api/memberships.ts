@@ -14,13 +14,7 @@ export const removeMembersFromResource = async ({ idOrSlug, ids }: { idOrSlug: s
   return json.data;
 };
 
-export const updateMembership = async (
-  idOrSlug: string,
-  user: string,
-  role?: Member['organizationRole'],
-  archive?: boolean,
-  muted?: boolean,
-) => {
+export const updateMembership = async (idOrSlug: string, user: string, role?: Member['organizationRole'], archive?: boolean, muted?: boolean) => {
   const response = await client[':idOrSlug'].memberships[':user'].$put({
     param: {
       idOrSlug,

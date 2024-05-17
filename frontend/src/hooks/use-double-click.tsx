@@ -22,11 +22,13 @@ const useDoubleClick = ({ ref, latency = 300, onSingleClick = () => null, onDoub
     if (!clickRef) return;
 
     let clickCount = 0;
-    const handleClick = (e: Event) => { // Update the type of the event parameter to Event
+    const handleClick = (e: Event) => {
+      // Update the type of the event parameter to Event
       clickCount += 1;
 
       setTimeout(() => {
-        if (clickCount === 1) onSingleClick(e as MouseEvent); // Cast the event to MouseEvent
+        if (clickCount === 1)
+          onSingleClick(e as MouseEvent); // Cast the event to MouseEvent
         else if (clickCount === 2) onDoubleClick(e as MouseEvent); // Cast the event to MouseEvent
 
         clickCount = 0;

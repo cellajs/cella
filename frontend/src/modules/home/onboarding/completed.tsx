@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import ConfettiExplosion from 'react-confetti-explosion';
-import { useNavigationStore } from '~/store/navigation';
-import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { Menu, Undo } from 'lucide-react';
-import { createWorkspace } from '~/api/workspaces';
-import { useUserStore } from '~/store/user';
+import { useEffect, useState } from 'react';
+import ConfettiExplosion from 'react-confetti-explosion';
+import { useTranslation } from 'react-i18next';
 import { createProject } from '~/api/projects';
+import { createWorkspace } from '~/api/workspaces';
+import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
+import { useNavigationStore } from '~/store/navigation';
+import { useUserStore } from '~/store/user';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();

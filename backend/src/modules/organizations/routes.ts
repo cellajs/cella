@@ -6,7 +6,7 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { authGuard, systemGuard, organizationTenantGuard } from '../../middlewares/guard';
+import { authGuard, organizationTenantGuard, systemGuard } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,

@@ -1,8 +1,8 @@
+import { deleteProjects as baseDeleteProjects } from '~/api/projects';
 import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { deleteProjects as baseDeleteProjects } from '~/api/projects';
 import type { Project } from '~/types';
 
 interface Props {

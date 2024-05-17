@@ -3,10 +3,10 @@ import type { AuthRoutes } from 'backend/modules/auth/index';
 import type { GeneralRoutes } from 'backend/modules/general/index';
 import type { MembershipRoutes } from 'backend/modules/memberships/index';
 import type { OrganizationsRoutes } from 'backend/modules/organizations/index';
+import type { ProjectsRoutes } from 'backend/modules/projects/index';
 import type { PublicRoutes } from 'backend/modules/public/index';
 import type { UsersRoutes } from 'backend/modules/users/index';
 import type { WorkspacesRoutes } from 'backend/modules/workspaces/index';
-import type { ProjectsRoutes } from 'backend/modules/projects/index';
 import type { PageResourceType } from 'backend/types/common';
 
 import { config } from 'config';

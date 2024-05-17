@@ -2,12 +2,12 @@ import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
+import { DialogTitle } from '../ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { AppAlert } from './app-alert';
+import { dialog } from './dialoger/state';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
-import { dialog } from './dialoger/state';
-import { DialogTitle } from '../ui/dialog';
 
 interface InviteUsersProps {
   organization?: Organization | null;

@@ -1,15 +1,15 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useParams } from '@tanstack/react-router';
 import { ChevronRight, Shrub, SquareMousePointer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Organization } from '~/types';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { dialog } from '../common/dialoger/state';
-import { CreateProjectForm } from './create-project-form';
-import { workspaceQueryOptions } from '../workspaces';
-import { useParams } from '@tanstack/react-router';
 import { WorkspaceRoute } from '~/routes/workspaces';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import type { Organization } from '~/types';
+import { dialog } from '../common/dialoger/state';
 import { DialogTitle } from '../ui/dialog';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { workspaceQueryOptions } from '../workspaces';
+import { CreateProjectForm } from './create-project-form';
 
 interface AddProjectsProps {
   organization?: Organization | null;

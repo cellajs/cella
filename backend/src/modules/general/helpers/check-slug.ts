@@ -2,10 +2,10 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../../db/db';
 
 import { organizationsTable } from '../../../db/schema/organizations';
-import { usersTable } from '../../../db/schema/users';
-import type { PageResourceType } from '../../../types/common';
-import { workspacesTable } from '../../../db/schema/workspaces';
 import { projectsTable } from '../../../db/schema/projects';
+import { usersTable } from '../../../db/schema/users';
+import { workspacesTable } from '../../../db/schema/workspaces';
+import type { PageResourceType } from '../../../types/common';
 
 export const checkSlugAvailable = async (slug: string, type: PageResourceType) => {
   let entity: unknown;

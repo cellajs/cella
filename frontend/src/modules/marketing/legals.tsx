@@ -1,9 +1,9 @@
-import PublicPage from '~/modules/marketing/page';
-import { AsideNav } from '../common/aside-nav';
-import { AsideAnchor } from '../common/aside-anchor';
-import { SimpleHeader } from '../common/simple-header';
-import StickyBox from 'react-sticky-box';
 import { useTranslation } from 'react-i18next';
+import StickyBox from 'react-sticky-box';
+import PublicPage from '~/modules/marketing/page';
+import { AsideAnchor } from '../common/aside-anchor';
+import { AsideNav } from '../common/aside-nav';
+import { SimpleHeader } from '../common/simple-header';
 
 type LegalTypes = 'privacy' | 'terms';
 

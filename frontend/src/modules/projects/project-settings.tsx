@@ -1,15 +1,15 @@
 import { useParams } from '@tanstack/react-router';
-import { Trans, useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Trash2 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { dialog } from '../common/dialoger/state';
+import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { sheet } from '~/modules/common/sheeter/state';
-import UpdateProjectForm from './update-project';
-import DeleteProjects from './delete-project';
-import type { Project } from '~/types';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { sheet } from '~/modules/common/sheeter/state';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
+import type { Project } from '~/types';
+import { dialog } from '../common/dialoger/state';
+import { Button } from '../ui/button';
+import DeleteProjects from './delete-project';
+import UpdateProjectForm from './update-project';
 
 export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();

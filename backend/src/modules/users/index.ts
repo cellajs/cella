@@ -5,9 +5,10 @@ import { coalesce, db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
+import { projectsTable } from '../../db/schema/projects';
 import { usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
-import { createError, errorResponse, type ErrorType } from '../../lib/errors';
+import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono, type PageResourceType } from '../../types/common';
@@ -23,7 +24,6 @@ import {
   terminateSessionsConfig,
   updateUserConfig,
 } from './routes';
-import { projectsTable } from '../../db/schema/projects';
 
 const app = new CustomHono();
 

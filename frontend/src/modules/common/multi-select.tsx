@@ -7,9 +7,9 @@ import { cn } from '~/lib/utils';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 
-import { AvatarWrap } from './avatar-wrap';
-import { ScrollArea } from '../ui/scroll-area';
 import { useFormContext } from 'react-hook-form';
+import { ScrollArea } from '../ui/scroll-area';
+import { AvatarWrap } from './avatar-wrap';
 
 export interface Option {
   value: string;
@@ -139,12 +139,16 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     const [isLoading, setIsLoading] = React.useState(false);
 
     const [options, setOptions] = React.useState<Option[]>(arrayDefaultOptions || []);
-    const [selected, setSelected] = React.useState<Option[]>(value || options.filter(o => {
-      const selectedValue = formValue || [];
-      if (onSearch) return true;
-      const values = selectedValue.filter((v: string | null) => v !== '' && v !== null);
-     return o.value && values.includes(o.value)
-    }) || []);
+    const [selected, setSelected] = React.useState<Option[]>(
+      value ||
+        options.filter((o) => {
+          const selectedValue = formValue || [];
+          if (onSearch) return true;
+          const values = selectedValue.filter((v: string | null) => v !== '' && v !== null);
+          return o.value && values.includes(o.value);
+        }) ||
+        [],
+    );
     const [inputValue, setInputValue] = React.useState('');
     const debouncedSearchTerm = useDebounce(inputValue, delay || 200);
 
@@ -152,15 +156,19 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     useEffect(() => {
       if (onSearch) {
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-        return setSelected(formValue.map((o: any) => {
-          return { label: o, value: o }
-        }) || [])
-      };
-      setSelected(options.filter(o => {
-        const selectedValue = formValue || [];
-        const values = selectedValue.filter((v: string | null) => v !== '' && v !== null);
-       return o.value && values.includes(o.value)
-      }) || []);
+        return setSelected(
+          formValue.map((o: any) => {
+            return { label: o, value: o };
+          }) || [],
+        );
+      }
+      setSelected(
+        options.filter((o) => {
+          const selectedValue = formValue || [];
+          const values = selectedValue.filter((v: string | null) => v !== '' && v !== null);
+          return o.value && values.includes(o.value);
+        }) || [],
+      );
     }, [formValue]);
 
     React.useImperativeHandle(

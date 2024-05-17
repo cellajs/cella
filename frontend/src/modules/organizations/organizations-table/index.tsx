@@ -1,8 +1,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { getOrganizations } from '~/api/organizations';
 import { updateMembership } from '~/api/memberships';
+import { getOrganizations } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { Bird } from 'lucide-react';
@@ -11,7 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
-import {useMutateInfiniteQueryData} from '~/hooks/use-mutate-query-data';
+import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
@@ -19,7 +20,6 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 

@@ -96,7 +96,7 @@ class WebGLRenderer {
       if (this.cycles >= this.renderStartCycle) this.renderTask();
       this.checkSync();
     } catch (error) {
-      console.error("Error in render loop:", error);
+      console.error('Error in render loop:', error);
       this.stop();
     }
   }
@@ -124,11 +124,11 @@ class WebGLRenderer {
             return;
           }
           // Lag detected, adjust frame rate
-          this.updateCycleCounters(true)
+          this.updateCycleCounters(true);
           this.adjustFrameRate();
         } else {
           // No lag, continue with requestAnimationFrame
-          this.updateCycleCounters()
+          this.updateCycleCounters();
           this.requestNextFrame();
         }
       } else {
@@ -136,7 +136,7 @@ class WebGLRenderer {
         setTimeout(() => this.checkSync(), this.checkTimeoutDuration);
       }
     } catch (error) {
-      console.error("Error in checkSync:", error);
+      console.error('Error in checkSync:', error);
       this.stop();
     }
   }
@@ -155,7 +155,7 @@ class WebGLRenderer {
 
       this.cycles++;
     } catch (error) {
-      console.error("Error in finishedCycle:", error);
+      console.error('Error in finishedCycle:', error);
       this.stop();
     }
   }
@@ -168,7 +168,7 @@ class WebGLRenderer {
       // Continue with next frame
       requestAnimationFrame(() => this.renderLoop());
     } catch (error) {
-      console.error("Error in requestNextFrame:", error);
+      console.error('Error in requestNextFrame:', error);
       this.stop();
     }
   }
@@ -182,7 +182,7 @@ class WebGLRenderer {
       // Example: reduce frame rate by setting a longer timeout
       setTimeout(() => this.requestNextFrame(), this.adjustmentTimeoutDuration);
     } catch (error) {
-      console.error("Error in adjustFrameRate:", error);
+      console.error('Error in adjustFrameRate:', error);
       this.stop();
     }
   }
@@ -197,7 +197,7 @@ class WebGLRenderer {
       // Stops the WebGL rendering process.
       this.stop();
     } catch (error) {
-      console.error("Error in handlePerformanceFallback:", error);
+      console.error('Error in handlePerformanceFallback:', error);
       this.stop();
     }
   }
@@ -554,14 +554,14 @@ void main()
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   if (!webGLRenderer) {
     webGLRenderer = new WebGLRenderer(renderTask);
-    webGLRenderer.start()
+    webGLRenderer.start();
   }
   return null;
 };
 const kill = () => {
   if (webGLRenderer) {
-    webGLRenderer.stop()
-    webGLRenderer = null
+    webGLRenderer.stop();
+    webGLRenderer = null;
   }
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
