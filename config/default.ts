@@ -69,9 +69,14 @@ export const config = {
   oauthOptions: ['Github'],
 
   // Optional settings
+
+  // To test waitList
+  //  signUp: false,
+  //   waitList: true,
   has: {
     pwa: false,
     signUp: true,
+    waitList: false,
     onboarding: true,
   },
 

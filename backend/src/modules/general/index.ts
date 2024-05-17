@@ -30,13 +30,16 @@ import { checkRole } from './helpers/check-role';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
   acceptInviteRouteConfig,
+  requestActionConfig,
   checkSlugRouteConfig,
   checkTokenRouteConfig,
   getUploadTokenRouteConfig,
   inviteRouteConfig,
   paddleWebhookRouteConfig,
   suggestionsConfig,
+  actionRequestsConfig,
 } from './routes';
+import { requestsTable } from '../../db/schema/requests';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -441,6 +444,61 @@ const generalRoutes = app
         organizations: organizationsResult,
         workspaces: workspacesResult,
         total: usersResult.length + workspacesResult.length + organizationsResult.length,
+      },
+    });
+  })
+  /*
+   *  Create access-request
+   */
+  .openapi(requestActionConfig, async (ctx) => {
+    const { email, userId, organizationId, type } = ctx.req.valid('json'); //accompanyingMessage
+
+    const [createdAccessRequest] = await db
+      .insert(requestsTable)
+      .values({
+        email,
+        type,
+        user_id: userId,
+        organization_id: organizationId,
+      })
+      .returning();
+
+    // I don't now if need to
+    //if (env.SEND_ALL_TO_EMAIL) {
+    // if(type === 'NEWSLETTER_REQUEST') {
+    //   emailSender.send(env.SEND_ALL_TO_EMAIL, 'New request for becoming a donate or build member.', `Here is his email ${email}.`)
+    // }
+
+    // if(type === 'CONTACT_REQUEST') {
+    //   emailSender.send(env.SEND_ALL_TO_EMAIL, 'New contact request', `Here is his email ${email}. ${accompanyingMessage}`)
+    // }
+    //}
+
+    return ctx.json({
+      success: true,
+      data: {
+        email: createdAccessRequest.email,
+        type: createdAccessRequest.type,
+        userId: createdAccessRequest.user_id,
+        organizationId: createdAccessRequest.organization_id,
+      },
+    });
+  })
+  /*
+   *  Get requests
+   */
+  .openapi(actionRequestsConfig, async (ctx) => {
+    const { type } = ctx.req.valid('query');
+
+    const [actionRequests] = await db.select().from(requestsTable).where(eq(requestsTable.type, type));
+
+    return ctx.json({
+      success: true,
+      data: {
+        email: actionRequests.email,
+        type: actionRequests.type,
+        userId: actionRequests.user_id,
+        organizationId: actionRequests.organization_id,
       },
     });
   })

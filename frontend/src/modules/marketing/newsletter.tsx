@@ -1,32 +1,20 @@
 import { Send } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '~/modules/ui/button';
+import { requestAction } from '~/api/general';
 
 export async function addEmail(email: string) {
   if (!email) return { success: false };
 
-  const app = config.slug;
-
   try {
-    const queryParams = new URLSearchParams({ email, app }).toString();
-    const webhookUrl = config.newsletterWebhookUrl + queryParams;
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      console.error('Webhook call failed:', response);
-      return { success: false };
-    }
-
-    return { success: true };
+    requestAction({ email, type: 'NEWSLETTER_REQUEST' });
+    return true;
   } catch (error) {
     console.error('Error in addEmail:', error);
-    return { success: false };
+    return false;
   }
 }
 
@@ -44,7 +32,7 @@ const NewsletterForm = () => {
     setPending(true);
     const response = await addEmail(email);
 
-    if (response.success) {
+    if (response) {
       toast.success(t('common:success.newsletter_sign_up'));
     } else {
       toast.error(t('common:error.newsletter_sign_up'));

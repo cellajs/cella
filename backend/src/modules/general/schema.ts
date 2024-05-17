@@ -5,6 +5,7 @@ import { tokensTable } from '../../db/schema/tokens';
 import { idSchema, imageUrlSchema, nameSchema, passwordSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
+import { requestsTable } from '../../db/schema/requests';
 
 export const tokensSchema = createSelectSchema(tokensTable);
 
@@ -43,4 +44,21 @@ export const suggestionsSchema = z.object({
   organizations: z.array(organizationSuggestionSchema),
   workspaces: z.array(workspaceSuggestionSchema),
   total: z.number(),
+});
+
+export const actionReqTableSchema = createSelectSchema(requestsTable);
+
+export const actionRequestSchema = z.object({
+  userId: idSchema.nullable(),
+  organizationId: idSchema.nullable(),
+  email: z.string().min(1).email(),
+  type: actionReqTableSchema.shape.type,
+  accompanyingMessage: z.string().nullable(),
+});
+
+export const actionResponseSchema = z.object({
+  userId: idSchema.nullable(),
+  organizationId: idSchema.nullable(),
+  email: z.string().min(1).email(),
+  type: actionReqTableSchema.shape.type,
 });

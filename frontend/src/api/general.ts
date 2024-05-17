@@ -99,3 +99,38 @@ export const acceptInvite = async ({
   if ('error' in json) throw new ApiError(json.error);
   return json.success;
 };
+
+interface ActionRequestProp {
+  email: string;
+  type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
+  userId?: string;
+  organizationId?: string;
+  accompanyingMessage?: string;
+}
+// Action request
+export const requestAction = async (requestInfo: ActionRequestProp) => {
+  const response = await client['action-request'].$post({
+    json: {
+      type: requestInfo.type,
+      email: requestInfo.email,
+      userId: requestInfo.userId || null,
+      organizationId: requestInfo.organizationId || null,
+      accompanyingMessage: requestInfo.accompanyingMessage || null,
+    },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return;
+};
+
+// Get action requests by type
+export const actionRequests = async (type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST') => {
+  const response = await client.requests.$get({
+    query: { type },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return;
+};
