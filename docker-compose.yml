@@ -1,68 +1,38 @@
 version: '3.8'
 
+volumes:
+  pg_data:
+
 services:
-  backend:
-    container_name: backend
-    build:
-      context: .
-      dockerfile: ./backend/Dockerfile
-      no_cache: true
-    restart: always
-    volumes:
-      - ./:/app
-      - /app/node_modules
-    ports:
-      - 4000:4000
-    depends_on:
-      - db
-    env_file:
-      - ./env/.env
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/cella
-
-  frontend:
-    container_name: frontend
-    build:
-      context: .
-      dockerfile: ./frontend/Dockerfile
-      no_cache: true
-    restart: always
-    volumes:
-      - ./:/app
-      - /app/node_modules
-    ports:
-      - 3000:3000
-    env_file:
-      - ./env/.env
-
-  tus:
-    container_name: tus
-    build:
-      context: .
-      dockerfile: ./tus/Dockerfile
-      no_cache: true
-    restart: always
-    ports:
-      - 1080:1080
-    env_file:
-      - ./env/.env
-
-  db:
-    container_name: db
+  pg:
     image: postgres:latest
-    restart: unless-stopped
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
+    container_name: electric_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: cella
+      POSTGRES_PASSWORD: pg_password
+      POSTGRES_DB: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - 5432:5432
     command:
-      - "-c"
-      - "wal_level=logical"
+      - -c
+      - wal_level=logical
+    ports:
+      - 5431:5431
+    restart: always
+    volumes:
+      - pg_data:/var/lib/postgresql/data
 
-volumes:
-  postgres-data:
+  electric:
+    image: electricsql/electric
+    container_name: electric-sync-service
+    depends_on:
+      - pg
+    environment:
+      DATABASE_URL: postgresql://postgres:pg_password@pg/postgres
+      DATABASE_REQUIRE_SSL: false
+      LOGICAL_PUBLISHER_HOST: electric
+      PG_PROXY_PASSWORD: proxy_password
+      AUTH_MODE: insecure
+    ports:
+      - 5133:5133
+      - 65432:65432
+    restart: always

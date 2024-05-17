@@ -86,9 +86,6 @@ importers:
       config:
         specifier: workspace:*
         version: link:../config
-      dotenv:
-        specifier: ^16.4.5
-        version: 16.4.5
       drizzle-orm:
         specifier: ^0.30.10
         version: 0.30.10(@types/pg@8.11.6)(pg@8.11.5)(postgres@3.4.4)(react@18.3.1)

@@ -16,7 +16,7 @@ const main = async () => {
   cron.schedule('0 0 * * 0', resetDb, { scheduled: true, timezone: 'UTC' }).start();
 
   // * Migrate db
-  await migrate(db, { migrationsFolder: 'drizzle' });
+  await migrate(db, { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' });
 
   // * Start server
   serve(
