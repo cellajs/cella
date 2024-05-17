@@ -25,4 +25,3 @@ export const publicGuard: MiddlewareHandler = async (_, next) => {
 
 export { setCtx };
 export { protect };
-export { auth };
