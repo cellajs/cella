@@ -1,14 +1,14 @@
 import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { systemGuard, authGuard, setCtx, protect } from '../../middlewares/guard';
+import { systemGuard, authGuard, protect } from '../../middlewares/guard';
 
 import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchema } from './schema';
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
   path: '/organizations/{organization}/workspaces',
-  guard: [authGuard(), setCtx('workspace'), protect('create')],
+  guard: [authGuard(), protect('workspace', 'create')],
   tags: ['workspaces'],
   summary: 'Create a new workspace',
   description: `
@@ -42,7 +42,7 @@ export const createWorkspaceRouteConfig = createRouteConfig({
 export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/workspaces/{workspace}',
-  guard: [authGuard(), setCtx('workspace'), protect('read')],
+  guard: [authGuard(), protect('workspace', 'read')],
   tags: ['workspaces'],
   summary: 'Get workspace by id or slug',
   description: `
@@ -69,7 +69,7 @@ export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
 export const updateWorkspaceRouteConfig = createRouteConfig({
   method: 'put',
   path: '/workspaces/{workspace}',
-  guard: [authGuard(), setCtx('workspace'), protect('update')],
+  guard: [authGuard(), protect('workspace', 'update')],
   tags: ['workspaces'],
   summary: 'Update workspace',
   description: `

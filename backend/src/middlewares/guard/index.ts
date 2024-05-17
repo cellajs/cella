@@ -1,7 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
 import auth from './auth';
 import tenant from './tenant';
-import setCtx from './set-ctx';
 import protect from './protect';
 
 type TenantAccessibleFor = Parameters<typeof tenant>[2];
@@ -23,5 +22,4 @@ export const publicGuard: MiddlewareHandler = async (_, next) => {
   await next();
 };
 
-export { setCtx };
 export { protect };

@@ -21,7 +21,7 @@ export type Env = {
     user: User;
     organization: OrganizationModel;
     workspace: WorkspaceModel;
-    context: OrganizationModel | WorkspaceModel;
+    authorzedIn: OrganizationModel | WorkspaceModel;
     memberships: [MembershipModel];
   };
 };
