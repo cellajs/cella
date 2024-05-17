@@ -126,7 +126,7 @@ pnpm run docker
 
 ### Step 3
 
-For ElectricSQL you currently need to run docker.
+For ElectricSQL you currently need to run docker. This will be changed soon.
 
 ```bash
 pnpm docker:electric
@@ -148,7 +148,7 @@ pnpm run seed:users
 pnpm run seed:organizations
 ```
 
-Use [Drizzle Studio](https://orm.drizzle.team/drizzle-studio/overview) to manage your local db on [local.drizzle.studio](http://localhost:4000/docs)
+Use [Drizzle Studio](https://orm.drizzle.team/drizzle-studio/overview) to manage your local db on [local.drizzle.studio](http:local.drizzle.studio)
 
 ```bash
 pnpm run studio
