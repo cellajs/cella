@@ -9,6 +9,7 @@ import { workspacesTable } from './workspaces';
 const typeEnum = ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const;
 const roleEnum = ['MEMBER', 'ADMIN'] as const;
 
+// TODO: Store IDs of all ancestors to directly retrieve all user memberships in the hierarchy
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   type: varchar('type', {
