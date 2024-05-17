@@ -30,7 +30,7 @@ const Integrations = () => {
   const { mode } = useThemeStore();
 
   return (
-    <ScrollArea className="w-full">
+    <ScrollArea className="w-full" orientation="horizontal" size="defaultHorizontal">
       <div className="flex w-max space-x-4 py-8 px-2">
         {integrations.map(({ planned, url, logo, name, invert, country }, index) => {
           const text = `about:integrations.text_${index + 1}`;
@@ -72,7 +72,7 @@ const Integrations = () => {
         })}
       </div>
 
-      <ScrollBar orientation="horizontal" />
+      <ScrollBar orientation="horizontal" size="defaultHorizontal" />
     </ScrollArea>
   );
 };

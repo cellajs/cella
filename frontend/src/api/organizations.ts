@@ -23,6 +23,13 @@ export const getOrganizationBySlugOrId = async (organization: string) => {
   return json.data;
 };
 
+export type GetOrganizationsParams = Partial<
+  Omit<Parameters<(typeof client.organizations)['$get']>['0']['query'], 'limit' | 'offset'> & {
+    limit: number;
+    page: number;
+  }
+>;
+
 // Get a list of organizations
 export const getOrganizations = async (
   { q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetOrganizationsParams = {},
@@ -67,13 +74,6 @@ export const updateOrganization = async (organization: string, params: UpdateOrg
   if ('error' in json) throw new ApiError(json.error);
   return json.data;
 };
-
-export type GetOrganizationsParams = Partial<
-  Omit<Parameters<(typeof client.organizations)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit: number;
-    page: number;
-  }
->;
 
 // Delete organizations
 export const deleteOrganizations = async (ids: string[]) => {

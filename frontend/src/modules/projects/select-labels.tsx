@@ -10,9 +10,9 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
 import { faker } from '@faker-js/faker';
 import { useElectric, type Label } from '../common/root/electric.ts';
-import { ProjectContext } from './board.tsx';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { CommandEmpty } from 'cmdk';
+import { TaskContext } from './board-column.tsx';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -24,15 +24,16 @@ interface SetLabelsProps {
   projectId: string;
   viewValue?: Label[];
   changeLabels?: (labels: Label[]) => void;
+  labels: Label[];
 }
 
-const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps) => {
+const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabelsProps) => {
   const { t } = useTranslation();
-  const { project } = useContext(ProjectContext);
   const formValue = useFormContext?.()?.getValues('labels');
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
+  const { task, focusedTaskId } = useContext(TaskContext);
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
@@ -45,7 +46,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
       setSelectedLabels(selectedLabels.filter((label) => label.name !== value));
       return;
     }
-    const newLabel = project.labels?.find((label) => label.name === value);
+    const newLabel = labels.find((label) => label.name === value);
     if (newLabel) {
       setSelectedLabels([...selectedLabels, newLabel]);
       return;
@@ -97,7 +98,14 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
   };
 
   // Open on key press
-  useHotkeys([['l', () => setOpenPopover(true)]]);
+  useHotkeys([
+    [
+      'l',
+      () => {
+        if (focusedTaskId === task.id) setOpenPopover(true);
+      },
+    ],
+  ]);
 
   // callback to change labels in task card
   useEffect(() => {
@@ -170,7 +178,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
             onValueChange={(searchValue) => {
               // If the label types a number, select the label like useHotkeys
               if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(Number.parseInt(searchValue))) {
-                handleSelectClick(project.labels?.[Number.parseInt(searchValue)]?.name);
+                handleSelectClick(labels[Number.parseInt(searchValue)]?.name);
                 setSearchValue('');
                 return;
               }
@@ -185,16 +193,16 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
             <CommandGroup>
               {!searchValue.length && (
                 <>
-                  {!project.labels && (
+                  {labels.length === 0 && (
                     <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
                       {t('common:no_labels')}
                     </CommandEmpty>
                   )}
-                  {renderLabels(project.labels || [])}
+                  {renderLabels(labels)}
                 </>
               )}
             </CommandGroup>
-            <CommandItemCreate onSelect={() => createLabel(searchValue)} {...{ searchValue, labels: project.labels || [] }} />
+            <CommandItemCreate onSelect={() => createLabel(searchValue)} {...{ searchValue, labels }} />
           </CommandList>
         </Command>
       </PopoverContent>

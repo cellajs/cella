@@ -23,7 +23,7 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
 
   const MinimizeClick = () => {
     setMinimize(!minimize);
-    changeColumn(project.workspace_id, project.id, {
+    changeColumn(project.workspaceId, project.id, {
       minimized: !minimize,
     });
   };

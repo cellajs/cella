@@ -19,7 +19,7 @@ const RowEdit = ({ organization, callback, tabIndex }: Props) => {
   const openUpdateDialog = () => {
     sheet(<UpdateOrganizationForm organization={organization} sheet callback={(organization) => callback([organization], 'update')} />, {
       id: 'edit-organization',
-      className: 'sm:max-w-2xl my-4 sm:my-8',
+      className: 'sm:max-w-2xl',
       title: t('common:edit_organization'),
     });
   };

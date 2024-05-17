@@ -6,6 +6,7 @@ import type { Schema } from 'hono';
 import type { OrganizationModel } from '../db/schema/organizations';
 import type { WorkspaceModel } from '../db/schema/workspaces';
 import type { errorResponseSchema, resourceTypeSchema } from '../lib/common-schemas';
+import type { ProjectModel } from '../db/schema/projects';
 
 export type PageResourceType = z.infer<typeof resourceTypeSchema>;
 
@@ -20,6 +21,7 @@ export type Env = {
     user: User;
     organization: OrganizationModel;
     workspace: WorkspaceModel;
+    project: ProjectModel;
   };
 };
 

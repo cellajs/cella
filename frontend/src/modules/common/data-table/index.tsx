@@ -11,6 +11,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import type { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
 import { DataTableSkeleton } from './table-skeleton';
+import ContentPlaceholder from '../content-placeholder';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -48,12 +49,7 @@ const NoRows = ({
 
   return (
     <div className="flex flex-col items-center justify-center w-full p-8">
-      {isFiltered && !isFetching && (
-        <>
-          <Search strokeWidth={0.7} size={80} className="opacity-50" />
-          <div className="text-sm mt-6">{t('common:no_results_found')}</div>
-        </>
-      )}
+      {isFiltered && !isFetching && <ContentPlaceholder Icon={Search} title={t('common:no_results_found')} />}
       {!isFiltered && !isFetching && (customComponent ?? t('common:no_results'))}
     </div>
   );
@@ -135,6 +131,8 @@ export const DataTable = <TData,>({
                 rows={rows}
                 onCellClick={onCellClick}
                 className="fill-grid"
+                // TODO Hack to rerender css by changing width
+                style={{ marginRight: columns.length % 2 === 0 ? '0px' : '1px' }}
                 selectedRows={selectedRows}
                 onSelectedRowsChange={onSelectedRowsChange}
                 sortColumns={sortColumns}

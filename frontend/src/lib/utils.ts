@@ -1,3 +1,4 @@
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
@@ -6,7 +7,9 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import i18next from 'i18next';
 import { customAlphabet } from 'nanoid';
 import * as React from 'react';
+import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
+import type { Task } from '~/modules/common/root/electric';
 import type { DraggableItemData } from '~/types';
 
 dayjs.extend(calendar);
@@ -34,6 +37,21 @@ export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789');
 // Merge tailwind classes
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+// Start a View Transition
+export function makeTransition(transition: () => void) {
+  // @ts-ignore
+  if (document.startViewTransition) {
+    // @ts-ignore
+    document.startViewTransition(() => {
+      flushSync(() => {
+        transition();
+      });
+    });
+  } else {
+    transition();
+  }
 }
 
 const colors = [
@@ -99,6 +117,15 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
   throw redirect({ to: pathname + redirectLocation, replace: true });
 };
 
+// To sort Tasks by its status & order
+export const sortTaskOrder = (task1: Task, task2: Task) => {
+  if (task1.status !== task2.status) return task2.status - task1.status;
+  // same status, sort by sort_order
+  if (task1.sort_order !== null && task2.sort_order !== null) return task2.sort_order - task1.sort_order;
+  // sort_order is null
+  return 0;
+};
+
 export const arrayMove = (array: string[], startIndex: number, endIndex: number) => {
   const newArray = [...array];
   const [removedElement] = newArray.splice(startIndex, 1);
@@ -108,4 +135,39 @@ export const arrayMove = (array: string[], startIndex: number, endIndex: number)
 
 export const getDraggableItemData = <T>(item: T, itemIndex: number, type: 'task' | 'column' | 'menuItem'): DraggableItemData<T> => {
   return { dragItem: true, item, index: itemIndex, type };
+};
+
+// To get target index for drop on DnD
+export const getReorderDestinationIndex = (
+  currentIndex: number,
+  closestEdgeOfTarget: Edge | null,
+  targetIndex: number,
+  axis: 'vertical' | 'horizontal',
+): number => {
+  if (targetIndex === currentIndex) return currentIndex;
+  // if (axis === 'horizontal') {
+  //   if (closestEdgeOfTarget === 'left') {
+  //     return indexOfTarget;
+  //   } else if (closestEdgeOfTarget === 'right') {
+  //     return indexOfTarget + 1;
+  //   }
+  // } else
+
+  if (axis === 'vertical') {
+    if (
+      (targetIndex === currentIndex - 1 && closestEdgeOfTarget === 'bottom') ||
+      (targetIndex === currentIndex + 1 && closestEdgeOfTarget === 'top')
+    ) {
+      return currentIndex;
+    }
+
+    if ((targetIndex === 0 && closestEdgeOfTarget === 'bottom') || (currentIndex > targetIndex && closestEdgeOfTarget === 'bottom')) {
+      return targetIndex + 1;
+    }
+    if (currentIndex < targetIndex && closestEdgeOfTarget === 'top') return targetIndex - 1;
+
+    return targetIndex;
+  }
+
+  return currentIndex;
 };

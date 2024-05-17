@@ -31,25 +31,6 @@ export type Labels = {
 }
 
 /**
- * Model Projects
- * 
- */
-export type Projects = {
-  /**
-   * @zod.string.uuid()
-   */
-  id: string
-  slug: string
-  name: string
-  color: string
-  workspace_id: string
-  created_at: Date
-  created_by: string
-  modified_at: Date | null
-  modified_by: string | null
-}
-
-/**
  * Model Task_labels
  * 
  */
@@ -100,6 +81,10 @@ export type Tasks = {
   /**
    * @zod.number.int().gte(-2147483648).lte(2147483647)
    */
+  sort_order: number | null
+  /**
+   * @zod.number.int().gte(-2147483648).lte(2147483647)
+   */
   status: number
   /**
    * @zod.string.uuid()
@@ -111,10 +96,6 @@ export type Tasks = {
   assigned_at: Date | null
   modified_at: Date | null
   modified_by: string | null
-  /**
-   * @zod.number.int().gte(-2147483648).lte(2147483647)
-   */
-  sort_order: number | null
 }
 
 
@@ -244,16 +225,6 @@ export class PrismaClient<
     * ```
     */
   get labels(): Prisma.LabelsDelegate<GlobalReject>;
-
-  /**
-   * `prisma.projects`: Exposes CRUD operations for the **Projects** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Projects
-    * const projects = await prisma.projects.findMany()
-    * ```
-    */
-  get projects(): Prisma.ProjectsDelegate<GlobalReject>;
 
   /**
    * `prisma.task_labels`: Exposes CRUD operations for the **Task_labels** model.
@@ -769,7 +740,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export const ModelName: {
     Labels: 'Labels',
-    Projects: 'Projects',
     Task_labels: 'Task_labels',
     Task_users: 'Task_users',
     Tasks: 'Tasks'
@@ -977,52 +947,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
      * 
     **/
     select?: LabelsCountOutputTypeSelect | null
-  }
-
-
-
-  /**
-   * Count Type ProjectsCountOutputType
-   */
-
-
-  export type ProjectsCountOutputType = {
-    labels: number
-    tasks: number
-  }
-
-  export type ProjectsCountOutputTypeSelect = {
-    labels?: boolean
-    tasks?: boolean
-  }
-
-  export type ProjectsCountOutputTypeGetPayload<S extends boolean | null | undefined | ProjectsCountOutputTypeArgs> =
-    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
-    S extends true ? ProjectsCountOutputType :
-    S extends undefined ? never :
-    S extends { include: any } & (ProjectsCountOutputTypeArgs)
-    ? ProjectsCountOutputType 
-    : S extends { select: any } & (ProjectsCountOutputTypeArgs)
-      ? {
-    [P in TruthyKeys<S['select']>]:
-    P extends keyof ProjectsCountOutputType ? ProjectsCountOutputType[P] : never
-  } 
-      : ProjectsCountOutputType
-
-
-
-
-  // Custom InputTypes
-
-  /**
-   * ProjectsCountOutputType without action
-   */
-  export type ProjectsCountOutputTypeArgs = {
-    /**
-     * Select specific fields to fetch from the ProjectsCountOutputType
-     * 
-    **/
-    select?: ProjectsCountOutputTypeSelect | null
   }
 
 
@@ -1240,14 +1164,12 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name?: boolean
     color?: boolean
     project_id?: boolean
-    projects?: boolean | ProjectsArgs
     task_labels?: boolean | Labels$task_labelsArgs
     _count?: boolean | LabelsCountOutputTypeArgs
   }
 
 
   export type LabelsInclude = {
-    projects?: boolean | ProjectsArgs
     task_labels?: boolean | Labels$task_labelsArgs
     _count?: boolean | LabelsCountOutputTypeArgs
   } 
@@ -1259,14 +1181,12 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     S extends { include: any } & (LabelsArgs | LabelsFindManyArgs)
     ? Labels  & {
     [P in TruthyKeys<S['include']>]:
-        P extends 'projects' ? ProjectsGetPayload<S['include'][P]> :
         P extends 'task_labels' ? Array < Task_labelsGetPayload<S['include'][P]>>  :
         P extends '_count' ? LabelsCountOutputTypeGetPayload<S['include'][P]> :  never
   } 
     : S extends { select: any } & (LabelsArgs | LabelsFindManyArgs)
       ? {
     [P in TruthyKeys<S['select']>]:
-        P extends 'projects' ? ProjectsGetPayload<S['select'][P]> :
         P extends 'task_labels' ? Array < Task_labelsGetPayload<S['select'][P]>>  :
         P extends '_count' ? LabelsCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof Labels ? Labels[P] : never
   } 
@@ -1641,8 +1561,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     private _requestPromise?;
     constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
     readonly [Symbol.toStringTag]: 'PrismaClientPromise';
-
-    projects<T extends ProjectsArgs= {}>(args?: Subset<T, ProjectsArgs>): Prisma__ProjectsClient<ProjectsGetPayload<T> | Null>;
 
     task_labels<T extends Labels$task_labelsArgs= {}>(args?: Subset<T, Labels$task_labelsArgs>): PrismaPromise<Array<Task_labelsGetPayload<T>>| Null>;
 
@@ -2086,1082 +2004,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
      * 
     **/
     include?: LabelsInclude | null
-  }
-
-
-
-  /**
-   * Model Projects
-   */
-
-
-  export type AggregateProjects = {
-    _count: ProjectsCountAggregateOutputType | null
-    _min: ProjectsMinAggregateOutputType | null
-    _max: ProjectsMaxAggregateOutputType | null
-  }
-
-  export type ProjectsMinAggregateOutputType = {
-    id: string | null
-    slug: string | null
-    name: string | null
-    color: string | null
-    workspace_id: string | null
-    created_at: Date | null
-    created_by: string | null
-    modified_at: Date | null
-    modified_by: string | null
-  }
-
-  export type ProjectsMaxAggregateOutputType = {
-    id: string | null
-    slug: string | null
-    name: string | null
-    color: string | null
-    workspace_id: string | null
-    created_at: Date | null
-    created_by: string | null
-    modified_at: Date | null
-    modified_by: string | null
-  }
-
-  export type ProjectsCountAggregateOutputType = {
-    id: number
-    slug: number
-    name: number
-    color: number
-    workspace_id: number
-    created_at: number
-    created_by: number
-    modified_at: number
-    modified_by: number
-    _all: number
-  }
-
-
-  export type ProjectsMinAggregateInputType = {
-    id?: true
-    slug?: true
-    name?: true
-    color?: true
-    workspace_id?: true
-    created_at?: true
-    created_by?: true
-    modified_at?: true
-    modified_by?: true
-  }
-
-  export type ProjectsMaxAggregateInputType = {
-    id?: true
-    slug?: true
-    name?: true
-    color?: true
-    workspace_id?: true
-    created_at?: true
-    created_by?: true
-    modified_at?: true
-    modified_by?: true
-  }
-
-  export type ProjectsCountAggregateInputType = {
-    id?: true
-    slug?: true
-    name?: true
-    color?: true
-    workspace_id?: true
-    created_at?: true
-    created_by?: true
-    modified_at?: true
-    modified_by?: true
-    _all?: true
-  }
-
-  export type ProjectsAggregateArgs = {
-    /**
-     * Filter which Projects to aggregate.
-     * 
-    **/
-    where?: ProjectsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Projects to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<ProjectsOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     * 
-    **/
-    cursor?: ProjectsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Projects from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Projects.
-     * 
-    **/
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned Projects
-    **/
-    _count?: true | ProjectsCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: ProjectsMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: ProjectsMaxAggregateInputType
-  }
-
-  export type GetProjectsAggregateType<T extends ProjectsAggregateArgs> = {
-        [P in keyof T & keyof AggregateProjects]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateProjects[P]>
-      : GetScalarType<T[P], AggregateProjects[P]>
-  }
-
-
-
-
-  export type ProjectsGroupByArgs = {
-    where?: ProjectsWhereInput
-    orderBy?: Enumerable<ProjectsOrderByWithAggregationInput>
-    by: Array<ProjectsScalarFieldEnum>
-    having?: ProjectsScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: ProjectsCountAggregateInputType | true
-    _min?: ProjectsMinAggregateInputType
-    _max?: ProjectsMaxAggregateInputType
-  }
-
-
-  export type ProjectsGroupByOutputType = {
-    id: string
-    slug: string
-    name: string
-    color: string
-    workspace_id: string
-    created_at: Date
-    created_by: string
-    modified_at: Date | null
-    modified_by: string | null
-    _count: ProjectsCountAggregateOutputType | null
-    _min: ProjectsMinAggregateOutputType | null
-    _max: ProjectsMaxAggregateOutputType | null
-  }
-
-  type GetProjectsGroupByPayload<T extends ProjectsGroupByArgs> = PrismaPromise<
-    Array<
-      PickArray<ProjectsGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof ProjectsGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], ProjectsGroupByOutputType[P]>
-            : GetScalarType<T[P], ProjectsGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type ProjectsSelect = {
-    id?: boolean
-    slug?: boolean
-    name?: boolean
-    color?: boolean
-    workspace_id?: boolean
-    created_at?: boolean
-    created_by?: boolean
-    modified_at?: boolean
-    modified_by?: boolean
-    labels?: boolean | Projects$labelsArgs
-    tasks?: boolean | Projects$tasksArgs
-    _count?: boolean | ProjectsCountOutputTypeArgs
-  }
-
-
-  export type ProjectsInclude = {
-    labels?: boolean | Projects$labelsArgs
-    tasks?: boolean | Projects$tasksArgs
-    _count?: boolean | ProjectsCountOutputTypeArgs
-  } 
-
-  export type ProjectsGetPayload<S extends boolean | null | undefined | ProjectsArgs> =
-    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
-    S extends true ? Projects :
-    S extends undefined ? never :
-    S extends { include: any } & (ProjectsArgs | ProjectsFindManyArgs)
-    ? Projects  & {
-    [P in TruthyKeys<S['include']>]:
-        P extends 'labels' ? Array < LabelsGetPayload<S['include'][P]>>  :
-        P extends 'tasks' ? Array < TasksGetPayload<S['include'][P]>>  :
-        P extends '_count' ? ProjectsCountOutputTypeGetPayload<S['include'][P]> :  never
-  } 
-    : S extends { select: any } & (ProjectsArgs | ProjectsFindManyArgs)
-      ? {
-    [P in TruthyKeys<S['select']>]:
-        P extends 'labels' ? Array < LabelsGetPayload<S['select'][P]>>  :
-        P extends 'tasks' ? Array < TasksGetPayload<S['select'][P]>>  :
-        P extends '_count' ? ProjectsCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof Projects ? Projects[P] : never
-  } 
-      : Projects
-
-
-  type ProjectsCountArgs = Merge<
-    Omit<ProjectsFindManyArgs, 'select' | 'include'> & {
-      select?: ProjectsCountAggregateInputType | true
-    }
-  >
-
-  export interface ProjectsDelegate<GlobalRejectSettings extends Prisma.RejectOnNotFound | Prisma.RejectPerOperation | false | undefined> {
-    /**
-     * Find zero or one Projects that matches the filter.
-     * @param {ProjectsFindUniqueArgs} args - Arguments to find a Projects
-     * @example
-     * // Get one Projects
-     * const projects = await prisma.projects.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findUnique<T extends ProjectsFindUniqueArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
-      args: SelectSubset<T, ProjectsFindUniqueArgs>
-    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findUnique', 'Projects'> extends True ? Prisma__ProjectsClient<ProjectsGetPayload<T>> : Prisma__ProjectsClient<ProjectsGetPayload<T> | null, null>
-
-    /**
-     * Find one Projects that matches the filter or throw an error  with `error.code='P2025'` 
-     *     if no matches were found.
-     * @param {ProjectsFindUniqueOrThrowArgs} args - Arguments to find a Projects
-     * @example
-     * // Get one Projects
-     * const projects = await prisma.projects.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findUniqueOrThrow<T extends ProjectsFindUniqueOrThrowArgs>(
-      args?: SelectSubset<T, ProjectsFindUniqueOrThrowArgs>
-    ): Prisma__ProjectsClient<ProjectsGetPayload<T>>
-
-    /**
-     * Find the first Projects that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ProjectsFindFirstArgs} args - Arguments to find a Projects
-     * @example
-     * // Get one Projects
-     * const projects = await prisma.projects.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findFirst<T extends ProjectsFindFirstArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
-      args?: SelectSubset<T, ProjectsFindFirstArgs>
-    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findFirst', 'Projects'> extends True ? Prisma__ProjectsClient<ProjectsGetPayload<T>> : Prisma__ProjectsClient<ProjectsGetPayload<T> | null, null>
-
-    /**
-     * Find the first Projects that matches the filter or
-     * throw `NotFoundError` if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ProjectsFindFirstOrThrowArgs} args - Arguments to find a Projects
-     * @example
-     * // Get one Projects
-     * const projects = await prisma.projects.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findFirstOrThrow<T extends ProjectsFindFirstOrThrowArgs>(
-      args?: SelectSubset<T, ProjectsFindFirstOrThrowArgs>
-    ): Prisma__ProjectsClient<ProjectsGetPayload<T>>
-
-    /**
-     * Find zero or more Projects that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ProjectsFindManyArgs=} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all Projects
-     * const projects = await prisma.projects.findMany()
-     * 
-     * // Get first 10 Projects
-     * const projects = await prisma.projects.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const projectsWithIdOnly = await prisma.projects.findMany({ select: { id: true } })
-     * 
-    **/
-    findMany<T extends ProjectsFindManyArgs>(
-      args?: SelectSubset<T, ProjectsFindManyArgs>
-    ): PrismaPromise<Array<ProjectsGetPayload<T>>>
-
-    /**
-     * Create a Projects.
-     * @param {ProjectsCreateArgs} args - Arguments to create a Projects.
-     * @example
-     * // Create one Projects
-     * const Projects = await prisma.projects.create({
-     *   data: {
-     *     // ... data to create a Projects
-     *   }
-     * })
-     * 
-    **/
-    create<T extends ProjectsCreateArgs>(
-      args: SelectSubset<T, ProjectsCreateArgs>
-    ): Prisma__ProjectsClient<ProjectsGetPayload<T>>
-
-    /**
-     * Create many Projects.
-     *     @param {ProjectsCreateManyArgs} args - Arguments to create many Projects.
-     *     @example
-     *     // Create many Projects
-     *     const projects = await prisma.projects.createMany({
-     *       data: {
-     *         // ... provide data here
-     *       }
-     *     })
-     *     
-    **/
-    createMany<T extends ProjectsCreateManyArgs>(
-      args?: SelectSubset<T, ProjectsCreateManyArgs>
-    ): PrismaPromise<BatchPayload>
-
-    /**
-     * Delete a Projects.
-     * @param {ProjectsDeleteArgs} args - Arguments to delete one Projects.
-     * @example
-     * // Delete one Projects
-     * const Projects = await prisma.projects.delete({
-     *   where: {
-     *     // ... filter to delete one Projects
-     *   }
-     * })
-     * 
-    **/
-    delete<T extends ProjectsDeleteArgs>(
-      args: SelectSubset<T, ProjectsDeleteArgs>
-    ): Prisma__ProjectsClient<ProjectsGetPayload<T>>
-
-    /**
-     * Update one Projects.
-     * @param {ProjectsUpdateArgs} args - Arguments to update one Projects.
-     * @example
-     * // Update one Projects
-     * const projects = await prisma.projects.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-    **/
-    update<T extends ProjectsUpdateArgs>(
-      args: SelectSubset<T, ProjectsUpdateArgs>
-    ): Prisma__ProjectsClient<ProjectsGetPayload<T>>
-
-    /**
-     * Delete zero or more Projects.
-     * @param {ProjectsDeleteManyArgs} args - Arguments to filter Projects to delete.
-     * @example
-     * // Delete a few Projects
-     * const { count } = await prisma.projects.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-    **/
-    deleteMany<T extends ProjectsDeleteManyArgs>(
-      args?: SelectSubset<T, ProjectsDeleteManyArgs>
-    ): PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more Projects.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ProjectsUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many Projects
-     * const projects = await prisma.projects.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-    **/
-    updateMany<T extends ProjectsUpdateManyArgs>(
-      args: SelectSubset<T, ProjectsUpdateManyArgs>
-    ): PrismaPromise<BatchPayload>
-
-    /**
-     * Create or update one Projects.
-     * @param {ProjectsUpsertArgs} args - Arguments to update or create a Projects.
-     * @example
-     * // Update or create a Projects
-     * const projects = await prisma.projects.upsert({
-     *   create: {
-     *     // ... data to create a Projects
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the Projects we want to update
-     *   }
-     * })
-    **/
-    upsert<T extends ProjectsUpsertArgs>(
-      args: SelectSubset<T, ProjectsUpsertArgs>
-    ): Prisma__ProjectsClient<ProjectsGetPayload<T>>
-
-    /**
-     * Count the number of Projects.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ProjectsCountArgs} args - Arguments to filter Projects to count.
-     * @example
-     * // Count the number of Projects
-     * const count = await prisma.projects.count({
-     *   where: {
-     *     // ... the filter for the Projects we want to count
-     *   }
-     * })
-    **/
-    count<T extends ProjectsCountArgs>(
-      args?: Subset<T, ProjectsCountArgs>,
-    ): PrismaPromise<
-      T extends _Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], ProjectsCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a Projects.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ProjectsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends ProjectsAggregateArgs>(args: Subset<T, ProjectsAggregateArgs>): PrismaPromise<GetProjectsAggregateType<T>>
-
-    /**
-     * Group by Projects.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ProjectsGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends ProjectsGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: ProjectsGroupByArgs['orderBy'] }
-        : { orderBy?: ProjectsGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends TupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, ProjectsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetProjectsGroupByPayload<T> : PrismaPromise<InputErrors>
-
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for Projects.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export class Prisma__ProjectsClient<T, Null = never> implements PrismaPromise<T> {
-    [prisma]: true;
-    private readonly _dmmf;
-    private readonly _fetcher;
-    private readonly _queryType;
-    private readonly _rootField;
-    private readonly _clientMethod;
-    private readonly _args;
-    private readonly _dataPath;
-    private readonly _errorFormat;
-    private readonly _measurePerformance?;
-    private _isList;
-    private _callsite;
-    private _requestPromise?;
-    constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
-    readonly [Symbol.toStringTag]: 'PrismaClientPromise';
-
-    labels<T extends Projects$labelsArgs= {}>(args?: Subset<T, Projects$labelsArgs>): PrismaPromise<Array<LabelsGetPayload<T>>| Null>;
-
-    tasks<T extends Projects$tasksArgs= {}>(args?: Subset<T, Projects$tasksArgs>): PrismaPromise<Array<TasksGetPayload<T>>| Null>;
-
-    private get _document();
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): Promise<T>;
-  }
-
-
-
-  // Custom InputTypes
-
-  /**
-   * Projects base type for findUnique actions
-   */
-  export type ProjectsFindUniqueArgsBase = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
-    /**
-     * Filter, which Projects to fetch.
-     * 
-    **/
-    where: ProjectsWhereUniqueInput
-  }
-
-  /**
-   * Projects findUnique
-   */
-  export interface ProjectsFindUniqueArgs extends ProjectsFindUniqueArgsBase {
-   /**
-    * Throw an Error if query returns no results
-    * @deprecated since 4.0.0: use `findUniqueOrThrow` method instead
-    */
-    rejectOnNotFound?: RejectOnNotFound
-  }
-      
-
-  /**
-   * Projects findUniqueOrThrow
-   */
-  export type ProjectsFindUniqueOrThrowArgs = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
-    /**
-     * Filter, which Projects to fetch.
-     * 
-    **/
-    where: ProjectsWhereUniqueInput
-  }
-
-
-  /**
-   * Projects base type for findFirst actions
-   */
-  export type ProjectsFindFirstArgsBase = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
-    /**
-     * Filter, which Projects to fetch.
-     * 
-    **/
-    where?: ProjectsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Projects to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<ProjectsOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for Projects.
-     * 
-    **/
-    cursor?: ProjectsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Projects from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Projects.
-     * 
-    **/
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Projects.
-     * 
-    **/
-    distinct?: Enumerable<ProjectsScalarFieldEnum>
-  }
-
-  /**
-   * Projects findFirst
-   */
-  export interface ProjectsFindFirstArgs extends ProjectsFindFirstArgsBase {
-   /**
-    * Throw an Error if query returns no results
-    * @deprecated since 4.0.0: use `findFirstOrThrow` method instead
-    */
-    rejectOnNotFound?: RejectOnNotFound
-  }
-      
-
-  /**
-   * Projects findFirstOrThrow
-   */
-  export type ProjectsFindFirstOrThrowArgs = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
-    /**
-     * Filter, which Projects to fetch.
-     * 
-    **/
-    where?: ProjectsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Projects to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<ProjectsOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for Projects.
-     * 
-    **/
-    cursor?: ProjectsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Projects from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Projects.
-     * 
-    **/
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Projects.
-     * 
-    **/
-    distinct?: Enumerable<ProjectsScalarFieldEnum>
-  }
-
-
-  /**
-   * Projects findMany
-   */
-  export type ProjectsFindManyArgs = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
-    /**
-     * Filter, which Projects to fetch.
-     * 
-    **/
-    where?: ProjectsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Projects to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<ProjectsOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing Projects.
-     * 
-    **/
-    cursor?: ProjectsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Projects from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Projects.
-     * 
-    **/
-    skip?: number
-    distinct?: Enumerable<ProjectsScalarFieldEnum>
-  }
-
-
-  /**
-   * Projects create
-   */
-  export type ProjectsCreateArgs = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
-    /**
-     * The data needed to create a Projects.
-     * 
-    **/
-    data: XOR<ProjectsCreateInput, ProjectsUncheckedCreateInput>
-  }
-
-
-  /**
-   * Projects createMany
-   */
-  export type ProjectsCreateManyArgs = {
-    /**
-     * The data used to create many Projects.
-     * 
-    **/
-    data: Enumerable<ProjectsCreateManyInput>
-    skipDuplicates?: boolean
-  }
-
-
-  /**
-   * Projects update
-   */
-  export type ProjectsUpdateArgs = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
-    /**
-     * The data needed to update a Projects.
-     * 
-    **/
-    data: XOR<ProjectsUpdateInput, ProjectsUncheckedUpdateInput>
-    /**
-     * Choose, which Projects to update.
-     * 
-    **/
-    where: ProjectsWhereUniqueInput
-  }
-
-
-  /**
-   * Projects updateMany
-   */
-  export type ProjectsUpdateManyArgs = {
-    /**
-     * The data used to update Projects.
-     * 
-    **/
-    data: XOR<ProjectsUpdateManyMutationInput, ProjectsUncheckedUpdateManyInput>
-    /**
-     * Filter which Projects to update
-     * 
-    **/
-    where?: ProjectsWhereInput
-  }
-
-
-  /**
-   * Projects upsert
-   */
-  export type ProjectsUpsertArgs = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
-    /**
-     * The filter to search for the Projects to update in case it exists.
-     * 
-    **/
-    where: ProjectsWhereUniqueInput
-    /**
-     * In case the Projects found by the `where` argument doesn't exist, create a new Projects with this data.
-     * 
-    **/
-    create: XOR<ProjectsCreateInput, ProjectsUncheckedCreateInput>
-    /**
-     * In case the Projects was found with the provided `where` argument, update it with this data.
-     * 
-    **/
-    update: XOR<ProjectsUpdateInput, ProjectsUncheckedUpdateInput>
-  }
-
-
-  /**
-   * Projects delete
-   */
-  export type ProjectsDeleteArgs = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
-    /**
-     * Filter which Projects to delete.
-     * 
-    **/
-    where: ProjectsWhereUniqueInput
-  }
-
-
-  /**
-   * Projects deleteMany
-   */
-  export type ProjectsDeleteManyArgs = {
-    /**
-     * Filter which Projects to delete
-     * 
-    **/
-    where?: ProjectsWhereInput
-  }
-
-
-  /**
-   * Projects.labels
-   */
-  export type Projects$labelsArgs = {
-    /**
-     * Select specific fields to fetch from the Labels
-     * 
-    **/
-    select?: LabelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
-    where?: LabelsWhereInput
-    orderBy?: Enumerable<LabelsOrderByWithRelationInput>
-    cursor?: LabelsWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: Enumerable<LabelsScalarFieldEnum>
-  }
-
-
-  /**
-   * Projects.tasks
-   */
-  export type Projects$tasksArgs = {
-    /**
-     * Select specific fields to fetch from the Tasks
-     * 
-    **/
-    select?: TasksSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
-    where?: TasksWhereInput
-    orderBy?: Enumerable<TasksOrderByWithRelationInput>
-    cursor?: TasksWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: Enumerable<TasksScalarFieldEnum>
-  }
-
-
-  /**
-   * Projects without action
-   */
-  export type ProjectsArgs = {
-    /**
-     * Select specific fields to fetch from the Projects
-     * 
-    **/
-    select?: ProjectsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: ProjectsInclude | null
   }
 
 
@@ -5123,14 +3965,14 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type TasksAvgAggregateOutputType = {
     impact: number | null
-    status: number | null
     sort_order: number | null
+    status: number | null
   }
 
   export type TasksSumAggregateOutputType = {
     impact: number | null
-    status: number | null
     sort_order: number | null
+    status: number | null
   }
 
   export type TasksMinAggregateOutputType = {
@@ -5140,6 +3982,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string | null
     type: string | null
     impact: number | null
+    sort_order: number | null
     status: number | null
     project_id: string | null
     created_at: Date | null
@@ -5148,7 +3991,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at: Date | null
     modified_at: Date | null
     modified_by: string | null
-    sort_order: number | null
   }
 
   export type TasksMaxAggregateOutputType = {
@@ -5158,6 +4000,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string | null
     type: string | null
     impact: number | null
+    sort_order: number | null
     status: number | null
     project_id: string | null
     created_at: Date | null
@@ -5166,7 +4009,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at: Date | null
     modified_at: Date | null
     modified_by: string | null
-    sort_order: number | null
   }
 
   export type TasksCountAggregateOutputType = {
@@ -5176,6 +4018,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: number
     type: number
     impact: number
+    sort_order: number
     status: number
     project_id: number
     created_at: number
@@ -5184,21 +4027,20 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at: number
     modified_at: number
     modified_by: number
-    sort_order: number
     _all: number
   }
 
 
   export type TasksAvgAggregateInputType = {
     impact?: true
-    status?: true
     sort_order?: true
+    status?: true
   }
 
   export type TasksSumAggregateInputType = {
     impact?: true
-    status?: true
     sort_order?: true
+    status?: true
   }
 
   export type TasksMinAggregateInputType = {
@@ -5208,6 +4050,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: true
     type?: true
     impact?: true
+    sort_order?: true
     status?: true
     project_id?: true
     created_at?: true
@@ -5216,7 +4059,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: true
     modified_at?: true
     modified_by?: true
-    sort_order?: true
   }
 
   export type TasksMaxAggregateInputType = {
@@ -5226,6 +4068,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: true
     type?: true
     impact?: true
+    sort_order?: true
     status?: true
     project_id?: true
     created_at?: true
@@ -5234,7 +4077,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: true
     modified_at?: true
     modified_by?: true
-    sort_order?: true
   }
 
   export type TasksCountAggregateInputType = {
@@ -5244,6 +4086,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: true
     type?: true
     impact?: true
+    sort_order?: true
     status?: true
     project_id?: true
     created_at?: true
@@ -5252,7 +4095,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: true
     modified_at?: true
     modified_by?: true
-    sort_order?: true
     _all?: true
   }
 
@@ -5355,6 +4197,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string
     type: string
     impact: number | null
+    sort_order: number | null
     status: number
     project_id: string
     created_at: Date
@@ -5363,7 +4206,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at: Date | null
     modified_at: Date | null
     modified_by: string | null
-    sort_order: number | null
     _count: TasksCountAggregateOutputType | null
     _avg: TasksAvgAggregateOutputType | null
     _sum: TasksSumAggregateOutputType | null
@@ -5392,6 +4234,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: boolean
     type?: boolean
     impact?: boolean
+    sort_order?: boolean
     status?: boolean
     project_id?: boolean
     created_at?: boolean
@@ -5400,10 +4243,8 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: boolean
     modified_at?: boolean
     modified_by?: boolean
-    sort_order?: boolean
     task_labels?: boolean | Tasks$task_labelsArgs
     task_users?: boolean | Tasks$task_usersArgs
-    projects?: boolean | ProjectsArgs
     _count?: boolean | TasksCountOutputTypeArgs
   }
 
@@ -5411,7 +4252,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   export type TasksInclude = {
     task_labels?: boolean | Tasks$task_labelsArgs
     task_users?: boolean | Tasks$task_usersArgs
-    projects?: boolean | ProjectsArgs
     _count?: boolean | TasksCountOutputTypeArgs
   } 
 
@@ -5424,7 +4264,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     [P in TruthyKeys<S['include']>]:
         P extends 'task_labels' ? Array < Task_labelsGetPayload<S['include'][P]>>  :
         P extends 'task_users' ? Array < Task_usersGetPayload<S['include'][P]>>  :
-        P extends 'projects' ? ProjectsGetPayload<S['include'][P]> :
         P extends '_count' ? TasksCountOutputTypeGetPayload<S['include'][P]> :  never
   } 
     : S extends { select: any } & (TasksArgs | TasksFindManyArgs)
@@ -5432,7 +4271,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     [P in TruthyKeys<S['select']>]:
         P extends 'task_labels' ? Array < Task_labelsGetPayload<S['select'][P]>>  :
         P extends 'task_users' ? Array < Task_usersGetPayload<S['select'][P]>>  :
-        P extends 'projects' ? ProjectsGetPayload<S['select'][P]> :
         P extends '_count' ? TasksCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof Tasks ? Tasks[P] : never
   } 
       : Tasks
@@ -5810,8 +4648,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     task_labels<T extends Tasks$task_labelsArgs= {}>(args?: Subset<T, Tasks$task_labelsArgs>): PrismaPromise<Array<Task_labelsGetPayload<T>>| Null>;
 
     task_users<T extends Tasks$task_usersArgs= {}>(args?: Subset<T, Tasks$task_usersArgs>): PrismaPromise<Array<Task_usersGetPayload<T>>| Null>;
-
-    projects<T extends ProjectsArgs= {}>(args?: Subset<T, ProjectsArgs>): Prisma__ProjectsClient<ProjectsGetPayload<T> | Null>;
 
     private get _document();
     /**
@@ -6297,21 +5133,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   export type LabelsScalarFieldEnum = (typeof LabelsScalarFieldEnum)[keyof typeof LabelsScalarFieldEnum]
 
 
-  export const ProjectsScalarFieldEnum: {
-    id: 'id',
-    slug: 'slug',
-    name: 'name',
-    color: 'color',
-    workspace_id: 'workspace_id',
-    created_at: 'created_at',
-    created_by: 'created_by',
-    modified_at: 'modified_at',
-    modified_by: 'modified_by'
-  };
-
-  export type ProjectsScalarFieldEnum = (typeof ProjectsScalarFieldEnum)[keyof typeof ProjectsScalarFieldEnum]
-
-
   export const QueryMode: {
     default: 'default',
     insensitive: 'insensitive'
@@ -6352,6 +5173,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: 'summary',
     type: 'type',
     impact: 'impact',
+    sort_order: 'sort_order',
     status: 'status',
     project_id: 'project_id',
     created_at: 'created_at',
@@ -6359,8 +5181,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_by: 'assigned_by',
     assigned_at: 'assigned_at',
     modified_at: 'modified_at',
-    modified_by: 'modified_by',
-    sort_order: 'sort_order'
+    modified_by: 'modified_by'
   };
 
   export type TasksScalarFieldEnum = (typeof TasksScalarFieldEnum)[keyof typeof TasksScalarFieldEnum]
@@ -6389,7 +5210,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name?: StringFilter | string
     color?: StringNullableFilter | string | null
     project_id?: UuidFilter | string
-    projects?: XOR<ProjectsRelationFilter, ProjectsWhereInput>
     task_labels?: Task_labelsListRelationFilter
   }
 
@@ -6398,7 +5218,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name?: SortOrder
     color?: SortOrder
     project_id?: SortOrder
-    projects?: ProjectsOrderByWithRelationInput
     task_labels?: Task_labelsOrderByRelationAggregateInput
   }
 
@@ -6424,71 +5243,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name?: StringWithAggregatesFilter | string
     color?: StringNullableWithAggregatesFilter | string | null
     project_id?: UuidWithAggregatesFilter | string
-  }
-
-  export type ProjectsWhereInput = {
-    AND?: Enumerable<ProjectsWhereInput>
-    OR?: Enumerable<ProjectsWhereInput>
-    NOT?: Enumerable<ProjectsWhereInput>
-    id?: UuidFilter | string
-    slug?: StringFilter | string
-    name?: StringFilter | string
-    color?: StringFilter | string
-    workspace_id?: StringFilter | string
-    created_at?: DateTimeFilter | Date | string
-    created_by?: StringFilter | string
-    modified_at?: DateTimeNullableFilter | Date | string | null
-    modified_by?: StringNullableFilter | string | null
-    labels?: LabelsListRelationFilter
-    tasks?: TasksListRelationFilter
-  }
-
-  export type ProjectsOrderByWithRelationInput = {
-    id?: SortOrder
-    slug?: SortOrder
-    name?: SortOrder
-    color?: SortOrder
-    workspace_id?: SortOrder
-    created_at?: SortOrder
-    created_by?: SortOrder
-    modified_at?: SortOrder
-    modified_by?: SortOrder
-    labels?: LabelsOrderByRelationAggregateInput
-    tasks?: TasksOrderByRelationAggregateInput
-  }
-
-  export type ProjectsWhereUniqueInput = {
-    id?: string
-  }
-
-  export type ProjectsOrderByWithAggregationInput = {
-    id?: SortOrder
-    slug?: SortOrder
-    name?: SortOrder
-    color?: SortOrder
-    workspace_id?: SortOrder
-    created_at?: SortOrder
-    created_by?: SortOrder
-    modified_at?: SortOrder
-    modified_by?: SortOrder
-    _count?: ProjectsCountOrderByAggregateInput
-    _max?: ProjectsMaxOrderByAggregateInput
-    _min?: ProjectsMinOrderByAggregateInput
-  }
-
-  export type ProjectsScalarWhereWithAggregatesInput = {
-    AND?: Enumerable<ProjectsScalarWhereWithAggregatesInput>
-    OR?: Enumerable<ProjectsScalarWhereWithAggregatesInput>
-    NOT?: Enumerable<ProjectsScalarWhereWithAggregatesInput>
-    id?: UuidWithAggregatesFilter | string
-    slug?: StringWithAggregatesFilter | string
-    name?: StringWithAggregatesFilter | string
-    color?: StringWithAggregatesFilter | string
-    workspace_id?: StringWithAggregatesFilter | string
-    created_at?: DateTimeWithAggregatesFilter | Date | string
-    created_by?: StringWithAggregatesFilter | string
-    modified_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
-    modified_by?: StringNullableWithAggregatesFilter | string | null
   }
 
   export type Task_labelsWhereInput = {
@@ -6577,6 +5331,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringFilter | string
     type?: StringFilter | string
     impact?: IntNullableFilter | number | null
+    sort_order?: IntNullableFilter | number | null
     status?: IntFilter | number
     project_id?: UuidFilter | string
     created_at?: DateTimeFilter | Date | string
@@ -6585,10 +5340,8 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: DateTimeNullableFilter | Date | string | null
     modified_at?: DateTimeNullableFilter | Date | string | null
     modified_by?: StringNullableFilter | string | null
-    sort_order?: IntNullableFilter | number | null
     task_labels?: Task_labelsListRelationFilter
     task_users?: Task_usersListRelationFilter
-    projects?: XOR<ProjectsRelationFilter, ProjectsWhereInput>
   }
 
   export type TasksOrderByWithRelationInput = {
@@ -6598,6 +5351,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: SortOrder
     type?: SortOrder
     impact?: SortOrder
+    sort_order?: SortOrder
     status?: SortOrder
     project_id?: SortOrder
     created_at?: SortOrder
@@ -6606,10 +5360,8 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
-    sort_order?: SortOrder
     task_labels?: Task_labelsOrderByRelationAggregateInput
     task_users?: Task_usersOrderByRelationAggregateInput
-    projects?: ProjectsOrderByWithRelationInput
   }
 
   export type TasksWhereUniqueInput = {
@@ -6623,6 +5375,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: SortOrder
     type?: SortOrder
     impact?: SortOrder
+    sort_order?: SortOrder
     status?: SortOrder
     project_id?: SortOrder
     created_at?: SortOrder
@@ -6631,7 +5384,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
-    sort_order?: SortOrder
     _count?: TasksCountOrderByAggregateInput
     _avg?: TasksAvgOrderByAggregateInput
     _max?: TasksMaxOrderByAggregateInput
@@ -6649,6 +5401,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringWithAggregatesFilter | string
     type?: StringWithAggregatesFilter | string
     impact?: IntNullableWithAggregatesFilter | number | null
+    sort_order?: IntNullableWithAggregatesFilter | number | null
     status?: IntWithAggregatesFilter | number
     project_id?: UuidWithAggregatesFilter | string
     created_at?: DateTimeWithAggregatesFilter | Date | string
@@ -6657,14 +5410,13 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
     modified_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
     modified_by?: StringNullableWithAggregatesFilter | string | null
-    sort_order?: IntNullableWithAggregatesFilter | number | null
   }
 
   export type LabelsCreateInput = {
     id: string
     name: string
     color?: string | null
-    projects: ProjectsCreateNestedOneWithoutLabelsInput
+    project_id: string
     task_labels?: Task_labelsCreateNestedManyWithoutLabelsInput
   }
 
@@ -6680,7 +5432,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
-    projects?: ProjectsUpdateOneRequiredWithoutLabelsNestedInput
+    project_id?: StringFieldUpdateOperationsInput | string
     task_labels?: Task_labelsUpdateManyWithoutLabelsNestedInput
   }
 
@@ -6703,6 +5455,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
+    project_id?: StringFieldUpdateOperationsInput | string
   }
 
   export type LabelsUncheckedUpdateManyInput = {
@@ -6710,98 +5463,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
     project_id?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type ProjectsCreateInput = {
-    id: string
-    slug: string
-    name: string
-    color: string
-    workspace_id: string
-    created_at: Date | string
-    created_by: string
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    labels?: LabelsCreateNestedManyWithoutProjectsInput
-    tasks?: TasksCreateNestedManyWithoutProjectsInput
-  }
-
-  export type ProjectsUncheckedCreateInput = {
-    id: string
-    slug: string
-    name: string
-    color: string
-    workspace_id: string
-    created_at: Date | string
-    created_by: string
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    labels?: LabelsUncheckedCreateNestedManyWithoutProjectsInput
-    tasks?: TasksUncheckedCreateNestedManyWithoutProjectsInput
-  }
-
-  export type ProjectsUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: StringFieldUpdateOperationsInput | string
-    workspace_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    labels?: LabelsUpdateManyWithoutProjectsNestedInput
-    tasks?: TasksUpdateManyWithoutProjectsNestedInput
-  }
-
-  export type ProjectsUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: StringFieldUpdateOperationsInput | string
-    workspace_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    labels?: LabelsUncheckedUpdateManyWithoutProjectsNestedInput
-    tasks?: TasksUncheckedUpdateManyWithoutProjectsNestedInput
-  }
-
-  export type ProjectsCreateManyInput = {
-    id: string
-    slug: string
-    name: string
-    color: string
-    workspace_id: string
-    created_at: Date | string
-    created_by: string
-    modified_at?: Date | string | null
-    modified_by?: string | null
-  }
-
-  export type ProjectsUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: StringFieldUpdateOperationsInput | string
-    workspace_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-  }
-
-  export type ProjectsUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: StringFieldUpdateOperationsInput | string
-    workspace_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type Task_labelsCreateInput = {
@@ -6886,17 +5547,17 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string
     type: string
     impact?: number | null
+    sort_order?: number | null
     status: number
+    project_id: string
     created_at: Date | string
     created_by: string
     assigned_by?: string | null
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
-    sort_order?: number | null
     task_labels?: Task_labelsCreateNestedManyWithoutTasksInput
     task_users?: Task_usersCreateNestedManyWithoutTasksInput
-    projects: ProjectsCreateNestedOneWithoutTasksInput
   }
 
   export type TasksUncheckedCreateInput = {
@@ -6906,6 +5567,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string
     type: string
     impact?: number | null
+    sort_order?: number | null
     status: number
     project_id: string
     created_at: Date | string
@@ -6914,7 +5576,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
-    sort_order?: number | null
     task_labels?: Task_labelsUncheckedCreateNestedManyWithoutTasksInput
     task_users?: Task_usersUncheckedCreateNestedManyWithoutTasksInput
   }
@@ -6926,17 +5587,17 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     impact?: NullableIntFieldUpdateOperationsInput | number | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     status?: IntFieldUpdateOperationsInput | number
+    project_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUpdateManyWithoutTasksNestedInput
     task_users?: Task_usersUpdateManyWithoutTasksNestedInput
-    projects?: ProjectsUpdateOneRequiredWithoutTasksNestedInput
   }
 
   export type TasksUncheckedUpdateInput = {
@@ -6946,6 +5607,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     impact?: NullableIntFieldUpdateOperationsInput | number | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     status?: IntFieldUpdateOperationsInput | number
     project_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6954,7 +5616,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUncheckedUpdateManyWithoutTasksNestedInput
     task_users?: Task_usersUncheckedUpdateManyWithoutTasksNestedInput
   }
@@ -6966,6 +5627,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string
     type: string
     impact?: number | null
+    sort_order?: number | null
     status: number
     project_id: string
     created_at: Date | string
@@ -6974,7 +5636,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
-    sort_order?: number | null
   }
 
   export type TasksUpdateManyMutationInput = {
@@ -6984,14 +5645,15 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     impact?: NullableIntFieldUpdateOperationsInput | number | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     status?: IntFieldUpdateOperationsInput | number
+    project_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type TasksUncheckedUpdateManyInput = {
@@ -7001,6 +5663,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     impact?: NullableIntFieldUpdateOperationsInput | number | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     status?: IntFieldUpdateOperationsInput | number
     project_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7009,7 +5672,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type UuidFilter = {
@@ -7052,11 +5714,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     endsWith?: string
     mode?: QueryMode
     not?: NestedStringNullableFilter | string | null
-  }
-
-  export type ProjectsRelationFilter = {
-    is?: ProjectsWhereInput
-    isNot?: ProjectsWhereInput
   }
 
   export type Task_labelsListRelationFilter = {
@@ -7141,112 +5798,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     _max?: NestedStringNullableFilter
   }
 
-  export type DateTimeFilter = {
-    equals?: Date | string
-    in?: Enumerable<Date> | Enumerable<string>
-    notIn?: Enumerable<Date> | Enumerable<string>
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeFilter | Date | string
-  }
-
-  export type DateTimeNullableFilter = {
-    equals?: Date | string | null
-    in?: Enumerable<Date> | Enumerable<string> | null
-    notIn?: Enumerable<Date> | Enumerable<string> | null
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeNullableFilter | Date | string | null
-  }
-
-  export type LabelsListRelationFilter = {
-    every?: LabelsWhereInput
-    some?: LabelsWhereInput
-    none?: LabelsWhereInput
-  }
-
-  export type TasksListRelationFilter = {
-    every?: TasksWhereInput
-    some?: TasksWhereInput
-    none?: TasksWhereInput
-  }
-
-  export type LabelsOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type TasksOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type ProjectsCountOrderByAggregateInput = {
-    id?: SortOrder
-    slug?: SortOrder
-    name?: SortOrder
-    color?: SortOrder
-    workspace_id?: SortOrder
-    created_at?: SortOrder
-    created_by?: SortOrder
-    modified_at?: SortOrder
-    modified_by?: SortOrder
-  }
-
-  export type ProjectsMaxOrderByAggregateInput = {
-    id?: SortOrder
-    slug?: SortOrder
-    name?: SortOrder
-    color?: SortOrder
-    workspace_id?: SortOrder
-    created_at?: SortOrder
-    created_by?: SortOrder
-    modified_at?: SortOrder
-    modified_by?: SortOrder
-  }
-
-  export type ProjectsMinOrderByAggregateInput = {
-    id?: SortOrder
-    slug?: SortOrder
-    name?: SortOrder
-    color?: SortOrder
-    workspace_id?: SortOrder
-    created_at?: SortOrder
-    created_by?: SortOrder
-    modified_at?: SortOrder
-    modified_by?: SortOrder
-  }
-
-  export type DateTimeWithAggregatesFilter = {
-    equals?: Date | string
-    in?: Enumerable<Date> | Enumerable<string>
-    notIn?: Enumerable<Date> | Enumerable<string>
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeWithAggregatesFilter | Date | string
-    _count?: NestedIntFilter
-    _min?: NestedDateTimeFilter
-    _max?: NestedDateTimeFilter
-  }
-
-  export type DateTimeNullableWithAggregatesFilter = {
-    equals?: Date | string | null
-    in?: Enumerable<Date> | Enumerable<string> | null
-    notIn?: Enumerable<Date> | Enumerable<string> | null
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeNullableWithAggregatesFilter | Date | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedDateTimeNullableFilter
-    _max?: NestedDateTimeNullableFilter
-  }
-
   export type LabelsRelationFilter = {
     is?: LabelsWhereInput
     isNot?: LabelsWhereInput
@@ -7322,6 +5873,28 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedIntFilter | number
   }
 
+  export type DateTimeFilter = {
+    equals?: Date | string
+    in?: Enumerable<Date> | Enumerable<string>
+    notIn?: Enumerable<Date> | Enumerable<string>
+    lt?: Date | string
+    lte?: Date | string
+    gt?: Date | string
+    gte?: Date | string
+    not?: NestedDateTimeFilter | Date | string
+  }
+
+  export type DateTimeNullableFilter = {
+    equals?: Date | string | null
+    in?: Enumerable<Date> | Enumerable<string> | null
+    notIn?: Enumerable<Date> | Enumerable<string> | null
+    lt?: Date | string
+    lte?: Date | string
+    gt?: Date | string
+    gte?: Date | string
+    not?: NestedDateTimeNullableFilter | Date | string | null
+  }
+
   export type Task_usersListRelationFilter = {
     every?: Task_usersWhereInput
     some?: Task_usersWhereInput
@@ -7339,6 +5912,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: SortOrder
     type?: SortOrder
     impact?: SortOrder
+    sort_order?: SortOrder
     status?: SortOrder
     project_id?: SortOrder
     created_at?: SortOrder
@@ -7347,13 +5921,12 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
-    sort_order?: SortOrder
   }
 
   export type TasksAvgOrderByAggregateInput = {
     impact?: SortOrder
-    status?: SortOrder
     sort_order?: SortOrder
+    status?: SortOrder
   }
 
   export type TasksMaxOrderByAggregateInput = {
@@ -7363,6 +5936,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: SortOrder
     type?: SortOrder
     impact?: SortOrder
+    sort_order?: SortOrder
     status?: SortOrder
     project_id?: SortOrder
     created_at?: SortOrder
@@ -7371,7 +5945,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
-    sort_order?: SortOrder
   }
 
   export type TasksMinOrderByAggregateInput = {
@@ -7381,6 +5954,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: SortOrder
     type?: SortOrder
     impact?: SortOrder
+    sort_order?: SortOrder
     status?: SortOrder
     project_id?: SortOrder
     created_at?: SortOrder
@@ -7389,13 +5963,12 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: SortOrder
     modified_at?: SortOrder
     modified_by?: SortOrder
-    sort_order?: SortOrder
   }
 
   export type TasksSumOrderByAggregateInput = {
     impact?: SortOrder
-    status?: SortOrder
     sort_order?: SortOrder
+    status?: SortOrder
   }
 
   export type IntNullableWithAggregatesFilter = {
@@ -7430,10 +6003,32 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     _max?: NestedIntFilter
   }
 
-  export type ProjectsCreateNestedOneWithoutLabelsInput = {
-    create?: XOR<ProjectsCreateWithoutLabelsInput, ProjectsUncheckedCreateWithoutLabelsInput>
-    connectOrCreate?: ProjectsCreateOrConnectWithoutLabelsInput
-    connect?: ProjectsWhereUniqueInput
+  export type DateTimeWithAggregatesFilter = {
+    equals?: Date | string
+    in?: Enumerable<Date> | Enumerable<string>
+    notIn?: Enumerable<Date> | Enumerable<string>
+    lt?: Date | string
+    lte?: Date | string
+    gt?: Date | string
+    gte?: Date | string
+    not?: NestedDateTimeWithAggregatesFilter | Date | string
+    _count?: NestedIntFilter
+    _min?: NestedDateTimeFilter
+    _max?: NestedDateTimeFilter
+  }
+
+  export type DateTimeNullableWithAggregatesFilter = {
+    equals?: Date | string | null
+    in?: Enumerable<Date> | Enumerable<string> | null
+    notIn?: Enumerable<Date> | Enumerable<string> | null
+    lt?: Date | string
+    lte?: Date | string
+    gt?: Date | string
+    gte?: Date | string
+    not?: NestedDateTimeNullableWithAggregatesFilter | Date | string | null
+    _count?: NestedIntNullableFilter
+    _min?: NestedDateTimeNullableFilter
+    _max?: NestedDateTimeNullableFilter
   }
 
   export type Task_labelsCreateNestedManyWithoutLabelsInput = {
@@ -7456,14 +6051,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
-  }
-
-  export type ProjectsUpdateOneRequiredWithoutLabelsNestedInput = {
-    create?: XOR<ProjectsCreateWithoutLabelsInput, ProjectsUncheckedCreateWithoutLabelsInput>
-    connectOrCreate?: ProjectsCreateOrConnectWithoutLabelsInput
-    upsert?: ProjectsUpsertWithoutLabelsInput
-    connect?: ProjectsWhereUniqueInput
-    update?: XOR<ProjectsUpdateWithoutLabelsInput, ProjectsUncheckedUpdateWithoutLabelsInput>
   }
 
   export type Task_labelsUpdateManyWithoutLabelsNestedInput = {
@@ -7492,98 +6079,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     update?: Enumerable<Task_labelsUpdateWithWhereUniqueWithoutLabelsInput>
     updateMany?: Enumerable<Task_labelsUpdateManyWithWhereWithoutLabelsInput>
     deleteMany?: Enumerable<Task_labelsScalarWhereInput>
-  }
-
-  export type LabelsCreateNestedManyWithoutProjectsInput = {
-    create?: XOR<Enumerable<LabelsCreateWithoutProjectsInput>, Enumerable<LabelsUncheckedCreateWithoutProjectsInput>>
-    connectOrCreate?: Enumerable<LabelsCreateOrConnectWithoutProjectsInput>
-    createMany?: LabelsCreateManyProjectsInputEnvelope
-    connect?: Enumerable<LabelsWhereUniqueInput>
-  }
-
-  export type TasksCreateNestedManyWithoutProjectsInput = {
-    create?: XOR<Enumerable<TasksCreateWithoutProjectsInput>, Enumerable<TasksUncheckedCreateWithoutProjectsInput>>
-    connectOrCreate?: Enumerable<TasksCreateOrConnectWithoutProjectsInput>
-    createMany?: TasksCreateManyProjectsInputEnvelope
-    connect?: Enumerable<TasksWhereUniqueInput>
-  }
-
-  export type LabelsUncheckedCreateNestedManyWithoutProjectsInput = {
-    create?: XOR<Enumerable<LabelsCreateWithoutProjectsInput>, Enumerable<LabelsUncheckedCreateWithoutProjectsInput>>
-    connectOrCreate?: Enumerable<LabelsCreateOrConnectWithoutProjectsInput>
-    createMany?: LabelsCreateManyProjectsInputEnvelope
-    connect?: Enumerable<LabelsWhereUniqueInput>
-  }
-
-  export type TasksUncheckedCreateNestedManyWithoutProjectsInput = {
-    create?: XOR<Enumerable<TasksCreateWithoutProjectsInput>, Enumerable<TasksUncheckedCreateWithoutProjectsInput>>
-    connectOrCreate?: Enumerable<TasksCreateOrConnectWithoutProjectsInput>
-    createMany?: TasksCreateManyProjectsInputEnvelope
-    connect?: Enumerable<TasksWhereUniqueInput>
-  }
-
-  export type DateTimeFieldUpdateOperationsInput = {
-    set?: Date | string
-  }
-
-  export type NullableDateTimeFieldUpdateOperationsInput = {
-    set?: Date | string | null
-  }
-
-  export type LabelsUpdateManyWithoutProjectsNestedInput = {
-    create?: XOR<Enumerable<LabelsCreateWithoutProjectsInput>, Enumerable<LabelsUncheckedCreateWithoutProjectsInput>>
-    connectOrCreate?: Enumerable<LabelsCreateOrConnectWithoutProjectsInput>
-    upsert?: Enumerable<LabelsUpsertWithWhereUniqueWithoutProjectsInput>
-    createMany?: LabelsCreateManyProjectsInputEnvelope
-    set?: Enumerable<LabelsWhereUniqueInput>
-    disconnect?: Enumerable<LabelsWhereUniqueInput>
-    delete?: Enumerable<LabelsWhereUniqueInput>
-    connect?: Enumerable<LabelsWhereUniqueInput>
-    update?: Enumerable<LabelsUpdateWithWhereUniqueWithoutProjectsInput>
-    updateMany?: Enumerable<LabelsUpdateManyWithWhereWithoutProjectsInput>
-    deleteMany?: Enumerable<LabelsScalarWhereInput>
-  }
-
-  export type TasksUpdateManyWithoutProjectsNestedInput = {
-    create?: XOR<Enumerable<TasksCreateWithoutProjectsInput>, Enumerable<TasksUncheckedCreateWithoutProjectsInput>>
-    connectOrCreate?: Enumerable<TasksCreateOrConnectWithoutProjectsInput>
-    upsert?: Enumerable<TasksUpsertWithWhereUniqueWithoutProjectsInput>
-    createMany?: TasksCreateManyProjectsInputEnvelope
-    set?: Enumerable<TasksWhereUniqueInput>
-    disconnect?: Enumerable<TasksWhereUniqueInput>
-    delete?: Enumerable<TasksWhereUniqueInput>
-    connect?: Enumerable<TasksWhereUniqueInput>
-    update?: Enumerable<TasksUpdateWithWhereUniqueWithoutProjectsInput>
-    updateMany?: Enumerable<TasksUpdateManyWithWhereWithoutProjectsInput>
-    deleteMany?: Enumerable<TasksScalarWhereInput>
-  }
-
-  export type LabelsUncheckedUpdateManyWithoutProjectsNestedInput = {
-    create?: XOR<Enumerable<LabelsCreateWithoutProjectsInput>, Enumerable<LabelsUncheckedCreateWithoutProjectsInput>>
-    connectOrCreate?: Enumerable<LabelsCreateOrConnectWithoutProjectsInput>
-    upsert?: Enumerable<LabelsUpsertWithWhereUniqueWithoutProjectsInput>
-    createMany?: LabelsCreateManyProjectsInputEnvelope
-    set?: Enumerable<LabelsWhereUniqueInput>
-    disconnect?: Enumerable<LabelsWhereUniqueInput>
-    delete?: Enumerable<LabelsWhereUniqueInput>
-    connect?: Enumerable<LabelsWhereUniqueInput>
-    update?: Enumerable<LabelsUpdateWithWhereUniqueWithoutProjectsInput>
-    updateMany?: Enumerable<LabelsUpdateManyWithWhereWithoutProjectsInput>
-    deleteMany?: Enumerable<LabelsScalarWhereInput>
-  }
-
-  export type TasksUncheckedUpdateManyWithoutProjectsNestedInput = {
-    create?: XOR<Enumerable<TasksCreateWithoutProjectsInput>, Enumerable<TasksUncheckedCreateWithoutProjectsInput>>
-    connectOrCreate?: Enumerable<TasksCreateOrConnectWithoutProjectsInput>
-    upsert?: Enumerable<TasksUpsertWithWhereUniqueWithoutProjectsInput>
-    createMany?: TasksCreateManyProjectsInputEnvelope
-    set?: Enumerable<TasksWhereUniqueInput>
-    disconnect?: Enumerable<TasksWhereUniqueInput>
-    delete?: Enumerable<TasksWhereUniqueInput>
-    connect?: Enumerable<TasksWhereUniqueInput>
-    update?: Enumerable<TasksUpdateWithWhereUniqueWithoutProjectsInput>
-    updateMany?: Enumerable<TasksUpdateManyWithWhereWithoutProjectsInput>
-    deleteMany?: Enumerable<TasksScalarWhereInput>
   }
 
   export type LabelsCreateNestedOneWithoutTask_labelsInput = {
@@ -7642,12 +6137,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     connect?: Enumerable<Task_usersWhereUniqueInput>
   }
 
-  export type ProjectsCreateNestedOneWithoutTasksInput = {
-    create?: XOR<ProjectsCreateWithoutTasksInput, ProjectsUncheckedCreateWithoutTasksInput>
-    connectOrCreate?: ProjectsCreateOrConnectWithoutTasksInput
-    connect?: ProjectsWhereUniqueInput
-  }
-
   export type Task_labelsUncheckedCreateNestedManyWithoutTasksInput = {
     create?: XOR<Enumerable<Task_labelsCreateWithoutTasksInput>, Enumerable<Task_labelsUncheckedCreateWithoutTasksInput>>
     connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutTasksInput>
@@ -7678,6 +6167,14 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     divide?: number
   }
 
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
+  }
+
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
+  }
+
   export type Task_labelsUpdateManyWithoutTasksNestedInput = {
     create?: XOR<Enumerable<Task_labelsCreateWithoutTasksInput>, Enumerable<Task_labelsUncheckedCreateWithoutTasksInput>>
     connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutTasksInput>
@@ -7704,14 +6201,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     update?: Enumerable<Task_usersUpdateWithWhereUniqueWithoutTasksInput>
     updateMany?: Enumerable<Task_usersUpdateManyWithWhereWithoutTasksInput>
     deleteMany?: Enumerable<Task_usersScalarWhereInput>
-  }
-
-  export type ProjectsUpdateOneRequiredWithoutTasksNestedInput = {
-    create?: XOR<ProjectsCreateWithoutTasksInput, ProjectsUncheckedCreateWithoutTasksInput>
-    connectOrCreate?: ProjectsCreateOrConnectWithoutTasksInput
-    upsert?: ProjectsUpsertWithoutTasksInput
-    connect?: ProjectsWhereUniqueInput
-    update?: XOR<ProjectsUpdateWithoutTasksInput, ProjectsUncheckedUpdateWithoutTasksInput>
   }
 
   export type Task_labelsUncheckedUpdateManyWithoutTasksNestedInput = {
@@ -7873,34 +6362,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedDateTimeNullableFilter | Date | string | null
   }
 
-  export type NestedDateTimeWithAggregatesFilter = {
-    equals?: Date | string
-    in?: Enumerable<Date> | Enumerable<string>
-    notIn?: Enumerable<Date> | Enumerable<string>
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeWithAggregatesFilter | Date | string
-    _count?: NestedIntFilter
-    _min?: NestedDateTimeFilter
-    _max?: NestedDateTimeFilter
-  }
-
-  export type NestedDateTimeNullableWithAggregatesFilter = {
-    equals?: Date | string | null
-    in?: Enumerable<Date> | Enumerable<string> | null
-    notIn?: Enumerable<Date> | Enumerable<string> | null
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeNullableWithAggregatesFilter | Date | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedDateTimeNullableFilter
-    _max?: NestedDateTimeNullableFilter
-  }
-
   export type NestedIntNullableWithAggregatesFilter = {
     equals?: number | null
     in?: Enumerable<number> | null
@@ -7955,35 +6416,32 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     not?: NestedFloatFilter | number
   }
 
-  export type ProjectsCreateWithoutLabelsInput = {
-    id: string
-    slug: string
-    name: string
-    color: string
-    workspace_id: string
-    created_at: Date | string
-    created_by: string
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    tasks?: TasksCreateNestedManyWithoutProjectsInput
+  export type NestedDateTimeWithAggregatesFilter = {
+    equals?: Date | string
+    in?: Enumerable<Date> | Enumerable<string>
+    notIn?: Enumerable<Date> | Enumerable<string>
+    lt?: Date | string
+    lte?: Date | string
+    gt?: Date | string
+    gte?: Date | string
+    not?: NestedDateTimeWithAggregatesFilter | Date | string
+    _count?: NestedIntFilter
+    _min?: NestedDateTimeFilter
+    _max?: NestedDateTimeFilter
   }
 
-  export type ProjectsUncheckedCreateWithoutLabelsInput = {
-    id: string
-    slug: string
-    name: string
-    color: string
-    workspace_id: string
-    created_at: Date | string
-    created_by: string
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    tasks?: TasksUncheckedCreateNestedManyWithoutProjectsInput
-  }
-
-  export type ProjectsCreateOrConnectWithoutLabelsInput = {
-    where: ProjectsWhereUniqueInput
-    create: XOR<ProjectsCreateWithoutLabelsInput, ProjectsUncheckedCreateWithoutLabelsInput>
+  export type NestedDateTimeNullableWithAggregatesFilter = {
+    equals?: Date | string | null
+    in?: Enumerable<Date> | Enumerable<string> | null
+    notIn?: Enumerable<Date> | Enumerable<string> | null
+    lt?: Date | string
+    lte?: Date | string
+    gt?: Date | string
+    gte?: Date | string
+    not?: NestedDateTimeNullableWithAggregatesFilter | Date | string | null
+    _count?: NestedIntNullableFilter
+    _min?: NestedDateTimeNullableFilter
+    _max?: NestedDateTimeNullableFilter
   }
 
   export type Task_labelsCreateWithoutLabelsInput = {
@@ -8002,37 +6460,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   export type Task_labelsCreateManyLabelsInputEnvelope = {
     data: Enumerable<Task_labelsCreateManyLabelsInput>
     skipDuplicates?: boolean
-  }
-
-  export type ProjectsUpsertWithoutLabelsInput = {
-    update: XOR<ProjectsUpdateWithoutLabelsInput, ProjectsUncheckedUpdateWithoutLabelsInput>
-    create: XOR<ProjectsCreateWithoutLabelsInput, ProjectsUncheckedCreateWithoutLabelsInput>
-  }
-
-  export type ProjectsUpdateWithoutLabelsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: StringFieldUpdateOperationsInput | string
-    workspace_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    tasks?: TasksUpdateManyWithoutProjectsNestedInput
-  }
-
-  export type ProjectsUncheckedUpdateWithoutLabelsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: StringFieldUpdateOperationsInput | string
-    workspace_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    tasks?: TasksUncheckedUpdateManyWithoutProjectsNestedInput
   }
 
   export type Task_labelsUpsertWithWhereUniqueWithoutLabelsInput = {
@@ -8059,146 +6486,11 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     label_id?: UuidFilter | string
   }
 
-  export type LabelsCreateWithoutProjectsInput = {
-    id: string
-    name: string
-    color?: string | null
-    task_labels?: Task_labelsCreateNestedManyWithoutLabelsInput
-  }
-
-  export type LabelsUncheckedCreateWithoutProjectsInput = {
-    id: string
-    name: string
-    color?: string | null
-    task_labels?: Task_labelsUncheckedCreateNestedManyWithoutLabelsInput
-  }
-
-  export type LabelsCreateOrConnectWithoutProjectsInput = {
-    where: LabelsWhereUniqueInput
-    create: XOR<LabelsCreateWithoutProjectsInput, LabelsUncheckedCreateWithoutProjectsInput>
-  }
-
-  export type LabelsCreateManyProjectsInputEnvelope = {
-    data: Enumerable<LabelsCreateManyProjectsInput>
-    skipDuplicates?: boolean
-  }
-
-  export type TasksCreateWithoutProjectsInput = {
-    id: string
-    slug: string
-    markdown?: string | null
-    summary: string
-    type: string
-    impact?: number | null
-    status: number
-    created_at: Date | string
-    created_by: string
-    assigned_by?: string | null
-    assigned_at?: Date | string | null
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    sort_order?: number | null
-    task_labels?: Task_labelsCreateNestedManyWithoutTasksInput
-    task_users?: Task_usersCreateNestedManyWithoutTasksInput
-  }
-
-  export type TasksUncheckedCreateWithoutProjectsInput = {
-    id: string
-    slug: string
-    markdown?: string | null
-    summary: string
-    type: string
-    impact?: number | null
-    status: number
-    created_at: Date | string
-    created_by: string
-    assigned_by?: string | null
-    assigned_at?: Date | string | null
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    sort_order?: number | null
-    task_labels?: Task_labelsUncheckedCreateNestedManyWithoutTasksInput
-    task_users?: Task_usersUncheckedCreateNestedManyWithoutTasksInput
-  }
-
-  export type TasksCreateOrConnectWithoutProjectsInput = {
-    where: TasksWhereUniqueInput
-    create: XOR<TasksCreateWithoutProjectsInput, TasksUncheckedCreateWithoutProjectsInput>
-  }
-
-  export type TasksCreateManyProjectsInputEnvelope = {
-    data: Enumerable<TasksCreateManyProjectsInput>
-    skipDuplicates?: boolean
-  }
-
-  export type LabelsUpsertWithWhereUniqueWithoutProjectsInput = {
-    where: LabelsWhereUniqueInput
-    update: XOR<LabelsUpdateWithoutProjectsInput, LabelsUncheckedUpdateWithoutProjectsInput>
-    create: XOR<LabelsCreateWithoutProjectsInput, LabelsUncheckedCreateWithoutProjectsInput>
-  }
-
-  export type LabelsUpdateWithWhereUniqueWithoutProjectsInput = {
-    where: LabelsWhereUniqueInput
-    data: XOR<LabelsUpdateWithoutProjectsInput, LabelsUncheckedUpdateWithoutProjectsInput>
-  }
-
-  export type LabelsUpdateManyWithWhereWithoutProjectsInput = {
-    where: LabelsScalarWhereInput
-    data: XOR<LabelsUpdateManyMutationInput, LabelsUncheckedUpdateManyWithoutLabelsInput>
-  }
-
-  export type LabelsScalarWhereInput = {
-    AND?: Enumerable<LabelsScalarWhereInput>
-    OR?: Enumerable<LabelsScalarWhereInput>
-    NOT?: Enumerable<LabelsScalarWhereInput>
-    id?: UuidFilter | string
-    name?: StringFilter | string
-    color?: StringNullableFilter | string | null
-    project_id?: UuidFilter | string
-  }
-
-  export type TasksUpsertWithWhereUniqueWithoutProjectsInput = {
-    where: TasksWhereUniqueInput
-    update: XOR<TasksUpdateWithoutProjectsInput, TasksUncheckedUpdateWithoutProjectsInput>
-    create: XOR<TasksCreateWithoutProjectsInput, TasksUncheckedCreateWithoutProjectsInput>
-  }
-
-  export type TasksUpdateWithWhereUniqueWithoutProjectsInput = {
-    where: TasksWhereUniqueInput
-    data: XOR<TasksUpdateWithoutProjectsInput, TasksUncheckedUpdateWithoutProjectsInput>
-  }
-
-  export type TasksUpdateManyWithWhereWithoutProjectsInput = {
-    where: TasksScalarWhereInput
-    data: XOR<TasksUpdateManyMutationInput, TasksUncheckedUpdateManyWithoutTasksInput>
-  }
-
-  export type TasksScalarWhereInput = {
-    AND?: Enumerable<TasksScalarWhereInput>
-    OR?: Enumerable<TasksScalarWhereInput>
-    NOT?: Enumerable<TasksScalarWhereInput>
-    id?: UuidFilter | string
-    slug?: StringFilter | string
-    markdown?: StringNullableFilter | string | null
-    summary?: StringFilter | string
-    type?: StringFilter | string
-    impact?: IntNullableFilter | number | null
-    status?: IntFilter | number
-    project_id?: UuidFilter | string
-    created_at?: DateTimeFilter | Date | string
-    created_by?: StringFilter | string
-    assigned_by?: StringNullableFilter | string | null
-    assigned_at?: DateTimeNullableFilter | Date | string | null
-    modified_at?: DateTimeNullableFilter | Date | string | null
-    modified_by?: StringNullableFilter | string | null
-    sort_order?: IntNullableFilter | number | null
-  }
-
   export type LabelsCreateWithoutTask_labelsInput = {
     id: string
     name: string
     color?: string | null
-    projects: ProjectsCreateNestedOneWithoutLabelsInput
+    project_id: string
   }
 
   export type LabelsUncheckedCreateWithoutTask_labelsInput = {
@@ -8220,16 +6512,16 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string
     type: string
     impact?: number | null
+    sort_order?: number | null
     status: number
+    project_id: string
     created_at: Date | string
     created_by: string
     assigned_by?: string | null
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
-    sort_order?: number | null
     task_users?: Task_usersCreateNestedManyWithoutTasksInput
-    projects: ProjectsCreateNestedOneWithoutTasksInput
   }
 
   export type TasksUncheckedCreateWithoutTask_labelsInput = {
@@ -8239,6 +6531,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string
     type: string
     impact?: number | null
+    sort_order?: number | null
     status: number
     project_id: string
     created_at: Date | string
@@ -8247,7 +6540,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
-    sort_order?: number | null
     task_users?: Task_usersUncheckedCreateNestedManyWithoutTasksInput
   }
 
@@ -8265,7 +6557,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
-    projects?: ProjectsUpdateOneRequiredWithoutLabelsNestedInput
+    project_id?: StringFieldUpdateOperationsInput | string
   }
 
   export type LabelsUncheckedUpdateWithoutTask_labelsInput = {
@@ -8287,16 +6579,16 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     impact?: NullableIntFieldUpdateOperationsInput | number | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     status?: IntFieldUpdateOperationsInput | number
+    project_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_users?: Task_usersUpdateManyWithoutTasksNestedInput
-    projects?: ProjectsUpdateOneRequiredWithoutTasksNestedInput
   }
 
   export type TasksUncheckedUpdateWithoutTask_labelsInput = {
@@ -8306,6 +6598,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     impact?: NullableIntFieldUpdateOperationsInput | number | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     status?: IntFieldUpdateOperationsInput | number
     project_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8314,7 +6607,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_users?: Task_usersUncheckedUpdateManyWithoutTasksNestedInput
   }
 
@@ -8325,16 +6617,16 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string
     type: string
     impact?: number | null
+    sort_order?: number | null
     status: number
+    project_id: string
     created_at: Date | string
     created_by: string
     assigned_by?: string | null
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
-    sort_order?: number | null
     task_labels?: Task_labelsCreateNestedManyWithoutTasksInput
-    projects: ProjectsCreateNestedOneWithoutTasksInput
   }
 
   export type TasksUncheckedCreateWithoutTask_usersInput = {
@@ -8344,6 +6636,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary: string
     type: string
     impact?: number | null
+    sort_order?: number | null
     status: number
     project_id: string
     created_at: Date | string
@@ -8352,7 +6645,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
-    sort_order?: number | null
     task_labels?: Task_labelsUncheckedCreateNestedManyWithoutTasksInput
   }
 
@@ -8373,16 +6665,16 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     impact?: NullableIntFieldUpdateOperationsInput | number | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     status?: IntFieldUpdateOperationsInput | number
+    project_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     created_by?: StringFieldUpdateOperationsInput | string
     assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUpdateManyWithoutTasksNestedInput
-    projects?: ProjectsUpdateOneRequiredWithoutTasksNestedInput
   }
 
   export type TasksUncheckedUpdateWithoutTask_usersInput = {
@@ -8392,6 +6684,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     summary?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     impact?: NullableIntFieldUpdateOperationsInput | number | null
+    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     status?: IntFieldUpdateOperationsInput | number
     project_id?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8400,7 +6693,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
     task_labels?: Task_labelsUncheckedUpdateManyWithoutTasksNestedInput
   }
 
@@ -8440,37 +6732,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   export type Task_usersCreateManyTasksInputEnvelope = {
     data: Enumerable<Task_usersCreateManyTasksInput>
     skipDuplicates?: boolean
-  }
-
-  export type ProjectsCreateWithoutTasksInput = {
-    id: string
-    slug: string
-    name: string
-    color: string
-    workspace_id: string
-    created_at: Date | string
-    created_by: string
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    labels?: LabelsCreateNestedManyWithoutProjectsInput
-  }
-
-  export type ProjectsUncheckedCreateWithoutTasksInput = {
-    id: string
-    slug: string
-    name: string
-    color: string
-    workspace_id: string
-    created_at: Date | string
-    created_by: string
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    labels?: LabelsUncheckedCreateNestedManyWithoutProjectsInput
-  }
-
-  export type ProjectsCreateOrConnectWithoutTasksInput = {
-    where: ProjectsWhereUniqueInput
-    create: XOR<ProjectsCreateWithoutTasksInput, ProjectsUncheckedCreateWithoutTasksInput>
   }
 
   export type Task_labelsUpsertWithWhereUniqueWithoutTasksInput = {
@@ -8514,37 +6775,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     role?: StringFilter | string
   }
 
-  export type ProjectsUpsertWithoutTasksInput = {
-    update: XOR<ProjectsUpdateWithoutTasksInput, ProjectsUncheckedUpdateWithoutTasksInput>
-    create: XOR<ProjectsCreateWithoutTasksInput, ProjectsUncheckedCreateWithoutTasksInput>
-  }
-
-  export type ProjectsUpdateWithoutTasksInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: StringFieldUpdateOperationsInput | string
-    workspace_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    labels?: LabelsUpdateManyWithoutProjectsNestedInput
-  }
-
-  export type ProjectsUncheckedUpdateWithoutTasksInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: StringFieldUpdateOperationsInput | string
-    workspace_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    labels?: LabelsUncheckedUpdateManyWithoutProjectsNestedInput
-  }
-
   export type Task_labelsCreateManyLabelsInput = {
     task_id: string
   }
@@ -8559,104 +6789,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type Task_labelsUncheckedUpdateManyWithoutTask_labelsInput = {
     task_id?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type LabelsCreateManyProjectsInput = {
-    id: string
-    name: string
-    color?: string | null
-  }
-
-  export type TasksCreateManyProjectsInput = {
-    id: string
-    slug: string
-    markdown?: string | null
-    summary: string
-    type: string
-    impact?: number | null
-    status: number
-    created_at: Date | string
-    created_by: string
-    assigned_by?: string | null
-    assigned_at?: Date | string | null
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    sort_order?: number | null
-  }
-
-  export type LabelsUpdateWithoutProjectsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-    task_labels?: Task_labelsUpdateManyWithoutLabelsNestedInput
-  }
-
-  export type LabelsUncheckedUpdateWithoutProjectsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-    task_labels?: Task_labelsUncheckedUpdateManyWithoutLabelsNestedInput
-  }
-
-  export type LabelsUncheckedUpdateManyWithoutLabelsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-  }
-
-  export type TasksUpdateWithoutProjectsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    markdown?: NullableStringFieldUpdateOperationsInput | string | null
-    summary?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    impact?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: IntFieldUpdateOperationsInput | number
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
-    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
-    task_labels?: Task_labelsUpdateManyWithoutTasksNestedInput
-    task_users?: Task_usersUpdateManyWithoutTasksNestedInput
-  }
-
-  export type TasksUncheckedUpdateWithoutProjectsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    markdown?: NullableStringFieldUpdateOperationsInput | string | null
-    summary?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    impact?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: IntFieldUpdateOperationsInput | number
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
-    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
-    task_labels?: Task_labelsUncheckedUpdateManyWithoutTasksNestedInput
-    task_users?: Task_usersUncheckedUpdateManyWithoutTasksNestedInput
-  }
-
-  export type TasksUncheckedUpdateManyWithoutTasksInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    markdown?: NullableStringFieldUpdateOperationsInput | string | null
-    summary?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    impact?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: IntFieldUpdateOperationsInput | number
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
-    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type Task_labelsCreateManyTasksInput = {

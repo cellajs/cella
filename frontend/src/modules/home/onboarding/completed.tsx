@@ -6,16 +6,13 @@ import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { Menu, Undo } from 'lucide-react';
 import { createWorkspace } from '~/api/workspaces';
 import { useUserStore } from '~/store/user';
-import { useElectric } from '~/modules/common/root/electric';
+import { createProject } from '~/api/projects';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
   const { menu, setSheet } = useNavigationStore();
   const [isExploding, _] = useState(true);
   const state = useUserStore();
-
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
 
   useEffect(() => {
     const sortedOrganizations = [...menu.organizations.items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -27,16 +24,11 @@ export const OnboardingCompleted = () => {
         organization: lastCreatedOrganization.id,
       }).then((workspace) => {
         for (let i = 3; i !== 0; i--) {
-          db.projects.create({
-            data: {
-              id: window.crypto.randomUUID(),
-              name: `Demo project ${i}`,
-              slug: `${lastCreatedOrganization.slug}-project-${i}`,
-              workspace_id: workspace.id,
-              color: '#000000',
-              created_at: new Date(),
-              created_by: state.user.id,
-            },
+          createProject({
+            name: `Demo project ${i}`,
+            slug: `${lastCreatedOrganization.slug}-project-${i}`,
+            workspace: workspace.id,
+            color: '#000000',
           });
         }
       });

@@ -1,17 +1,15 @@
-For working with ElectricSQL you need to up docker container with name `electric`.
+For working with ElectricSQL you need to up docker containers.
 
-Firstly, you need to set up the environment variables in the `.env.electric` file. You can use the `.env.electric.example` file as an example.
-
-Then you need to run the following command to up the docker container:
+Then you need to run the following command to up the docker containers:
 
 ```bash
-docker-compose up electric
+pnpm docker:electric
 ```
 
-After that, you need to run migrations:
+After that, you need to prepare the frontend to work with ElectricSQL by running the following command:
 
 ```bash
-pnpm migrate:fe
+pnpm prepare:electric:dev
 ```
 
 And then you can run the frontend:

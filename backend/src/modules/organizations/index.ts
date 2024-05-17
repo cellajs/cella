@@ -81,7 +81,7 @@ const organizationsRoutes = app
     });
   })
   /*
-   * Get an organization
+   * Get an organizations
    */
   .openapi(getOrganizationsRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');

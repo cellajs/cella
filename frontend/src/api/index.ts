@@ -6,6 +6,7 @@ import type { OrganizationsRoutes } from 'backend/modules/organizations/index';
 import type { PublicRoutes } from 'backend/modules/public/index';
 import type { UsersRoutes } from 'backend/modules/users/index';
 import type { WorkspacesRoutes } from 'backend/modules/workspaces/index';
+import type { ProjectsRoutes } from 'backend/modules/projects/index';
 import type { PageResourceType } from 'backend/types/common';
 
 import { config } from 'config';
@@ -55,3 +56,4 @@ export const membershipClient = hc<MembershipRoutes>(config.backendUrl, clientCo
 export const generalClient = hc<GeneralRoutes>(config.backendUrl, clientConfig);
 export const publicClient = hc<PublicRoutes>(config.backendUrl, clientConfig);
 export const workspaceClient = hc<WorkspacesRoutes>(config.backendUrl, clientConfig);
+export const projectClient = hc<ProjectsRoutes>(config.backendUrl, clientConfig);

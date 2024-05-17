@@ -5,6 +5,7 @@ import { organizationsTable } from '../../../db/schema/organizations';
 import { usersTable } from '../../../db/schema/users';
 import type { PageResourceType } from '../../../types/common';
 import { workspacesTable } from '../../../db/schema/workspaces';
+import { projectsTable } from '../../../db/schema/projects';
 
 export const checkSlugAvailable = async (slug: string, type: PageResourceType) => {
   let entity: unknown;
@@ -18,6 +19,9 @@ export const checkSlugAvailable = async (slug: string, type: PageResourceType) =
       break;
     case 'WORKSPACE':
       [entity] = await db.select().from(workspacesTable).where(eq(workspacesTable.slug, slug));
+      break;
+    case 'PROJECT':
+      [entity] = await db.select().from(projectsTable).where(eq(projectsTable.slug, slug));
       break;
     default:
       return false;
