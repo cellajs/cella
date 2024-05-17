@@ -68,6 +68,8 @@ pnpm install
 ```
 
 #### Docker
+Make sure docker runs in the background.
+
 ```bash
 pnpm run docker
 ```
