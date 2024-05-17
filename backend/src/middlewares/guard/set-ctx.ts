@@ -53,7 +53,7 @@ const setCtx =
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async  function resolveResourceByIdOrSlug(resourceType: string, idOrSlug: string, ctx: any) {
+async function resolveResourceByIdOrSlug(resourceType: string, idOrSlug: string, ctx: any) {
   const table = tables.get(resourceType);
   
   // Return early if table is not available
@@ -77,7 +77,7 @@ async  function resolveResourceByIdOrSlug(resourceType: string, idOrSlug: string
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async  function resolveParentContext(resourceType: string, ctx: any) {
+async function resolveParentContext(resourceType: string, ctx: any) {
   const resource = HierarchicalEntity.instanceMap.get(resourceType);
 
     // Return early if resource is not available
