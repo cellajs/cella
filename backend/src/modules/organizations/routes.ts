@@ -6,7 +6,7 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { authGuard, systemGuard, organizationTenantGuard } from '../../middlewares/guard';
+import { authGuard, systemGuard, auth, setCtx, protect } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
@@ -53,7 +53,7 @@ export const createOrganizationRouteConfig = createRouteConfig({
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
   path: '/organizations/{organization}',
-  guard: organizationTenantGuard('organization', ['ADMIN']),
+  guard: [auth(), setCtx('organization'), protect('update')],
   tags: ['organizations'],
   summary: 'Update organization',
   description: `
@@ -113,7 +113,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organization}',
-  guard: organizationTenantGuard('organization'),
+  guard:  [auth(), setCtx('organization'), protect('read')],
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
   description: `
@@ -140,7 +140,7 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
 export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organization}/members',
-  guard: organizationTenantGuard('organization'),
+  guard: [auth(), setCtx('organization'), protect('read')],
   tags: ['organizations'],
   summary: 'Get members of organization',
   description: `
