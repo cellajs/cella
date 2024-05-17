@@ -17,8 +17,6 @@
     "postinstall": "lefthook install",
     "docker": "docker-compose --env-file env/.env up",
     "docker:down": "docker-compose down",
-    "docker:electric": "docker-compose -f electric.yaml up",
-    "docker:electric:down": "docker-compose -f electric.yaml down",
     "start": "dotenv -e env/.env -- turbo start --filter backend --filter frontend --filter tus",
     "dev": "pnpm run clean && dotenv -e env/.env -- turbo dev --filter backend --filter frontend --filter tus",
     "build": "pnpm run clean && dotenv -e env/.env -- turbo build --filter backend --filter frontend --filter tus",
@@ -42,11 +40,10 @@
     "studio": "dotenv -e env/.env -- turbo studio --filter backend",
     "seed:users": "dotenv -e env/.env -- turbo seed:users --filter backend --force",
     "seed:organizations": "dotenv -e env/.env -- turbo seed:organizations --filter backend --force",
-    "docs:generate": "cd backend && pnpm run docs:generate",
     "proxy:deploy": "cd proxy && node_modules/.bin/wrangler deploy --force",
     "email:dev": "dotenv -e env/.env -- turbo dev --filter email",
     "prepare:electric": "turbo prepare:electric --filter frontend",
-    "prepare:electric:dev": "turbo prepare:electric:dev --filter frontend"
+    "electrify": "turbo prepare:electric:dev --filter frontend"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.7.2",

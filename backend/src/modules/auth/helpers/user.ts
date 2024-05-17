@@ -58,7 +58,7 @@ export const handleCreateUser = async (
     } else {
       await setSessionCookie(ctx, user.id, 'password');
     }
-
+    if (options?.redirectUrl) return ctx.redirect(options?.redirectUrl);
     return ctx.json({
       success: true,
     });
