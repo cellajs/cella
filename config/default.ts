@@ -22,10 +22,6 @@ export const config = {
   debug: false,
   maintenance: false,
 
-  // Webhooks with n8n
-  newsletterWebhookUrl: 'https://cella.app.n8n.cloud/webhook/subscription?',
-  contactWebhookUrl: 'https://cella.app.n8n.cloud/webhook/contact?',
-
   // Payment with Paddle
   // paddleToken: 'live_ba8bb57b62089459e4f4fd1da8c',
   // paddlePriceIds: {

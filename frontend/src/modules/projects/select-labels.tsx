@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History, Tag, X } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
@@ -13,6 +12,7 @@ import { Badge } from '../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { TaskContext } from './board-column.tsx';
+import { nanoid } from '~/lib/utils.ts';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -55,7 +55,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
 
   const createLabel = (value: string) => {
     const newLabel: Label = {
-      id: faker.string.uuid(),
+      id: nanoid(),
       name: value,
       color: '#fff',
       project_id: projectId,

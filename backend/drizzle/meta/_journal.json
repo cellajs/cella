@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1713434080350,
-      "tag": "0000_charming_lady_vermin",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1715608556922,
-      "tag": "0001_absurd_omega_red",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1715946756931,
-      "tag": "0002_watery_triton",
+      "when": 1715957314343,
+      "tag": "0000_windy_white_queen",
       "breakpoints": true
     }
   ]

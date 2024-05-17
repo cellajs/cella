@@ -1,8 +1,9 @@
 CREATE TABLE IF NOT EXISTS "memberships" (
 	"id" varchar PRIMARY KEY NOT NULL,
-	"organization_id" varchar,
 	"type" varchar DEFAULT 'ORGANIZATION' NOT NULL,
+	"organization_id" varchar,
 	"workspace_id" varchar,
+	"project_id" varchar,
 	"user_id" varchar NOT NULL,
 	"role" varchar DEFAULT 'MEMBER' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -46,6 +47,28 @@ CREATE TABLE IF NOT EXISTS "organizations" (
 	"modified_at" timestamp,
 	"modified_by" varchar,
 	CONSTRAINT "organizations_slug_unique" UNIQUE("slug")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "projects" (
+	"id" varchar PRIMARY KEY NOT NULL,
+	"slug" varchar NOT NULL,
+	"name" varchar NOT NULL,
+	"color" varchar NOT NULL,
+	"workspace_id" varchar NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"created_by" varchar,
+	"modified_at" timestamp,
+	"modified_by" varchar
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "requests" (
+	"id" varchar PRIMARY KEY NOT NULL,
+	"user_id" varchar,
+	"organization_id" varchar,
+	"accompanying_message" varchar,
+	"email" varchar NOT NULL,
+	"type" varchar NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "sessions" (
@@ -107,6 +130,8 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "organizations_name_index" ON "organizations" ("name");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "organizations_created_at_index" ON "organizations" ("created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "requests_emails" ON "requests" ("email");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "requests_created_at" ON "requests" ("created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "users_name_index" ON "users" ("name");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "users_email_index" ON "users" ("email");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "users_created_at_index" ON "users" ("created_at");--> statement-breakpoint
@@ -120,6 +145,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "memberships" ADD CONSTRAINT "memberships_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "memberships" ADD CONSTRAINT "memberships_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -156,6 +187,36 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "organizations" ADD CONSTRAINT "organizations_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "projects" ADD CONSTRAINT "projects_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "projects" ADD CONSTRAINT "projects_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "projects" ADD CONSTRAINT "projects_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "requests" ADD CONSTRAINT "requests_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "requests" ADD CONSTRAINT "requests_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

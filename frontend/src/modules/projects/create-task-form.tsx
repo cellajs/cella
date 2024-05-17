@@ -23,6 +23,7 @@ import { ProjectContext } from './board.tsx';
 import { SelectImpact } from './select-impact.tsx';
 import SetLabels from './select-labels.tsx';
 import SelectStatus from './select-status.tsx';
+import { nanoid } from '~/lib/utils.ts';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -97,7 +98,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: window.crypto.randomUUID(),
+        id: nanoid(),
         markdown: '',
         summary: '',
         type: 'feature',

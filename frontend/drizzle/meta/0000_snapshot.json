@@ -1,5 +1,5 @@
 {
-  "id": "e8523b76-c0e3-4683-a8e7-75e2faa53c2c",
+  "id": "95bdf3ff-9292-426a-bc71-e897ed1c155c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
@@ -10,7 +10,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "varchar",
           "primaryKey": true,
           "notNull": true
         },
@@ -28,7 +28,7 @@
         },
         "project_id": {
           "name": "project_id",
-          "type": "uuid",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         }
@@ -44,13 +44,13 @@
       "columns": {
         "task_id": {
           "name": "task_id",
-          "type": "uuid",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
         "label_id": {
           "name": "label_id",
-          "type": "uuid",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         }
@@ -101,13 +101,13 @@
       "columns": {
         "task_id": {
           "name": "task_id",
-          "type": "uuid",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
         "user_id": {
           "name": "user_id",
-          "type": "uuid",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
@@ -151,7 +151,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "varchar",
           "primaryKey": true,
           "notNull": true
         },
@@ -199,7 +199,7 @@
         },
         "project_id": {
           "name": "project_id",
-          "type": "uuid",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },

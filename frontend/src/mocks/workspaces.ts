@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { nanoid } from '~/lib/utils';
 import type { TaskImpact, TaskStatus, TaskType } from '~/modules/projects/create-task-form';
 
 const roles = ['MEMBER', 'ADMIN'] as const;
@@ -69,17 +70,17 @@ export const getProjects = (number: number): Project[] => {
   const users = [
     {
       role: 'ADMIN' as const,
-      id: faker.string.uuid(),
+      id: nanoid(),
     },
     {
       role: roles[Math.floor(Math.random() * roles.length)],
-      id: faker.string.uuid(),
+      id: nanoid(),
     },
   ];
 
   for (let i = 0; i < number; i++) {
     const user = users[Math.floor(Math.random() * users.length)];
-    const projectId = faker.string.uuid();
+    const projectId = nanoid();
     const canBeAssignedToNumber = Math.floor(Math.random() * (8 - 2 + 1)) + 2;
 
     finalArray.push({
@@ -92,8 +93,8 @@ export const getProjects = (number: number): Project[] => {
       createdAt: faker.date.anytime(),
       modifiedBy: user.id,
       modifiedAt: faker.date.anytime(),
-      workspaceId: faker.string.uuid(),
-      organizationId: faker.string.uuid(),
+      workspaceId: nanoid(),
+      organizationId: nanoid(),
       members: usersInTask(canBeAssignedToNumber),
     });
   }
@@ -107,13 +108,13 @@ export const getLabels = (): Label[] => {
   for (let i = 0; i < 10; i++) {
     const count = Math.floor(Math.random() * (40 - 4 + 1)) + 4;
     returnedArray.push({
-      id: faker.string.uuid(),
+      id: nanoid(),
       color: faker.color.rgb({ casing: 'upper' }),
       count: count,
       value: faker.hacker.noun().toLowerCase(),
-      groupId: faker.string.uuid(),
+      groupId: nanoid(),
       lastActive: faker.date.anytime(),
-      // workspaceId: faker.string.uuid(),
+      // workspaceId: nanoid(),
     });
   }
   return returnedArray;
@@ -135,7 +136,7 @@ export const getTasks = (projects: Project[]) => {
     const status = [0, 1, 2, 3, 4, 5, 6];
     for (let i = 0; i < numberOfTasks; i++) {
       returnedArray.push({
-        id: faker.string.uuid(),
+        id: nanoid(),
         slug: faker.animal.bird(),
         markdown: faker.commerce.productDescription(),
         summary: faker.company.catchPhrase(),
@@ -164,7 +165,7 @@ export const getTasks = (projects: Project[]) => {
 
 export const labelsInTask = (): TaskLabel[] => {
   return Array.from({ length: 3 }, () => ({
-    id: faker.string.uuid(),
+    id: nanoid(),
     value: faker.hacker.noun().toLowerCase(),
     color: faker.color.rgb({ casing: 'upper' }),
   }));
@@ -172,7 +173,7 @@ export const labelsInTask = (): TaskLabel[] => {
 
 export const usersInTask = (number: number): TaskUser[] => {
   return Array.from({ length: number }, () => ({
-    id: faker.string.uuid(),
+    id: nanoid(),
     name: faker.person.fullName(),
     thumbnailUrl: null,
     bio: faker.person.bio(),

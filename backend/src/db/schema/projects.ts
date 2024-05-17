@@ -1,9 +1,10 @@
-import { pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
+import { nanoid } from '../../lib/nanoid';
 
 export const projectsTable = pgTable('projects', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: varchar('id').primaryKey().$defaultFn(nanoid),
   slug: varchar('slug').notNull(),
   name: varchar('name').notNull(),
   color: varchar('color').notNull(),

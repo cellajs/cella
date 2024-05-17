@@ -6771,7 +6771,7 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     OR?: Enumerable<Task_usersScalarWhereInput>
     NOT?: Enumerable<Task_usersScalarWhereInput>
     task_id?: UuidFilter | string
-    user_id?: UuidFilter | string
+    user_id?: string
     role?: StringFilter | string
   }
 

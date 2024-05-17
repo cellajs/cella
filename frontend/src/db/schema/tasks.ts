@@ -1,4 +1,5 @@
-import { integer, pgTable, primaryKey, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { integer, pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { nanoid } from '~/lib/utils';
 
 // id: string;
 // slug: string;
@@ -17,8 +18,8 @@ import { integer, pgTable, primaryKey, timestamp, uuid, varchar } from 'drizzle-
 // labels: TaskLabel[];
 // projectId: string;
 
-export const tasks = pgTable('tasks', {
-  id: uuid('id').primaryKey(),
+export const tasksTable = pgTable('tasks', {
+  id: varchar('id').primaryKey().$defaultFn(nanoid),
   slug: varchar('slug').notNull(),
   markdown: varchar('markdown'),
   summary: varchar('summary').notNull(),
@@ -29,7 +30,7 @@ export const tasks = pgTable('tasks', {
   // order is a reserved keyword in Postgres, so we need to use a different name
   order: integer('sort_order'),
   status: integer('status').notNull(),
-  projectId: uuid('project_id').notNull(),
+  projectId: varchar('project_id').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by').notNull(),
   assignedBy: varchar('assigned_by'),
@@ -46,24 +47,24 @@ export const tasks = pgTable('tasks', {
 // lastActive: Date;
 // projectId: string;
 
-export const labels = pgTable('labels', {
-  id: uuid('id').primaryKey(),
+export const labelsTable = pgTable('labels', {
+  id: varchar('id').primaryKey().$defaultFn(nanoid),
   name: varchar('name').notNull(),
   color: varchar('color'),
-  projectId: uuid('project_id').notNull(),
+  projectId: varchar('project_id').notNull(),
 });
 
 export const taskLabels = pgTable(
   'task_labels',
   {
-    taskId: uuid('task_id')
+    taskId: varchar('task_id')
       .notNull()
-      .references(() => tasks.id, {
+      .references(() => tasksTable.id, {
         onDelete: 'cascade',
       }),
-    labelId: uuid('label_id')
+    labelId: varchar('label_id')
       .notNull()
-      .references(() => labels.id, {
+      .references(() => labelsTable.id, {
         onDelete: 'cascade',
       }),
   },
@@ -79,12 +80,12 @@ export const taskLabels = pgTable(
 export const taskUsers = pgTable(
   'task_users',
   {
-    taskId: uuid('task_id')
+    taskId: varchar('task_id')
       .notNull()
-      .references(() => tasks.id, {
+      .references(() => tasksTable.id, {
         onDelete: 'cascade',
       }),
-    userId: uuid('user_id').notNull(),
+    userId: varchar('user_id').notNull(),
     role: varchar('role', {
       enum: ['ASSIGNED', 'CREATED'],
     }).notNull(),

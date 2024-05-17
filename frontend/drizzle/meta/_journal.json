@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1715763128396,
-      "tag": "0000_charming_the_stranger",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1715763307772,
-      "tag": "0001_fresh_firestar",
+      "when": 1715959346619,
+      "tag": "0000_zippy_sphinx",
       "breakpoints": true
     }
   ]

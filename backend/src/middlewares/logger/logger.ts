@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'hono/types';
-import { nanoid } from 'nanoid';
+import { nanoid } from '../../lib/nanoid';
 
 enum LogPrefix {
   Outgoing = 'res',
