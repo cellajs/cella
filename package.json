@@ -42,8 +42,8 @@
     "seed:organizations": "dotenv -e env/.env -- turbo seed:organizations --filter backend --force",
     "proxy:deploy": "cd proxy && node_modules/.bin/wrangler deploy --force",
     "email:dev": "dotenv -e env/.env -- turbo dev --filter email",
-    "prepare:electric": "turbo prepare:electric --filter frontend",
-    "electrify": "turbo prepare:electric:dev --filter frontend"
+    "prepare:electric": "turbo prepare:electric --filter frontend --force",
+    "electrify": "turbo prepare:electric:dev --filter frontend --force"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.7.2",
