@@ -26,6 +26,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+!.env.local
 
 # Other
 .netlify

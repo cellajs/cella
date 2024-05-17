@@ -64,15 +64,5 @@ services:
       - "-c"
       - "wal_level=logical"
 
-  electric:
-    container_name: electric-sync-service
-    image: electricsql/electric
-    init: true
-    env_file:
-      - ./env/.env.electric
-    ports:
-      - 5133:5133
-      - 65432:65432
-
 volumes:
   postgres-data:

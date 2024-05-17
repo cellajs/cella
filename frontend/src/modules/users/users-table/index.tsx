@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
-import useMutateQueryData from '~/hooks/use-mutate-query-data';
+import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { DataTable } from '~/modules/common/data-table';
 import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
 import { UsersTableRoute } from '~/routes/system';
@@ -54,7 +54,7 @@ const UsersTable = () => {
 
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-  const callback = useMutateQueryData(['users', debounceQuery, sortColumns, role]);
+  const callback = useMutateInfiniteQueryData(['users', debounceQuery, sortColumns, role]);
 
   const queryResult = useInfiniteQuery({
     queryKey: ['users', debounceQuery, sortColumns, role],

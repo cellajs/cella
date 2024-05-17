@@ -5,7 +5,7 @@ import { InviteEmail } from '../../../../email/emails/invite';
 import { render } from '@react-email/render';
 import { config } from 'config';
 import { env } from 'env';
-import { streamSSE, type SSEStreamingApi } from 'hono/streaming';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
@@ -13,8 +13,8 @@ import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { membershipsTable, type MembershipModel } from '../../db/schema/memberships';
-import { organizationsTable, type OrganizationModel } from '../../db/schema/organizations';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
@@ -24,7 +24,9 @@ import { sendSSE } from '../../lib/sse';
 import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
+import { checkRole } from './helpers/check-role';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
   acceptInviteRouteConfig,
@@ -35,8 +37,6 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import { checkRole } from './helpers/check-role';
-import { apiMembershipSchema } from '../memberships/schema';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

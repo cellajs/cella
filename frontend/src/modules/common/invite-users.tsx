@@ -2,12 +2,13 @@ import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
+import { DialogTitle } from '../ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { AppAlert } from './app-alert';
+import { dialog } from './dialoger/state';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
-import { dialog } from './dialoger/state';
-import { DialogTitle } from '../ui/dialog';
+import useFocusById from '~/hooks/use-focus-by-id';
 
 interface InviteUsersProps {
   organization?: Organization | null;
@@ -22,6 +23,7 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
+  if (!mode) useFocusById('create-project-option');
 
   const updateMode = (mode: string[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);

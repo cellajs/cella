@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Bird } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
-import { useColumns } from './columns';
-import type { Label } from '~/modules/common/root/electric';
-import { Toolbar } from './toolbar';
+import { useTranslation } from 'react-i18next';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
+import type { Label } from '~/modules/common/root/electric';
+import { useColumns } from './columns';
+import { Toolbar } from './toolbar';
 
 export interface LabelsParam {
   role?: 'secondary' | 'primary' | undefined;
@@ -84,12 +85,7 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
           onSelectedRowsChange: handleSelectedRowsChange,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <>
-              <Bird strokeWidth={0.7} size={80} className="opacity-50" />
-              <div className="mt-6 text-sm">{t('common:no_labels')}</div>
-            </>
-          ),
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_labels')} />,
         }}
       />
     </div>

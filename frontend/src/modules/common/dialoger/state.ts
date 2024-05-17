@@ -35,7 +35,7 @@ export type ExternalDialog = Omit<DialogT, 'id' | 'content'> & {
 
 export const isDialog = (dialog: DialogT | DialogToRemove): dialog is DialogT => {
   return !(dialog as DialogToRemove).remove;
-}
+};
 
 class Observer {
   subscribers: Array<(dialog: DialogT | DialogToRemove | DialogToReset) => void>;
@@ -68,7 +68,7 @@ class Observer {
 
   get = (id: number | string) => {
     return this.dialogs.find((dialog) => dialog.id === id);
-  }
+  };
 
   remove = (refocus = true, id?: number | string) => {
     if (id) {

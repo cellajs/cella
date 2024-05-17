@@ -1,6 +1,6 @@
 import type { PageResourceType } from 'backend/types/common';
 import type { InferResponseType } from 'hono/client';
-import type { membershipClient, organizationsClient, usersClient, workspaceClient } from '~/api';
+import type { membershipClient, organizationsClient, projectClient, usersClient, workspaceClient } from '~/api';
 
 export enum UploadType {
   Personal,
@@ -29,7 +29,7 @@ export interface Page {
   id: string;
   slug: string;
   name: string;
-  thumbnailUrl: string | null;
+  thumbnailUrl?: string | null;
   archived: boolean;
   muted: boolean;
   role: keyof typeof UserRole | null;
@@ -40,6 +40,8 @@ export type User = Extract<InferResponseType<(typeof usersClient.me)['$get']>, {
 export type Organization = Extract<InferResponseType<(typeof organizationsClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Workspace = Extract<InferResponseType<(typeof workspaceClient.workspaces)[':workspace']['$get']>, { data: unknown }>['data'];
+
+export type Project = Extract<InferResponseType<(typeof projectClient.projects)[':project']['$get']>, { data: unknown }>['data'];
 
 export type Member = Extract<
   InferResponseType<(typeof organizationsClient.organizations)[':organization']['members']['$get']>,

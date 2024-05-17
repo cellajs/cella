@@ -4,21 +4,21 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { Workspace } from '~/types';
 
+import { updateWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
+import { useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
+import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
 import { dialog } from '~/modules/common/dialoger/state';
-import { sheet, isSheet as checkSheet } from '~/modules/common/sheeter/state';
+import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import InputFormField from '../common/form-fields/input';
-import { SlugFormField } from '../common/form-fields/slug';
-import { updateWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
-import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
 import SelectParentFormField from '../common/form-fields/select-parent';
-import { useEffect } from 'react';
+import { SlugFormField } from '../common/form-fields/slug';
 import UnsavedBadge from '../common/unsaved-badge';
 
 interface Props {

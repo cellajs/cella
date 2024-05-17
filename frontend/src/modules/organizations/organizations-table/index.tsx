@@ -1,8 +1,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { getOrganizations } from '~/api/organizations';
 import { updateMembership } from '~/api/memberships';
+import { getOrganizations } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { Bird } from 'lucide-react';
@@ -11,7 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
-import useMutateQueryData from '~/hooks/use-mutate-query-data';
+import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
@@ -72,7 +73,7 @@ const OrganizationsTable = () => {
     refetchOnWindowFocus: false,
   });
 
-  const callback = useMutateQueryData(['organizations', debounceQuery, sortColumns]);
+  const callback = useMutateInfiniteQueryData(['organizations', debounceQuery, sortColumns]);
   const [columns, setColumns] = useColumns(callback);
 
   const onRowsChange = async (records: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
@@ -144,12 +145,7 @@ const OrganizationsTable = () => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <>
-              <Bird strokeWidth={0.7} size={80} className="opacity-50" />
-              <div className="mt-6 text-sm">{t('common:no_organizations')}</div>
-            </>
-          ),
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_organizations')} />,
         }}
       />
     </div>

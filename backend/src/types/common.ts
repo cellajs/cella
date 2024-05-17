@@ -4,6 +4,7 @@ import type { z } from 'zod';
 
 import type { Schema } from 'hono';
 import type { OrganizationModel } from '../db/schema/organizations';
+import type { ProjectModel } from '../db/schema/projects';
 import type { WorkspaceModel } from '../db/schema/workspaces';
 import type { MembershipModel } from '../db/schema/memberships';
 import type { errorResponseSchema, resourceTypeSchema } from '../lib/common-schemas';
@@ -23,6 +24,7 @@ export type Env = {
     workspace: WorkspaceModel;
     authorzedIn: OrganizationModel | WorkspaceModel;
     memberships: [MembershipModel];
+    project: ProjectModel;
   };
 };
 

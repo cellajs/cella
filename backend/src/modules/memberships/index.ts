@@ -3,13 +3,13 @@ import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { usersTable } from '../../db/schema/users';
 
+import type { OrganizationModel } from '../../db/schema/organizations';
+import type { WorkspaceModel } from '../../db/schema/workspaces';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
-import type { OrganizationModel } from '../../db/schema/organizations';
-import type { WorkspaceModel } from '../../db/schema/workspaces';
 
 const app = new CustomHono();
 

@@ -1,6 +1,7 @@
-import { PanelTopClose, Plus, Settings, Tag, Trash, XSquare, FilterX } from 'lucide-react';
+import { FilterX, PanelTopClose, Plus, Settings, Tag, Trash, XSquare } from 'lucide-react';
 import { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -9,15 +10,14 @@ import DisplayOptions from '~/modules/projects/display-options';
 import WorkspaceView from '~/modules/projects/view-options';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
+import { AvatarWrap } from '../common/avatar-wrap';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
+import { useElectric } from '../common/root/electric';
+import { TooltipButton } from '../common/tooltip-button';
 import { Badge } from '../ui/badge';
 import { WorkspaceContext } from '../workspaces';
 import AddProjects from './add-projects';
 import LabelsTable from './labels-table';
-import { type Label, useElectric } from '../common/root/electric';
-import { AvatarWrap } from '../common/avatar-wrap';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
-import { TooltipButton } from '../common/tooltip-button';
-import { toast } from 'sonner';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;
@@ -27,12 +27,10 @@ interface BoardHeaderProps {
 const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps) => {
   const { t } = useTranslation();
 
-  const { workspace, selectedTasks, setSelectedTasks, projects, searchQuery, tasks, setSearchQuery } = useContext(WorkspaceContext);
+  const { workspace, selectedTasks, setSelectedTasks, searchQuery, tasks, setSearchQuery, labels } = useContext(WorkspaceContext);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
-
-  const labels = projects.flatMap((project) => project.labels).filter(Boolean) as Label[];
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet />, {
@@ -115,7 +113,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
                 </Button>
               </TooltipButton>
               <TooltipButton toolTipContent={t('common:manage_labels')}>
-                <Button variant="outlinePrimary" onClick={openLabelsSheet}>
+                <Button variant="outline" onClick={openLabelsSheet}>
                   <Tag size={16} />
                   <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
                 </Button>
@@ -123,7 +121,6 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
               <TooltipButton toolTipContent={t('common:workspace_settings')}>
                 <Button variant="outline" onClick={openSettingsSheet}>
                   <Settings size={16} />
-                  <span className="ml-1 max-lg:hidden">{t('common:settings')}</span>
                 </Button>
               </TooltipButton>
             </div>

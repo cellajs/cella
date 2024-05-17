@@ -5,8 +5,49 @@ interface Item {
   id: string;
 }
 
-// This hook is used to mutate the data of a query
-const useMutateQueryData = (queryKey: QueryKey) => {
+// This hook is used to mutate the data of a infinite query
+export const useMutateQueryData = (queryKey: QueryKey) => {
+  return (items: Item[], action: 'create' | 'update' | 'delete') => {
+    queryClient.setQueryData<{
+      items: Item[];
+      total: number;
+    }>(queryKey, (data) => {
+      if (!data) {
+        return;
+      }
+      if (action === 'create') {
+        return {
+          items: [...items, ...data.items],
+          total: data.total + items.length,
+        };
+      }
+
+      if (action === 'update') {
+        return {
+          items: data.items.map((item) => {
+            const updatedItem = items.find((items) => items.id === item.id);
+            if (item.id === updatedItem?.id) {
+              return updatedItem;
+            }
+
+            return item;
+          }),
+          total: data.total,
+        };
+      }
+
+      if (action === 'delete') {
+        return {
+          items: data.items.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id)),
+          total: data.total - 1,
+        };
+      }
+    });
+  };
+};
+
+// This hook is used to mutate the data of a infinite query
+export const useMutateInfiniteQueryData = (queryKey: QueryKey) => {
   return (items: Item[], action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<
       InfiniteData<{
@@ -65,5 +106,3 @@ const useMutateQueryData = (queryKey: QueryKey) => {
     });
   };
 };
-
-export default useMutateQueryData;

@@ -1,19 +1,21 @@
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { Bird, Redo } from 'lucide-react';
 import { Fragment, createContext, useContext, useEffect, useMemo, useState } from 'react';
-import type { ProjectWithLabels, Task } from '../common/root/electric';
+import { useTranslation } from 'react-i18next';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+import { sortTaskOrder } from '~/lib/utils';
+import { useWorkspaceStore } from '~/store/workspace';
+import type { Project } from '~/types';
+import ContentPlaceholder from '../common/content-placeholder';
+import type { Label, Task } from '../common/root/electric';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';
-import { useTranslation } from 'react-i18next';
-import { Bird, Redo } from 'lucide-react';
-import ContentPlaceholder from '../common/content-placeholder';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { sortTaskOrder } from '~/lib/utils';
-import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useWorkspaceStore } from '~/store/workspace';
 
 interface ProjectContextValue {
-  project: ProjectWithLabels;
+  project: Project;
+  labels: Label[];
   focusedProject: number | null;
   setFocusedProjectIndex: (index: number) => void;
 }
@@ -23,7 +25,7 @@ export const ProjectContext = createContext({} as ProjectContextValue);
 export default function Board() {
   const { t } = useTranslation();
   const { workspaces } = useWorkspaceStore();
-  const { projects, tasks, searchQuery } = useContext(WorkspaceContext);
+  const { projects, labels, tasks, searchQuery } = useContext(WorkspaceContext);
   const [focusedProjectIndex, setFocusedProjectIndex] = useState<number | null>(null);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
 
@@ -48,7 +50,7 @@ export default function Board() {
     if (event.key === 'ArrowRight') nextIndex = currentIndex === projects.length - 1 ? 0 : currentIndex + 1;
     if (event.key === 'ArrowLeft') nextIndex = currentIndex <= 0 ? projects.length - 1 : currentIndex - 1;
     const indexedProject = projects[nextIndex];
-    const currentProjectSettings = workspaces[indexedProject.workspace_id]?.columns.find((el) => el.columnId === indexedProject.id);
+    const currentProjectSettings = workspaces[indexedProject.workspaceId]?.columns.find((el) => el.columnId === indexedProject.id);
     const sortedProjectTasks = tasks.filter((t) => t.project_id === indexedProject.id).sort((a, b) => sortTaskOrder(a, b));
     const lengthWithoutAccepted = sortedProjectTasks.filter((t) => t.status !== 6).length;
 
@@ -126,7 +128,14 @@ export default function Board() {
         {projects.map((project, index) => (
           <Fragment key={project.id}>
             <ResizablePanel key={`${project.id}-panel`}>
-              <ProjectContext.Provider value={{ project, focusedProject: focusedProjectIndex, setFocusedProjectIndex }}>
+              <ProjectContext.Provider
+                value={{
+                  project,
+                  labels: labels.filter((l) => l.project_id === project.id),
+                  focusedProject: focusedProjectIndex,
+                  setFocusedProjectIndex,
+                }}
+              >
                 <BoardColumn
                   tasks={filteredTasks.filter((t) => t.project_id === project.id)}
                   key={`${project.id}-column`}

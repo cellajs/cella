@@ -1,15 +1,15 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
-import { Trans, useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import UpdateWorkspaceForm from './update-workspace-form';
-import { Trash2 } from 'lucide-react';
-import { Button } from '../ui/button';
-import DeleteWorkspaces from './delete-workspace';
-import { dialog } from '../common/dialoger/state';
-import { workspaceQueryOptions } from '.';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { useNavigate, useParams } from '@tanstack/react-router';
+import { Trash2 } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { sheet } from '~/modules/common/sheeter/state';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
+import { workspaceQueryOptions } from '.';
+import { dialog } from '../common/dialoger/state';
+import { Button } from '../ui/button';
+import DeleteWorkspaces from './delete-workspace';
+import UpdateWorkspaceForm from './update-workspace-form';
 
 export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
   const { t } = useTranslation();

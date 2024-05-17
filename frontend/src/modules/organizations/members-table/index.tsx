@@ -4,8 +4,8 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Member, Membership } from '~/types';
 
-import { type GetMembersParams, getOrganizationMembers } from '~/api/organizations';
 import { updateMembership } from '~/api/memberships';
+import { type GetMembersParams, getOrganizationMembers } from '~/api/organizations';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
@@ -13,8 +13,9 @@ import { Bird } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
-import useMutateQueryData from '~/hooks/use-mutate-query-data';
+import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { OrganizationMembersRoute } from '~/routes/organizations';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
@@ -112,7 +113,7 @@ const MembersTable = () => {
     order: 'desc',
   });
 
-  const callback = useMutateQueryData([
+  const callback = useMutateInfiniteQueryData([
     'members',
     organization.slug,
     debounceQuery,
@@ -199,12 +200,7 @@ const MembersTable = () => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <>
-              <Bird strokeWidth={0.7} size={80} className="opacity-50" />
-              <div className="mt-6 text-sm">{t('common:no_members')}</div>
-            </>
-          ),
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_members')} />,
         }}
       />
     </div>

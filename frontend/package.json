@@ -6,8 +6,8 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "prepare:electric": "NODE_ENV=production pnpm proxy & (NODE_ENV=production pnpm migrate && NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",
-    "prepare:electric:dev": "NODE_ENV=development pnpm proxy & (NODE_ENV=development pnpm migrate && NODE_ENV=development pnpm generate:electric && tsx prepare-files.ts)",
+    "prepare:electric": "pnpm proxy & (pnpm migrate && NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",
+    "prepare:electric:dev": "pnpm migrate && NODE_ENV=development pnpm generate:electric:dev && tsx prepare-files.ts",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
     "build": "tsc && vite build",
@@ -15,16 +15,17 @@
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
     "generate": "drizzle-kit generate:pg",
-    "generate:electric": "if test \"$NODE_ENV\" = \"production\"; then electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://prisma:proxy_password@0.0.0.0:65431/postgres; else electric-sql generate --service https://cella-electric-dev.onrender.com --proxy postgresql://prisma:proxy_password@localhost:65431/postgres; fi",
+    "generate:electric": "electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres",
+    "generate:electric:dev": "electric-sql generate",
     "migrate": "tsx src/db/migrate.ts",
-    "proxy": "if test \"$NODE_ENV\" = \"production\"; then electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65431; else electric-sql proxy-tunnel --service https://cella-electric-dev.onrender.com --local-port 65431; fi"
+    "proxy": "electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65432"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.1.7",
     "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^1.3.0",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.3",
-    "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator": "^1.1.1",
     "@databases/pg-migrations": "^5.0.3",
+    "@dnd-kit/core": "^6.1.0",
     "@github/mini-throttle": "^2.1.1",
     "@hocuspocus/provider": "^2.12.2",
     "@hookform/resolvers": "^3.3.4",
@@ -144,7 +145,7 @@
     "react-joyride": "^2.8.1",
     "react-leaflet": "^4.2.1",
     "react-resizable-panels": "^2.0.19",
-    "react-sticky-el": "^2.1.0",
+    "react-sticky-box": "^2.0.5",
     "slugify": "1.6.6",
     "sonner": "^1.4.41",
     "tailwind-merge": "^2.3.0",

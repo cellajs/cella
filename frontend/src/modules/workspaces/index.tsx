@@ -2,19 +2,21 @@ import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
 import { useLiveQuery } from 'electric-sql/react';
 import { type Dispatch, type SetStateAction, createContext, useEffect, useState } from 'react';
+import { getProjects } from '~/api/projects';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import BoardHeader from '~/modules/projects/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
-import type { Workspace } from '~/types';
-import { PageHeader } from '../common/page-header';
-import { type TaskWithTaskLabels, useElectric, type ProjectWithLabels, type TaskWithLabels } from '../common/root/electric';
+import type { Project, Workspace } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
+import { PageHeader } from '../common/page-header';
+import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/root/electric';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
-  projects: ProjectWithLabels[];
+  projects: Project[];
   tasks: TaskWithLabels[];
+  labels: Label[];
   selectedTasks: string[];
   setSelectedTasks: Dispatch<SetStateAction<string[]>>;
   searchQuery: string;
@@ -27,6 +29,15 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: ['workspaces', idOrSlug],
     queryFn: () => getWorkspaceBySlugOrId(idOrSlug),
+  });
+
+export const workspaceProjectsQueryOptions = (workspace: string) =>
+  queryOptions({
+    queryKey: ['workspaces', workspace, 'projects'],
+    queryFn: () =>
+      getProjects({
+        workspace,
+      }),
   });
 
 const WorkspacePage = () => {
@@ -47,12 +58,25 @@ const WorkspacePage = () => {
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const { db } = useElectric()!;
 
-  const { results: projects = [] } = useLiveQuery(
-    db.projects.liveMany({
-      where: { workspace_id: workspace.id },
-      include: { labels: true },
-    }),
-  );
+  const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id));
+  const projects = projectsQuery.data.items;
+
+  // const { results: projects = [] } = useLiveQuery(
+  //   db.projects.liveMany({
+  //     where: { workspace_id: workspace.id },
+  //     include: { labels: true },
+  //   }),
+  // );
+
+  // const { results: labels = [] } = useLiveQuery(
+  //   db.labels.liveMany({
+  //     where: {
+  //       project_id: {
+  //         in: projects.map((project) => project.id),
+  //       },
+  //     },
+  //   }),
+  // );
 
   const { results: tasks = [] } = useLiveQuery(
     db.tasks.liveMany({
@@ -70,6 +94,16 @@ const WorkspacePage = () => {
       },
     }),
   ) as { results: TaskWithTaskLabels[] };
+
+  const { results: labels = [] } = useLiveQuery(
+    db.labels.liveMany({
+      where: {
+        project_id: {
+          in: projects.map((p) => p.id),
+        },
+      },
+    }),
+  );
 
   // const [projects, setProjects] = useState<Project[]>([]);
   // const [tasks, setTasks] = useState<Task[]>([]);
@@ -111,6 +145,7 @@ const WorkspacePage = () => {
           ...task,
           labels: task.task_labels?.map((tl) => tl.labels || []).flatMap((labels) => labels) || [],
         })),
+        labels,
         selectedTasks,
         setSelectedTasks,
         searchQuery,

@@ -1,15 +1,9 @@
+import { deleteProjects as baseDeleteProjects } from '~/api/projects';
 import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-
-interface Project {
-  id: string;
-  slug: string;
-  name: string;
-  organizationId: string;
-  workspaceId: string;
-}
+import type { Project } from '~/types';
 
 interface Props {
   projects: Project[];
@@ -19,11 +13,11 @@ interface Props {
 
 const DeleteProjects = ({ projects, callback, dialog: isDialog }: Props) => {
   const { mutate: deleteProjects, isPending } = useMutation({
-    // mutationFn: baseDeleteProjects,
+    mutationFn: baseDeleteProjects,
     onSuccess: () => {
       for (const project of projects) {
         queryClient.invalidateQueries({
-          queryKey: ['Projects', project.id],
+          queryKey: ['projects', project.id],
         });
       }
 
@@ -34,8 +28,7 @@ const DeleteProjects = ({ projects, callback, dialog: isDialog }: Props) => {
   });
 
   const onDelete = () => {
-    deleteProjects();
-    // deleteProjects(projects.map((p) => p.id));
+    deleteProjects(projects.map((p) => p.id));
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;

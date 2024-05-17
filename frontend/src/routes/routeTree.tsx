@@ -101,9 +101,13 @@ export const routeTree = rootRoute.addChildren([
   AccessibilityRoute,
   ErrorNoticeRoute,
   SignOutRoute,
-  AuthRoute.addChildren([SignInRoute, 
-    // AcceptRoute, 
-    ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken]), acceptInviteRoute]),
+  AuthRoute.addChildren([
+    SignInRoute,
+    // AcceptRoute,
+    ResetPasswordRoute,
+    VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken]),
+    acceptInviteRoute,
+  ]),
   IndexRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,

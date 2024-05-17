@@ -1,18 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import type { organizationSuggestionSchema, userSuggestionSchema, workspaceSuggestionSchema } from 'backend/modules/general/schema';
+import type { PageResourceType } from 'backend/types/common';
 import { History, Loader2, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Sticky from 'react-sticky-el';
+import StickyBox from 'react-sticky-box';
+import type { z } from 'zod';
 import { getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { useNavigationStore } from '~/store/navigation';
 import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
-import type { userSuggestionSchema, organizationSuggestionSchema, workspaceSuggestionSchema } from 'backend/modules/general/schema';
-import type { z } from 'zod';
-import type { PageResourceType } from 'backend/types/common';
 
 type SuggestionType = z.infer<typeof userSuggestionSchema> | z.infer<typeof organizationSuggestionSchema> | z.infer<typeof workspaceSuggestionSchema>;
 
@@ -146,11 +146,9 @@ export const AppSearch = () => {
               return (
                 <Fragment key={section.id}>
                   {hasPrevious && hasNext && <CommandSeparator />}
-                  <CommandGroup>
+                  <CommandGroup className="">
                     {hasNext && (
-                      <Sticky scrollElement="#suggestion-search-viewport" stickyClassName="z-10">
-                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</div>
-                      </Sticky>
+                      <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
                     )}
                     {suggestions[section.id].map((suggestion) => (
                       <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>

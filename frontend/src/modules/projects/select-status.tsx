@@ -1,14 +1,14 @@
+import { cva } from 'class-variance-authority';
+import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, CircleDotDashed, Dot, type LucideIcon, Snowflake } from 'lucide-react';
 import { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+import { cn } from '~/lib/utils';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Button } from '../ui/button';
-import { ChevronDown, Check, Snowflake, CircleDashed, Circle, CircleDot, CircleDotDashed, CircleCheck, type LucideIcon, Dot } from 'lucide-react';
 import { Kbd } from '../common/kbd';
-import { useTranslation } from 'react-i18next';
-import { useHotkeys } from '~/hooks/use-hot-keys';
-import { toast } from 'sonner';
-import { cva } from 'class-variance-authority';
-import { cn } from '~/lib/utils';
+import { Button } from '../ui/button';
 import { TaskContext } from './board-column';
 
 type Status = {

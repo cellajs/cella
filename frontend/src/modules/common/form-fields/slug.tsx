@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { checkSlugAvailable } from '~/api/general';
 import { Button } from '~/modules/ui/button';
-import { useElectric } from '../root/electric';
 import InputFormField from './input';
 
 interface SlugFieldProps {
@@ -33,26 +32,12 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
-
   // Check if slug is available
   const { mutate: checkAvailability } = useMutation({
     mutationFn: async (params: {
       slug: string;
       type: PageResourceType;
     }) => {
-      if (params.type === 'PROJECT') {
-        const project = await db.projects.findFirst({
-          where: {
-            slug: {
-              contains: slug,
-            },
-          },
-        });
-        return !project;
-      }
-
       return checkSlugAvailable(params);
     },
     onSuccess: (isAvailable) => {

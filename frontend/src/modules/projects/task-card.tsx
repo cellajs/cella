@@ -1,7 +1,7 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { type MouseEventHandler, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -17,21 +17,24 @@ import { SelectImpact } from './select-impact.tsx';
 import SelectStatus, { type TaskStatus } from './select-status.tsx';
 import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
-import { TaskEditor } from './task-editor.tsx';
-import SetLabels from './select-labels.tsx';
 import { TaskContext } from './board-column.tsx';
+import { ProjectContext } from './board.tsx';
+import SetLabels from './select-labels.tsx';
+import { TaskEditor } from './task-editor.tsx';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
   taskDragButtonRef: React.RefObject<HTMLButtonElement>;
+  className?: string;
   dragging?: boolean;
   dragOver?: boolean;
 }
 
-export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: TaskCardProps) {
+export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
+  const { labels } = useContext(ProjectContext);
 
   const { task, focusedTaskId, setFocusedTask } = useContext(TaskContext);
   const [isEditing, setIsEditing] = useState(false);
@@ -119,6 +122,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: Tas
     setIsEditing(!isEditing);
   };
 
+  // Pressing ENTER on markdown when focused and expanded should set isEditing to true
+  const handleMarkdownClick: MouseEventHandler<HTMLDivElement> = (event) => {
+    if (!isExpanded) return;
+    if (document.activeElement === event.currentTarget) setIsEditing(true);
+  };
+
   useDoubleClick({
     onSingleClick: () => setFocusedTask(task.id),
     onDoubleClick: () => {
@@ -151,16 +160,23 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: Tas
     setFocusedTask(task.id);
   }, [dragging]);
 
+  useEffect(() => {
+    if (focusedTaskId !== task.id) return;
+    taskRef.current?.focus();
+  }, [focusedTaskId]);
+
   return (
     <Card
+      tabIndex={focusedTaskId === task.id ? 0 : -1}
       ref={taskRef}
       className={cn(
-        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent 
+        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
+        focus-visible:none
         via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''}`,
         variants({
           status: task.status as TaskStatus,
         }),
-        isExpanded ? 'border-l-2 border-l-primary' : 'border-l-2 border-l-transparent',
+        className,
       )}
     >
       <CardContent id={`${task.id}-content`} className="p-2 space-between gap-1 flex flex-col relative">
@@ -199,8 +215,14 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: Tas
               )}
               {!isEditing && (
                 <div className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
-                  {/* biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation> */}
-                  <div ref={contentRef} tabIndex={0} className="flex">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                  <div
+                    ref={contentRef}
+                    // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
+                    tabIndex={0}
+                    onClick={handleMarkdownClick}
+                    className="flex ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
                     <MDEditor.Markdown
                       source={isExpanded ? task.markdown || '' : task.summary}
                       style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
@@ -253,6 +275,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver }: Tas
             )}
 
             <SetLabels
+              labels={labels}
               projectId={task.project_id}
               changeLabels={(newLabels) => handleChange('labels', newLabels)}
               viewValue={task.labels}

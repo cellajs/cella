@@ -2,18 +2,18 @@ import { ChevronDown, Plus, Settings2 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Sticky from 'react-sticky-el';
+import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
+import { makeTransition } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { Page, UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
+import { TooltipButton } from '../tooltip-button';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
-import { TooltipButton } from '../tooltip-button';
-import { makeTransition } from '~/lib/utils';
 
 interface MenuSectionProps {
   key: string;
@@ -35,6 +35,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
+  const [globalDragging, setGlobalDragging] = useState(false);
   const { activeSections, toggleSection, activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
   const isSectionVisible = activeSections[section.id];
 
@@ -98,11 +99,26 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         </li>
       );
     }
-    if (list[0].archived) return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />);
+    if (list[0].archived)
+      return list.map((item: Page) => (
+        <SheetMenuItemOptions
+          key={item.id}
+          item={item}
+          sectionName={section.id}
+          isGlobalDragging={globalDragging}
+          setGlobalDragging={setGlobalDragging}
+        />
+      ));
     return (
       <>
         {list.map((item: Page) => (
-          <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />
+          <SheetMenuItemOptions
+            isGlobalDragging={globalDragging}
+            setGlobalDragging={setGlobalDragging}
+            key={item.id}
+            item={item}
+            sectionName={section.id}
+          />
         ))}
       </>
     );
@@ -119,39 +135,32 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     setUnarchive(unarchive.sort((a, b) => sortById(a, b, activeItemsOrder[section.id])));
   }, [data, activeItemsOrder]);
 
-  useEffect(() => {
-    if (!sectionRef.current) return;
+  // Helper function to set or remove 'tabindex' attribute
+  const updateTabIndex = (ref: React.RefObject<HTMLElement>, isVisible: boolean) => {
+    if (!ref.current) return;
 
-    const elements = sectionRef.current.querySelectorAll('*');
-    for (const el of elements) {
-      if (el instanceof HTMLElement) {
-        if (!isSectionVisible) {
-          el.setAttribute('tabindex', '-1');
-        } else {
-          el.removeAttribute('tabindex');
-        }
+    const elements = ref.current.querySelectorAll<HTMLElement>('*');
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      if (isVisible) {
+        el.removeAttribute('tabindex');
+      } else {
+        el.setAttribute('tabindex', '-1');
       }
     }
+  };
+
+  useEffect(() => {
+    updateTabIndex(sectionRef, isSectionVisible);
   }, [sectionRef, isSectionVisible]);
 
   useEffect(() => {
-    if (!archivedRef.current) return;
-
-    const elements = archivedRef.current.querySelectorAll('*');
-    for (const el of elements) {
-      if (el instanceof HTMLElement) {
-        if (!isArchivedVisible) {
-          el.setAttribute('tabindex', '-1');
-        } else {
-          el.removeAttribute('tabindex');
-        }
-      }
-    }
+    updateTabIndex(archivedRef, isArchivedVisible);
   }, [archivedRef, isArchivedVisible]);
 
   return (
     <>
-      <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
+      <StickyBox className="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <Button
             style={{
@@ -203,7 +212,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
             </TooltipButton>
           )}
         </div>
-      </Sticky>
+      </StickyBox>
       <div
         ref={sectionRef}
         className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}

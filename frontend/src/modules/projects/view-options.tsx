@@ -1,17 +1,17 @@
+import { cva } from 'class-variance-authority';
 import { SlidersHorizontal } from 'lucide-react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import { useContext, useEffect, useState } from 'react';
+import { TooltipButton } from '../common/tooltip-button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import ThreeStateSwitch from '../ui/three-state-switch.tsx';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import { taskTypes } from './create-task-form.tsx';
-import { cva } from 'class-variance-authority';
-import ThreeStateSwitch from '../ui/three-state-switch.tsx';
-import { Badge } from '../ui/badge.tsx';
-import { TooltipButton } from '../common/tooltip-button.tsx';
 
 interface Props {
   className?: string;

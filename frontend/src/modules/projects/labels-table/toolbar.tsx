@@ -1,13 +1,13 @@
+import { Plus, Trash, XSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { LabelsParam } from '.';
-import { useTranslation } from 'react-i18next';
-import { TooltipButton } from '~/modules/common/tooltip-button';
-import { Button } from '~/modules/ui/button';
-import { Plus, Trash, XSquare } from 'lucide-react';
-import { Badge } from '~/modules/ui/badge';
-import { toast } from 'sonner';
 import { useElectric } from '~/modules/common/root/electric';
+import { TooltipButton } from '~/modules/common/tooltip-button';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
+import type { LabelsParam } from '.';
 
 interface Props {
   searchQuery: string;

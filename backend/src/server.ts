@@ -4,11 +4,12 @@ import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import authRoutes from './modules/auth';
 import generalRoutes from './modules/general';
+import membershipRoutes from './modules/memberships';
 import organizationsRoutes from './modules/organizations';
+import projectsRoutes from './modules/projects';
 import publicRoutes from './modules/public';
 import usersRoutes from './modules/users';
-import membershipRoutes from './modules/memberships';
-import workspaceRoutes from './modules/workspaces';
+import workspacesRoutes from './modules/workspaces';
 
 import { CustomHono } from './types/common';
 
@@ -45,4 +46,5 @@ app
   .route('/', membershipRoutes)
 
   // App-specific routes go here
-  .route('/', workspaceRoutes);
+  .route('/', workspacesRoutes)
+  .route('/', projectsRoutes);

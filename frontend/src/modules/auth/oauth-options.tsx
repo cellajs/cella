@@ -2,11 +2,11 @@ import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
+import { acceptInvite } from '~/api/general';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/authentication';
 import { useThemeStore } from '~/store/theme';
 import type { Step } from '.';
-import { acceptInvite } from '~/api/general';
 
 const oauthOptions = [
   {

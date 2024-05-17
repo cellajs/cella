@@ -46,7 +46,7 @@ export const menuItemSchema = z.array(
     createdAt: z.string(),
     modifiedAt: z.string().nullable(),
     name: nameSchema,
-    thumbnailUrl: imageUrlSchema.nullable(),
+    thumbnailUrl: imageUrlSchema.nullish(),
     archived: z.boolean(),
     muted: z.boolean(),
     role: apiMembershipSchema.shape.role.nullable(),

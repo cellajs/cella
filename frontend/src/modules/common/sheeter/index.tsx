@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
-import { SheetState, type SheetToReset, type SheetT, type SheetToRemove } from './state';
+import { SheetState, type SheetT, type SheetToRemove, type SheetToReset } from './state';
 
 export function Sheeter() {
   const { t } = useTranslation();
@@ -76,7 +76,7 @@ export function Sheeter() {
               </SheetHeader>
             ) : null}
             {sheet.content}
-            <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+            <SheetClose className="absolute right-4 top-5 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
               <X size={24} strokeWidth={1.25} />
               <span className="sr-only">{t('common:close')}</span>
             </SheetClose>

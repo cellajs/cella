@@ -1,5 +1,5 @@
 import { Search, XCircle } from 'lucide-react';
-import { useContext, useRef, useEffect } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
 import { TableFilterBarContext } from './table-filter-bar';

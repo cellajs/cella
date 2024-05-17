@@ -1,21 +1,22 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useParams } from '@tanstack/react-router';
 import { ChevronRight, Shrub, SquareMousePointer } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Organization } from '~/types';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { dialog } from '../common/dialoger/state';
-import { CreateProjectForm } from './create-project-form';
-import { workspaceQueryOptions } from '../workspaces';
-import { useParams } from '@tanstack/react-router';
 import { WorkspaceRoute } from '~/routes/workspaces';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import type { Organization } from '~/types';
+import { dialog } from '../common/dialoger/state';
 import { DialogTitle } from '../ui/dialog';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { workspaceQueryOptions } from '../workspaces';
+import { CreateProjectForm } from './create-project-form';
+import useFocusById from '~/hooks/use-focus-by-id';
 
 interface AddProjectsProps {
   organization?: Organization | null;
   callback?: () => void;
   dialog?: boolean;
-  mode?: string | null;
+  mode?: 'create' | 'select' | null;
 }
 
 const AddProjects = ({ mode }: AddProjectsProps) => {
@@ -26,10 +27,11 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
 
-  const [inviteMode, setInviteMode] = useState(mode);
+  const [creationMode, setCreationMode] = useState(mode);
+  if (!mode) useFocusById('create-project-option');
 
-  const updateMode = (mode: string[]) => {
-    mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
+  const updateMode = (mode: ('create' | 'select')[]) => {
+    mode[0] ? setCreationMode(mode[0]) : setCreationMode(null);
 
     dialog.update('add-projects', {
       title: mode[0] ? (
@@ -38,7 +40,7 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
             {t('common:add_projects')}
           </button>
           <ChevronRight className="opacity-50" size={16} />
-          <span>{mode[0] === 'search' ? t('common:select') : t('common:create')}</span>
+          <span>{mode[0] === 'select' ? t('common:select') : t('common:create')}</span>
         </DialogTitle>
       ) : (
         <DialogTitle>{t('common:add_projects')}</DialogTitle>
@@ -46,10 +48,10 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
     });
   };
 
-  if (!inviteMode)
+  if (!creationMode)
     return (
       <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
-        <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by emails">
+        <ToggleGroupItem size="tile" variant="tile" value="create" aria-label="Create project" id="create-project-option">
           <Shrub size={48} strokeWidth={1} />
           <div className="flex flex-col p-4">
             <p className="font-light">{t('common:create_project.text')}</p>
@@ -59,7 +61,7 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
             </div>
           </div>
         </ToggleGroupItem>
-        <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
+        <ToggleGroupItem size="tile" variant="tile" value="select" aria-label="Select from existed project">
           <SquareMousePointer size={48} strokeWidth={1} />
           <div className="flex flex-col p-4">
             <div className="font-light">{t('common:select_project.text')}</div>
@@ -72,7 +74,7 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
       </ToggleGroup>
     );
 
-  if (inviteMode === 'search') {
+  if (creationMode === 'select') {
     return (
       <div className="flex flex-col gap-4">
         Not yet ready

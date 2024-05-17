@@ -114,15 +114,17 @@ function Toolbar({
           <FilterBarActions>
             {selectedMembers.length > 0 ? (
               <>
-                <Button variant="destructive" onClick={openRemoveDialog} className="relative">
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedMembers.length}</Badge>
+                <Button variant="destructive" onClick={openRemoveDialog} className="relative ">
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2 animate-in zoom-in">
+                    {selectedMembers.length}
+                  </Badge>
                   <Trash size={16} />
                   <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
                 </Button>
-                <Button variant="ghost" onClick={onResetSelectedRows}>
+                <Button variant="ghost" onClick={onResetSelectedRows} className="animate-in fade-in slide-in-from-left-1/2">
                   <XSquare size={16} />
                   <span className="ml-1">{t('common:clear')}</span>
-                </Button> 
+                </Button>
               </>
             ) : (
               !isFiltered &&
@@ -133,14 +135,12 @@ function Toolbar({
                 </Button>
               )
             )}
-            {selectedMembers.length === 0 && (
-              <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-            )}
+            {selectedMembers.length === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
 
           <div className="sm:grow" />
 
-          <FilterBarContent>
+          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in">
             <TableSearch value={query} setQuery={setQuery} />
             <SelectRole roles={selectRoleOptions} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>

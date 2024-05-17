@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
-import { RadioGroupItem, RadioGroup } from '~/modules/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 
 interface SelectRoleProps {
   roles: readonly { key: string; value: string }[];

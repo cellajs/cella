@@ -13,8 +13,10 @@ export const organizationTenantGuard = (paramName: string, accessibleFor?: Tenan
 export const workspaceTenantGuard = (paramName: string, accessibleFor?: TenantAccessibleFor) =>
   [auth(), tenant(paramName, 'WORKSPACE', accessibleFor)] as const;
 
-export const anyTenantGuard = (paramName: string, accessibleFor?: TenantAccessibleFor) => 
-  [auth(), tenant(paramName, 'ANY', accessibleFor)] as const;
+export const projectTenantGuard = (paramName: string, accessibleFor?: TenantAccessibleFor) =>
+  [auth(), tenant(paramName, 'PROJECT', accessibleFor)] as const;
+
+export const anyTenantGuard = (paramName: string, accessibleFor?: TenantAccessibleFor) => [auth(), tenant(paramName, 'ANY', accessibleFor)] as const;
 
 export const systemGuard = auth(['ADMIN']);
 

@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { UserRoundCheck, Check, UserRoundX } from 'lucide-react';
+import { Check, UserRoundCheck, UserRoundX } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { invite as baseInvite } from '~/api/general';
@@ -8,10 +9,9 @@ import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import { Button } from '../ui/button';
+import { Command, CommandGroup, CommandItem, CommandList } from '../ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { organizationQueryOptions } from './organization';
-import { useState } from 'react';
-import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
-import { Command, CommandGroup, CommandList, CommandItem } from '../ui/command';
 
 interface Props {
   organization: Organization;

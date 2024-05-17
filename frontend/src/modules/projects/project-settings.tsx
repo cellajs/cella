@@ -1,39 +1,33 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
-import { Trans, useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
+import { useParams } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { dialog } from '../common/dialoger/state';
+import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { sheet } from '~/modules/common/sheeter/state';
-import UpdateProjectForm from './update-project';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
+import type { Project } from '~/types';
+import { dialog } from '../common/dialoger/state';
+import { Button } from '../ui/button';
 import DeleteProjects from './delete-project';
+import UpdateProjectForm from './update-project';
 
-const projectPlug = [
-  {
-    id: 'string;',
-    slug: 'string;',
-    name: 'string;',
-    organizationId: 'string;',
-    workspaceId: 'string;',
-  },
-];
-
-export const ProjectSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
+export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
+
+  const callback = useMutateQueryData(['workspaces', project.workspaceId, 'projects']);
 
   const openDeleteDialog = () => {
     dialog(
       <DeleteProjects
         dialog
-        projects={projectPlug}
-        callback={() => {
-          toast.success(t('common:success.delete_Project'));
-          sheet.remove('Project_settings');
-          navigate({ to: '/', replace: true });
+        projects={[project]}
+        callback={(projects) => {
+          callback(projects, 'delete');
+          console.log('callback');
+          toast.success(t('common:success.delete_project'));
+          sheet.remove('edit-project');
         }}
       />,
       {
@@ -51,7 +45,7 @@ export const ProjectSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
         </CardHeader>
         <CardContent>
           <UpdateProjectForm
-            project={projectPlug[0]}
+            project={project}
             callback={(project) => {
               if (idOrSlug !== project.slug) {
                 // navigate({

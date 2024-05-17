@@ -9,16 +9,15 @@ import Logo from './logo';
 
 const AppNavLoader = () => {
   const { hasWaited } = useMounted();
-  const { navLoading, setLoading, setFocusView} = useNavigationStore();
+  const { navLoading, setLoading, setFocusView } = useNavigationStore();
   const isFetching = useIsFetching();
 
   // Show loading spinner when fetching data or navigating
   const isLoading = isFetching > 0 || navLoading;
 
   useEffect(() => {
-
     // TODO: move this to a more general location?
-    router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation}) => {
+    router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
       if (toLocation.pathname !== fromLocation.pathname) setFocusView(false);
       pathChanged && setLoading(true);
     });

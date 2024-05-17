@@ -1,13 +1,9 @@
 import { makeElectricContext } from 'electric-sql/react';
 import type { Electric } from '~/generated/client';
-import type { Projects as Project, Tasks as Task, Task_labels as TaskLabel, Labels as Label } from '~/generated/client';
+import type { Labels as Label, Tasks as Task, Task_labels as TaskLabel } from '~/generated/client';
 
 export { schema } from '~/generated/client';
-export type { Project, Task, Electric, Label };
-
-export type ProjectWithLabels = Project & {
-  labels?: Label[];
-};
+export type { Task, Electric, Label };
 
 export type TaskWithTaskLabels = Task & {
   task_labels?: (TaskLabel & {

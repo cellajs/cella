@@ -1,13 +1,13 @@
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { useHotkeys } from '~/hooks/use-hot-keys';
-import { Kbd } from '~/modules/common/kbd';
+import { Bolt, Bug, Check, Star } from 'lucide-react';
 import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bolt, Bug, Star, Check } from 'lucide-react';
-import type { TaskType } from './create-task-form';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+import { Kbd } from '~/modules/common/kbd';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Button } from '../ui/button';
 import { TaskContext } from './board-column';
+import type { TaskType } from './create-task-form';
 
 type Type = {
   value: (typeof types)[number]['value'];

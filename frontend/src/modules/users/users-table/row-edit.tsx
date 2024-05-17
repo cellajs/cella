@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import type { User } from '~/types';
 import UpdateUserForm from '~/modules/users/update-user-form';
+import type { User } from '~/types';
 
 import { Pencil } from 'lucide-react';
-import { Button } from '~/modules/ui/button';
 import { sheet } from '~/modules/common/sheeter/state';
+import { Button } from '~/modules/ui/button';
 
 interface Props {
   user: User;
