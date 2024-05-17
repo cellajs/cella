@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { MiddlewareHandler } from 'hono';
+import type { MiddlewareHandler, Context } from 'hono';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { errorResponse } from '../../lib/errors';
@@ -15,7 +15,7 @@ import permissionManager from '../../lib/permission-manager';
 const protect =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
   (action: string): MiddlewareHandler<Env, any> =>
-  async (ctx, next) => {
+  async (ctx: Context, next) => {
     // Extract user
     const user = ctx.get('user');
     
@@ -42,6 +42,9 @@ const protect =
     if (!isAllowed && user.role !== 'ADMIN') {
       return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id, id: context.id });
     }
+
+    // Store the user memberships in the context
+    ctx.set('memberships', memberships);
 
     // Log user authentication in the context
     logEvent(`User authenticated in ${context.id}`, { user: user.id, id: context.id });
