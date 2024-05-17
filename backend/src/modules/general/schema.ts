@@ -4,8 +4,8 @@ import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '../../db/schema/tokens';
 import { idSchema, imageUrlSchema, nameSchema, passwordSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
-import { accessRequestsTable } from '../../db/schema/access-requests';
 import { apiUserSchema } from '../users/schema';
+import { requestsTable } from '../../db/schema/requests';
 
 export const tokensSchema = createSelectSchema(tokensTable);
 
@@ -46,11 +46,19 @@ export const suggestionsSchema = z.object({
   total: z.number(),
 });
 
-export const accessReqSchema = createSelectSchema(accessRequestsTable);
+export const actionReqTableSchema = createSelectSchema(requestsTable);
 
-export const accessRequestSchema = z.object({
+export const actionRequestSchema = z.object({
   userId: idSchema.nullable(),
   organizationId: idSchema.nullable(),
   email: z.string().min(1).email(),
-  type: accessReqSchema.shape.type,
+  type: actionReqTableSchema.shape.type,
+  accompanyingMessage: z.string().nullable(),
+});
+
+export const actionResponseSchema = z.object({
+  userId: idSchema.nullable(),
+  organizationId: idSchema.nullable(),
+  email: z.string().min(1).email(),
+  type: actionReqTableSchema.shape.type,
 });

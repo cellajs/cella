@@ -55,6 +55,6 @@ export default [
       "DROP TRIGGER IF EXISTS compensation_update_main_task_users_task_id_into_oplog;",
       "CREATE TRIGGER compensation_update_main_task_users_task_id_into_oplog\n   AFTER UPDATE ON \"main\".\"task_users\"\n   WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.tasks') AND\n        1 == (SELECT value from _electric_meta WHERE key == 'compensations')\nBEGIN\n  INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)\n  SELECT 'main', 'tasks', 'COMPENSATION', json_object('id', \"id\"), json_object('id', \"id\"), NULL, NULL\n  FROM \"main\".\"tasks\" WHERE \"id\" = new.\"task_id\";\nEND;"
     ],
-    "version": "20240516211739_426"
+    "version": "20240516102556_367"
   }
 ]

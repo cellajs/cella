@@ -30,16 +30,16 @@ import { checkRole } from './helpers/check-role';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
   acceptInviteRouteConfig,
-  requestAccessConfig,
+  requestActionConfig,
   checkSlugRouteConfig,
   checkTokenRouteConfig,
   getUploadTokenRouteConfig,
   inviteRouteConfig,
   paddleWebhookRouteConfig,
   suggestionsConfig,
-  accessRequestsConfig,
+  actionRequestsConfig,
 } from './routes';
-import { accessRequestsTable } from '../../db/schema/access-requests';
+import { requestsTable } from '../../db/schema/requests';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -450,11 +450,11 @@ const generalRoutes = app
   /*
    *  Create access-request
    */
-  .openapi(requestAccessConfig, async (ctx) => {
-    const { email, userId, organizationId, type } = ctx.req.valid('json');
+  .openapi(requestActionConfig, async (ctx) => {
+    const { email, userId, organizationId, type } = ctx.req.valid('json'); //accompanyingMessage
 
     const [createdAccessRequest] = await db
-      .insert(accessRequestsTable)
+      .insert(requestsTable)
       .values({
         email,
         type,
@@ -462,6 +462,17 @@ const generalRoutes = app
         organization_id: organizationId,
       })
       .returning();
+
+    // I don't now if need to
+    //if (env.SEND_ALL_TO_EMAIL) {
+    // if(type === 'NEWSLETTER_REQUEST') {
+    //   emailSender.send(env.SEND_ALL_TO_EMAIL, 'New request for becoming a donate or build member.', `Here is his email ${email}.`)
+    // }
+
+    // if(type === 'CONTACT_REQUEST') {
+    //   emailSender.send(env.SEND_ALL_TO_EMAIL, 'New contact request', `Here is his email ${email}. ${accompanyingMessage}`)
+    // }
+    //}
 
     return ctx.json({
       success: true,
@@ -474,20 +485,20 @@ const generalRoutes = app
     });
   })
   /*
-   *  Get access-requests
+   *  Get requests
    */
-  .openapi(accessRequestsConfig, async (ctx) => {
+  .openapi(actionRequestsConfig, async (ctx) => {
     const { type } = ctx.req.valid('query');
 
-    const [accessRequests] = await db.select().from(accessRequestsTable).where(eq(accessRequestsTable.type, type));
+    const [actionRequests] = await db.select().from(requestsTable).where(eq(requestsTable.type, type));
 
     return ctx.json({
       success: true,
       data: {
-        email: accessRequests.email,
-        type: accessRequests.type,
-        userId: accessRequests.user_id,
-        organizationId: accessRequests.organization_id,
+        email: actionRequests.email,
+        type: actionRequests.type,
+        userId: actionRequests.user_id,
+        organizationId: actionRequests.organization_id,
       },
     });
   })

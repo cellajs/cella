@@ -15,6 +15,13 @@
       "when": 1715608556922,
       "tag": "0001_absurd_omega_red",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1715946756931,
+      "tag": "0002_watery_triton",
+      "breakpoints": true
     }
   ]
 }

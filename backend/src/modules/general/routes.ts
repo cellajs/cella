@@ -6,8 +6,9 @@ import { anyTenantGuard, authGuard, publicGuard, systemGuard } from '../../middl
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteJsonSchema,
-  accessReqSchema,
-  accessRequestSchema,
+  actionReqTableSchema,
+  actionRequestSchema,
+  actionResponseSchema,
   inviteJsonSchema,
   inviteQuerySchema,
   suggestionsSchema,
@@ -232,9 +233,9 @@ export const suggestionsConfig = createRouteConfig({
   },
 });
 
-export const requestAccessConfig = createRouteConfig({
+export const requestActionConfig = createRouteConfig({
   method: 'post',
-  path: '/access-request',
+  path: '/action-request',
   guard: publicGuard,
   middleware: [authRateLimiter],
   tags: ['general'],
@@ -243,7 +244,7 @@ export const requestAccessConfig = createRouteConfig({
     body: {
       content: {
         'application/json': {
-          schema: accessRequestSchema,
+          schema: actionRequestSchema,
         },
       },
     },
@@ -253,7 +254,7 @@ export const requestAccessConfig = createRouteConfig({
       description: 'Access requests',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(accessRequestSchema),
+          schema: successResponseWithDataSchema(actionResponseSchema),
         },
       },
     },
@@ -261,15 +262,15 @@ export const requestAccessConfig = createRouteConfig({
   },
 });
 
-export const accessRequestsConfig = createRouteConfig({
+export const actionRequestsConfig = createRouteConfig({
   method: 'get',
-  path: '/access-requests',
+  path: '/requests',
   guard: systemGuard,
   tags: ['general'],
-  summary: 'Get access-requests',
+  summary: 'Get requests',
   request: {
     query: z.object({
-      type: accessReqSchema.shape.type,
+      type: actionReqTableSchema.shape.type,
     }),
   },
   responses: {
@@ -277,7 +278,7 @@ export const accessRequestsConfig = createRouteConfig({
       description: 'Access requests',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(accessRequestSchema),
+          schema: successResponseWithDataSchema(actionResponseSchema),
         },
       },
     },

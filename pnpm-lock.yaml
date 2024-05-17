@@ -215,9 +215,6 @@ importers:
       '@databases/pg-migrations':
         specifier: ^5.0.3
         version: 5.0.3(typescript@5.4.5)
-      '@dnd-kit/core':
-        specifier: ^6.1.0
-        version: 6.1.0(react-dom@18.3.1)(react@18.3.1)
       '@github/mini-throttle':
         specifier: ^2.1.1
         version: 2.1.1
@@ -4134,36 +4131,7 @@ packages:
     resolution: {integrity: sha512-dLKqxGcymeVwEb/6c44KjOnzaAafFf0Wxa8xcfEjx/qOl3rdijsKYBAtIGhtVtOlpPf/PFKfgTuFurSPn/3B/g==}
     dev: false
 
-  /@dnd-kit/accessibility@3.1.0(react@18.3.1):
-    resolution: {integrity: sha512-ea7IkhKvlJUv9iSHJOnxinBcoOI3ppGnnL+VDJ75O45Nss6HtZd8IdN8touXPDtASfeI2T2LImb8VOZcL47wjQ==}
-    peerDependencies:
-      react: '>=16.8.0'
-    dependencies:
-      react: 18.3.1
-      tslib: 2.6.2
-    dev: false
 
-  /@dnd-kit/core@6.1.0(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-J3cQBClB4TVxwGo3KEjssGEXNJqGVWx17aRTZ1ob0FliR5IjYgTxl5YJbKTzA6IzrtelotH19v6y7uoIRUZPSg==}
-    peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-    dependencies:
-      '@dnd-kit/accessibility': 3.1.0(react@18.3.1)
-      '@dnd-kit/utilities': 3.2.2(react@18.3.1)
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      tslib: 2.6.2
-    dev: false
-
-  /@dnd-kit/utilities@3.2.2(react@18.3.1):
-    resolution: {integrity: sha512-+MKAJEOfaBe5SmV6t34p80MMKhjvUz0vRrvVJbPT0WElzaOJ/1xs+D+KDv+tD/NE5ujfrChEcshd4fLn0wpiqg==}
-    peerDependencies:
-      react: '>=16.8.0'
-    dependencies:
-      react: 18.3.1
-      tslib: 2.6.2
-    dev: false
 
   /@electric-sql/prisma-generator@1.1.4:
     resolution: {integrity: sha512-zZQ88uBEKIhf6lKmnzWjOs65V5uVj/i2/N9aU4jpbJIf63n9LUgUh6abv7weFkvJsGddY/6I0bgE4a400FAkxA==}

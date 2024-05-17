@@ -100,16 +100,23 @@ export const acceptInvite = async ({
   return json.success;
 };
 
-interface AccessRequestProp {
-  userId: string | null;
+interface ActionRequestProp {
   email: string;
-  organizationId: string | null;
-  type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST';
+  type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
+  userId?: string;
+  organizationId?: string;
+  accompanyingMessage?: string;
 }
-// Access request
-export const requestAccess = async ({ email, userId, organizationId, type }: AccessRequestProp) => {
-  const response = await client['access-request'].$post({
-    json: { email, userId, organizationId, type },
+// Action request
+export const requestAction = async (requestInfo: ActionRequestProp) => {
+  const response = await client['action-request'].$post({
+    json: {
+      type: requestInfo.type,
+      email: requestInfo.email,
+      userId: requestInfo.userId || null,
+      organizationId: requestInfo.organizationId || null,
+      accompanyingMessage: requestInfo.accompanyingMessage || null,
+    },
   });
 
   const json = await response.json();
@@ -117,9 +124,9 @@ export const requestAccess = async ({ email, userId, organizationId, type }: Acc
   return;
 };
 
-// Get Access requests
-export const accessRequests = async (type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST') => {
-  const response = await client['access-requests'].$get({
+// Get action requests by type
+export const actionRequests = async (type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST') => {
+  const response = await client.requests.$get({
     query: { type },
   });
 
