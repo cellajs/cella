@@ -15,7 +15,7 @@ import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { dialog } from '../common/dialoger/state.ts';
-import { type Task, useElectric } from '../common/root/electric.ts';
+import { type Task, useElectric } from '../common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { WorkspaceContext } from '../workspaces/index.tsx';

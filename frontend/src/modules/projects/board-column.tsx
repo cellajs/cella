@@ -15,7 +15,7 @@ import { useWorkspaceStore } from '~/store/workspace';
 import type { DraggableItemData, Project } from '~/types/index.ts';
 import ContentPlaceholder from '../common/content-placeholder';
 import { DropIndicator } from '../common/drop-indicator';
-import type { Task, TaskWithLabels } from '../common/root/electric';
+import type { Task, TaskWithLabels } from '../common/electric/electrify';
 import { sheet } from '../common/sheeter/state';
 import { WorkspaceContext } from '../workspaces';
 import { ProjectContext } from './board';

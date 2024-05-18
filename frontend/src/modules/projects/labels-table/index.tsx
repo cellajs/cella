@@ -4,7 +4,7 @@ import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import type { Label } from '~/modules/common/root/electric';
+import type { Label } from '~/modules/common/electric/electrify';
 import { useColumns } from './columns';
 import { Toolbar } from './toolbar';
 

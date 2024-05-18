@@ -10,7 +10,7 @@ import { useNavigationStore } from '~/store/navigation';
 import type { Project, Workspace } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
-import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/root/electric';
+import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/electric/electrify';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
@@ -61,79 +61,41 @@ const WorkspacePage = () => {
   const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id));
   const projects = projectsQuery.data.items;
 
-  // const { results: projects = [] } = useLiveQuery(
-  //   db.projects.liveMany({
-  //     where: { workspace_id: workspace.id },
-  //     include: { labels: true },
-  //   }),
-  // );
+  let tasks = [] as TaskWithLabels[];
+  let labels = [] as Label[];
 
-  // const { results: labels = [] } = useLiveQuery(
-  //   db.labels.liveMany({
-  //     where: {
-  //       project_id: {
-  //         in: projects.map((project) => project.id),
-  //       },
-  //     },
-  //   }),
-  // );
-
-  const { results: tasks = [] } = useLiveQuery(
-    db.tasks.liveMany({
-      where: {
-        project_id: {
-          in: projects.map((project) => project.id),
-        },
-      },
-      include: {
-        task_labels: {
-          include: {
-            labels: true,
+  if (db) {
+    const { results: taskTesults = [] } = useLiveQuery(
+      db.tasks.liveMany({
+        where: {
+          project_id: {
+            in: projects.map((project) => project.id),
           },
         },
-      },
-    }),
-  ) as { results: TaskWithTaskLabels[] };
-
-  const { results: labels = [] } = useLiveQuery(
-    db.labels.liveMany({
-      where: {
-        project_id: {
-          in: projects.map((p) => p.id),
+        include: {
+          task_labels: {
+            include: {
+              labels: true,
+            },
+          },
         },
-      },
-    }),
-  );
+      }),
+    ) as { results: TaskWithTaskLabels[] };
+    tasks
 
-  // const [projects, setProjects] = useState<Project[]>([]);
-  // const [tasks, setTasks] = useState<Task[]>([]);
-
-  // const updateTasks = (task: Task) => {
-  //   if (!task) return;
-
-  //   // Add new task
-  //   if (!tasks.find((t) => t.id === task.id)) {
-  //     const updatedTasks = [...tasks, task];
-  //     return setTasks(updatedTasks.sort((a, b) => b.status - a.status));
-  //   }
-  //   // Update existing task
-  //   const updatedTasks = tasks.map((t: Task) => {
-  //     if (t.id !== task.id) return t;
-  //     return { ...t, ...task };
-  //   });
-  //   setTasks(updatedTasks.sort((a, b) => b.status - a.status));
-  // };
+    const { results: labelResults = [] } = useLiveQuery(
+      db.labels.liveMany({
+        where: {
+          project_id: {
+            in: projects.map((p) => p.id),
+          },
+        },
+      }),
+    );
+  }
 
   useEffect(() => {
     setSearchQuery('');
-    // fetch('/mock/workspace-data')
-    //   .then((response) => response.json())
-    //   .then((data) => {
-    //     setProjects(data.projects);
-    //     setLabels(data.labels);
-    //     setTasks(data.tasks);
-    //   })
-    //   .catch((error) => console.error('Error fetching MSW data:', error));
   }, [workspace]);
 
   return (

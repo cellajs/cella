@@ -7,7 +7,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { Button } from '~/modules/ui/button';
 import { Kbd } from '../common/kbd.tsx';
-import { type Label, useElectric } from '../common/root/electric.ts';
+import { type Label, useElectric } from '../common/electric/electrify.ts';
 import { Badge } from '../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';

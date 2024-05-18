@@ -8,7 +8,7 @@ import { sortTaskOrder } from '~/lib/utils';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
 import ContentPlaceholder from '../common/content-placeholder';
-import type { Label, Task } from '../common/root/electric';
+import type { Label, Task } from '../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';

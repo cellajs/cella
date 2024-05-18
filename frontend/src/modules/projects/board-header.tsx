@@ -12,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { AvatarWrap } from '../common/avatar-wrap';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
-import { useElectric } from '../common/root/electric';
+import { useElectric } from '../common/electric/electrify';
 import { TooltipButton } from '../common/tooltip-button';
 import { Badge } from '../ui/badge';
 import { WorkspaceContext } from '../workspaces';

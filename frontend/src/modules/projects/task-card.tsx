@@ -9,7 +9,7 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { type TaskWithLabels, useElectric } from '../common/root/electric.ts';
+import { type TaskWithLabels, useElectric } from '../common/electric/electrify.ts';
 import { Checkbox } from '../ui/checkbox';
 import { WorkspaceContext } from '../workspaces';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';

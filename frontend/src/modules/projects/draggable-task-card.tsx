@@ -7,7 +7,7 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { getDraggableItemData } from '~/lib/utils';
 import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '../common/drop-indicator';
-import type { Task } from '../common/root/electric';
+import type { Task } from '../common/electric/electrify';
 import { TaskContext } from './board-column';
 import { TaskCard } from './task-card';
 

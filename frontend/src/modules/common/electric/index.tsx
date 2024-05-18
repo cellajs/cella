@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
-import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electric';
+import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
 
 interface Props {
   children: React.ReactNode;
