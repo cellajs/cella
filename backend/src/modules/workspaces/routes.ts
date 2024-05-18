@@ -8,7 +8,7 @@ import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSche
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
   path: '/organizations/{organization}/workspaces',
-  guard: [authGuard(), protect('workspace', 'create')],
+  guard: [authGuard(), protect('organization', 'update')],
   tags: ['workspaces'],
   summary: 'Create a new workspace',
   description: `

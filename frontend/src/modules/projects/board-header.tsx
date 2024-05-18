@@ -12,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { AvatarWrap } from '../common/avatar-wrap';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
-import { useElectric } from '../common/root/electric';
+import { useElectric } from '../common/electric/electrify';
 import { TooltipButton } from '../common/tooltip-button';
 import { Badge } from '../ui/badge';
 import { WorkspaceContext } from '../workspaces';
@@ -30,7 +30,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   const { workspace, selectedTasks, setSelectedTasks, searchQuery, tasks, setSearchQuery, labels } = useContext(WorkspaceContext);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const Electric = useElectric()!;
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet />, {
@@ -51,7 +51,9 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   };
 
   const onRemove = () => {
-    db.tasks
+    if (!Electric) return toast.error(t('common:no_local_db'))
+
+    Electric.db.tasks
       .deleteMany({
         where: {
           id: {

@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
-import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electric';
+import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
 
 interface Props {
   children: React.ReactNode;
@@ -96,20 +96,21 @@ const ElectricProvider = ({ children }: Props) => {
     };
   }, []);
 
-  if (electric === undefined) {
-    return (
-      <div className="fixed z-[300] bottom-0 border-0 p-4 flex w-full justify-center">
-        <Alert variant="plain" className="border-0 w-auto">
-          <AlertDescription className="pr-8 font-light flex items-center justify-center">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="ml-2">Initializing local database</span>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  return <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>;
+  return (
+    <>
+      <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>
+      {electric === undefined && (
+        <div className="fixed z-[300] bottom-0 border-0 p-4 flex w-full justify-center">
+          <Alert variant="plain" className="border-0 w-auto">
+            <AlertDescription className="pr-8 font-light flex items-center justify-center">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="ml-2">Initializing local database</span>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+    </>
+  );
 };
 
 export default ElectricProvider;

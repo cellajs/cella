@@ -1,12 +1,11 @@
 import { eq, or } from 'drizzle-orm';
-import type { MiddlewareHandler, Context } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { errorResponse } from '../../lib/errors';
+import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
 import type { Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
-import permissionManager from '../../lib/permission-manager';
-import { HierarchicalEntity } from '../../lib/permission-manager';
 
 // TODO: Refactor to make schema imports more abstract and modular,
 //       so all different schemas don't need to be individually imported/declared.
@@ -27,45 +26,40 @@ export const tables = new Map<string, typeof organizationsTable | typeof workspa
  */
 const protect =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-  (resourceType: string, action: string): MiddlewareHandler<Env, any> =>
-  async (ctx: Context, next) => {
-    // Extract user
-    const user = ctx.get('user');
-    
-    // Retrieve the context of the resource to be authorized (e.g., 'organization', 'workspace')
-    const context = await getResourceContext(ctx, resourceType)
+    (resourceType: string, action: string): MiddlewareHandler<Env, any> =>
+    async (ctx: Context, next) => {
+      // Extract user
+      const user = ctx.get('user');
 
-    // Check if user or context is missing
-    if (!context || !user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN', { user: user?.id, id: context?.id || '' });
-    }
+      // Retrieve the context of the resource to be authorized (e.g., 'organization', 'workspace')
+      const context = await getResourceContext(ctx, resourceType);
 
-    // Fetch user's memberships from the database
-    const memberships = await db
-      .select()
-      .from(membershipsTable)
-      .where(
-        eq(membershipsTable.userId, user.id),
-      );
+      // Check if user or context is missing
+      if (!context || !user) {
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN', { user: user?.id, id: context?.id || '' });
+      }
 
-    // Check if the user is allowed to perform the action in the given context
-    const isAllowed = permissionManager.isPermissionAllowed(memberships, action, context);
-  
-    // If user is not allowed and not an admin, return a forbidden error
-    if (!isAllowed && user.role !== 'ADMIN') {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id, id: context.id });
-    }
+      // Fetch user's memberships from the database
+      const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
-    // Store the user memberships and authorized resource context in the context
-    ctx.set('memberships', memberships);
-    ctx.set('authorzedIn', context);
-    ctx.set(resourceType, context);
+      // Check if the user is allowed to perform the action in the given context
+      const isAllowed = permissionManager.isPermissionAllowed(memberships, action, context);
 
-    // Log user authentication in the context
-    logEvent(`User authenticated in ${context.id}`, { user: user.id, id: context.id });
+      // If user is not allowed and not an admin, return a forbidden error
+      if (!isAllowed && user.role !== 'ADMIN') {
+        return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id, id: context.id });
+      }
 
-    await next();
-  };
+      // Store the user memberships and authorized resource context in the context
+      ctx.set('memberships', memberships);
+      ctx.set('authorizedIn', context);
+      ctx.set(resourceType, context);
+
+      // Log user authentication in the context
+      logEvent(`User authenticated in ${context.id}`, { user: user.id, id: context.id });
+
+      await next();
+    };
 
 /**
  * Get the context based on the resource type.
@@ -75,7 +69,7 @@ const protect =
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function getResourceContext (ctx: any, resourceType: string) {
+async function getResourceContext(ctx: any, resourceType: string) {
   // Check if resource is configured; if not, return early
   if (!HierarchicalEntity.instanceMap.has(resourceType)) {
     return;
@@ -89,14 +83,14 @@ async function getResourceContext (ctx: any, resourceType: string) {
 
   // Handles resolve for contextual resource operations, like fetching or creating child resources
   return await resolveParentContext(resourceType, ctx);
-};
+}
 
 /**
-* Resolves resource based on ID or Slug and sets the context accordingly.
-* @param resourceType - The type of the resource.
-* @param idOrSlug - The unique identifier (ID or Slug) of the resource.
-* @param ctx - The context object containing request and response details.
-*/
+ * Resolves resource based on ID or Slug and sets the context accordingly.
+ * @param resourceType - The type of the resource.
+ * @param idOrSlug - The unique identifier (ID or Slug) of the resource.
+ * @param ctx - The context object containing request and response details.
+ */
 async function resolveResourceByIdOrSlug(resourceType: string, idOrSlug: string) {
   const table = tables.get(resourceType);
 
@@ -112,16 +106,16 @@ async function resolveResourceByIdOrSlug(resourceType: string, idOrSlug: string)
 }
 
 /**
-* Resolves the parent context for contextual resource operations and sets the context accordingly.
-* @param resourceType - The type of the resource.
-* @param ctx - The context object containing request and response details.
-*/
+ * Resolves the parent context for contextual resource operations and sets the context accordingly.
+ * @param resourceType - The type of the resource.
+ * @param ctx - The context object containing request and response details.
+ */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
 async function resolveParentContext(resourceType: string, ctx: any) {
   const resource = HierarchicalEntity.instanceMap.get(resourceType);
 
-    // Return early if resource is not available
+  // Return early if resource is not available
   if (!resource) return;
 
   // Extract payload from request body

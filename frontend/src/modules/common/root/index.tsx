@@ -8,7 +8,7 @@ import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { DownAlert } from '../down-alert';
-import ElectricProvider from './electric-provider';
+import ElectricProvider from '../electric';
 
 // Lazy load Tanstack dev tools in development
 const TanStackRouterDevtools =

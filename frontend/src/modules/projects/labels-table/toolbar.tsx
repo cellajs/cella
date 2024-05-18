@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import { useElectric } from '~/modules/common/root/electric';
+import { useElectric } from '~/modules/common/electric/electrify';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -24,10 +24,12 @@ export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelect
   const { t } = useTranslation();
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const Electric = useElectric()!;
 
   const removeLabel = () => {
-    db.labels
+    if (!Electric) return toast.error(t('common:no_local_db'))
+
+    Electric.db.labels
       .deleteMany({
         where: {
           id: {

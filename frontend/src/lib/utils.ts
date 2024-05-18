@@ -1,6 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
-import { type ClassValue, clsx } from 'clsx';
+import { clsx, type ClassValue } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -9,7 +9,7 @@ import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
-import type { Task } from '~/modules/common/root/electric';
+import type { Task } from '~/modules/common/electric/electrify';
 import type { DraggableItemData } from '~/types';
 
 dayjs.extend(calendar);

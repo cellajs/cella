@@ -1,23 +1,6 @@
 import { integer, pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '~/lib/utils';
 
-// id: string;
-// slug: string;
-// markdown: string;
-// summary: string;
-// createdBy: string;
-// createdAt: Date;
-// assignedBy: string;
-// assignedTo: TaskUser[];
-// assignedAt: Date;
-// modifiedBy: string;
-// modifiedAt: Date;
-// type: TaskType;
-// impact: TaskImpact;
-// status: TaskStatus;
-// labels: TaskLabel[];
-// projectId: string;
-
 export const tasksTable = pgTable('tasks', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   slug: varchar('slug').notNull(),
@@ -39,14 +22,6 @@ export const tasksTable = pgTable('tasks', {
   modifiedBy: varchar('modified_by'),
 });
 
-// id: string;
-// value: string;
-// color: string | null;
-// count: number;
-// groupId: string | null;
-// lastActive: Date;
-// projectId: string;
-
 export const labelsTable = pgTable('labels', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   name: varchar('name').notNull(),
@@ -54,7 +29,7 @@ export const labelsTable = pgTable('labels', {
   projectId: varchar('project_id').notNull(),
 });
 
-export const taskLabels = pgTable(
+export const taskLabelsTable = pgTable(
   'task_labels',
   {
     taskId: varchar('task_id')
@@ -77,7 +52,7 @@ export const taskLabels = pgTable(
   },
 );
 
-export const taskUsers = pgTable(
+export const taskUsersTable = pgTable(
   'task_users',
   {
     taskId: varchar('task_id')

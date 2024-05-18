@@ -9,7 +9,7 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { type TaskWithLabels, useElectric } from '../common/root/electric.ts';
+import { type TaskWithLabels, useElectric } from '../common/electric/electrify.ts';
 import { Checkbox } from '../ui/checkbox';
 import { WorkspaceContext } from '../workspaces';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
@@ -21,6 +21,7 @@ import { TaskContext } from './board-column.tsx';
 import { ProjectContext } from './board.tsx';
 import SetLabels from './select-labels.tsx';
 import { TaskEditor } from './task-editor.tsx';
+import { toast } from 'sonner';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
@@ -43,10 +44,13 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   const contentRef = useRef<HTMLDivElement>(null);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const Electric = useElectric()!;
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof TaskWithLabels, value: any) => {
+    if (!Electric) return toast.error(t('common:no_local_db'));
+    const db = Electric.db;
+
     // TODO: Review this
     if (field === 'labels' && Array.isArray(value)) {
       const currentLabels = task.labels?.map((label) => label.id) || [];
