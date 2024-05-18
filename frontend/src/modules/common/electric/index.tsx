@@ -96,10 +96,10 @@ const ElectricProvider = ({ children }: Props) => {
     };
   }, []);
 
-  if (electric === undefined) {
-    return (
-      <>
-        {children}
+  return (
+    <>
+      <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>
+      {electric === undefined && (
         <div className="fixed z-[300] bottom-0 border-0 p-4 flex w-full justify-center">
           <Alert variant="plain" className="border-0 w-auto">
             <AlertDescription className="pr-8 font-light flex items-center justify-center">
@@ -108,11 +108,9 @@ const ElectricProvider = ({ children }: Props) => {
             </AlertDescription>
           </Alert>
         </div>
-      </>
-    );
-  }
-
-  return <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>;
+      )}
+    </>
+  );
 };
 
 export default ElectricProvider;
