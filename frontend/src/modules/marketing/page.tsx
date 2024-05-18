@@ -5,18 +5,17 @@ import { MarketingNav } from './nav';
 export interface MarketingPageProps {
   title: string;
   children?: React.ReactNode;
-  Link?: JSX.Element;
   FooterLink?: JSX.Element;
   AboutLink?: JSX.Element;
   LegalLinks?: JSX.Element;
 }
 
-const MarketingPage = ({ title, children, Link, FooterLink, AboutLink, LegalLinks }: MarketingPageProps) => {
+const MarketingPage = ({ title, children, FooterLink, AboutLink, LegalLinks }: MarketingPageProps) => {
   const { t } = useTranslation();
 
   return (
     <div>
-      <MarketingNav NavItems={Link} />
+      <MarketingNav />
       <div className="container max-w-none px-0">
         <section className="rich-gradient relative py-20 pb-8">
           <h1 className="mt-12 mb-4 max-w-[600px] px-4 mx-auto sm:w-full text-4xl text-center md:text-5xl">{t(title)}</h1>

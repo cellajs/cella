@@ -1,8 +1,8 @@
-import { Link as TanstackRouterLink } from '@tanstack/react-router';
 import { config } from 'config';
 import { Github } from 'lucide-react';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
+
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import Logo from '~/modules/common/logo';
@@ -11,6 +11,7 @@ import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent } from '~/modules/ui/sheet';
 import HamburgerButton from '../common/hamburger';
 import UserLanguage from '../common/user-language';
+import { Link } from '../common/link';
 
 const marketingNavConfig = [
   { id: 'features', url: '/about', hash: 'features' },
@@ -18,12 +19,12 @@ const marketingNavConfig = [
   { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 
-type MarketingNav = {
-  NavItems?: JSX.Element;
+type Props = {
   onHandleMismatch?: (target: string) => void;
+  as?: 'a' | 'tanstack-link';
 };
 
-export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
+export function MarketingNav({ as = 'tanstack-link', onHandleMismatch }: Props) {
   const { t } = useTranslation();
   const [showSheet, setShowSheet] = useState<boolean>(false);
 
@@ -38,23 +39,24 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
 
   const { ref, inView } = useInView();
 
-  const openInNewTab = (url: string) => {
-    window.open(url, '_blank', 'noreferrer');
-  };
-
   const renderNavItems = () => {
     return marketingNavConfig.map((item) => (
-      <TanstackRouterLink
+      <Link
         to={item.url}
         hash={item.hash}
-        replace={false}
+        replace={typeof window !== 'undefined' && location.pathname === '/about'}
         key={item.id}
         onClick={() => handleNavClick(item.hash, false)}
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
+        as={as}
       >
         {t(item.id)}
-      </TanstackRouterLink>
+      </Link>
     ));
+  };
+
+  const openInNewTab = (url: string) => {
+    window.open(url, '_blank', 'noreferrer');
   };
 
   return (
@@ -66,7 +68,14 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
               <HamburgerButton isOpen={showSheet} toggle={setShowSheet} />
             </div>
 
-            <a href="/about" className="md:ml-2 hover:opacity-90 active:scale-95 relative" aria-label="Go to about page">
+            <Link
+              to="/about"
+              hash=""
+              replace={typeof window !== 'undefined' && location.pathname === '/about'}
+              className="md:ml-2 hover:opacity-90 active:scale-95 relative"
+              aria-label="Go to about page"
+              as={as}
+            >
               <Logo height={30} />
 
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0 -right-4">
@@ -82,9 +91,9 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
                   />
                 </g>
               </svg>
-            </a>
+            </Link>
 
-            {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{NavItems}</nav>}
+            {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>}
           </div>
 
           <div className={`gap-2 px-2 flex transition-all duration-300 ease-in-out ${showSheet ? 'translate-x-2 opacity-0' : 'delay-700'}`}>
@@ -103,6 +112,10 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
             >
               <Github strokeWidth={config.theme.strokeWidth} />
             </Button>
+
+            <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())} as={as}>
+              {t('common:sign_in')}
+            </Link>
           </div>
         </div>
       </header>
@@ -119,8 +132,7 @@ export function MarketingNav({ NavItems, onHandleMismatch }: MarketingNav) {
               <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
               <UserTheme className="absolute top-5 right-4 xs:hidden" />
             </div>
-            {NavItems ?? renderNavItems()}
-
+            {renderNavItems()}
             <Button
               size="lg"
               className="sm:hidden"

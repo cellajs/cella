@@ -1,10 +1,10 @@
-import { MainLayout } from "@/components/PublicPage";
-import { reactRenderer } from "@hono/react-renderer";
-import { useRequestContext } from "@hono/react-renderer";
-import { FC, PropsWithChildren } from "react";
+import Layout from '@/islands/Nav';
+import { reactRenderer } from '@hono/react-renderer';
+import { useRequestContext } from '@hono/react-renderer';
+import { FC, PropsWithChildren } from 'react';
 
 const HasIslands: FC<PropsWithChildren> = ({ children }) => {
-  const IMPORTING_ISLANDS_ID = "__importing_islands" as const;
+  const IMPORTING_ISLANDS_ID = '__importing_islands' as const;
   const c = useRequestContext();
   return <>{c.get(IMPORTING_ISLANDS_ID) ? children : <></>}</>;
 };
@@ -28,10 +28,10 @@ export default reactRenderer(({ children, title }) => {
             <link href="/app/index.css" rel="stylesheet" />
           </>
         )}
-        {title ? <title>{title}</title> : ""}
+        {title ? <title>{title}</title> : ''}
       </head>
       <body>
-        <MainLayout>{children}</MainLayout>
+        <Layout>{children}</Layout>
       </body>
     </html>
   );
