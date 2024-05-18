@@ -14,7 +14,9 @@ export const tasksTable = pgTable('tasks', {
   order: integer('sort_order'),
   status: integer('status').notNull(),
   projectId: varchar('project_id').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at')
+  // .defaultNow()
+  .notNull(),
   createdBy: varchar('created_by').notNull(),
   assignedBy: varchar('assigned_by'),
   assignedAt: timestamp('assigned_at'),
