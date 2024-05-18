@@ -30,7 +30,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   const { workspace, selectedTasks, setSelectedTasks, searchQuery, tasks, setSearchQuery, labels } = useContext(WorkspaceContext);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const Electric = useElectric()!;
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet />, {
@@ -51,7 +51,9 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   };
 
   const onRemove = () => {
-    db.tasks
+    if (!Electric) return toast.error(t('common:no_local_db'))
+
+    Electric.db.tasks
       .deleteMany({
         where: {
           id: {
