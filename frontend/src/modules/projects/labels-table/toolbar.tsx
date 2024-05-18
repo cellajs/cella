@@ -24,10 +24,12 @@ export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelect
   const { t } = useTranslation();
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const Electric = useElectric()!;
 
   const removeLabel = () => {
-    db.labels
+    if (!Electric) return toast.error(t('common:no_local_db'))
+
+    Electric.db.labels
       .deleteMany({
         where: {
           id: {

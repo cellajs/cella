@@ -436,5 +436,6 @@
   "minimize": "minimize",
   "task": "Task",
   "manage_labels": "Manage labels",
-  "click": "Click"
+  "click": "Click",
+  "no_local_db": "No local db. Try reloading or contact support"
 }

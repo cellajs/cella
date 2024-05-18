@@ -13,6 +13,7 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '.
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { TaskContext } from './board-column.tsx';
 import { nanoid } from '~/lib/utils.ts';
+import { toast } from 'sonner';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -37,7 +38,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const Electric = useElectric()!;
 
   const handleSelectClick = (value?: string) => {
     if (!value) return;
@@ -54,6 +55,8 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
   };
 
   const createLabel = (value: string) => {
+    if (!Electric) return toast.error(t('common:no_local_db'))
+
     const newLabel: Label = {
       id: nanoid(),
       name: value,
@@ -65,7 +68,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
 
     // TODO: Implement the following
     // Save the new label to the database
-    db.labels.create({ data: newLabel });
+    Electric.db.labels.create({ data: newLabel });
 
     //  changeLabels?.([...passedLabels, newLabel]);
   };
