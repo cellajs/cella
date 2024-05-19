@@ -2,7 +2,6 @@ import { config } from 'config';
 import { Github } from 'lucide-react';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
-
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import Logo from '~/modules/common/logo';
@@ -42,10 +41,10 @@ export function MarketingNav({ as = 'tanstack-link', onHandleMismatch }: Props) 
   const renderNavItems = () => {
     return marketingNavConfig.map((item) => (
       <Link
+        key={item.id}
         to={item.url}
         hash={item.hash}
         replace={typeof window !== 'undefined' && location.pathname === '/about'}
-        key={item.id}
         onClick={() => handleNavClick(item.hash, false)}
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
         as={as}
