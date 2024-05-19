@@ -18,7 +18,7 @@ const features = [
   { icon: 'openapi' },
   { icon: 'vite' },
   { icon: 'tanstack' },
-  { icon: 'plus' },
+  { icon: 'electric' },
 ];
 
 const Feature = ({ icon, invertClass, index }: FeatureProps) => {

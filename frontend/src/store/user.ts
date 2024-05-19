@@ -11,8 +11,10 @@ type PartialUser = Partial<User>;
 interface UserState {
   user: User;
   lastUser: PartialUser | null;
+  finishOnboarding: boolean;
   clearLastUser: () => void;
   setUser: (user: User) => void;
+  completeOnboarding: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -21,6 +23,7 @@ export const useUserStore = create<UserState>()(
       immer((set) => ({
         // TODO: Fix this type, can we find another way to allow null, while not having to check for null all through the code?
         user: null as unknown as User,
+        finishOnboarding: false,
         lastUser: null,
         clearLastUser: () => {
           set((state) => {
@@ -35,6 +38,11 @@ export const useUserStore = create<UserState>()(
 
           i18n.changeLanguage(user.language || 'en');
         },
+        completeOnboarding: () => {
+          set((state) => {
+            state.finishOnboarding = true;
+          });
+        },
       })),
       {
         version: 2,
@@ -42,6 +50,7 @@ export const useUserStore = create<UserState>()(
         partialize: (state) => ({
           user: state.user,
           lastUser: state.lastUser,
+          finishOnboarding: state.finishOnboarding,
         }),
         storage: createJSONStorage(() => localStorage),
       },

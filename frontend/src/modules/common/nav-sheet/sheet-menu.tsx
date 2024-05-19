@@ -15,7 +15,7 @@ import type { LucideProps } from 'lucide-react';
 import type { PageResourceType } from 'backend/types/common';
 
 export type SectionItem = {
-  id: string;
+  id: 'organizations' | 'workspaces' | 'projects';
   type: PageResourceType;
   label: string;
   createForm?: React.ReactNode;
@@ -95,16 +95,8 @@ export const SheetMenu = memo(() => {
 
       {!searchTerm && (
         <div className="max-xl:hidden my-4 flex items-center justify-center space-x-2">
-          <Checkbox
-            id="keepMenuOpen"
-            checked={keepMenuOpen}
-            onCheckedChange={toggleKeepMenu}
-            aria-label={t('common:keep_menu_open')}
-          />
-          <label
-            htmlFor="keepMenuOpen"
-            className="cursor-pointer select-none text-sm font-medium leading-none"
-          >
+          <Checkbox id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
+          <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
             {t('common:keep_menu_open')}
           </label>
         </div>

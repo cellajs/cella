@@ -14,7 +14,6 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
-import { dialog, isDialog as checkDialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import AvatarFormField from '../common/form-fields/avatar';
@@ -23,6 +22,7 @@ import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import DomainsFormField from '../common/form-fields/domains';
 import UnsavedBadge from '../common/unsaved-badge';
+import { sheet, isSheet as checkSheet } from '../common/sheeter/state';
 
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
@@ -30,7 +30,7 @@ const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-cou
 interface Props {
   organization: Organization;
   callback?: (organization: Organization) => void;
-  dialog?: boolean;
+  sheet?: boolean;
 }
 
 const formSchema = updateOrganizationJsonSchema;
@@ -48,7 +48,7 @@ export const useUpdateOrganizationMutation = (idOrSlug: string) => {
   });
 };
 
-const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Props) => {
+const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Props) => {
   const { t } = useTranslation();
   const { mutate, isPending } = useUpdateOrganizationMutation(organization.id);
 
@@ -77,9 +77,8 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   const onSubmit = (values: FormValues) => {
     mutate(values, {
       onSuccess: (data) => {
+        if (isSheet) sheet.remove('edit-organization');
         callback?.(data);
-        if (isDialog) dialog.remove(true, 'edit-organization');
-
         toast.success(t('common:success.update_organization'));
       },
     });
@@ -111,18 +110,18 @@ const UpdateOrganizationForm = ({ organization, callback, dialog: isDialog }: Pr
   //   }
   // }, [form.formState.isSubmitSuccessful]);
 
-  // Update dialog title with unsaved changes
+  // Update sheet title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
-      const targetDialog = dialog.get('edit-organization');
-      if (targetDialog && checkDialog(targetDialog)) {
-        dialog.update('edit-organization', {
-          title: <UnsavedBadge title={targetDialog?.title} />,
+      const targetSheet = sheet.get('edit-organization');
+      if (targetSheet && checkSheet(targetSheet)) {
+        sheet.update('edit-organization', {
+          title: <UnsavedBadge title={targetSheet?.title} />,
         });
       }
       return;
     }
-    dialog.reset('edit-organization');
+    sheet.reset('edit-organization');
   }, [form.unsavedChanges]);
 
   return (

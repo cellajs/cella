@@ -17,7 +17,7 @@ export const SheetMenuItem = ({ item, menuItemClick, className, searchResults }:
     <Link
       resetScroll={false}
       className={cn(
-        'group mb-1 sm:max-w-[18rem] flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground',
+        'group my-1 sm:max-w-[18rem] flex h-14 w-full cursor-pointer items-start justify-start space-x-2 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground',
         className,
       )}
       onClick={menuItemClick}

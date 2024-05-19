@@ -8,7 +8,7 @@ import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types';
 import { PageHeader } from '../common/page-header';
-import { useElectric, type ProjectWithLabels, type TaskWithLabels } from '../common/root/electric';
+import { type TaskWithTaskLabels, useElectric, type ProjectWithLabels, type TaskWithLabels } from '../common/root/electric';
 import { FocusViewContainer } from '../common/focus-view';
 
 interface WorkspaceContextValue {
@@ -61,9 +61,15 @@ const WorkspacePage = () => {
           in: projects.map((project) => project.id),
         },
       },
-      include: { task_labels: true },
+      include: {
+        task_labels: {
+          include: {
+            labels: true,
+          },
+        },
+      },
     }),
-  );
+  ) as { results: TaskWithTaskLabels[] };
 
   // const [projects, setProjects] = useState<Project[]>([]);
   // const [tasks, setTasks] = useState<Task[]>([]);
@@ -97,7 +103,20 @@ const WorkspacePage = () => {
   }, [workspace]);
 
   return (
-    <WorkspaceContext.Provider value={{ workspace, projects, tasks, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery }}>
+    <WorkspaceContext.Provider
+      value={{
+        workspace,
+        projects,
+        tasks: tasks.map((task) => ({
+          ...task,
+          labels: task.task_labels?.map((tl) => tl.labels || []).flatMap((labels) => labels) || [],
+        })),
+        selectedTasks,
+        setSelectedTasks,
+        searchQuery,
+        setSearchQuery,
+      }}
+    >
       {showPageHeader && (
         <PageHeader
           type="WORKSPACE"

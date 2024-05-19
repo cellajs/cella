@@ -9,10 +9,11 @@ import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useFormContext } from 'react-hook-form';
 import { faker } from '@faker-js/faker';
-import type { Label } from '../common/root/electric.ts';
+import { useElectric, type Label } from '../common/root/electric.ts';
 import { ProjectContext } from './board.tsx';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { CommandEmpty } from 'cmdk';
+import { TaskContext } from './board-column.tsx';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -33,9 +34,11 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
+  const { task, focusedTaskId } = useContext(TaskContext);
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
-  // const { db } = useElectric()!;
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const { db } = useElectric()!;
 
   const handleSelectClick = (value?: string) => {
     if (!value) return;
@@ -55,7 +58,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
     const newLabel: Label = {
       id: faker.string.uuid(),
       name: value,
-      color: null,
+      color: '#fff',
       project_id: projectId,
     };
     setSelectedLabels((prev) => [...prev, newLabel]);
@@ -63,7 +66,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
 
     // TODO: Implement the following
     // Save the new label to the database
-    // db.labels.create({ data: newLabel });
+    db.labels.create({ data: newLabel });
 
     //  changeLabels?.([...passedLabels, newLabel]);
   };
@@ -96,11 +99,18 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
   };
 
   // Open on key press
-  useHotkeys([['l', () => setOpenPopover(true)]]);
+  useHotkeys([
+    [
+      'l',
+      () => {
+        if (focusedTaskId === task.id) setOpenPopover(true);
+      },
+    ],
+  ]);
 
   // callback to change labels in task card
   useEffect(() => {
-    if (changeLabels && selectedLabels.length > 0) changeLabels(selectedLabels);
+    if (changeLabels && JSON.stringify(selectedLabels) !== JSON.stringify(viewValue)) changeLabels(selectedLabels);
   }, [selectedLabels]);
 
   // Whenever the form value changes (also on reset), update the internal state
@@ -189,7 +199,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId }: SetLabelsProps)
                       {t('common:no_labels')}
                     </CommandEmpty>
                   )}
-                  {mode === 'edit' ? renderLabels(selectedLabels) : renderLabels(project.labels || [])}
+                  {renderLabels(project.labels || [])}
                 </>
               )}
             </CommandGroup>

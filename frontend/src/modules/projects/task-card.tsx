@@ -1,9 +1,7 @@
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { type MouseEventHandler, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -11,7 +9,7 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { type TaskWithLabels, useElectric, type Task } from '../common/root/electric.ts';
+import { type TaskWithLabels, useElectric } from '../common/root/electric.ts';
 import { Checkbox } from '../ui/checkbox';
 import { WorkspaceContext } from '../workspaces';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
@@ -21,21 +19,22 @@ import { SelectTaskType } from './select-task-type.tsx';
 import './style.css';
 import { TaskEditor } from './task-editor.tsx';
 import SetLabels from './select-labels.tsx';
+import { TaskContext } from './board-column.tsx';
 
 interface TaskCardProps {
-  task: TaskWithLabels;
+  taskRef: React.RefObject<HTMLDivElement>;
+  taskDragButtonRef: React.RefObject<HTMLButtonElement>;
+  className?: string;
+  dragging?: boolean;
+  dragOver?: boolean;
 }
 
-export interface TaskDragData {
-  type: 'Task';
-  task: Task;
-}
-
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
 
+  const { task, focusedTaskId, setFocusedTask } = useContext(TaskContext);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -46,17 +45,47 @@ export function TaskCard({ task }: TaskCardProps) {
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof TaskWithLabels, value: any) => {
-    // TODO: Implement this
-    if (field === 'task_labels' && Array.isArray(value)) {
-      return;
-      // db.tasks.update({
-      //   where: { id: task.id },
-      //   data: {
-      //     task_labels: {
+    // TODO: Review this
+    if (field === 'labels' && Array.isArray(value)) {
+      const currentLabels = task.labels?.map((label) => label.id) || [];
+      const newLabels = value.map((label) => label.id);
 
-      //     },
-      //   },
-      // });
+      const labelsToRemove = currentLabels.filter((label) => !newLabels.includes(label));
+
+      const labelsToAdd = newLabels.filter((label) => !currentLabels.includes(label));
+
+      if (labelsToRemove.length > 0) {
+        db.task_labels.deleteMany({
+          where: {
+            task_id: task.id,
+            label_id: {
+              in: labelsToRemove,
+            },
+          },
+        });
+      }
+
+      for (const label of labelsToAdd) {
+        const labelData = value.find((l) => l.id === label);
+        db.labels
+          .upsert({
+            where: {
+              id: label,
+            },
+            create: labelData,
+            update: labelData,
+          })
+          .then((label) => {
+            db.task_labels.create({
+              data: {
+                task_id: task.id,
+                label_id: label.id,
+              },
+            });
+          });
+      }
+
+      return;
     }
 
     db.tasks.update({
@@ -67,22 +96,6 @@ export function TaskCard({ task }: TaskCardProps) {
         id: task.id,
       },
     });
-  };
-
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: task.id,
-    data: {
-      type: 'Task',
-      task,
-    } satisfies TaskDragData,
-    attributes: {
-      roleDescription: 'Task',
-    },
-  });
-
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
   };
 
   const variants = cva('task-card', {
@@ -106,38 +119,55 @@ export function TaskCard({ task }: TaskCardProps) {
   const toggleEditorState = () => {
     setIsEditing(!isEditing);
   };
+  
+  // Pressing ENTER on markdown when focused and expanded should set isEditing to true
+  const handleMarkdownClick: MouseEventHandler<HTMLDivElement> = (event) => {
+    if (!isExpanded) return;
+    if (document.activeElement === event.currentTarget) setIsEditing(true);
+  }
 
   useDoubleClick({
+    onSingleClick: () => setFocusedTask(task.id),
     onDoubleClick: () => {
       toggleEditorState();
       setIsExpanded(true);
+      setFocusedTask(task.id);
     },
-    ref: contentRef,
+    ref: taskRef,
     latency: 250,
   });
 
-  const handleEscKeyPress = useCallback(() => {
+  const handleEscKeyPress = () => {
+    if (focusedTaskId !== task.id) return;
     setIsExpanded(false);
-  }, []);
+  };
+  const handleEnterKeyPress = () => {
+    if (focusedTaskId !== task.id) return;
+    setIsExpanded(true);
+  };
 
-  useHotkeys([['Escape', handleEscKeyPress]]);
+  useHotkeys([
+    ['Escape', handleEscKeyPress],
+    ['Enter', handleEnterKeyPress],
+  ]);
 
   useEffect(() => {
-    if (!isDragging) return;
+    if (!dragging) return;
     setIsEditing(false);
     setIsExpanded(false);
-  }, [isDragging]);
+    setFocusedTask(task.id);
+  }, [dragging]);
 
   return (
     <Card
-      ref={setNodeRef}
-      style={style}
+      ref={taskRef}
       className={cn(
-        'group/task rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent via-transparent via-60% to-100%',
+        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent 
+        via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''}`,
         variants({
           status: task.status as TaskStatus,
         }),
-        isExpanded ? 'border-l border-l-primary/50' : 'border-l border-l-transparent',
+        className,
       )}
     >
       <CardContent id={`${task.id}-content`} className="p-2 space-between gap-1 flex flex-col relative">
@@ -177,7 +207,8 @@ export function TaskCard({ task }: TaskCardProps) {
               {!isEditing && (
                 <div className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
                   {/* biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation> */}
-                  <div ref={contentRef} tabIndex={0} className="flex">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                  <div ref={contentRef} tabIndex={0} onClick={handleMarkdownClick} className="flex ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
                     <MDEditor.Markdown
                       source={isExpanded ? task.markdown || '' : task.summary}
                       style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
@@ -217,9 +248,8 @@ export function TaskCard({ task }: TaskCardProps) {
 
           <div className="max-sm:-ml-1 flex items-center justify-between gap-1">
             <Button
+              ref={taskDragButtonRef}
               variant={'ghost'}
-              {...attributes}
-              {...listeners}
               className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35"
             >
               <span className="sr-only"> {t('common:move_task')}</span>
@@ -232,8 +262,8 @@ export function TaskCard({ task }: TaskCardProps) {
 
             <SetLabels
               projectId={task.project_id}
-              changeLabels={(newLabels) => handleChange('task_labels', newLabels)}
-              viewValue={task.task_labels}
+              changeLabels={(newLabels) => handleChange('labels', newLabels)}
+              viewValue={task.labels}
               mode="edit"
             />
             <div className="grow h-0" />

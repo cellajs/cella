@@ -13,9 +13,7 @@ import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
 import { TooltipButton } from '../tooltip-button';
-import { closestCorners, DndContext, type DragEndEvent, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { coordinateGetter } from '~/modules/projects/keyboard-preset';
+import { makeTransition } from '~/lib/utils';
 
 interface MenuSectionProps {
   key: string;
@@ -32,6 +30,7 @@ const sortById = (a: MenuItem, b: MenuItem, order: string[]) => {
   if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
   return indexA - indexB;
 };
+
 export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuItemClick }) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
@@ -47,29 +46,6 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
   );
 
   const archived = data.items.filter((item) => item.archived);
-
-  const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: coordinateGetter,
-    }),
-  );
-
-  const onDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    if (active.id === over.id) return;
-
-    const startIndex = unarchive.findIndex((el) => el.id === active.id);
-    const endIndex = unarchive.findIndex((el) => el.id === over.id);
-
-    const newItemOrder = arrayMove(unarchive, startIndex, endIndex);
-    const itemsIds = newItemOrder.map((el) => el.id);
-
-    setActiveItemsOrder(section.id as keyof UserMenu, itemsIds);
-    setUnarchive(newItemOrder);
-  };
 
   const createDialog = () => {
     dialog(section.createForm, {
@@ -122,57 +98,69 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         </li>
       );
     }
-    if (list[0].archived) return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} />);
+    if (list[0].archived) return list.map((item: Page) => <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />);
     return (
-      <SortableContext items={list} strategy={verticalListSortingStrategy}>
+      <>
         {list.map((item: Page) => (
-          <SheetMenuItemOptions key={item.id} item={item} />
+          <SheetMenuItemOptions key={item.id} item={item} sectionName={section.id} />
         ))}
-      </SortableContext>
+      </>
     );
   };
 
   useEffect(() => {
-    setUnarchive(data.items.filter((item) => !item.archived).sort((a, b) => sortById(a, b, activeItemsOrder[section.id as keyof UserMenu])));
-  }, [data]);
+    const sectionItems = activeItemsOrder[section.id];
+    const unarchive = data.items
+      .filter((item) => !item.archived)
+      .map((item) => {
+        if (!sectionItems.includes(item.id)) setActiveItemsOrder(section.id, [...sectionItems, item.id]);
+        return item;
+      });
+    setUnarchive(unarchive.sort((a, b) => sortById(a, b, activeItemsOrder[section.id])));
+  }, [data, activeItemsOrder]);
 
-  useEffect(() => {
-    if (!sectionRef.current) return;
+  // Helper function to set or remove 'tabindex' attribute
+  const updateTabIndex = (ref: React.RefObject<HTMLElement>, isVisible: boolean) => {
+    if (!ref.current) return;
 
-    const elements = sectionRef.current.querySelectorAll('*');
-    for (const el of elements) {
-      if (el instanceof HTMLElement) {
-        if (!isSectionVisible) {
-          el.setAttribute('tabindex', '-1');
-        } else {
-          el.removeAttribute('tabindex');
-        }
+    const elements = ref.current.querySelectorAll<HTMLElement>('*');
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      if (isVisible) {
+        el.removeAttribute('tabindex');
+      } else {
+        el.setAttribute('tabindex', '-1');
       }
     }
+  };
+  
+  useEffect(() => {
+    updateTabIndex(sectionRef, isSectionVisible);
   }, [sectionRef, isSectionVisible]);
 
   useEffect(() => {
-    if (!archivedRef.current) return;
-
-    const elements = archivedRef.current.querySelectorAll('*');
-    for (const el of elements) {
-      if (el instanceof HTMLElement) {
-        if (!isArchivedVisible) {
-          el.setAttribute('tabindex', '-1');
-        } else {
-          el.removeAttribute('tabindex');
-        }
-      }
-    }
+    updateTabIndex(archivedRef, isArchivedVisible);
   }, [archivedRef, isArchivedVisible]);
 
   return (
     <>
       <Sticky scrollElement="#nav-sheet-viewport" stickyClassName="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
-          <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary">
+          <Button
+            style={{
+              viewTransitionName: `section-${section.id}`,
+            }}
+            onClick={() => makeTransition(() => toggleSection(section.id))}
+            className="w-full justify-between transition-transform"
+            variant="secondary"
+          >
             <div className="flex items-center">
-              <span className="flex items-center">
+              <span
+                style={{
+                  viewTransitionName: `section-text-${section.id}`,
+                }}
+                className="flex items-center"
+              >
                 {section.icon && <section.icon className="mr-2 w-5 h-5" />}
                 {t(section.label)}
               </span>
@@ -185,7 +173,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
             <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
               <Button
                 disabled={!archived.length && !unarchive.length}
-                className="w-12 transition duration-300 px-3 ease-in-out }"
+                className={`w-12 px-3 duration-300 ${isSectionVisible ? 'animate-in fade-in slide-in-from-right' : ''}`}
                 variant="secondary"
                 size="icon"
                 onClick={() => toggleOptionsView(!optionsView)}
@@ -197,7 +185,12 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
 
           {isSectionVisible && data.canCreate && section.createForm && (
             <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
-              <Button className="w-12 transition duration-300 px-3 ease-in-out }" variant="secondary" size="icon" onClick={createDialog}>
+              <Button
+                className={`w-12 px-3 duration-300 ${isSectionVisible ? 'animate-in fade-in slide-in-from-right' : ''}`}
+                variant="secondary"
+                size="icon"
+                onClick={createDialog}
+              >
                 <Plus size={16} />
               </Button>
             </TooltipButton>
@@ -209,22 +202,20 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}
       >
         <ul className="overflow-hidden">
-          <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
-            {optionsView ? renderOptions(unarchive) : renderItems(unarchive, data.canCreate, false)}
-            {!!(unarchive.length || archived.length) && (
-              <>
-                <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archived.length} isArchivedVisible={isArchivedVisible} />
-                <div
-                  ref={archivedRef}
-                  className={`grid transition-[grid-template-rows] ${
-                    isArchivedVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                  } ease-in-out duration-300`}
-                >
-                  <ul className="overflow-hidden">{optionsView ? renderOptions(archived) : renderItems(archived, data.canCreate, true)}</ul>
-                </div>
-              </>
-            )}
-          </DndContext>
+          {optionsView ? renderOptions(unarchive) : renderItems(unarchive, data.canCreate, false)}
+          {!!(unarchive.length || archived.length) && (
+            <>
+              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={archived.length} isArchivedVisible={isArchivedVisible} />
+              <div
+                ref={archivedRef}
+                className={`grid transition-[grid-template-rows] ${
+                  isArchivedVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                } ease-in-out duration-300`}
+              >
+                <ul className="overflow-hidden">{optionsView ? renderOptions(archived) : renderItems(archived, data.canCreate, true)}</ul>
+              </div>
+            </>
+          )}
         </ul>
       </div>
     </>
