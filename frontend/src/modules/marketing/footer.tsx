@@ -60,10 +60,9 @@ function FooterLinks({ as = 'tanstack-link' }: FooterLink) {
 
             <ul className="mt-4 text-sm text-white/90">
               {section.links.map((link) => {
-                const target = link.href.startsWith('http') ? '_blank' : '_self';
                 return (
                   <li key={link.title} className="mt-4">
-                    <Link to={link.href} target={target} as={as} className="underline-offset-4 transition hover:underline">
+                    <Link to={link.href} target={''} as={as} className="underline-offset-4 transition hover:underline">
                       {t(link.title)}
                     </Link>
                   </li>

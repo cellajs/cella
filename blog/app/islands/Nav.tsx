@@ -1,5 +1,5 @@
 import MarketingPage from 'frontend/src/modules/marketing/page';
-import { FC, PropsWithChildren } from 'react';
+import type { FC, PropsWithChildren } from 'react';
 
 type Props = PropsWithChildren;
 

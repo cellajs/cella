@@ -14,10 +14,6 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './app'),
         '~': path.resolve(__dirname, '../frontend/src'),
-        stream: 'stream-browserify',
-        http: 'stream-http',
-        https: 'https-browserify',
-        zlib: 'browserify-zlib',
       },
     },
   };
@@ -40,30 +36,8 @@ export default defineConfig(({ mode }) => {
   }
   return {
     ...common,
-
     build: {
       emptyOutDir: false,
-    },
-    ssr: {
-      external: [
-        'react',
-        'react-dom',
-        'void-elements',
-        'html-parse-stringify',
-        'react-i18next',
-        'use-sync-external-store',
-        'stream-browserify',
-        'http-browserify',
-        'url',
-        'punycode',
-        'https-browserify',
-        'zlib-browserify',
-        'html-parse-stringify',
-        'stream',
-        'http',
-        'https',
-        'zlib',
-      ],
     },
     plugins: [
       honox(),

@@ -5,19 +5,7 @@
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
   "description": "Intuivive TypeScript template to build local-first web apps. Implementation-ready. MIT licensed.",
-  "keywords": [
-    "template",
-    "monorepo",
-    "fullstack",
-    "typescript",
-    "hono",
-    "drizzle",
-    "shadcn",
-    "postgres",
-    "react",
-    "vite",
-    "PWA"
-  ],
+  "keywords": ["template", "monorepo", "fullstack", "typescript", "hono", "drizzle", "shadcn", "postgres", "react", "vite", "PWA"],
   "author": "CellaJS <info@cellajs.com>",
   "homepage": "https://cellajs.com",
   "type": "module",
@@ -69,8 +57,6 @@
     "zod": "^3.23.6"
   },
   "msw": {
-    "workerDirectory": [
-      "./frontend/public"
-    ]
+    "workerDirectory": ["./frontend/public"]
   }
 }
