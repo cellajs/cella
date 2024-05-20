@@ -10,10 +10,10 @@ import { useUserStore } from '~/store/user';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
-  const { menu, setSheet } = useNavigationStore();
+  const { menu, setSheet, setSection } = useNavigationStore();
   const [isExploding, _] = useState(true);
   const state = useUserStore();
-
+  
   useEffect(() => {
     const sortedOrganizations = [...menu.organizations.items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const lastCreatedOrganization = sortedOrganizations[0];
@@ -33,6 +33,8 @@ export const OnboardingCompleted = () => {
         }
       });
     }
+    setSection('organizations', true)
+    setSection('workspaces', true)
     setTimeout(
       () => {
         setSheet({ id: 'menu', sheet: <SheetMenu />, icon: Menu });

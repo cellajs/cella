@@ -18,6 +18,7 @@ interface NavigationState {
   toggleKeepMenu: (status: boolean) => void;
   activeSections: Record<string, boolean>;
   toggleSection: (section: string) => void;
+  setSection: (section: string, sectionState: boolean) => void;
   navLoading: boolean;
   setLoading: (status: boolean) => void;
   focusView: boolean;
@@ -76,6 +77,11 @@ export const useNavigationStore = create<NavigationState>()(
           toggleSection: (section) => {
             set((state) => {
               state.activeSections[section] = !state.activeSections[section];
+            });
+          },
+          setSection: (section, sectionState) => {
+            set((state) => {
+              state.activeSections[section] = sectionState;
             });
           },
           archiveStateToggle: (itemId: string, active: boolean) => {
