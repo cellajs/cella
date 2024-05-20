@@ -8,7 +8,7 @@ import { SignInRoute } from '~/routes/authentication';
 import { useThemeStore } from '~/store/theme';
 import type { Step } from '.';
 
-const oauthOptions = [
+const oauthProviders = [
   {
     name: 'Github',
     url: githubSignInUrl,
@@ -64,8 +64,8 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
       </div>
 
       <div className="flex flex-col space-y-2">
-        {oauthOptions.map((option) => {
-          if (!config.oauthOptions.includes(option.name)) return null;
+        {oauthProviders.map((option) => {
+          if (!config.oauthProviders.includes(option.name)) return null;
 
           return (
             <Button

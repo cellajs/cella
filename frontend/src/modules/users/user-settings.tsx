@@ -38,7 +38,7 @@ const tabs = [
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 
-const oauthOptions = [
+const oauthProviders = [
   {
     name: 'Github',
     url: githubSignInUrl,
@@ -207,8 +207,8 @@ const UserSettings = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col space-y-2">
-                {oauthOptions.map((option) => {
-                  if (!config.oauthOptions.includes(option.name)) return null;
+                {oauthProviders.map((option) => {
+                  if (!config.oauthProviders.includes(option.name)) return null;
 
                   return (
                     <Button

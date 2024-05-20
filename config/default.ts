@@ -63,7 +63,7 @@ export const config = {
   },
 
   // Enabled OAuth providers
-  oauthOptions: ['Github'],
+  oauthProviders: ['Github'],
 
   // Optional settings
 
