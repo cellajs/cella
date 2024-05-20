@@ -81,17 +81,6 @@
   #root {
     @apply flex flex-col h-full;
   }
-
-  ::view-transition-group(root),
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
-  }
-
-  ::view-transition-group(*) {
-    animation-duration: 200ms;
-    animation-timing-function: ease-out;
-  }
 }
 
 @layer components {
@@ -153,22 +142,6 @@
 
   .rich-gradient.dark-gradient:before {
     background-image: radial-gradient(circle 120vh at 40% 120%, rgba(59, 17, 37, 0.6), rgba(255, 255, 255, 0));
-  }
-
-  ::view-transition-old(section-organizations),
-  ::view-transition-old(section-workspaces) {
-    display: none
-  }
-
-  ::view-transition-new(section-organizations),
-  ::view-transition-new(section-workspaces) {
-    height: 100%;
-    animation: none;
-  }
-
-  ::view-transition-old(table-filter-bar-button),
-  ::view-transition-new(table-filter-bar-button) {
-    height: 100%;
   }
 }
 

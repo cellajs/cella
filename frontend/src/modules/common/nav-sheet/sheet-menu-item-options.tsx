@@ -13,6 +13,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { DraggableItemData, Page } from '~/types';
 import { DropIndicator } from '../drop-indicator';
+import { motion } from 'framer-motion';
 
 interface SheetMenuItemProps {
   item: Page;
@@ -145,7 +146,8 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
 
   return (
     <div className="relative my-1" ref={dragRef}>
-      <div
+      <motion.div
+        layoutId={`sheet-menu-item-${item.id}`}
         ref={dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
         className={`group flex relative items-center sm:max-w-[18rem] h-14 w-full cursor-pointer justify-start rounded p-0 focus:outline-none
@@ -201,7 +203,7 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
             <GripVertical size={16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
           </Button>
         )}
-      </div>
+      </motion.div>
       {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} gap="2px" />}
     </div>
   );

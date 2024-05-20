@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
-import { makeTransition } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { Page, UserMenu } from '~/types';
@@ -14,6 +13,7 @@ import { MenuArchiveToggle } from './menu-archive-toggle';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
+import { motion } from 'framer-motion';
 
 interface MenuSectionProps {
   key: string;
@@ -162,52 +162,53 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     <>
       <StickyBox className="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
-          <Button
-            style={{
-              viewTransitionName: `section-${section.id}`,
-            }}
-            onClick={() => makeTransition(() => toggleSection(section.id))}
-            className="w-full justify-between transition-transform"
-            variant="secondary"
-          >
-            <div className="flex items-center">
-              <span
-                style={{
-                  viewTransitionName: `section-text-${section.id}`,
-                }}
-                className="flex items-center"
-              >
-                {section.icon && <section.icon className="mr-2 w-5 h-5" />}
-                {t(section.label)}
-              </span>
-              {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{unarchive.length}</span>}
-            </div>
+          <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary" asChild>
+            <motion.button layout transition={{ bounce: 0 }}>
+              <div className="flex items-center">
+                <span className="flex items-center">
+                  {section.icon && <section.icon className="mr-2 w-5 h-5" />}
+                  {t(section.label)}
+                </span>
+                {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{unarchive.length}</span>}
+              </div>
 
-            <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
+              <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
+            </motion.button>
           </Button>
           {!!isSectionVisible && (
             <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
               <Button
                 disabled={!archived.length && !unarchive.length}
-                className={`w-12 px-3 duration-300 ${isSectionVisible ? 'animate-in fade-in slide-in-from-right' : ''}`}
+                className="w-12 px-3"
                 variant="secondary"
                 size="icon"
                 onClick={() => toggleOptionsView(!optionsView)}
+                asChild
               >
-                <Settings2 size={16} />
+                <motion.button
+                  key={`sheet-menu-settings-${section.id}`}
+                  transition={{ bounce: 0 }}
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: 20, opacity: 0 }}
+                >
+                  <Settings2 size={16} />
+                </motion.button>
               </Button>
             </TooltipButton>
           )}
-
           {isSectionVisible && data.canCreate && section.createForm && (
             <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
-              <Button
-                className={`w-12 px-3 duration-300 ${isSectionVisible ? 'animate-in fade-in slide-in-from-right' : ''}`}
-                variant="secondary"
-                size="icon"
-                onClick={createDialog}
-              >
-                <Plus size={16} />
+              <Button className="w-12 px-3" variant="secondary" size="icon" onClick={createDialog} asChild>
+                <motion.button
+                  key={`sheet-menu-plus-${section.id}`}
+                  transition={{ bounce: 0 }}
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: 20, opacity: 0 }}
+                >
+                  <Plus size={16} />
+                </motion.button>
               </Button>
             </TooltipButton>
           )}
