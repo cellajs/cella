@@ -39,7 +39,7 @@ const Accept = () => {
     onSuccess: () => {
       toast.success(t('common:invitation_accepted'));
       navigate({
-        to: '/home',
+        to: '/welcome',
       });
     },
     onError: (error) => {

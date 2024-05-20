@@ -8,6 +8,7 @@ export const config = {
   electricUrl: 'http://localhost:5133',
 
   defaultRedirectPath: '/home',
+  firstSignInRedirectPath: '/welcome',
 
   aboutUrl: '/about',
   statusUrl: 'https://status.cellajs.com',
