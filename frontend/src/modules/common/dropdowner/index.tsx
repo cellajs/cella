@@ -41,9 +41,6 @@ export function DropDowner() {
     if (!isMobile || !dropDown.drawerOnMobile) {
       return (
         <DropdownMenu key={dropDown.id} modal={!dropDown.container}>
-          {dropDown.container && (
-            <div className="fixed inset-0 z-30 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          )}
           <DropdownMenuTrigger>{dropDown.trigger}</DropdownMenuTrigger>
           <DropdownMenuContent autoFocus={dropDown.autoFocus} className={dropDown.className}>
             {dropDown.content}

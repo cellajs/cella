@@ -67,42 +67,46 @@ const WorkspacePage = () => {
   const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id));
   const projects = projectsQuery.data.items;
 
+  const tasksQuery = useLiveQuery(
+    Electric.db.tasks.liveMany({
+      where: {
+        project_id: {
+          in: projects.map((project) => project.id),
+        },
+      },
+      include: {
+        task_labels: {
+          include: {
+            labels: true,
+          },
+        },
+      },
+    }),
+  );
+
+  const labelsQuery = useLiveQuery(
+    Electric.db.labels.liveMany({
+      where: {
+        project_id: {
+          in: projects.map((p) => p.id),
+        },
+      },
+    }),
+  );
+
   useEffect(() => {
     if (!Electric) {
       toast.error(t('common:no_local_db'));
       return;
     }
 
-    const { results: tasks = [] } = useLiveQuery(
-      Electric.db.tasks.liveMany({
-        where: {
-          project_id: {
-            in: projects.map((project) => project.id),
-          },
-        },
-        include: {
-          task_labels: {
-            include: {
-              labels: true,
-            },
-          },
-        },
-      }),
-    ) as { results: TaskWithTaskLabels[] };
-
-    const { results: labels = [] } = useLiveQuery(
-      Electric.db.labels.liveMany({
-        where: {
-          project_id: {
-            in: projects.map((p) => p.id),
-          },
-        },
-      }),
-    );
-
-    setTasks(tasks);
-    setLabels(labels);
-  }, []);
+    if (tasksQuery.results) {
+      setTasks(tasksQuery.results);
+    }
+    if (labelsQuery.results) {
+      setLabels(labelsQuery.results);
+    }
+  }, [tasksQuery.results, labelsQuery.results, projects]);
 
   useEffect(() => {
     setSearchQuery('');
