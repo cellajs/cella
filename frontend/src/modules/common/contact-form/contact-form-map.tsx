@@ -1,71 +1,55 @@
 import { config } from 'config';
-import L from 'leaflet';
-import { useEffect, useRef } from 'react';
+// import L from 'leaflet';
+// import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
+import { useState } from 'react';
+import Logo from '/static/logo/logo-icon-only.svg';
 import { useTranslation } from 'react-i18next';
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import '~/modules/common/contact-form/leaflet.css';
+import { AdvancedMarker, APIProvider, InfoWindow, Map as GMap, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 
-// Define the prop types for CustomMarker
-interface CustomMarkerProps {
-  isActive: boolean;
-  map: L.Map | null;
-  positionArray: L.LatLngExpression;
-}
-
-const greenIcon = L.icon({
-  iconUrl: '/static/logo/logo-icon-only.svg',
-  iconSize: [30, 30], // size of the icon
-  iconAnchor: [15, 15], // point of the icon which will correspond to marker's location
-  popupAnchor: [0, 0], // point from which the popup should open relative to the iconAnchor
-});
-
-// Updated CustomMarker to use hardcoded config
-const CustomMarker = ({ isActive, map, positionArray }: CustomMarkerProps) => {
+export const MarkerWithInfowindow = ({ position }: { position: { lat: number; lng: number } }) => {
   const { t } = useTranslation();
-  const popupRef = useRef<L.Popup | null>(null);
-
-  useEffect(() => {
-    if (isActive && map && popupRef.current) {
-      popupRef.current.openOn(map);
-    }
-  }, [isActive, map]);
+  const [markerRef, marker] = useAdvancedMarkerRef();
+  const [infowindowOpen, setInfowindowOpen] = useState(true);
 
   return (
-    <Marker position={positionArray} icon={greenIcon}>
-      <Popup
-        className="text-sm"
-        ref={(r) => {
-          if (r) popupRef.current = r;
-        }}
+    <>
+      <AdvancedMarker
+        ref={markerRef}
+        onClick={() => setInfowindowOpen(true)}
+        position={position}
+        title={'Marker that opens an Infowindow when clicked.'}
       >
-        <strong className="block">{config.company.name}</strong>
-        <span className="block">{config.company.streetAddress}</span>
-        <span className="block">{config.company.country}</span>
-        <a href={config.company.googleMapsUrl} target="_blank" className="text-primary" rel="noreferrer">
-          {t('common:get_directions')}
-        </a>
-      </Popup>
-    </Marker>
+        <img src={Logo} width="30" height="30" alt="Cella" />
+      </AdvancedMarker>
+
+      {infowindowOpen && (
+        <InfoWindow anchor={marker} onCloseClick={() => setInfowindowOpen(false)}>
+          <div className="text-xs text-slate-800">
+            <strong className="block">{config.company.name}</strong>
+            <span className="block">{config.company.streetAddress}</span>
+            <span className="block">{config.company.country}</span>
+            <a href={config.company.googleMapsUrl} target="_blank" className="text-primary" rel="noreferrer">
+              {t('common:get_directions')}
+            </a>
+          </div>
+        </InfoWindow>
+      )}
+    </>
   );
 };
 
 const ContactFormMap = () => {
-  const positionArray = [config.company.coordinates.lat, config.company.coordinates.lon] as L.LatLngExpression;
-  const mapRef = useRef<L.Map>(null);
-  const mapContainerClass = 'w-full h-full md:pb-12 md:px-4 overflow-hidden';
-
-  if (positionArray)
+  const position = { lat: config.company.coordinates.lat, lng: config.company.coordinates.lon };
+  if (position)
     return (
-      <div className={mapContainerClass}>
-        <MapContainer center={positionArray} zoom={config.company.mapZoom} scrollWheelZoom={false} className="h-full w-full" ref={mapRef}>
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution={'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}
-          />
-          <CustomMarker map={mapRef.current} isActive positionArray={positionArray} />
-        </MapContainer>
+      <div className="w-full h-full md:pb-12 md:px-4 overflow-hidden">
+        <APIProvider apiKey={'AIzaSyAl84y68d7u6lVO5LZvR6ThQd6iMYKNXys'} libraries={['marker']}>
+          <GMap mapId={'bf51a910020fa25a'} gestureHandling={'greedy'} disableDefaultUI defaultCenter={position} defaultZoom={5}>
+            <MarkerWithInfowindow position={position} />
+          </GMap>
+        </APIProvider>
       </div>
     );
 };
-
 export default ContactFormMap;

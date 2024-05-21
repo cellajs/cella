@@ -68,10 +68,8 @@ const WorkspacePage = () => {
           in: projects.map((project) => project.id),
         },
       },
-    })
+    }),
   ) as { results: TaskWithTaskLabels[] };
-
-  console.log(tasks);
 
   const { results: labels = [] } = useLiveQuery(
     Electric.db.labels.liveMany({
