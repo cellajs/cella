@@ -12,7 +12,7 @@ import { IndexRoute } from './routeTree';
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
 const UsersTable = lazy(() => import('~/modules/users/users-table'));
-const RequestsTable = lazy(() => import('~/modules/requests/requests-table'));
+const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
 
 const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });

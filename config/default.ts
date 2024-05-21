@@ -120,7 +120,7 @@ export const config = {
     mapZoom: 3,
     coordinates: {
       lat: 51.92760809717153,
-      lon: 4.47421039909924,
+      lng: 4.47421039909924,
     },
   },
 };

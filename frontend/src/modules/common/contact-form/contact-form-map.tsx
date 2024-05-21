@@ -2,7 +2,6 @@ import { config } from 'config';
 import { useState } from 'react';
 import Logo from '/static/logo/logo-icon-only.svg';
 import { useTranslation } from 'react-i18next';
-import '~/modules/common/contact-form/leaflet.css';
 import { AdvancedMarker, APIProvider, InfoWindow, Map as GMap, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { useThemeStore } from '~/store/theme';
 
@@ -11,7 +10,6 @@ type MapConfig = {
   label: string;
   mapId?: string;
   mapTypeId?: string;
-  styles?: google.maps.MapTypeStyle[];
 };
 
 const mapStyles: MapConfig[] = [
@@ -40,9 +38,9 @@ export const MarkerWithInfowindow = ({ position }: { position: { lat: number; ln
         ref={markerRef}
         onClick={() => setInfowindowOpen(true)}
         position={position}
-        title={'Marker that opens an Infowindow when clicked.'}
+        title="More info"
       >
-        <img src={Logo} width="30" height="30" alt="Cella" />
+        <img src={Logo} width="30" height="30" alt={config.name} />
       </AdvancedMarker>
 
       {infowindowOpen && (
@@ -64,21 +62,20 @@ export const MarkerWithInfowindow = ({ position }: { position: { lat: number; ln
 const ContactFormMap = () => {
   const { mode } = useThemeStore();
   const [mapConfig] = useState<MapConfig>(mode === 'dark' ? mapStyles[1] : mapStyles[0]);
-  const position = { lat: config.company.coordinates.lat, lng: config.company.coordinates.lon };
-  if (position && config.googleMapsKey)
+
+  if (config.company.coordinates && config.googleMapsKey)
     return (
       <div className="w-full h-full md:pb-12 md:px-4 overflow-hidden">
         <APIProvider apiKey={config.googleMapsKey} libraries={['marker']}>
           <GMap
             mapId={mapConfig.mapId || null}
             mapTypeId={mapConfig.mapTypeId}
-            styles={mapConfig.styles}
             gestureHandling={'greedy'}
             disableDefaultUI
-            defaultCenter={position}
+            defaultCenter={config.company.coordinates}
             defaultZoom={config.company.mapZoom}
           >
-            <MarkerWithInfowindow position={position} />
+            <MarkerWithInfowindow position={config.company.coordinates} />
           </GMap>
         </APIProvider>
       </div>

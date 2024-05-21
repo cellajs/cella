@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
+import { Mailbox, Trash, XSquare } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -13,7 +13,6 @@ import { sheet } from '~/modules/common/sheeter/state';
 import NewsletterForm from '~/modules/system/newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
 import type { Requests } from '~/types';
 import type { RequestsSearch } from '.';
 import { actionRequests } from '~/api/general';
@@ -46,7 +45,6 @@ function Toolbar({
   order,
 }: Props) {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
 
   const openDeleteDialog = () => {
     console.log('decline requests');
@@ -66,7 +64,7 @@ function Toolbar({
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
-            {selectedRequests.length > 0 ? (
+            {selectedRequests.length > 0 && (
               <>
                 <Button onClick={openNewsletterSheet} className="relative">
                   <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedRequests.length}</Badge>
@@ -83,14 +81,6 @@ function Toolbar({
                   <span className="ml-1">{t('common:clear')}</span>
                 </Button>
               </>
-            ) : (
-              !isFiltered &&
-              user.role === 'ADMIN' && (
-                <Button>
-                  <Plus size={16} />
-                  <span className="ml-1">Do something</span>
-                </Button>
-              )
             )}
             {selectedRequests.length === 0 && <TableCount count={total} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
