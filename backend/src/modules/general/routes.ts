@@ -6,9 +6,10 @@ import { anyTenantGuard, authGuard, publicGuard, systemGuard } from '../../middl
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteJsonSchema,
-  actionReqTableSchema,
   actionRequestSchema,
   actionResponseSchema,
+  getRequestsQuerySchema,
+  getRequestsSchema,
   inviteJsonSchema,
   inviteQuerySchema,
   suggestionsSchema,
@@ -269,16 +270,14 @@ export const actionRequestsConfig = createRouteConfig({
   tags: ['general'],
   summary: 'Get requests',
   request: {
-    query: z.object({
-      type: actionReqTableSchema.shape.type,
-    }),
+    query: getRequestsQuerySchema,
   },
   responses: {
     200: {
       description: 'Access requests',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(actionResponseSchema),
+          schema: successResponseWithDataSchema(getRequestsSchema),
         },
       },
     },
