@@ -112,6 +112,7 @@
     "electric-sql": "^0.11.3",
     "embla-carousel-autoplay": "^8.0.4",
     "embla-carousel-react": "^8.0.4",
+    "framer-motion": "^11.2.4",
     "gleap": "^13.6.4",
     "hono": "4.2.6",
     "i18next": "^23.11.3",
@@ -182,7 +183,11 @@
     "vite-plugin-static-copy": "^1.0.4",
     "workbox-window": "^7.1.0"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},

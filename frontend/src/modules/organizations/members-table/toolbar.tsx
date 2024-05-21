@@ -19,6 +19,7 @@ import { useUserStore } from '~/store/user';
 import type { Member } from '~/types';
 import type { MembersSearch } from '.';
 import RemoveMembersForm from './remove-member-form';
+import { motion } from 'framer-motion';
 
 interface Props {
   selectedMembers: Member[];
@@ -114,24 +115,44 @@ function Toolbar({
           <FilterBarActions>
             {selectedMembers.length > 0 ? (
               <>
-                <Button variant="destructive" onClick={openRemoveDialog} className="relative ">
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2 animate-in zoom-in">
-                    {selectedMembers.length}
-                  </Badge>
-                  <Trash size={16} />
-                  <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+                <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative ">
+                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
+                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2 animate-in zoom-in">
+                      {selectedMembers.length}
+                    </Badge>
+                    <motion.span layoutId="members-filter-bar-icon">
+                      <Trash size={16} />
+                    </motion.span>
+
+                    <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+                  </motion.button>
                 </Button>
-                <Button variant="ghost" onClick={onResetSelectedRows} className="animate-in fade-in slide-in-from-left-1/2">
-                  <XSquare size={16} />
-                  <span className="ml-1">{t('common:clear')}</span>
+
+                <Button asChild variant="ghost" onClick={onResetSelectedRows}>
+                  <motion.button
+                    transition={{
+                      bounce: 0,
+                      duration: 0.2,
+                    }}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -20, opacity: 0 }}
+                  >
+                    <XSquare size={16} />
+                    <span className="ml-1">{t('common:clear')}</span>{' '}
+                  </motion.button>
                 </Button>
               </>
             ) : (
               !isFiltered &&
               (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
-                <Button onClick={openInviteDialog}>
-                  <Mail size={16} />
-                  <span className="ml-1">{t('common:invite')}</span>
+                <Button asChild onClick={openInviteDialog}>
+                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
+                    <motion.span layoutId="members-filter-bar-icon">
+                      <Mail size={16} />
+                    </motion.span>
+                    <span className="ml-1">{t('common:invite')}</span>
+                  </motion.button>
                 </Button>
               )
             )}
@@ -140,7 +161,7 @@ function Toolbar({
 
           <div className="sm:grow" />
 
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in">
+          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
             <TableSearch value={query} setQuery={setQuery} />
             <SelectRole roles={selectRoleOptions} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>

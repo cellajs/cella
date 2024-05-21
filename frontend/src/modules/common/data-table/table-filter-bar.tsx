@@ -3,7 +3,8 @@ import { createContext, useContext, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 
 import { useTranslation } from 'react-i18next';
-import { cn, makeTransition } from '~/lib/utils';
+import { cn } from '~/lib/utils';
+import { motion } from 'framer-motion';
 
 interface TableFilterBarProps {
   children: React.ReactNode;
@@ -44,11 +45,7 @@ export const FilterBarContent = ({ children, className = '' }: FilterBarChildPro
 export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFilterBarProps) => {
   const { t } = useTranslation();
 
-  const [isFilterActive, setFilterActiveWithoutTransition] = useState<boolean>(!!isFiltered);
-
-  const setFilterActive = (active: boolean) => {
-    makeTransition(() => setFilterActiveWithoutTransition(active));
-  };
+  const [isFilterActive, setFilterActive] = useState<boolean>(!!isFiltered);
 
   const clearFilters = () => {
     if (isFiltered) return onResetFilters();
@@ -59,22 +56,13 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
     <>
       <TableFilterBarContext.Provider value={{ isFilterActive, setFilterActive }}>{children}</TableFilterBarContext.Provider>
       {!isFilterActive && (
-        <Button
-          style={{
-            viewTransitionName: 'table-filter-bar-button',
-          }}
-          className="sm:hidden"
-          variant="secondary"
-          onClick={() => setFilterActive(true)}
-        >
-          <Filter
-            style={{
-              viewTransitionName: 'table-filter-bar-icon',
-            }}
-            width={16}
-            height={16}
-          />
-          <span className="ml-1">{t('common:filter')}</span>
+        <Button className="sm:hidden" variant="secondary" onClick={() => setFilterActive(true)} asChild>
+          <motion.button layoutId="table-filter-bar-button">
+            <motion.span layoutId="table-filter-bar-icon">
+              <Filter width={16} height={16} />
+            </motion.span>
+            <span className="ml-1">{t('common:filter')}</span>
+          </motion.button>
         </Button>
       )}
       {isFilterActive && (
@@ -85,22 +73,22 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
           className="sm:hidden"
           variant="secondary"
           onClick={clearFilters}
+          asChild
         >
-          {isFiltered ? (
-            <FilterX
-              style={{
-                viewTransitionName: 'table-filter-bar-icon',
-              }}
-              size={16}
-            />
-          ) : (
-            <X
-              size={16}
-              style={{
-                viewTransitionName: 'table-filter-bar-icon',
-              }}
-            />
-          )}
+          <motion.button layoutId="table-filter-bar-button">
+            <motion.span layoutId="table-filter-bar-icon">
+              {isFiltered ? (
+                <FilterX size={16} />
+              ) : (
+                <X
+                  size={16}
+                  style={{
+                    viewTransitionName: 'table-filter-bar-icon',
+                  }}
+                />
+              )}
+            </motion.span>
+          </motion.button>
         </Button>
       )}
     </>
