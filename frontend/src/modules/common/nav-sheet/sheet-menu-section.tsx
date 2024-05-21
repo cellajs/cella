@@ -164,9 +164,9 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
           <LayoutGroup>
             <Button onClick={() => toggleSection(section.id)} className="w-full justify-between" variant="secondary" asChild>
-              <motion.button layout transition={{ bounce: 0, duration: 0.15 }}>
+              <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.15 }}>
                 <div className="flex items-center">
-                  <motion.span layout className="flex items-center">
+                  <motion.span layout={'size'} className="flex items-center">
                     {section.icon && <section.icon className="mr-2 w-5 h-5" />}
                     {t(section.label)}
                   </motion.span>
