@@ -61,14 +61,15 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
       const labelsToAdd = newLabels.filter((label) => !currentLabels.includes(label));
 
       if (labelsToRemove.length > 0) {
-        db.task_labels.deleteMany({
-          where: {
-            task_id: task.id,
-            label_id: {
-              in: labelsToRemove,
-            },
-          },
-        });
+        // TODO: Create relation between tasks and labels
+        // db.task_labels.deleteMany({
+        //   where: {
+        //     task_id: task.id,
+        //     label_id: {
+        //       in: labelsToRemove,
+        //     },
+        //   },
+        // });
       }
 
       for (const label of labelsToAdd) {
@@ -81,13 +82,14 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
             create: labelData,
             update: labelData,
           })
-          .then((label) => {
-            db.task_labels.create({
-              data: {
-                task_id: task.id,
-                label_id: label.id,
-              },
-            });
+          .then((_label) => {
+            // TODO: Create relation between tasks and labels
+            // db.task_labels.create({
+            //   data: {
+            //     task_id: task.id,
+            //     label_id: label.id,
+            //   },
+            // });
           });
       }
 

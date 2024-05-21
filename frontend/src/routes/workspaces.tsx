@@ -6,6 +6,8 @@ import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import Workspace, { workspaceQueryOptions } from '~/modules/workspaces';
 import { IndexRoute } from './routeTree';
+import { useElectric } from '~/modules/common/electric/electrify';
+import { Loader } from 'lucide-react';
 
 // Lazy-loaded components
 const Board = lazy(() => import('~/modules/projects/board'));
@@ -20,11 +22,25 @@ export const WorkspaceRoute = createRoute({
     queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
-  component: () => (
-    <Suspense>
-      <Workspace />
-    </Suspense>
-  ),
+  component: () => {
+    const Electric = useElectric();
+
+
+    // TODO: review this
+    if (!Electric) {
+      return (
+        <div className="flex items-center justify-center grow">
+          <Loader className="animate-spin" size={36} />
+        </div>
+      );
+    }
+
+    return (
+      <Suspense>
+        <Workspace />
+      </Suspense>
+    );
+  },
 });
 
 export const WorkspaceBoardRoute = createRoute({

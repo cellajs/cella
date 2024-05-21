@@ -103,7 +103,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
         type: 'feature',
         impact: null,
         assignedTo: [],
-        task_labels: [],
         labels: [],
         status: 1,
       },
@@ -119,6 +118,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
+
     Electric.db.tasks
       .create({
         data: {
@@ -129,14 +129,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           impact: values.impact as TaskImpact,
           // assignedTo: values.assignedTo as TaskUser[],
           // labels: values.labels,
-          task_labels:
-            values.labels.length > 0
-              ? {
-                  create: values.labels.map((label) => ({
-                    label_id: label.id,
-                  })),
-                }
-              : undefined,
+          // task_labels:
+          //   values.labels.length > 0
+          //     ? {
+          //         create: values.labels.map((label) => ({
+          //           label_id: label.id,
+          //         })),
+          //       }
+          //     : undefined,
           status: values.status,
           project_id: project.id,
           created_at: new Date(),

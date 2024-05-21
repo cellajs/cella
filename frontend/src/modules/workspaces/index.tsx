@@ -11,8 +11,6 @@ import type { Project, Workspace } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
 import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/electric/electrify';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
@@ -43,14 +41,10 @@ export const workspaceProjectsQueryOptions = (workspace: string) =>
   });
 
 const WorkspacePage = () => {
-  const { t } = useTranslation();
   const { setFocusView } = useNavigationStore();
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPageHeader, setShowPageHeader] = useState(false);
-
-  const [labels, setLabels] = useState<Label[]>([]);
-  const [tasks, setTasks] = useState<TaskWithTaskLabels[]>([]);
 
   const togglePageHeader = () => {
     if (!showPageHeader) setFocusView(false);
@@ -67,24 +61,19 @@ const WorkspacePage = () => {
   const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id));
   const projects = projectsQuery.data.items;
 
-  const tasksQuery = useLiveQuery(
+  const { results: tasks = [] } = useLiveQuery(
     Electric.db.tasks.liveMany({
       where: {
         project_id: {
           in: projects.map((project) => project.id),
         },
       },
-      include: {
-        task_labels: {
-          include: {
-            labels: true,
-          },
-        },
-      },
-    }),
-  );
+    })
+  ) as { results: TaskWithTaskLabels[] };
 
-  const labelsQuery = useLiveQuery(
+  console.log(tasks);
+
+  const { results: labels = [] } = useLiveQuery(
     Electric.db.labels.liveMany({
       where: {
         project_id: {
@@ -93,20 +82,6 @@ const WorkspacePage = () => {
       },
     }),
   );
-
-  useEffect(() => {
-    if (!Electric) {
-      toast.error(t('common:no_local_db'));
-      return;
-    }
-
-    if (tasksQuery.results) {
-      setTasks(tasksQuery.results);
-    }
-    if (labelsQuery.results) {
-      setLabels(labelsQuery.results);
-    }
-  }, [tasksQuery.results, labelsQuery.results, projects]);
 
   useEffect(() => {
     setSearchQuery('');

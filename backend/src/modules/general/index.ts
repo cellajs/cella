@@ -15,7 +15,7 @@ import { db } from '../../db/db';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
-import { tokensTable } from '../../db/schema/tokens';
+import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { errorResponse } from '../../lib/errors';
@@ -209,7 +209,7 @@ const generalRoutes = app
         type: organization ? 'ORGANIZATION_INVITATION' : 'SYSTEM_INVITATION',
         userId: targetUser?.id,
         email: email.toLowerCase(),
-        role: role || 'USER',
+        role: role as TokenModel['role'] || 'USER',
         organizationId: organization?.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });

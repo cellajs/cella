@@ -4,14 +4,13 @@ volumes:
   pg_data:
 
 services:
-  pg:
+  db:
+    container_name: db
     image: postgres:latest
-    container_name: electric_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pg_password
       POSTGRES_DB: postgres
-      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     command:
       - -c
       - wal_level=logical
@@ -21,17 +20,18 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
 
-  electric:
-    image: electricsql/electric
+  electric-sync-service:
     container_name: electric-sync-service
+    image: electricsql/electric:latest
     depends_on:
-      - pg
+      - db
     environment:
-      DATABASE_URL: postgresql://postgres:pg_password@pg/postgres
+      DATABASE_URL: postgresql://postgres:postgres@db/postgres
       DATABASE_REQUIRE_SSL: false
-      LOGICAL_PUBLISHER_HOST: electric
+      LOGICAL_PUBLISHER_HOST: electric-sync-service
       PG_PROXY_PASSWORD: proxy_password
       AUTH_MODE: insecure
+      LOG_LEVEL: debug
     ports:
       - 5133:5133
       - 65432:65432

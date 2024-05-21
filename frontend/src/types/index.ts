@@ -15,6 +15,9 @@ export interface UploadParams {
 export enum UserRole {
   ADMIN = 'Admin',
   MEMBER = 'Member',
+  // USER = 'User',
+  ASSIGNED = 'Assigned',
+  CREATED = 'Created',
 }
 
 export type DraggableItemData<T> = {

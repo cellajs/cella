@@ -5,7 +5,7 @@ export const config = {
 
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:4000',
-  electricUrl: 'http://localhost:5133',
+  electricUrl: 'http://0.0.0.0:5133',
 
   defaultRedirectPath: '/home',
   firstSignInRedirectPath: '/welcome',

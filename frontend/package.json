@@ -6,24 +6,21 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "prepare:electric": "pnpm proxy & (pnpm migrate && NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",
-    "prepare:electric:dev": "pnpm migrate && NODE_ENV=development electric-sql generate && tsx prepare-files.ts",
+    "prepare:electric": "pnpm proxy & (NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",
+    "prepare:electric:dev": "electric-sql generate && tsx prepare-files.ts",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
     "build": "tsc && vite build",
     "check:types": "tsc",
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
-    "generate": "drizzle-kit generate:pg",
     "generate:electric": "electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres",
-    "migrate": "tsx src/db/migrate.ts",
     "proxy": "electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65432"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.1.7",
     "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^1.3.0",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.3",
-    "@databases/pg-migrations": "^5.0.3",
     "@github/mini-throttle": "^2.1.1",
     "@hocuspocus/provider": "^2.12.2",
     "@hookform/resolvers": "^3.3.4",
@@ -111,8 +108,7 @@
     "cmdk": "^1.0.0",
     "config": "workspace:*",
     "dayjs": "^1.11.11",
-    "drizzle-orm": "^0.30.10",
-    "electric-sql": "^0.10.1",
+    "electric-sql": "^0.11.3",
     "embla-carousel-autoplay": "^8.0.4",
     "embla-carousel-react": "^8.0.4",
     "gleap": "^13.6.4",
@@ -172,7 +168,6 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
-    "drizzle-kit": "^0.20.17",
     "msw": "^2.2.14",
     "postcss": "^8.4.38",
     "postcss-import": "^16.1.0",
@@ -188,7 +183,11 @@
     "vite-plugin-static-copy": "^1.0.4",
     "workbox-window": "^7.1.0"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},
