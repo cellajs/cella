@@ -21,7 +21,9 @@ export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
 const LIMIT = 40;
 
-const RequestsTable = () => {
+type RequestsTableModes = { mode?: 'system' | 'organization' };
+
+const RequestsTable = ({ mode = 'system' }: RequestsTableModes) => {
   const search = useSearch({
     from: RequestsTableRoute.id,
   });
@@ -71,6 +73,7 @@ const RequestsTable = () => {
   const [columns, setColumns] = useColumns();
 
   const onRowsChange = async (records: Requests[]) => {
+    if (mode === 'organization') return setRows(records.filter((el) => el.type === 'ORGANIZATION_REQUEST'));
     setRows(records);
   };
 
@@ -86,6 +89,7 @@ const RequestsTable = () => {
 
     if (data) {
       setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
+      if (mode === 'organization') return setRows(data.filter((el) => el.type === 'ORGANIZATION_REQUEST'));
       setRows(data);
     }
   }, [queryResult.data]);
