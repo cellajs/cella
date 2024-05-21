@@ -12,6 +12,7 @@ import type { Label, Task } from '../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';
+import { taskStatuses } from './select-status';
 
 interface ProjectContextValue {
   project: Project;
@@ -24,10 +25,11 @@ export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
   const { t } = useTranslation();
-  const { workspaces } = useWorkspaceStore();
-  const { projects, labels, tasks, searchQuery } = useContext(WorkspaceContext);
+  const { workspaces, getWorkspaceViewOptions } = useWorkspaceStore();
+  const { projects, labels, tasks, searchQuery, workspace } = useContext(WorkspaceContext);
   const [focusedProjectIndex, setFocusedProjectIndex] = useState<number | null>(null);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
+  const [viewOptions, setViewOptions] = useState(getWorkspaceViewOptions(workspace.id));
 
   const handleTaskClick = (taskId: string) => {
     setFocusedTaskId(taskId);
@@ -42,6 +44,15 @@ export default function Board() {
         task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [searchQuery, tasks]);
+
+  const filteredByViewOptionsTasks = useMemo(() => {
+    return filteredTasks.filter(
+      (task) =>
+        viewOptions.type.includes(task.type) &&
+        (task.status === 0 || task.status === 6 || viewOptions.type.includes(taskStatuses[task.status].status)),
+      // add to task label status and filter by status of label too
+    );
+  }, [viewOptions, filteredTasks]);
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (!tasks.length || !projects.length) return;
@@ -67,6 +78,10 @@ export default function Board() {
     ['ArrowRight', handleKeyDown],
     ['ArrowLeft', handleKeyDown],
   ]);
+
+  useEffect(() => {
+    setViewOptions(workspaces[workspace.id].viewOptions);
+  }, [workspaces[workspace.id].viewOptions]);
 
   useEffect(() => {
     return combine(
@@ -137,7 +152,7 @@ export default function Board() {
                 }}
               >
                 <BoardColumn
-                  tasks={filteredTasks.filter((t) => t.project_id === project.id)}
+                  tasks={filteredByViewOptionsTasks.filter((t) => t.project_id === project.id)}
                   key={`${project.id}-column`}
                   setFocusedTask={(taskId: string) => handleTaskClick(taskId)}
                   focusedTask={focusedTaskId}

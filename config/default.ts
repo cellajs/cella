@@ -64,7 +64,8 @@ export const config = {
 
   // Enabled OAuth providers
   oauthProviders: ['Github'],
-
+  // Auth methods
+  authMethods: ['Github', 'email'],
   // Optional settings
 
   // To test waitList

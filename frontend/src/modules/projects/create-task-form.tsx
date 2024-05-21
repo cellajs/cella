@@ -116,7 +116,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
 
   const onSubmit = (values: FormValues) => {
     if (!Electric) return toast.error(t('common:no_local_db'));
-      // create(values);
+    // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
     Electric.db.tasks
@@ -127,7 +127,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           summary: summary,
           type: values.type as TaskType,
           impact: values.impact as TaskImpact,
-              // assignedTo: values.assignedTo as TaskUser[],
+          // assignedTo: values.assignedTo as TaskUser[],
           // labels: values.labels,
           task_labels:
             values.labels.length > 0
