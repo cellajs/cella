@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '../../db/schema/tokens';
-import { idSchema, imageUrlSchema, nameSchema, passwordSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, passwordSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
 import { requestsTable } from '../../db/schema/requests';
@@ -62,3 +62,28 @@ export const actionResponseSchema = z.object({
   email: z.string().min(1).email(),
   type: actionReqTableSchema.shape.type,
 });
+
+export const getRequestsSchema = z.object({
+  requestsInfo: z.array(
+    z.object({
+      id: idSchema,
+      email: z.string(),
+      createdAt: z.string(),
+      type: actionReqTableSchema.shape.type,
+      message: z.string().nullable(),
+      userId: z.string().nullable(),
+      userName: z.string().nullable(),
+      userThumbnail: z.string().nullable(),
+      organizationId: z.string().nullable(),
+      organizationName: z.string().nullable(),
+      organizationThumbnail: z.string().nullable(),
+    }),
+  ),
+  total: z.number(),
+});
+
+export const getRequestsQuerySchema = paginationQuerySchema.merge(
+  z.object({
+    sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
+  }),
+);

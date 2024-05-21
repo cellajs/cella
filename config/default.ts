@@ -1,3 +1,5 @@
+const oauthProviders = ['Github'];
+
 export const config = {
   mode: 'development' as 'production' | 'development' | 'tunnel',
   name: 'Cella',
@@ -5,7 +7,7 @@ export const config = {
 
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:4000',
-  electricUrl: 'http://localhost:5133',
+  electricUrl: 'http://0.0.0.0:5133',
 
   defaultRedirectPath: '/home',
   firstSignInRedirectPath: '/welcome',
@@ -63,7 +65,10 @@ export const config = {
   },
 
   // Enabled OAuth providers
-  oauthProviders: ['Github'],
+  oauthProviders,
+
+  // Auth methods
+  authMethods: [...oauthProviders, 'email'], // Spread operator to include elements of oauthProviders
 
   // Optional settings
 

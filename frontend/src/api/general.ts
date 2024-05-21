@@ -124,13 +124,42 @@ export const requestAction = async (requestInfo: ActionRequestProp) => {
   return;
 };
 
+export type GetRequestsParams = Partial<
+  Omit<Parameters<(typeof client.requests)['$get']>['0']['query'], 'limit' | 'offset'> & {
+    limit: number;
+    page: number;
+  }
+>;
+
+// TODO: fix this
 // Get action requests by type
-export const actionRequests = async (type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST') => {
-  const response = await client.requests.$get({
-    query: { type },
-  });
+export const actionRequests = async (
+  // _type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST',
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {},
+  signal?: AbortSignal,
+) => {
+  const response = await client.requests.$get(
+    {
+      query: {
+        q,
+        sort,
+        order,
+        offset: String(page * limit),
+        limit: String(limit),
+      },
+    },
+    {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        return fetch(input, {
+          ...init,
+          credentials: 'include',
+          signal,
+        });
+      },
+    },
+  );
 
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
-  return;
+  return json.data;
 };

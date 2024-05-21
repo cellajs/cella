@@ -5,9 +5,11 @@ import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
+import { tasksTable } from './tasks';
+import { labelsTable } from './labels';
 
 const typeEnum = ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const;
-const roleEnum = ['MEMBER', 'ADMIN'] as const;
+const roleEnum = ['MEMBER', 'ADMIN', 'ASSIGNED', 'CREATED'] as const;
 
 // TODO: Store IDs of all ancestors to directly retrieve all user memberships in the hierarchy
 export const membershipsTable = pgTable('memberships', {
@@ -20,6 +22,8 @@ export const membershipsTable = pgTable('memberships', {
   organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
+  taskId: varchar('task_id').references(() => tasksTable.id, { onDelete: 'cascade' }),
+  labelId: varchar('label_id').references(() => labelsTable.id, { onDelete: 'cascade' }),
   userId: varchar('user_id')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),

@@ -1,4 +1,4 @@
-import { and, eq, ilike, or } from 'drizzle-orm';
+import { and, count, eq, ilike, or, type SQL } from 'drizzle-orm';
 import { emailSender } from '../../../../email';
 import { InviteEmail } from '../../../../email/emails/invite';
 
@@ -15,7 +15,7 @@ import { db } from '../../db/db';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
-import { tokensTable } from '../../db/schema/tokens';
+import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { errorResponse } from '../../lib/errors';
@@ -40,6 +40,7 @@ import {
   actionRequestsConfig,
 } from './routes';
 import { requestsTable } from '../../db/schema/requests';
+import { getOrderColumn } from '../../lib/order-column';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -208,7 +209,7 @@ const generalRoutes = app
         type: organization ? 'ORGANIZATION_INVITATION' : 'SYSTEM_INVITATION',
         userId: targetUser?.id,
         email: email.toLowerCase(),
-        role: role || 'USER',
+        role: role as TokenModel['role'] || 'USER',
         organizationId: organization?.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
@@ -488,17 +489,56 @@ const generalRoutes = app
    *  Get requests
    */
   .openapi(actionRequestsConfig, async (ctx) => {
-    const { type } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
-    const [actionRequests] = await db.select().from(requestsTable).where(eq(requestsTable.type, type));
+    const filter: SQL | undefined = q ? ilike(requestsTable.email, `%${q}%`) : undefined;
+
+    const requestsQuery = db.select().from(requestsTable).where(filter);
+
+    const [{ total }] = await db.select({ total: count() }).from(requestsQuery.as('requests'));
+
+    const orderColumn = getOrderColumn(
+      {
+        id: requestsTable.id,
+        email: requestsTable.email,
+        createdAt: requestsTable.createdAt,
+        type: requestsTable.type,
+      },
+      sort,
+      requestsTable.id,
+      order,
+    );
+
+    const requests = await db
+      .select({
+        requests: requestsTable,
+        user: usersTable,
+        organization: organizationsTable,
+      })
+      .from(requestsQuery.as('requests'))
+      .leftJoin(organizationsTable, eq(organizationsTable.id, requestsTable.organization_id))
+      .leftJoin(usersTable, eq(usersTable.id, requestsTable.user_id))
+      .orderBy(orderColumn)
+      .limit(Number(limit))
+      .offset(Number(offset));
 
     return ctx.json({
       success: true,
       data: {
-        email: actionRequests.email,
-        type: actionRequests.type,
-        userId: actionRequests.user_id,
-        organizationId: actionRequests.organization_id,
+        requestsInfo: requests.map(({ organization, user, requests }) => ({
+          id: requests.id,
+          email: requests.email,
+          createdAt: requests.createdAt,
+          type: requests.type,
+          message: requests.accompanyingMessage,
+          userId: user?.id || null,
+          userName: user?.name || null,
+          userThumbnail: user?.thumbnailUrl || null,
+          organizationId: organization?.id || null,
+          organizationName: organization?.name || null,
+          organizationThumbnail: organization?.thumbnailUrl || null,
+        })),
+        total,
       },
     });
   })

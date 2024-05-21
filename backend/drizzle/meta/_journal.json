@@ -1,12 +1,19 @@
 {
-  "version": "5",
-  "dialect": "pg",
+  "version": "6",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1715957314343,
-      "tag": "0000_windy_white_queen",
+      "version": "6",
+      "when": 1716202961105,
+      "tag": "0000_handy_shinobi_shaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1716202969683,
+      "tag": "0001_good_vector",
       "breakpoints": true
     }
   ]

@@ -18,47 +18,10 @@ type UnwrapTuple<Tuple extends readonly unknown[]> = {
  * 
  */
 export type Labels = {
-  /**
-   * @zod.string.uuid()
-   */
   id: string
   name: string
   color: string | null
-  /**
-   * @zod.string.uuid()
-   */
   project_id: string
-}
-
-/**
- * Model Task_labels
- * 
- */
-export type Task_labels = {
-  /**
-   * @zod.string.uuid()
-   */
-  task_id: string
-  /**
-   * @zod.string.uuid()
-   */
-  label_id: string
-}
-
-/**
- * Model Task_users
- * 
- */
-export type Task_users = {
-  /**
-   * @zod.string.uuid()
-   */
-  task_id: string
-  /**
-   * @zod.string.uuid()
-   */
-  user_id: string
-  role: string
 }
 
 /**
@@ -66,9 +29,6 @@ export type Task_users = {
  * 
  */
 export type Tasks = {
-  /**
-   * @zod.string.uuid()
-   */
   id: string
   slug: string
   markdown: string | null
@@ -86,9 +46,6 @@ export type Tasks = {
    * @zod.number.int().gte(-2147483648).lte(2147483647)
    */
   status: number
-  /**
-   * @zod.string.uuid()
-   */
   project_id: string
   created_at: Date
   created_by: string
@@ -227,26 +184,6 @@ export class PrismaClient<
   get labels(): Prisma.LabelsDelegate<GlobalReject>;
 
   /**
-   * `prisma.task_labels`: Exposes CRUD operations for the **Task_labels** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Task_labels
-    * const task_labels = await prisma.task_labels.findMany()
-    * ```
-    */
-  get task_labels(): Prisma.Task_labelsDelegate<GlobalReject>;
-
-  /**
-   * `prisma.task_users`: Exposes CRUD operations for the **Task_users** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Task_users
-    * const task_users = await prisma.task_users.findMany()
-    * ```
-    */
-  get task_users(): Prisma.Task_usersDelegate<GlobalReject>;
-
-  /**
    * `prisma.tasks`: Exposes CRUD operations for the **Tasks** model.
     * Example usage:
     * ```ts
@@ -297,7 +234,7 @@ export namespace Prisma {
 
   /**
    * Prisma Client JS version: 4.8.1
-   * Query Engine version: d6e67a83f971b175a593ccc12e15c4a757f93ffe
+   * Query Engine version: e9771e62de70f79a5e1c604a2d7c8e2a0a874b48
    */
   export type PrismaVersion = {
     client: string
@@ -740,8 +677,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export const ModelName: {
     Labels: 'Labels',
-    Task_labels: 'Task_labels',
-    Task_users: 'Task_users',
     Tasks: 'Tasks'
   };
 
@@ -905,95 +840,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   /**
    * Count Types
    */
-
-
-  /**
-   * Count Type LabelsCountOutputType
-   */
-
-
-  export type LabelsCountOutputType = {
-    task_labels: number
-  }
-
-  export type LabelsCountOutputTypeSelect = {
-    task_labels?: boolean
-  }
-
-  export type LabelsCountOutputTypeGetPayload<S extends boolean | null | undefined | LabelsCountOutputTypeArgs> =
-    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
-    S extends true ? LabelsCountOutputType :
-    S extends undefined ? never :
-    S extends { include: any } & (LabelsCountOutputTypeArgs)
-    ? LabelsCountOutputType 
-    : S extends { select: any } & (LabelsCountOutputTypeArgs)
-      ? {
-    [P in TruthyKeys<S['select']>]:
-    P extends keyof LabelsCountOutputType ? LabelsCountOutputType[P] : never
-  } 
-      : LabelsCountOutputType
-
-
-
-
-  // Custom InputTypes
-
-  /**
-   * LabelsCountOutputType without action
-   */
-  export type LabelsCountOutputTypeArgs = {
-    /**
-     * Select specific fields to fetch from the LabelsCountOutputType
-     * 
-    **/
-    select?: LabelsCountOutputTypeSelect | null
-  }
-
-
-
-  /**
-   * Count Type TasksCountOutputType
-   */
-
-
-  export type TasksCountOutputType = {
-    task_labels: number
-    task_users: number
-  }
-
-  export type TasksCountOutputTypeSelect = {
-    task_labels?: boolean
-    task_users?: boolean
-  }
-
-  export type TasksCountOutputTypeGetPayload<S extends boolean | null | undefined | TasksCountOutputTypeArgs> =
-    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
-    S extends true ? TasksCountOutputType :
-    S extends undefined ? never :
-    S extends { include: any } & (TasksCountOutputTypeArgs)
-    ? TasksCountOutputType 
-    : S extends { select: any } & (TasksCountOutputTypeArgs)
-      ? {
-    [P in TruthyKeys<S['select']>]:
-    P extends keyof TasksCountOutputType ? TasksCountOutputType[P] : never
-  } 
-      : TasksCountOutputType
-
-
-
-
-  // Custom InputTypes
-
-  /**
-   * TasksCountOutputType without action
-   */
-  export type TasksCountOutputTypeArgs = {
-    /**
-     * Select specific fields to fetch from the TasksCountOutputType
-     * 
-    **/
-    select?: TasksCountOutputTypeSelect | null
-  }
 
 
 
@@ -1164,31 +1010,19 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name?: boolean
     color?: boolean
     project_id?: boolean
-    task_labels?: boolean | Labels$task_labelsArgs
-    _count?: boolean | LabelsCountOutputTypeArgs
   }
 
-
-  export type LabelsInclude = {
-    task_labels?: boolean | Labels$task_labelsArgs
-    _count?: boolean | LabelsCountOutputTypeArgs
-  } 
 
   export type LabelsGetPayload<S extends boolean | null | undefined | LabelsArgs> =
     S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
     S extends true ? Labels :
     S extends undefined ? never :
     S extends { include: any } & (LabelsArgs | LabelsFindManyArgs)
-    ? Labels  & {
-    [P in TruthyKeys<S['include']>]:
-        P extends 'task_labels' ? Array < Task_labelsGetPayload<S['include'][P]>>  :
-        P extends '_count' ? LabelsCountOutputTypeGetPayload<S['include'][P]> :  never
-  } 
+    ? Labels 
     : S extends { select: any } & (LabelsArgs | LabelsFindManyArgs)
       ? {
     [P in TruthyKeys<S['select']>]:
-        P extends 'task_labels' ? Array < Task_labelsGetPayload<S['select'][P]>>  :
-        P extends '_count' ? LabelsCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof Labels ? Labels[P] : never
+    P extends keyof Labels ? Labels[P] : never
   } 
       : Labels
 
@@ -1562,7 +1396,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
     readonly [Symbol.toStringTag]: 'PrismaClientPromise';
 
-    task_labels<T extends Labels$task_labelsArgs= {}>(args?: Subset<T, Labels$task_labelsArgs>): PrismaPromise<Array<Task_labelsGetPayload<T>>| Null>;
 
     private get _document();
     /**
@@ -1601,11 +1434,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: LabelsSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
-    /**
      * Filter, which Labels to fetch.
      * 
     **/
@@ -1634,11 +1462,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: LabelsSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
-    /**
      * Filter, which Labels to fetch.
      * 
     **/
@@ -1655,11 +1478,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
      * 
     **/
     select?: LabelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
     /**
      * Filter, which Labels to fetch.
      * 
@@ -1724,11 +1542,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: LabelsSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
-    /**
      * Filter, which Labels to fetch.
      * 
     **/
@@ -1781,11 +1594,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: LabelsSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
-    /**
      * Filter, which Labels to fetch.
      * 
     **/
@@ -1832,11 +1640,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: LabelsSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
-    /**
      * The data needed to create a Labels.
      * 
     **/
@@ -1866,11 +1669,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
      * 
     **/
     select?: LabelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
     /**
      * The data needed to update a Labels.
      * 
@@ -1911,11 +1709,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: LabelsSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
-    /**
      * The filter to search for the Labels to update in case it exists.
      * 
     **/
@@ -1943,11 +1736,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: LabelsSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
-    /**
      * Filter which Labels to delete.
      * 
     **/
@@ -1968,29 +1756,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
 
   /**
-   * Labels.task_labels
-   */
-  export type Labels$task_labelsArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    where?: Task_labelsWhereInput
-    orderBy?: Enumerable<Task_labelsOrderByWithRelationInput>
-    cursor?: Task_labelsWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: Enumerable<Task_labelsScalarFieldEnum>
-  }
-
-
-  /**
    * Labels without action
    */
   export type LabelsArgs = {
@@ -1999,1953 +1764,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
      * 
     **/
     select?: LabelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: LabelsInclude | null
-  }
-
-
-
-  /**
-   * Model Task_labels
-   */
-
-
-  export type AggregateTask_labels = {
-    _count: Task_labelsCountAggregateOutputType | null
-    _min: Task_labelsMinAggregateOutputType | null
-    _max: Task_labelsMaxAggregateOutputType | null
-  }
-
-  export type Task_labelsMinAggregateOutputType = {
-    task_id: string | null
-    label_id: string | null
-  }
-
-  export type Task_labelsMaxAggregateOutputType = {
-    task_id: string | null
-    label_id: string | null
-  }
-
-  export type Task_labelsCountAggregateOutputType = {
-    task_id: number
-    label_id: number
-    _all: number
-  }
-
-
-  export type Task_labelsMinAggregateInputType = {
-    task_id?: true
-    label_id?: true
-  }
-
-  export type Task_labelsMaxAggregateInputType = {
-    task_id?: true
-    label_id?: true
-  }
-
-  export type Task_labelsCountAggregateInputType = {
-    task_id?: true
-    label_id?: true
-    _all?: true
-  }
-
-  export type Task_labelsAggregateArgs = {
-    /**
-     * Filter which Task_labels to aggregate.
-     * 
-    **/
-    where?: Task_labelsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Task_labels to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<Task_labelsOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     * 
-    **/
-    cursor?: Task_labelsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Task_labels from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Task_labels.
-     * 
-    **/
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned Task_labels
-    **/
-    _count?: true | Task_labelsCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: Task_labelsMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: Task_labelsMaxAggregateInputType
-  }
-
-  export type GetTask_labelsAggregateType<T extends Task_labelsAggregateArgs> = {
-        [P in keyof T & keyof AggregateTask_labels]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateTask_labels[P]>
-      : GetScalarType<T[P], AggregateTask_labels[P]>
-  }
-
-
-
-
-  export type Task_labelsGroupByArgs = {
-    where?: Task_labelsWhereInput
-    orderBy?: Enumerable<Task_labelsOrderByWithAggregationInput>
-    by: Array<Task_labelsScalarFieldEnum>
-    having?: Task_labelsScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: Task_labelsCountAggregateInputType | true
-    _min?: Task_labelsMinAggregateInputType
-    _max?: Task_labelsMaxAggregateInputType
-  }
-
-
-  export type Task_labelsGroupByOutputType = {
-    task_id: string
-    label_id: string
-    _count: Task_labelsCountAggregateOutputType | null
-    _min: Task_labelsMinAggregateOutputType | null
-    _max: Task_labelsMaxAggregateOutputType | null
-  }
-
-  type GetTask_labelsGroupByPayload<T extends Task_labelsGroupByArgs> = PrismaPromise<
-    Array<
-      PickArray<Task_labelsGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof Task_labelsGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], Task_labelsGroupByOutputType[P]>
-            : GetScalarType<T[P], Task_labelsGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type Task_labelsSelect = {
-    task_id?: boolean
-    label_id?: boolean
-    labels?: boolean | LabelsArgs
-    tasks?: boolean | TasksArgs
-  }
-
-
-  export type Task_labelsInclude = {
-    labels?: boolean | LabelsArgs
-    tasks?: boolean | TasksArgs
-  } 
-
-  export type Task_labelsGetPayload<S extends boolean | null | undefined | Task_labelsArgs> =
-    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
-    S extends true ? Task_labels :
-    S extends undefined ? never :
-    S extends { include: any } & (Task_labelsArgs | Task_labelsFindManyArgs)
-    ? Task_labels  & {
-    [P in TruthyKeys<S['include']>]:
-        P extends 'labels' ? LabelsGetPayload<S['include'][P]> :
-        P extends 'tasks' ? TasksGetPayload<S['include'][P]> :  never
-  } 
-    : S extends { select: any } & (Task_labelsArgs | Task_labelsFindManyArgs)
-      ? {
-    [P in TruthyKeys<S['select']>]:
-        P extends 'labels' ? LabelsGetPayload<S['select'][P]> :
-        P extends 'tasks' ? TasksGetPayload<S['select'][P]> :  P extends keyof Task_labels ? Task_labels[P] : never
-  } 
-      : Task_labels
-
-
-  type Task_labelsCountArgs = Merge<
-    Omit<Task_labelsFindManyArgs, 'select' | 'include'> & {
-      select?: Task_labelsCountAggregateInputType | true
-    }
-  >
-
-  export interface Task_labelsDelegate<GlobalRejectSettings extends Prisma.RejectOnNotFound | Prisma.RejectPerOperation | false | undefined> {
-    /**
-     * Find zero or one Task_labels that matches the filter.
-     * @param {Task_labelsFindUniqueArgs} args - Arguments to find a Task_labels
-     * @example
-     * // Get one Task_labels
-     * const task_labels = await prisma.task_labels.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findUnique<T extends Task_labelsFindUniqueArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
-      args: SelectSubset<T, Task_labelsFindUniqueArgs>
-    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findUnique', 'Task_labels'> extends True ? Prisma__Task_labelsClient<Task_labelsGetPayload<T>> : Prisma__Task_labelsClient<Task_labelsGetPayload<T> | null, null>
-
-    /**
-     * Find one Task_labels that matches the filter or throw an error  with `error.code='P2025'` 
-     *     if no matches were found.
-     * @param {Task_labelsFindUniqueOrThrowArgs} args - Arguments to find a Task_labels
-     * @example
-     * // Get one Task_labels
-     * const task_labels = await prisma.task_labels.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findUniqueOrThrow<T extends Task_labelsFindUniqueOrThrowArgs>(
-      args?: SelectSubset<T, Task_labelsFindUniqueOrThrowArgs>
-    ): Prisma__Task_labelsClient<Task_labelsGetPayload<T>>
-
-    /**
-     * Find the first Task_labels that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_labelsFindFirstArgs} args - Arguments to find a Task_labels
-     * @example
-     * // Get one Task_labels
-     * const task_labels = await prisma.task_labels.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findFirst<T extends Task_labelsFindFirstArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
-      args?: SelectSubset<T, Task_labelsFindFirstArgs>
-    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findFirst', 'Task_labels'> extends True ? Prisma__Task_labelsClient<Task_labelsGetPayload<T>> : Prisma__Task_labelsClient<Task_labelsGetPayload<T> | null, null>
-
-    /**
-     * Find the first Task_labels that matches the filter or
-     * throw `NotFoundError` if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_labelsFindFirstOrThrowArgs} args - Arguments to find a Task_labels
-     * @example
-     * // Get one Task_labels
-     * const task_labels = await prisma.task_labels.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findFirstOrThrow<T extends Task_labelsFindFirstOrThrowArgs>(
-      args?: SelectSubset<T, Task_labelsFindFirstOrThrowArgs>
-    ): Prisma__Task_labelsClient<Task_labelsGetPayload<T>>
-
-    /**
-     * Find zero or more Task_labels that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_labelsFindManyArgs=} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all Task_labels
-     * const task_labels = await prisma.task_labels.findMany()
-     * 
-     * // Get first 10 Task_labels
-     * const task_labels = await prisma.task_labels.findMany({ take: 10 })
-     * 
-     * // Only select the `task_id`
-     * const task_labelsWithTask_idOnly = await prisma.task_labels.findMany({ select: { task_id: true } })
-     * 
-    **/
-    findMany<T extends Task_labelsFindManyArgs>(
-      args?: SelectSubset<T, Task_labelsFindManyArgs>
-    ): PrismaPromise<Array<Task_labelsGetPayload<T>>>
-
-    /**
-     * Create a Task_labels.
-     * @param {Task_labelsCreateArgs} args - Arguments to create a Task_labels.
-     * @example
-     * // Create one Task_labels
-     * const Task_labels = await prisma.task_labels.create({
-     *   data: {
-     *     // ... data to create a Task_labels
-     *   }
-     * })
-     * 
-    **/
-    create<T extends Task_labelsCreateArgs>(
-      args: SelectSubset<T, Task_labelsCreateArgs>
-    ): Prisma__Task_labelsClient<Task_labelsGetPayload<T>>
-
-    /**
-     * Create many Task_labels.
-     *     @param {Task_labelsCreateManyArgs} args - Arguments to create many Task_labels.
-     *     @example
-     *     // Create many Task_labels
-     *     const task_labels = await prisma.task_labels.createMany({
-     *       data: {
-     *         // ... provide data here
-     *       }
-     *     })
-     *     
-    **/
-    createMany<T extends Task_labelsCreateManyArgs>(
-      args?: SelectSubset<T, Task_labelsCreateManyArgs>
-    ): PrismaPromise<BatchPayload>
-
-    /**
-     * Delete a Task_labels.
-     * @param {Task_labelsDeleteArgs} args - Arguments to delete one Task_labels.
-     * @example
-     * // Delete one Task_labels
-     * const Task_labels = await prisma.task_labels.delete({
-     *   where: {
-     *     // ... filter to delete one Task_labels
-     *   }
-     * })
-     * 
-    **/
-    delete<T extends Task_labelsDeleteArgs>(
-      args: SelectSubset<T, Task_labelsDeleteArgs>
-    ): Prisma__Task_labelsClient<Task_labelsGetPayload<T>>
-
-    /**
-     * Update one Task_labels.
-     * @param {Task_labelsUpdateArgs} args - Arguments to update one Task_labels.
-     * @example
-     * // Update one Task_labels
-     * const task_labels = await prisma.task_labels.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-    **/
-    update<T extends Task_labelsUpdateArgs>(
-      args: SelectSubset<T, Task_labelsUpdateArgs>
-    ): Prisma__Task_labelsClient<Task_labelsGetPayload<T>>
-
-    /**
-     * Delete zero or more Task_labels.
-     * @param {Task_labelsDeleteManyArgs} args - Arguments to filter Task_labels to delete.
-     * @example
-     * // Delete a few Task_labels
-     * const { count } = await prisma.task_labels.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-    **/
-    deleteMany<T extends Task_labelsDeleteManyArgs>(
-      args?: SelectSubset<T, Task_labelsDeleteManyArgs>
-    ): PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more Task_labels.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_labelsUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many Task_labels
-     * const task_labels = await prisma.task_labels.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-    **/
-    updateMany<T extends Task_labelsUpdateManyArgs>(
-      args: SelectSubset<T, Task_labelsUpdateManyArgs>
-    ): PrismaPromise<BatchPayload>
-
-    /**
-     * Create or update one Task_labels.
-     * @param {Task_labelsUpsertArgs} args - Arguments to update or create a Task_labels.
-     * @example
-     * // Update or create a Task_labels
-     * const task_labels = await prisma.task_labels.upsert({
-     *   create: {
-     *     // ... data to create a Task_labels
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the Task_labels we want to update
-     *   }
-     * })
-    **/
-    upsert<T extends Task_labelsUpsertArgs>(
-      args: SelectSubset<T, Task_labelsUpsertArgs>
-    ): Prisma__Task_labelsClient<Task_labelsGetPayload<T>>
-
-    /**
-     * Count the number of Task_labels.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_labelsCountArgs} args - Arguments to filter Task_labels to count.
-     * @example
-     * // Count the number of Task_labels
-     * const count = await prisma.task_labels.count({
-     *   where: {
-     *     // ... the filter for the Task_labels we want to count
-     *   }
-     * })
-    **/
-    count<T extends Task_labelsCountArgs>(
-      args?: Subset<T, Task_labelsCountArgs>,
-    ): PrismaPromise<
-      T extends _Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], Task_labelsCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a Task_labels.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_labelsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends Task_labelsAggregateArgs>(args: Subset<T, Task_labelsAggregateArgs>): PrismaPromise<GetTask_labelsAggregateType<T>>
-
-    /**
-     * Group by Task_labels.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_labelsGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends Task_labelsGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: Task_labelsGroupByArgs['orderBy'] }
-        : { orderBy?: Task_labelsGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends TupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, Task_labelsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTask_labelsGroupByPayload<T> : PrismaPromise<InputErrors>
-
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for Task_labels.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export class Prisma__Task_labelsClient<T, Null = never> implements PrismaPromise<T> {
-    [prisma]: true;
-    private readonly _dmmf;
-    private readonly _fetcher;
-    private readonly _queryType;
-    private readonly _rootField;
-    private readonly _clientMethod;
-    private readonly _args;
-    private readonly _dataPath;
-    private readonly _errorFormat;
-    private readonly _measurePerformance?;
-    private _isList;
-    private _callsite;
-    private _requestPromise?;
-    constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
-    readonly [Symbol.toStringTag]: 'PrismaClientPromise';
-
-    labels<T extends LabelsArgs= {}>(args?: Subset<T, LabelsArgs>): Prisma__LabelsClient<LabelsGetPayload<T> | Null>;
-
-    tasks<T extends TasksArgs= {}>(args?: Subset<T, TasksArgs>): Prisma__TasksClient<TasksGetPayload<T> | Null>;
-
-    private get _document();
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): Promise<T>;
-  }
-
-
-
-  // Custom InputTypes
-
-  /**
-   * Task_labels base type for findUnique actions
-   */
-  export type Task_labelsFindUniqueArgsBase = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    /**
-     * Filter, which Task_labels to fetch.
-     * 
-    **/
-    where: Task_labelsWhereUniqueInput
-  }
-
-  /**
-   * Task_labels findUnique
-   */
-  export interface Task_labelsFindUniqueArgs extends Task_labelsFindUniqueArgsBase {
-   /**
-    * Throw an Error if query returns no results
-    * @deprecated since 4.0.0: use `findUniqueOrThrow` method instead
-    */
-    rejectOnNotFound?: RejectOnNotFound
-  }
-      
-
-  /**
-   * Task_labels findUniqueOrThrow
-   */
-  export type Task_labelsFindUniqueOrThrowArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    /**
-     * Filter, which Task_labels to fetch.
-     * 
-    **/
-    where: Task_labelsWhereUniqueInput
-  }
-
-
-  /**
-   * Task_labels base type for findFirst actions
-   */
-  export type Task_labelsFindFirstArgsBase = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    /**
-     * Filter, which Task_labels to fetch.
-     * 
-    **/
-    where?: Task_labelsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Task_labels to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<Task_labelsOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for Task_labels.
-     * 
-    **/
-    cursor?: Task_labelsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Task_labels from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Task_labels.
-     * 
-    **/
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Task_labels.
-     * 
-    **/
-    distinct?: Enumerable<Task_labelsScalarFieldEnum>
-  }
-
-  /**
-   * Task_labels findFirst
-   */
-  export interface Task_labelsFindFirstArgs extends Task_labelsFindFirstArgsBase {
-   /**
-    * Throw an Error if query returns no results
-    * @deprecated since 4.0.0: use `findFirstOrThrow` method instead
-    */
-    rejectOnNotFound?: RejectOnNotFound
-  }
-      
-
-  /**
-   * Task_labels findFirstOrThrow
-   */
-  export type Task_labelsFindFirstOrThrowArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    /**
-     * Filter, which Task_labels to fetch.
-     * 
-    **/
-    where?: Task_labelsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Task_labels to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<Task_labelsOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for Task_labels.
-     * 
-    **/
-    cursor?: Task_labelsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Task_labels from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Task_labels.
-     * 
-    **/
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Task_labels.
-     * 
-    **/
-    distinct?: Enumerable<Task_labelsScalarFieldEnum>
-  }
-
-
-  /**
-   * Task_labels findMany
-   */
-  export type Task_labelsFindManyArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    /**
-     * Filter, which Task_labels to fetch.
-     * 
-    **/
-    where?: Task_labelsWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Task_labels to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<Task_labelsOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing Task_labels.
-     * 
-    **/
-    cursor?: Task_labelsWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Task_labels from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Task_labels.
-     * 
-    **/
-    skip?: number
-    distinct?: Enumerable<Task_labelsScalarFieldEnum>
-  }
-
-
-  /**
-   * Task_labels create
-   */
-  export type Task_labelsCreateArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    /**
-     * The data needed to create a Task_labels.
-     * 
-    **/
-    data: XOR<Task_labelsCreateInput, Task_labelsUncheckedCreateInput>
-  }
-
-
-  /**
-   * Task_labels createMany
-   */
-  export type Task_labelsCreateManyArgs = {
-    /**
-     * The data used to create many Task_labels.
-     * 
-    **/
-    data: Enumerable<Task_labelsCreateManyInput>
-    skipDuplicates?: boolean
-  }
-
-
-  /**
-   * Task_labels update
-   */
-  export type Task_labelsUpdateArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    /**
-     * The data needed to update a Task_labels.
-     * 
-    **/
-    data: XOR<Task_labelsUpdateInput, Task_labelsUncheckedUpdateInput>
-    /**
-     * Choose, which Task_labels to update.
-     * 
-    **/
-    where: Task_labelsWhereUniqueInput
-  }
-
-
-  /**
-   * Task_labels updateMany
-   */
-  export type Task_labelsUpdateManyArgs = {
-    /**
-     * The data used to update Task_labels.
-     * 
-    **/
-    data: XOR<Task_labelsUpdateManyMutationInput, Task_labelsUncheckedUpdateManyInput>
-    /**
-     * Filter which Task_labels to update
-     * 
-    **/
-    where?: Task_labelsWhereInput
-  }
-
-
-  /**
-   * Task_labels upsert
-   */
-  export type Task_labelsUpsertArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    /**
-     * The filter to search for the Task_labels to update in case it exists.
-     * 
-    **/
-    where: Task_labelsWhereUniqueInput
-    /**
-     * In case the Task_labels found by the `where` argument doesn't exist, create a new Task_labels with this data.
-     * 
-    **/
-    create: XOR<Task_labelsCreateInput, Task_labelsUncheckedCreateInput>
-    /**
-     * In case the Task_labels was found with the provided `where` argument, update it with this data.
-     * 
-    **/
-    update: XOR<Task_labelsUpdateInput, Task_labelsUncheckedUpdateInput>
-  }
-
-
-  /**
-   * Task_labels delete
-   */
-  export type Task_labelsDeleteArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    /**
-     * Filter which Task_labels to delete.
-     * 
-    **/
-    where: Task_labelsWhereUniqueInput
-  }
-
-
-  /**
-   * Task_labels deleteMany
-   */
-  export type Task_labelsDeleteManyArgs = {
-    /**
-     * Filter which Task_labels to delete
-     * 
-    **/
-    where?: Task_labelsWhereInput
-  }
-
-
-  /**
-   * Task_labels without action
-   */
-  export type Task_labelsArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-  }
-
-
-
-  /**
-   * Model Task_users
-   */
-
-
-  export type AggregateTask_users = {
-    _count: Task_usersCountAggregateOutputType | null
-    _min: Task_usersMinAggregateOutputType | null
-    _max: Task_usersMaxAggregateOutputType | null
-  }
-
-  export type Task_usersMinAggregateOutputType = {
-    task_id: string | null
-    user_id: string | null
-    role: string | null
-  }
-
-  export type Task_usersMaxAggregateOutputType = {
-    task_id: string | null
-    user_id: string | null
-    role: string | null
-  }
-
-  export type Task_usersCountAggregateOutputType = {
-    task_id: number
-    user_id: number
-    role: number
-    _all: number
-  }
-
-
-  export type Task_usersMinAggregateInputType = {
-    task_id?: true
-    user_id?: true
-    role?: true
-  }
-
-  export type Task_usersMaxAggregateInputType = {
-    task_id?: true
-    user_id?: true
-    role?: true
-  }
-
-  export type Task_usersCountAggregateInputType = {
-    task_id?: true
-    user_id?: true
-    role?: true
-    _all?: true
-  }
-
-  export type Task_usersAggregateArgs = {
-    /**
-     * Filter which Task_users to aggregate.
-     * 
-    **/
-    where?: Task_usersWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Task_users to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<Task_usersOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     * 
-    **/
-    cursor?: Task_usersWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Task_users from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Task_users.
-     * 
-    **/
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned Task_users
-    **/
-    _count?: true | Task_usersCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: Task_usersMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: Task_usersMaxAggregateInputType
-  }
-
-  export type GetTask_usersAggregateType<T extends Task_usersAggregateArgs> = {
-        [P in keyof T & keyof AggregateTask_users]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateTask_users[P]>
-      : GetScalarType<T[P], AggregateTask_users[P]>
-  }
-
-
-
-
-  export type Task_usersGroupByArgs = {
-    where?: Task_usersWhereInput
-    orderBy?: Enumerable<Task_usersOrderByWithAggregationInput>
-    by: Array<Task_usersScalarFieldEnum>
-    having?: Task_usersScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: Task_usersCountAggregateInputType | true
-    _min?: Task_usersMinAggregateInputType
-    _max?: Task_usersMaxAggregateInputType
-  }
-
-
-  export type Task_usersGroupByOutputType = {
-    task_id: string
-    user_id: string
-    role: string
-    _count: Task_usersCountAggregateOutputType | null
-    _min: Task_usersMinAggregateOutputType | null
-    _max: Task_usersMaxAggregateOutputType | null
-  }
-
-  type GetTask_usersGroupByPayload<T extends Task_usersGroupByArgs> = PrismaPromise<
-    Array<
-      PickArray<Task_usersGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof Task_usersGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], Task_usersGroupByOutputType[P]>
-            : GetScalarType<T[P], Task_usersGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type Task_usersSelect = {
-    task_id?: boolean
-    user_id?: boolean
-    role?: boolean
-    tasks?: boolean | TasksArgs
-  }
-
-
-  export type Task_usersInclude = {
-    tasks?: boolean | TasksArgs
-  } 
-
-  export type Task_usersGetPayload<S extends boolean | null | undefined | Task_usersArgs> =
-    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
-    S extends true ? Task_users :
-    S extends undefined ? never :
-    S extends { include: any } & (Task_usersArgs | Task_usersFindManyArgs)
-    ? Task_users  & {
-    [P in TruthyKeys<S['include']>]:
-        P extends 'tasks' ? TasksGetPayload<S['include'][P]> :  never
-  } 
-    : S extends { select: any } & (Task_usersArgs | Task_usersFindManyArgs)
-      ? {
-    [P in TruthyKeys<S['select']>]:
-        P extends 'tasks' ? TasksGetPayload<S['select'][P]> :  P extends keyof Task_users ? Task_users[P] : never
-  } 
-      : Task_users
-
-
-  type Task_usersCountArgs = Merge<
-    Omit<Task_usersFindManyArgs, 'select' | 'include'> & {
-      select?: Task_usersCountAggregateInputType | true
-    }
-  >
-
-  export interface Task_usersDelegate<GlobalRejectSettings extends Prisma.RejectOnNotFound | Prisma.RejectPerOperation | false | undefined> {
-    /**
-     * Find zero or one Task_users that matches the filter.
-     * @param {Task_usersFindUniqueArgs} args - Arguments to find a Task_users
-     * @example
-     * // Get one Task_users
-     * const task_users = await prisma.task_users.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findUnique<T extends Task_usersFindUniqueArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
-      args: SelectSubset<T, Task_usersFindUniqueArgs>
-    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findUnique', 'Task_users'> extends True ? Prisma__Task_usersClient<Task_usersGetPayload<T>> : Prisma__Task_usersClient<Task_usersGetPayload<T> | null, null>
-
-    /**
-     * Find one Task_users that matches the filter or throw an error  with `error.code='P2025'` 
-     *     if no matches were found.
-     * @param {Task_usersFindUniqueOrThrowArgs} args - Arguments to find a Task_users
-     * @example
-     * // Get one Task_users
-     * const task_users = await prisma.task_users.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findUniqueOrThrow<T extends Task_usersFindUniqueOrThrowArgs>(
-      args?: SelectSubset<T, Task_usersFindUniqueOrThrowArgs>
-    ): Prisma__Task_usersClient<Task_usersGetPayload<T>>
-
-    /**
-     * Find the first Task_users that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_usersFindFirstArgs} args - Arguments to find a Task_users
-     * @example
-     * // Get one Task_users
-     * const task_users = await prisma.task_users.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findFirst<T extends Task_usersFindFirstArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
-      args?: SelectSubset<T, Task_usersFindFirstArgs>
-    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findFirst', 'Task_users'> extends True ? Prisma__Task_usersClient<Task_usersGetPayload<T>> : Prisma__Task_usersClient<Task_usersGetPayload<T> | null, null>
-
-    /**
-     * Find the first Task_users that matches the filter or
-     * throw `NotFoundError` if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_usersFindFirstOrThrowArgs} args - Arguments to find a Task_users
-     * @example
-     * // Get one Task_users
-     * const task_users = await prisma.task_users.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-    **/
-    findFirstOrThrow<T extends Task_usersFindFirstOrThrowArgs>(
-      args?: SelectSubset<T, Task_usersFindFirstOrThrowArgs>
-    ): Prisma__Task_usersClient<Task_usersGetPayload<T>>
-
-    /**
-     * Find zero or more Task_users that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_usersFindManyArgs=} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all Task_users
-     * const task_users = await prisma.task_users.findMany()
-     * 
-     * // Get first 10 Task_users
-     * const task_users = await prisma.task_users.findMany({ take: 10 })
-     * 
-     * // Only select the `task_id`
-     * const task_usersWithTask_idOnly = await prisma.task_users.findMany({ select: { task_id: true } })
-     * 
-    **/
-    findMany<T extends Task_usersFindManyArgs>(
-      args?: SelectSubset<T, Task_usersFindManyArgs>
-    ): PrismaPromise<Array<Task_usersGetPayload<T>>>
-
-    /**
-     * Create a Task_users.
-     * @param {Task_usersCreateArgs} args - Arguments to create a Task_users.
-     * @example
-     * // Create one Task_users
-     * const Task_users = await prisma.task_users.create({
-     *   data: {
-     *     // ... data to create a Task_users
-     *   }
-     * })
-     * 
-    **/
-    create<T extends Task_usersCreateArgs>(
-      args: SelectSubset<T, Task_usersCreateArgs>
-    ): Prisma__Task_usersClient<Task_usersGetPayload<T>>
-
-    /**
-     * Create many Task_users.
-     *     @param {Task_usersCreateManyArgs} args - Arguments to create many Task_users.
-     *     @example
-     *     // Create many Task_users
-     *     const task_users = await prisma.task_users.createMany({
-     *       data: {
-     *         // ... provide data here
-     *       }
-     *     })
-     *     
-    **/
-    createMany<T extends Task_usersCreateManyArgs>(
-      args?: SelectSubset<T, Task_usersCreateManyArgs>
-    ): PrismaPromise<BatchPayload>
-
-    /**
-     * Delete a Task_users.
-     * @param {Task_usersDeleteArgs} args - Arguments to delete one Task_users.
-     * @example
-     * // Delete one Task_users
-     * const Task_users = await prisma.task_users.delete({
-     *   where: {
-     *     // ... filter to delete one Task_users
-     *   }
-     * })
-     * 
-    **/
-    delete<T extends Task_usersDeleteArgs>(
-      args: SelectSubset<T, Task_usersDeleteArgs>
-    ): Prisma__Task_usersClient<Task_usersGetPayload<T>>
-
-    /**
-     * Update one Task_users.
-     * @param {Task_usersUpdateArgs} args - Arguments to update one Task_users.
-     * @example
-     * // Update one Task_users
-     * const task_users = await prisma.task_users.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-    **/
-    update<T extends Task_usersUpdateArgs>(
-      args: SelectSubset<T, Task_usersUpdateArgs>
-    ): Prisma__Task_usersClient<Task_usersGetPayload<T>>
-
-    /**
-     * Delete zero or more Task_users.
-     * @param {Task_usersDeleteManyArgs} args - Arguments to filter Task_users to delete.
-     * @example
-     * // Delete a few Task_users
-     * const { count } = await prisma.task_users.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-    **/
-    deleteMany<T extends Task_usersDeleteManyArgs>(
-      args?: SelectSubset<T, Task_usersDeleteManyArgs>
-    ): PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more Task_users.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_usersUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many Task_users
-     * const task_users = await prisma.task_users.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-    **/
-    updateMany<T extends Task_usersUpdateManyArgs>(
-      args: SelectSubset<T, Task_usersUpdateManyArgs>
-    ): PrismaPromise<BatchPayload>
-
-    /**
-     * Create or update one Task_users.
-     * @param {Task_usersUpsertArgs} args - Arguments to update or create a Task_users.
-     * @example
-     * // Update or create a Task_users
-     * const task_users = await prisma.task_users.upsert({
-     *   create: {
-     *     // ... data to create a Task_users
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the Task_users we want to update
-     *   }
-     * })
-    **/
-    upsert<T extends Task_usersUpsertArgs>(
-      args: SelectSubset<T, Task_usersUpsertArgs>
-    ): Prisma__Task_usersClient<Task_usersGetPayload<T>>
-
-    /**
-     * Count the number of Task_users.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_usersCountArgs} args - Arguments to filter Task_users to count.
-     * @example
-     * // Count the number of Task_users
-     * const count = await prisma.task_users.count({
-     *   where: {
-     *     // ... the filter for the Task_users we want to count
-     *   }
-     * })
-    **/
-    count<T extends Task_usersCountArgs>(
-      args?: Subset<T, Task_usersCountArgs>,
-    ): PrismaPromise<
-      T extends _Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], Task_usersCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a Task_users.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_usersAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends Task_usersAggregateArgs>(args: Subset<T, Task_usersAggregateArgs>): PrismaPromise<GetTask_usersAggregateType<T>>
-
-    /**
-     * Group by Task_users.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {Task_usersGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends Task_usersGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: Task_usersGroupByArgs['orderBy'] }
-        : { orderBy?: Task_usersGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends TupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, Task_usersGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTask_usersGroupByPayload<T> : PrismaPromise<InputErrors>
-
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for Task_users.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export class Prisma__Task_usersClient<T, Null = never> implements PrismaPromise<T> {
-    [prisma]: true;
-    private readonly _dmmf;
-    private readonly _fetcher;
-    private readonly _queryType;
-    private readonly _rootField;
-    private readonly _clientMethod;
-    private readonly _args;
-    private readonly _dataPath;
-    private readonly _errorFormat;
-    private readonly _measurePerformance?;
-    private _isList;
-    private _callsite;
-    private _requestPromise?;
-    constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
-    readonly [Symbol.toStringTag]: 'PrismaClientPromise';
-
-    tasks<T extends TasksArgs= {}>(args?: Subset<T, TasksArgs>): Prisma__TasksClient<TasksGetPayload<T> | Null>;
-
-    private get _document();
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): Promise<T>;
-  }
-
-
-
-  // Custom InputTypes
-
-  /**
-   * Task_users base type for findUnique actions
-   */
-  export type Task_usersFindUniqueArgsBase = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    /**
-     * Filter, which Task_users to fetch.
-     * 
-    **/
-    where: Task_usersWhereUniqueInput
-  }
-
-  /**
-   * Task_users findUnique
-   */
-  export interface Task_usersFindUniqueArgs extends Task_usersFindUniqueArgsBase {
-   /**
-    * Throw an Error if query returns no results
-    * @deprecated since 4.0.0: use `findUniqueOrThrow` method instead
-    */
-    rejectOnNotFound?: RejectOnNotFound
-  }
-      
-
-  /**
-   * Task_users findUniqueOrThrow
-   */
-  export type Task_usersFindUniqueOrThrowArgs = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    /**
-     * Filter, which Task_users to fetch.
-     * 
-    **/
-    where: Task_usersWhereUniqueInput
-  }
-
-
-  /**
-   * Task_users base type for findFirst actions
-   */
-  export type Task_usersFindFirstArgsBase = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    /**
-     * Filter, which Task_users to fetch.
-     * 
-    **/
-    where?: Task_usersWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Task_users to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<Task_usersOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for Task_users.
-     * 
-    **/
-    cursor?: Task_usersWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Task_users from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Task_users.
-     * 
-    **/
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Task_users.
-     * 
-    **/
-    distinct?: Enumerable<Task_usersScalarFieldEnum>
-  }
-
-  /**
-   * Task_users findFirst
-   */
-  export interface Task_usersFindFirstArgs extends Task_usersFindFirstArgsBase {
-   /**
-    * Throw an Error if query returns no results
-    * @deprecated since 4.0.0: use `findFirstOrThrow` method instead
-    */
-    rejectOnNotFound?: RejectOnNotFound
-  }
-      
-
-  /**
-   * Task_users findFirstOrThrow
-   */
-  export type Task_usersFindFirstOrThrowArgs = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    /**
-     * Filter, which Task_users to fetch.
-     * 
-    **/
-    where?: Task_usersWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Task_users to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<Task_usersOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for Task_users.
-     * 
-    **/
-    cursor?: Task_usersWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Task_users from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Task_users.
-     * 
-    **/
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Task_users.
-     * 
-    **/
-    distinct?: Enumerable<Task_usersScalarFieldEnum>
-  }
-
-
-  /**
-   * Task_users findMany
-   */
-  export type Task_usersFindManyArgs = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    /**
-     * Filter, which Task_users to fetch.
-     * 
-    **/
-    where?: Task_usersWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Task_users to fetch.
-     * 
-    **/
-    orderBy?: Enumerable<Task_usersOrderByWithRelationInput>
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing Task_users.
-     * 
-    **/
-    cursor?: Task_usersWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Task_users from the position of the cursor.
-     * 
-    **/
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Task_users.
-     * 
-    **/
-    skip?: number
-    distinct?: Enumerable<Task_usersScalarFieldEnum>
-  }
-
-
-  /**
-   * Task_users create
-   */
-  export type Task_usersCreateArgs = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    /**
-     * The data needed to create a Task_users.
-     * 
-    **/
-    data: XOR<Task_usersCreateInput, Task_usersUncheckedCreateInput>
-  }
-
-
-  /**
-   * Task_users createMany
-   */
-  export type Task_usersCreateManyArgs = {
-    /**
-     * The data used to create many Task_users.
-     * 
-    **/
-    data: Enumerable<Task_usersCreateManyInput>
-    skipDuplicates?: boolean
-  }
-
-
-  /**
-   * Task_users update
-   */
-  export type Task_usersUpdateArgs = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    /**
-     * The data needed to update a Task_users.
-     * 
-    **/
-    data: XOR<Task_usersUpdateInput, Task_usersUncheckedUpdateInput>
-    /**
-     * Choose, which Task_users to update.
-     * 
-    **/
-    where: Task_usersWhereUniqueInput
-  }
-
-
-  /**
-   * Task_users updateMany
-   */
-  export type Task_usersUpdateManyArgs = {
-    /**
-     * The data used to update Task_users.
-     * 
-    **/
-    data: XOR<Task_usersUpdateManyMutationInput, Task_usersUncheckedUpdateManyInput>
-    /**
-     * Filter which Task_users to update
-     * 
-    **/
-    where?: Task_usersWhereInput
-  }
-
-
-  /**
-   * Task_users upsert
-   */
-  export type Task_usersUpsertArgs = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    /**
-     * The filter to search for the Task_users to update in case it exists.
-     * 
-    **/
-    where: Task_usersWhereUniqueInput
-    /**
-     * In case the Task_users found by the `where` argument doesn't exist, create a new Task_users with this data.
-     * 
-    **/
-    create: XOR<Task_usersCreateInput, Task_usersUncheckedCreateInput>
-    /**
-     * In case the Task_users was found with the provided `where` argument, update it with this data.
-     * 
-    **/
-    update: XOR<Task_usersUpdateInput, Task_usersUncheckedUpdateInput>
-  }
-
-
-  /**
-   * Task_users delete
-   */
-  export type Task_usersDeleteArgs = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    /**
-     * Filter which Task_users to delete.
-     * 
-    **/
-    where: Task_usersWhereUniqueInput
-  }
-
-
-  /**
-   * Task_users deleteMany
-   */
-  export type Task_usersDeleteManyArgs = {
-    /**
-     * Filter which Task_users to delete
-     * 
-    **/
-    where?: Task_usersWhereInput
-  }
-
-
-  /**
-   * Task_users without action
-   */
-  export type Task_usersArgs = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
   }
 
 
@@ -4243,35 +2061,19 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: boolean
     modified_at?: boolean
     modified_by?: boolean
-    task_labels?: boolean | Tasks$task_labelsArgs
-    task_users?: boolean | Tasks$task_usersArgs
-    _count?: boolean | TasksCountOutputTypeArgs
   }
 
-
-  export type TasksInclude = {
-    task_labels?: boolean | Tasks$task_labelsArgs
-    task_users?: boolean | Tasks$task_usersArgs
-    _count?: boolean | TasksCountOutputTypeArgs
-  } 
 
   export type TasksGetPayload<S extends boolean | null | undefined | TasksArgs> =
     S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
     S extends true ? Tasks :
     S extends undefined ? never :
     S extends { include: any } & (TasksArgs | TasksFindManyArgs)
-    ? Tasks  & {
-    [P in TruthyKeys<S['include']>]:
-        P extends 'task_labels' ? Array < Task_labelsGetPayload<S['include'][P]>>  :
-        P extends 'task_users' ? Array < Task_usersGetPayload<S['include'][P]>>  :
-        P extends '_count' ? TasksCountOutputTypeGetPayload<S['include'][P]> :  never
-  } 
+    ? Tasks 
     : S extends { select: any } & (TasksArgs | TasksFindManyArgs)
       ? {
     [P in TruthyKeys<S['select']>]:
-        P extends 'task_labels' ? Array < Task_labelsGetPayload<S['select'][P]>>  :
-        P extends 'task_users' ? Array < Task_usersGetPayload<S['select'][P]>>  :
-        P extends '_count' ? TasksCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof Tasks ? Tasks[P] : never
+    P extends keyof Tasks ? Tasks[P] : never
   } 
       : Tasks
 
@@ -4645,9 +2447,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
     readonly [Symbol.toStringTag]: 'PrismaClientPromise';
 
-    task_labels<T extends Tasks$task_labelsArgs= {}>(args?: Subset<T, Tasks$task_labelsArgs>): PrismaPromise<Array<Task_labelsGetPayload<T>>| Null>;
-
-    task_users<T extends Tasks$task_usersArgs= {}>(args?: Subset<T, Tasks$task_usersArgs>): PrismaPromise<Array<Task_usersGetPayload<T>>| Null>;
 
     private get _document();
     /**
@@ -4686,11 +2485,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: TasksSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
-    /**
      * Filter, which Tasks to fetch.
      * 
     **/
@@ -4719,11 +2513,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: TasksSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
-    /**
      * Filter, which Tasks to fetch.
      * 
     **/
@@ -4740,11 +2529,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
      * 
     **/
     select?: TasksSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
     /**
      * Filter, which Tasks to fetch.
      * 
@@ -4809,11 +2593,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: TasksSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
-    /**
      * Filter, which Tasks to fetch.
      * 
     **/
@@ -4866,11 +2645,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: TasksSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
-    /**
      * Filter, which Tasks to fetch.
      * 
     **/
@@ -4917,11 +2691,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: TasksSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
-    /**
      * The data needed to create a Tasks.
      * 
     **/
@@ -4951,11 +2720,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
      * 
     **/
     select?: TasksSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
     /**
      * The data needed to update a Tasks.
      * 
@@ -4996,11 +2760,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: TasksSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
-    /**
      * The filter to search for the Tasks to update in case it exists.
      * 
     **/
@@ -5028,11 +2787,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     **/
     select?: TasksSelect | null
     /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
-    /**
      * Filter which Tasks to delete.
      * 
     **/
@@ -5053,52 +2807,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
 
   /**
-   * Tasks.task_labels
-   */
-  export type Tasks$task_labelsArgs = {
-    /**
-     * Select specific fields to fetch from the Task_labels
-     * 
-    **/
-    select?: Task_labelsSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_labelsInclude | null
-    where?: Task_labelsWhereInput
-    orderBy?: Enumerable<Task_labelsOrderByWithRelationInput>
-    cursor?: Task_labelsWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: Enumerable<Task_labelsScalarFieldEnum>
-  }
-
-
-  /**
-   * Tasks.task_users
-   */
-  export type Tasks$task_usersArgs = {
-    /**
-     * Select specific fields to fetch from the Task_users
-     * 
-    **/
-    select?: Task_usersSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: Task_usersInclude | null
-    where?: Task_usersWhereInput
-    orderBy?: Enumerable<Task_usersOrderByWithRelationInput>
-    cursor?: Task_usersWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: Enumerable<Task_usersScalarFieldEnum>
-  }
-
-
-  /**
    * Tasks without action
    */
   export type TasksArgs = {
@@ -5107,11 +2815,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
      * 
     **/
     select?: TasksSelect | null
-    /**
-     * Choose, which related nodes to fetch as well.
-     * 
-    **/
-    include?: TasksInclude | null
   }
 
 
@@ -5123,6 +2826,16 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   // Based on
   // https://github.com/microsoft/TypeScript/issues/3192#issuecomment-261720275
 
+  export const TransactionIsolationLevel: {
+    ReadUncommitted: 'ReadUncommitted',
+    ReadCommitted: 'ReadCommitted',
+    RepeatableRead: 'RepeatableRead',
+    Serializable: 'Serializable'
+  };
+
+  export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
+
+
   export const LabelsScalarFieldEnum: {
     id: 'id',
     name: 'name',
@@ -5131,39 +2844,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   };
 
   export type LabelsScalarFieldEnum = (typeof LabelsScalarFieldEnum)[keyof typeof LabelsScalarFieldEnum]
-
-
-  export const QueryMode: {
-    default: 'default',
-    insensitive: 'insensitive'
-  };
-
-  export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
-
-
-  export const SortOrder: {
-    asc: 'asc',
-    desc: 'desc'
-  };
-
-  export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
-
-
-  export const Task_labelsScalarFieldEnum: {
-    task_id: 'task_id',
-    label_id: 'label_id'
-  };
-
-  export type Task_labelsScalarFieldEnum = (typeof Task_labelsScalarFieldEnum)[keyof typeof Task_labelsScalarFieldEnum]
-
-
-  export const Task_usersScalarFieldEnum: {
-    task_id: 'task_id',
-    user_id: 'user_id',
-    role: 'role'
-  };
-
-  export type Task_usersScalarFieldEnum = (typeof Task_usersScalarFieldEnum)[keyof typeof Task_usersScalarFieldEnum]
 
 
   export const TasksScalarFieldEnum: {
@@ -5187,16 +2867,89 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
   export type TasksScalarFieldEnum = (typeof TasksScalarFieldEnum)[keyof typeof TasksScalarFieldEnum]
 
 
-  export const TransactionIsolationLevel: {
-    ReadUncommitted: 'ReadUncommitted',
-    ReadCommitted: 'ReadCommitted',
-    RepeatableRead: 'RepeatableRead',
-    Serializable: 'Serializable'
+  export const SortOrder: {
+    asc: 'asc',
+    desc: 'desc'
   };
 
-  export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
+  export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+  export const QueryMode: {
+    default: 'default',
+    insensitive: 'insensitive'
+  };
+
+  export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+  export const NullsOrder: {
+    first: 'first',
+    last: 'last'
+  };
+
+  export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+  /**
+   * Field references 
+   */
+
+
+  /**
+   * Reference to a field of type 'String'
+   */
+  export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
+    
+
+
+  /**
+   * Reference to a field of type 'String[]'
+   */
+  export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Int'
+   */
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+  /**
+   * Reference to a field of type 'Int[]'
+   */
+  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'DateTime'
+   */
+  export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+    
+
+
+  /**
+   * Reference to a field of type 'DateTime[]'
+   */
+  export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
   /**
    * Deep Input Types
    */
@@ -5206,29 +2959,33 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     AND?: Enumerable<LabelsWhereInput>
     OR?: Enumerable<LabelsWhereInput>
     NOT?: Enumerable<LabelsWhereInput>
-    id?: UuidFilter | string
-    name?: StringFilter | string
-    color?: StringNullableFilter | string | null
-    project_id?: UuidFilter | string
-    task_labels?: Task_labelsListRelationFilter
+    id?: StringFilter<"Labels"> | string
+    name?: StringFilter<"Labels"> | string
+    color?: StringNullableFilter<"Labels"> | string | null
+    project_id?: StringFilter<"Labels"> | string
   }
 
   export type LabelsOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
-    color?: SortOrder
+    color?: SortOrderInput | SortOrder
     project_id?: SortOrder
-    task_labels?: Task_labelsOrderByRelationAggregateInput
   }
 
-  export type LabelsWhereUniqueInput = {
+  export type LabelsWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-  }
+    AND?: Enumerable<LabelsWhereInput>
+    OR?: Enumerable<LabelsWhereInput>
+    NOT?: Enumerable<LabelsWhereInput>
+    name?: StringFilter<"Labels"> | string
+    color?: StringNullableFilter<"Labels"> | string | null
+    project_id?: StringFilter<"Labels"> | string
+  }, "id">
 
   export type LabelsOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
-    color?: SortOrder
+    color?: SortOrderInput | SortOrder
     project_id?: SortOrder
     _count?: LabelsCountOrderByAggregateInput
     _max?: LabelsMaxOrderByAggregateInput
@@ -5239,151 +2996,88 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     AND?: Enumerable<LabelsScalarWhereWithAggregatesInput>
     OR?: Enumerable<LabelsScalarWhereWithAggregatesInput>
     NOT?: Enumerable<LabelsScalarWhereWithAggregatesInput>
-    id?: UuidWithAggregatesFilter | string
-    name?: StringWithAggregatesFilter | string
-    color?: StringNullableWithAggregatesFilter | string | null
-    project_id?: UuidWithAggregatesFilter | string
-  }
-
-  export type Task_labelsWhereInput = {
-    AND?: Enumerable<Task_labelsWhereInput>
-    OR?: Enumerable<Task_labelsWhereInput>
-    NOT?: Enumerable<Task_labelsWhereInput>
-    task_id?: UuidFilter | string
-    label_id?: UuidFilter | string
-    labels?: XOR<LabelsRelationFilter, LabelsWhereInput>
-    tasks?: XOR<TasksRelationFilter, TasksWhereInput>
-  }
-
-  export type Task_labelsOrderByWithRelationInput = {
-    task_id?: SortOrder
-    label_id?: SortOrder
-    labels?: LabelsOrderByWithRelationInput
-    tasks?: TasksOrderByWithRelationInput
-  }
-
-  export type Task_labelsWhereUniqueInput = {
-    label_id_task_id?: Task_labelsLabel_idTask_idCompoundUniqueInput
-  }
-
-  export type Task_labelsOrderByWithAggregationInput = {
-    task_id?: SortOrder
-    label_id?: SortOrder
-    _count?: Task_labelsCountOrderByAggregateInput
-    _max?: Task_labelsMaxOrderByAggregateInput
-    _min?: Task_labelsMinOrderByAggregateInput
-  }
-
-  export type Task_labelsScalarWhereWithAggregatesInput = {
-    AND?: Enumerable<Task_labelsScalarWhereWithAggregatesInput>
-    OR?: Enumerable<Task_labelsScalarWhereWithAggregatesInput>
-    NOT?: Enumerable<Task_labelsScalarWhereWithAggregatesInput>
-    task_id?: UuidWithAggregatesFilter | string
-    label_id?: UuidWithAggregatesFilter | string
-  }
-
-  export type Task_usersWhereInput = {
-    AND?: Enumerable<Task_usersWhereInput>
-    OR?: Enumerable<Task_usersWhereInput>
-    NOT?: Enumerable<Task_usersWhereInput>
-    task_id?: UuidFilter | string
-    user_id?: UuidFilter | string
-    role?: StringFilter | string
-    tasks?: XOR<TasksRelationFilter, TasksWhereInput>
-  }
-
-  export type Task_usersOrderByWithRelationInput = {
-    task_id?: SortOrder
-    user_id?: SortOrder
-    role?: SortOrder
-    tasks?: TasksOrderByWithRelationInput
-  }
-
-  export type Task_usersWhereUniqueInput = {
-    user_id_task_id?: Task_usersUser_idTask_idCompoundUniqueInput
-  }
-
-  export type Task_usersOrderByWithAggregationInput = {
-    task_id?: SortOrder
-    user_id?: SortOrder
-    role?: SortOrder
-    _count?: Task_usersCountOrderByAggregateInput
-    _max?: Task_usersMaxOrderByAggregateInput
-    _min?: Task_usersMinOrderByAggregateInput
-  }
-
-  export type Task_usersScalarWhereWithAggregatesInput = {
-    AND?: Enumerable<Task_usersScalarWhereWithAggregatesInput>
-    OR?: Enumerable<Task_usersScalarWhereWithAggregatesInput>
-    NOT?: Enumerable<Task_usersScalarWhereWithAggregatesInput>
-    task_id?: UuidWithAggregatesFilter | string
-    user_id?: UuidWithAggregatesFilter | string
-    role?: StringWithAggregatesFilter | string
+    id?: StringWithAggregatesFilter<"Labels"> | string
+    name?: StringWithAggregatesFilter<"Labels"> | string
+    color?: StringNullableWithAggregatesFilter<"Labels"> | string | null
+    project_id?: StringWithAggregatesFilter<"Labels"> | string
   }
 
   export type TasksWhereInput = {
     AND?: Enumerable<TasksWhereInput>
     OR?: Enumerable<TasksWhereInput>
     NOT?: Enumerable<TasksWhereInput>
-    id?: UuidFilter | string
-    slug?: StringFilter | string
-    markdown?: StringNullableFilter | string | null
-    summary?: StringFilter | string
-    type?: StringFilter | string
-    impact?: IntNullableFilter | number | null
-    sort_order?: IntNullableFilter | number | null
-    status?: IntFilter | number
-    project_id?: UuidFilter | string
-    created_at?: DateTimeFilter | Date | string
-    created_by?: StringFilter | string
-    assigned_by?: StringNullableFilter | string | null
-    assigned_at?: DateTimeNullableFilter | Date | string | null
-    modified_at?: DateTimeNullableFilter | Date | string | null
-    modified_by?: StringNullableFilter | string | null
-    task_labels?: Task_labelsListRelationFilter
-    task_users?: Task_usersListRelationFilter
+    id?: StringFilter<"Tasks"> | string
+    slug?: StringFilter<"Tasks"> | string
+    markdown?: StringNullableFilter<"Tasks"> | string | null
+    summary?: StringFilter<"Tasks"> | string
+    type?: StringFilter<"Tasks"> | string
+    impact?: IntNullableFilter<"Tasks"> | number | null
+    sort_order?: IntNullableFilter<"Tasks"> | number | null
+    status?: IntFilter<"Tasks"> | number
+    project_id?: StringFilter<"Tasks"> | string
+    created_at?: DateTimeFilter<"Tasks"> | Date | string
+    created_by?: StringFilter<"Tasks"> | string
+    assigned_by?: StringNullableFilter<"Tasks"> | string | null
+    assigned_at?: DateTimeNullableFilter<"Tasks"> | Date | string | null
+    modified_at?: DateTimeNullableFilter<"Tasks"> | Date | string | null
+    modified_by?: StringNullableFilter<"Tasks"> | string | null
   }
 
   export type TasksOrderByWithRelationInput = {
     id?: SortOrder
     slug?: SortOrder
-    markdown?: SortOrder
+    markdown?: SortOrderInput | SortOrder
     summary?: SortOrder
     type?: SortOrder
-    impact?: SortOrder
-    sort_order?: SortOrder
+    impact?: SortOrderInput | SortOrder
+    sort_order?: SortOrderInput | SortOrder
     status?: SortOrder
     project_id?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
-    assigned_by?: SortOrder
-    assigned_at?: SortOrder
-    modified_at?: SortOrder
-    modified_by?: SortOrder
-    task_labels?: Task_labelsOrderByRelationAggregateInput
-    task_users?: Task_usersOrderByRelationAggregateInput
+    assigned_by?: SortOrderInput | SortOrder
+    assigned_at?: SortOrderInput | SortOrder
+    modified_at?: SortOrderInput | SortOrder
+    modified_by?: SortOrderInput | SortOrder
   }
 
-  export type TasksWhereUniqueInput = {
+  export type TasksWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-  }
+    AND?: Enumerable<TasksWhereInput>
+    OR?: Enumerable<TasksWhereInput>
+    NOT?: Enumerable<TasksWhereInput>
+    slug?: StringFilter<"Tasks"> | string
+    markdown?: StringNullableFilter<"Tasks"> | string | null
+    summary?: StringFilter<"Tasks"> | string
+    type?: StringFilter<"Tasks"> | string
+    impact?: IntNullableFilter<"Tasks"> | number | null
+    sort_order?: IntNullableFilter<"Tasks"> | number | null
+    status?: IntFilter<"Tasks"> | number
+    project_id?: StringFilter<"Tasks"> | string
+    created_at?: DateTimeFilter<"Tasks"> | Date | string
+    created_by?: StringFilter<"Tasks"> | string
+    assigned_by?: StringNullableFilter<"Tasks"> | string | null
+    assigned_at?: DateTimeNullableFilter<"Tasks"> | Date | string | null
+    modified_at?: DateTimeNullableFilter<"Tasks"> | Date | string | null
+    modified_by?: StringNullableFilter<"Tasks"> | string | null
+  }, "id">
 
   export type TasksOrderByWithAggregationInput = {
     id?: SortOrder
     slug?: SortOrder
-    markdown?: SortOrder
+    markdown?: SortOrderInput | SortOrder
     summary?: SortOrder
     type?: SortOrder
-    impact?: SortOrder
-    sort_order?: SortOrder
+    impact?: SortOrderInput | SortOrder
+    sort_order?: SortOrderInput | SortOrder
     status?: SortOrder
     project_id?: SortOrder
     created_at?: SortOrder
     created_by?: SortOrder
-    assigned_by?: SortOrder
-    assigned_at?: SortOrder
-    modified_at?: SortOrder
-    modified_by?: SortOrder
+    assigned_by?: SortOrderInput | SortOrder
+    assigned_at?: SortOrderInput | SortOrder
+    modified_at?: SortOrderInput | SortOrder
+    modified_by?: SortOrderInput | SortOrder
     _count?: TasksCountOrderByAggregateInput
     _avg?: TasksAvgOrderByAggregateInput
     _max?: TasksMaxOrderByAggregateInput
@@ -5395,21 +3089,21 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     AND?: Enumerable<TasksScalarWhereWithAggregatesInput>
     OR?: Enumerable<TasksScalarWhereWithAggregatesInput>
     NOT?: Enumerable<TasksScalarWhereWithAggregatesInput>
-    id?: UuidWithAggregatesFilter | string
-    slug?: StringWithAggregatesFilter | string
-    markdown?: StringNullableWithAggregatesFilter | string | null
-    summary?: StringWithAggregatesFilter | string
-    type?: StringWithAggregatesFilter | string
-    impact?: IntNullableWithAggregatesFilter | number | null
-    sort_order?: IntNullableWithAggregatesFilter | number | null
-    status?: IntWithAggregatesFilter | number
-    project_id?: UuidWithAggregatesFilter | string
-    created_at?: DateTimeWithAggregatesFilter | Date | string
-    created_by?: StringWithAggregatesFilter | string
-    assigned_by?: StringNullableWithAggregatesFilter | string | null
-    assigned_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
-    modified_at?: DateTimeNullableWithAggregatesFilter | Date | string | null
-    modified_by?: StringNullableWithAggregatesFilter | string | null
+    id?: StringWithAggregatesFilter<"Tasks"> | string
+    slug?: StringWithAggregatesFilter<"Tasks"> | string
+    markdown?: StringNullableWithAggregatesFilter<"Tasks"> | string | null
+    summary?: StringWithAggregatesFilter<"Tasks"> | string
+    type?: StringWithAggregatesFilter<"Tasks"> | string
+    impact?: IntNullableWithAggregatesFilter<"Tasks"> | number | null
+    sort_order?: IntNullableWithAggregatesFilter<"Tasks"> | number | null
+    status?: IntWithAggregatesFilter<"Tasks"> | number
+    project_id?: StringWithAggregatesFilter<"Tasks"> | string
+    created_at?: DateTimeWithAggregatesFilter<"Tasks"> | Date | string
+    created_by?: StringWithAggregatesFilter<"Tasks"> | string
+    assigned_by?: StringNullableWithAggregatesFilter<"Tasks"> | string | null
+    assigned_at?: DateTimeNullableWithAggregatesFilter<"Tasks"> | Date | string | null
+    modified_at?: DateTimeNullableWithAggregatesFilter<"Tasks"> | Date | string | null
+    modified_by?: StringNullableWithAggregatesFilter<"Tasks"> | string | null
   }
 
   export type LabelsCreateInput = {
@@ -5417,7 +3111,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name: string
     color?: string | null
     project_id: string
-    task_labels?: Task_labelsCreateNestedManyWithoutLabelsInput
   }
 
   export type LabelsUncheckedCreateInput = {
@@ -5425,7 +3118,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name: string
     color?: string | null
     project_id: string
-    task_labels?: Task_labelsUncheckedCreateNestedManyWithoutLabelsInput
   }
 
   export type LabelsUpdateInput = {
@@ -5433,7 +3125,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
     project_id?: StringFieldUpdateOperationsInput | string
-    task_labels?: Task_labelsUpdateManyWithoutLabelsNestedInput
   }
 
   export type LabelsUncheckedUpdateInput = {
@@ -5441,7 +3132,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
     project_id?: StringFieldUpdateOperationsInput | string
-    task_labels?: Task_labelsUncheckedUpdateManyWithoutLabelsNestedInput
   }
 
   export type LabelsCreateManyInput = {
@@ -5465,81 +3155,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     project_id?: StringFieldUpdateOperationsInput | string
   }
 
-  export type Task_labelsCreateInput = {
-    labels: LabelsCreateNestedOneWithoutTask_labelsInput
-    tasks: TasksCreateNestedOneWithoutTask_labelsInput
-  }
-
-  export type Task_labelsUncheckedCreateInput = {
-    task_id: string
-    label_id: string
-  }
-
-  export type Task_labelsUpdateInput = {
-    labels?: LabelsUpdateOneRequiredWithoutTask_labelsNestedInput
-    tasks?: TasksUpdateOneRequiredWithoutTask_labelsNestedInput
-  }
-
-  export type Task_labelsUncheckedUpdateInput = {
-    task_id?: StringFieldUpdateOperationsInput | string
-    label_id?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type Task_labelsCreateManyInput = {
-    task_id: string
-    label_id: string
-  }
-
-  export type Task_labelsUpdateManyMutationInput = {
-
-  }
-
-  export type Task_labelsUncheckedUpdateManyInput = {
-    task_id?: StringFieldUpdateOperationsInput | string
-    label_id?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type Task_usersCreateInput = {
-    user_id: string
-    role: string
-    tasks: TasksCreateNestedOneWithoutTask_usersInput
-  }
-
-  export type Task_usersUncheckedCreateInput = {
-    task_id: string
-    user_id: string
-    role: string
-  }
-
-  export type Task_usersUpdateInput = {
-    user_id?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-    tasks?: TasksUpdateOneRequiredWithoutTask_usersNestedInput
-  }
-
-  export type Task_usersUncheckedUpdateInput = {
-    task_id?: StringFieldUpdateOperationsInput | string
-    user_id?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type Task_usersCreateManyInput = {
-    task_id: string
-    user_id: string
-    role: string
-  }
-
-  export type Task_usersUpdateManyMutationInput = {
-    user_id?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type Task_usersUncheckedUpdateManyInput = {
-    task_id?: StringFieldUpdateOperationsInput | string
-    user_id?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-  }
-
   export type TasksCreateInput = {
     id: string
     slug: string
@@ -5556,8 +3171,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
-    task_labels?: Task_labelsCreateNestedManyWithoutTasksInput
-    task_users?: Task_usersCreateNestedManyWithoutTasksInput
   }
 
   export type TasksUncheckedCreateInput = {
@@ -5576,8 +3189,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: Date | string | null
     modified_at?: Date | string | null
     modified_by?: string | null
-    task_labels?: Task_labelsUncheckedCreateNestedManyWithoutTasksInput
-    task_users?: Task_usersUncheckedCreateNestedManyWithoutTasksInput
   }
 
   export type TasksUpdateInput = {
@@ -5596,8 +3207,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    task_labels?: Task_labelsUpdateManyWithoutTasksNestedInput
-    task_users?: Task_usersUpdateManyWithoutTasksNestedInput
   }
 
   export type TasksUncheckedUpdateInput = {
@@ -5616,8 +3225,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    task_labels?: Task_labelsUncheckedUpdateManyWithoutTasksNestedInput
-    task_users?: Task_usersUncheckedUpdateManyWithoutTasksNestedInput
   }
 
   export type TasksCreateManyInput = {
@@ -5674,56 +3281,39 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     modified_by?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type UuidFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
+  export type StringFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel>
+    in?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel>
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
     mode?: QueryMode
-    not?: NestedUuidFilter | string
+    not?: NestedStringFilter<$PrismaModel> | string
   }
 
-  export type StringFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
+  export type StringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
     mode?: QueryMode
-    not?: NestedStringFilter | string
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
-  export type StringNullableFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    mode?: QueryMode
-    not?: NestedStringNullableFilter | string | null
-  }
-
-  export type Task_labelsListRelationFilter = {
-    every?: Task_labelsWhereInput
-    some?: Task_labelsWhereInput
-    none?: Task_labelsWhereInput
-  }
-
-  export type Task_labelsOrderByRelationAggregateInput = {
-    _count?: SortOrder
+  export type SortOrderInput = {
+    sort: SortOrder
+    nulls?: NullsOrder
   }
 
   export type LabelsCountOrderByAggregateInput = {
@@ -5747,162 +3337,84 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     project_id?: SortOrder
   }
 
-  export type UuidWithAggregatesFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
+  export type StringWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel>
+    in?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel>
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
     mode?: QueryMode
-    not?: NestedUuidWithAggregatesFilter | string
-    _count?: NestedIntFilter
-    _min?: NestedStringFilter
-    _max?: NestedStringFilter
+    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedStringFilter<$PrismaModel>
+    _max?: NestedStringFilter<$PrismaModel>
   }
 
-  export type StringWithAggregatesFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
+  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
     mode?: QueryMode
-    not?: NestedStringWithAggregatesFilter | string
-    _count?: NestedIntFilter
-    _min?: NestedStringFilter
-    _max?: NestedStringFilter
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
-  export type StringNullableWithAggregatesFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    mode?: QueryMode
-    not?: NestedStringNullableWithAggregatesFilter | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedStringNullableFilter
-    _max?: NestedStringNullableFilter
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
-  export type LabelsRelationFilter = {
-    is?: LabelsWhereInput
-    isNot?: LabelsWhereInput
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
   }
 
-  export type TasksRelationFilter = {
-    is?: TasksWhereInput
-    isNot?: TasksWhereInput
+  export type DateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
-  export type Task_labelsLabel_idTask_idCompoundUniqueInput = {
-    label_id: string
-    task_id: string
-  }
-
-  export type Task_labelsCountOrderByAggregateInput = {
-    task_id?: SortOrder
-    label_id?: SortOrder
-  }
-
-  export type Task_labelsMaxOrderByAggregateInput = {
-    task_id?: SortOrder
-    label_id?: SortOrder
-  }
-
-  export type Task_labelsMinOrderByAggregateInput = {
-    task_id?: SortOrder
-    label_id?: SortOrder
-  }
-
-  export type Task_usersUser_idTask_idCompoundUniqueInput = {
-    user_id: string
-    task_id: string
-  }
-
-  export type Task_usersCountOrderByAggregateInput = {
-    task_id?: SortOrder
-    user_id?: SortOrder
-    role?: SortOrder
-  }
-
-  export type Task_usersMaxOrderByAggregateInput = {
-    task_id?: SortOrder
-    user_id?: SortOrder
-    role?: SortOrder
-  }
-
-  export type Task_usersMinOrderByAggregateInput = {
-    task_id?: SortOrder
-    user_id?: SortOrder
-    role?: SortOrder
-  }
-
-  export type IntNullableFilter = {
-    equals?: number | null
-    in?: Enumerable<number> | null
-    notIn?: Enumerable<number> | null
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntNullableFilter | number | null
-  }
-
-  export type IntFilter = {
-    equals?: number
-    in?: Enumerable<number>
-    notIn?: Enumerable<number>
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntFilter | number
-  }
-
-  export type DateTimeFilter = {
-    equals?: Date | string
-    in?: Enumerable<Date> | Enumerable<string>
-    notIn?: Enumerable<Date> | Enumerable<string>
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeFilter | Date | string
-  }
-
-  export type DateTimeNullableFilter = {
-    equals?: Date | string | null
-    in?: Enumerable<Date> | Enumerable<string> | null
-    notIn?: Enumerable<Date> | Enumerable<string> | null
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeNullableFilter | Date | string | null
-  }
-
-  export type Task_usersListRelationFilter = {
-    every?: Task_usersWhereInput
-    some?: Task_usersWhereInput
-    none?: Task_usersWhereInput
-  }
-
-  export type Task_usersOrderByRelationAggregateInput = {
-    _count?: SortOrder
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
   export type TasksCountOrderByAggregateInput = {
@@ -5971,78 +3483,64 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     status?: SortOrder
   }
 
-  export type IntNullableWithAggregatesFilter = {
-    equals?: number | null
-    in?: Enumerable<number> | null
-    notIn?: Enumerable<number> | null
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntNullableWithAggregatesFilter | number | null
-    _count?: NestedIntNullableFilter
-    _avg?: NestedFloatNullableFilter
-    _sum?: NestedIntNullableFilter
-    _min?: NestedIntNullableFilter
-    _max?: NestedIntNullableFilter
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
-  export type IntWithAggregatesFilter = {
-    equals?: number
-    in?: Enumerable<number>
-    notIn?: Enumerable<number>
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntWithAggregatesFilter | number
-    _count?: NestedIntFilter
-    _avg?: NestedFloatFilter
-    _sum?: NestedIntFilter
-    _min?: NestedIntFilter
-    _max?: NestedIntFilter
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
   }
 
-  export type DateTimeWithAggregatesFilter = {
-    equals?: Date | string
-    in?: Enumerable<Date> | Enumerable<string>
-    notIn?: Enumerable<Date> | Enumerable<string>
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeWithAggregatesFilter | Date | string
-    _count?: NestedIntFilter
-    _min?: NestedDateTimeFilter
-    _max?: NestedDateTimeFilter
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
-  export type DateTimeNullableWithAggregatesFilter = {
-    equals?: Date | string | null
-    in?: Enumerable<Date> | Enumerable<string> | null
-    notIn?: Enumerable<Date> | Enumerable<string> | null
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeNullableWithAggregatesFilter | Date | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedDateTimeNullableFilter
-    _max?: NestedDateTimeNullableFilter
-  }
-
-  export type Task_labelsCreateNestedManyWithoutLabelsInput = {
-    create?: XOR<Enumerable<Task_labelsCreateWithoutLabelsInput>, Enumerable<Task_labelsUncheckedCreateWithoutLabelsInput>>
-    connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutLabelsInput>
-    createMany?: Task_labelsCreateManyLabelsInputEnvelope
-    connect?: Enumerable<Task_labelsWhereUniqueInput>
-  }
-
-  export type Task_labelsUncheckedCreateNestedManyWithoutLabelsInput = {
-    create?: XOR<Enumerable<Task_labelsCreateWithoutLabelsInput>, Enumerable<Task_labelsUncheckedCreateWithoutLabelsInput>>
-    connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutLabelsInput>
-    createMany?: Task_labelsCreateManyLabelsInputEnvelope
-    connect?: Enumerable<Task_labelsWhereUniqueInput>
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -6051,104 +3549,6 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
 
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
-  }
-
-  export type Task_labelsUpdateManyWithoutLabelsNestedInput = {
-    create?: XOR<Enumerable<Task_labelsCreateWithoutLabelsInput>, Enumerable<Task_labelsUncheckedCreateWithoutLabelsInput>>
-    connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutLabelsInput>
-    upsert?: Enumerable<Task_labelsUpsertWithWhereUniqueWithoutLabelsInput>
-    createMany?: Task_labelsCreateManyLabelsInputEnvelope
-    set?: Enumerable<Task_labelsWhereUniqueInput>
-    disconnect?: Enumerable<Task_labelsWhereUniqueInput>
-    delete?: Enumerable<Task_labelsWhereUniqueInput>
-    connect?: Enumerable<Task_labelsWhereUniqueInput>
-    update?: Enumerable<Task_labelsUpdateWithWhereUniqueWithoutLabelsInput>
-    updateMany?: Enumerable<Task_labelsUpdateManyWithWhereWithoutLabelsInput>
-    deleteMany?: Enumerable<Task_labelsScalarWhereInput>
-  }
-
-  export type Task_labelsUncheckedUpdateManyWithoutLabelsNestedInput = {
-    create?: XOR<Enumerable<Task_labelsCreateWithoutLabelsInput>, Enumerable<Task_labelsUncheckedCreateWithoutLabelsInput>>
-    connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutLabelsInput>
-    upsert?: Enumerable<Task_labelsUpsertWithWhereUniqueWithoutLabelsInput>
-    createMany?: Task_labelsCreateManyLabelsInputEnvelope
-    set?: Enumerable<Task_labelsWhereUniqueInput>
-    disconnect?: Enumerable<Task_labelsWhereUniqueInput>
-    delete?: Enumerable<Task_labelsWhereUniqueInput>
-    connect?: Enumerable<Task_labelsWhereUniqueInput>
-    update?: Enumerable<Task_labelsUpdateWithWhereUniqueWithoutLabelsInput>
-    updateMany?: Enumerable<Task_labelsUpdateManyWithWhereWithoutLabelsInput>
-    deleteMany?: Enumerable<Task_labelsScalarWhereInput>
-  }
-
-  export type LabelsCreateNestedOneWithoutTask_labelsInput = {
-    create?: XOR<LabelsCreateWithoutTask_labelsInput, LabelsUncheckedCreateWithoutTask_labelsInput>
-    connectOrCreate?: LabelsCreateOrConnectWithoutTask_labelsInput
-    connect?: LabelsWhereUniqueInput
-  }
-
-  export type TasksCreateNestedOneWithoutTask_labelsInput = {
-    create?: XOR<TasksCreateWithoutTask_labelsInput, TasksUncheckedCreateWithoutTask_labelsInput>
-    connectOrCreate?: TasksCreateOrConnectWithoutTask_labelsInput
-    connect?: TasksWhereUniqueInput
-  }
-
-  export type LabelsUpdateOneRequiredWithoutTask_labelsNestedInput = {
-    create?: XOR<LabelsCreateWithoutTask_labelsInput, LabelsUncheckedCreateWithoutTask_labelsInput>
-    connectOrCreate?: LabelsCreateOrConnectWithoutTask_labelsInput
-    upsert?: LabelsUpsertWithoutTask_labelsInput
-    connect?: LabelsWhereUniqueInput
-    update?: XOR<LabelsUpdateWithoutTask_labelsInput, LabelsUncheckedUpdateWithoutTask_labelsInput>
-  }
-
-  export type TasksUpdateOneRequiredWithoutTask_labelsNestedInput = {
-    create?: XOR<TasksCreateWithoutTask_labelsInput, TasksUncheckedCreateWithoutTask_labelsInput>
-    connectOrCreate?: TasksCreateOrConnectWithoutTask_labelsInput
-    upsert?: TasksUpsertWithoutTask_labelsInput
-    connect?: TasksWhereUniqueInput
-    update?: XOR<TasksUpdateWithoutTask_labelsInput, TasksUncheckedUpdateWithoutTask_labelsInput>
-  }
-
-  export type TasksCreateNestedOneWithoutTask_usersInput = {
-    create?: XOR<TasksCreateWithoutTask_usersInput, TasksUncheckedCreateWithoutTask_usersInput>
-    connectOrCreate?: TasksCreateOrConnectWithoutTask_usersInput
-    connect?: TasksWhereUniqueInput
-  }
-
-  export type TasksUpdateOneRequiredWithoutTask_usersNestedInput = {
-    create?: XOR<TasksCreateWithoutTask_usersInput, TasksUncheckedCreateWithoutTask_usersInput>
-    connectOrCreate?: TasksCreateOrConnectWithoutTask_usersInput
-    upsert?: TasksUpsertWithoutTask_usersInput
-    connect?: TasksWhereUniqueInput
-    update?: XOR<TasksUpdateWithoutTask_usersInput, TasksUncheckedUpdateWithoutTask_usersInput>
-  }
-
-  export type Task_labelsCreateNestedManyWithoutTasksInput = {
-    create?: XOR<Enumerable<Task_labelsCreateWithoutTasksInput>, Enumerable<Task_labelsUncheckedCreateWithoutTasksInput>>
-    connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutTasksInput>
-    createMany?: Task_labelsCreateManyTasksInputEnvelope
-    connect?: Enumerable<Task_labelsWhereUniqueInput>
-  }
-
-  export type Task_usersCreateNestedManyWithoutTasksInput = {
-    create?: XOR<Enumerable<Task_usersCreateWithoutTasksInput>, Enumerable<Task_usersUncheckedCreateWithoutTasksInput>>
-    connectOrCreate?: Enumerable<Task_usersCreateOrConnectWithoutTasksInput>
-    createMany?: Task_usersCreateManyTasksInputEnvelope
-    connect?: Enumerable<Task_usersWhereUniqueInput>
-  }
-
-  export type Task_labelsUncheckedCreateNestedManyWithoutTasksInput = {
-    create?: XOR<Enumerable<Task_labelsCreateWithoutTasksInput>, Enumerable<Task_labelsUncheckedCreateWithoutTasksInput>>
-    connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutTasksInput>
-    createMany?: Task_labelsCreateManyTasksInputEnvelope
-    connect?: Enumerable<Task_labelsWhereUniqueInput>
-  }
-
-  export type Task_usersUncheckedCreateNestedManyWithoutTasksInput = {
-    create?: XOR<Enumerable<Task_usersCreateWithoutTasksInput>, Enumerable<Task_usersUncheckedCreateWithoutTasksInput>>
-    connectOrCreate?: Enumerable<Task_usersCreateOrConnectWithoutTasksInput>
-    createMany?: Task_usersCreateManyTasksInputEnvelope
-    connect?: Enumerable<Task_usersWhereUniqueInput>
   }
 
   export type NullableIntFieldUpdateOperationsInput = {
@@ -6175,652 +3575,192 @@ export type InputJsonValue = null | string | number | boolean | InputJsonObject 
     set?: Date | string | null
   }
 
-  export type Task_labelsUpdateManyWithoutTasksNestedInput = {
-    create?: XOR<Enumerable<Task_labelsCreateWithoutTasksInput>, Enumerable<Task_labelsUncheckedCreateWithoutTasksInput>>
-    connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutTasksInput>
-    upsert?: Enumerable<Task_labelsUpsertWithWhereUniqueWithoutTasksInput>
-    createMany?: Task_labelsCreateManyTasksInputEnvelope
-    set?: Enumerable<Task_labelsWhereUniqueInput>
-    disconnect?: Enumerable<Task_labelsWhereUniqueInput>
-    delete?: Enumerable<Task_labelsWhereUniqueInput>
-    connect?: Enumerable<Task_labelsWhereUniqueInput>
-    update?: Enumerable<Task_labelsUpdateWithWhereUniqueWithoutTasksInput>
-    updateMany?: Enumerable<Task_labelsUpdateManyWithWhereWithoutTasksInput>
-    deleteMany?: Enumerable<Task_labelsScalarWhereInput>
-  }
-
-  export type Task_usersUpdateManyWithoutTasksNestedInput = {
-    create?: XOR<Enumerable<Task_usersCreateWithoutTasksInput>, Enumerable<Task_usersUncheckedCreateWithoutTasksInput>>
-    connectOrCreate?: Enumerable<Task_usersCreateOrConnectWithoutTasksInput>
-    upsert?: Enumerable<Task_usersUpsertWithWhereUniqueWithoutTasksInput>
-    createMany?: Task_usersCreateManyTasksInputEnvelope
-    set?: Enumerable<Task_usersWhereUniqueInput>
-    disconnect?: Enumerable<Task_usersWhereUniqueInput>
-    delete?: Enumerable<Task_usersWhereUniqueInput>
-    connect?: Enumerable<Task_usersWhereUniqueInput>
-    update?: Enumerable<Task_usersUpdateWithWhereUniqueWithoutTasksInput>
-    updateMany?: Enumerable<Task_usersUpdateManyWithWhereWithoutTasksInput>
-    deleteMany?: Enumerable<Task_usersScalarWhereInput>
-  }
-
-  export type Task_labelsUncheckedUpdateManyWithoutTasksNestedInput = {
-    create?: XOR<Enumerable<Task_labelsCreateWithoutTasksInput>, Enumerable<Task_labelsUncheckedCreateWithoutTasksInput>>
-    connectOrCreate?: Enumerable<Task_labelsCreateOrConnectWithoutTasksInput>
-    upsert?: Enumerable<Task_labelsUpsertWithWhereUniqueWithoutTasksInput>
-    createMany?: Task_labelsCreateManyTasksInputEnvelope
-    set?: Enumerable<Task_labelsWhereUniqueInput>
-    disconnect?: Enumerable<Task_labelsWhereUniqueInput>
-    delete?: Enumerable<Task_labelsWhereUniqueInput>
-    connect?: Enumerable<Task_labelsWhereUniqueInput>
-    update?: Enumerable<Task_labelsUpdateWithWhereUniqueWithoutTasksInput>
-    updateMany?: Enumerable<Task_labelsUpdateManyWithWhereWithoutTasksInput>
-    deleteMany?: Enumerable<Task_labelsScalarWhereInput>
-  }
-
-  export type Task_usersUncheckedUpdateManyWithoutTasksNestedInput = {
-    create?: XOR<Enumerable<Task_usersCreateWithoutTasksInput>, Enumerable<Task_usersUncheckedCreateWithoutTasksInput>>
-    connectOrCreate?: Enumerable<Task_usersCreateOrConnectWithoutTasksInput>
-    upsert?: Enumerable<Task_usersUpsertWithWhereUniqueWithoutTasksInput>
-    createMany?: Task_usersCreateManyTasksInputEnvelope
-    set?: Enumerable<Task_usersWhereUniqueInput>
-    disconnect?: Enumerable<Task_usersWhereUniqueInput>
-    delete?: Enumerable<Task_usersWhereUniqueInput>
-    connect?: Enumerable<Task_usersWhereUniqueInput>
-    update?: Enumerable<Task_usersUpdateWithWhereUniqueWithoutTasksInput>
-    updateMany?: Enumerable<Task_usersUpdateManyWithWhereWithoutTasksInput>
-    deleteMany?: Enumerable<Task_usersScalarWhereInput>
-  }
-
-  export type NestedUuidFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    not?: NestedUuidFilter | string
-  }
-
-  export type NestedStringFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    not?: NestedStringFilter | string
-  }
-
-  export type NestedStringNullableFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    not?: NestedStringNullableFilter | string | null
-  }
-
-  export type NestedUuidWithAggregatesFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    not?: NestedUuidWithAggregatesFilter | string
-    _count?: NestedIntFilter
-    _min?: NestedStringFilter
-    _max?: NestedStringFilter
-  }
-
-  export type NestedIntFilter = {
-    equals?: number
-    in?: Enumerable<number>
-    notIn?: Enumerable<number>
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntFilter | number
-  }
-
-  export type NestedStringWithAggregatesFilter = {
-    equals?: string
-    in?: Enumerable<string>
-    notIn?: Enumerable<string>
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    not?: NestedStringWithAggregatesFilter | string
-    _count?: NestedIntFilter
-    _min?: NestedStringFilter
-    _max?: NestedStringFilter
-  }
-
-  export type NestedStringNullableWithAggregatesFilter = {
-    equals?: string | null
-    in?: Enumerable<string> | null
-    notIn?: Enumerable<string> | null
-    lt?: string
-    lte?: string
-    gt?: string
-    gte?: string
-    contains?: string
-    startsWith?: string
-    endsWith?: string
-    not?: NestedStringNullableWithAggregatesFilter | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedStringNullableFilter
-    _max?: NestedStringNullableFilter
-  }
-
-  export type NestedIntNullableFilter = {
-    equals?: number | null
-    in?: Enumerable<number> | null
-    notIn?: Enumerable<number> | null
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntNullableFilter | number | null
-  }
-
-  export type NestedDateTimeFilter = {
-    equals?: Date | string
-    in?: Enumerable<Date> | Enumerable<string>
-    notIn?: Enumerable<Date> | Enumerable<string>
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeFilter | Date | string
-  }
-
-  export type NestedDateTimeNullableFilter = {
-    equals?: Date | string | null
-    in?: Enumerable<Date> | Enumerable<string> | null
-    notIn?: Enumerable<Date> | Enumerable<string> | null
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeNullableFilter | Date | string | null
-  }
-
-  export type NestedIntNullableWithAggregatesFilter = {
-    equals?: number | null
-    in?: Enumerable<number> | null
-    notIn?: Enumerable<number> | null
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntNullableWithAggregatesFilter | number | null
-    _count?: NestedIntNullableFilter
-    _avg?: NestedFloatNullableFilter
-    _sum?: NestedIntNullableFilter
-    _min?: NestedIntNullableFilter
-    _max?: NestedIntNullableFilter
-  }
-
-  export type NestedFloatNullableFilter = {
-    equals?: number | null
-    in?: Enumerable<number> | null
-    notIn?: Enumerable<number> | null
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedFloatNullableFilter | number | null
-  }
-
-  export type NestedIntWithAggregatesFilter = {
-    equals?: number
-    in?: Enumerable<number>
-    notIn?: Enumerable<number>
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedIntWithAggregatesFilter | number
-    _count?: NestedIntFilter
-    _avg?: NestedFloatFilter
-    _sum?: NestedIntFilter
-    _min?: NestedIntFilter
-    _max?: NestedIntFilter
-  }
-
-  export type NestedFloatFilter = {
-    equals?: number
-    in?: Enumerable<number>
-    notIn?: Enumerable<number>
-    lt?: number
-    lte?: number
-    gt?: number
-    gte?: number
-    not?: NestedFloatFilter | number
-  }
-
-  export type NestedDateTimeWithAggregatesFilter = {
-    equals?: Date | string
-    in?: Enumerable<Date> | Enumerable<string>
-    notIn?: Enumerable<Date> | Enumerable<string>
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeWithAggregatesFilter | Date | string
-    _count?: NestedIntFilter
-    _min?: NestedDateTimeFilter
-    _max?: NestedDateTimeFilter
-  }
-
-  export type NestedDateTimeNullableWithAggregatesFilter = {
-    equals?: Date | string | null
-    in?: Enumerable<Date> | Enumerable<string> | null
-    notIn?: Enumerable<Date> | Enumerable<string> | null
-    lt?: Date | string
-    lte?: Date | string
-    gt?: Date | string
-    gte?: Date | string
-    not?: NestedDateTimeNullableWithAggregatesFilter | Date | string | null
-    _count?: NestedIntNullableFilter
-    _min?: NestedDateTimeNullableFilter
-    _max?: NestedDateTimeNullableFilter
-  }
-
-  export type Task_labelsCreateWithoutLabelsInput = {
-    tasks: TasksCreateNestedOneWithoutTask_labelsInput
-  }
-
-  export type Task_labelsUncheckedCreateWithoutLabelsInput = {
-    task_id: string
-  }
-
-  export type Task_labelsCreateOrConnectWithoutLabelsInput = {
-    where: Task_labelsWhereUniqueInput
-    create: XOR<Task_labelsCreateWithoutLabelsInput, Task_labelsUncheckedCreateWithoutLabelsInput>
-  }
-
-  export type Task_labelsCreateManyLabelsInputEnvelope = {
-    data: Enumerable<Task_labelsCreateManyLabelsInput>
-    skipDuplicates?: boolean
-  }
-
-  export type Task_labelsUpsertWithWhereUniqueWithoutLabelsInput = {
-    where: Task_labelsWhereUniqueInput
-    update: XOR<Task_labelsUpdateWithoutLabelsInput, Task_labelsUncheckedUpdateWithoutLabelsInput>
-    create: XOR<Task_labelsCreateWithoutLabelsInput, Task_labelsUncheckedCreateWithoutLabelsInput>
-  }
-
-  export type Task_labelsUpdateWithWhereUniqueWithoutLabelsInput = {
-    where: Task_labelsWhereUniqueInput
-    data: XOR<Task_labelsUpdateWithoutLabelsInput, Task_labelsUncheckedUpdateWithoutLabelsInput>
-  }
-
-  export type Task_labelsUpdateManyWithWhereWithoutLabelsInput = {
-    where: Task_labelsScalarWhereInput
-    data: XOR<Task_labelsUpdateManyMutationInput, Task_labelsUncheckedUpdateManyWithoutTask_labelsInput>
-  }
-
-  export type Task_labelsScalarWhereInput = {
-    AND?: Enumerable<Task_labelsScalarWhereInput>
-    OR?: Enumerable<Task_labelsScalarWhereInput>
-    NOT?: Enumerable<Task_labelsScalarWhereInput>
-    task_id?: UuidFilter | string
-    label_id?: UuidFilter | string
-  }
-
-  export type LabelsCreateWithoutTask_labelsInput = {
-    id: string
-    name: string
-    color?: string | null
-    project_id: string
-  }
-
-  export type LabelsUncheckedCreateWithoutTask_labelsInput = {
-    id: string
-    name: string
-    color?: string | null
-    project_id: string
-  }
-
-  export type LabelsCreateOrConnectWithoutTask_labelsInput = {
-    where: LabelsWhereUniqueInput
-    create: XOR<LabelsCreateWithoutTask_labelsInput, LabelsUncheckedCreateWithoutTask_labelsInput>
-  }
-
-  export type TasksCreateWithoutTask_labelsInput = {
-    id: string
-    slug: string
-    markdown?: string | null
-    summary: string
-    type: string
-    impact?: number | null
-    sort_order?: number | null
-    status: number
-    project_id: string
-    created_at: Date | string
-    created_by: string
-    assigned_by?: string | null
-    assigned_at?: Date | string | null
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    task_users?: Task_usersCreateNestedManyWithoutTasksInput
-  }
-
-  export type TasksUncheckedCreateWithoutTask_labelsInput = {
-    id: string
-    slug: string
-    markdown?: string | null
-    summary: string
-    type: string
-    impact?: number | null
-    sort_order?: number | null
-    status: number
-    project_id: string
-    created_at: Date | string
-    created_by: string
-    assigned_by?: string | null
-    assigned_at?: Date | string | null
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    task_users?: Task_usersUncheckedCreateNestedManyWithoutTasksInput
-  }
-
-  export type TasksCreateOrConnectWithoutTask_labelsInput = {
-    where: TasksWhereUniqueInput
-    create: XOR<TasksCreateWithoutTask_labelsInput, TasksUncheckedCreateWithoutTask_labelsInput>
-  }
-
-  export type LabelsUpsertWithoutTask_labelsInput = {
-    update: XOR<LabelsUpdateWithoutTask_labelsInput, LabelsUncheckedUpdateWithoutTask_labelsInput>
-    create: XOR<LabelsCreateWithoutTask_labelsInput, LabelsUncheckedCreateWithoutTask_labelsInput>
-  }
-
-  export type LabelsUpdateWithoutTask_labelsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-    project_id?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type LabelsUncheckedUpdateWithoutTask_labelsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-    project_id?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type TasksUpsertWithoutTask_labelsInput = {
-    update: XOR<TasksUpdateWithoutTask_labelsInput, TasksUncheckedUpdateWithoutTask_labelsInput>
-    create: XOR<TasksCreateWithoutTask_labelsInput, TasksUncheckedCreateWithoutTask_labelsInput>
-  }
-
-  export type TasksUpdateWithoutTask_labelsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    markdown?: NullableStringFieldUpdateOperationsInput | string | null
-    summary?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    impact?: NullableIntFieldUpdateOperationsInput | number | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: IntFieldUpdateOperationsInput | number
-    project_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
-    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    task_users?: Task_usersUpdateManyWithoutTasksNestedInput
-  }
-
-  export type TasksUncheckedUpdateWithoutTask_labelsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    markdown?: NullableStringFieldUpdateOperationsInput | string | null
-    summary?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    impact?: NullableIntFieldUpdateOperationsInput | number | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: IntFieldUpdateOperationsInput | number
-    project_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
-    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    task_users?: Task_usersUncheckedUpdateManyWithoutTasksNestedInput
-  }
-
-  export type TasksCreateWithoutTask_usersInput = {
-    id: string
-    slug: string
-    markdown?: string | null
-    summary: string
-    type: string
-    impact?: number | null
-    sort_order?: number | null
-    status: number
-    project_id: string
-    created_at: Date | string
-    created_by: string
-    assigned_by?: string | null
-    assigned_at?: Date | string | null
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    task_labels?: Task_labelsCreateNestedManyWithoutTasksInput
-  }
-
-  export type TasksUncheckedCreateWithoutTask_usersInput = {
-    id: string
-    slug: string
-    markdown?: string | null
-    summary: string
-    type: string
-    impact?: number | null
-    sort_order?: number | null
-    status: number
-    project_id: string
-    created_at: Date | string
-    created_by: string
-    assigned_by?: string | null
-    assigned_at?: Date | string | null
-    modified_at?: Date | string | null
-    modified_by?: string | null
-    task_labels?: Task_labelsUncheckedCreateNestedManyWithoutTasksInput
-  }
-
-  export type TasksCreateOrConnectWithoutTask_usersInput = {
-    where: TasksWhereUniqueInput
-    create: XOR<TasksCreateWithoutTask_usersInput, TasksUncheckedCreateWithoutTask_usersInput>
-  }
-
-  export type TasksUpsertWithoutTask_usersInput = {
-    update: XOR<TasksUpdateWithoutTask_usersInput, TasksUncheckedUpdateWithoutTask_usersInput>
-    create: XOR<TasksCreateWithoutTask_usersInput, TasksUncheckedCreateWithoutTask_usersInput>
-  }
-
-  export type TasksUpdateWithoutTask_usersInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    markdown?: NullableStringFieldUpdateOperationsInput | string | null
-    summary?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    impact?: NullableIntFieldUpdateOperationsInput | number | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: IntFieldUpdateOperationsInput | number
-    project_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
-    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    task_labels?: Task_labelsUpdateManyWithoutTasksNestedInput
-  }
-
-  export type TasksUncheckedUpdateWithoutTask_usersInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    slug?: StringFieldUpdateOperationsInput | string
-    markdown?: NullableStringFieldUpdateOperationsInput | string | null
-    summary?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    impact?: NullableIntFieldUpdateOperationsInput | number | null
-    sort_order?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: IntFieldUpdateOperationsInput | number
-    project_id?: StringFieldUpdateOperationsInput | string
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    created_by?: StringFieldUpdateOperationsInput | string
-    assigned_by?: NullableStringFieldUpdateOperationsInput | string | null
-    assigned_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    modified_by?: NullableStringFieldUpdateOperationsInput | string | null
-    task_labels?: Task_labelsUncheckedUpdateManyWithoutTasksNestedInput
-  }
-
-  export type Task_labelsCreateWithoutTasksInput = {
-    labels: LabelsCreateNestedOneWithoutTask_labelsInput
-  }
-
-  export type Task_labelsUncheckedCreateWithoutTasksInput = {
-    label_id: string
-  }
-
-  export type Task_labelsCreateOrConnectWithoutTasksInput = {
-    where: Task_labelsWhereUniqueInput
-    create: XOR<Task_labelsCreateWithoutTasksInput, Task_labelsUncheckedCreateWithoutTasksInput>
-  }
-
-  export type Task_labelsCreateManyTasksInputEnvelope = {
-    data: Enumerable<Task_labelsCreateManyTasksInput>
-    skipDuplicates?: boolean
-  }
-
-  export type Task_usersCreateWithoutTasksInput = {
-    user_id: string
-    role: string
-  }
-
-  export type Task_usersUncheckedCreateWithoutTasksInput = {
-    user_id: string
-    role: string
-  }
-
-  export type Task_usersCreateOrConnectWithoutTasksInput = {
-    where: Task_usersWhereUniqueInput
-    create: XOR<Task_usersCreateWithoutTasksInput, Task_usersUncheckedCreateWithoutTasksInput>
-  }
-
-  export type Task_usersCreateManyTasksInputEnvelope = {
-    data: Enumerable<Task_usersCreateManyTasksInput>
-    skipDuplicates?: boolean
-  }
-
-  export type Task_labelsUpsertWithWhereUniqueWithoutTasksInput = {
-    where: Task_labelsWhereUniqueInput
-    update: XOR<Task_labelsUpdateWithoutTasksInput, Task_labelsUncheckedUpdateWithoutTasksInput>
-    create: XOR<Task_labelsCreateWithoutTasksInput, Task_labelsUncheckedCreateWithoutTasksInput>
-  }
-
-  export type Task_labelsUpdateWithWhereUniqueWithoutTasksInput = {
-    where: Task_labelsWhereUniqueInput
-    data: XOR<Task_labelsUpdateWithoutTasksInput, Task_labelsUncheckedUpdateWithoutTasksInput>
-  }
-
-  export type Task_labelsUpdateManyWithWhereWithoutTasksInput = {
-    where: Task_labelsScalarWhereInput
-    data: XOR<Task_labelsUpdateManyMutationInput, Task_labelsUncheckedUpdateManyWithoutTask_labelsInput>
-  }
-
-  export type Task_usersUpsertWithWhereUniqueWithoutTasksInput = {
-    where: Task_usersWhereUniqueInput
-    update: XOR<Task_usersUpdateWithoutTasksInput, Task_usersUncheckedUpdateWithoutTasksInput>
-    create: XOR<Task_usersCreateWithoutTasksInput, Task_usersUncheckedCreateWithoutTasksInput>
-  }
-
-  export type Task_usersUpdateWithWhereUniqueWithoutTasksInput = {
-    where: Task_usersWhereUniqueInput
-    data: XOR<Task_usersUpdateWithoutTasksInput, Task_usersUncheckedUpdateWithoutTasksInput>
-  }
-
-  export type Task_usersUpdateManyWithWhereWithoutTasksInput = {
-    where: Task_usersScalarWhereInput
-    data: XOR<Task_usersUpdateManyMutationInput, Task_usersUncheckedUpdateManyWithoutTask_usersInput>
-  }
-
-  export type Task_usersScalarWhereInput = {
-    AND?: Enumerable<Task_usersScalarWhereInput>
-    OR?: Enumerable<Task_usersScalarWhereInput>
-    NOT?: Enumerable<Task_usersScalarWhereInput>
-    task_id?: UuidFilter | string
-    user_id?: string
-    role?: StringFilter | string
-  }
-
-  export type Task_labelsCreateManyLabelsInput = {
-    task_id: string
-  }
-
-  export type Task_labelsUpdateWithoutLabelsInput = {
-    tasks?: TasksUpdateOneRequiredWithoutTask_labelsNestedInput
-  }
-
-  export type Task_labelsUncheckedUpdateWithoutLabelsInput = {
-    task_id?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type Task_labelsUncheckedUpdateManyWithoutTask_labelsInput = {
-    task_id?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type Task_labelsCreateManyTasksInput = {
-    label_id: string
-  }
-
-  export type Task_usersCreateManyTasksInput = {
-    user_id: string
-    role: string
-  }
-
-  export type Task_labelsUpdateWithoutTasksInput = {
-    labels?: LabelsUpdateOneRequiredWithoutTask_labelsNestedInput
-  }
-
-  export type Task_labelsUncheckedUpdateWithoutTasksInput = {
-    label_id?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type Task_usersUpdateWithoutTasksInput = {
-    user_id?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type Task_usersUncheckedUpdateWithoutTasksInput = {
-    user_id?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type Task_usersUncheckedUpdateManyWithoutTask_usersInput = {
-    user_id?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
+  export type NestedStringFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel>
+    in?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel>
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringFilter<$PrismaModel> | string
+  }
+
+  export type NestedStringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel>
+    in?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel>
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedStringFilter<$PrismaModel>
+    _max?: NestedStringFilter<$PrismaModel>
+  }
+
+  export type NestedIntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<string> | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedDateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<number> | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<number> | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<number> | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: Enumerable<number> | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<number> | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Enumerable<Date> | Enumerable<string> | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
 
