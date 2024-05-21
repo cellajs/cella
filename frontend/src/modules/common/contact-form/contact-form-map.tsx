@@ -1,11 +1,33 @@
 import { config } from 'config';
-// import L from 'leaflet';
-// import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { useState } from 'react';
 import Logo from '/static/logo/logo-icon-only.svg';
 import { useTranslation } from 'react-i18next';
 import '~/modules/common/contact-form/leaflet.css';
 import { AdvancedMarker, APIProvider, InfoWindow, Map as GMap, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
+import { useThemeStore } from '~/store/theme';
+
+type MapConfig = {
+  id: string;
+  label: string;
+  mapId?: string;
+  mapTypeId?: string;
+  styles?: google.maps.MapTypeStyle[];
+};
+
+const mapStyles: MapConfig[] = [
+  {
+    id: 'light',
+    label: 'Light',
+    mapId: '49ae42fed52588c3',
+    mapTypeId: 'roadmap',
+  },
+  {
+    id: 'dark',
+    label: 'Dark',
+    mapId: '739af084373f96fe',
+    mapTypeId: 'roadmap',
+  },
+];
 
 export const MarkerWithInfowindow = ({ position }: { position: { lat: number; lng: number } }) => {
   const { t } = useTranslation();
@@ -40,12 +62,22 @@ export const MarkerWithInfowindow = ({ position }: { position: { lat: number; ln
 };
 
 const ContactFormMap = () => {
+  const { mode } = useThemeStore();
+  const [mapConfig] = useState<MapConfig>(mode === 'dark' ? mapStyles[1] : mapStyles[0]);
   const position = { lat: config.company.coordinates.lat, lng: config.company.coordinates.lon };
   if (position)
     return (
       <div className="w-full h-full md:pb-12 md:px-4 overflow-hidden">
         <APIProvider apiKey={'AIzaSyAl84y68d7u6lVO5LZvR6ThQd6iMYKNXys'} libraries={['marker']}>
-          <GMap mapId={'bf51a910020fa25a'} gestureHandling={'greedy'} disableDefaultUI defaultCenter={position} defaultZoom={5}>
+          <GMap
+            mapId={mapConfig.mapId || null}
+            mapTypeId={mapConfig.mapTypeId}
+            styles={mapConfig.styles}
+            gestureHandling={'greedy'}
+            disableDefaultUI
+            defaultCenter={position}
+            defaultZoom={5}
+          >
             <MarkerWithInfowindow position={position} />
           </GMap>
         </APIProvider>

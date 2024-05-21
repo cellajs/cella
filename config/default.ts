@@ -1,3 +1,5 @@
+const oauthProviders = ['Github'];
+
 export const config = {
   mode: 'development' as 'production' | 'development' | 'tunnel',
   name: 'Cella',
@@ -63,9 +65,11 @@ export const config = {
   },
 
   // Enabled OAuth providers
-  oauthProviders: ['Github'],
+  oauthProviders,
+
   // Auth methods
-  authMethods: ['Github', 'email'],
+  authMethods: [...oauthProviders, 'email'], // Spread operator to include elements of oauthProviders
+
   // Optional settings
 
   // To test waitList
