@@ -65,11 +65,10 @@ const ContactFormMap = () => {
   const { mode } = useThemeStore();
   const [mapConfig] = useState<MapConfig>(mode === 'dark' ? mapStyles[1] : mapStyles[0]);
   const position = { lat: config.company.coordinates.lat, lng: config.company.coordinates.lon };
-  const mapApiKey = process.env.GOOGLE_MAP_API_KEY || 'AIzaSyAl84y68d7u6lVO5LZvR6ThQd6iMYKNXys';
-  if (position)
+  if (position && config.googleMapsKey)
     return (
       <div className="w-full h-full md:pb-12 md:px-4 overflow-hidden">
-        <APIProvider apiKey={mapApiKey} libraries={['marker']}>
+        <APIProvider apiKey={config.googleMapsKey} libraries={['marker']}>
           <GMap
             mapId={mapConfig.mapId || null}
             mapTypeId={mapConfig.mapTypeId}
@@ -77,7 +76,7 @@ const ContactFormMap = () => {
             gestureHandling={'greedy'}
             disableDefaultUI
             defaultCenter={position}
-            defaultZoom={5}
+            defaultZoom={config.company.mapZoom}
           >
             <MarkerWithInfowindow position={position} />
           </GMap>

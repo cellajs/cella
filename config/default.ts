@@ -41,6 +41,9 @@ export const config = {
   // Customer support with Gleap
   gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
 
+  // Google maps key
+  googleMapsKey: 'AIzaSyCuYvBo76_SZIAcmov00uf7KIM1DSH8D7A',
+
   // File handling with imado
   tusUrl: 'http://localhost:1080',
   tusPort: 1080,
@@ -71,10 +74,6 @@ export const config = {
   authMethods: [...oauthProviders, 'email'], // Spread operator to include elements of oauthProviders
 
   // Optional settings
-
-  // To test waitList
-  //  signUp: false,
-  //   waitList: true,
   has: {
     pwa: false,
     signUp: true,
@@ -89,6 +88,19 @@ export const config = {
   ],
 
   defaultLanguage: 'en' as const,
+
+    // Roles
+  // TODO, make dynamic and type safe, for now it's hardcoded
+  rolesByType: {
+    system: [
+      { key: 'USER', value: 'common:user' },
+      { key: 'ADMIN', value: 'common:admin' },
+    ],
+    organization: [
+      { key: 'MEMBER', value: 'common:member' },
+      { key: 'ADMIN', value: 'common:admin' },
+    ],
+  } as const,
 
   // Company details
   company: {
@@ -105,25 +117,12 @@ export const config = {
     twitterUrl: 'https://twitter.com/flipvanhaaren',
     twitterHandle: '@flipvanhaaren',
     githubUrl: 'https://github.com/cellajs/cella',
-    mapZoom: 4,
+    mapZoom: 3,
     coordinates: {
       lat: 51.92760809717153,
       lon: 4.47421039909924,
     },
   },
-
-  // Roles
-  // TODO, make dynamic and type safe, for now it's hardcoded
-  rolesByType: {
-    system: [
-      { key: 'USER', value: 'common:user' },
-      { key: 'ADMIN', value: 'common:admin' },
-    ],
-    organization: [
-      { key: 'MEMBER', value: 'common:member' },
-      { key: 'ADMIN', value: 'common:admin' },
-    ],
-  } as const,
 };
 
 export default config;

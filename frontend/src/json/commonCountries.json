@@ -1,13 +1,8 @@
 [
   { "name": "France", "code": "FR" },
-  { "name": "French Guiana", "code": "GF" },
-  { "name": "French Polynesia", "code": "PF" },
-  { "name": "French Southern Territories", "code": "TF" },
-
   { "name": "Germany", "code": "DE" },
   { "name": "Netherlands", "code": "NL" },
-  { "name": "Netherlands Antilles", "code": "AN" },
   { "name": "Ukraine", "code": "UA" },
   { "name": "United States", "code": "US" },
-  { "name": "United States Minor Outlying Islands", "code": "UM" }
+  { "name": "United Kingdom", "code": "GB" }
 ]

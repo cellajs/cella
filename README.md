@@ -84,7 +84,7 @@ pnpm run generate
 pnpm run migrate 
 ```
 
-And for local-first data with [ElectricSQL](https://github.com/electric-sql/electric) in frontend.
+And for local-first data with [ElectricSQL](https://github.com/electric-sql/electric).
 
 ```bash
 pnpm run electrify
