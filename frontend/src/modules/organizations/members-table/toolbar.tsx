@@ -116,7 +116,7 @@ function Toolbar({
             {selectedMembers.length > 0 ? (
               <>
                 <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative ">
-                  <motion.button transition={{ duration: 0.2 }} layoutId="members-filter-bar-button">
+                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2 animate-in zoom-in">
                       {selectedMembers.length}
                     </Badge>
@@ -147,7 +147,7 @@ function Toolbar({
               !isFiltered &&
               (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
                 <Button asChild onClick={openInviteDialog}>
-                  <motion.button transition={{ duration: 0.2 }} layoutId="members-filter-bar-button">
+                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <motion.span layoutId="members-filter-bar-icon">
                       <Mail size={16} />
                     </motion.span>

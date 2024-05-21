@@ -13,7 +13,7 @@ import { MenuArchiveToggle } from './menu-archive-toggle';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
-import { motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 
 interface MenuSectionProps {
   key: string;
@@ -162,56 +162,62 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     <>
       <StickyBox className="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
-          <Button onClick={() => toggleSection(section.id)} className="w-full justify-between" variant="secondary" asChild>
-            <motion.button layout transition={{ bounce: 0, duration: 0.2 }}>
-              <div className="flex items-center">
-                <motion.span layout className="flex items-center">
-                  {section.icon && <section.icon className="mr-2 w-5 h-5" />}
-                  {t(section.label)}
-                </motion.span>
-                {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{unarchive.length}</span>}
-              </div>
+          <LayoutGroup>
+            <Button onClick={() => toggleSection(section.id)} className="w-full justify-between" variant="secondary" asChild>
+              <motion.button layout transition={{ bounce: 0, duration: 0.15 }}>
+                <div className="flex items-center">
+                  <motion.span layout className="flex items-center">
+                    {section.icon && <section.icon className="mr-2 w-5 h-5" />}
+                    {t(section.label)}
+                  </motion.span>
+                  {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{unarchive.length}</span>}
+                </div>
 
-              <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
-            </motion.button>
-          </Button>
-          {!!isSectionVisible && (
-            <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
-              <Button
-                disabled={!archived.length && !unarchive.length}
-                className="w-12 px-3"
-                variant="secondary"
-                size="icon"
-                onClick={() => toggleOptionsView(!optionsView)}
-                asChild
-              >
-                <motion.button
-                  key={`sheet-menu-settings-${section.id}`}
-                  transition={{ bounce: 0 }}
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: 20, opacity: 0 }}
-                >
-                  <Settings2 size={16} />
-                </motion.button>
-              </Button>
-            </TooltipButton>
-          )}
-          {isSectionVisible && data.canCreate && section.createForm && (
-            <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
-              <Button className="w-12 px-3" variant="secondary" size="icon" onClick={createDialog} asChild>
-                <motion.button
-                  key={`sheet-menu-plus-${section.id}`}
-                  transition={{ bounce: 0 }}
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: 20, opacity: 0 }}
-                >
-                  <Plus size={16} />
-                </motion.button>
-              </Button>
-            </TooltipButton>
-          )}
+                <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
+              </motion.button>
+            </Button>
+            <AnimatePresence mode="popLayout">
+              {!!isSectionVisible && (
+                <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
+                  <Button
+                    disabled={!archived.length && !unarchive.length}
+                    className="w-12 px-3"
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => toggleOptionsView(!optionsView)}
+                    asChild
+                  >
+                    <motion.button
+                      key={`sheet-menu-settings-${section.id}`}
+                      transition={{ bounce: 0, duration: 0.2 }}
+                      initial={{ x: 20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: 20, opacity: 0, transition: { bounce: 0, duration: 0.1 } }}
+                    >
+                      <Settings2 size={16} />
+                    </motion.button>
+                  </Button>
+                </TooltipButton>
+              )}
+            </AnimatePresence>
+            <AnimatePresence mode="popLayout">
+              {isSectionVisible && data.canCreate && section.createForm && (
+                <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
+                  <Button className="w-12 px-3" variant="secondary" size="icon" onClick={createDialog} asChild>
+                    <motion.button
+                      key={`sheet-menu-plus-${section.id}`}
+                      transition={{ bounce: 0, duration: 0.2, transition: { bounce: 0, duration: 0.1 } }}
+                      initial={{ x: 20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: 20, opacity: 0 }}
+                    >
+                      <Plus size={16} />
+                    </motion.button>
+                  </Button>
+                </TooltipButton>
+              )}
+            </AnimatePresence>
+          </LayoutGroup>
         </div>
       </StickyBox>
       <div
