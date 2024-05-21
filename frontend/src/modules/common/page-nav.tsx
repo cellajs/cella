@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { motion } from 'framer-motion';
 
 export type PageNavTab = {
   id: string;
@@ -69,14 +70,24 @@ export const PageNav = ({ title, avatar, tabs }: Props) => {
           <Link
             key={id}
             resetScroll={false}
-            className="p-2 border-b-4 lg:px-4 border-transparent"
+            className="relative p-2 lg:px-4"
             to={path}
             params={''}
             activeOptions={{ exact: true, includeSearch: false }}
             onClick={updateScrollPosition}
-            activeProps={{ className: '!border-primary' }}
           >
-            {t(label)}
+            {({ isActive }) => (
+              <>
+                {t(label)}
+                {isActive && (
+                  <motion.div
+                    layoutId="page-nav-underline"
+                    transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                    className="h-1 bg-primary w-full absolute bottom-0 left-0"
+                  />
+                )}
+              </>
+            )}
           </Link>
         ))}
       </div>
