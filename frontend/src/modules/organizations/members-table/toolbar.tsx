@@ -120,10 +120,14 @@ function Toolbar({
                     <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2 animate-in zoom-in">
                       {selectedMembers.length}
                     </Badge>
-                    <Trash size={16} />
+                    <motion.span layoutId="members-filter-bar-icon">
+                      <Trash size={16} />
+                    </motion.span>
+
                     <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
                   </motion.button>
                 </Button>
+
                 <Button asChild variant="ghost" onClick={onResetSelectedRows}>
                   <motion.button
                     transition={{
@@ -144,7 +148,9 @@ function Toolbar({
               (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
                 <Button asChild onClick={openInviteDialog}>
                   <motion.button transition={{ duration: 0.2 }} layoutId="members-filter-bar-button">
-                    <Mail size={16} />
+                    <motion.span layoutId="members-filter-bar-icon">
+                      <Mail size={16} />
+                    </motion.span>
                     <span className="ml-1">{t('common:invite')}</span>
                   </motion.button>
                 </Button>
@@ -155,7 +161,7 @@ function Toolbar({
 
           <div className="sm:grow" />
 
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in">
+          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
             <TableSearch value={query} setQuery={setQuery} />
             <SelectRole roles={selectRoleOptions} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>

@@ -162,13 +162,13 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     <>
       <StickyBox className="z-10">
         <div className="flex items-center gap-2 z-10 py-2 bg-background justify-between px-1 -mx-1">
-          <Button onClick={() => toggleSection(section.id)} className="w-full justify-between transition-transform" variant="secondary" asChild>
-            <motion.button layout transition={{ bounce: 0 }}>
+          <Button onClick={() => toggleSection(section.id)} className="w-full justify-between" variant="secondary" asChild>
+            <motion.button layout transition={{ bounce: 0, duration: 0.2 }}>
               <div className="flex items-center">
-                <span className="flex items-center">
+                <motion.span layout className="flex items-center">
                   {section.icon && <section.icon className="mr-2 w-5 h-5" />}
                   {t(section.label)}
-                </span>
+                </motion.span>
                 {!isSectionVisible && <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{unarchive.length}</span>}
               </div>
 
