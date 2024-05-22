@@ -31,9 +31,9 @@ export const LegalsMenu = () => {
   const { t } = useTranslation();
   return (
     <PublicPage title={t('common:legal')}>
-      <div className="container md:flex md:flex-row md:mt-8 mx-auto gap-4">
+      <div className="container md:flex md:flex-row mt-4 md:mt-8 mx-auto gap-4">
         <div className="mx-auto md:min-w-[200px] md:w-[30%] md:mt-2">
-          <StickyBox className="z-10 max-md:!relative">
+          <StickyBox className="z-10 max-md:!block">
             <SimpleHeader className="p-3" text={t('common:legal_text')} />
             <AsideNav tabs={tabs} className="py-2" />
           </StickyBox>
