@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS "memberships" (
 	"project_id" varchar,
 	"task_id" varchar,
 	"label_id" varchar,
-	"user_id" varchar NOT NULL,
+	"user_id" varchar,
 	"role" varchar DEFAULT 'MEMBER' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,

@@ -15,7 +15,7 @@ export type ErrorType = z.infer<typeof errorSchema> & {
 };
 
 export type EventData = {
-  readonly [key: string]: number | string | boolean;
+  readonly [key: string]: number | string | boolean | null;
 };
 
 // Create error object and log it if needed
