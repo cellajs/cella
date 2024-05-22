@@ -57,7 +57,7 @@ export const RequestsTableRoute = createRoute({
   getParentRoute: () => SystemPanelRoute,
   component: () => (
     <Suspense>
-      <RequestsTable />
+      <RequestsTable mode="system" />
     </Suspense>
   ),
   validateSearch: requestSearchSchema,

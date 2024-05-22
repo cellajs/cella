@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { Bird } from 'lucide-react';
 import type { SortColumn } from 'react-data-grid';
@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { RequestsTableRoute } from '~/routes/system';
 import type { Requests } from '~/types';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
@@ -16,16 +15,19 @@ import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import type { getRequestsQuerySchema } from 'backend/modules/general/schema';
 import { actionRequests } from '~/api/general';
+import { OrganizationContext } from '~/modules/organizations/organization';
 
 export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
 const LIMIT = 40;
 
-type RequestsTableModes = { mode?: 'system' | 'organization' };
+type RequestsTableModes = { mode: 'system' | 'organization' };
+const RequestsTable = ({ mode }: RequestsTableModes) => {
+  const { organization } = useContext(OrganizationContext);
 
-const RequestsTable = ({ mode = 'system' }: RequestsTableModes) => {
+  // Fix it
   const search = useSearch({
-    from: RequestsTableRoute.id,
+    from: `/layout/${mode === 'system' ? mode : '$idOrSlug'}/requests`,
   });
   const { t } = useTranslation();
   const [rows, setRows] = useState<Requests[]>([]);
@@ -61,6 +63,8 @@ const RequestsTable = ({ mode = 'system' }: RequestsTableModes) => {
           sort: sortColumns[0]?.columnKey as RequestsSearch['sort'],
           order: sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'],
           limit: LIMIT,
+          organizationId: organization?.id,
+          mode,
         },
         signal,
       );
@@ -85,7 +89,6 @@ const RequestsTable = ({ mode = 'system' }: RequestsTableModes) => {
 
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.requestsInfo);
-
     if (data) {
       setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
       setRows(data);

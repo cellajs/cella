@@ -453,7 +453,7 @@ const generalRoutes = app
    *  Create access-request
    */
   .openapi(requestActionConfig, async (ctx) => {
-    const { email, userId, organizationId, type, accompanyingMessage } = ctx.req.valid('json'); //accompanyingMessage
+    const { email, userId, organizationId, type, accompanyingMessage } = ctx.req.valid('json');
 
     const [createdAccessRequest] = await db
       .insert(requestsTable)
@@ -486,7 +486,7 @@ const generalRoutes = app
    *  Get requests
    */
   .openapi(actionRequestsConfig, async (ctx) => {
-    const { q, sort, order, offset, limit, mode } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, mode, organizationId } = ctx.req.valid('query');
 
     let filter: SQL | undefined = undefined;
     if (mode === 'system') {
@@ -516,6 +516,9 @@ const generalRoutes = app
       order,
     );
 
+    const organizationJoinFilter = organizationId
+      ? and(eq(organizationsTable.id, requestsTable.organization_id), eq(organizationsTable.id, organizationId))
+      : eq(organizationsTable.id, requestsTable.organization_id);
     const requests = await db
       .select({
         requests: requestsTable,
@@ -523,7 +526,7 @@ const generalRoutes = app
         organization: organizationsTable,
       })
       .from(requestsQuery.as('requests'))
-      .leftJoin(organizationsTable, eq(organizationsTable.id, requestsTable.organization_id))
+      .leftJoin(organizationsTable, organizationJoinFilter)
       .leftJoin(usersTable, eq(usersTable.id, requestsTable.user_id))
       .orderBy(orderColumn)
       .limit(Number(limit))
@@ -542,6 +545,7 @@ const generalRoutes = app
           userName: user?.name || null,
           userThumbnail: user?.thumbnailUrl || null,
           organizationId: organization?.id || null,
+          organizationSlug: organization?.slug || null,
           organizationName: organization?.name || null,
           organizationThumbnail: organization?.thumbnailUrl || null,
         })),
