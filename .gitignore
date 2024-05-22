@@ -34,4 +34,5 @@ dist-ssr
 .wrangler
 backend/files
 frontend/stats.html
+frontend/src/generated
 mockServiceWorker.js

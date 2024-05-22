@@ -74,6 +74,12 @@ Make sure docker runs in the background.
 pnpm run docker
 ```
 
+If you want to use [Supabase](https://supabase.io/) as a database you can add the `SUPABASE_DATABASE_URL` to the `.env` file. Then run:
+
+```bash
+pnpm run docker:supabase
+```
+
 ### Step 2
 
 #### Populate database
