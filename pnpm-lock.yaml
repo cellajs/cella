@@ -167,7 +167,7 @@ importers:
         version: 5.3.0
       drizzle-kit:
         specifier: ^0.21.2
-        version: 0.21.2
+        version: 0.21.3
       hanji:
         specifier: ^0.0.5
         version: 0.0.5
@@ -487,7 +487,7 @@ importers:
         version: 1.11.11
       electric-sql:
         specifier: ^0.11.3
-        version: 0.11.3(pg@8.11.5)(prisma@5.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vue@3.4.26(typescript@5.4.5))(wa-sqlite@1.0.0)(zod@3.23.6)
+        version: 0.11.3(@tauri-apps/plugin-sql@2.0.0-alpha.5)(pg@8.11.5)(prisma@5.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vue@3.4.26(typescript@5.4.5))(wa-sqlite@1.0.0)(zod@3.23.6)
       embla-carousel-autoplay:
         specifier: ^8.0.4
         version: 8.0.4(embla-carousel@8.0.4)
@@ -496,7 +496,7 @@ importers:
         version: 8.0.4(react@18.3.1)
       framer-motion:
         specifier: ^11.2.4
-        version: 11.2.5(@emotion/is-prop-valid@0.8.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 11.2.6(@emotion/is-prop-valid@0.8.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       gleap:
         specifier: ^13.6.4
         version: 13.6.4
@@ -4915,6 +4915,13 @@ packages:
     peerDependencies:
       vue: ^2.7.0 || ^3.0.0
 
+  '@tauri-apps/api@2.0.0-alpha.13':
+    resolution: {integrity: sha512-sGgCkFahF3OZAHoGN5Ozt9WK7wJlbVZSgWpPQKNag4nSOX1+Py6VDRTEWriiJHDiV+gg31CWHnNXRy6TFoZmdA==}
+    engines: {node: '>= 18', npm: '>= 6.6.0', yarn: '>= 1.19.1'}
+
+  '@tauri-apps/plugin-sql@2.0.0-alpha.5':
+    resolution: {integrity: sha512-u4rJZM357zWP+WmE/W1t1iu0/INQ9uqO8+dOFWzLSGqg2zgYcohTeV66hZoeCTRTzsV3qrKI3suWueLu1YKT7A==}
+
   '@testing-library/dom@9.3.4':
     resolution: {integrity: sha512-FlS4ZWlp97iiNWig0Muq8p+3rVDjRiYE+YKGbAqXOu9nwJFFOdL00kFpz42M+4huzYi86vAK1sOOfyOG45muIQ==}
     engines: {node: '>=14'}
@@ -6531,8 +6538,8 @@ packages:
     resolution: {integrity: sha512-vyJTp8+mC+G+5dfgsY+r3ckxlz+QMX40VjPQsZc5gxVAxLmi64TBoVkP54A/pRAXMXsbu2GMMBrZPxNv23waMg==}
     engines: {node: '>=0.4.0'}
 
-  drizzle-kit@0.21.2:
-    resolution: {integrity: sha512-U87IhZyCt/9d0ZT/Na3KFJVY31tSxtTx/n9UMcWFpW/5c2Ede39xiCG5efNV/0iimsv97UIRtDI0ldLBW5lbcg==}
+  drizzle-kit@0.21.3:
+    resolution: {integrity: sha512-BqLkHBucr32OOZ/16mMSUFKGBcoBYwZnOLkLMbaSVmd8shTVAjOdh2mleI7c/iw70ZcKlL53n3SFlUlKLzy2lQ==}
     hasBin: true
 
   drizzle-orm@0.30.10:
@@ -7057,8 +7064,8 @@ packages:
       react-dom:
         optional: true
 
-  framer-motion@11.2.5:
-    resolution: {integrity: sha512-X22i42hWY423wx2C1TlQlC4UnWonD+udND0qX1Fkt0dDlreSmuNY76obO6Y2d/UdJPhqVd5Zn6g1jAIwF6Xx9A==}
+  framer-motion@11.2.6:
+    resolution: {integrity: sha512-XUrjjBt57e5YoHQtjwc3eNchFBuHvIgN/cS8SC4oIaAn2J/0+bLanUxXizidJKZVeHJam/JrmMnPRjYMglVn5g==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0
@@ -16007,6 +16014,14 @@ snapshots:
       '@tanstack/virtual-core': 3.5.0
       vue: 3.4.26(typescript@5.4.5)
 
+  '@tauri-apps/api@2.0.0-alpha.13':
+    optional: true
+
+  '@tauri-apps/plugin-sql@2.0.0-alpha.5':
+    dependencies:
+      '@tauri-apps/api': 2.0.0-alpha.13
+    optional: true
+
   '@testing-library/dom@9.3.4':
     dependencies:
       '@babel/code-frame': 7.24.2
@@ -17835,7 +17850,7 @@ snapshots:
     dependencies:
       wordwrap: 1.0.0
 
-  drizzle-kit@0.21.2:
+  drizzle-kit@0.21.3:
     dependencies:
       '@esbuild-kit/esm-loader': 2.6.5
       commander: 9.5.0
@@ -17881,7 +17896,7 @@ snapshots:
     dependencies:
       jake: 10.9.1
 
-  electric-sql@0.11.3(pg@8.11.5)(prisma@5.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vue@3.4.26(typescript@5.4.5))(wa-sqlite@1.0.0)(zod@3.23.6):
+  electric-sql@0.11.3(@tauri-apps/plugin-sql@2.0.0-alpha.5)(pg@8.11.5)(prisma@5.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vue@3.4.26(typescript@5.4.5))(wa-sqlite@1.0.0)(zod@3.23.6):
     dependencies:
       '@electric-sql/prisma-generator': 1.1.5
       '@prisma/client': 4.8.1(prisma@5.14.0)
@@ -17919,6 +17934,7 @@ snapshots:
       ws: 8.17.0
       zod: 3.23.6
     optionalDependencies:
+      '@tauri-apps/plugin-sql': 2.0.0-alpha.5
       pg: 8.11.5
       prisma: 5.14.0
       react: 18.3.1
@@ -18494,7 +18510,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  framer-motion@11.2.5(@emotion/is-prop-valid@0.8.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  framer-motion@11.2.6(@emotion/is-prop-valid@0.8.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       tslib: 2.6.2
     optionalDependencies:

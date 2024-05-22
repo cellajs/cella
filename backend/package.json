@@ -20,6 +20,7 @@
     "migrate:script": "tsx dist/src/db/migrate.cjs",
     "seeds:script": "tsx dist/seed/users.cjs && tsx dist/seed/organizations.cjs",
     "studio": "drizzle-kit studio",
+    "proxy": "electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65432",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend ./dist && sentry-cli sourcemaps upload --org cella --project backend ./dist"
   },
   "dependencies": {
