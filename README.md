@@ -87,13 +87,13 @@ When starting from scratch: generate migration and build the db tables.
 
 ```bash
 pnpm run generate
-pnpm run migrate 
+pnpm run migrate:dev 
 ```
 
 And for local-first data with [ElectricSQL](https://github.com/electric-sql/electric).
 
 ```bash
-pnpm run electrify
+pnpm run electrify:dev
 ```
 
 #### Run
