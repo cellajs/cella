@@ -13,7 +13,7 @@ interface ThemeState {
   setTheme: (theme: Theme) => void;
 }
 
-const browserMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+const browserMode = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
 export const useThemeStore = create<ThemeState>()(
   devtools(

@@ -1,0 +1,55 @@
+---
+title: Understanding Core web vitals
+description: How to enhance your website expirence by analyzing your core web vitals scores
+image: /static/web-vitals-guide.png
+publishedAt: "2023-09-28"
+published: true
+authors:
+  - yossydev
+readingTime: 5min
+---
+
+Core Web Vitals are a set of standardized metrics from Google that help developers understand how users experience a web page. They break down the user's real-world experience on a page.
+
+Core Web Vitals can improve your search results. They check website loading speed and help Google understand how well your website is performing and then identify areas where it can improve. Specifically, Core Web Vitals consider loading time, interactivity and visual stability metrics. These are included in Google’s algorithms to measure the health of your website.
+
+Core Web Vitals identify user experience issues by generating a metric for three primary areas of user experience, including:
+
+- Page loading performance
+
+- Ease of interaction
+
+- Visual stability of a page from a user’s perspective
+
+Let’s take a look 4 of the main metrics included in Core Web Vitals.
+
+### 1. Largest Contentful Paint (LCP)
+
+The amount of time to render the largest content element visible in the viewport, from when the user requests the URL. The largest element is typically an image or video, or perhaps a large block-level text element. This metric is important because it indicates how quickly a visitor sees that the URL is actually loading.
+
+**A good LCP time is considered to be 2.5 seconds or less.**
+
+### 2. First Input Delay (FID)
+
+The time from when a user first interacts with your page (when they clicked a link, tapped on a button, and so on) to the time when the browser responds to that interaction. This measurement is taken from whatever interactive element that the user first clicks. This is important on pages where the user needs to do something, because this is the delay before the page becomes interactive. Note that this might not be reported for each page since it'll need interaction to be reported.
+
+**A good FID score is 100 milliseconds or less.**
+
+### 3. Interaction to Next Paint (INP)
+
+A metric that assesses a page's overall responsiveness to user interactions by observing the time that it takes for the page to respond to all click, tap, and keyboard interactions that occur throughout the lifespan of a user's visit to a page. The final INP value is the longest interaction observed, ignoring outliers.
+
+**Lower INP times are better, but a specific target value for INP is not clearly defined yet, as it's an experimental metric.**
+
+### 4. Cumulative Layout Shift (CLS)
+
+CLS measures the sum total of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page. The score is zero to any positive number, where zero means no shifting and the larger the number, the more layout shift on the page. This is important because having pages elements shift while a user is trying to interact with it is a bad user experience. If you can't seem to find the reason for a high value, try interacting with the page to see how that affects the score.
+
+**A good CLS score is considered to be 0.1 or less.**
+
+## Loglib And Web Vitals
+
+Loglib enables the effortless collection and analysis of core web vitals, eliminating the need for any manual intervention. These vitals are gathered from authentic user devices and transmitted to loglib servers. Currently, we present five web vital metrics that are encompassed above.
+
+Loglib's speed insights furnish a comprehensive inventory of all Page Names and URLs accessed by users of your application. In this context, 'Page Names' denote the actual pages constructed, while 'URLs' signify the paths requested by visitors. However, loglib's capabilities extend beyond page URLs, as it also provides information pertaining to scores based on location (country and city), devices (mobile, desktop, tablet), as well as browser and operating system.
+

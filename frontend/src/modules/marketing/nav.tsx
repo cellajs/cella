@@ -1,9 +1,7 @@
-import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import { Github } from 'lucide-react';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
-
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import Logo from '~/modules/common/logo';
@@ -12,6 +10,7 @@ import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent } from '~/modules/ui/sheet';
 import HamburgerButton from '../common/hamburger';
 import UserLanguage from '../common/user-language';
+import { Link } from '../common/link';
 
 const marketingNavConfig = [
   { id: 'features', url: '/about', hash: 'features' },
@@ -19,7 +18,12 @@ const marketingNavConfig = [
   { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 
-export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target: string) => void }) {
+type Props = {
+  onHandleMismatch?: (target: string) => void;
+  as?: 'a' | 'tanstack-link';
+};
+
+export function MarketingNav({ as = 'tanstack-link', onHandleMismatch }: Props) {
   const { t } = useTranslation();
   const [showSheet, setShowSheet] = useState<boolean>(false);
 
@@ -37,12 +41,13 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
   const renderNavItems = () => {
     return marketingNavConfig.map((item) => (
       <Link
+        key={item.id}
         to={item.url}
         hash={item.hash}
-        replace={location.pathname === '/about'}
-        key={item.id}
+        replace={typeof window !== 'undefined' && location.pathname === '/about'}
         onClick={() => handleNavClick(item.hash, false)}
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
+        as={as}
       >
         {t(item.id)}
       </Link>
@@ -65,9 +70,10 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
             <Link
               to="/about"
               hash=""
-              replace={location.pathname === '/about'}
+              replace={typeof window !== 'undefined' && location.pathname === '/about'}
               className="md:ml-2 hover:opacity-90 active:scale-95 relative"
               aria-label="Go to about page"
+              as={as}
             >
               <Logo height={30} />
 
@@ -106,7 +112,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               <Github strokeWidth={config.theme.strokeWidth} />
             </Button>
 
-            <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
+            <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())} as={as}>
               {t('common:sign_in')}
             </Link>
           </div>
