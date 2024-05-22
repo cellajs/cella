@@ -24,7 +24,7 @@ export const tables = new Map<string, typeof organizationsTable | typeof workspa
  * @param resourceType - The type of the resource (e.g., 'organization', 'workspace').
  * @returns MiddlewareHandler to protect routes based on user permissions.
  */
-const isUserAllowedTo =
+const isAllowedTo =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
     (action: string, resourceType: string): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
@@ -157,4 +157,4 @@ async function createResourceContext(resourceType: string, ctx: any) {
   return context;
 }
 
-export default isUserAllowedTo;
+export default isAllowedTo;

@@ -6,7 +6,7 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isUserAuthenticated, systemGuard, isUserAllowedTo } from '../../middlewares/guard';
+import { isAuthenticated, systemGuard, isAllowedTo } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
@@ -19,7 +19,7 @@ import {
 export const createOrganizationRouteConfig = createRouteConfig({
   method: 'post',
   path: '/organizations',
-  guard: isUserAuthenticated(),
+  guard: isAuthenticated(),
   tags: ['organizations'],
   summary: 'Create a new organization',
   // TODO: all users can create, but somehow we need to restrict it to just one and with more needing manual activation by an admin?
@@ -53,7 +53,7 @@ export const createOrganizationRouteConfig = createRouteConfig({
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
   path: '/organizations/{organization}',
-  guard: [isUserAuthenticated(), isUserAllowedTo('update', 'organization')],
+  guard: [isAuthenticated(), isAllowedTo('update', 'organization')],
   tags: ['organizations'],
   summary: 'Update organization',
   description: `
@@ -113,7 +113,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organization}',
-  guard:  [isUserAuthenticated(), isUserAllowedTo('read', 'organization')],
+  guard:  [isAuthenticated(), isAllowedTo('read', 'organization')],
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
   description: `
@@ -140,7 +140,7 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
 export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organization}/members',
-  guard: [isUserAuthenticated(), isUserAllowedTo('read', 'organization')],
+  guard: [isAuthenticated(), isAllowedTo('read', 'organization')],
   tags: ['organizations'],
   summary: 'Get members of organization',
   description: `
