@@ -161,7 +161,7 @@ const generalRoutes = app
           logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
 
           // Update role if different
-          if (role && existingMembership.role !== role && existingMembership.organizationId) {
+          if (role && existingMembership.role !== role && existingMembership.organizationId && existingMembership.userId) {
             await db
               .update(membershipsTable)
               .set({ role: role as MembershipModel['role'] })

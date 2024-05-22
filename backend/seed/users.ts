@@ -1,3 +1,8 @@
 import { usersSeed } from '.';
 
-usersSeed().finally(() => process.exit(0));
+usersSeed()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(() => process.exit(0));

@@ -24,9 +24,7 @@ export const membershipsTable = pgTable('memberships', {
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
   taskId: varchar('task_id').references(() => tasksTable.id, { onDelete: 'cascade' }),
   labelId: varchar('label_id').references(() => labelsTable.id, { onDelete: 'cascade' }),
-  userId: varchar('user_id')
-    .notNull()
-    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id').references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar('role', { enum: roleEnum }).notNull().default('MEMBER'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by').references(() => usersTable.id, {

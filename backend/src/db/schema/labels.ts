@@ -7,3 +7,6 @@ export const labelsTable = pgTable('labels', {
     color: varchar('color'),
     projectId: varchar('project_id').notNull(),
 });
+
+export type LabelModel = typeof labelsTable.$inferSelect;
+export type InsertLabelModel = typeof labelsTable.$inferInsert;

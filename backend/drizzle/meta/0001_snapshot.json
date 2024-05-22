@@ -1,6 +1,6 @@
 {
-  "id": "4935f68e-12d0-4144-93be-207973f9dde4",
-  "prevId": "fb9e7325-94a9-4db1-9540-b12b80a50dba",
+  "id": "9d82ac17-274f-47f5-b391-41fd935a41e9",
+  "prevId": "96cc347e-2a58-4a38-b6de-673f0d76373b",
   "version": "6",
   "dialect": "postgresql",
   "tables": {
@@ -89,7 +89,7 @@
           "name": "user_id",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "role": {
           "name": "role",
