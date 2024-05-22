@@ -14,8 +14,8 @@
     "check:types": "tsc",
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
-    "generate:electric": "electric-sql generate --service https://electric-z2us.onrender.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres",
-    "proxy": "electric-sql proxy-tunnel --service https://electric-z2us.onrender.com --local-port 65432"
+    "generate:electric": "electric-sql generate --service https://cella-electric-sync-service.onrender.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres",
+    "proxy": "electric-sql proxy-tunnel --service https://cella-electric-sync-service.onrender.com --local-port 65432"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.1.7",

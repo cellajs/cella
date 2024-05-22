@@ -20,6 +20,7 @@
     "migrate:script": "tsx dist/src/db/migrate.cjs",
     "seeds:script": "tsx dist/seed/users.cjs && tsx dist/seed/organizations.cjs",
     "studio": "drizzle-kit studio",
+    "proxy": "electric-sql proxy-tunnel --service https://cella-electric-sync-service.onrender.com --local-port 65432",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend ./dist && sentry-cli sourcemaps upload --org cella --project backend ./dist"
   },
   "dependencies": {
@@ -41,6 +42,7 @@
     "config": "workspace:*",
     "drizzle-orm": "^0.30.10",
     "drizzle-zod": "^0.5.1",
+    "electric-sql": "^0.11.3",
     "email": "workspace:*",
     "enforce-unique": "^1.3.0",
     "env": "workspace:*",
@@ -72,7 +74,9 @@
     "tsx": "^4.9.3"
   },
   "babel": {
-    "presets": ["@babel/preset-typescript"]
+    "presets": [
+      "@babel/preset-typescript"
+    ]
   },
   "exports": {
     "./*": "./src/*.ts"
