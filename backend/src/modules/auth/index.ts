@@ -9,6 +9,7 @@ import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
 
 import { config } from 'config';
+import type { z } from 'zod';
 import { emailSender } from '../../../../email';
 import { db } from '../../db/db';
 import { tokensTable } from '../../db/schema/tokens';
@@ -18,8 +19,10 @@ import { i18n } from '../../lib/i18n';
 import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { checkTokenRouteConfig } from '../general/routes';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
+import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import oauthRoutes from './oauth';
 import { slugFromEmail } from './oauth-helpers';
@@ -33,9 +36,6 @@ import {
   signUpRouteConfig,
   verifyEmailRouteConfig,
 } from './routes';
-import { handleCreateUser } from './helpers/user';
-import { checkTokenRouteConfig } from '../general/routes';
-import type { z } from 'zod';
 
 const app = new CustomHono();
 
@@ -67,7 +67,7 @@ const authRoutes = app
     const isEmailVerified = tokenData?.email === email;
 
     // * create user and send verification email
-    return await handleCreateUser(
+    await handleCreateUser(
       ctx,
       {
         id: userId,
@@ -81,6 +81,10 @@ const authRoutes = app
         isEmailVerified,
       },
     );
+
+    return ctx.json({
+      success: true,
+    });
   })
   /*
    * Verify email

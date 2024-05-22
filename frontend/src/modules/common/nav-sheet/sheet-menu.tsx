@@ -4,6 +4,8 @@ import type { Page, UserMenu } from '~/types';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
 
+import type { PageResourceType } from 'backend/types/common';
+import type { LucideProps } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
@@ -11,8 +13,6 @@ import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
-import type { LucideProps } from 'lucide-react';
-import type { PageResourceType } from 'backend/types/common';
 
 export type SectionItem = {
   id: 'organizations' | 'workspaces' | 'projects';

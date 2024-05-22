@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import timezones from '~/json/timezones.json';
-import commonTimezones from '~/json/commonTimezones.json';
 import Combobox from '~/modules/ui/combobox';
+import { config } from 'config';
 
 const SelectTimezone = ({ listGroup = 'all', onChange }: { listGroup?: 'all' | 'common'; onChange: (value: string) => void }) => {
   const { t } = useTranslation();
-  const options = listGroup === 'all' ? getTimezones(timezones) : getTimezones(commonTimezones);
+  const options = listGroup === 'all' ? getTimezones(timezones) : getTimezones(config.common.timezones);
 
   return (
     <Combobox

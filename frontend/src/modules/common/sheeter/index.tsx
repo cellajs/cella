@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
-import { SheetState, type SheetToReset, type SheetT, type SheetToRemove } from './state';
+import { SheetState, type SheetT, type SheetToRemove, type SheetToReset } from './state';
 
 export function Sheeter() {
   const { t } = useTranslation();

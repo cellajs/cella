@@ -6,11 +6,11 @@ import { getUserBySlugOrId } from '~/api/users';
 import { UserProfileRoute } from '~/routes/users';
 import type { User } from '~/types';
 
-import { PageHeader } from '~/modules/common/page-header';
-import { Button } from '../ui/button';
 import { UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { PageHeader } from '~/modules/common/page-header';
 import { useUserStore } from '~/store/user';
+import { Button } from '../ui/button';
 
 interface UserContextValue {
   user: User;

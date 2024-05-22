@@ -35,7 +35,7 @@ const ResetPassword = () => {
     onSuccess: (data) => setEmail(data.email),
     onError: (error) => setError(error),
   });
-  
+
   // Reset password and sign in
   const { mutate: resetPassword, isPending } = useMutation({
     mutationFn: baseResetPassword,
@@ -62,7 +62,7 @@ const ResetPassword = () => {
 
   useEffect(() => {
     if (!token) return;
-  
+
     checkToken(token);
   }, [token]);
 

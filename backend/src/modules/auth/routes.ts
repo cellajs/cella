@@ -4,10 +4,10 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithoutDa
 import { cookieSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { publicGuard } from '../../middlewares/guard';
+import { authRateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { apiUserSchema } from '../users/schema';
 import { checkEmailJsonSchema, emailExistsJsonSchema, resetPasswordJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
-import { authRateLimiter } from '../../middlewares/rate-limiter';
 
 export const signUpRouteConfig = createRouteConfig({
   method: 'post',

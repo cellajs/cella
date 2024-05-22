@@ -80,6 +80,10 @@ export const workspaceParamSchema = z.object({
   workspace: idSchema.or(slugSchema),
 });
 
+export const projectParamSchema = z.object({
+  project: idSchema.or(slugSchema),
+});
+
 export const imageUrlSchema = z
   .string()
   .url()
@@ -94,7 +98,7 @@ export const nameSchema = z
 export const colorSchema = z
   .string()
   .min(3)
-  .max(6)
+  .max(7)
   .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, 'Color may only contain letters, numbers & starts with #');
 
 export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');

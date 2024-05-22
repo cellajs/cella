@@ -1,22 +1,25 @@
-import { Archive, BellOff, GripVertical, ArchiveRestore, Bell } from 'lucide-react';
+import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { Archive, ArchiveRestore, Bell, BellOff, GripVertical } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { updateMembership } from '~/api/memberships';
+import { arrayMove, getDraggableItemData, getReorderDestinationIndex } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { DraggableItemData, Page } from '~/types';
-import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { attachClosestEdge, extractClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { getDraggableItemData, arrayMove, getReorderDestinationIndex } from '~/lib/utils';
 import { DropIndicator } from '../drop-indicator';
+import { motion } from 'framer-motion';
 
 interface SheetMenuItemProps {
   item: Page;
   sectionName: 'organizations' | 'projects' | 'workspaces';
+  isGlobalDragging: boolean;
+  setGlobalDragging: (dragging: boolean) => void;
 }
 
 type PageDraggableItemData = DraggableItemData<Page>;
@@ -25,16 +28,15 @@ const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggab
   return data.dragItem === true && typeof data.index === 'number';
 };
 
-export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) => {
+export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setGlobalDragging }: SheetMenuItemProps) => {
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
   const { t } = useTranslation();
-
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [isItemArchived, setItemArchived] = useState(item.archived);
   const [isItemMuted, setItemMuted] = useState(item.muted);
-  
+
   const user = useUserStore((state) => state.user);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
@@ -87,13 +89,19 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
         element,
         dragHandle: dragButton,
         getInitialData: () => data,
-        onDragStart: () => setDragging(true),
-        onDrop: () => setDragging(false),
+        onDragStart: () => {
+          setDragging(true);
+          setGlobalDragging(true);
+        },
+        onDrop: () => {
+          setDragging(false);
+          setGlobalDragging(false);
+        },
       }),
       dropTargetForElements({
         element,
         canDrop({ source }) {
-          return isPageData(source.data) && source.data.item.id !== item.id;
+          return isPageData(source.data);
         },
         getIsSticky: () => true,
         getData({ input }) {
@@ -104,12 +112,8 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
           });
         },
         onDrag: ({ self, source }) => {
-          if (isPageData(source.data) && isPageData(self.data) && source.data.index === self.data.index - 1) {
-            setClosestEdge('bottom');
-            return;
-          }
-          if (isPageData(source.data) && isPageData(self.data) && source.data.index === self.data.index + 1) {
-            setClosestEdge('top');
+          if (isPageData(source.data) && source.data.item.id === item.id) {
+            setClosestEdge(null);
             return;
           }
           setClosestEdge(extractClosestEdge(self.data));
@@ -142,7 +146,8 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
 
   return (
     <div className="relative my-1" ref={dragRef}>
-      <div
+      <motion.div
+        layoutId={`sheet-menu-item-${item.id}`}
         ref={dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
         className={`group flex relative items-center sm:max-w-[18rem] h-14 w-full cursor-pointer justify-start rounded p-0 focus:outline-none
@@ -152,11 +157,11 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
         <AvatarWrap className="m-2" type={item.type} id={item.id} name={item.name} url={item.thumbnailUrl} />
         <div className="truncate grow p-2 pl-2 text-left">
           <div className="truncate text-foreground/50 leading-5">{item.name}</div>
-          <div className="flex items-center gap-4 mt-1">
+          <div className={`flex items-center gap-4 mt-1 ${isGlobalDragging ? 'h-4' : ''}`}>
             <Button
               variant="link"
               size="sm"
-              className="p-0 font-light text-xs h-4 leading-3"
+              className={`p-0 font-light text-xs h-4 leading-3 ${isGlobalDragging ? 'hidden' : ''}`}
               aria-label="Toggle archive"
               onClick={itemArchiveStateHandle}
             >
@@ -171,8 +176,13 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
                 </>
               )}
             </Button>
-
-            <Button variant="link" size="sm" className="p-0 font-light text-xs h-4 leading-3" aria-label="Toggle Mute" onClick={itemMuteStateHandle}>
+            <Button
+              variant="link"
+              size="sm"
+              className={`p-0 font-light text-xs h-4 leading-3 ${isGlobalDragging ? 'hidden' : ''}`}
+              aria-label="Toggle Mute"
+              onClick={itemMuteStateHandle}
+            >
               {isItemMuted ? (
                 <>
                   <Bell size={14} className="mr-1" />
@@ -193,7 +203,7 @@ export const SheetMenuItemOptions = ({ item, sectionName }: SheetMenuItemProps) 
             <GripVertical size={16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
           </Button>
         )}
-      </div>
+      </motion.div>
       {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} gap="2px" />}
     </div>
   );

@@ -2,27 +2,27 @@ import { Trash2, Zap, ZapOff } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
+import { Send } from 'lucide-react';
 import { terminateMySessions as baseTerminateMySessions } from '~/api/users';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import DeleteUsers from './delete-users';
-import { Send } from 'lucide-react';
 
 import { useNavigate } from '@tanstack/react-router';
+import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Sticky from 'react-sticky-el';
+import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
+import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl, sendResetPasswordEmail } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
 import { AsideNav } from '~/modules/common/aside-nav';
 import UpdateUserForm from '~/modules/users/update-user-form';
+import { useThemeStore } from '~/store/theme';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
-import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl, sendResetPasswordEmail } from '~/api/authentication';
-import { config } from 'config';
-import { useThemeStore } from '~/store/theme';
 
 type Session = {
   id: string;
@@ -38,7 +38,7 @@ const tabs = [
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 
-const oauthOptions = [
+const oauthProviders = [
   {
     name: 'Github',
     url: githubSignInUrl,
@@ -146,10 +146,10 @@ const UserSettings = () => {
   return (
     <div className="container md:flex md:flex-row md:mt-8 mx-auto max-w-[1200px] gap-4">
       <div className="mx-auto md:min-w-[200px] md:w-[30%] md:mt-2">
-        <Sticky stickyClassName="z-10 max-md:!relative">
+        <StickyBox className="z-10 max-md:!block">
           <SimpleHeader className="p-3" heading="common:account_settings" text="common:account_settings.text" />
           <AsideNav tabs={tabs} className="py-2" />
-        </Sticky>
+        </StickyBox>
       </div>
 
       <div className="md:w-[70%] flex flex-col gap-8">
@@ -207,8 +207,8 @@ const UserSettings = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col space-y-2">
-                {oauthOptions.map((option) => {
-                  if (!config.oauthOptions.includes(option.name)) return null;
+                {oauthProviders.map((option) => {
+                  if (!config.oauthProviders.includes(option.name)) return null;
 
                   return (
                     <Button

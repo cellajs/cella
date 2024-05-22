@@ -5,9 +5,10 @@ import { coalesce, db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
+import { projectsTable } from '../../db/schema/projects';
 import { usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
-import { createError, errorResponse, type ErrorType } from '../../lib/errors';
+import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono, type PageResourceType } from '../../types/common';
@@ -107,7 +108,7 @@ const usersRoutes = app
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
-    const workspaceWithMemberships = await db
+    const workspacesWithMemberships = await db
       .select({
         workspace: workspacesTable,
         membership: membershipsTable,
@@ -116,6 +117,16 @@ const usersRoutes = app
       .where(eq(membershipsTable.userId, user.id))
       .orderBy(desc(workspacesTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.workspaceId, workspacesTable.id));
+
+    const projectsWithMemberships = await db
+      .select({
+        project: projectsTable,
+        membership: membershipsTable,
+      })
+      .from(projectsTable)
+      .where(eq(membershipsTable.userId, user.id))
+      .orderBy(desc(projectsTable.createdAt))
+      .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id));
 
     const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
       return {
@@ -132,7 +143,7 @@ const usersRoutes = app
       };
     });
 
-    const workspaces = workspaceWithMemberships.map(({ workspace, membership }) => {
+    const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
       return {
         slug: workspace.slug,
         id: workspace.id,
@@ -147,12 +158,27 @@ const usersRoutes = app
       };
     });
 
+    const projects = projectsWithMemberships.map(({ project, membership }) => {
+      return {
+        slug: project.slug,
+        id: project.id,
+        createdAt: project.createdAt,
+        modifiedAt: project.modifiedAt,
+        name: project.name,
+        color: project.color,
+        archived: membership.inactive || false,
+        muted: membership.muted || false,
+        role: membership?.role || null,
+        type: 'PROJECT' as PageResourceType,
+      };
+    });
+
     return ctx.json({
       success: true,
       data: {
         organizations: { items: organizations, canCreate: true },
         workspaces: { items: workspaces, canCreate: true },
-        projects: { items: [], canCreate: false },
+        projects: { items: projects, canCreate: true },
       },
     });
   })

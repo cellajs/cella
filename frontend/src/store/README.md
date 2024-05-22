@@ -1,14 +1,14 @@
-## Store
+# Store
 We use some stores for resources that are shared or subscribed to across the entire app.
 
-Some things that are good to know: 
+## Good to know
 * Zustand is used
 * Some stores persist on sessionStorage, others on localStorage
 * Keep the store clean. Use `storeName.subscribe` to listen to changes.
 * Pay attention to versioning. If we change a value or the data structure, we should bump the version up.
 
 
-Subscribe example: 
+#### Subscribe example 
 ```
   useUserStore.subscribe((state) => {
     const user: User = state.user;
@@ -21,7 +21,7 @@ Subscribe example:
 ```
 
 
-Versioning example:
+#### Versioning example:
 
 ```
 export const useBoundStore = create(

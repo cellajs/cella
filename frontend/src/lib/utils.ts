@@ -1,6 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
-import { type ClassValue, clsx } from 'clsx';
+import { clsx, type ClassValue } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -9,7 +9,7 @@ import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
-import type { Task } from '~/modules/common/root/electric';
+import type { Task } from '~/modules/common/electric/electrify';
 import type { DraggableItemData } from '~/types';
 
 dayjs.extend(calendar);
@@ -144,6 +144,7 @@ export const getReorderDestinationIndex = (
   targetIndex: number,
   axis: 'vertical' | 'horizontal',
 ): number => {
+  if (targetIndex === currentIndex) return currentIndex;
   // if (axis === 'horizontal') {
   //   if (closestEdgeOfTarget === 'left') {
   //     return indexOfTarget;
@@ -151,10 +152,22 @@ export const getReorderDestinationIndex = (
   //     return indexOfTarget + 1;
   //   }
   // } else
-  if (axis === 'vertical') {
-    if (closestEdgeOfTarget === 'top') return targetIndex - 1;
 
-    if (closestEdgeOfTarget === 'bottom') return targetIndex;
+  if (axis === 'vertical') {
+    if (
+      (targetIndex === currentIndex - 1 && closestEdgeOfTarget === 'bottom') ||
+      (targetIndex === currentIndex + 1 && closestEdgeOfTarget === 'top')
+    ) {
+      return currentIndex;
+    }
+
+    if ((targetIndex === 0 && closestEdgeOfTarget === 'bottom') || (currentIndex > targetIndex && closestEdgeOfTarget === 'bottom')) {
+      return targetIndex + 1;
+    }
+    if (currentIndex < targetIndex && closestEdgeOfTarget === 'top') return targetIndex - 1;
+
+    return targetIndex;
   }
+
   return currentIndex;
 };

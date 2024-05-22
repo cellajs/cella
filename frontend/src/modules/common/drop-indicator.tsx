@@ -19,12 +19,16 @@ const dropIndicatorEdgeStyles = {
   right: () => {},
 };
 
-
 export const DropIndicator: React.FC<DropIndicatorProps> = ({ edge, className = '', gap = '0px' }) => {
   return (
     <div
       style={{ ...dropIndicatorEdgeStyles[edge](gap), '--gap': gap } as unknown as React.CSSProperties}
-      className={cn('absolute w-full bg-primary rounded-sm', ['top', 'bottom'].includes(edge) ? 'left-0 w-full h-1' : 'top-0 h-full w-1', `${edge}-0`, className)}
+      className={cn(
+        'absolute w-full bg-primary rounded-sm',
+        ['top', 'bottom'].includes(edge) ? 'left-0 w-full h-1' : 'top-0 h-full w-1',
+        `${edge}-0`,
+        className,
+      )}
     />
   );
 };

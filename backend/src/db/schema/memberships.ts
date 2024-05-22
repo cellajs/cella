@@ -1,24 +1,30 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, timestamp, varchar, boolean } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { nanoid } from '../../lib/nanoid';
 import { organizationsTable } from './organizations';
+import { projectsTable } from './projects';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
-import { nanoid } from '../../lib/nanoid';
+import { tasksTable } from './tasks';
+import { labelsTable } from './labels';
 
-const roleEnum = ['MEMBER', 'ADMIN'] as const;
+const typeEnum = ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const;
+const roleEnum = ['MEMBER', 'ADMIN', 'ASSIGNED', 'CREATED'] as const;
 
+// TODO: Store IDs of all ancestors to directly retrieve all user memberships in the hierarchy
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
-  organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   type: varchar('type', {
-    enum: ['ORGANIZATION', 'WORKSPACE'],
+    enum: typeEnum,
   })
     .notNull()
     .default('ORGANIZATION'),
+  organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
-  userId: varchar('user_id')
-    .notNull()
-    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
+  taskId: varchar('task_id').references(() => tasksTable.id, { onDelete: 'cascade' }),
+  labelId: varchar('label_id').references(() => labelsTable.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id').references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar('role', { enum: roleEnum }).notNull().default('MEMBER'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by').references(() => usersTable.id, {

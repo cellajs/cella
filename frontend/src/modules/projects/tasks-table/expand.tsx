@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { dateShort } from '~/lib/utils';
-import type { Task } from '~/modules/common/root/electric';
+import type { Task } from '~/modules/common/electric/electrify';
 
 const Expand = ({ row }: { row: Task }) => {
   const { t } = useTranslation();

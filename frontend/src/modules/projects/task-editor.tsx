@@ -1,8 +1,8 @@
 import MDEditor from '@uiw/react-md-editor';
 import { useCallback, useEffect, useState } from 'react';
-import type { Mode } from '~/store/theme';
-import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useTranslation } from 'react-i18next';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+import type { Mode } from '~/store/theme';
 
 interface TaskEditorProps {
   id: string;

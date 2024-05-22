@@ -1,7 +1,7 @@
-## Routes
+# Routes
 All routes of the app are in this folder. So no file-based routing, yet. We are still unsure of the benefits in terms of readability and maintainability.
 
-Some things that are good to know: 
+### Good to know
 * We use type-safe Tanstack [react-router](https://tanstack.com/router).
 * Recommended way of querying is directly in the route's `loader`. It offers many possibilities. One of those is parallel loading in nested routes, to prevent waterfall.
 * Router instance is created in `/lib/router.ts` [Code link](/frontend/src/lib/router.ts)

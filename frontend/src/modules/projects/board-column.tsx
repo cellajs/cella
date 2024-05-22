@@ -1,28 +1,28 @@
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+import { getDraggableItemData, sortTaskOrder } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { ProjectWithLabels, Task, TaskWithLabels } from '../common/root/electric';
+import type { DraggableItemData, Project } from '~/types/index.ts';
+import ContentPlaceholder from '../common/content-placeholder';
+import { DropIndicator } from '../common/drop-indicator';
+import type { Task, TaskWithLabels } from '../common/electric/electrify';
 import { sheet } from '../common/sheeter/state';
+import { WorkspaceContext } from '../workspaces';
 import { ProjectContext } from './board';
 import { BoardColumnHeader } from './board-column-header';
 import CreateTaskForm from './create-task-form';
-import { ProjectSettings } from './project-settings';
-import { WorkspaceContext } from '../workspaces';
-import ContentPlaceholder from '../common/content-placeholder';
-import type { DraggableItemData } from '~/types/index.ts';
-import { getDraggableItemData, sortTaskOrder } from '~/lib/utils';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
-import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { attachClosestEdge, extractClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { DraggableTaskCard } from './draggable-task-card';
-import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
-import { DropIndicator } from '../common/drop-indicator';
-import { useHotkeys } from '~/hooks/use-hot-keys';
+import { ProjectSettings } from './project-settings';
 
 interface BoardColumnProps {
   tasks: Task[];
@@ -38,7 +38,7 @@ interface TaskContextValue {
 
 export const TaskContext = createContext({} as TaskContextValue);
 
-type ProjectDraggableItemData = DraggableItemData<ProjectWithLabels> & { type: 'column' };
+type ProjectDraggableItemData = DraggableItemData<Project> & { type: 'column' };
 
 const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
   return data.dragItem === true && typeof data.index === 'number';
@@ -60,7 +60,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const { project, focusedProject, setFocusedProjectIndex } = useContext(ProjectContext);
   const { searchQuery, projects } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
-  const currentProjectSettings = workspaces[project.workspace_id]?.columns.find((el) => el.columnId === project.id);
+  const currentProjectSettings = workspaces[project.workspaceId]?.columns.find((el) => el.columnId === project.id);
 
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
@@ -72,19 +72,19 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
-    changeColumn(project.workspace_id, project.id, {
+    changeColumn(project.workspaceId, project.id, {
       expandIced: !showIced,
     });
   };
   const handleAcceptedClick = () => {
     setShowAccepted(!showAccepted);
-    changeColumn(project.workspace_id, project.id, {
+    changeColumn(project.workspaceId, project.id, {
       expandAccepted: !showAccepted,
     });
   };
 
   const openSettingsSheet = () => {
-    sheet(<ProjectSettings sheet />, {
+    sheet(<ProjectSettings sheet project={project} />, {
       className: 'sm:max-w-[52rem]',
       title: t('common:project_settings'),
       text: t('common:project_settings.text'),
@@ -133,7 +133,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
     const cardList = cardListRef.current;
     const scrollable = scrollableRef.current;
 
-    const data = getDraggableItemData<ProjectWithLabels>(
+    const data = getDraggableItemData<Project>(
       project,
       projects.findIndex((el) => el.id === project.id),
       'column',
@@ -232,7 +232,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
         {!!tasks.length && (
           <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-1px]">
             <ScrollBar size="indicatorVertical" />
-            <CardContent className="flex flex-col px-0 pb-14 ">
+            <CardContent className="flex flex-col px-0 pb-14">
               <Button
                 onClick={handleAcceptedClick}
                 variant="ghost"

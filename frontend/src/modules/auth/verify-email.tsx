@@ -16,7 +16,7 @@ const VerifyEmail = () => {
     mutationFn: baseVerifyEmail,
     onSuccess: () => {
       toast.success(t('common:success.email_verified'));
-      navigate({ to: '/home' });
+      navigate({ to: '/welcome' });
     },
   });
 

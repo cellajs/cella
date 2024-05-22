@@ -10,19 +10,19 @@ import { useCallback, useContext, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import { useElectric, type Task } from '../common/root/electric.ts';
 import { dialog } from '../common/dialoger/state.ts';
+import { type Task, useElectric } from '../common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
+import { WorkspaceContext } from '../workspaces/index.tsx';
 import { ProjectContext } from './board.tsx';
 import { SelectImpact } from './select-impact.tsx';
 import SetLabels from './select-labels.tsx';
 import SelectStatus from './select-status.tsx';
-import { WorkspaceContext } from '../workspaces/index.tsx';
+import { nanoid } from '~/lib/utils.ts';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -70,9 +70,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
 
   const { tasks } = useContext(WorkspaceContext);
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const Electric = useElectric()!;
 
-  const { project } = useContext(ProjectContext);
+  const { project, labels } = useContext(ProjectContext);
 
   const handleCloseForm = () => {
     if (isDialog) dialog.remove();
@@ -97,13 +97,12 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: window.crypto.randomUUID(),
+        id: nanoid(),
         markdown: '',
         summary: '',
         type: 'feature',
         impact: null,
         assignedTo: [],
-        task_labels: [],
         labels: [],
         status: 1,
       },
@@ -114,12 +113,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>(`create-task-${project.id}`, formOptions);
 
-  const { isPending } = useMutation({
-    // mutate: create
-    mutationFn: (values: FormValues) => {
-      const summary = values.markdown.split('\n')[0];
-      const slug = summary.toLowerCase().replace(/ /g, '-');
-      return db.tasks.create({
+  const onSubmit = (values: FormValues) => {
+    if (!Electric) return toast.error(t('common:no_local_db'));
+    // create(values);
+    const summary = values.markdown.split('\n')[0];
+    const slug = summary.toLowerCase().replace(/ /g, '-');
+
+    Electric.db.tasks
+      .create({
         data: {
           id: values.id,
           markdown: values.markdown,
@@ -128,41 +129,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           impact: values.impact as TaskImpact,
           // assignedTo: values.assignedTo as TaskUser[],
           // labels: values.labels,
-          status: values.status,
-          project_id: project.id,
-          created_at: new Date(),
-          created_by: user.id,
-          slug: slug,
-        },
-      });
-    },
-    onSuccess: () => {
-      form.reset();
-      toast.success(t('common:success.create_task'));
-      handleCloseForm();
-    },
-  });
-
-  const onSubmit = (values: FormValues) => {
-    // create(values);
-    const summary = values.markdown.split('\n')[0];
-    const slug = summary.toLowerCase().replace(/ /g, '-');
-    db.tasks
-      .create({
-        data: {
-          id: values.id,
-          markdown: values.markdown,
-          summary: summary,
-          type: values.type as TaskType,
-          impact: values.impact as TaskImpact,
-          task_labels:
-            values.labels.length > 0
-              ? {
-                  create: values.labels.map((label) => ({
-                    label_id: label.id,
-                  })),
-                }
-              : undefined,
+          // task_labels:
+          //   values.labels.length > 0
+          //     ? {
+          //         create: values.labels.map((label) => ({
+          //           label_id: label.id,
+          //         })),
+          //       }
+          //     : undefined,
           status: values.status,
           project_id: project.id,
           created_at: new Date(),
@@ -283,7 +257,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels projectId={project.id} mode="create" changeLabels={onChange} />
+                  <SetLabels labels={labels} projectId={project.id} mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -297,7 +271,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               size={'xs'}
               type="submit"
               disabled={!form.formState.isDirty}
-              loading={isPending}
               className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'} [&:not(.absolute)]:active:translate-y-0`}
             >
               <span>{t('common:create')}</span>

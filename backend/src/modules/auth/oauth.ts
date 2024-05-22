@@ -13,6 +13,7 @@ import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { setSessionCookie } from './helpers/cookies';
+import { handleCreateUser } from './helpers/user';
 import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './oauth-helpers';
 import {
   githubSignInCallbackRouteConfig,
@@ -22,7 +23,6 @@ import {
   microsoftSignInCallbackRouteConfig,
   microsoftSignInRouteConfig,
 } from './routes';
-import { handleCreateUser } from './helpers/user';
 
 const app = new CustomHono();
 
@@ -87,7 +87,7 @@ const oauthRoutes = app
       return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'github' });
     }
 
-    const redirectUrl = getRedirectUrl(ctx);
+    const redirectExistingUserUrl = getRedirectUrl(ctx);
 
     try {
       const { accessToken } = await githubAuth.validateAuthorizationCode(code);
@@ -136,7 +136,7 @@ const oauthRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
 
-        return ctx.redirect(redirectUrl);
+        return ctx.redirect(redirectExistingUserUrl);
       }
 
       // * Get user emails from github
@@ -192,13 +192,13 @@ const oauthRoutes = app
             firstName,
             lastName,
           },
-          redirectUrl,
+          redirectUrl: redirectExistingUserUrl,
           isEmailVerified: existingUser.emailVerified || !!inviteToken || primaryEmail.verified,
         });
       }
 
       const userId = nanoid();
-
+      const redirectNewUserUrl = getRedirectUrl(ctx, true);
       // * Create new user and oauth account
       return await handleCreateUser(
         ctx,
@@ -220,7 +220,7 @@ const oauthRoutes = app
             userId: String(githubUser.id),
           },
           isEmailVerified: primaryEmail.verified,
-          redirectUrl,
+          redirectUrl:redirectNewUserUrl,
         },
       );
     } catch (error) {
@@ -249,7 +249,7 @@ const oauthRoutes = app
       return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'google' });
     }
 
-    const redirectUrl = getRedirectUrl(ctx);
+    const redirectExistingUserUrl = getRedirectUrl(ctx);
 
     try {
       const { accessToken } = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
@@ -274,7 +274,7 @@ const oauthRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
 
-        return ctx.redirect(redirectUrl);
+        return ctx.redirect(redirectExistingUserUrl);
       }
 
       // * Check if user already exists
@@ -288,14 +288,14 @@ const oauthRoutes = app
             firstName: user.given_name,
             lastName: user.family_name,
           },
-          redirectUrl,
+          redirectUrl: redirectExistingUserUrl,
           // TODO: invite token
           isEmailVerified: existingUser.emailVerified || user.email_verified,
         });
       }
 
       const userId = nanoid();
-
+      const redirectNewUserUrl = getRedirectUrl(ctx, true);
       // * Create new user and oauth account
       return await handleCreateUser(
         ctx,
@@ -315,7 +315,7 @@ const oauthRoutes = app
             userId: user.sub,
           },
           isEmailVerified: user.email_verified,
-          redirectUrl,
+          redirectUrl: redirectNewUserUrl,
         },
       );
     } catch (error) {
@@ -344,7 +344,7 @@ const oauthRoutes = app
       return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'microsoft' });
     }
 
-    const redirectUrl = getRedirectUrl(ctx);
+    const redirectExistingUserUrl = getRedirectUrl(ctx);
 
     try {
       const { accessToken } = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
@@ -367,7 +367,7 @@ const oauthRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
 
-        return ctx.redirect(redirectUrl);
+        return ctx.redirect(redirectExistingUserUrl);
       }
 
       if (!user.email) {
@@ -385,14 +385,14 @@ const oauthRoutes = app
             firstName: user.given_name,
             lastName: user.family_name,
           },
-          redirectUrl,
+          redirectUrl: redirectExistingUserUrl,
           // TODO: invite token and email verification
           isEmailVerified: existingUser.emailVerified,
         });
       }
 
       const userId = nanoid();
-
+      const redirectNewUserUrl = getRedirectUrl(ctx, true);
       // * Create new user and oauth account
       return await handleCreateUser(
         ctx,
@@ -412,7 +412,7 @@ const oauthRoutes = app
             userId: user.sub,
           },
           isEmailVerified: false,
-          redirectUrl,
+          redirectUrl: redirectNewUserUrl,
         },
       );
     } catch (error) {

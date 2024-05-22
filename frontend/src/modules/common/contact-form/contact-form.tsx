@@ -1,22 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { config } from 'config';
 
 import { Mail, MessageSquare, Send, User } from 'lucide-react';
 import type { SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { dialog, isDialog as checkDialog } from '~/modules/common/dialoger/state';
+import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 
 import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { i18n } from '~/lib/i18n';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../form-fields/input';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { requestAction } from '~/api/general';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
@@ -30,15 +30,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 export async function submitContactForm(data: FormValues) {
   try {
-    const webhookUrl = config.contactWebhookUrl;
-    let { name, email, message } = data;
-    const app = config.slug;
-    email = email.trim().toLowerCase();
-
-    const queryParams = new URLSearchParams({ app, name, email }).toString();
-    const response = await fetch(webhookUrl + queryParams, { method: 'POST', body: message });
-
-    return response.ok;
+    const { name, email, message } = data;
+    requestAction({ email, type: 'CONTACT_REQUEST', accompanyingMessage: `${name} with the message: ${message}` });
+    return true;
   } catch (error) {
     console.error('Error in contact form:', error);
     return false;

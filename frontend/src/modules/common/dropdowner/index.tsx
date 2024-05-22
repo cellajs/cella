@@ -1,8 +1,8 @@
+import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { dropDownState, type DropDownT, type DropDownToRemove } from '../dropdowner/state';
 import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
-import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
+import { type DropDownT, type DropDownToRemove, dropDownState } from '../dropdowner/state';
 
 export function DropDowner() {
   const [dropDowns, setDropDowns] = useState<DropDownT[]>([]);
@@ -41,9 +41,6 @@ export function DropDowner() {
     if (!isMobile || !dropDown.drawerOnMobile) {
       return (
         <DropdownMenu key={dropDown.id} modal={!dropDown.container}>
-          {dropDown.container && (
-            <div className="fixed inset-0 z-30 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          )}
           <DropdownMenuTrigger>{dropDown.trigger}</DropdownMenuTrigger>
           <DropdownMenuContent autoFocus={dropDown.autoFocus} className={dropDown.className}>
             {dropDown.content}

@@ -1,11 +1,11 @@
 import { config } from 'config';
+import { toast } from 'sonner';
 import { updateUser } from '~/api/users';
 import { i18n } from '~/lib/i18n';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useUserStore } from '~/store/user';
 import CountryFlag from './country-flag';
-import { toast } from 'sonner';
 
 interface Props {
   size?: number;

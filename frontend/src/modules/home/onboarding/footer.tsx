@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 
 import { ArrowLeft, Redo } from 'lucide-react';
-import type { Organization } from '~/types';
-import { Button } from '../../ui/button';
-import { useStepper } from '~/modules/common/stepper';
-import type { OnboardingStates } from '.';
 import { useTranslation } from 'react-i18next';
+import { useStepper } from '~/modules/common/stepper';
+import type { Organization } from '~/types';
+import type { OnboardingStates } from '.';
+import { Button } from '../../ui/button';
 
 interface StepperFooterProps {
   organization?: Organization | null;

@@ -1,4 +1,5 @@
 import type * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import { forwardRef } from 'react';
 import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 
 interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
@@ -11,23 +12,19 @@ interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof Toolt
   portal?: boolean;
 }
 
-export const TooltipButton = ({
-  children,
-  toolTipContent,
-  disabled,
-  side = 'bottom',
-  sideOffset = 8,
-  hideWhenDetached,
-  portal = false,
-  ...props
-}: TooltipButtonProps) => {
+export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>(function TooltipButton(
+  { children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, hideWhenDetached, portal = false, ...props }: TooltipButtonProps,
+  ref,
+) {
   if (disabled) {
     return <>{children}</>;
   }
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipTrigger ref={ref} asChild>
+        {children}
+      </TooltipTrigger>
       {portal ? (
         <TooltipPortal>
           <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
@@ -41,4 +38,4 @@ export const TooltipButton = ({
       )}
     </Tooltip>
   );
-};
+});

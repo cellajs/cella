@@ -1,13 +1,20 @@
 {
-    "version": "5",
-    "dialect": "pg",
-    "entries": [
-        {
-            "idx": 0,
-            "version": "5",
-            "when": 1713434080350,
-            "tag": "0000_charming_lady_vermin",
-            "breakpoints": true
-        }
-    ]
+  "version": "6",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1716374814771,
+      "tag": "0000_redundant_solo",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1716374868365,
+      "tag": "0001_brave_gamma_corps",
+      "breakpoints": true
+    }
+  ]
 }

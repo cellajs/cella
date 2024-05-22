@@ -6,7 +6,7 @@ import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
-import type { Task } from '~/modules/common/root/electric';
+import type { Task } from '~/modules/common/electric/electrify';
 import { Button } from '~/modules/ui/button';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';

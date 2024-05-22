@@ -3,12 +3,14 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { signOut } from '~/api/authentication';
+import { useDraftStore } from '~/store/draft';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
 
 export const signOutUser = async () => {
   useUserStore.setState({ user: null as unknown as User });
   await signOut();
+  useDraftStore.getState().clearForms(); // Clear all drafts when signing out
 };
 
 const SignOut = () => {

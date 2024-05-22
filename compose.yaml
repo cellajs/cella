@@ -1,0 +1,38 @@
+version: '3.8'
+
+volumes:
+  pg_data:
+
+services:
+  db:
+    container_name: db
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command:
+      - -c
+      - wal_level=logical
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  electric-sync-service:
+    container_name: electric-sync-service
+    image: electricsql/electric:latest
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db/postgres
+      DATABASE_REQUIRE_SSL: false
+      LOGICAL_PUBLISHER_HOST: electric-sync-service
+      PG_PROXY_PASSWORD: proxy_password
+      AUTH_MODE: insecure
+      LOG_LEVEL: debug
+    ports:
+      - 5133:5133
+      - 65432:65432
+    restart: always

@@ -14,10 +14,6 @@ export default {
   // Hide chat widget in development
   gleapToken: undefined,
 
-  // Webhooks with n8n
-  newsletterWebhookUrl: 'https://cella.app.n8n.cloud/webhook-test/subscription?',
-  contactWebhookUrl: 'https://cella.app.n8n.cloud/webhook-test/contact?',
-
   // Payment with Paddle
   paddleToken: 'test_85052d6574ab68d36b341e0afc8',
   paddlePriceIds: {

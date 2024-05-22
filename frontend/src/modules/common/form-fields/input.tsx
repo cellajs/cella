@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useFormContext, type Control, type FieldValues, type Path } from 'react-hook-form';
+import { type Control, type FieldValues, type Path, useFormContext } from 'react-hook-form';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
@@ -51,7 +51,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
 
   const prefixClick = () => {
     setFocus(name.toString());
-  }
+  };
 
   return (
     <FormField
@@ -67,16 +67,16 @@ const InputFormField = <TFieldValues extends FieldValues>({
           <FormControl>
             <div className="relative flex w-full items-center ">
               {(prefix || icon) && (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-<span
-                    id={`${name.toString()}-prefix`}
-                    onClick={prefixClick}
-                    className="absolute font-light left-3 text-sm"
-                    style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
-                  >
-                    {prefix || icon}
-                  </span>
-                )}
+                // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                <span
+                  id={`${name.toString()}-prefix`}
+                  onClick={prefixClick}
+                  className="absolute font-light left-3 text-sm"
+                  style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
+                >
+                  {prefix || icon}
+                </span>
+              )}
               {type === 'textarea' ? (
                 <Textarea
                   style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '' }}

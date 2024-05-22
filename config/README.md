@@ -1,5 +1,5 @@
 # Config
-In this folder you find the config files, which are used in different pnpm workspaces, ie `frontend` and `backend`. Each setup gets a different config file.
+In this folder you find the config files to set up all kinds of app-specific configurations that can be made public. Each setup (`development`, `production` etc) gets a different config file.
 
 
 ### TODO

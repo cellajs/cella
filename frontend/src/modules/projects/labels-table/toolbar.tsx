@@ -1,13 +1,13 @@
+import { Plus, Trash, XSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { LabelsParam } from '.';
-import { useTranslation } from 'react-i18next';
+import { useElectric } from '~/modules/common/electric/electrify';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { Button } from '~/modules/ui/button';
-import { Plus, Trash, XSquare } from 'lucide-react';
 import { Badge } from '~/modules/ui/badge';
-import { toast } from 'sonner';
-import { useElectric } from '~/modules/common/root/electric';
+import { Button } from '~/modules/ui/button';
+import type { LabelsParam } from '.';
 
 interface Props {
   searchQuery: string;
@@ -24,10 +24,12 @@ export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelect
   const { t } = useTranslation();
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const { db } = useElectric()!;
+  const Electric = useElectric()!;
 
   const removeLabel = () => {
-    db.labels
+    if (!Electric) return toast.error(t('common:no_local_db'))
+
+    Electric.db.labels
       .deleteMany({
         where: {
           id: {

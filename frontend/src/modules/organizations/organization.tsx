@@ -16,6 +16,7 @@ interface OrganizationContextValue {
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
   { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
+  { id: 'requests', label: 'common:requests', path: '/$idOrSlug/requests' },
 ];
 
 export const OrganizationContext = createContext({} as OrganizationContextValue);
@@ -31,6 +32,10 @@ const OrganizationPage = () => {
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
 
+  const tabs = organizationTabs.filter((el) => {
+    if (organization.userRole !== 'ADMIN') return el.id !== 'requests';
+    return true;
+  });
   return (
     <OrganizationContext.Provider value={{ organization }}>
       <PageHeader
@@ -45,7 +50,7 @@ const OrganizationPage = () => {
           </div>
         }
       />
-      <PageNav title={organization.name} avatar={organization} tabs={organizationTabs} />
+      <PageNav title={organization.name} avatar={organization} tabs={tabs} />
       <FocusViewContainer className="container min-h-screen mt-4">
         <Outlet />
       </FocusViewContainer>

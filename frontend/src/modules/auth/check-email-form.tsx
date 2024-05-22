@@ -10,10 +10,10 @@ import { Input } from '~/modules/ui/input';
 
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
+import { useEffect } from 'react';
 import { checkEmail as baseCheckEmail } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
 import type { TokenData } from '.';
-import { useEffect } from 'react';
 
 const formSchema = checkEmailJsonSchema;
 
@@ -32,6 +32,9 @@ export const CheckEmailForm = ({ tokenData, setStep }: { tokenData: TokenData | 
     onSuccess: (result) => {
       if (config.has.signUp) {
         const nextStep = result.exists ? 'signIn' : 'signUp';
+        setStep(nextStep, form.getValues('email'));
+      } else if (config.has.waitList && !config.has.signUp) {
+        const nextStep = result.exists ? 'signIn' : 'waitList';
         setStep(nextStep, form.getValues('email'));
       } else {
         const nextStep = result.exists ? 'signIn' : 'inviteOnly';

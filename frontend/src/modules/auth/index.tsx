@@ -3,19 +3,20 @@ import { CheckEmailForm } from './check-email-form';
 import { SignInForm } from './sign-in-form';
 import { SignUpForm } from './sign-up-form';
 
+import { Link, useSearch } from '@tanstack/react-router';
+import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { ApiError } from '~/api';
+import { checkToken } from '~/api/general';
+import { cn } from '~/lib/utils';
+import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
+import { buttonVariants } from '../ui/button';
 import AuthPage from './auth-page';
 import OauthOptions from './oauth-options';
-import { Link, useSearch } from '@tanstack/react-router';
-import { SignInRoute } from '~/routes/authentication';
-import { checkToken } from '~/api/general';
-import { ArrowRight } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { buttonVariants } from '../ui/button';
-import type { ApiError } from '~/api';
+import { WaitListForm } from '../common/wait-list-form';
 
-export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error';
+export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitList';
 
 export type TokenData = Awaited<ReturnType<typeof checkToken>> & {
   token: string;
@@ -67,13 +68,14 @@ const SignIn = () => {
           {step === 'check' && <CheckEmailForm tokenData={tokenData} setStep={handleCheckEmail} />}
           {step === 'signIn' && <SignInForm tokenData={tokenData} email={email} setStep={handleSetStep} />}
           {step === 'signUp' && <SignUpForm tokenData={tokenData} email={email} setStep={handleSetStep} />}
+          {step === 'waitList' && <WaitListForm email={email} setStep={handleSetStep} />}
           {step === 'inviteOnly' && (
             <>
               <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>
               <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text')}</h2>
             </>
           )}
-          {step !== 'inviteOnly' && <OauthOptions actionType={step} />}
+          {step !== 'inviteOnly' && step !== 'waitList' && <OauthOptions actionType={step} />}
         </>
       ) : (
         <>

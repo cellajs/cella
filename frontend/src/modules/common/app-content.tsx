@@ -13,7 +13,7 @@ export const AppContent = () => {
   const isLargeScreen = useBreakpoints('min', 'xl');
 
   const clickContentRef = useRef<HTMLDivElement>(null);
-  const [showFooter, setShowFooter] = useState(true);
+  const [showFooter, setShowFooter] = useState(false);
 
   // Move content to the right when the menu is open
   const addPadding = keepMenuOpen && activeSheet?.id === 'menu' ? 'xl:pl-80' : 'pl-0';
@@ -38,11 +38,15 @@ export const AppContent = () => {
 
   useEffect(() => {
     const hide = matches.find((match) => match.staticData.hideFooter);
-    if (!hide !== showFooter) setShowFooter(!showFooter);
+    if (!!hide === showFooter) setShowFooter(!showFooter);
   }, [matches]);
 
   return (
-    <div ref={clickContentRef} id="app-content" className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding} ${focusView && 'addPadding'}`}>
+    <div
+      ref={clickContentRef}
+      id="app-content"
+      className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding} ${focusView && 'addPadding'}`}
+    >
       <div
         className={`flex flex-col justify-between min-h-[calc(100vh-64px)] md:min-h-[100vh] transition duration-300 ease-in-out ${
           !focusView && 'mt-16 md:ml-16'

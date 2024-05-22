@@ -2,13 +2,13 @@ import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
+import { acceptInvite } from '~/api/general';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/authentication';
 import { useThemeStore } from '~/store/theme';
 import type { Step } from '.';
-import { acceptInvite } from '~/api/general';
 
-const oauthOptions = [
+const oauthProviders = [
   {
     name: 'Github',
     url: githubSignInUrl,
@@ -64,8 +64,8 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
       </div>
 
       <div className="flex flex-col space-y-2">
-        {oauthOptions.map((option) => {
-          if (!config.oauthOptions.includes(option.name)) return null;
+        {oauthProviders.map((option) => {
+          if (!config.oauthProviders.includes(option.name)) return null;
 
           return (
             <Button

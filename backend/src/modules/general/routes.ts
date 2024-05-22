@@ -1,10 +1,20 @@
 import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
-import { createRouteConfig } from '../../lib/route-config';
-import { anyTenantGuard, authGuard, publicGuard } from '../../middlewares/guard';
-import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
-import { acceptInviteJsonSchema, inviteJsonSchema, inviteQuerySchema, suggestionsSchema, tokensSchema } from './schema';
 import { resourceTypeSchema } from '../../lib/common-schemas';
+import { createRouteConfig } from '../../lib/route-config';
+import { anyTenantGuard, authGuard, publicGuard, systemGuard } from '../../middlewares/guard';
+import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
+import {
+  acceptInviteJsonSchema,
+  actionRequestSchema,
+  actionResponseSchema,
+  getRequestsQuerySchema,
+  getRequestsSchema,
+  inviteJsonSchema,
+  inviteQuerySchema,
+  suggestionsSchema,
+  tokensSchema,
+} from './schema';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
@@ -217,6 +227,57 @@ export const suggestionsConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(suggestionsSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const requestActionConfig = createRouteConfig({
+  method: 'post',
+  path: '/action-request',
+  guard: publicGuard,
+  middleware: [authRateLimiter],
+  tags: ['general'],
+  summary: 'Create access-request',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: actionRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Access requests',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(actionResponseSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const actionRequestsConfig = createRouteConfig({
+  method: 'get',
+  path: '/requests',
+  guard: systemGuard,
+  tags: ['general'],
+  summary: 'Get requests',
+  request: {
+    query: getRequestsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Access requests',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(getRequestsSchema),
         },
       },
     },

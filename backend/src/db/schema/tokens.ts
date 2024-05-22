@@ -16,3 +16,6 @@ export const tokensTable = pgTable('tokens', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
 });
+
+export type TokenModel = typeof tokensTable.$inferSelect;
+export type InsertTokenModel = typeof tokensTable.$inferInsert;

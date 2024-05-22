@@ -15,8 +15,8 @@ import AcceptInvite from '~/modules/common/accept-invite';
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
-import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
-import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
+import { OrganizationMembersRoute, OrganizationRequestsRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
+import { OrganizationsTableRoute, SystemPanelRoute, UsersTableRoute, RequestsTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
 
@@ -101,18 +101,22 @@ export const routeTree = rootRoute.addChildren([
   AccessibilityRoute,
   ErrorNoticeRoute,
   SignOutRoute,
-  AuthRoute.addChildren([SignInRoute, 
-    // AcceptRoute, 
-    ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken]), acceptInviteRoute]),
+  AuthRoute.addChildren([
+    SignInRoute,
+    // AcceptRoute,
+    ResetPasswordRoute,
+    VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken]),
+    acceptInviteRoute,
+  ]),
   IndexRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,
     WelcomeRoute,
-    SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute]),
+    SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute]),
     UserProfileRoute,
     UserSettingsRoute,
     WorkspaceRoute.addChildren([WorkspaceBoardRoute, WorkspaceTableRoute, WorkspaceOverviewRoute]),
-    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),
+    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute, OrganizationRequestsRoute]),
   ]),
 ]);
 

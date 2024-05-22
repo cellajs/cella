@@ -14,8 +14,8 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { LegalText } from '../marketing/legals';
 import type { TokenData } from '.';
+import { LegalText } from '../marketing/legals';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 

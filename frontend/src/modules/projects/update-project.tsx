@@ -3,28 +3,21 @@ import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
+import { useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 // import { queryClient } from '~/lib/router';
 import { dialog } from '~/modules/common/dialoger/state';
-import { sheet, isSheet as checkSheet } from '~/modules/common/sheeter/state';
+import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
+import type { Project } from '~/types';
 import InputFormField from '../common/form-fields/input';
-import { SlugFormField } from '../common/form-fields/slug';
 import SelectParentFormField from '../common/form-fields/select-parent';
-import { useEffect } from 'react';
+import { SlugFormField } from '../common/form-fields/slug';
 import UnsavedBadge from '../common/unsaved-badge';
-
-interface Project {
-  id: string;
-  slug: string;
-  name: string;
-  organizationId: string;
-  workspaceId: string;
-}
 
 interface Props {
   project: Project;
@@ -37,7 +30,7 @@ const formSchema = z.object({
   id: z.string(),
   slug: z.string(),
   name: z.string(),
-  organizationId: z.string(),
+  color: z.string(),
   workspaceId: z.string(),
 });
 
@@ -69,7 +62,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
     defaultValues: {
       slug: project.slug,
       name: project.name,
-      organizationId: project.organizationId,
+      color: project.color,
       workspaceId: project.workspaceId,
     },
   };
@@ -121,8 +114,15 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
           description={t('common:project_handle.text')}
           previousSlug={project.slug}
         />
-        <SelectParentFormField collection="organizations" type="ORGANIZATION" control={form.control} label={t('common:organization')} name="organizationId" required />
-        <SelectParentFormField collection="workspaces" type="WORKSPACE" control={form.control} label={t('common:workspace')} name="workspaceId" required />
+        <InputFormField control={form.control} name="color" label={t('common:color')} required />
+        <SelectParentFormField
+          collection="workspaces"
+          type="WORKSPACE"
+          control={form.control}
+          label={t('common:workspace')}
+          name="workspaceId"
+          required
+        />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}

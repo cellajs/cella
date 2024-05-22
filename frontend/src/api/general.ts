@@ -1,6 +1,6 @@
-import { UploadType, type Member, type UploadParams, type User } from '~/types';
-import { ApiError, generalClient as client } from '.';
 import type { PageResourceType } from 'backend/types/common';
+import { type Member, type UploadParams, UploadType, type User } from '~/types';
+import { ApiError, generalClient as client } from '.';
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
@@ -98,4 +98,68 @@ export const acceptInvite = async ({
   const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
   return json.success;
+};
+
+interface ActionRequestProp {
+  email: string;
+  type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
+  userId?: string;
+  organizationId?: string;
+  accompanyingMessage?: string;
+}
+// Action request
+export const requestAction = async (requestInfo: ActionRequestProp) => {
+  const response = await client['action-request'].$post({
+    json: {
+      type: requestInfo.type,
+      email: requestInfo.email,
+      userId: requestInfo.userId || null,
+      organizationId: requestInfo.organizationId || null,
+      accompanyingMessage: requestInfo.accompanyingMessage || null,
+    },
+  });
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return;
+};
+
+export type GetRequestsParams = Partial<
+  Omit<Parameters<(typeof client.requests)['$get']>['0']['query'], 'limit' | 'offset'> & {
+    limit: number;
+    page: number;
+  }
+>;
+
+// TODO: fix this
+// Get action requests by type
+export const actionRequests = async (
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50, mode = 'system' }: GetRequestsParams = {},
+  signal?: AbortSignal,
+) => {
+  const response = await client.requests.$get(
+    {
+      query: {
+        q,
+        sort,
+        order,
+        mode,
+        offset: String(page * limit),
+        limit: String(limit),
+      },
+    },
+    {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        return fetch(input, {
+          ...init,
+          credentials: 'include',
+          signal,
+        });
+      },
+    },
+  );
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  return json.data;
 };

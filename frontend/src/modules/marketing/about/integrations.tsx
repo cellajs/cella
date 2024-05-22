@@ -17,7 +17,6 @@ const integrations: Integrations[] = [
   { name: 'TipTap', invert: true, country: 'DE', url: 'tiptap.dev', logo: 'tiptap.svg' },
   { name: 'Sentry', country: 'US', url: 'sentry.io', logo: 'sentry.svg' },
   { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', logo: 'betterstack.svg' },
-  { name: 'n8n', country: 'DE', url: 'n8n.io', logo: 'n8n.svg' },
   { name: 'Paddle', country: 'GB', url: 'paddle.com', logo: 'paddle.svg' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', logo: 'gleap.svg' },
   { name: 'Imado', country: 'NL', url: 'imado.eu', logo: 'imado.svg' },

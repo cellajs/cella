@@ -10,6 +10,7 @@ interface DraftState {
   setForm<T>(key: string, value: T): void;
   resetForm(key: string): void;
   getForm<T>(key: string): T | undefined;
+  clearForms(): void; 
 }
 
 export const useDraftStore = create<DraftState>()(
@@ -32,6 +33,9 @@ export const useDraftStore = create<DraftState>()(
 
         getForm<T>(key: string): T | undefined {
           return get().forms[key] as T | undefined;
+        },
+        clearForms() {
+          set({ forms: {} });
         },
       }),
       { version: 1, name: `${config.slug}-drafts`, storage: createJSONStorage(() => sessionStorage) },

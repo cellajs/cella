@@ -101,7 +101,7 @@ const AvatarGroupList = ({ children }: { children?: React.ReactNode }) => {
 
   React.useEffect(() => {
     setCount?.(React.Children.count(children));
-  }, [children, setCount]); 
+  }, [children, setCount]);
 
   return <>{limit ? React.Children.toArray(children).slice(0, limit) : children}</>;
 };
@@ -113,7 +113,11 @@ const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.HTMLAttr
     const { limit, count } = useAvatarGroupContext();
     if (!limit || !count || count <= limit) return null;
     return (
-      <span ref={ref} className={cn('relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background shadow-sm', className)} {...props}>
+      <span
+        ref={ref}
+        className={cn('relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background shadow-sm', className)}
+        {...props}
+      >
         +{count - limit}
       </span>
     );

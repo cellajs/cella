@@ -26,6 +26,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+!.env.local
 
 # Other
 .netlify
@@ -33,4 +34,5 @@ dist-ssr
 .wrangler
 backend/files
 frontend/stats.html
+frontend/src/generated
 mockServiceWorker.js

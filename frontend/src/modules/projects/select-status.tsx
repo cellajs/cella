@@ -1,24 +1,24 @@
+import { cva } from 'class-variance-authority';
+import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, CircleDotDashed, Dot, type LucideIcon, Snowflake } from 'lucide-react';
 import { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+import { cn } from '~/lib/utils';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Button } from '../ui/button';
-import { ChevronDown, Check, Snowflake, CircleDashed, Circle, CircleDot, CircleDotDashed, CircleCheck, type LucideIcon, Dot } from 'lucide-react';
 import { Kbd } from '../common/kbd';
-import { useTranslation } from 'react-i18next';
-import { useHotkeys } from '~/hooks/use-hot-keys';
-import { toast } from 'sonner';
-import { cva } from 'class-variance-authority';
-import { cn } from '~/lib/utils';
+import { Button } from '../ui/button';
 import { TaskContext } from './board-column';
 
 type Status = {
-  value: (typeof statuses)[number]['value'];
+  value: (typeof taskStatuses)[number]['value'];
   status: string;
   action: string;
   icon: LucideIcon;
 };
 
-const statuses = [
+export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: Snowflake },
   { value: 1, action: 'start', status: 'unstarted', icon: Dot },
   { value: 2, action: 'finish', status: 'started', icon: CircleDashed },
@@ -28,7 +28,7 @@ const statuses = [
   { value: 6, action: 'accepted', status: 'accepted', icon: CircleCheck },
 ] as const;
 
-export type TaskStatus = (typeof statuses)[number]['value'];
+export type TaskStatus = (typeof taskStatuses)[number]['value'];
 
 interface SelectStatusProps {
   taskStatus: TaskStatus;
@@ -55,7 +55,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<Status>(statuses[taskStatus]);
+  const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
   const { task, focusedTaskId } = useContext(TaskContext);
 
   const isSearching = searchValue.length > 0;
@@ -70,7 +70,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
   ]);
 
   const statusChange = (index: number) => {
-    const newStatus = statuses[index];
+    const newStatus = taskStatuses[index];
     setSelectedStatus(newStatus);
     changeTaskStatus(index);
     if (mode === 'edit') toast.success(t('common:success.new_status', { status: t(newStatus.status).toLowerCase() }));
@@ -98,7 +98,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
             onClick={nextStatusClick}
             disabled={selectedStatus.value === 6}
           >
-            {t(statuses[selectedStatus.value].action)}
+            {t(taskStatuses[selectedStatus.value].action)}
           </Button>
         )}
         <PopoverTrigger asChild>
@@ -141,7 +141,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
 
           <CommandGroup>
             <CommandList>
-              {statuses.map((status, index) => {
+              {taskStatuses.map((status, index) => {
                 return (
                   <CommandItem
                     key={status.value}

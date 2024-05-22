@@ -7,7 +7,7 @@ import { type UpdateOrganizationParams, updateOrganization } from '~/api/organiz
 import type { Organization } from '~/types';
 
 import { Loader2 } from 'lucide-react';
-import { lazy, Suspense, useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -17,12 +17,12 @@ import { cleanUrl } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import AvatarFormField from '../common/form-fields/avatar';
+import DomainsFormField from '../common/form-fields/domains';
 import InputFormField from '../common/form-fields/input';
 import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
-import DomainsFormField from '../common/form-fields/domains';
+import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
 import UnsavedBadge from '../common/unsaved-badge';
-import { sheet, isSheet as checkSheet } from '../common/sheeter/state';
 
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
