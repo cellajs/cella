@@ -41,6 +41,7 @@ import {
 } from './routes';
 import { requestsTable } from '../../db/schema/requests';
 import { getOrderColumn } from '../../lib/order-column';
+import { sendSlackNotification } from '../../lib/notification';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -209,7 +210,7 @@ const generalRoutes = app
         type: organization ? 'ORGANIZATION_INVITATION' : 'SYSTEM_INVITATION',
         userId: targetUser?.id,
         email: email.toLowerCase(),
-        role: role as TokenModel['role'] || 'USER',
+        role: (role as TokenModel['role']) || 'USER',
         organizationId: organization?.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
@@ -452,7 +453,7 @@ const generalRoutes = app
    *  Create access-request
    */
   .openapi(requestActionConfig, async (ctx) => {
-    const { email, userId, organizationId, type } = ctx.req.valid('json'); //accompanyingMessage
+    const { email, userId, organizationId, type, accompanyingMessage } = ctx.req.valid('json'); //accompanyingMessage
 
     const [createdAccessRequest] = await db
       .insert(requestsTable)
@@ -461,19 +462,15 @@ const generalRoutes = app
         type,
         user_id: userId,
         organization_id: organizationId,
+        accompanyingMessage: accompanyingMessage,
       })
       .returning();
 
-    // I don't now if need to
-    //if (env.SEND_ALL_TO_EMAIL) {
-    // if(type === 'NEWSLETTER_REQUEST') {
-    //   emailSender.send(env.SEND_ALL_TO_EMAIL, 'New request for becoming a donate or build member.', `Here is his email ${email}.`)
-    // }
-
-    // if(type === 'CONTACT_REQUEST') {
-    //   emailSender.send(env.SEND_ALL_TO_EMAIL, 'New contact request', `Here is his email ${email}. ${accompanyingMessage}`)
-    // }
-    //}
+    // slack notifications
+    if (type === 'SYSTEM_REQUEST') await sendSlackNotification('to join the waitlist.', email);
+    if (type === 'ORGANIZATION_REQUEST') await sendSlackNotification('to join an organization.', email);
+    if (type === 'NEWSLETTER_REQUEST') await sendSlackNotification('to become a donate or build member.', email);
+    if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${accompanyingMessage}.`, email);
 
     return ctx.json({
       success: true,

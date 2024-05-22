@@ -6,7 +6,7 @@ export const env = createEnv({
     DATABASE_URL: z.string().url().optional(),
     PORT: z.string().optional(),
 
-    GOOGLE_MAP_API_KEY: z.string().optional(),
+    NOVU_API_KEY: z.string().optional(),
     PADDLE_API_KEY: z.string().optional(),
     PADDLE_WEBHOOK_KEY: z.string().optional(),
     LOGTAIL_TOKEN: z.string().optional(),

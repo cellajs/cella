@@ -31,7 +31,7 @@ type FormValues = z.infer<typeof formSchema>;
 export async function submitContactForm(data: FormValues) {
   try {
     const { name, email, message } = data;
-    requestAction({ email, type: 'CONTACT_REQUEST', accompanyingMessage: `${name} message: "${message}"` });
+    requestAction({ email, type: 'CONTACT_REQUEST', accompanyingMessage: `${name} with the message: ${message}` });
     return true;
   } catch (error) {
     console.error('Error in contact form:', error);
