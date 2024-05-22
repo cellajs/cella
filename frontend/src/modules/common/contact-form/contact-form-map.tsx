@@ -34,12 +34,7 @@ export const MarkerWithInfowindow = ({ position }: { position: { lat: number; ln
 
   return (
     <>
-      <AdvancedMarker
-        ref={markerRef}
-        onClick={() => setInfowindowOpen(true)}
-        position={position}
-        title="More info"
-      >
+      <AdvancedMarker ref={markerRef} onClick={() => setInfowindowOpen(true)} position={position} title="More info">
         <img src={Logo} width="30" height="30" alt={config.name} />
       </AdvancedMarker>
 
