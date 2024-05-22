@@ -122,7 +122,7 @@ async function createResourceContext(resourceType: string, ctx: any) {
 
   // Initialize context to store the custom created resource context based on the lowest possible ancestor
   const context: Record<string, string> = {};
-  
+
   // Variable to hold the lowest ancestor found
   // biome-ignore lint/suspicious/noExplicitAny: The lowest ancestor can be of different entity types (e.g., organization, workspace, project) or undefined
   let lowestAncestor: any;
@@ -131,7 +131,6 @@ async function createResourceContext(resourceType: string, ctx: any) {
   for (const ancestor of resource.descSortedAncestors) {
     // Continue searching for the lowest ancestor if not found yet
     if (!lowestAncestor) {
-
       // Check if ancestor identifier is provided in params or query
       let lowestAncestorIdOrSlug = ctx.req.param(ancestor.name)?.toLowerCase() || ctx.req.query(ancestor.name)?.toLowerCase();
 
@@ -148,7 +147,7 @@ async function createResourceContext(resourceType: string, ctx: any) {
           context[`${ancestor.name}Id`] = lowestAncestor.id;
         }
       }
-    } else if (lowestAncestor[`${ancestor.name}Id`]){
+    } else if (lowestAncestor[`${ancestor.name}Id`]) {
       // Resolve ancestors by the parents of the lowest ancestor
       context[`${ancestor.name}Id`] = lowestAncestor[`${ancestor.name}Id`];
     }

@@ -4,15 +4,15 @@ import { Argon2id } from 'oslo/password';
 
 import { config } from 'config';
 import { db } from '../src/db/db';
+import { type InsertLabelModel, labelsTable } from '../src/db/schema/labels';
 import { type InsertMembershipModel, membershipsTable } from '../src/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '../src/db/schema/organizations';
-import { type InsertUserModel, usersTable } from '../src/db/schema/users';
-import { nanoid } from '../src/lib/nanoid';
-import { type InsertWorkspaceModel, workspacesTable } from '../src/db/schema/workspaces';
 import { type InsertProjectModel, projectsTable } from '../src/db/schema/projects';
 import { type InsertTaskModel, tasksTable } from '../src/db/schema/tasks';
-import { type InsertLabelModel, labelsTable } from '../src/db/schema/labels';
-import type { Status, Stage } from './organizations';
+import { type InsertUserModel, usersTable } from '../src/db/schema/users';
+import { type InsertWorkspaceModel, workspacesTable } from '../src/db/schema/workspaces';
+import { nanoid } from '../src/lib/nanoid';
+import type { Stage, Status } from './organizations';
 
 // Seed an admin user to access app first time
 export const usersSeed = async () => {
@@ -93,7 +93,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
   for (const organization of organizations) {
     organizationsCount++;
     if (progressCallback) {
-      progressCallback("organizations", organizationsCount, "inserting");
+      progressCallback('organizations', organizationsCount, 'inserting');
     }
 
     const insertUsers: InsertUserModel[] = Array.from({ length: 100 }).map(() => {
@@ -127,7 +127,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
 
     usersCount += insertUsers.length;
     if (progressCallback) {
-      progressCallback("users", usersCount, "inserting");
+      progressCallback('users', usersCount, 'inserting');
     }
 
     const users = await db.insert(usersTable).values(insertUsers).returning().onConflictDoNothing();
@@ -145,7 +145,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
 
     relationsCount += memberships.length;
     if (progressCallback) {
-      progressCallback("relations", relationsCount, "inserting");
+      progressCallback('relations', relationsCount, 'inserting');
     }
 
     await db.insert(membershipsTable).values(memberships).onConflictDoNothing();
@@ -174,7 +174,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
     for (const workspace of workspaces) {
       workspacesCount++;
       if (progressCallback) {
-        progressCallback("workspaces", workspacesCount, "inserting");
+        progressCallback('workspaces', workspacesCount, 'inserting');
       }
 
       // slice users to 10 members for each workspace
@@ -192,7 +192,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
 
       relationsCount += workspaceMemberships.length;
       if (progressCallback) {
-        progressCallback("relations", relationsCount, "inserting");
+        progressCallback('relations', relationsCount, 'inserting');
       }
 
       await db.insert(membershipsTable).values(workspaceMemberships).onConflictDoNothing();
@@ -218,7 +218,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
       for (const project of projects) {
         projectsCount++;
         if (progressCallback) {
-          progressCallback("projects", projectsCount, "inserting");
+          progressCallback('projects', projectsCount, 'inserting');
         }
 
         const projectMemberships: InsertMembershipModel[] = usersGroup.map((user) => {
@@ -233,7 +233,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
 
         relationsCount += projectMemberships.length;
         if (progressCallback) {
-          progressCallback("relations", relationsCount, "inserting");
+          progressCallback('relations', relationsCount, 'inserting');
         }
 
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
@@ -276,7 +276,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
 
         labelsCount += insertLabels.length;
         if (progressCallback) {
-          progressCallback("labels", labelsCount, "inserting");
+          progressCallback('labels', labelsCount, 'inserting');
         }
 
         const labels = await db.insert(labelsTable).values(insertLabels).returning().onConflictDoNothing();
@@ -284,7 +284,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
         for (const task of tasks) {
           tasksCount++;
           if (progressCallback) {
-            progressCallback("tasks", tasksCount, "inserting");
+            progressCallback('tasks', tasksCount, 'inserting');
           }
 
           const taskLabels = labels.filter(() => faker.datatype.boolean());
@@ -304,7 +304,7 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
 
           relationsCount += insertTaskLabels.length;
           if (progressCallback) {
-            progressCallback("relations", relationsCount, "inserting");
+            progressCallback('relations', relationsCount, 'inserting');
           }
 
           await db.insert(membershipsTable).values(insertTaskLabels).onConflictDoNothing();
@@ -314,12 +314,12 @@ export const organizationsAndMembersSeed = async (progressCallback?: (stage: Sta
   }
 
   if (progressCallback) {
-    progressCallback("relations", relationsCount, "done");
-    progressCallback("labels", labelsCount, "done");
-    progressCallback("tasks", tasksCount, "done");
-    progressCallback("projects", projectsCount, "done");
-    progressCallback("workspaces", workspacesCount, "done");
-    progressCallback("users", usersCount, "done");
-    progressCallback("organizations", organizationsCount, "done");
+    progressCallback('relations', relationsCount, 'done');
+    progressCallback('labels', labelsCount, 'done');
+    progressCallback('tasks', tasksCount, 'done');
+    progressCallback('projects', projectsCount, 'done');
+    progressCallback('workspaces', workspacesCount, 'done');
+    progressCallback('users', usersCount, 'done');
+    progressCallback('organizations', organizationsCount, 'done');
   }
 };

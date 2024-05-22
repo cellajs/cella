@@ -3,6 +3,7 @@ import { Mailbox, Trash, XSquare } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { actionRequests } from '~/api/general';
 import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -15,7 +16,6 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { Requests } from '~/types';
 import type { RequestsSearch } from '.';
-import { actionRequests } from '~/api/general';
 
 interface Props {
   total?: number;

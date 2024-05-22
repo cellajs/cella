@@ -220,7 +220,7 @@ const oauthRoutes = app
             userId: String(githubUser.id),
           },
           isEmailVerified: primaryEmail.verified,
-          redirectUrl:redirectNewUserUrl,
+          redirectUrl: redirectNewUserUrl,
         },
       );
     } catch (error) {

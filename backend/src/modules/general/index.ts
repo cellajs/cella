@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, ne, or, type SQL } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, ne, or } from 'drizzle-orm';
 import { emailSender } from '../../../../email';
 import { InviteEmail } from '../../../../email/emails/invite';
 
@@ -15,11 +15,14 @@ import { db } from '../../db/db';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { requestsTable } from '../../db/schema/requests';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
+import { sendSlackNotification } from '../../lib/notification';
+import { getOrderColumn } from '../../lib/order-column';
 import { sendSSE } from '../../lib/sse';
 import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -30,18 +33,15 @@ import { checkRole } from './helpers/check-role';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
   acceptInviteRouteConfig,
-  requestActionConfig,
+  actionRequestsConfig,
   checkSlugRouteConfig,
   checkTokenRouteConfig,
   getUploadTokenRouteConfig,
   inviteRouteConfig,
   paddleWebhookRouteConfig,
+  requestActionConfig,
   suggestionsConfig,
-  actionRequestsConfig,
 } from './routes';
-import { requestsTable } from '../../db/schema/requests';
-import { getOrderColumn } from '../../lib/order-column';
-import { sendSlackNotification } from '../../lib/notification';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

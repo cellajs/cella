@@ -1,7 +1,7 @@
-import { organizationsAndMembersSeed } from '.';
 import chalk from 'chalk';
+import { organizationsAndMembersSeed } from '.';
 
-import { renderWithTask, TaskView } from 'hanji';
+import { TaskView, renderWithTask } from 'hanji';
 
 class Spinner {
   private offset = 0;

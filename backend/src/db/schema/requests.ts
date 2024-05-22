@@ -1,7 +1,7 @@
 import { index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
-import { usersTable } from './users';
 import { organizationsTable } from './organizations';
+import { usersTable } from './users';
 
 const requestTypeEnum = ['ORGANIZATION_REQUEST', 'SYSTEM_REQUEST', 'NEWSLETTER_REQUEST', 'CONTACT_REQUEST'] as const;
 

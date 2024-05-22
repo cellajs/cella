@@ -35,4 +35,3 @@ dist-ssr
 backend/files
 frontend/stats.html
 frontend/src/generated
-mockServiceWorker.js

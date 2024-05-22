@@ -1,3 +1,4 @@
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { ChevronDown, Plus, Settings2 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
@@ -13,7 +14,6 @@ import { MenuArchiveToggle } from './menu-archive-toggle';
 import type { SectionItem } from './sheet-menu';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuItemOptions } from './sheet-menu-item-options';
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 
 interface MenuSectionProps {
   key: string;

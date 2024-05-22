@@ -2,9 +2,9 @@ import { Filter, FilterX, X } from 'lucide-react';
 import { createContext, useContext, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
-import { motion } from 'framer-motion';
 
 interface TableFilterBarProps {
   children: React.ReactNode;

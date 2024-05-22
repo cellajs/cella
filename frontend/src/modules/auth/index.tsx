@@ -11,10 +11,10 @@ import { checkToken } from '~/api/general';
 import { cn } from '~/lib/utils';
 import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
+import { WaitListForm } from '../common/wait-list-form';
 import { buttonVariants } from '../ui/button';
 import AuthPage from './auth-page';
 import OauthOptions from './oauth-options';
-import { WaitListForm } from '../common/wait-list-form';
 
 export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitList';
 

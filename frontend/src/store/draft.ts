@@ -10,7 +10,7 @@ interface DraftState {
   setForm<T>(key: string, value: T): void;
   resetForm(key: string): void;
   getForm<T>(key: string): T | undefined;
-  clearForms(): void; 
+  clearForms(): void;
 }
 
 export const useDraftStore = create<DraftState>()(

@@ -2,7 +2,7 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { TaskLabel } from '~/mocks/workspaces';
+import type { Label } from '~/modules/common/electric/electrify';
 import { type ViewOptions, viewOptions } from '~/modules/projects/view-options';
 
 type Column = {
@@ -11,7 +11,7 @@ type Column = {
   minimized: boolean;
   expandAccepted: boolean;
   expandIced: boolean;
-  recentLabels: TaskLabel[];
+  recentLabels: Label[];
   taskIds: string[];
 };
 
@@ -32,7 +32,7 @@ const defaultColumnValues = {
   minimized: false,
   expandAccepted: false,
   expandIced: false,
-  recentLabels: [] as TaskLabel[],
+  recentLabels: [] as Label[],
   taskIds: [] as string[],
 };
 

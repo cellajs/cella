@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useContext, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -19,7 +20,6 @@ import { useUserStore } from '~/store/user';
 import type { Member } from '~/types';
 import type { MembersSearch } from '.';
 import RemoveMembersForm from './remove-member-form';
-import { motion } from 'framer-motion';
 
 interface Props {
   selectedMembers: Member[];

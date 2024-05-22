@@ -1,7 +1,7 @@
+import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import timezones from '~/json/timezones.json';
 import Combobox from '~/modules/ui/combobox';
-import { config } from 'config';
 
 const SelectTimezone = ({ listGroup = 'all', onChange }: { listGroup?: 'all' | 'common'; onChange: (value: string) => void }) => {
   const { t } = useTranslation();

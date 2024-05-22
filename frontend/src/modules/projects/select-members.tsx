@@ -4,7 +4,6 @@ import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
-import type { TaskUser } from '~/mocks/workspaces.ts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
@@ -12,11 +11,12 @@ import { Kbd } from '../common/kbd.tsx';
 import { Command, CommandInput } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { TaskContext } from './board-column';
+import type { User } from '~/types/index.ts';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';
-  viewValue?: TaskUser[];
-  changeAssignedTo?: (users: TaskUser[]) => void;
+  viewValue?: User[];
+  changeAssignedTo?: (users: User[]) => void;
 }
 
 const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps) => {
@@ -24,7 +24,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('assignedTo');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<TaskUser[]>(viewValue ? viewValue : formValue || []);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();

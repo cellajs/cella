@@ -4,7 +4,7 @@ export const sendSSE = (userId: string | null, eventName: string, data: Record<s
   if (!userId) {
     return;
   }
-  
+
   const stream = streams.get(userId);
 
   if (stream) {

@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
+import { requestsTable } from '../../db/schema/requests';
 import { tokensTable } from '../../db/schema/tokens';
 import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, passwordSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
-import { requestsTable } from '../../db/schema/requests';
 
 export const tokensSchema = createSelectSchema(tokensTable);
 

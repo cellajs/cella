@@ -8,6 +8,7 @@ import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state
 
 import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { requestAction } from '~/api/general';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { i18n } from '~/lib/i18n';
@@ -16,7 +17,6 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../form-fields/input';
-import { requestAction } from '~/api/general';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
