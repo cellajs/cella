@@ -49,7 +49,7 @@ export default function Board() {
     return filteredTasks.filter(
       (task) =>
         viewOptions.type.includes(task.type) &&
-        (task.status === 0 || task.status === 6 || viewOptions.type.includes(taskStatuses[task.status].status)),
+        (task.status === 0 || task.status === 6 || viewOptions.status.includes(taskStatuses[task.status].status)),
       // add to task label status and filter by status of label too
     );
   }, [viewOptions, filteredTasks]);
