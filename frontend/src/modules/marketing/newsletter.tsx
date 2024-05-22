@@ -3,8 +3,8 @@ import { useRef, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Button } from '~/modules/ui/button';
 import { requestAction } from '~/api/general';
+import { Button } from '~/modules/ui/button';
 
 export async function addEmail(email: string) {
   if (!email) return { success: false };

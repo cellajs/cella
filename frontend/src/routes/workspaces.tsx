@@ -1,13 +1,13 @@
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
+import { Loader } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
+import { useElectric } from '~/modules/common/electric/electrify';
 import ErrorNotice from '~/modules/common/error-notice';
 import Workspace, { workspaceQueryOptions } from '~/modules/workspaces';
 import { IndexRoute } from './routeTree';
-import { useElectric } from '~/modules/common/electric/electrify';
-import { Loader } from 'lucide-react';
 
 // Lazy-loaded components
 const Board = lazy(() => import('~/modules/projects/board'));
@@ -24,7 +24,6 @@ export const WorkspaceRoute = createRoute({
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
     const Electric = useElectric();
-
 
     // TODO: review this
     if (!Electric) {

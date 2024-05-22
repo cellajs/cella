@@ -8,9 +8,9 @@ import BoardHeader from '~/modules/projects/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import type { Project, Workspace } from '~/types';
+import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/electric/electrify';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
-import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/electric/electrify';
 
 interface WorkspaceContextValue {
   workspace: Workspace;

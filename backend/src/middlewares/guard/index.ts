@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import auth from './auth';
-import tenant from './tenant';
 import isAllowedTo from './is-allowed-to';
+import tenant from './tenant';
 
 type TenantAccessibleFor = Parameters<typeof tenant>[2];
 

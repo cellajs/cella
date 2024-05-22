@@ -1,7 +1,7 @@
 import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { systemGuard, isAuthenticated, isAllowedTo } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, systemGuard } from '../../middlewares/guard';
 
 import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchema } from './schema';
 

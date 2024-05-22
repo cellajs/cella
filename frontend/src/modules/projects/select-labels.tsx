@@ -3,17 +3,17 @@ import { Check, Dot, History, Tag, X } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
+import { nanoid } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
-import { Kbd } from '../common/kbd.tsx';
 import { type Label, useElectric } from '../common/electric/electrify.ts';
+import { Kbd } from '../common/kbd.tsx';
 import { Badge } from '../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { TaskContext } from './board-column.tsx';
-import { nanoid } from '~/lib/utils.ts';
-import { toast } from 'sonner';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -55,7 +55,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
   };
 
   const createLabel = (value: string) => {
-    if (!Electric) return toast.error(t('common:no_local_db'))
+    if (!Electric) return toast.error(t('common:no_local_db'));
 
     const newLabel: Label = {
       id: nanoid(),

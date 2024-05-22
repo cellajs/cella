@@ -1,9 +1,9 @@
 import { Link, type ToPathOption } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { motion } from 'framer-motion';
 
 export type PageNavTab = {
   id: string;

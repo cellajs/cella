@@ -67,37 +67,25 @@ export const useColumns = (mode: 'system' | 'organization') => {
         );
       },
     },
+  ];
+
+  const defaultColumns: ColumnOrColumnGroup<Requests>[] = [
     {
-      key: 'organization',
-      name: t('common:organization'),
+      key: 'message',
+      name: t('common:message'),
       visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => {
-        return (
-          <>
-            {row.organizationId !== null ? (
-              <Link
-                to="/$idOrSlug/members"
-                tabIndex={tabIndex}
-                params={{ idOrSlug: row.organizationId }}
-                className="flex space-x-2 items-center outline-0 ring-0 group"
-              >
-                <AvatarWrap
-                  type="ORGANIZATION"
-                  className="h-8 w-8"
-                  id={row.organizationId}
-                  name={row.organizationName}
-                  url={row.organizationThumbnail}
-                />
-                <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.organizationName || '-'}</span>
-              </Link>
-            ) : (
-              '-'
-            )}
-          </>
-        );
-      },
+      renderCell: ({ row }) => <>{row.message || '-'}</>,
+    },
+    {
+      key: 'createdAt',
+      name: t('common:created_at'),
+      sortable: true,
+      visible: true,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => dateShort(row.createdAt),
+      minWidth: 180,
     },
   ];
 
@@ -105,46 +93,7 @@ export const useColumns = (mode: 'system' | 'organization') => {
     isMobile
       ? mobileColumns
       : mode === 'system'
-        ? [
-            ...mobileColumns,
-            {
-              key: 'message',
-              name: t('common:message'),
-              visible: true,
-              sortable: false,
-              renderHeaderCell: HeaderCell,
-              renderCell: ({ row }) => <>{row.message || '-'}</>,
-            },
-            {
-              key: 'createdAt',
-              name: t('common:created_at'),
-              sortable: true,
-              visible: true,
-              renderHeaderCell: HeaderCell,
-              renderCell: ({ row }) => dateShort(row.createdAt),
-              minWidth: 180,
-            },
-          ]
-        : [
-            ...mobileColumns,
-            {
-              key: 'message',
-              name: t('common:message'),
-              visible: true,
-              sortable: false,
-              renderHeaderCell: HeaderCell,
-              renderCell: ({ row }) => <>{row.message || '-'}</>,
-            },
-            ...organizationColumns,
-            {
-              key: 'createdAt',
-              name: t('common:created_at'),
-              sortable: true,
-              visible: true,
-              renderHeaderCell: HeaderCell,
-              renderCell: ({ row }) => dateShort(row.createdAt),
-              minWidth: 180,
-            },
-          ],
+        ? [...mobileColumns, ...defaultColumns]
+        : [...mobileColumns, ...organizationColumns, ...defaultColumns],
   );
 };

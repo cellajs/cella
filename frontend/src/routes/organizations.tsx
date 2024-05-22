@@ -1,5 +1,6 @@
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
+import { getRequestsQuerySchema } from 'backend/modules/general/schema';
 import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
 import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
@@ -9,7 +10,6 @@ import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import { IndexRoute } from './routeTree';
-import { getRequestsQuerySchema } from 'backend/modules/general/schema';
 
 // Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));

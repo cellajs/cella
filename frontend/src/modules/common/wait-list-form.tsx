@@ -12,8 +12,8 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { dialog } from './dialoger/state';
 import { LegalText } from '../marketing/legals';
+import { dialog } from './dialoger/state';
 
 const formSchema = actionRequestSchema;
 

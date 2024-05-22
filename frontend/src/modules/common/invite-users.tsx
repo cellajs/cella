@@ -1,6 +1,7 @@
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import useFocusById from '~/hooks/use-focus-by-id';
 import type { Organization } from '~/types';
 import { DialogTitle } from '../ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
@@ -8,7 +9,6 @@ import { AppAlert } from './app-alert';
 import { dialog } from './dialoger/state';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
-import useFocusById from '~/hooks/use-focus-by-id';
 
 interface InviteUsersProps {
   organization?: Organization | null;

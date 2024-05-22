@@ -1,8 +1,8 @@
+import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import countries from '~/json/countries.json';
 import Combobox from '~/modules/ui/combobox';
 import CountryFlag from '../country-flag';
-import { config } from 'config';
 
 const SelectCountry = ({ listGroup = 'all', onChange }: { listGroup?: 'all' | 'common'; onChange: (value: string) => void }) => {
   const { t } = useTranslation();

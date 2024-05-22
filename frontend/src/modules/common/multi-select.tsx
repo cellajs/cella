@@ -155,8 +155,8 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     // Whenever the form value changes (also on reset), update the internal state
     useEffect(() => {
       if (onSearch) {
-        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         return setSelected(
+          // biome-ignore lint/suspicious/noExplicitAny: <explanation>
           formValue.map((o: any) => {
             return { label: o, value: o };
           }) || [],

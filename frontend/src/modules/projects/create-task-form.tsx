@@ -10,6 +10,7 @@ import { useCallback, useContext, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import { nanoid } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
@@ -22,7 +23,6 @@ import { ProjectContext } from './board.tsx';
 import { SelectImpact } from './select-impact.tsx';
 import SetLabels from './select-labels.tsx';
 import SelectStatus from './select-status.tsx';
-import { nanoid } from '~/lib/utils.ts';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;

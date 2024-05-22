@@ -6,7 +6,7 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAuthenticated, systemGuard, isAllowedTo } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, systemGuard } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
@@ -113,7 +113,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organization}',
-  guard:  [isAuthenticated(), isAllowedTo('read', 'organization')],
+  guard: [isAuthenticated(), isAllowedTo('read', 'organization')],
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
   description: `

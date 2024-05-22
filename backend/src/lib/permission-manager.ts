@@ -1,13 +1,13 @@
 // Import required modules from '@cellajs/permission-manager'
-import { 
+import {
+  type AccessPolicyConfiguration,
   Context,
-  PermissionManager, 
-  MembershipAdapter, 
-  SubjectAdapter,
   HierarchicalEntity,
-  type Subject,
   type Membership,
-  type AccessPolicyConfiguration 
+  MembershipAdapter,
+  PermissionManager,
+  type Subject,
+  SubjectAdapter,
 } from '@cellajs/permission-manager';
 
 /**
@@ -45,16 +45,16 @@ class AdaptedMembershipAdapter extends MembershipAdapter {
    * @param memberships - Array of raw membership data.
    * @returns Array of adapted Membership objects.
    */
-  
+
   // biome-ignore lint/suspicious/noExplicitAny: The format of the membership object may vary.
   adapt(memberships: any[]): Membership[] {
     return memberships.map((m) => ({
       contextName: m.type?.toLowerCase() || '',
       contextKey: m[`${m.type?.toLowerCase() || ''}Id`],
       roleName: m.role,
-      ancestors: { 
+      ancestors: {
         organization: m.organizationId,
-      }
+      },
     }));
   }
 }
@@ -68,16 +68,16 @@ class AdaptedSubjectAdapter extends SubjectAdapter {
    * @param s - Raw subject data.
    * @returns Adapted Subject object.
    */
-  
+
   // biome-ignore lint/suspicious/noExplicitAny: The format of the subject can vary depending on the subject.
   adapt(s: any): Subject {
     return {
       // TODO: Replace inline type determination with a type declaration in the schema!
       name: !('organizationId' in s) ? 'organization' : 'workspace',
       key: s.id,
-      ancestors: { 
+      ancestors: {
         organization: s.organizationId,
-      }
+      },
     };
   }
 }

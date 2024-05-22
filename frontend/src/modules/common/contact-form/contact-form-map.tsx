@@ -1,11 +1,11 @@
+import { APIProvider, AdvancedMarker, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { config } from 'config';
+import { Minus, Plus } from 'lucide-react';
 import { useState } from 'react';
-import Logo from '/static/logo/logo-icon-only.svg';
 import { useTranslation } from 'react-i18next';
-import { AdvancedMarker, APIProvider, InfoWindow, Map as GMap, useAdvancedMarkerRef, ControlPosition, MapControl } from '@vis.gl/react-google-maps';
-import { useThemeStore } from '~/store/theme';
 import { Button } from '~/modules/ui/button';
-import { Plus, Minus } from 'lucide-react';
+import { useThemeStore } from '~/store/theme';
+import Logo from '/static/logo/logo-icon-only.svg';
 
 type MapConfig = {
   id: string;

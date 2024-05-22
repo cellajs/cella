@@ -15,8 +15,8 @@ interface OrganizationContextValue {
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
-  { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
   { id: 'requests', label: 'common:requests', path: '/$idOrSlug/requests' },
+  { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
 ];
 
 export const OrganizationContext = createContext({} as OrganizationContextValue);

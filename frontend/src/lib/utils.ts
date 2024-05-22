@@ -1,6 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
-import { clsx, type ClassValue } from 'clsx';
+import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
 import relativeTime from 'dayjs/plugin/relativeTime';

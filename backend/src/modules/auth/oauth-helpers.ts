@@ -28,7 +28,7 @@ export const getRedirectUrl = (ctx: Context, firstSignIn?: boolean): string => {
   const redirectCookie = getCookie(ctx, 'oauth_redirect');
   let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
   if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie);
-  if (firstSignIn) redirectUrl =  config.frontendUrl + config.firstSignInRedirectPath
+  if (firstSignIn) redirectUrl = config.frontendUrl + config.firstSignInRedirectPath;
   return redirectUrl;
 };
 

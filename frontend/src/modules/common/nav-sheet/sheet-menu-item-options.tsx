@@ -1,6 +1,7 @@
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff, GripVertical } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +14,6 @@ import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { DraggableItemData, Page } from '~/types';
 import { DropIndicator } from '../drop-indicator';
-import { motion } from 'framer-motion';
 
 interface SheetMenuItemProps {
   item: Page;
