@@ -1,7 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.7.2/schema.json",
   "files": {
-    "ignore": ["node_modules", "dist", ".react-email", "generated", "wa-sqlite-async.mjs"]
+    "ignore": ["node_modules", "dist", ".react-email", "generated", "wa-sqlite-async.mjs", "drizzle"]
   },
   "organizeImports": {
     "enabled": true
