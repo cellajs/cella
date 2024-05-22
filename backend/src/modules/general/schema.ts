@@ -84,6 +84,7 @@ export const getRequestsSchema = z.object({
 
 export const getRequestsQuerySchema = paginationQuerySchema.merge(
   z.object({
+    mode: z.enum(['system', 'organization']),
     sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
   }),
 );

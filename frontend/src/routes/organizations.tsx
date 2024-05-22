@@ -9,11 +9,14 @@ import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import { IndexRoute } from './routeTree';
+import { getRequestsQuerySchema } from 'backend/modules/general/schema';
 
 // Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
+const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
 
 const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
 
 export const OrganizationRoute = createRoute({
   path: '$idOrSlug',
@@ -56,4 +59,16 @@ export const OrganizationSettingsRoute = createRoute({
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,
   component: () => <OrganizationSettings />,
+});
+
+export const OrganizationRequestsRoute = createRoute({
+  path: '/requests',
+  staticData: { pageTitle: 'Requests' },
+  getParentRoute: () => OrganizationRoute,
+  component: () => (
+    <Suspense>
+      <RequestsTable mode="organization" />
+    </Suspense>
+  ),
+  validateSearch: requestSearchSchema,
 });

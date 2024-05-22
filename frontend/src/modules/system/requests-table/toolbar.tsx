@@ -29,6 +29,7 @@ interface Props {
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Requests>[]>>;
   sort: RequestsSearch['sort'];
   order: RequestsSearch['order'];
+  mode: 'system' | 'organization';
 }
 
 function Toolbar({
@@ -43,6 +44,7 @@ function Toolbar({
   selectedRequests,
   sort,
   order,
+  mode,
 }: Props) {
   const { t } = useTranslation();
 
@@ -74,7 +76,7 @@ function Toolbar({
                 <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
                   <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedRequests.length}</Badge>
                   <Trash size={16} />
-                  <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
+                  <span className="ml-1 max-lg:hidden">{t('common:decline_request')}</span>
                 </Button>
                 <Button variant="ghost" onClick={onResetSelectedRows}>
                   <XSquare size={16} />
@@ -98,7 +100,7 @@ function Toolbar({
           columns={columns}
           selectedRows={selectedRequests}
           fetchRows={async (limit) => {
-            const { requestsInfo } = await actionRequests({ limit, q: query, sort, order });
+            const { requestsInfo } = await actionRequests({ limit, q: query, sort, order, mode });
             return requestsInfo;
           }}
         />

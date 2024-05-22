@@ -70,10 +70,9 @@ const RequestsTable = ({ mode = 'system' }: RequestsTableModes) => {
     refetchOnWindowFocus: false,
   });
 
-  const [columns, setColumns] = useColumns();
+  const [columns, setColumns] = useColumns(mode);
 
   const onRowsChange = async (records: Requests[]) => {
-    if (mode === 'organization') return setRows(records.filter((el) => el.type === 'ORGANIZATION_REQUEST'));
     setRows(records);
   };
 
@@ -89,7 +88,6 @@ const RequestsTable = ({ mode = 'system' }: RequestsTableModes) => {
 
     if (data) {
       setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
-      if (mode === 'organization') return setRows(data.filter((el) => el.type === 'ORGANIZATION_REQUEST'));
       setRows(data);
     }
   }, [queryResult.data]);
@@ -97,6 +95,7 @@ const RequestsTable = ({ mode = 'system' }: RequestsTableModes) => {
   return (
     <div className="space-y-4 h-full">
       <Toolbar
+        mode={mode}
         total={queryResult.data?.pages?.[0]?.total}
         query={query}
         setQuery={setQuery}

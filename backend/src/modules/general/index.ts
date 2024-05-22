@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, or, type SQL } from 'drizzle-orm';
+import { and, count, eq, ilike, ne, or, type SQL } from 'drizzle-orm';
 import { emailSender } from '../../../../email';
 import { InviteEmail } from '../../../../email/emails/invite';
 
@@ -486,9 +486,19 @@ const generalRoutes = app
    *  Get requests
    */
   .openapi(actionRequestsConfig, async (ctx) => {
-    const { q, sort, order, offset, limit } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, mode } = ctx.req.valid('query');
 
-    const filter: SQL | undefined = q ? ilike(requestsTable.email, `%${q}%`) : undefined;
+    let filter: SQL | undefined = undefined;
+    if (mode === 'system') {
+      filter = q
+        ? and(ilike(requestsTable.email, `%${q}%`), ne(requestsTable.type, 'ORGANIZATION_REQUEST'))
+        : ne(requestsTable.type, 'ORGANIZATION_REQUEST');
+    }
+    if (mode === 'organization') {
+      filter = q
+        ? and(ilike(requestsTable.email, `%${q}%`), eq(requestsTable.type, 'ORGANIZATION_REQUEST'))
+        : eq(requestsTable.type, 'ORGANIZATION_REQUEST');
+    }
 
     const requestsQuery = db.select().from(requestsTable).where(filter);
 
