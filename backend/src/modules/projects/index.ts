@@ -101,15 +101,19 @@ const projectsRoutes = app
     const { q, sort, order, offset, limit, workspace } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
-
     const membershipsFilters = [eq(membershipsTable.userId, user.id)];
 
+    const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
+    const projectsFilters = [filter];
+
     if (workspace) {
-      membershipsFilters.push(eq(membershipsTable.workspaceId, workspace));
+      projectsFilters.push(eq(projectsTable.workspaceId, workspace));
     }
 
-    const projectsQuery = db.select().from(projectsTable).where(filter);
+    const projectsQuery = db
+      .select()
+      .from(projectsTable)
+      .where(and(...projectsFilters));
 
     const [{ total }] = await db.select({ total: count() }).from(projectsQuery.as('projects'));
 
@@ -152,7 +156,7 @@ const projectsRoutes = app
         members: counts.members,
       })
       .from(projectsQuery.as('projects'))
-      .leftJoin(membershipRoles, eq(projectsTable.id, membershipRoles.projectId))
+      .leftJoin(membershipRoles, eq(membershipRoles.projectId, projectsTable.id))
       .leftJoin(counts, eq(projectsTable.id, counts.projectId))
       .orderBy(orderColumn)
       .limit(Number(limit))
