@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { resourceTypeSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { anyTenantGuard, authGuard, publicGuard, systemGuard } from '../../middlewares/guard';
+import { anyTenantGuard, isUserAuthenticated, publicGuard, systemGuard } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteJsonSchema,
@@ -19,7 +19,7 @@ import {
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
   path: '/upload-token',
-  guard: authGuard(),
+  guard: isUserAuthenticated(),
   tags: ['general'],
   summary: 'Get upload token',
   description:
@@ -54,7 +54,7 @@ export const getUploadTokenRouteConfig = createRouteConfig({
 export const checkSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/check-slug/{type}/{slug}',
-  guard: authGuard(),
+  guard: isUserAuthenticated(),
   tags: ['general'],
   summary: 'Check if a slug is available',
   description: 'This endpoint is used to check if a slug is available. It is used for organizations and users.',
@@ -212,7 +212,7 @@ export const paddleWebhookRouteConfig = createRouteConfig({
 export const suggestionsConfig = createRouteConfig({
   method: 'get',
   path: '/suggestions',
-  guard: authGuard(),
+  guard: isUserAuthenticated(),
   tags: ['general'],
   summary: 'Get suggestions',
   request: {

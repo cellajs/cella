@@ -20,7 +20,7 @@ const workspacesRoutes = app
   .openapi(createWorkspaceRouteConfig, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = ctx.get('user');
-    const organization = ctx.get('organization');
+    const { organizationId } = ctx.get('workspace');
 
     const slugAvailable = await checkSlugAvailable(slug, 'WORKSPACE');
 
@@ -31,7 +31,7 @@ const workspacesRoutes = app
     const [createdWorkspace] = await db
       .insert(workspacesTable)
       .values({
-        organizationId: organization.id,
+        organizationId,
         name,
         slug,
       })

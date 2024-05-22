@@ -1,11 +1,11 @@
 import type { MiddlewareHandler } from 'hono';
 import auth from './auth';
 import tenant from './tenant';
-import protect from './protect';
+import isUserAllowedTo from './is-user-allowed-to';
 
 type TenantAccessibleFor = Parameters<typeof tenant>[2];
 
-export const authGuard = (accessibleFor?: Parameters<typeof auth>[0]): MiddlewareHandler => auth(accessibleFor);
+export const isUserAuthenticated = (accessibleFor?: Parameters<typeof auth>[0]): MiddlewareHandler => auth(accessibleFor);
 
 export const organizationTenantGuard = (paramName: string, accessibleFor?: TenantAccessibleFor) =>
   [auth(), tenant(paramName, 'ORGANIZATION', accessibleFor)] as const;
@@ -24,4 +24,4 @@ export const publicGuard: MiddlewareHandler = async (_, next) => {
   await next();
 };
 
-export { protect };
+export { isUserAllowedTo };

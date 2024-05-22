@@ -20,13 +20,13 @@ export const tables = new Map<string, typeof organizationsTable | typeof workspa
 
 /**
  * Middleware to protect routes by checking user permissions.
- * @param resourceType - The type of the resource (e.g., 'organization', 'workspace').
  * @param action - The action to be performed (e.g., 'read', 'write').
+ * @param resourceType - The type of the resource (e.g., 'organization', 'workspace').
  * @returns MiddlewareHandler to protect routes based on user permissions.
  */
-const protect =
+const isUserAllowedTo =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    (resourceType: string, action: string): MiddlewareHandler<Env, any> =>
+    (action: string, resourceType: string): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
       const user = ctx.get('user');
@@ -52,7 +52,6 @@ const protect =
 
       // Store the user memberships and authorized resource context in the context
       ctx.set('memberships', memberships);
-      ctx.set('authorizedIn', context);
       ctx.set(resourceType, context);
 
       // Log user authentication in the context
@@ -81,8 +80,8 @@ async function getResourceContext(ctx: any, resourceType: string) {
     return await resolveResourceByIdOrSlug(resourceType, idOrSlug);
   }
 
-  // Handles resolve for contextual resource operations, like fetching or creating child resources
-  return await resolveParentContext(resourceType, ctx);
+  // Generate a context using the lowest parent for resource operations, such as fetching or creating child resources
+  return await createResourceContext(resourceType, ctx);
 }
 
 /**
@@ -106,13 +105,13 @@ async function resolveResourceByIdOrSlug(resourceType: string, idOrSlug: string)
 }
 
 /**
- * Resolves the parent context for contextual resource operations and sets the context accordingly.
+ * Creates a context based on the lowest parent for a resource.
  * @param resourceType - The type of the resource.
  * @param ctx - The context object containing request and response details.
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function resolveParentContext(resourceType: string, ctx: any) {
+async function createResourceContext(resourceType: string, ctx: any) {
   const resource = HierarchicalEntity.instanceMap.get(resourceType);
 
   // Return early if resource is not available
@@ -121,21 +120,41 @@ async function resolveParentContext(resourceType: string, ctx: any) {
   // Extract payload from request body
   const payload = ctx.req.valid('json');
 
+  // Initialize context to store the custom created resource context based on the lowest possible ancestor
+  const context: Record<string, string> = {};
+  
+  // Variable to hold the lowest ancestor found
+  // biome-ignore lint/suspicious/noExplicitAny: The lowest ancestor can be of different entity types (e.g., organization, workspace, project) or undefined
+  let lowestAncestor: any;
+
   // Iterate over ancestors (from lowest to highest) and determine the lowest ancestor available
   for (const ancestor of resource.descSortedAncestors) {
-    // Check if ancestor identifier is provided in params or query
-    let lowestAncestorIdOrSlug = ctx.req.param(ancestor.name)?.toLowerCase() || ctx.req.query(ancestor.name)?.toLowerCase();
+    // Continue searching for the lowest ancestor if not found yet
+    if (!lowestAncestor) {
 
-    // If not found in params or query, check if it's provided in the request body
-    if (!lowestAncestorIdOrSlug && payload) {
-      lowestAncestorIdOrSlug = payload[ancestor.name];
-    }
+      // Check if ancestor identifier is provided in params or query
+      let lowestAncestorIdOrSlug = ctx.req.param(ancestor.name)?.toLowerCase() || ctx.req.query(ancestor.name)?.toLowerCase();
 
-    // If identifier is found, resolve the resource and set the context
-    if (lowestAncestorIdOrSlug) {
-      return await resolveResourceByIdOrSlug(ancestor.name, lowestAncestorIdOrSlug);
+      // If not found in params or query, check if it's provided in the request body
+      if (!lowestAncestorIdOrSlug && payload) {
+        lowestAncestorIdOrSlug = payload[ancestor.name];
+      }
+
+      // If identifier is found, resolve the lowest ancestor
+      if (lowestAncestorIdOrSlug) {
+        lowestAncestor = await resolveResourceByIdOrSlug(ancestor.name, lowestAncestorIdOrSlug);
+        if (lowestAncestor) {
+          // Set the lowest ancestor as parent in context
+          context[`${ancestor.name}Id`] = lowestAncestor.id;
+        }
+      }
+    } else if (lowestAncestor[`${ancestor.name}Id`]){
+      // Resolve ancestors by the parents of the lowest ancestor
+      context[`${ancestor.name}Id`] = lowestAncestor[`${ancestor.name}Id`];
     }
   }
+
+  return context;
 }
 
-export default protect;
+export default isUserAllowedTo;
