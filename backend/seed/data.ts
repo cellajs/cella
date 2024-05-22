@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { organizationsAndMembersSeed } from '.';
+import { dataSeed } from '.';
 
 import { TaskView, renderWithTask } from 'hanji';
 
@@ -130,7 +130,7 @@ export class Progress extends TaskView {
 const progress = new Progress();
 renderWithTask(
   progress,
-  organizationsAndMembersSeed((stage, count, status) => {
+  dataSeed((stage, count, status) => {
     progress.update(stage, count, status);
   })
     .catch((error) => {

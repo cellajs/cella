@@ -12,10 +12,10 @@ import { type InsertTaskModel, tasksTable } from '../src/db/schema/tasks';
 import { type InsertUserModel, usersTable } from '../src/db/schema/users';
 import { type InsertWorkspaceModel, workspacesTable } from '../src/db/schema/workspaces';
 import { nanoid } from '../src/lib/nanoid';
-import type { Stage, Status } from './organizations';
+import type { Stage, Status } from './data';
 
 // Seed an admin user to access app first time
-export const usersSeed = async () => {
+export const userSeed = async () => {
   const usersInTable = await db.select().from(usersTable).limit(1);
 
   if (usersInTable.length > 0) {
@@ -44,7 +44,7 @@ export const usersSeed = async () => {
 };
 
 // Seed 100 organizations with 100 members each
-export const organizationsAndMembersSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
+export const dataSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
   if (organizationsInTable.length > 0) {

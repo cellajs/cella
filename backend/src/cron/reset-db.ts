@@ -1,4 +1,4 @@
-import { organizationsAndMembersSeed, usersSeed } from '../../seed';
+import { dataSeed, userSeed } from '../../seed';
 import { db } from '../db/db';
 import { organizationsTable } from '../db/schema/organizations';
 import { usersTable } from '../db/schema/users';
@@ -9,8 +9,8 @@ export const resetDb = async () => {
 
   console.info('Deleted all organizations and users.');
 
-  await usersSeed();
-  await organizationsAndMembersSeed();
+  await userSeed();
+  await dataSeed();
 
   console.info('Database reset complete.');
 };

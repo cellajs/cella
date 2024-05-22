@@ -1,6 +1,6 @@
-import { usersSeed } from '.';
+import { userSeed } from '.';
 
-usersSeed()
+userSeed()
   .catch((error) => {
     console.error(error);
     process.exit(1);
