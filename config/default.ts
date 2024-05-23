@@ -19,7 +19,7 @@ export const config = {
   description: 'Intuitive TypeScript template to build local-first web apps. Implementation-ready. MIT licensed.',
   keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
 
-  ownerEmail: 'flip@cellajs.com',
+  supportEmail: 'flip@cellajs.com',
   notificationsEmail: 'notifications@cellajs.com',
   senderIsReceiver: false,
 

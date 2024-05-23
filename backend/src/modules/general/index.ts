@@ -258,6 +258,7 @@ const generalRoutes = app
           config.senderIsReceiver ? user.email : email.toLowerCase(),
           organization ? `Invitation to ${organization.name} on Cella` : 'Invitation to Cella',
           emailHtml,
+          user.email,
         )
         .catch((error) => {
           logEvent('Error sending email', { error: (error as Error).message }, 'error');
