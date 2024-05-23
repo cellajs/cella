@@ -1,0 +1,9 @@
+import { Img, Section } from '@react-email/components';
+
+import { config } from 'config';
+
+export const Logo = () => (
+  <Section className="mt-[32px]">
+    <Img src={`${config.productionUrl}/static/email/logo.png`} height="37" alt={config.name} className="mx-auto my-0" />
+  </Section>
+);
