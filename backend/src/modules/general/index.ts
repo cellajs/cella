@@ -74,7 +74,7 @@ const generalRoutes = app
     return ctx.json({
       success: true,
       data: token,
-    });
+    }, 200);
   })
   /*
    * Check if slug is available
@@ -87,7 +87,7 @@ const generalRoutes = app
     return ctx.json({
       success: true,
       data: slugAvailable,
-    });
+    }, 200);
   })
   /*
    * Check token (token validation)
@@ -125,7 +125,7 @@ const generalRoutes = app
         // TODO: review
         email: tokenRecord.email || '',
       },
-    });
+    }, 200);
   })
   /*
    * Invite users to the system or members to an organization
@@ -267,7 +267,7 @@ const generalRoutes = app
     return ctx.json({
       success: true,
       data: undefined,
-    });
+    }, 200);
   })
   /*
    * Accept invite token
@@ -299,7 +299,7 @@ const generalRoutes = app
 
       return ctx.json({
         success: true,
-      });
+      }, 200);
     }
 
     if (token.type === 'ORGANIZATION_INVITATION') {
@@ -333,7 +333,7 @@ const generalRoutes = app
 
         return ctx.json({
           success: true,
-        });
+        }, 200);
       }
 
       await db.insert(membershipsTable).values({
@@ -351,7 +351,7 @@ const generalRoutes = app
 
     return ctx.json({
       success: true,
-    });
+    }, 200);
   })
   /*
    * Paddle webhook
@@ -382,7 +382,7 @@ const generalRoutes = app
     return ctx.json({
       success: true,
       data: undefined,
-    });
+    }, 200);
   })
   /*
    * Get suggestions
@@ -447,7 +447,7 @@ const generalRoutes = app
         workspaces: workspacesResult,
         total: usersResult.length + workspacesResult.length + organizationsResult.length,
       },
-    });
+    }, 200);
   })
   /*
    *  Create access-request
@@ -480,7 +480,7 @@ const generalRoutes = app
         userId: createdAccessRequest.user_id,
         organizationId: createdAccessRequest.organization_id,
       },
-    });
+    }, 200);
   })
   /*
    *  Get requests
@@ -551,7 +551,7 @@ const generalRoutes = app
         })),
         total,
       },
-    });
+    }, 200);
   })
   .get('/sse', auth(), async (ctx) => {
     const user = ctx.get('user');

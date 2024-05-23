@@ -78,7 +78,7 @@ const organizationsRoutes = app
           members: 1,
         },
       },
-    });
+    }, 200);
   })
   /*
    * Get an organizations
@@ -148,7 +148,7 @@ const organizationsRoutes = app
         })),
         total,
       },
-    });
+    }, 200);
   })
   /*
    * Update an organization
@@ -250,7 +250,7 @@ const organizationsRoutes = app
           members,
         },
       },
-    });
+    }, 200);
   })
   /*
    * Get organization by id or slug
@@ -288,7 +288,7 @@ const organizationsRoutes = app
           members,
         },
       },
-    });
+    }, 200);
   })
   /*
    * Get members by organization id
@@ -371,7 +371,7 @@ const organizationsRoutes = app
         items: members,
         total,
       },
-    });
+    }, 200);
   })
   /*
    * Delete organizations
@@ -427,7 +427,7 @@ const organizationsRoutes = app
       return ctx.json({
         success: false,
         errors: errors,
-      });
+      }, 200);
     }
 
     // * Delete the organizations
@@ -451,7 +451,7 @@ const organizationsRoutes = app
     return ctx.json({
       success: true,
       errors: errors,
-    });
+    }, 200);
   });
 
 export default organizationsRoutes;

@@ -59,7 +59,7 @@ const usersRoutes = app
           memberships,
         },
       },
-    });
+    }, 200);
   })
   /*
    * Terminate a session
@@ -90,7 +90,7 @@ const usersRoutes = app
     return ctx.json({
       success: true,
       errors: errors,
-    });
+    }, 200);
   })
   /*
    * Get user menu
@@ -180,7 +180,7 @@ const usersRoutes = app
         workspaces: { items: workspaces, canCreate: true },
         projects: { items: projects, canCreate: true },
       },
-    });
+    }, 200);
   })
   /*
    * Update a user
@@ -247,7 +247,7 @@ const usersRoutes = app
           memberships,
         },
       },
-    });
+    }, 200);
   })
   /*
    * Get list of  users
@@ -321,7 +321,7 @@ const usersRoutes = app
         items: users,
         total,
       },
-    });
+    }, 200);
   })
   /*
    * Get a user by id or slug
@@ -359,7 +359,7 @@ const usersRoutes = app
           memberships,
         },
       },
-    });
+    }, 200);
   }) /*
    * Delete users
    */
@@ -407,7 +407,7 @@ const usersRoutes = app
       return ctx.json({
         success: false,
         errors: errors,
-      });
+      }, 200);
     }
 
     // * Delete the users
@@ -432,7 +432,7 @@ const usersRoutes = app
     return ctx.json({
       success: true,
       errors: errors,
-    });
+    }, 200);
   });
 
 export default usersRoutes;

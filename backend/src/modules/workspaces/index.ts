@@ -63,7 +63,7 @@ const workspacesRoutes = app
         ...createdWorkspace,
         role: 'ADMIN' as const,
       },
-    });
+    }, 200);
   })
 
   /*
@@ -84,7 +84,7 @@ const workspacesRoutes = app
         ...workspace,
         role: membership?.role || null,
       },
-    });
+    }, 200);
   })
 
   /*
@@ -137,7 +137,7 @@ const workspacesRoutes = app
         ...updatedWorkspace,
         role: membership?.role || null,
       },
-    });
+    }, 200);
   })
 
   /*
@@ -194,7 +194,7 @@ const workspacesRoutes = app
       return ctx.json({
         success: false,
         errors: errors,
-      });
+      }, 200);
     }
 
     // * Delete the workspaces
@@ -218,7 +218,7 @@ const workspacesRoutes = app
     return ctx.json({
       success: true,
       errors: errors,
-    });
+    }, 200);
   });
 
 export default workspacesRoutes;

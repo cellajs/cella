@@ -5,7 +5,7 @@ import type { PageResourceType } from '../types/common';
 import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
 
-export type HttpStatus = 400 | 401 | 403 | 404 | 409 | 429 | 500;
+export type HttpErrorStatus = 400 | 401 | 403 | 404 | 409 | 429 | 500;
 
 export type Severity = 'debug' | 'info' | 'log' | 'warn' | 'error';
 
@@ -21,7 +21,7 @@ export type EventData = {
 // Create error object and log it if needed
 export const createError = (
   ctx: Context,
-  status: HttpStatus,
+  status: HttpErrorStatus,
   type: string,
   severity: Severity = 'info',
   resourceType?: PageResourceType,
@@ -62,7 +62,7 @@ export const createError = (
 // Return error as http response
 export const errorResponse = (
   ctx: Context,
-  status: HttpStatus,
+  status: HttpErrorStatus,
   type: string,
   severity: Severity = 'info',
   resourceType?: PageResourceType,
