@@ -70,8 +70,12 @@ export const InviteEmail = ({
           }}
         />
       </Text>
-      <Text className="text-[12px] leading-[18px] text-[#6a737d] mt-[20px]">
+      <Text className="text-[12px] leading-[18px] text-[#6a737d] mt-[20px] gap-1">
         {i18n.t('backend:email.invite_reply_to')}
+        <a className="ml-1" href={`mailto:${config.ownerEmail}`}>
+          {config.ownerEmail}
+        </a>
+        {' or '}
         <a className="ml-1" href={`mailto:${replyTo}`}>
           {replyTo}
         </a>

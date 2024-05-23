@@ -8,6 +8,7 @@ export const emailSender = {
   send: async (to: string, subject: string, html: string) => {
     await sendgrid.send({
       to: env.SEND_ALL_TO_EMAIL || to,
+      replyTo: config.ownerEmail,
       from: config.notificationsEmail,
       subject,
       html,
