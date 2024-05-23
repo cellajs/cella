@@ -1,13 +1,10 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { Bird, Redo } from 'lucide-react';
 import { Fragment, createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { sortTaskOrder } from '~/lib/utils';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
-import ContentPlaceholder from '../common/content-placeholder';
 import type { Label, Task } from '../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
@@ -24,7 +21,6 @@ interface ProjectContextValue {
 export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
-  const { t } = useTranslation();
   const { workspaces, getWorkspaceViewOptions } = useWorkspaceStore();
   const { projects, labels, tasks, searchQuery, workspace } = useContext(WorkspaceContext);
   const [focusedProjectIndex, setFocusedProjectIndex] = useState<number | null>(null);
@@ -120,26 +116,6 @@ export default function Board() {
   return (
     <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)]">
       <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels">
-        {!projects.length && (
-          <ContentPlaceholder
-            Icon={Bird}
-            title={t('common:no_projects')}
-            text={
-              <>
-                <Redo
-                  size={200}
-                  strokeWidth={0.2}
-                  className="max-md:hidden absolute scale-x-0 scale-y-75 -rotate-180 text-primary top-4 left-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/board:opacity-100 group-hover/board:scale-x-100 group-hover/board:translate-y-0 group-hover/board:rotate-[-130deg]"
-                />
-                <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/board:opacity-100">
-                  <span>{t('common:click')}</span>
-                  <span className="text-primary">{`+ ${t('common:add')}`}</span>
-                  <span>{t('common:no_projects.text')}</span>
-                </p>
-              </>
-            }
-          />
-        )}
         {projects.map((project, index) => (
           <Fragment key={project.id}>
             <ResizablePanel key={`${project.id}-panel`}>

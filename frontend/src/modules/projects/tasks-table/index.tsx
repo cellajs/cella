@@ -54,6 +54,7 @@ export default function TasksTable() {
           limit: 10,
           rowHeight: 42,
           onRowsChange,
+          isFiltered: !!searchQuery,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,
           rowKeyGetter: (row) => row.id,
