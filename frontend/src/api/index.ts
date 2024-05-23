@@ -10,7 +10,7 @@ import type { WorkspacesRoutes } from 'backend/modules/workspaces/index';
 import type { PageResourceType } from 'backend/types/common';
 
 import { config } from 'config';
-import { hc } from 'hono/client';
+import { type ClientResponse, hc } from 'hono/client';
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
@@ -39,6 +39,18 @@ export class ApiError extends Error {
     this.org = error.org;
   }
 }
+
+// biome-ignore lint/suspicious/noExplicitAny: any is used to handle any type of response
+export const handleResponse = async <T extends Record<string, any>, U extends ClientResponse<T, number, 'json'>>(response: U) => {
+  if (response.ok) {
+    const json = await response.json();
+    return json as Awaited<ReturnType<Extract<U, { status: 200 }>['json']>>;
+  }
+
+  const json = await response.json();
+  if ('error' in json) throw new ApiError(json.error);
+  throw new Error('Unknown error');
+};
 
 const clientConfig = {
   fetch: (input: RequestInfo | URL, init?: RequestInit) =>

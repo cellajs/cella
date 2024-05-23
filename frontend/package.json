@@ -114,7 +114,7 @@
     "embla-carousel-react": "^8.1.3",
     "framer-motion": "^11.2.6",
     "gleap": "^13.7.1",
-    "hono": "4.2.6",
+    "hono": "4.3.10",
     "i18next": "^23.11.5",
     "i18next-browser-languagedetector": "^7.2.1",
     "i18next-http-backend": "^2.5.2",

@@ -4,8 +4,9 @@ import { logEvent, logtail } from '../middlewares/logger/log-event';
 import type { PageResourceType } from '../types/common';
 import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
+import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 
-export type HttpErrorStatus = 400 | 401 | 403 | 404 | 409 | 429 | 500;
+export type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
 
 export type Severity = 'debug' | 'info' | 'log' | 'warn' | 'error';
 
@@ -71,5 +72,6 @@ export const errorResponse = (
 ) => {
   const error: ErrorType = createError(ctx, status, type, severity, resourceType, eventData, err);
 
-  return ctx.json({ success: false, error }, status);
+  // TODO: Review this assignment (as 400)
+  return ctx.json({ success: false, error }, status as 400);
 };
