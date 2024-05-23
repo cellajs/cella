@@ -1,8 +1,6 @@
 import { Body, Container, Head, Html, Preview, Tailwind } from '@react-email/components';
 import * as React from 'react';
 
-import { cn } from '../../../frontend/src/lib/utils';
-
 interface EmailContainerProps {
   previewText: string;
   bodyClassName?: string;
@@ -16,8 +14,8 @@ export const EmailContainer = ({ previewText, bodyClassName, containerClassName,
       <Head />
       <Preview>{previewText}</Preview>
       <Tailwind>
-        <Body className={cn('bg-white font-sans', bodyClassName)}>
-          <Container className={cn('', containerClassName)}>{children}</Container>
+        <Body className={`bg-white font-sans ${bodyClassName}`}>
+          <Container className={containerClassName}>{children}</Container>
         </Body>
       </Tailwind>
     </Html>
