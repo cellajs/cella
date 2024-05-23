@@ -74,7 +74,7 @@ export const getProjectByIdOrSlugRouteConfig = createRouteConfig({
 export const getProjectsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/projects',
-  guard: systemGuard,
+  guard: [isAuthenticated(), isAllowedTo('read', 'project')],
   tags: ['projects'],
   summary: 'Get projects',
   description: `
