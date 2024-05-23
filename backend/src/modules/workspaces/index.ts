@@ -94,7 +94,7 @@ const workspacesRoutes = app
     const user = ctx.get('user');
     const workspace = ctx.get('workspace');
 
-    const { name, slug, organizationId } = ctx.req.valid('json');
+    const { name, slug } = ctx.req.valid('json');
 
     if (slug && slug !== workspace.slug) {
       const slugAvailable = await checkSlugAvailable(slug, 'WORKSPACE');
@@ -109,7 +109,7 @@ const workspacesRoutes = app
       .set({
         name,
         slug,
-        organizationId,
+        organizationId: workspace.organizationId,
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })

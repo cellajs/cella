@@ -11,11 +11,13 @@ import { logEvent } from '../logger/log-event';
 //       so all different schemas don't need to be individually imported/declared.
 import { organizationsTable } from '../../db/schema/organizations';
 import { workspacesTable } from '../../db/schema/workspaces';
+import { projectsTable } from '../../db/schema/projects';
 
 // Create a map to store tables for different resource types
-export const tables = new Map<string, typeof organizationsTable | typeof workspacesTable>([
+export const tables = new Map<string, typeof organizationsTable | typeof workspacesTable | typeof projectsTable>([
   ['organization', organizationsTable],
   ['workspace', workspacesTable],
+  ['project', projectsTable],
 ]);
 
 /**

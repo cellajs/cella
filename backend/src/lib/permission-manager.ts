@@ -14,7 +14,8 @@ import {
  * Define hierarchical structure for contexts with roles.
  */
 const organization = new Context('organization', ['ADMIN', 'MEMBER']);
-new Context('workspace', ['ADMIN', 'MEMBER'], new Set([organization]));
+const workspace = new Context('workspace', ['ADMIN', 'MEMBER'], new Set([organization]));
+new Context('project', ['ADMIN', 'MEMBER'], new Set([workspace]))
 
 /**
  * Initialize the PermissionManager and configure access policies.
@@ -32,6 +33,12 @@ permissionManager.accessPolicies.configureAccessPolicies(({ subject, contexts }:
       contexts.organization.ADMIN({ create: 1, read: 1, update: 1, delete: 1 });
       contexts.workspace.ADMIN({ create: 0, read: 1, update: 1, delete: 1 });
       contexts.workspace.MEMBER({ create: 0, read: 1, update: 0, delete: 0 });
+      break;
+    case 'project':
+      contexts.organization.ADMIN({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.workspace.ADMIN({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.project.ADMIN({ create: 0, read: 1, update: 1, delete: 1 });
+      contexts.project.MEMBER({ create: 0, read: 1, update: 0, delete: 0 });
       break;
   }
 });
@@ -54,6 +61,7 @@ class AdaptedMembershipAdapter extends MembershipAdapter {
       roleName: m.role,
       ancestors: {
         organization: m.organizationId,
+        workspace: m.workspaceId,
       },
     }));
   }
@@ -73,10 +81,11 @@ class AdaptedSubjectAdapter extends SubjectAdapter {
   adapt(s: any): Subject {
     return {
       // TODO: Replace inline type determination with a type declaration in the schema!
-      name: !('organizationId' in s) ? 'organization' : 'workspace',
+      name: ('workspaceId' in s) ? 'project' : ('organizationId' in s) ? 'workspace' : 'organization',
       key: s.id,
       ancestors: {
         organization: s.organizationId,
+        workspace: s.workspaceId,
       },
     };
   }

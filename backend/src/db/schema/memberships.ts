@@ -12,6 +12,8 @@ const typeEnum = ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const;
 const roleEnum = ['MEMBER', 'ADMIN', 'ASSIGNED', 'CREATED'] as const;
 
 // TODO: Store IDs of all ancestors to directly retrieve all user memberships in the hierarchy
+// TODO: Avoid storing task and label memberships. Only track memberships for contexts where the user can perform actions (e.g., 'organization', 'workspace', 'project')
+// TODO: Implement different roles for various contexts (e.g., a user can now have the role 'ASSIGNED' within an organization)
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   type: varchar('type', {

@@ -27,7 +27,7 @@ const projectsRoutes = app
   .openapi(createProjectRouteConfig, async (ctx) => {
     const { name, slug, color } = ctx.req.valid('json');
     const user = ctx.get('user');
-    const workspace = ctx.get('workspace');
+    const { workspaceId } = ctx.get('project');
 
     const slugAvailable = await checkSlugAvailable(slug, 'PROJECT');
 
@@ -38,7 +38,7 @@ const projectsRoutes = app
     const [createdProject] = await db
       .insert(projectsTable)
       .values({
-        workspaceId: workspace.id,
+        workspaceId,
         name,
         slug,
         color,
