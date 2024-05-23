@@ -52,7 +52,7 @@ export const config = {
   publicCDNUrl: 'https://cdn.cellajs.com',
 
   // Slack notification
-  slackHook: 'https://hooks.slack.com/services/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',
+  slackHook: 'https://hooks.slack.com/services/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',
 
   // Theme settings
   theme: {
@@ -106,7 +106,7 @@ export const config = {
 
   // Company details
   company: {
-    novuSubId: '7148662132902',
+    novuSubId: 'CellaJSManagement',
     name: 'CellaJS',
     shortName: 'Cella',
     email: 'info@cellajs.com',
