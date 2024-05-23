@@ -57,8 +57,8 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
       <TableFilterBarContext.Provider value={{ isFilterActive, setFilterActive }}>{children}</TableFilterBarContext.Provider>
       {!isFilterActive && (
         <Button className="sm:hidden" variant="secondary" onClick={() => setFilterActive(true)} asChild>
-          <motion.button layoutId="table-filter-bar-button">
-            <motion.span layoutId="table-filter-bar-icon">
+          <motion.button layout="size" layoutId="table-filter-bar-button">
+            <motion.span layout="size" layoutId="table-filter-bar-icon">
               <Filter width={16} height={16} />
             </motion.span>
             <span className="ml-1">{t('common:filter')}</span>
@@ -66,27 +66,10 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
         </Button>
       )}
       {isFilterActive && (
-        <Button
-          style={{
-            viewTransitionName: 'table-filter-bar-button',
-          }}
-          className="sm:hidden"
-          variant="secondary"
-          onClick={clearFilters}
-          asChild
-        >
-          <motion.button layoutId="table-filter-bar-button">
-            <motion.span layoutId="table-filter-bar-icon">
-              {isFiltered ? (
-                <FilterX size={16} />
-              ) : (
-                <X
-                  size={16}
-                  style={{
-                    viewTransitionName: 'table-filter-bar-icon',
-                  }}
-                />
-              )}
+        <Button className="sm:hidden" variant="secondary" onClick={clearFilters} asChild>
+          <motion.button layout="size" layoutId="table-filter-bar-button">
+            <motion.span layout="size" layoutId="table-filter-bar-icon">
+              {isFiltered ? <FilterX size={16} /> : <X size={16} />}
             </motion.span>
           </motion.button>
         </Button>
