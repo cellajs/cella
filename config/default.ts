@@ -51,9 +51,6 @@ export const config = {
   privateCDNUrl: 'https://cdn-priv.cellajs.com',
   publicCDNUrl: 'https://cdn.cellajs.com',
 
-  // Slack notification
-  slackHook: 'https://hooks.slack.com/services/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',
-
   // Theme settings
   theme: {
     rose: { primary: '#e11d48' },
@@ -106,7 +103,6 @@ export const config = {
 
   // Company details
   company: {
-    novuSubId: 'CellaJSManagement',
     name: 'CellaJS',
     shortName: 'Cella',
     email: 'info@cellajs.com',

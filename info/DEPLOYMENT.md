@@ -28,6 +28,8 @@ Then, [create Novu Workflow](https://web.novu.co/workflows?page=1&size=10) and s
 
 The next step is [creating the Slack integration](https://web.novu.co/integrations). Create a Slack provider and add the App ID, Client ID, and Client Secret obtained from the first step. It's important not to forget to activate it. Now, in the workflow, add the 'Chat (Slack)' option to your workflow trigger and configure the message content. Pass variables that you want to use within double curly braces as example {{usersMessage}}.
 
+Also we need to [add incoming webhook](https://api.slack.com/apps/A074GBPK6A1/incoming-webhooks?).
+
 Now, let's create the backend. Install the package.
 ```
 pnpm install @novu/node
@@ -47,6 +49,10 @@ const notification = (message: string) => {
         email: 'fakeEmail@wow.com',
     });
 
+    // Set's notification to chosen channel
+      await novu.subscribers.setCredentials('Subscriber identifier', ChatProviderIdEnum.Slack, {
+        webhookUrl: 'Webhook that you have created',
+      });
 
     // Send the notification 
     novu.trigger('Your workflow name(default 'untitled')', {
