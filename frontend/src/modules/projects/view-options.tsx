@@ -12,6 +12,7 @@ import ThreeStateSwitch from '../ui/three-state-switch.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import { taskTypes } from './create-task-form.tsx';
+import { DualSlider } from './view-status-dual-select.tsx';
 
 interface Props {
   className?: string;
@@ -23,6 +24,8 @@ export const viewOptions = {
   labels: ['primary', 'secondary'],
   status: ['unstarted', 'started', 'finished', 'delivered', 'reviewed'],
 };
+
+const statusesForDualSelect = ['iced', 'unstarted', 'started', 'finished', 'delivered', 'reviewed', 'accepted'];
 
 // Variants for bottom border highlight
 const variants = cva('border-b-2', {
@@ -55,6 +58,10 @@ const WorkspaceView = ({ className = '' }: Props) => {
   const currentLength = Object.values(innerViewOptions).flat().length;
   const [switchState, setSwitchState] = useState<'none' | 'partly' | 'all'>(currentLength < 1 ? 'none' : currentLength === 10 ? 'all' : 'partly');
 
+  const { status } = innerViewOptions;
+  const startIndex = Math.max(1, statusesForDualSelect.indexOf(status[0]));
+  const endIndex = Math.min(statusesForDualSelect.length - 2, statusesForDualSelect.indexOf(status[status.length - 1]));
+
   const handleViewOptionsChange = (viewOption: keyof ViewOptions, values: string[]) => {
     const newInnerViewOptions = { ...innerViewOptions };
     newInnerViewOptions[viewOption] = values;
@@ -77,9 +84,10 @@ const WorkspaceView = ({ className = '' }: Props) => {
 
   useEffect(() => {
     if (switchState === 'partly') return;
-    Object.entries(viewOptions).map(([key, value]) =>
-      setWorkspaceViewOptions(workspaceId, key as keyof ViewOptions, switchState === 'all' ? value : []),
-    );
+    Object.entries(viewOptions).map(([key, value]) => {
+      return setWorkspaceViewOptions(workspaceId, key as keyof ViewOptions, switchState === 'all' ? value : []);
+    });
+    setInnerViewOptions(getWorkspaceViewOptions(workspaceId));
     return;
   }, [switchState]);
 
@@ -87,6 +95,14 @@ const WorkspaceView = ({ className = '' }: Props) => {
     setWorkspaceId(workspace.id);
     setInnerViewOptions(getWorkspaceViewOptions(workspace.id));
   }, [workspace]);
+
+  const handleSliderChange = (values: number[]) => {
+    if (values[0] === 1 && values[1] === 1) return handleViewOptionsChange('status', ['unstarted']);
+    if (values[0] === 5 && values[1] === 5) return handleViewOptionsChange('status', ['reviewed']);
+    if (values[0] === 0 && values[1] === 0) return handleViewOptionsChange('status', []);
+    const selectedStatuses = statusesForDualSelect.slice(values[0], values[1] + 1);
+    handleViewOptionsChange('status', selectedStatuses);
+  };
 
   return (
     <DropdownMenu>
@@ -103,29 +119,39 @@ const WorkspaceView = ({ className = '' }: Props) => {
       </TooltipButton>
 
       <DropdownMenuContent align="end" className="min-w-[320px] p-2 gap-2 flex flex-col">
-        {Object.entries(viewOptions).map(([key, options]) => (
-          <ToggleGroup
-            key={key}
-            type="multiple"
-            variant="merged"
-            value={getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]}
-            className={cn('gap-0 w-full', className)}
-            onValueChange={(values) => handleViewOptionsChange(key as keyof ViewOptions, values)}
-          >
-            {options.map((option) => (
-              <ToggleGroupItem
-                key={option}
-                size="sm"
-                value={option}
-                className={`w-full ${
-                  getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]?.includes(option) ? variants({ [key]: option }) : 'pb-[1px]'
-                }`}
-              >
-                <span className="text-xs font-normal">{t(`common:${option}`)}</span>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        ))}
+        {Object.entries(viewOptions)
+          .filter(([key]) => key !== 'status')
+          .map(([key, options]) => (
+            <ToggleGroup
+              key={key}
+              type="multiple"
+              variant="merged"
+              value={getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]}
+              className={cn('gap-0 w-full', className)}
+              onValueChange={(values) => handleViewOptionsChange(key as keyof ViewOptions, values)}
+            >
+              {options.map((option) => (
+                <ToggleGroupItem
+                  key={option}
+                  size="sm"
+                  value={option}
+                  className={`w-full ${
+                    getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]?.includes(option) ? variants({ [key]: option }) : 'pb-[1px]'
+                  }`}
+                >
+                  <span className="text-xs font-normal">{t(`common:${option}`)}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          ))}
+        <DualSlider
+          min={1}
+          max={5}
+          step={1}
+          value={[startIndex, endIndex]}
+          onValueChange={handleSliderChange}
+          formatLabel={(value) => statusesForDualSelect[value]}
+        />
         <ThreeStateSwitch
           disableIndex={switchState === 'all' || switchState === 'none' ? [1] : []}
           value={switchState}
