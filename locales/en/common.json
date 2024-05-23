@@ -97,7 +97,7 @@
   "error.error": "Error",
   "error.expired.token": "Token has expired. Please request a new one.",
   "error.forbidden": "Forbidden",
-  "error.forbidden.text": "Not allowed to perform this action",
+  "error.forbidden.text": "Not allowed to perform this action.",
   "error.forbidden_action": "Forbidden: Not allowed to perform this action",
   "error.gleap_not_initialized": "No chat support: please click 'Contact' on page bottom",
   "error.image_upload_failed": "Image upload failed. Try again later",
