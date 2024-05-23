@@ -118,13 +118,22 @@ const generalRoutes = app
     //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
     // }
 
+    const data = {
+      type: tokenRecord.type,
+      email: tokenRecord.email || '',
+      organizationName: '',
+      organizationSlug: '',
+    };
+
+    if (tokenRecord.type === 'ORGANIZATION_INVITATION' && tokenRecord.organizationId) {
+      const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
+      data.organizationName = organization.name;
+      data.organizationSlug = organization.slug;
+    }
+
     return ctx.json({
       success: true,
-      data: {
-        type: tokenRecord.type,
-        // TODO: review
-        email: tokenRecord.email || '',
-      },
+      data,
     });
   })
   /*
@@ -451,7 +460,7 @@ const generalRoutes = app
     });
   })
   /*
-   *  Create access-request
+   *  Create request
    */
   .openapi(requestActionConfig, async (ctx) => {
     const { email, userId, organizationId, type, accompanyingMessage } = ctx.req.valid('json');

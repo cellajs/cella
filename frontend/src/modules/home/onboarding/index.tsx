@@ -9,7 +9,7 @@ import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
-import InviteUsers from '../../common/invite-users';
+import InviteUsers from '../../users/invite-users';
 import StepperFooter from './footer';
 import { OnboardingStart } from './start';
 

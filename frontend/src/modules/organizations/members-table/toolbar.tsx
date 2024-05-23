@@ -12,7 +12,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import InviteUsers from '~/modules/common/invite-users';
+import InviteUsers from '~/modules/users/invite-users';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';

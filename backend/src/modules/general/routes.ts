@@ -13,7 +13,7 @@ import {
   inviteJsonSchema,
   inviteQuerySchema,
   suggestionsSchema,
-  tokensSchema,
+  checkTokenSchema,
 } from './schema';
 
 export const getUploadTokenRouteConfig = createRouteConfig({
@@ -91,14 +91,11 @@ export const checkTokenRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'Email address of user',
+      description: 'Token is valid',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(
-            z.object({
-              type: tokensSchema.shape.type,
-              email: z.string().email(),
-            }),
+            checkTokenSchema,
           ),
         },
       },

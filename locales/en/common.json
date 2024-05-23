@@ -69,7 +69,6 @@
   "default_language.text": "The language that will be given to new members.",
   "delete": "Delete",
   "delete_account": "Delete account",
-
   "delete_account.text": "Want to permanently delete your Cella account? Use the button below. Please note that this action is irreversible.",
   "delete_organization": "Delete organization",
   "delete_organization_notice.text": "As an admin you can permanently delete the organization {{name}}. All members will loose access to this organization and its data. Please note that this action is irreversible.",
@@ -174,7 +173,7 @@
   "invite": "Invite",
   "invite_by_email": "Invite with email addresses",
   "invite_by_name": "Invite by searching for users",
-  "invite_create_account": "Create account to accept the invitation",
+  "invite_create_account": " Sign up to accept invitation",
   "invite_members.text": "Invited members will receive an email to accept the invitation.",
   "invite_members_search.text": "Search for users to invite within Cella.",
   "invite_only.text": "Cella is currently invite-only. Can't wait? Contact us for an invite.",
@@ -449,5 +448,7 @@
   "workspace_view": "Workspace view",
   "workspaces": "Workspaces",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "accept_invite": "Accept invitation",
+  "accept_invite_text": "Hi {{email}}, click accept to become part of organization {{organization}}."
 }

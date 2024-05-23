@@ -2,7 +2,6 @@ import { Outlet, createRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 import { queryClient } from '~/lib/router';
 import SignIn from '~/modules/auth';
-import AcceptInvite from '~/modules/auth/accept-invite';
 import ResetPassword from '~/modules/auth/reset-password';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
@@ -40,13 +39,6 @@ export const SignInRoute = createRoute({
   validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional(), token: z.string().optional() }),
 });
 
-export const AcceptRoute = createRoute({
-  path: '/auth/accept-invite/$token',
-  staticData: { pageTitle: 'Accept invite' },
-  getParentRoute: () => AuthRoute,
-  component: () => <AcceptInvite />,
-  validateSearch: z.object({ redirect: z.string().optional() }),
-});
 
 export const ResetPasswordRoute = createRoute({
   path: '/auth/reset-password/$token',

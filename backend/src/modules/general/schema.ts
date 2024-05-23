@@ -9,6 +9,13 @@ import { apiUserSchema } from '../users/schema';
 
 export const tokensSchema = createSelectSchema(tokensTable);
 
+export const checkTokenSchema = z.object({
+  type: tokensSchema.shape.type,
+  email: z.string().email(),
+  organizationName: z.string().optional(),
+  organizationSlug: z.string().optional(),
+})
+
 export const inviteJsonSchema = z.object({
   emails: apiUserSchema.shape.email.array().min(1),
   role: z.union([apiUserSchema.shape.role, apiMembershipSchema.shape.role]).optional(),

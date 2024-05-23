@@ -15,9 +15,9 @@ import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Badge } from '../ui/badge';
-import SelectRole from './form-fields/select-role-radio';
-import MultipleSelector from './multi-select';
+import { Badge } from '~/modules/ui/badge';
+import SelectRole from '~/modules/common/form-fields/select-role-radio';
+import MultipleSelector from '~/modules/common/multi-select';
 
 interface Props {
   organization?: Organization | null;
