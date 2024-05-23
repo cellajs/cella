@@ -12,7 +12,7 @@ import ThreeStateSwitch from '../ui/three-state-switch.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
 import { WorkspaceContext } from '../workspaces/index.tsx';
 import { taskTypes } from './create-task-form.tsx';
-import { DualSlider } from './view-status-dual-select.tsx';
+import { DualSlider } from './view-status-dual-slider.tsx';
 
 interface Props {
   className?: string;
