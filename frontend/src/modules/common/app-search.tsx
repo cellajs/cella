@@ -14,6 +14,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
 import ContentPlaceholder from './content-placeholder';
+import { config } from 'config';
 
 type SuggestionType = z.infer<typeof userSuggestionSchema> | z.infer<typeof organizationSuggestionSchema> | z.infer<typeof workspaceSuggestionSchema>;
 
@@ -126,7 +127,7 @@ export const AppSearch = () => {
                 )}
                 {searchValue.length === 0 && (
                   <CommandEmpty className="h-full">
-                    <ContentPlaceholder Icon={Search} title={t('common:global_search.text')} />
+                    <ContentPlaceholder Icon={Search} title={t('common:global_search.text', { appName: config.name })} />
                   </CommandEmpty>
                 )}
                 {!!recentSearches.length && (

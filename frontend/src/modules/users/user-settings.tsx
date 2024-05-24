@@ -256,7 +256,7 @@ const UserSettings = () => {
           <Card className="mx-auto sm:w-full">
             <CardHeader>
               <CardTitle>{t('common:delete_account')}</CardTitle>
-              <CardDescription>{t('common:delete_account.text')}</CardDescription>
+              <CardDescription>{t('common:delete_account.text', { appName: config.name })}</CardDescription>
             </CardHeader>
             <CardContent>
               <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
