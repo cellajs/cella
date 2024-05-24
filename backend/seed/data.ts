@@ -25,7 +25,7 @@ class Spinner {
 
 type ValueOf<T> = T[keyof T];
 export type Status = 'inserting' | 'done';
-export type Stage = 'users' | 'organizations' | 'workspaces' | 'projects' | 'tasks' | 'labels' | 'relations';
+export type Stage = 'users' | 'organizations' | 'workspaces' | 'projects' | 'tasks' | 'labels' | 'memberships';
 type State = {
   [key in Stage]: {
     count: number;
@@ -61,17 +61,17 @@ export class Progress extends TaskView {
     },
     tasks: {
       count: 0,
-      name: 'tasks',
+      name: 'tasks ⚡',
       status: 'inserting',
     },
     labels: {
       count: 0,
-      name: 'labels',
+      name: 'labels ⚡',
       status: 'inserting',
     },
-    relations: {
+    memberships: {
       count: 0,
-      name: 'relations',
+      name: 'memberships',
       status: 'inserting',
     },
   };
@@ -120,9 +120,9 @@ export class Progress extends TaskView {
     info += this.statusText(spin, this.state.users);
     info += this.statusText(spin, this.state.workspaces);
     info += this.statusText(spin, this.state.projects);
+    info += this.statusText(spin, this.state.memberships);
     info += this.statusText(spin, this.state.tasks);
     info += this.statusText(spin, this.state.labels);
-    info += this.statusText(spin, this.state.relations);
     return info;
   }
 }

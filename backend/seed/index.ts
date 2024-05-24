@@ -4,15 +4,18 @@ import { Argon2id } from 'oslo/password';
 
 import { config } from 'config';
 import { db } from '../src/db/db';
-import { labelsTable, type InsertLabelModel } from '../../electric-sync/src/db/schema/labels';
+import { nanoid } from '../src/lib/nanoid';
+import type { Stage, Status } from './data';
+
 import { type InsertMembershipModel, membershipsTable } from '../src/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '../src/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '../src/db/schema/projects';
-import { tasksTable, type InsertTaskModel } from '../../electric-sync/src/db/schema/tasks';
 import { type InsertUserModel, usersTable } from '../src/db/schema/users';
 import { type InsertWorkspaceModel, workspacesTable } from '../src/db/schema/workspaces';
-import { nanoid } from '../src/lib/nanoid';
-import type { Stage, Status } from './data';
+
+// Electric schema
+import { labelsTable, type InsertLabelModel } from '../src/db/schema-electric/labels';
+import { tasksTable, type InsertTaskModel } from '../src/db/schema-electric/tasks';
 
 // Seed an admin user to access app first time
 export const userSeed = async () => {
@@ -43,7 +46,7 @@ export const userSeed = async () => {
   console.info(`Created admin user with verified email ${email} and password ${password}.`);
 };
 
-// Seed 100 organizations with 100 members each
+// Seed organizations with data
 export const dataSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
@@ -57,7 +60,7 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
   const organizations: (InsertOrganizationModel & {
     id: string;
   })[] = Array.from({
-    length: 100,
+ length: 10,
   }).map(() => {
     const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
@@ -88,7 +91,7 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
   let projectsCount = 0;
   let tasksCount = 0;
   let labelsCount = 0;
-  let relationsCount = 0;
+  let membershipsCount = 0;
   // Create 100 users for each organization
   for (const organization of organizations) {
     organizationsCount++;
@@ -143,9 +146,9 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
       };
     });
 
-    relationsCount += memberships.length;
+    membershipsCount += memberships.length;
     if (progressCallback) {
-      progressCallback('relations', relationsCount, 'inserting');
+      progressCallback('memberships', membershipsCount, 'inserting');
     }
 
     await db.insert(membershipsTable).values(memberships).onConflictDoNothing();
@@ -191,9 +194,9 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
         };
       });
 
-      relationsCount += workspaceMemberships.length;
+      membershipsCount += workspaceMemberships.length;
       if (progressCallback) {
-        progressCallback('relations', relationsCount, 'inserting');
+        progressCallback('memberships', membershipsCount, 'inserting');
       }
 
       await db.insert(membershipsTable).values(workspaceMemberships).onConflictDoNothing();
@@ -235,14 +238,14 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
           };
         });
 
-        relationsCount += projectMemberships.length;
+        membershipsCount += projectMemberships.length;
         if (progressCallback) {
-          progressCallback('relations', relationsCount, 'inserting');
+          progressCallback('memberships', membershipsCount, 'inserting');
         }
 
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
 
-        const insertTasks: InsertTaskModel[] = Array.from({ length: 25 }).map(() => {
+        const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).map(() => {
           const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
           return {
@@ -295,7 +298,7 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
   }
 
   if (progressCallback) {
-    progressCallback('relations', relationsCount, 'done');
+    progressCallback('memberships', membershipsCount, 'done');
     progressCallback('labels', labelsCount, 'done');
     progressCallback('tasks', tasksCount, 'done');
     progressCallback('projects', projectsCount, 'done');

@@ -76,14 +76,14 @@ pnpm run docker:supabase
 
 ### Step 2
 Cella adopted a local-first strategy, whereby page-related resources are handled normally by an API, whereas content-related resources are fully handled local-first using [ElectricSQL](https://github.com/electric-sql/electric).
-Therefore, `generate` and `migrate` commands will execute for `backend` as well as for `electric-sync` service.
+Therefore, `generate` and `migrate` commands will execute both for normal schemas and for electric schemas in `/backend`.
 
 ```bash
 pnpm run generate
 pnpm run migrate 
 ```
 
-Generate local-first sync layer with [ElectricSQL](https://github.com/electric-sql/electric).
+Generate local-first sync layer in `/frontend` with [ElectricSQL](https://github.com/electric-sql/electric).
 
 ```bash
 pnpm run electrify

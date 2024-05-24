@@ -1,5 +1,5 @@
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from '../../../nanoid';
+import { nanoid } from '../../lib/nanoid';
 
 // TODO: Add a 'type' column or virtual property with a static value of "label" to directly identify the resource type in the data
 // TODO: Store organizationId and workspaceId (full parent tree) to directly retrieve all labels within various contexts
