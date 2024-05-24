@@ -39,7 +39,7 @@ const OrganizationSettings = () => {
       {
         className: 'md:max-w-xl',
         title: t('common:delete_organization'),
-        text: t('common:confirm.delete_organization', { name: organization.name }),
+        text: t('common:confirm.delete_resource', { name: organization.name, resource: t('common:organization').toLowerCase() }),
       },
     );
   };

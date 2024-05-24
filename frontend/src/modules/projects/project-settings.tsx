@@ -33,7 +33,7 @@ export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; 
       {
         className: 'md:max-w-xl',
         title: t('common:delete_project'),
-        text: t('common:confirm.delete_project', { name: 'SETPROJECTNAME' }),
+        text: t('common:confirm.delete_resource', { name: 'SETPROJECTNAME', resource: t('common:project').toLowerCase() }),
       },
     );
   };

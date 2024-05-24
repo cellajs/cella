@@ -83,7 +83,7 @@ function Toolbar({
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('common:confirm.delete_users'),
+        text: t('common:confirm.delete_resource', { resource: t('common:users').toLowerCase() }),
       },
     );
   };

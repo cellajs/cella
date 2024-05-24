@@ -67,7 +67,7 @@ function Toolbar({
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('common:confirm.delete_organizations'),
+        text: t('confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
       },
     );
   };

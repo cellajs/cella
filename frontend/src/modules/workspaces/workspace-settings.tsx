@@ -34,7 +34,7 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
       {
         className: 'md:max-w-xl',
         title: t('common:delete_workspace'),
-        text: t('common:confirm.delete_workspace', { name: workspace.name }),
+        text: t('common:confirm.delete_resource', { name: workspace.name, resource: t('common:workspace').toLowerCase() }),
       },
     );
   };
