@@ -98,7 +98,7 @@ interface ActionRequestProp {
   type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
   userId?: string;
   organizationId?: string;
-  accompanyingMessage?: string;
+  message?: string;
 }
 // Action request
 export const requestAction = async (requestInfo: ActionRequestProp) => {
@@ -108,7 +108,7 @@ export const requestAction = async (requestInfo: ActionRequestProp) => {
       email: requestInfo.email,
       userId: requestInfo.userId || null,
       organizationId: requestInfo.organizationId || null,
-      accompanyingMessage: requestInfo.accompanyingMessage || null,
+      message: requestInfo.message || null,
     },
   });
 

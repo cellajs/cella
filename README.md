@@ -75,8 +75,8 @@ pnpm run docker:supabase
 ```
 
 ### Step 2
-
-When starting from scratch: generate migration and build the db tables.
+Cella adopted a local-first strategy, whereby page-related resources are handled normally by an API, whereas content-related resources are fully handled local-first using [ElectricSQL](https://github.com/electric-sql/electric).
+Therefore, `generate` and `migrate` commands will execute for `backend` as well as for `electric-sync` service.
 
 ```bash
 pnpm run generate

@@ -451,7 +451,7 @@ const organizationsRoutes = app
             email: requests.email,
             createdAt: requests.createdAt,
             type: requests.type,
-            message: requests.accompanyingMessage,
+            message: requests.message,
             userId: user?.id || null,
             userName: user?.name || null,
             userThumbnail: user?.thumbnailUrl || null,

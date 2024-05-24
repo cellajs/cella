@@ -15,7 +15,7 @@ export const requestsTable = pgTable(
     organization_id: varchar('organization_id').references(() => organizationsTable.id, {
       onDelete: 'set null',
     }),
-    accompanyingMessage: varchar('accompanying_message'),
+    message: varchar('message'),
     email: varchar('email').notNull(),
     type: varchar('type', { enum: requestTypeEnum }).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

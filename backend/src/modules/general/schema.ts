@@ -60,7 +60,7 @@ export const actionRequestSchema = z.object({
   organizationId: idSchema.nullable(),
   email: z.string().min(1).email(),
   type: actionReqTableSchema.shape.type,
-  accompanyingMessage: z.string().nullable(),
+  message: z.string().nullable(),
 });
 
 export const actionResponseSchema = z.object({

@@ -490,7 +490,7 @@ const generalRoutes = app
    *  Create request
    */
   .openapi(requestActionConfig, async (ctx) => {
-    const { email, userId, organizationId, type, accompanyingMessage } = ctx.req.valid('json');
+    const { email, userId, organizationId, type, message } = ctx.req.valid('json');
 
     const [createdAccessRequest] = await db
       .insert(requestsTable)
@@ -499,7 +499,7 @@ const generalRoutes = app
         type,
         user_id: userId,
         organization_id: organizationId,
-        accompanyingMessage: accompanyingMessage,
+        message: message,
       })
       .returning();
 
@@ -507,7 +507,7 @@ const generalRoutes = app
     if (type === 'SYSTEM_REQUEST') await sendSlackNotification('to join the waitlist.', email);
     if (type === 'ORGANIZATION_REQUEST') await sendSlackNotification('to join an organization.', email);
     if (type === 'NEWSLETTER_REQUEST') await sendSlackNotification('to become a donate or build member.', email);
-    if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${accompanyingMessage}.`, email);
+    if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${message}.`, email);
 
     return ctx.json(
       {
@@ -581,7 +581,7 @@ const generalRoutes = app
     //         email: requests.email,
     //         createdAt: requests.createdAt,
     //         type: requests.type,
-    //         message: requests.accompanyingMessage,
+    //         message: requests.message,
     //         userId: user?.id || null,
     //         userName: user?.name || null,
     //         userThumbnail: user?.thumbnailUrl || null,
@@ -604,7 +604,7 @@ const generalRoutes = app
             email: el.email,
             createdAt: el.createdAt,
             type: el.type,
-            message: el.accompanyingMessage,
+            message: el.message,
           })),
           total,
         },
