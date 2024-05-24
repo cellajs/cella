@@ -9,6 +9,7 @@ export const usersTable = pgTable(
   'users',
   {
     id: varchar('id').primaryKey(),
+    entity: varchar('entity').notNull().default('USER'),
     hashedPassword: varchar('hashed_password'),
     slug: varchar('slug').unique().notNull(),
     name: varchar('name').notNull(),

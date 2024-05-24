@@ -5,11 +5,11 @@ import { membershipsTable } from './memberships';
 import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 
-// Add a 'type' column or virtual property with a static value of "workspace" to directly identify the resource type from the data
 export const workspacesTable = pgTable(
   'workspaces',
   {
     id: varchar('id').primaryKey().$defaultFn(nanoid),
+    entity: varchar('entity').notNull().default('WORKSPACE'),
     name: varchar('name').notNull(),
     slug: varchar('slug').unique().notNull(),
     organizationId: varchar('organization_id')

@@ -4,10 +4,9 @@ import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
 import { organizationsTable } from './organizations';
 
-// Add a 'type' column or virtual property with a static value of "project" to directly identify the resource type from the data
-// TODO: Store organizationId (full parent tree) to directly retrieve all user projects within an organization and to check user permissions based on ancestor roles
 export const projectsTable = pgTable('projects', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
+  entity: varchar('entity').notNull().default('PROJECT'),
   slug: varchar('slug').notNull(),
   name: varchar('name').notNull(),
   color: varchar('color').notNull(),
