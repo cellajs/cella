@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { organizationSuggestionSchema, userSuggestionSchema, workspaceSuggestionSchema } from 'backend/modules/general/schema';
 import type { PageResourceType } from 'backend/types/common';
-import { History, Loader2, X } from 'lucide-react';
+import { History, Loader2, X, Search } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from 'react-sticky-box';
@@ -13,6 +13,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useNavigationStore } from '~/store/navigation';
 import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
+import ContentPlaceholder from './content-placeholder';
 
 type SuggestionType = z.infer<typeof userSuggestionSchema> | z.infer<typeof organizationSuggestionSchema> | z.infer<typeof workspaceSuggestionSchema>;
 
@@ -99,8 +100,13 @@ export const AppSearch = () => {
         clearValue={setSearchValue}
         autoFocus
         placeholder={t('common:placeholder.search')}
-        onValueChange={(value) => {
-          setSearchValue(value);
+        onValueChange={(searchValue) => {
+          const historyIndexes = recentSearches.map((_, index) => index);
+          if (historyIndexes.includes(Number.parseInt(searchValue))) {
+            setSearchValue(recentSearches[+searchValue]);
+            return;
+          }
+          setSearchValue(searchValue);
         }}
       />
       <ScrollArea id={'suggestion-search'} ref={scrollAreaRef} className="h-[50vh] sm:h-[40vh] overflow-y-auto">
@@ -110,64 +116,79 @@ export const AppSearch = () => {
           </CommandLoading>
         )}
         {
-          <CommandList className="px-1">
+          <CommandList className="px-1 h-full">
             {suggestions.total === 0 && (
               <>
-                {!!searchValue.length && <CommandEmpty>{t('common:no_results_found')}</CommandEmpty>}
-                {searchValue.length === 0 && <CommandEmpty>{t('common:global_search.text')}</CommandEmpty>}
+                {!!searchValue.length && (
+                  <CommandEmpty className="h-full">
+                    <ContentPlaceholder Icon={Search} title={t('common:no_results_found')} />
+                  </CommandEmpty>
+                )}
+                {searchValue.length === 0 && (
+                  <CommandEmpty className="h-full">
+                    <ContentPlaceholder Icon={Search} title={t('common:global_search.text')} />
+                  </CommandEmpty>
+                )}
                 {!!recentSearches.length && (
                   <CommandGroup>
                     <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
-                    {recentSearches.map((search) => (
+                    {recentSearches.map((search, index) => (
                       <CommandItem key={search} onSelect={() => setSearchValue(search)} className="justify-between">
                         <div className="flex space-x-2 items-center outline-0 ring-0 group">
                           <History className="h-5 w-5" />
                           <span className="underline-offset-4 truncate font-medium">{search}</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            deleteItemFromList(search);
-                          }}
-                        >
-                          <X className="h-5 w-5 opacity-70 hover:opacity-100" />
-                        </button>
+                        <div className="flex items-center">
+                          <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              deleteItemFromList(search);
+                            }}
+                          >
+                            <X className="h-5 w-5 opacity-70 hover:opacity-100" />
+                          </button>
+                        </div>
                       </CommandItem>
                     ))}
                   </CommandGroup>
                 )}
               </>
             )}
-            {suggestionSections.map((section, index) => {
-              const hasPrevious = index > 0 && suggestions[suggestionSections[index - 1].id].length > 0;
-              const hasNext = index < suggestionSections.length - 1 && suggestions[suggestionSections[index + 1].id].length > 0;
+            {suggestions.total > 0 && (
+              <>
+                {suggestionSections.map((section, index) => {
+                  const hasPrevious = index > 0 && suggestions[suggestionSections[index - 1].id].length > 0;
+                  const hasNext = index < suggestionSections.length - 1 && suggestions[suggestionSections[index + 1].id].length > 0;
 
-              return (
-                <Fragment key={section.id}>
-                  {hasPrevious && hasNext && <CommandSeparator />}
-                  <CommandGroup className="">
-                    {hasNext && (
-                      <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
-                    )}
-                    {suggestions[section.id].map((suggestion) => (
-                      <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
-                        <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                          <AvatarWrap
-                            type={section.type}
-                            className="h-8 w-8"
-                            id={suggestion.id}
-                            name={suggestion.name}
-                            url={suggestion.thumbnailUrl}
-                          />
-                          <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Fragment>
-              );
-            })}
+                  return (
+                    <Fragment key={section.id}>
+                      {hasPrevious && hasNext && <CommandSeparator />}
+                      <CommandGroup className="">
+                        {hasNext && (
+                          <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
+                        )}
+                        {suggestions[section.id].map((suggestion: SuggestionType) => (
+                          <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
+                            <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                              <AvatarWrap
+                                type={section.type}
+                                className="h-8 w-8"
+                                id={suggestion.id}
+                                name={suggestion.name}
+                                url={suggestion.thumbnailUrl}
+                              />
+                              <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Fragment>
+                  );
+                })}
+              </>
+            )}
           </CommandList>
         }
       </ScrollArea>
