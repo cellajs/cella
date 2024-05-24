@@ -51,7 +51,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   };
 
   const onRemove = () => {
-    if (!Electric) return toast.error(t('common:no_local_db'));
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
 
     Electric.db.tasks
       .deleteMany({

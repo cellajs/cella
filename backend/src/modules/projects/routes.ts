@@ -6,14 +6,14 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, projectParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { projectTenantGuard, systemGuard, workspaceTenantGuard } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, systemGuard } from '../../middlewares/guard';
 
 import { apiProjectSchema, createProjectJsonSchema, getProjectsQuerySchema, updateProjectJsonSchema } from './schema';
 
 export const createProjectRouteConfig = createRouteConfig({
   method: 'post',
   path: '/workspaces/{workspace}/projects',
-  guard: workspaceTenantGuard('workspace', ['ADMIN']),
+  guard: [isAuthenticated(), isAllowedTo('create', 'project')],
   tags: ['projects'],
   summary: 'Create a new project',
   description: `
@@ -47,7 +47,7 @@ export const createProjectRouteConfig = createRouteConfig({
 export const getProjectByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/projects/{project}',
-  guard: projectTenantGuard('project'),
+  guard: [isAuthenticated(), isAllowedTo('read', 'project')],
   tags: ['projects'],
   summary: 'Get project by id or slug',
   description: `
@@ -74,7 +74,7 @@ export const getProjectByIdOrSlugRouteConfig = createRouteConfig({
 export const getProjectsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/projects',
-  guard: systemGuard,
+  guard: [isAuthenticated(), isAllowedTo('read', 'project')],
   tags: ['projects'],
   summary: 'Get projects',
   description: `
@@ -100,7 +100,7 @@ export const getProjectsRouteConfig = createRouteConfig({
 export const updateProjectRouteConfig = createRouteConfig({
   method: 'put',
   path: '/projects/{project}',
-  guard: projectTenantGuard('project', ['ADMIN']),
+  guard: [isAuthenticated(), isAllowedTo('update', 'project')],
   tags: ['projects'],
   summary: 'Update projects',
   description: `

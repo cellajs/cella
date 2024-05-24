@@ -1,17 +1,15 @@
 import { relations } from 'drizzle-orm';
 import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
-import { labelsTable } from './labels';
 import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
-import { tasksTable } from './tasks';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
 
 const typeEnum = ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const;
 const roleEnum = ['MEMBER', 'ADMIN', 'ASSIGNED', 'CREATED'] as const;
 
-// TODO: Store IDs of all ancestors to directly retrieve all user memberships in the hierarchy
+// TODO: Implement different roles for various contexts (e.g., a user can now have the role 'ASSIGNED' within an organization)
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   type: varchar('type', {
@@ -22,8 +20,6 @@ export const membershipsTable = pgTable('memberships', {
   organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
-  taskId: varchar('task_id').references(() => tasksTable.id, { onDelete: 'cascade' }),
-  labelId: varchar('label_id').references(() => labelsTable.id, { onDelete: 'cascade' }),
   userId: varchar('user_id').references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar('role', { enum: roleEnum }).notNull().default('MEMBER'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -50,6 +46,10 @@ export const membershipsTableRelations = relations(membershipsTable, ({ one }) =
   workspace: one(workspacesTable, {
     fields: [membershipsTable.workspaceId],
     references: [workspacesTable.id],
+  }),
+  project: one(projectsTable, {
+    fields: [membershipsTable.projectId],
+    references: [projectsTable.id],
   }),
 }));
 

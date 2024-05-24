@@ -66,7 +66,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     onSuccess: (result) => {
       form.reset();
       callback?.(result);
-      toast.success(t('common:success.create_workspace'));
+      toast.success(t('success.create_resource', { resource: t('common:workspace') }));
 
       setSheet(null);
       navigate({
@@ -103,7 +103,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   if (!form.getValues('organization') && !menu.organizations.items.length)
     return (
       <Alert variant="plain" className="border-0 w-auto">
-        <AlertTitle>{t('common:no_organization')}</AlertTitle>
+        <AlertTitle>{t('common:organization_required')}</AlertTitle>
         <AlertDescription className="pr-8 font-light">
           <p className="mb-2">{t('common:organization_required.text')}</p>
           <Button

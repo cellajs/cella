@@ -55,7 +55,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
   };
 
   const createLabel = (value: string) => {
-    if (!Electric) return toast.error(t('common:no_local_db'));
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
 
     const newLabel: Label = {
       id: nanoid(),
@@ -198,7 +198,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
                 <>
                   {labels.length === 0 && (
                     <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
-                      {t('common:no_labels')}
+                      {t('common:no_resource_yet', { resource: t('common:labels'.toLowerCase()) })}
                     </CommandEmpty>
                   )}
                   {renderLabels(labels)}

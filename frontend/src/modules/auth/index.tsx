@@ -15,6 +15,7 @@ import { WaitListForm } from '../common/wait-list-form';
 import { buttonVariants } from '../ui/button';
 import AuthPage from './auth-page';
 import OauthOptions from './oauth-options';
+import { config } from 'config';
 
 export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitList';
 
@@ -72,7 +73,7 @@ const SignIn = () => {
           {step === 'inviteOnly' && (
             <>
               <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>
-              <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text')}</h2>
+              <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text', { appName: config.name })}</h2>
             </>
           )}
           {step !== 'inviteOnly' && step !== 'waitList' && <OauthOptions actionType={step} />}

@@ -58,7 +58,7 @@ const membershipRoutes = app
           .insert(membershipsTable)
           .values({
             userId: user.id,
-            organizationId: organization?.id,
+            organizationId: organization?.id || workspace?.organizationId,
             workspaceId: workspace?.id,
             role,
           })
@@ -95,7 +95,7 @@ const membershipRoutes = app
     return ctx.json({
       success: true,
       data: membership,
-    });
+    }, 200);
   })
   /*
    * Delete users from organization
@@ -167,7 +167,7 @@ const membershipRoutes = app
       return ctx.json({
         success: false,
         errors: errors,
-      });
+      }, 200);
     }
 
     // * Delete the memberships
@@ -200,7 +200,7 @@ const membershipRoutes = app
     return ctx.json({
       success: true,
       data: undefined,
-    });
+    }, 200);
   });
 
 export default membershipRoutes;

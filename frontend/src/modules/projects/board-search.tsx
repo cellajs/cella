@@ -4,11 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '~/modules/ui/input';
 import { TableFilterBarContext } from '../common/data-table/table-filter-bar';
 import { WorkspaceContext } from '../workspaces';
+import { useNavigate } from '@tanstack/react-router';
+import router from '~/lib/router';
 
 const BoardSearch = () => {
   const { t } = useTranslation();
   const { searchQuery, setSearchQuery, setSelectedTasks } = useContext(WorkspaceContext);
   const { isFilterActive } = useContext(TableFilterBarContext);
+  const navigate = useNavigate();
 
   // Reference with `useRef` to persist the same ref object during re-renders
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -16,6 +19,16 @@ const BoardSearch = () => {
   const handleClick = () => {
     inputRef.current?.focus();
   };
+
+  useEffect(() => {
+    const currentPath = router.state.location.pathname;
+    const boardOnTableView = currentPath.endsWith('/table');
+    if (searchQuery.length > 0 && boardOnTableView) {
+      navigate({ to: currentPath, search: (prev) => ({ ...prev, q: searchQuery }) });
+    } else {
+      navigate({ to: currentPath, search: (prev) => ({ ...prev, q: undefined }) });
+    }
+  }, [searchQuery]);
 
   // Focus input  when filter button clicked(mobile)
   useEffect(() => {

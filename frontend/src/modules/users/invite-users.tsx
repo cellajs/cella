@@ -5,8 +5,8 @@ import useFocusById from '~/hooks/use-focus-by-id';
 import type { Organization } from '~/types';
 import { DialogTitle } from '../ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { AppAlert } from './app-alert';
-import { dialog } from './dialoger/state';
+import { AppAlert } from '~/modules/common/app-alert';
+import { dialog } from '~/modules/common/dialoger/state';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
 

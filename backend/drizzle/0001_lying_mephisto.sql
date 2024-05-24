@@ -1,0 +1,1 @@
+ALTER TABLE "requests" RENAME COLUMN "accompanying_message" TO "message";

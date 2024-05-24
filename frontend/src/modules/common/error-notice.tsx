@@ -52,7 +52,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
             <CardDescription>
               <span>
                 {error?.resourceType
-                  ? t(`common:error.resource_${error.type}.text`, { resource: t(error.resourceType.toLowerCase()) })
+                  ? t(`common:error.resource_${error.type}.text`, { resource: t(error.resourceType.toLowerCase()).toLowerCase() })
                   : error?.type
                     ? t(`common:error.${error.type}.text`)
                     : error?.message || t('common:error.reported_try_or_contact')}

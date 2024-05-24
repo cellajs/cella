@@ -1,6 +1,6 @@
 import type { PageResourceType } from 'backend/types/common';
 import { type Member, type UploadParams, UploadType, type User } from '~/types';
-import { ApiError, generalClient as client } from '.';
+import { generalClient as client, handleResponse } from '.';
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
@@ -21,8 +21,7 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
 
   const response = await client['upload-token'].$get({ query: preparedQuery });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -39,9 +38,7 @@ export const invite = async ({ idOrSlug, ...rest }: InviteProps) => {
     json: rest,
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };
 
 // Check if slug is available
@@ -53,8 +50,7 @@ export const checkSlugAvailable = async (params: {
     param: params,
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -64,8 +60,7 @@ export const checkToken = async (token: string) => {
     param: { token },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -75,8 +70,7 @@ export const getSuggestions = async (query: string, type?: PageResourceType | un
     query: { q: query, type },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -95,8 +89,7 @@ export const acceptInvite = async ({
     json: { password, oauth },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.success;
 };
 
@@ -105,7 +98,7 @@ interface ActionRequestProp {
   type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
   userId?: string;
   organizationId?: string;
-  accompanyingMessage?: string;
+  message?: string;
 }
 // Action request
 export const requestAction = async (requestInfo: ActionRequestProp) => {
@@ -115,13 +108,11 @@ export const requestAction = async (requestInfo: ActionRequestProp) => {
       email: requestInfo.email,
       userId: requestInfo.userId || null,
       organizationId: requestInfo.organizationId || null,
-      accompanyingMessage: requestInfo.accompanyingMessage || null,
+      message: requestInfo.message || null,
     },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };
 
 export type GetRequestsParams = Partial<
@@ -132,18 +123,14 @@ export type GetRequestsParams = Partial<
 >;
 
 // TODO: fix this
-// Get action requests by type
-export const actionRequests = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, mode = 'system' }: GetRequestsParams = {},
-  signal?: AbortSignal,
-) => {
+// Get system action requests
+export const actionRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {}, signal?: AbortSignal) => {
   const response = await client.requests.$get(
     {
       query: {
         q,
         sort,
         order,
-        mode,
         offset: String(page * limit),
         limit: String(limit),
       },
@@ -159,7 +146,6 @@ export const actionRequests = async (
     },
   );
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };

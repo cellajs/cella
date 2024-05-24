@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import { useEffect, useState } from 'react';
@@ -8,19 +8,25 @@ import { acceptInvite as baseAcceptInvite } from '~/api/general';
 import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import AuthPage from '../auth/auth-page';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { ArrowRight, Loader2 } from 'lucide-react';
+import { Button, buttonVariants } from '../ui/button';
+import { cn } from '~/lib/utils';
+import type { checkTokenSchema } from 'backend/modules/general/schema';
+import type { z } from 'zod';
+
+type TokenData = z.infer<typeof checkTokenSchema>;
 
 const AcceptInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token }: { token: string } = useParams({ strict: false });
 
-  const [email, setEmail] = useState('');
+  const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
-  const { mutate: checkToken } = useMutation({
+  const { mutate: checkToken, isPending: isChecking } = useMutation({
     mutationFn: baseCheckToken,
-    onSuccess: (data) => setEmail(data?.email || ''),
+    onSuccess: (data) => setTokenData(data),
     onError: (error) => setError(error),
   });
 
@@ -29,7 +35,7 @@ const AcceptInvite = () => {
     onSuccess: () => {
       toast.success(t('common:invitation_accepted'));
       navigate({
-        to: '/home',
+        to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : '/home',
       });
     },
     onError: (error) => {
@@ -48,29 +54,36 @@ const AcceptInvite = () => {
     checkToken(token);
   }, [token]);
 
+  if (isChecking) return <Loader2 className="text-muted-foreground mx-auto mt-[40vh] h-10 w-10 animate-spin" />;
+
   return (
     <AuthPage>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('common:accept_invite')}</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <h1 className="text-2xl text-center">{t('common:accept_invite')}</h1>
+
+      <p className="font-light mb-4">{t('common:accept_invite_text', { email: tokenData?.email, organization: tokenData?.organizationName })}</p>
+
+      {tokenData?.email && !error ? (
+        <div className="space-y-4">
+          <Button type="submit" loading={isPending} className="w-full" onClick={onSubmit}>
+            {t('common:accept')}
+            <ArrowRight size={16} className="ml-2" />
+          </Button>
+        </div>
+      ) : (
+        <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
+          {/* TODO: we need a render error message component ? */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <span className="block sm:inline">{error.message}</span>
-            </div>
+            <>
+              <span className="text-muted-foreground text-sm">{t(`common:error.${error.type}`)}</span>
+              <Link to="/auth/sign-in" className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
+                {t('common:sign_in')}
+                <ArrowRight size={16} className="ml-2" />
+              </Link>
+            </>
           )}
-          <p>{t('common:accept_invite_text', { email })}</p>
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={isPending}
-            className="mt-4 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            {t('common:accept_invite')}
-          </button>
-        </CardContent>
-      </Card>
+          {isPending && <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}
+        </div>
+      )}
     </AuthPage>
   );
 };

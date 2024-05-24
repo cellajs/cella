@@ -25,12 +25,12 @@ function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...sources
   return mergeDeep(target, ...sources);
 }
 
-const configVersions = {
+const configModes = {
   development,
   production,
   tunnel,
 };
 
-type Version = keyof typeof configVersions;
+export type ConfigMode = keyof typeof configModes;
 
-export const config = mergeDeep(_default, configVersions[process.env.NODE_ENV as Version]);
+export const config = mergeDeep(_default, configModes[process.env.NODE_ENV as ConfigMode]);

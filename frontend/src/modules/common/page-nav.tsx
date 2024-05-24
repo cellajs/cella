@@ -81,7 +81,8 @@ export const PageNav = ({ title, avatar, tabs }: Props) => {
                 {t(label)}
                 {isActive && (
                   <motion.div
-                    layoutId="page-nav-underline"
+                    layoutId={`page-nav-underline-${title}`}
+                    key={`page-nav-underline-${title}`}
                     transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
                     className="h-1 bg-primary w-full absolute bottom-0 left-0"
                   />

@@ -22,7 +22,7 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
   ];
 
   const themes = [
-    { id: 'none', label: t('common:no_color'), icon: Ban, color: 'opacity-50' },
+    { id: 'none', label: t('common:without_color'), icon: Ban, color: 'opacity-50' },
     { id: 'rose', label: 'Rose', icon: Circle, color: 'text-rose-600' },
   ];
 

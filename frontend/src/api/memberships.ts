@@ -1,5 +1,5 @@
 import type { Member } from '~/types';
-import { ApiError, membershipClient as client } from '.';
+import { membershipClient as client, handleResponse } from '.';
 
 export const removeMembersFromResource = async ({ idOrSlug, ids }: { idOrSlug: string; ids: string[] }) => {
   const response = await client[':idOrSlug'].memberships.$delete({
@@ -9,8 +9,7 @@ export const removeMembersFromResource = async ({ idOrSlug, ids }: { idOrSlug: s
     query: { ids },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -23,7 +22,6 @@ export const updateMembership = async (idOrSlug: string, user: string, role?: Me
     json: { role, inactive: archive, muted },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };

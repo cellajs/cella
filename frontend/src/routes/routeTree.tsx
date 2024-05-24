@@ -12,6 +12,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 
 import { queryClient } from '~/lib/router';
 import AcceptInvite from '~/modules/common/accept-invite';
+
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
@@ -103,7 +104,6 @@ export const routeTree = rootRoute.addChildren([
   SignOutRoute,
   AuthRoute.addChildren([
     SignInRoute,
-    // AcceptRoute,
     ResetPasswordRoute,
     VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken]),
     acceptInviteRoute,

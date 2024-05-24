@@ -156,12 +156,12 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
       >
         <AvatarWrap className="m-2" type={item.type} id={item.id} name={item.name} url={item.thumbnailUrl} />
         <div className="truncate grow p-2 pl-2 text-left">
-          <div className="truncate text-foreground/50 leading-5">{item.name}</div>
-          <div className={`flex items-center gap-4 mt-1 ${isGlobalDragging ? 'h-4' : ''}`}>
+          <div className="truncate text-foreground/80 leading-5">{item.name}</div>
+          <div className={`flex items-center gap-4 mt-1 transition-opacity ${isGlobalDragging ? 'opacity-40 delay-0' : 'delay-500'}`}>
             <Button
               variant="link"
               size="sm"
-              className={`p-0 font-light text-xs h-4 leading-3 ${isGlobalDragging ? 'hidden' : ''}`}
+              className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover:opacity-100"
               aria-label="Toggle archive"
               onClick={itemArchiveStateHandle}
             >
@@ -179,8 +179,8 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
             <Button
               variant="link"
               size="sm"
-              className={`p-0 font-light text-xs h-4 leading-3 ${isGlobalDragging ? 'hidden' : ''}`}
-              aria-label="Toggle Mute"
+              className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover:opacity-100"
+              aria-label="Toggle mute"
               onClick={itemMuteStateHandle}
             >
               {isItemMuted ? (

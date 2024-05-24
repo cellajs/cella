@@ -71,10 +71,13 @@ const generalRoutes = app
       env.TUS_UPLOAD_API_SECRET,
     );
 
-    return ctx.json({
-      success: true,
-      data: token,
-    });
+    return ctx.json(
+      {
+        success: true,
+        data: token,
+      },
+      200,
+    );
   })
   /*
    * Check if slug is available
@@ -84,10 +87,13 @@ const generalRoutes = app
 
     const slugAvailable = await checkSlugAvailable(slug, type);
 
-    return ctx.json({
-      success: true,
-      data: slugAvailable,
-    });
+    return ctx.json(
+      {
+        success: true,
+        data: slugAvailable,
+      },
+      200,
+    );
   })
   /*
    * Check token (token validation)
@@ -118,14 +124,26 @@ const generalRoutes = app
     //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
     // }
 
-    return ctx.json({
-      success: true,
-      data: {
-        type: tokenRecord.type,
-        // TODO: review
-        email: tokenRecord.email || '',
+    const data = {
+      type: tokenRecord.type,
+      email: tokenRecord.email || '',
+      organizationName: '',
+      organizationSlug: '',
+    };
+
+    if (tokenRecord.type === 'ORGANIZATION_INVITATION' && tokenRecord.organizationId) {
+      const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
+      data.organizationName = organization.name;
+      data.organizationSlug = organization.slug;
+    }
+
+    return ctx.json(
+      {
+        success: true,
+        data,
       },
-    });
+      200,
+    );
   })
   /*
    * Invite users to the system or members to an organization
@@ -258,16 +276,20 @@ const generalRoutes = app
           config.senderIsReceiver ? user.email : email.toLowerCase(),
           organization ? `Invitation to ${organization.name} on Cella` : 'Invitation to Cella',
           emailHtml,
+          user.email,
         )
         .catch((error) => {
           logEvent('Error sending email', { error: (error as Error).message }, 'error');
         });
     }
 
-    return ctx.json({
-      success: true,
-      data: undefined,
-    });
+    return ctx.json(
+      {
+        success: true,
+        data: undefined,
+      },
+      200,
+    );
   })
   /*
    * Accept invite token
@@ -297,9 +319,12 @@ const generalRoutes = app
         await db.update(usersTable).set({ role: 'ADMIN' }).where(eq(usersTable.id, user.id));
       }
 
-      return ctx.json({
-        success: true,
-      });
+      return ctx.json(
+        {
+          success: true,
+        },
+        200,
+      );
     }
 
     if (token.type === 'ORGANIZATION_INVITATION') {
@@ -331,9 +356,12 @@ const generalRoutes = app
             .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
         }
 
-        return ctx.json({
-          success: true,
-        });
+        return ctx.json(
+          {
+            success: true,
+          },
+          200,
+        );
       }
 
       await db.insert(membershipsTable).values({
@@ -349,9 +377,12 @@ const generalRoutes = app
       });
     }
 
-    return ctx.json({
-      success: true,
-    });
+    return ctx.json(
+      {
+        success: true,
+      },
+      200,
+    );
   })
   /*
    * Paddle webhook
@@ -379,10 +410,13 @@ const generalRoutes = app
       logEvent('Error handling paddle webhook', { error: (error as Error).message }, 'error');
     }
 
-    return ctx.json({
-      success: true,
-      data: undefined,
-    });
+    return ctx.json(
+      {
+        success: true,
+        data: undefined,
+      },
+      200,
+    );
   })
   /*
    * Get suggestions
@@ -439,21 +473,24 @@ const generalRoutes = app
       workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'WORKSPACE' as const })));
     }
 
-    return ctx.json({
-      success: true,
-      data: {
-        users: usersResult,
-        organizations: organizationsResult,
-        workspaces: workspacesResult,
-        total: usersResult.length + workspacesResult.length + organizationsResult.length,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          users: usersResult,
+          organizations: organizationsResult,
+          workspaces: workspacesResult,
+          total: usersResult.length + workspacesResult.length + organizationsResult.length,
+        },
       },
-    });
+      200,
+    );
   })
   /*
-   *  Create access-request
+   *  Create request
    */
   .openapi(requestActionConfig, async (ctx) => {
-    const { email, userId, organizationId, type, accompanyingMessage } = ctx.req.valid('json');
+    const { email, userId, organizationId, type, message } = ctx.req.valid('json');
 
     const [createdAccessRequest] = await db
       .insert(requestsTable)
@@ -462,7 +499,7 @@ const generalRoutes = app
         type,
         user_id: userId,
         organization_id: organizationId,
-        accompanyingMessage: accompanyingMessage,
+        message: message,
       })
       .returning();
 
@@ -470,35 +507,36 @@ const generalRoutes = app
     if (type === 'SYSTEM_REQUEST') await sendSlackNotification('to join the waitlist.', email);
     if (type === 'ORGANIZATION_REQUEST') await sendSlackNotification('to join an organization.', email);
     if (type === 'NEWSLETTER_REQUEST') await sendSlackNotification('to become a donate or build member.', email);
-    if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${accompanyingMessage}.`, email);
+    if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${message}.`, email);
 
-    return ctx.json({
-      success: true,
-      data: {
-        email: createdAccessRequest.email,
-        type: createdAccessRequest.type,
-        userId: createdAccessRequest.user_id,
-        organizationId: createdAccessRequest.organization_id,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          email: createdAccessRequest.email,
+          type: createdAccessRequest.type,
+          userId: createdAccessRequest.user_id,
+          organizationId: createdAccessRequest.organization_id,
+        },
       },
-    });
+      200,
+    );
   })
   /*
    *  Get requests
    */
   .openapi(actionRequestsConfig, async (ctx) => {
-    const { q, sort, order, offset, limit, mode, organizationId } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
-    let filter: SQL | undefined = undefined;
-    if (mode === 'system') {
-      filter = q
-        ? and(ilike(requestsTable.email, `%${q}%`), ne(requestsTable.type, 'ORGANIZATION_REQUEST'))
-        : ne(requestsTable.type, 'ORGANIZATION_REQUEST');
-    }
-    if (mode === 'organization') {
-      filter = q
-        ? and(ilike(requestsTable.email, `%${q}%`), eq(requestsTable.type, 'ORGANIZATION_REQUEST'))
-        : eq(requestsTable.type, 'ORGANIZATION_REQUEST');
-    }
+    const filter: SQL | undefined = q
+      ? and(ilike(requestsTable.email, `%${q}%`), ne(requestsTable.type, 'ORGANIZATION_REQUEST'))
+      : ne(requestsTable.type, 'ORGANIZATION_REQUEST');
+
+    // if (mode === 'organization') {
+    //   filter = q
+    //     ? and(ilike(requestsTable.email, `%${q}%`), eq(requestsTable.type, 'ORGANIZATION_REQUEST'))
+    //     : eq(requestsTable.type, 'ORGANIZATION_REQUEST');
+    // }
 
     const requestsQuery = db.select().from(requestsTable).where(filter);
 
@@ -516,42 +554,63 @@ const generalRoutes = app
       order,
     );
 
-    const organizationJoinFilter = organizationId
-      ? and(eq(organizationsTable.id, requestsTable.organization_id), eq(organizationsTable.id, organizationId))
-      : eq(organizationsTable.id, requestsTable.organization_id);
-    const requests = await db
-      .select({
-        requests: requestsTable,
-        user: usersTable,
-        organization: organizationsTable,
-      })
-      .from(requestsQuery.as('requests'))
-      .leftJoin(organizationsTable, organizationJoinFilter)
-      .leftJoin(usersTable, eq(usersTable.id, requestsTable.user_id))
-      .orderBy(orderColumn)
-      .limit(Number(limit))
-      .offset(Number(offset));
+    // const organizationJoinFilter = organizationId
+    //   ? and(eq(organizationsTable.id, requestsTable.organization_id), eq(organizationsTable.id, organizationId))
+    //   : eq(organizationsTable.id, requestsTable.organization_id);
+    // const requests = await db
+    //   .select({
+    //     requests: requestsTable,
+    //     user: usersTable,
+    //     organization: organizationsTable,
+    //   })
+    //   .from(requestsQuery.as('requests'))
+    //   .leftJoin(organizationsTable, organizationJoinFilter)
+    //   .leftJoin(usersTable, eq(usersTable.id, requestsTable.user_id))
+    //   .orderBy(orderColumn)
+    //   .limit(Number(limit))
+    //   .offset(Number(offset));
 
-    return ctx.json({
-      success: true,
-      data: {
-        requestsInfo: requests.map(({ organization, user, requests }) => ({
-          id: requests.id,
-          email: requests.email,
-          createdAt: requests.createdAt,
-          type: requests.type,
-          message: requests.accompanyingMessage,
-          userId: user?.id || null,
-          userName: user?.name || null,
-          userThumbnail: user?.thumbnailUrl || null,
-          organizationId: organization?.id || null,
-          organizationSlug: organization?.slug || null,
-          organizationName: organization?.name || null,
-          organizationThumbnail: organization?.thumbnailUrl || null,
-        })),
-        total,
+    const requests = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+
+    // return ctx.json(
+    //   {
+    //     success: true,
+    //     data: {
+    //       requestsInfo: requests.map(({ requests }) => ({
+    //         id: requests.id,
+    //         email: requests.email,
+    //         createdAt: requests.createdAt,
+    //         type: requests.type,
+    //         message: requests.message,
+    //         userId: user?.id || null,
+    //         userName: user?.name || null,
+    //         userThumbnail: user?.thumbnailUrl || null,
+    //         organizationId: organization?.id || null,
+    //         organizationSlug: organization?.slug || null,
+    //         organizationName: organization?.name || null,
+    //         organizationThumbnail: organization?.thumbnailUrl || null,
+    //       })),
+    //       total,
+    //     },
+    //   },
+    //   200,
+    // );
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          requestsInfo: requests.map((el) => ({
+            id: el.id,
+            email: el.email,
+            createdAt: el.createdAt,
+            type: el.type,
+            message: el.message,
+          })),
+          total,
+        },
       },
-    });
+      200,
+    );
   })
   .get('/sse', auth(), async (ctx) => {
     const user = ctx.get('user');

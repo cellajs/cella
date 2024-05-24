@@ -12,6 +12,7 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import {
+  accessRequestsConfig,
   createOrganizationRouteConfig,
   deleteOrganizationsRouteConfig,
   getOrganizationByIdOrSlugRouteConfig,
@@ -19,6 +20,7 @@ import {
   getUsersByOrganizationIdRouteConfig,
   updateOrganizationRouteConfig,
 } from './routes';
+import { requestsTable } from '../../db/schema/requests';
 
 const app = new CustomHono();
 
@@ -68,17 +70,20 @@ const organizationsRoutes = app
       type: 'ORGANIZATION',
     });
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...createdOrganization,
-        userRole: 'ADMIN' as const,
-        counts: {
-          admins: 1,
-          members: 1,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...createdOrganization,
+          userRole: 'ADMIN' as const,
+          counts: {
+            admins: 1,
+            members: 1,
+          },
         },
       },
-    });
+      200,
+    );
   })
   /*
    * Get an organizations
@@ -138,17 +143,20 @@ const organizationsRoutes = app
       .limit(Number(limit))
       .offset(Number(offset));
 
-    return ctx.json({
-      success: true,
-      data: {
-        items: organizations.map(({ organization, userRole, admins, members }) => ({
-          ...organization,
-          userRole,
-          counts: { admins, members },
-        })),
-        total,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          items: organizations.map(({ organization, userRole, admins, members }) => ({
+            ...organization,
+            userRole,
+            counts: { admins, members },
+          })),
+          total,
+        },
       },
-    });
+      200,
+    );
   })
   /*
    * Update an organization
@@ -240,17 +248,20 @@ const organizationsRoutes = app
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...updatedOrganization,
-        userRole: membership?.role || null,
-        counts: {
-          admins,
-          members,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...updatedOrganization,
+          userRole: membership?.role || null,
+          counts: {
+            admins,
+            members,
+          },
         },
       },
-    });
+      200,
+    );
   })
   /*
    * Get organization by id or slug
@@ -278,17 +289,20 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.organizationId, organization.id));
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...organization,
-        userRole: membership?.role || null,
-        counts: {
-          admins,
-          members,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...organization,
+          userRole: membership?.role || null,
+          counts: {
+            admins,
+            members,
+          },
         },
       },
-    });
+      200,
+    );
   })
   /*
    * Get members by organization id
@@ -365,13 +379,92 @@ const organizationsRoutes = app
       })),
     );
 
-    return ctx.json({
-      success: true,
-      data: {
-        items: members,
-        total,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          items: members,
+          total,
+        },
       },
-    });
+      200,
+    );
+  })
+  /*
+   *  Get access requests
+   */
+  .openapi(accessRequestsConfig, async (ctx) => {
+    console.log(22);
+
+    console.log(22);
+    console.log(22);
+    console.log(22);
+    console.log(22);
+    console.log(22);
+    console.log(22);
+    console.log(22);
+    console.log(22);
+
+    console.log(22);
+    const { q, sort, order, offset, limit } = ctx.req.valid('query');
+    const organization = ctx.get('organization');
+
+    const filter: SQL | undefined = q
+      ? and(ilike(requestsTable.email, `%${q}%`), eq(requestsTable.type, 'ORGANIZATION_REQUEST'))
+      : eq(requestsTable.type, 'ORGANIZATION_REQUEST');
+
+    const requestsQuery = db.select().from(requestsTable).where(filter);
+
+    const [{ total }] = await db.select({ total: count() }).from(requestsQuery.as('requests'));
+
+    const orderColumn = getOrderColumn(
+      {
+        id: requestsTable.id,
+        email: requestsTable.email,
+        createdAt: requestsTable.createdAt,
+        type: requestsTable.type,
+      },
+      sort,
+      requestsTable.id,
+      order,
+    );
+
+    const requests = await db
+      .select({
+        requests: requestsTable,
+        user: usersTable,
+        organization: organizationsTable,
+      })
+      .from(requestsQuery.as('requests'))
+      .leftJoin(organizationsTable, and(eq(organizationsTable.id, requestsTable.organization_id), eq(organizationsTable.id, organization.id)))
+      .leftJoin(usersTable, eq(usersTable.id, requestsTable.user_id))
+      .orderBy(orderColumn)
+      .limit(Number(limit))
+      .offset(Number(offset));
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          requestsInfo: requests.map(({ requests, organization, user }) => ({
+            id: requests.id,
+            email: requests.email,
+            createdAt: requests.createdAt,
+            type: requests.type,
+            message: requests.message,
+            userId: user?.id || null,
+            userName: user?.name || null,
+            userThumbnail: user?.thumbnailUrl || null,
+            organizationId: organization?.id || null,
+            organizationSlug: organization?.slug || null,
+            organizationName: organization?.name || null,
+            organizationThumbnail: organization?.thumbnailUrl || null,
+          })),
+          total,
+        },
+      },
+      200,
+    );
   })
   /*
    * Delete organizations
@@ -424,10 +517,13 @@ const organizationsRoutes = app
 
     // * If the user doesn't have permission to delete any of the organizations, return an error
     if (allowedTargets.length === 0) {
-      return ctx.json({
-        success: false,
-        errors: errors,
-      });
+      return ctx.json(
+        {
+          success: false,
+          errors: errors,
+        },
+        200,
+      );
     }
 
     // * Delete the organizations
@@ -448,10 +544,13 @@ const organizationsRoutes = app
       logEvent('Organization deleted', { organization: organization.id });
     }
 
-    return ctx.json({
-      success: true,
-      errors: errors,
-    });
+    return ctx.json(
+      {
+        success: true,
+        errors: errors,
+      },
+      200,
+    );
   });
 
 export default organizationsRoutes;

@@ -1,4 +1,4 @@
-import { ApiError, authClient as client } from '.';
+import { authClient as client, handleResponse } from '.';
 
 // Oath endpoints
 export const githubSignInUrl = client['sign-in'].github.$url().href;
@@ -11,8 +11,7 @@ export const signUp = async ({ email, password, token }: { email: string; passwo
     json: { email, password, token },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.success;
 };
 
@@ -22,8 +21,7 @@ export const checkEmail = async (email: string) => {
     json: { email },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -34,9 +32,7 @@ export const verifyEmail = async ({ token, resend }: { token: string; resend?: b
     query: { resend: String(resend) },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };
 
 // Sign in a user with email and password
@@ -53,8 +49,7 @@ export const signIn = async ({
     json: { email, password, token },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -64,9 +59,7 @@ export const sendVerificationEmail = async (email: string) => {
     json: { email },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };
 
 // Send a reset password email
@@ -75,9 +68,7 @@ export const sendResetPasswordEmail = async (email: string) => {
     json: { email },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };
 
 // Reset the user's password
@@ -93,9 +84,7 @@ export const resetPassword = async ({
     json: { password },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };
 
 export const signOut = () => client['sign-out'].$get();

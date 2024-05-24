@@ -59,7 +59,7 @@ function Toolbar({
         organizations={selectedOrganizations}
         callback={(organizations) => {
           callback(organizations, 'delete');
-          toast.success(t('common:success.delete_organizations'));
+          toast.success(t('success.delete_resources', { resources: t('common:organizations') }));
         }}
         dialog
       />,
@@ -67,7 +67,7 @@ function Toolbar({
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('common:confirm.delete_organizations'),
+        text: t('confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
       },
     );
   };

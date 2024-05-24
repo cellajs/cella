@@ -1,4 +1,4 @@
-import { ApiError, workspaceClient as client } from '.';
+import { workspaceClient as client, handleResponse } from '.';
 
 export type CreateWorkspaceParams = Parameters<(typeof client.organizations)[':organization']['workspaces']['$post']>['0']['json'] & {
   organization: string;
@@ -11,8 +11,7 @@ export const createWorkspace = async ({ organization, ...rest }: CreateWorkspace
     json: rest,
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -22,8 +21,7 @@ export const getWorkspaceBySlugOrId = async (workspace: string) => {
     param: { workspace },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -36,8 +34,7 @@ export const updateWorkspace = async (workspace: string, params: UpdateWorkspace
     json: params,
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -47,7 +44,5 @@ export const deleteWorkspaces = async (ids: string[]) => {
     query: { ids },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };

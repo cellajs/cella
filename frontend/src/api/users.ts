@@ -1,11 +1,10 @@
-import { ApiError, usersClient as client } from '.';
+import { usersClient as client, handleResponse } from '.';
 
 // Get the current user
 export const getMe = async () => {
   const response = await client.me.$get();
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -13,8 +12,7 @@ export const getMe = async () => {
 export const getUserMenu = async () => {
   const response = await client.menu.$get();
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -24,8 +22,7 @@ export const getUserBySlugOrId = async (user: string) => {
     param: { user },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -60,8 +57,7 @@ export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit 
     },
   );
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -71,9 +67,7 @@ export const deleteUsers = async (userIds: string[]) => {
     query: { ids: userIds },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };
 
 export type UpdateUserParams = Parameters<(typeof client.users)[':user']['$put']>['0']['json'];
@@ -85,8 +79,7 @@ export const updateUser = async (user: string, params: UpdateUserParams) => {
     json: params,
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -96,7 +89,5 @@ export const terminateMySessions = async (sessionIds: string[]) => {
     query: { ids: sessionIds },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };

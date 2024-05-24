@@ -41,6 +41,7 @@ const workspacesRoutes = app
 
     await db.insert(membershipsTable).values({
       userId: user.id,
+      organizationId,
       workspaceId: createdWorkspace.id,
       type: 'WORKSPACE',
       role: 'ADMIN',
@@ -63,7 +64,7 @@ const workspacesRoutes = app
         ...createdWorkspace,
         role: 'ADMIN' as const,
       },
-    });
+    }, 200);
   })
 
   /*
@@ -84,7 +85,7 @@ const workspacesRoutes = app
         ...workspace,
         role: membership?.role || null,
       },
-    });
+    }, 200);
   })
 
   /*
@@ -94,7 +95,7 @@ const workspacesRoutes = app
     const user = ctx.get('user');
     const workspace = ctx.get('workspace');
 
-    const { name, slug, organizationId } = ctx.req.valid('json');
+    const { name, slug } = ctx.req.valid('json');
 
     if (slug && slug !== workspace.slug) {
       const slugAvailable = await checkSlugAvailable(slug, 'WORKSPACE');
@@ -109,7 +110,7 @@ const workspacesRoutes = app
       .set({
         name,
         slug,
-        organizationId,
+        organizationId: workspace.organizationId,
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })
@@ -137,7 +138,7 @@ const workspacesRoutes = app
         ...updatedWorkspace,
         role: membership?.role || null,
       },
-    });
+    }, 200);
   })
 
   /*
@@ -194,7 +195,7 @@ const workspacesRoutes = app
       return ctx.json({
         success: false,
         errors: errors,
-      });
+      }, 200);
     }
 
     // * Delete the workspaces
@@ -218,7 +219,7 @@ const workspacesRoutes = app
     return ctx.json({
       success: true,
       errors: errors,
-    });
+    }, 200);
   });
 
 export default workspacesRoutes;

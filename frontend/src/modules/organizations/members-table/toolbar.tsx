@@ -12,7 +12,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import InviteUsers from '~/modules/common/invite-users';
+import InviteUsers from '~/modules/users/invite-users';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -116,7 +116,7 @@ function Toolbar({
             {selectedMembers.length > 0 ? (
               <>
                 <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative ">
-                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
+                  <motion.button key={organization.slug} layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2 animate-in zoom-in">
                       {selectedMembers.length}
                     </Badge>
@@ -147,7 +147,7 @@ function Toolbar({
               !isFiltered &&
               (user.role === 'ADMIN' || organization.userRole === 'ADMIN') && (
                 <Button asChild onClick={openInviteDialog}>
-                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
+                  <motion.button key={organization.slug} transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <motion.span layoutId="members-filter-bar-icon">
                       <Mail size={16} />
                     </motion.span>
