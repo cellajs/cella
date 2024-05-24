@@ -10,7 +10,7 @@ interface AsideNavProps {
   tabs: {
     id: string;
     label: string;
-    values?: Record<string, string>;
+    resource?: string;
     icon?: React.ElementType<LucideProps>;
   }[];
 }
@@ -33,7 +33,7 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
 
   return (
     <div className={cn('w-full flex flex-col gap-1', className)}>
-      {tabs.map(({ id, label, icon, values }) => {
+      {tabs.map(({ id, label, icon, resource }) => {
         const btnClass = `${id.includes('delete') && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left`;
         const Icon = icon;
         return (
@@ -46,7 +46,7 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
             activeOptions={{ exact: true, includeHash: true }}
             activeProps={{ className: 'bg-secondary' }}
           >
-            {Icon && <Icon className="mr-2 w-5 h-5" />} {t(label, values)}
+            {Icon && <Icon className="mr-2 w-5 h-5" />} {t(label, { resource: t(resource || '').toLowerCase()})}
           </Link>
         );
       })}
