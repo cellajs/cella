@@ -23,8 +23,8 @@
     "push": {},
     "generate": {},
     "studio": {},
-    "seed:users": {},
-    "seed:organizations": {},
+    "seed:user": {},
+    "seed:data": {},
     "check:types": {},
     "prepare:electric": {},
     "prepare:electric:dev": {}
