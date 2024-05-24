@@ -58,7 +58,7 @@ const membershipRoutes = app
           .insert(membershipsTable)
           .values({
             userId: user.id,
-            organizationId: organization?.id,
+            organizationId: organization?.id || workspace?.organizationId,
             workspaceId: workspace?.id,
             role,
           })

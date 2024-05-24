@@ -53,6 +53,10 @@ export const membershipsTableRelations = relations(membershipsTable, ({ one }) =
     fields: [membershipsTable.workspaceId],
     references: [workspacesTable.id],
   }),
+  project: one(projectsTable, {
+    fields: [membershipsTable.projectId],
+    references: [projectsTable.id],
+  }),
 }));
 
 export type MembershipModel = typeof membershipsTable.$inferSelect;

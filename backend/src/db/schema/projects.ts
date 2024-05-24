@@ -2,6 +2,7 @@ import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
+import { organizationsTable } from './organizations';
 
 // Add a 'type' column or virtual property with a static value of "project" to directly identify the resource type from the data
 // TODO: Store organizationId (full parent tree) to directly retrieve all user projects within an organization and to check user permissions based on ancestor roles
@@ -10,6 +11,11 @@ export const projectsTable = pgTable('projects', {
   slug: varchar('slug').notNull(),
   name: varchar('name').notNull(),
   color: varchar('color').notNull(),
+  organizationId: varchar('organization_id')
+    .notNull()
+    .references(() => organizationsTable.id, {
+      onDelete: 'cascade',
+    }),
   workspaceId: varchar('workspace_id')
     .notNull()
     .references(() => workspacesTable.id, {
