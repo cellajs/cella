@@ -56,8 +56,8 @@ const isAllowedTo =
       ctx.set('memberships', memberships);
       ctx.set(resourceType, context);
 
-      // Log user authentication in the context
-      logEvent(`User authenticated in ${context.id}`, { user: user.id, id: context.id });
+      // Log user allowance in the context
+      logEvent(`User is allowed to ${action} ${context.entity}`, { user: user.id, id: context.id });
 
       await next();
     };
@@ -123,7 +123,7 @@ async function createResourceContext(resourceType: string, ctx: any) {
   const payload = ctx.req.valid('json');
 
   // Initialize context to store the custom created resource context based on the lowest possible ancestor
-  const context: Record<string, string> = {};
+  const context: Record<string, string> = { entity: resourceType.toUpperCase() };
 
   // Variable to hold the lowest ancestor found
   // biome-ignore lint/suspicious/noExplicitAny: The lowest ancestor can be of different entity types (e.g., organization, workspace, project) or undefined
