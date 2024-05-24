@@ -41,6 +41,7 @@ const workspacesRoutes = app
 
     await db.insert(membershipsTable).values({
       userId: user.id,
+      organizationId,
       workspaceId: createdWorkspace.id,
       type: 'WORKSPACE',
       role: 'ADMIN',

@@ -103,7 +103,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   if (!form.getValues('organization') && !menu.organizations.items.length)
     return (
       <Alert variant="plain" className="border-0 w-auto">
-        <AlertTitle>{t('common:no_organization')}</AlertTitle>
+        <AlertTitle>{t('common:organization_required')}</AlertTitle>
         <AlertDescription className="pr-8 font-light">
           <p className="mb-2">{t('common:organization_required.text')}</p>
           <Button

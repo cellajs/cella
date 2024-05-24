@@ -27,7 +27,7 @@ export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelect
   const Electric = useElectric()!;
 
   const removeLabel = () => {
-    if (!Electric) return toast.error(t('common:no_local_db'));
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
 
     Electric.db.labels
       .deleteMany({
