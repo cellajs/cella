@@ -52,7 +52,7 @@ const NoRows = ({
       {isFiltered && !isFetching && (
         <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
       )}
-      {!isFiltered && !isFetching && (customComponent ?? t('common:no_results'))}
+      {!isFiltered && !isFetching && (customComponent ?? t('common:no_resource_yet', { resource: t('common:results'.toLowerCase()) }))}
     </div>
   );
 };
