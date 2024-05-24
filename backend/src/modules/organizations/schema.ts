@@ -2,9 +2,18 @@ import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '../../db/schema/organizations';
-import { imageUrlSchema, nameSchema, paginationQuerySchema, validDomainsSchema, validSlugSchema, validUrlSchema } from '../../lib/common-schemas';
+import {
+  idSchema,
+  imageUrlSchema,
+  nameSchema,
+  paginationQuerySchema,
+  validDomainsSchema,
+  validSlugSchema,
+  validUrlSchema,
+} from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
+import { actionReqTableSchema } from '../general/schema';
 
 export const apiOrganizationUserSchema = z.object({
   ...apiUserSchema.shape,
@@ -79,5 +88,31 @@ export const getUsersByOrganizationQuerySchema = paginationQuerySchema.extend({
 export const getOrganizationsQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
+  }),
+);
+
+export const getRequestsSchema = z.object({
+  requestsInfo: z.array(
+    z.object({
+      id: idSchema,
+      email: z.string(),
+      createdAt: z.string(),
+      type: actionReqTableSchema.shape.type,
+      message: z.string().nullable(),
+      userId: z.string().nullable(),
+      userName: z.string().nullable(),
+      userThumbnail: z.string().nullable(),
+      organizationId: z.string().nullable(),
+      organizationName: z.string().nullable(),
+      organizationThumbnail: z.string().nullable(),
+      organizationSlug: z.string().nullable(),
+    }),
+  ),
+  total: z.number(),
+});
+
+export const getRequestsQuerySchema = paginationQuerySchema.merge(
+  z.object({
+    sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
   }),
 );

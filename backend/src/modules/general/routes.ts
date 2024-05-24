@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { resourceTypeSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { anyTenantGuard, isAuthenticated, publicGuard, systemGuard } from '../../middlewares/guard';
+import { anyTenantGuard, isAuthenticated, systemGuard, publicGuard } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteJsonSchema,
@@ -94,9 +94,7 @@ export const checkTokenRouteConfig = createRouteConfig({
       description: 'Token is valid',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(
-            checkTokenSchema,
-          ),
+          schema: successResponseWithDataSchema(checkTokenSchema),
         },
       },
     },
@@ -271,7 +269,7 @@ export const actionRequestsConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'Access requests',
+      description: 'System access requests',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(getRequestsSchema),

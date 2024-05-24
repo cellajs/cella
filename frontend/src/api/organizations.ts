@@ -134,3 +134,41 @@ export const sendNewsletter = async ({
 
   return { success: true };
 };
+
+export type GetRequestsParams = Partial<
+  Omit<Parameters<(typeof client.organizations)[':organization']['requests']['$get']>['0']['query'], 'limit' | 'offset'> & {
+    limit: number;
+    page: number;
+  }
+>;
+// Get become member requests
+export const becomeMemberRequests = async (
+  organization: string,
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {},
+  signal?: AbortSignal,
+) => {
+  const response = await client.organizations[':organization'].requests.$get(
+    {
+      param: { organization },
+      query: {
+        q,
+        sort,
+        order,
+        offset: String(page * limit),
+        limit: String(limit),
+      },
+    },
+    {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        return fetch(input, {
+          ...init,
+          credentials: 'include',
+          signal,
+        });
+      },
+    },
+  );
+
+  const json = await handleResponse(response);
+  return json.data;
+};

@@ -123,18 +123,14 @@ export type GetRequestsParams = Partial<
 >;
 
 // TODO: fix this
-// Get action requests by type
-export const actionRequests = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, mode = 'system' }: GetRequestsParams = {},
-  signal?: AbortSignal,
-) => {
+// Get system action requests
+export const actionRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {}, signal?: AbortSignal) => {
   const response = await client.requests.$get(
     {
       query: {
         q,
         sort,
         order,
-        mode,
         offset: String(page * limit),
         limit: String(limit),
       },

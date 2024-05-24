@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { Mailbox, Trash, XSquare } from 'lucide-react';
-import type { Dispatch, SetStateAction } from 'react';
+import { useContext, type Dispatch, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { actionRequests } from '~/api/general';
@@ -16,6 +16,8 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { Requests } from '~/types';
 import type { RequestsSearch } from '.';
+import { becomeMemberRequests } from '~/api/organizations';
+import { OrganizationContext } from '~/modules/organizations/organization';
 
 interface Props {
   total?: number;
@@ -100,7 +102,10 @@ function Toolbar({
           columns={columns}
           selectedRows={selectedRequests}
           fetchRows={async (limit) => {
-            const { requestsInfo } = await actionRequests({ limit, q: query, sort, order, mode });
+            const requestData = { limit, q: query, sort, order };
+            const { organization } = useContext(OrganizationContext);
+            const { requestsInfo } =
+              mode === 'organization' ? await becomeMemberRequests(organization?.id || '', requestData) : await actionRequests(requestData);
             return requestsInfo;
           }}
         />

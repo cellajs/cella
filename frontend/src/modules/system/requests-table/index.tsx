@@ -16,6 +16,7 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { becomeMemberRequests } from '~/api/organizations';
 
 export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
@@ -56,18 +57,16 @@ const RequestsTable = ({ mode }: RequestsTableModes) => {
     queryKey: ['requests', debounceQuery, sortColumns],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await actionRequests(
-        {
-          page: pageParam,
-          q: debounceQuery,
-          sort: sortColumns[0]?.columnKey as RequestsSearch['sort'],
-          order: sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'],
-          limit: LIMIT,
-          organizationId: organization?.id,
-          mode,
-        },
-        signal,
-      );
+      const requestData = {
+        page: pageParam,
+        q: debounceQuery,
+        sort: sortColumns[0]?.columnKey as RequestsSearch['sort'],
+        order: sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'],
+        limit: LIMIT,
+      };
+
+      const fetchedData =
+        mode === 'organization' ? await becomeMemberRequests(organization?.id || '', requestData, signal) : await actionRequests(requestData, signal);
       return fetchedData;
     },
     getNextPageParam: (_lastGroup, groups) => groups.length,
@@ -88,7 +87,8 @@ const RequestsTable = ({ mode }: RequestsTableModes) => {
   };
 
   useEffect(() => {
-    const data = queryResult.data?.pages?.flatMap((page) => page.requestsInfo);
+    //Fix types
+    const data = queryResult.data?.pages?.flatMap((page) => page.requestsInfo as unknown as Requests);
     if (data) {
       setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
       setRows(data);

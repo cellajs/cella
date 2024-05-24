@@ -6,12 +6,14 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, systemGuard } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, organizationTenantGuard, systemGuard } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
   createOrganizationJsonSchema,
   getOrganizationsQuerySchema,
+  getRequestsQuerySchema,
+  getRequestsSchema,
   getUsersByOrganizationQuerySchema,
   updateOrganizationJsonSchema,
 } from './schema';
@@ -158,6 +160,29 @@ export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithPaginationSchema(apiOrganizationUserSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const accessRequestsConfig = createRouteConfig({
+  method: 'get',
+  path: '/organizations/{organization}/requests',
+  guard: organizationTenantGuard('organization', ['ADMIN']),
+  tags: ['organizations'],
+  summary: 'Get organizations requests',
+  request: {
+    params: organizationParamSchema,
+    query: getRequestsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Requests to be a member of organization',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(getRequestsSchema),
         },
       },
     },

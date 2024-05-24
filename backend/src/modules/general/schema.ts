@@ -14,7 +14,7 @@ export const checkTokenSchema = z.object({
   email: z.string().email(),
   organizationName: z.string().optional(),
   organizationSlug: z.string().optional(),
-})
+});
 
 export const inviteJsonSchema = z.object({
   emails: apiUserSchema.shape.email.array().min(1),
@@ -78,13 +78,6 @@ export const getRequestsSchema = z.object({
       createdAt: z.string(),
       type: actionReqTableSchema.shape.type,
       message: z.string().nullable(),
-      userId: z.string().nullable(),
-      userName: z.string().nullable(),
-      userThumbnail: z.string().nullable(),
-      organizationId: z.string().nullable(),
-      organizationName: z.string().nullable(),
-      organizationThumbnail: z.string().nullable(),
-      organizationSlug: z.string().nullable(),
     }),
   ),
   total: z.number(),
@@ -92,8 +85,6 @@ export const getRequestsSchema = z.object({
 
 export const getRequestsQuerySchema = paginationQuerySchema.merge(
   z.object({
-    organizationId: idSchema.optional(),
-    mode: z.enum(['system', 'organization']),
     sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
   }),
 );
