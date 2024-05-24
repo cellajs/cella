@@ -121,7 +121,7 @@ export const AppSearch = () => {
               <>
                 {!!searchValue.length && (
                   <CommandEmpty className="h-full">
-                    <ContentPlaceholder Icon={Search} title={t('common:no_results_found')} />
+                    <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
                   </CommandEmpty>
                 )}
                 {searchValue.length === 0 && (

@@ -49,7 +49,9 @@ const NoRows = ({
 
   return (
     <div className="flex flex-col items-center justify-center w-full p-8">
-      {isFiltered && !isFetching && <ContentPlaceholder Icon={Search} title={t('common:no_results_found')} />}
+      {isFiltered && !isFetching && (
+        <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+      )}
       {!isFiltered && !isFetching && (customComponent ?? t('common:no_results'))}
     </div>
   );

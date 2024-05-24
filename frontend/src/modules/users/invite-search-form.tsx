@@ -99,7 +99,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
                   hidePlaceholderWhenSelected
                   defaultOptions={value ? value.map((val: string) => ({ label: val, value: val })) : []}
                   placeholder={t('common:search_users')}
-                  emptyValue={t('common:no_users_found')}
+                  emptyValue={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })}
                 />
               </FormControl>
               <FormMessage />
