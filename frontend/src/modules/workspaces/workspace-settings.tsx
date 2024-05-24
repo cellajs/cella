@@ -26,7 +26,7 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
         dialog
         workspaces={[workspace]}
         callback={() => {
-          toast.success(t('common:success.delete_workspace'));
+          toast.success(t('success.delete_resource', { resource: t('common:workspace') }));
           sheet.remove('workspace_settings');
           navigate({ to: '/', replace: true });
         }}

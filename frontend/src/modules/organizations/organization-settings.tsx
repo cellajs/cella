@@ -32,7 +32,7 @@ const OrganizationSettings = () => {
         dialog
         organizations={[organization]}
         callback={() => {
-          toast.success(t('common:success.delete_organization'));
+          toast.success(t('success.delete_resource', { resource: t('common:organization') }));
           navigate({ to: '/', replace: true });
         }}
       />,

@@ -59,7 +59,7 @@ function Toolbar({
         organizations={selectedOrganizations}
         callback={(organizations) => {
           callback(organizations, 'delete');
-          toast.success(t('common:success.delete_organizations'));
+          toast.success(t('success.delete_resources', { resources: t('common:organizations') }));
         }}
         dialog
       />,

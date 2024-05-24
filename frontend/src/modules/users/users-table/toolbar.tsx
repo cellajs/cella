@@ -76,7 +76,7 @@ function Toolbar({
         users={selectedUsers}
         callback={(users) => {
           callback(users, 'delete');
-          toast.success(t('common:success.delete_users'));
+          toast.success(t('success.delete_resources', { resources: t('common:users') }));
         }}
       />,
       {
