@@ -130,7 +130,7 @@ const RequestsTable = ({ mode }: RequestsTableModes) => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_requests')} />,
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:results'.toLowerCase()) })} />,
         }}
       />
     </div>

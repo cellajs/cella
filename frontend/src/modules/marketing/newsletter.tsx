@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -33,7 +34,7 @@ const NewsletterForm = () => {
     const response = await addEmail(email);
 
     if (response) {
-      toast.success(t('common:success.newsletter_sign_up'));
+      toast.success(t('common:success.newsletter_sign_up', { appName: config.name }));
     } else {
       toast.error(t('common:error.newsletter_sign_up'));
     }

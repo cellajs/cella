@@ -1,24 +1,23 @@
 import { Link } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { cn } from '~/lib/utils';
 import { buttonVariants } from '../ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface AsideNavProps {
   className?: string;
   tabs: {
     id: string;
     label: string;
+    values?: Record<string, string>;
     icon?: React.ElementType<LucideProps>;
   }[];
 }
 
 export const AsideNav = ({ tabs, className }: AsideNavProps) => {
   const { t } = useTranslation();
-
   const sectionIds = tabs.map((tab) => tab.id);
-
   const { activeHash } = useScrollSpy({ sectionIds, autoUpdateHash: true });
 
   // console.log(activeHash, 'TEST')
@@ -34,7 +33,7 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
 
   return (
     <div className={cn('w-full flex flex-col gap-1', className)}>
-      {tabs.map(({ id, label, icon }) => {
+      {tabs.map(({ id, label, icon, values }) => {
         const btnClass = `${id.includes('delete') && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left`;
         const Icon = icon;
         return (
@@ -47,7 +46,7 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
             activeOptions={{ exact: true, includeHash: true }}
             activeProps={{ className: 'bg-secondary' }}
           >
-            {Icon && <Icon className="mr-2 w-5 h-5" />} {t(label)}
+            {Icon && <Icon className="mr-2 w-5 h-5" />} {t(label, values)}
           </Link>
         );
       })}

@@ -12,6 +12,7 @@ import type { Organization } from '~/types';
 import InviteUsers from '../../users/invite-users';
 import StepperFooter from './footer';
 import { OnboardingStart } from './start';
+import { config } from 'config';
 
 const steps: StepItem[] = [
   { id: 'profile', label: 'Tune your profile', optional: true },
@@ -55,7 +56,7 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
                       <CardDescription className="font-light">
                         {id === 'profile' && t('common:onboarding_step1', { name: user.firstName })}
                         {id === 'organization' && t('common:onboarding_step2')}
-                        {id === 'invitation' && t('common:onboarding_step3', { organizationName: organization?.name })}
+                        {id === 'invitation' && t('common:onboarding_step3', { appName: config.name, organizationName: organization?.name })}
                       </CardDescription>
                     </CardHeader>
 

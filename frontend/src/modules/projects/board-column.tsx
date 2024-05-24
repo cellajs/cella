@@ -276,7 +276,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
         {!tasks.length && !searchQuery && (
           <ContentPlaceholder
             Icon={Palmtree}
-            title={t('common:no_tasks')}
+            title={t('common:no_resource_yet', { resource: t('common:tasks'.toLowerCase()) })}
             text={
               !createForm && (
                 <>
@@ -295,7 +295,9 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
             }
           />
         )}
-        {!tasks.length && searchQuery && <ContentPlaceholder Icon={Search} title={t('common:no_tasks_found')} />}
+        {!tasks.length && searchQuery && (
+          <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
+        )}
       </div>
       {closestEdge && <DropIndicator edge={closestEdge} gap="8px" />}
     </Card>

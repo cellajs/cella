@@ -70,7 +70,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     if (!canCreate) {
       return (
         <li className="py-2 text-muted-foreground text-sm text-light text-center">
-          {t('common:no_section_yet', { section: t(section.type.toLowerCase()).toLowerCase() })}
+          {t('common:no_resource_yet', { resource: t(section.type.toLowerCase()).toLowerCase() })}
         </li>
       );
     }
@@ -95,7 +95,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
     if (list.length === 0) {
       return (
         <li className="py-2 text-muted-foreground text-sm text-light text-center">
-          {t('common:no_section_yet', { section: t(section.type.toLowerCase()).toLowerCase() })}
+          {t('common:no_resource_yet', { resource: t(section.type.toLowerCase()).toLowerCase() })}
         </li>
       );
     }

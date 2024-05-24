@@ -71,7 +71,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
     onSuccess: (project) => {
       form.reset();
       callback([project], 'create');
-      toast.success(t('common:success.create_project'));
+      toast.success(t('success.create_resource', { resource: t('common:project') }));
 
       setSheet(null);
       // navigate({

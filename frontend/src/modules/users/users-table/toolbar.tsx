@@ -76,14 +76,14 @@ function Toolbar({
         users={selectedUsers}
         callback={(users) => {
           callback(users, 'delete');
-          toast.success(t('common:success.delete_users'));
+          toast.success(t('success.delete_resources', { resources: t('common:users') }));
         }}
       />,
       {
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('common:confirm.delete_users'),
+        text: t('common:confirm.delete_resource', { resource: t('common:users').toLowerCase() }),
       },
     );
   };
