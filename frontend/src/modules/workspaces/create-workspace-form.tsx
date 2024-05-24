@@ -66,7 +66,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     onSuccess: (result) => {
       form.reset();
       callback?.(result);
-      toast.success(t('common:success.create_workspace'));
+      toast.success(t('success.create_resource', { resource: t('common:workspace') }));
 
       setSheet(null);
       navigate({

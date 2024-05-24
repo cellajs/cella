@@ -147,7 +147,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
       })
       .then(() => {
         form.reset();
-        toast.success(t('common:success.create_task'));
+        toast.success(t('success.create_resource', { resource: t('common:task') }));
         handleCloseForm();
       });
   };

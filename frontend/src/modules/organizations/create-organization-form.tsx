@@ -61,7 +61,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     onSuccess: (result) => {
       form.reset();
       callback?.(result);
-      toast.success(t('common:success.create_organization'));
+      toast.success(t('success.create_resource', { resource: t('common:organization') }));
 
       // If in stepper
       nextStep?.();
