@@ -7,10 +7,10 @@
   },
   "scripts": {
     "prepare:electric": "pnpm proxy & (NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",
-    "prepare:electric:dev": "electric-sql generate --proxy postgres://postgres:proxy_password@0.0.0.0:65432/electric?sslmode=disable --debug true && tsx prepare-files.ts",
+    "prepare:electric:dev": "electric-sql generate && tsx prepare-files.ts",
     "start": "pnpm run preview",
     "dev": "NODE_ENV=development vite --mode development",
-    "build": "tsc && vite build",
+    "build": "pnpm run prepare:electric && tsc && vite build",
     "check:types": "tsc",
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
