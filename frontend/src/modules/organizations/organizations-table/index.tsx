@@ -145,7 +145,9 @@ const OrganizationsTable = () => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_organizations')} />,
+          NoRowsComponent: (
+            <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations'.toLowerCase()) })} />
+          ),
         }}
       />
     </div>

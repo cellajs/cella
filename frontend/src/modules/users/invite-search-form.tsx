@@ -95,11 +95,11 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
                       value: u.email,
                     }));
                   }}
-                  basicSignValue={t('common:invite_members_search.text')}
+                  basicSignValue={t('common:invite_members_search.text', { appName: config.name })}
                   hidePlaceholderWhenSelected
                   defaultOptions={value ? value.map((val: string) => ({ label: val, value: val })) : []}
                   placeholder={t('common:search_users')}
-                  emptyValue={t('common:no_users_found')}
+                  emptyValue={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })}
                 />
               </FormControl>
               <FormMessage />

@@ -84,7 +84,11 @@ export const SheetMenu = memo(() => {
 
       {searchTerm && (
         <div className="search-results mt-6">
-          {searchResultsListItems().length > 0 ? searchResultsListItems() : <ContentPlaceholder Icon={Search} title={t('common:no_results_found')} />}
+          {searchResultsListItems().length > 0 ? (
+            searchResultsListItems()
+          ) : (
+            <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+          )}
         </div>
       )}
 
