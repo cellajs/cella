@@ -32,7 +32,7 @@ export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; 
       />,
       {
         className: 'md:max-w-xl',
-        title: t('common:delete_project'),
+        title: t('common:delete_resource', { resource: t('common:project').toLowerCase() }),
         text: t('common:confirm.delete_resource', { name: 'SETPROJECTNAME', resource: t('common:project').toLowerCase() }),
       },
     );
@@ -61,15 +61,15 @@ export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; 
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>{t('common:delete_project')}</CardTitle>
+          <CardTitle>{t('common:delete_resource', { resource: t('common:project').toLowerCase() })}</CardTitle>
           <CardDescription>
-            <Trans i18nKey="common:delete_project_notice.text" values={{ name: 'SETPROJECTNAME' }} />
+            <Trans i18nKey="common:delete_resource_notice.text" values={{ name: 'SETPROJECTNAME', resource: t('common:project').toLowerCase() }} />
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
             <Trash2 className="mr-2 h-4 w-4" />
-            <span>{t('common:delete_project')}</span>
+            <span>{t('common:delete_resource', { resource: t('common:project').toLowerCase() })}</span>
           </Button>
         </CardContent>
       </Card>

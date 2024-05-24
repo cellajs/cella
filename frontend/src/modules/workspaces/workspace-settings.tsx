@@ -33,7 +33,7 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
       />,
       {
         className: 'md:max-w-xl',
-        title: t('common:delete_workspace'),
+        title: t('common:delete_resource', { resource: t('common:workspace').toLowerCase() }),
         text: t('common:confirm.delete_resource', { name: workspace.name, resource: t('common:workspace').toLowerCase() }),
       },
     );
@@ -63,15 +63,15 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>{t('common:delete_workspace')}</CardTitle>
+          <CardTitle>{t('common:delete_resource', { resource: t('common:workspace').toLowerCase() })}</CardTitle>
           <CardDescription>
-            <Trans i18nKey="common:delete_workspace_notice.text" values={{ name: workspace.name }} />
+            <Trans i18nKey={'common:delete_workspace_notice.text'} values={{ name: workspace.name, resource: t('common:workspace').toLowerCase() }} />
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
             <Trash2 className="mr-2 h-4 w-4" />
-            <span>{t('common:delete_workspace')}</span>
+            <span>{t('common:delete_resource', { resource: t('common:workspace').toLowerCase() })}</span>
           </Button>
         </CardContent>
       </Card>

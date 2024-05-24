@@ -17,7 +17,7 @@ import UpdateOrganizationForm from './update-organization-form';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
-  { id: 'delete-organization', label: 'common:delete_organization' },
+  { id: 'delete-organization', label: 'common:delete_resource', values: { resource: useTranslation().t('common:organization').toLowerCase() } },
 ];
 
 const OrganizationSettings = () => {
@@ -38,7 +38,7 @@ const OrganizationSettings = () => {
       />,
       {
         className: 'md:max-w-xl',
-        title: t('common:delete_organization'),
+        title: t('common:delete_resource', { resource: t('common:organization').toLowerCase() }),
         text: t('common:confirm.delete_resource', { name: organization.name, resource: t('common:organization').toLowerCase() }),
       },
     );
@@ -78,15 +78,18 @@ const OrganizationSettings = () => {
         <AsideAnchor id="delete-organization">
           <Card>
             <CardHeader>
-              <CardTitle>{t('common:delete_organization')}</CardTitle>
+              <CardTitle>{t('common:delete_resource', { resource: t('common:organization').toLowerCase() })}</CardTitle>
               <CardDescription>
-                <Trans i18nKey="common:delete_organization_notice.text" values={{ name: organization.name }} />
+                <Trans
+                  i18nKey="common:delete_resource_notice.text"
+                  values={{ name: organization.name, resource: t('common:organization').toLowerCase() }}
+                />
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
                 <Trash2 className="mr-2 h-4 w-4" />
-                <span>{t('common:delete_organization')}</span>
+                <span>{t('common:delete_resource', { resource: t('common:organization').toLowerCase() })}</span>
               </Button>
             </CardContent>
           </Card>
