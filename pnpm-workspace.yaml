@@ -1,5 +1,6 @@
 packages:
   - 'backend'
+  - 'electric-sync'
   - 'frontend'
   - 'locales'
   - 'proxy'

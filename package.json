@@ -47,6 +47,8 @@
     "dev:fe": "dotenv -e env/.env -- turbo dev --filter frontend",
     "generate": "dotenv -e env/.env -- turbo run generate --filter backend --force",
     "migrate": "dotenv -e env/.env -- turbo migrate --filter backend --force",
+    "generate:electric": "dotenv -e env/.env -- turbo run generate --filter electric-sync --force",
+    "migrate:electric": "dotenv -e env/.env -- turbo migrate --filter electric-sync --force",
     "push": "dotenv -e env/.env -- turbo push --filter backend",
     "studio": "dotenv -e env/.env -- turbo studio --filter backend",
     "seed": "pnpm run seed:users && pnpm run seed:organizations",

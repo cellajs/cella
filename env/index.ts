@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url().optional(),
+    ELECTRIC_SYNC_URL: z.string().url().optional(),
     PORT: z.string().optional(),
 
     NOVU_API_KEY: z.string().optional(),

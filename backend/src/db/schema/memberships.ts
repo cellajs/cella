@@ -1,10 +1,8 @@
 import { relations } from 'drizzle-orm';
 import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
-import { labelsTable } from './labels';
 import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
-import { tasksTable } from './tasks';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
 
@@ -24,8 +22,6 @@ export const membershipsTable = pgTable('memberships', {
   organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
-  taskId: varchar('task_id').references(() => tasksTable.id, { onDelete: 'cascade' }),
-  labelId: varchar('label_id').references(() => labelsTable.id, { onDelete: 'cascade' }),
   userId: varchar('user_id').references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar('role', { enum: roleEnum }).notNull().default('MEMBER'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

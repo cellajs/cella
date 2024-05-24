@@ -4,9 +4,11 @@ import { Argon2id } from 'oslo/password';
 
 import { config } from 'config';
 import { db } from '../src/db/db';
+import { type InsertLabelModel, labelsTable } from '../src/db/schema/labels';
 import { type InsertMembershipModel, membershipsTable } from '../src/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '../src/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '../src/db/schema/projects';
+import { type InsertTaskModel, tasksTable } from '../src/db/schema/tasks';
 import { type InsertUserModel, usersTable } from '../src/db/schema/users';
 import { type InsertWorkspaceModel, workspacesTable } from '../src/db/schema/workspaces';
 import { nanoid } from '../src/lib/nanoid';
@@ -84,6 +86,8 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
   let organizationsCount = 0;
   let workspacesCount = 0;
   let projectsCount = 0;
+  let tasksCount = 0;
+  let labelsCount = 0;
   let relationsCount = 0;
   // Create 100 users for each organization
   for (const organization of organizations) {
@@ -237,12 +241,86 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
         }
 
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
+
+        const insertTasks: InsertTaskModel[] = Array.from({ length: 25 }).map(() => {
+          const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+
+          return {
+            id: nanoid(),
+            projectId: project.id,
+            summary: name,
+            slug: faker.helpers.slugify(name).toLowerCase(),
+            // random integer between 0 and 6
+            status: Math.floor(Math.random() * 7),
+            type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
+            // random integer between 0 and 3
+            impact: Math.floor(Math.random() * 4),
+            markdown: faker.lorem.paragraphs(),
+            createdAt: faker.date.past(),
+            createdBy: usersGroup[Math.floor(Math.random() * usersGroup.length)].id,
+            modifiedAt: faker.date.past(),
+            modifiedBy: usersGroup[Math.floor(Math.random() * usersGroup.length)].id,
+            assignedAt: faker.date.past(),
+            assignedBy: usersGroup[Math.floor(Math.random() * usersGroup.length)].id,
+          };
+        });
+
+        const tasks = await db.insert(tasksTable).values(insertTasks).returning().onConflictDoNothing();
+
+        const insertLabels: InsertLabelModel[] = Array.from({ length: 5 }).map(() => {
+          const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+
+          return {
+            id: nanoid(),
+            projectId: project.id,
+            name,
+            color: faker.internet.color(),
+          };
+        });
+
+        labelsCount += insertLabels.length;
+        if (progressCallback) {
+          progressCallback('labels', labelsCount, 'inserting');
+        }
+
+        const labels = await db.insert(labelsTable).values(insertLabels).returning().onConflictDoNothing();
+
+        for (const task of tasks) {
+          tasksCount++;
+          if (progressCallback) {
+            progressCallback('tasks', tasksCount, 'inserting');
+          }
+
+          const taskLabels = labels.filter(() => faker.datatype.boolean());
+
+          if (taskLabels.length === 0) {
+            continue;
+          }
+
+          const insertTaskLabels: InsertMembershipModel[] = taskLabels.map((label) => {
+            return {
+              id: nanoid(),
+              taskId: task.id,
+              labelId: label.id,
+              createdAt: faker.date.past(),
+            };
+          });
+
+          relationsCount += insertTaskLabels.length;
+          if (progressCallback) {
+            progressCallback('relations', relationsCount, 'inserting');
+          }
+
+          await db.insert(membershipsTable).values(insertTaskLabels).onConflictDoNothing();
+        }
       }
     }
   }
 
   if (progressCallback) {
     progressCallback('relations', relationsCount, 'done');
+    progressCallback('labels', labelsCount, 'done');
+    progressCallback('tasks', tasksCount, 'done');
     progressCallback('projects', projectsCount, 'done');
     progressCallback('workspaces', workspacesCount, 'done');
     progressCallback('users', usersCount, 'done');
