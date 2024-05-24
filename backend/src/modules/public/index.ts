@@ -36,7 +36,7 @@ const publicRoutes = app
         organizations,
         users,
       },
-    });
+    }, 200);
   });
 
 export default publicRoutes;

@@ -84,7 +84,7 @@ const authRoutes = app
 
     return ctx.json({
       success: true,
-    });
+    }, 200);
   })
   /*
    * Verify email
@@ -105,7 +105,7 @@ const authRoutes = app
 
         return ctx.json({
           success: true,
-        });
+        }, 200);
       }
 
       // t('common:error.invalid_token')
@@ -127,7 +127,7 @@ const authRoutes = app
 
         return ctx.json({
           success: true,
-        });
+        }, 200);
       }
 
       return errorResponse(ctx, 400, 'invalid_token', 'warn');
@@ -144,7 +144,7 @@ const authRoutes = app
 
     return ctx.json({
       success: true,
-    });
+    }, 200);
   })
   /*
    * Send verification email
@@ -187,7 +187,7 @@ const authRoutes = app
 
     return ctx.json({
       success: true,
-    });
+    }, 200);
   })
   /*
    * Check if email exists
@@ -202,7 +202,7 @@ const authRoutes = app
       data: {
         exists: !!user,
       },
-    });
+    }, 200);
   })
   /*
    * Request reset password email with token
@@ -247,7 +247,7 @@ const authRoutes = app
     return ctx.json({
       success: true,
       data: undefined,
-    });
+    }, 200);
   })
   /*
    * Reset password with token
@@ -284,7 +284,7 @@ const authRoutes = app
     return ctx.json({
       success: true,
       data: undefined,
-    });
+    }, 200);
   })
   /*
    * Sign in with email and password
@@ -330,7 +330,7 @@ const authRoutes = app
     return ctx.json({
       success: true,
       data: transformDatabaseUser(user),
-    });
+    }, 200);
   })
   /*
    * Sign out
@@ -353,7 +353,7 @@ const authRoutes = app
     removeSessionCookie(ctx);
     logEvent('User signed out', { user: session?.userId || 'na' });
 
-    return ctx.json({ success: true, data: undefined });
+    return ctx.json({ success: true, data: undefined }, 200);
   });
 
 const allRoutes = authRoutes.route('/', oauthRoutes);

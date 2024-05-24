@@ -1,4 +1,4 @@
-import { ApiError, organizationsClient as client } from '.';
+import { organizationsClient as client, handleResponse } from '.';
 export type CreateOrganizationParams = Parameters<(typeof client.organizations)['$post']>['0']['json'];
 
 // Create a new organization
@@ -7,8 +7,7 @@ export const createOrganization = async (params: CreateOrganizationParams) => {
     json: params,
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -18,8 +17,7 @@ export const getOrganizationBySlugOrId = async (organization: string) => {
     param: { organization },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -56,8 +54,7 @@ export const getOrganizations = async (
     },
   );
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -70,8 +67,7 @@ export const updateOrganization = async (organization: string, params: UpdateOrg
     json: params,
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -81,9 +77,7 @@ export const deleteOrganizations = async (ids: string[]) => {
     query: { ids },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };
 
 export type GetMembersParams = Partial<
@@ -122,8 +116,7 @@ export const getOrganizationMembers = async (
     },
   );
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 

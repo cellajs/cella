@@ -1,4 +1,4 @@
-import { ApiError, projectClient as client } from '.';
+import { projectClient as client, handleResponse } from '.';
 
 export type CreateProjectParams = Parameters<(typeof client.workspaces)[':workspace']['projects']['$post']>['0']['json'] & {
   workspace: string;
@@ -11,8 +11,7 @@ export const createProject = async ({ workspace, ...rest }: CreateProjectParams)
     json: rest,
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -22,8 +21,7 @@ export const getProjectBySlugOrId = async (project: string) => {
     param: { project },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -61,8 +59,7 @@ export const getProjects = async (
     },
   );
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -75,8 +72,7 @@ export const updateProject = async (project: string, params: UpdateProjectParams
     json: params,
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
+  const json = await handleResponse(response);
   return json.data;
 };
 
@@ -86,7 +82,5 @@ export const deleteProjects = async (ids: string[]) => {
     query: { ids },
   });
 
-  const json = await response.json();
-  if ('error' in json) throw new ApiError(json.error);
-  return;
+  await handleResponse(response);
 };

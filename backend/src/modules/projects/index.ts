@@ -71,7 +71,7 @@ const projectsRoutes = app
         ...createdProject,
         role: 'ADMIN' as const,
       },
-    });
+    }, 200);
   })
 
   /*
@@ -92,7 +92,7 @@ const projectsRoutes = app
         ...project,
         role: membership?.role || null,
       },
-    });
+    }, 200);
   })
   /*
    * Get projects
@@ -172,7 +172,7 @@ const projectsRoutes = app
         })),
         total,
       },
-    });
+    }, 200);
   })
   /*
    * Update project
@@ -224,7 +224,7 @@ const projectsRoutes = app
         ...updatedProject,
         role: membership?.role || null,
       },
-    });
+    }, 200);
   })
 
   /*
@@ -281,7 +281,7 @@ const projectsRoutes = app
       return ctx.json({
         success: false,
         errors: errors,
-      });
+      }, 200);
     }
 
     // * Delete the projectId
@@ -305,7 +305,7 @@ const projectsRoutes = app
     return ctx.json({
       success: true,
       errors: errors,
-    });
+    }, 200);
   });
 
 export default projectsRoutes;
