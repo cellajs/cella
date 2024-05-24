@@ -48,7 +48,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof TaskWithLabels, value: any) => {
-    if (!Electric) return toast.error(t('common:no_local_db'));
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
     const db = Electric.db;
 
     // TODO: Review this

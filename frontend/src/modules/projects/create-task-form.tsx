@@ -114,7 +114,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   const form = useFormWithDraft<FormValues>(`create-task-${project.id}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
-    if (!Electric) return toast.error(t('common:no_local_db'));
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
     // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
