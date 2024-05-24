@@ -4,7 +4,7 @@ import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
-import type { Env } from '../../types/common';
+import type { Env, PageResourceType } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
 // TODO: Refactor to make schema imports more abstract and modular,
@@ -38,7 +38,10 @@ const isAllowedTo =
 
       // Check if user or context is missing
       if (!context || !user) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN', { user: user?.id, id: context?.id || '' });
+        return errorResponse(ctx, 404, 'not_found', 'warn', resourceType.toUpperCase() as PageResourceType, {
+          user: user?.id,
+          id: context?.id || '',
+        });
       }
 
       // Fetch user's memberships from the database
