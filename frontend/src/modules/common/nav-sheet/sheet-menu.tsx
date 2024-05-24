@@ -5,7 +5,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
 
 import type { PageResourceType } from 'backend/types/common';
-import type { LucideProps } from 'lucide-react';
+import { Search, type LucideProps } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
@@ -13,6 +13,7 @@ import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
+import ContentPlaceholder from '../content-placeholder';
 
 export type SectionItem = {
   id: 'organizations' | 'workspaces' | 'projects';
@@ -83,11 +84,7 @@ export const SheetMenu = memo(() => {
 
       {searchTerm && (
         <div className="search-results mt-6">
-          {searchResultsListItems().length > 0 ? (
-            searchResultsListItems()
-          ) : (
-            <div className="text-muted-foreground text-sm text-center">{t('common:no_results_found')}</div>
-          )}
+          {searchResultsListItems().length > 0 ? searchResultsListItems() : <ContentPlaceholder Icon={Search} title={t('common:no_results_found')} />}
         </div>
       )}
 
