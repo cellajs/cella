@@ -56,7 +56,7 @@
 git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
-Create a `.env` in `/env` folder with `.env.example`. Minimum is `DATABASE_URL`. Then install:
+Create a `.env` in `/env` folder with `.env.example`. Minimum is `DATABASE_URL` and `ELECTRIC_SYNC_URL` (recommended to use existing defaults). Then install:
 
 ```bash
 pnpm install
@@ -83,7 +83,7 @@ pnpm run generate
 pnpm run migrate 
 ```
 
-Generate local-first sync layer in `/frontend` with [ElectricSQL](https://github.com/electric-sql/electric).
+Generate local-first sync layer in `/frontend` with [ElectricSQL](https://github.com/electric-sql/electric)
 
 ```bash
 pnpm run electrify
