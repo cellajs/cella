@@ -6,7 +6,6 @@ async function main() {
   console.info('Running migrations');
 
   await migrate(db, { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' });
-  await migrate(db, { migrationsFolder: 'drizzle-electric', migrationsSchema: 'drizzle-electric' });
 
   console.info('Migrated successfully');
 

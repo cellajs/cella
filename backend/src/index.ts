@@ -17,6 +17,7 @@ const main = async () => {
 
   // * Migrate db
   await migrate(db, { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' });
+  await migrate(db, { migrationsFolder: 'drizzle-electric', migrationsSchema: 'drizzle-electric' });
 
   // * Start server
   serve(
