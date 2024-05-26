@@ -22,7 +22,7 @@ export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
   const { workspaces, getWorkspaceViewOptions } = useWorkspaceStore();
-  const { projects, labels, tasks, searchQuery, workspace } = useContext(WorkspaceContext);
+  const { projects, searchQuery, workspace, tasks, labels } = useContext(WorkspaceContext);
   const [focusedProjectIndex, setFocusedProjectIndex] = useState<number | null>(null);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const [viewOptions, setViewOptions] = useState(getWorkspaceViewOptions(workspace.id));

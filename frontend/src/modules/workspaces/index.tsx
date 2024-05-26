@@ -124,7 +124,7 @@ const WorkspacePage = () => {
             <ContentPlaceholder
               className=" h-[calc(100vh-64px-64px)] md:h-[calc(100vh-88px)]"
               Icon={Bird}
-              title={t('common:no_resource_yet', { resource: t('common:projects'.toLowerCase()) })}
+              title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })}
               text={
                 <>
                   <Redo

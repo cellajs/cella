@@ -1,5 +1,5 @@
 import { FilterX, PanelTopClose, Plus, Settings, Tag, Trash, XSquare } from 'lucide-react';
-import { useContext, useMemo } from 'react';
+import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -27,7 +27,7 @@ interface BoardHeaderProps {
 const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps) => {
   const { t } = useTranslation();
 
-  const { workspace, selectedTasks, setSelectedTasks, searchQuery, tasks, setSearchQuery, labels } = useContext(WorkspaceContext);
+  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, labels } = useContext(WorkspaceContext);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
@@ -76,15 +76,16 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
     });
   };
 
-  const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    return tasks.filter(
-      (task) =>
-        task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [searchQuery, tasks]);
+  // TODO: this one we use just for count, perhaps there is a way to get the count from context, updated where the filter is executed?
+  // const filteredTasks = useMemo(() => {
+  //   if (!searchQuery) return tasks;
+  //   return tasks.filter(
+  //     (task) =>
+  //       task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+  //   );
+  // }, [searchQuery, tasks]);
 
   return (
     <div className={'flex items-center w-full max-sm:justify-between gap-2'}>
@@ -137,7 +138,8 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
               </Button>
             </TooltipButton>
             <div className="w-max mx-2">
-              {`${filteredTasks.length} ${filteredTasks.length > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}
+              {/* TODO */}
+              {`${[].length} ${[].length > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}
             </div>
           </div>
         )}
