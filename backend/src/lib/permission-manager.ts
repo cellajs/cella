@@ -15,7 +15,7 @@ import {
  */
 const organization = new Context('organization', ['ADMIN', 'MEMBER']);
 const workspace = new Context('workspace', ['ADMIN', 'MEMBER'], new Set([organization]));
-new Context('project', ['ADMIN', 'MEMBER'], new Set([workspace]))
+new Context('project', ['ADMIN', 'MEMBER'], new Set([workspace]));
 
 /**
  * Initialize the PermissionManager and configure access policies.
@@ -81,7 +81,7 @@ class AdaptedSubjectAdapter extends SubjectAdapter {
   adapt(s: any): Subject {
     return {
       // TODO: Temporarily retain parent checks... Remove logic once migration is complete and 'entity' property is added to subjects.
-      name: ('entity' in s) ? s.entity.toLowerCase() : ('workspaceId' in s) ? 'project' : ('organizationId' in s) ? 'workspace' : 'organization',
+      name: 'entity' in s ? s.entity.toLowerCase() : 'workspaceId' in s ? 'project' : 'organizationId' in s ? 'workspace' : 'organization',
       key: s.id,
       ancestors: {
         organization: s.organizationId,

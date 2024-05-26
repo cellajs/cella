@@ -39,7 +39,6 @@ export const SignInRoute = createRoute({
   validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional(), token: z.string().optional() }),
 });
 
-
 export const ResetPasswordRoute = createRoute({
   path: '/auth/reset-password/$token',
   staticData: { pageTitle: 'Reset password' },

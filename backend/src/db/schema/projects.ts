@@ -1,8 +1,8 @@
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
+import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
-import { organizationsTable } from './organizations';
 
 export const projectsTable = pgTable('projects', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),

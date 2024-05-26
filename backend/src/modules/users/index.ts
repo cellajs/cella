@@ -50,16 +50,19 @@ const usersRoutes = app
       current: session.id === currentSessionId,
     }));
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...transformDatabaseUser(user),
-        sessions: preparedSessions,
-        counts: {
-          memberships,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...transformDatabaseUser(user),
+          sessions: preparedSessions,
+          counts: {
+            memberships,
+          },
         },
       },
-    }, 200);
+      200,
+    );
   })
   /*
    * Terminate a session
@@ -87,10 +90,13 @@ const usersRoutes = app
       }),
     );
 
-    return ctx.json({
-      success: true,
-      errors: errors,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+        errors: errors,
+      },
+      200,
+    );
   })
   /*
    * Get user menu
@@ -173,14 +179,17 @@ const usersRoutes = app
       };
     });
 
-    return ctx.json({
-      success: true,
-      data: {
-        organizations: { items: organizations, canCreate: true },
-        workspaces: { items: workspaces, canCreate: true },
-        projects: { items: projects, canCreate: true },
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          organizations: { items: organizations, canCreate: true },
+          workspaces: { items: workspaces, canCreate: true },
+          projects: { items: projects, canCreate: true },
+        },
       },
-    }, 200);
+      200,
+    );
   })
   /*
    * Update a user
@@ -238,16 +247,19 @@ const usersRoutes = app
 
     logEvent('User updated', { user: updatedUser.id });
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...transformDatabaseUser(updatedUser),
-        sessions: [],
-        counts: {
-          memberships,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...transformDatabaseUser(updatedUser),
+          sessions: [],
+          counts: {
+            memberships,
+          },
         },
       },
-    }, 200);
+      200,
+    );
   })
   /*
    * Get list of  users
@@ -315,13 +327,16 @@ const usersRoutes = app
       counts,
     }));
 
-    return ctx.json({
-      success: true,
-      data: {
-        items: users,
-        total,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          items: users,
+          total,
+        },
       },
-    }, 200);
+      200,
+    );
   })
   /*
    * Get a user by id or slug
@@ -350,16 +365,19 @@ const usersRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, targetUser.id));
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...transformDatabaseUser(targetUser),
-        sessions: [],
-        counts: {
-          memberships,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...transformDatabaseUser(targetUser),
+          sessions: [],
+          counts: {
+            memberships,
+          },
         },
       },
-    }, 200);
+      200,
+    );
   }) /*
    * Delete users
    */
@@ -404,10 +422,13 @@ const usersRoutes = app
 
     // * If the user doesn't have permission to delete any of the users, return an error
     if (allowedTargets.length === 0) {
-      return ctx.json({
-        success: false,
-        errors: errors,
-      }, 200);
+      return ctx.json(
+        {
+          success: false,
+          errors: errors,
+        },
+        200,
+      );
     }
 
     // * Delete the users
@@ -429,10 +450,13 @@ const usersRoutes = app
       logEvent('User deleted', { user: id });
     }
 
-    return ctx.json({
-      success: true,
-      errors: errors,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+        errors: errors,
+      },
+      200,
+    );
   });
 
 export default usersRoutes;

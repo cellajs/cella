@@ -1,11 +1,11 @@
+import { useNavigate } from '@tanstack/react-router';
 import { Search, XCircle } from 'lucide-react';
 import React, { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import router from '~/lib/router';
 import { Input } from '~/modules/ui/input';
 import { TableFilterBarContext } from '../common/data-table/table-filter-bar';
 import { WorkspaceContext } from '../workspaces';
-import { useNavigate } from '@tanstack/react-router';
-import router from '~/lib/router';
 
 const BoardSearch = () => {
   const { t } = useTranslation();

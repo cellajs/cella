@@ -1,8 +1,8 @@
+import { config } from 'config';
 import { ArrowDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import type { OnboardingStates } from '.';
-import { config } from 'config';
 
 interface OnboardingStartProps {
   setOnboarding: (value: OnboardingStates) => void;

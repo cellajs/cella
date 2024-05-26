@@ -2,18 +2,18 @@ import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { resourceTypeSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { anyTenantGuard, isAuthenticated, systemGuard, publicGuard } from '../../middlewares/guard';
+import { anyTenantGuard, isAuthenticated, publicGuard, systemGuard } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteJsonSchema,
   actionRequestSchema,
   actionResponseSchema,
+  checkTokenSchema,
   getRequestsQuerySchema,
   getRequestsSchema,
   inviteJsonSchema,
   inviteQuerySchema,
   suggestionsSchema,
-  checkTokenSchema,
 } from './schema';
 
 export const getUploadTokenRouteConfig = createRouteConfig({

@@ -30,13 +30,16 @@ const publicRoutes = app
     const organizations = organizationsResult[0].total;
     const users = usersResult[0].total;
 
-    return ctx.json({
-      success: true,
-      data: {
-        organizations,
-        users,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          organizations,
+          users,
+        },
       },
-    }, 200);
+      200,
+    );
   });
 
 export default publicRoutes;

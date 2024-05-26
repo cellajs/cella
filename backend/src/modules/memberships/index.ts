@@ -92,10 +92,13 @@ const membershipRoutes = app
       user: userId,
     });
 
-    return ctx.json({
-      success: true,
-      data: membership,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+        data: membership,
+      },
+      200,
+    );
   })
   /*
    * Delete users from organization
@@ -164,10 +167,13 @@ const membershipRoutes = app
 
     // * If the user doesn't have permission to delete any of the memberships, return an error
     if (allowedTargets.length === 0) {
-      return ctx.json({
-        success: false,
-        errors: errors,
-      }, 200);
+      return ctx.json(
+        {
+          success: false,
+          errors: errors,
+        },
+        200,
+      );
     }
 
     // * Delete the memberships
@@ -197,10 +203,13 @@ const membershipRoutes = app
       logEvent('Member deleted', { membership: membership.id });
     }
 
-    return ctx.json({
-      success: true,
-      data: undefined,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+        data: undefined,
+      },
+      200,
+    );
   });
 
 export default membershipRoutes;

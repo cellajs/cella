@@ -1,19 +1,19 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
 import { useLiveQuery } from 'electric-sql/react';
+import { Bird, Redo } from 'lucide-react';
 import { type Dispatch, type SetStateAction, createContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getProjects } from '~/api/projects';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import BoardHeader from '~/modules/projects/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import type { Project, Workspace } from '~/types';
+import ContentPlaceholder from '../common/content-placeholder';
 import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/electric/electrify';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
-import { Bird, Redo } from 'lucide-react';
-import ContentPlaceholder from '../common/content-placeholder';
-import { useTranslation } from 'react-i18next';
 
 interface WorkspaceContextValue {
   workspace: Workspace;

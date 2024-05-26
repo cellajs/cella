@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { organizationSuggestionSchema, userSuggestionSchema, workspaceSuggestionSchema } from 'backend/modules/general/schema';
 import type { PageResourceType } from 'backend/types/common';
-import { History, Loader2, X, Search } from 'lucide-react';
+import { config } from 'config';
+import { History, Loader2, Search, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from 'react-sticky-box';
@@ -14,7 +15,6 @@ import { useNavigationStore } from '~/store/navigation';
 import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
 import ContentPlaceholder from './content-placeholder';
-import { config } from 'config';
 
 type SuggestionType = z.infer<typeof userSuggestionSchema> | z.infer<typeof organizationSuggestionSchema> | z.infer<typeof workspaceSuggestionSchema>;
 

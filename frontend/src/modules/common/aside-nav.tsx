@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { cn } from '~/lib/utils';
 import { buttonVariants } from '../ui/button';
-import { useTranslation } from 'react-i18next';
 
 interface AsideNavProps {
   className?: string;
@@ -46,7 +46,7 @@ export const AsideNav = ({ tabs, className }: AsideNavProps) => {
             activeOptions={{ exact: true, includeHash: true }}
             activeProps={{ className: 'bg-secondary' }}
           >
-            {Icon && <Icon className="mr-2 w-5 h-5" />} {t(label, { resource: t(resource || '').toLowerCase()})}
+            {Icon && <Icon className="mr-2 w-5 h-5" />} {t(label, { resource: t(resource || '').toLowerCase() })}
           </Link>
         );
       })}

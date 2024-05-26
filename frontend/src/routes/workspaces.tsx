@@ -1,15 +1,15 @@
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
+import { config } from 'config';
 import { Construction, Loader } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useElectric } from '~/modules/common/electric/electrify';
 import ErrorNotice from '~/modules/common/error-notice';
 import Workspace, { workspaceQueryOptions } from '~/modules/workspaces';
 import { IndexRoute } from './routeTree';
-import { config } from 'config';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
 
 // Lazy-loaded components
 const Board = lazy(() => import('~/modules/projects/board'));

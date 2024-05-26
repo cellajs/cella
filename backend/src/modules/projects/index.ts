@@ -68,13 +68,16 @@ const projectsRoutes = app
       type: 'PROJECT',
     });
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...createdProject,
-        role: 'ADMIN' as const,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...createdProject,
+          role: 'ADMIN' as const,
+        },
       },
-    }, 200);
+      200,
+    );
   })
 
   /*
@@ -89,13 +92,16 @@ const projectsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.projectId, project.id)));
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...project,
-        role: membership?.role || null,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...project,
+          role: membership?.role || null,
+        },
       },
-    }, 200);
+      200,
+    );
   })
   /*
    * Get projects
@@ -165,17 +171,20 @@ const projectsRoutes = app
       .limit(Number(limit))
       .offset(Number(offset));
 
-    return ctx.json({
-      success: true,
-      data: {
-        items: projects.map(({ project, role, admins, members }) => ({
-          ...project,
-          role,
-          counts: { admins, members },
-        })),
-        total,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          items: projects.map(({ project, role, admins, members }) => ({
+            ...project,
+            role,
+            counts: { admins, members },
+          })),
+          total,
+        },
       },
-    }, 200);
+      200,
+    );
   })
   /*
    * Update project
@@ -221,13 +230,16 @@ const projectsRoutes = app
 
     logEvent('Project updated', { project: updatedProject.id });
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...updatedProject,
-        role: membership?.role || null,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...updatedProject,
+          role: membership?.role || null,
+        },
       },
-    }, 200);
+      200,
+    );
   })
 
   /*
@@ -281,10 +293,13 @@ const projectsRoutes = app
 
     // * If the user doesn't have permission to delete any of the projects, return an error
     if (allowedTargets.length === 0) {
-      return ctx.json({
-        success: false,
-        errors: errors,
-      }, 200);
+      return ctx.json(
+        {
+          success: false,
+          errors: errors,
+        },
+        200,
+      );
     }
 
     // * Delete the projectId
@@ -305,10 +320,13 @@ const projectsRoutes = app
       logEvent('Project deleted', { project: project.id });
     }
 
-    return ctx.json({
-      success: true,
-      errors: errors,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+        errors: errors,
+      },
+      200,
+    );
   });
 
 export default projectsRoutes;

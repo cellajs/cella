@@ -59,9 +59,12 @@ export const handleCreateUser = async (
       await setSessionCookie(ctx, user.id, 'password');
     }
     if (options?.redirectUrl) return ctx.redirect(options?.redirectUrl);
-    return ctx.json({
-      success: true,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+      },
+      200,
+    );
   } catch (error) {
     // * If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {

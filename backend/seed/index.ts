@@ -14,8 +14,8 @@ import { type InsertUserModel, usersTable } from '../src/db/schema/users';
 import { type InsertWorkspaceModel, workspacesTable } from '../src/db/schema/workspaces';
 
 // Electric schema
-import { labelsTable, type InsertLabelModel } from '../src/db/schema-electric/labels';
-import { tasksTable, type InsertTaskModel } from '../src/db/schema-electric/tasks';
+import { type InsertLabelModel, labelsTable } from '../src/db/schema-electric/labels';
+import { type InsertTaskModel, tasksTable } from '../src/db/schema-electric/tasks';
 
 // Seed an admin user to access app first time
 export const userSeed = async () => {
@@ -60,7 +60,7 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
   const organizations: (InsertOrganizationModel & {
     id: string;
   })[] = Array.from({
- length: 10,
+    length: 10,
   }).map(() => {
     const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
@@ -292,7 +292,6 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
         }
 
         await db.insert(labelsTable).values(insertLabels).onConflictDoNothing();
-
       }
     }
   }
