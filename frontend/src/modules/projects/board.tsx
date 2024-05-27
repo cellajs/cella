@@ -1,6 +1,6 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { Fragment, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { Fragment, createContext, useContext, useEffect, useState } from 'react';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { sortTaskOrder } from '~/lib/utils';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -9,7 +9,6 @@ import type { Label, Task } from '../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
 import { BoardColumn } from './board-column';
-import { taskStatuses } from './select-status';
 
 interface ProjectContextValue {
   project: Project;
@@ -21,34 +20,14 @@ interface ProjectContextValue {
 export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
-  const { workspaces, getWorkspaceViewOptions } = useWorkspaceStore();
-  const { projects, searchQuery, workspace, tasks, labels } = useContext(WorkspaceContext);
+  const { workspaces } = useWorkspaceStore();
+  const { projects, tasks, labels } = useContext(WorkspaceContext);
   const [focusedProjectIndex, setFocusedProjectIndex] = useState<number | null>(null);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
-  const [viewOptions, setViewOptions] = useState(getWorkspaceViewOptions(workspace.id));
 
   const handleTaskClick = (taskId: string) => {
     setFocusedTaskId(taskId);
   };
-
-  const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    return tasks.filter(
-      (task) =>
-        task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [searchQuery, tasks]);
-
-  const filteredByViewOptionsTasks = useMemo(() => {
-    return filteredTasks.filter(
-      (task) =>
-        viewOptions.type.includes(task.type) &&
-        (task.status === 0 || task.status === 6 || viewOptions.status.includes(taskStatuses[task.status].status)),
-      // add to task label status and filter by status of label too
-    );
-  }, [viewOptions, filteredTasks]);
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (!tasks.length || !projects.length) return;
@@ -74,10 +53,6 @@ export default function Board() {
     ['ArrowRight', handleKeyDown],
     ['ArrowLeft', handleKeyDown],
   ]);
-
-  useEffect(() => {
-    setViewOptions(workspaces[workspace.id].viewOptions);
-  }, [workspaces[workspace.id].viewOptions]);
 
   useEffect(() => {
     return combine(
@@ -128,7 +103,7 @@ export default function Board() {
                 }}
               >
                 <BoardColumn
-                  tasks={filteredByViewOptionsTasks.filter((t) => t.project_id === project.id)}
+                  tasks={tasks.filter((t) => t.project_id === project.id)}
                   key={`${project.id}-column`}
                   setFocusedTask={(taskId: string) => handleTaskClick(taskId)}
                   focusedTask={focusedTaskId}

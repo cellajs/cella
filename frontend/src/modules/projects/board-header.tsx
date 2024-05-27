@@ -27,7 +27,7 @@ interface BoardHeaderProps {
 const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps) => {
   const { t } = useTranslation();
 
-  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, labels } = useContext(WorkspaceContext);
+  const { tasksCount, workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, labels } = useContext(WorkspaceContext);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
@@ -75,17 +75,6 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
       title: t('common:add_projects'),
     });
   };
-
-  // TODO: this one we use just for count, perhaps there is a way to get the count from context, updated where the filter is executed?
-  // const filteredTasks = useMemo(() => {
-  //   if (!searchQuery) return tasks;
-  //   return tasks.filter(
-  //     (task) =>
-  //       task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //       task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //       task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
-  //   );
-  // }, [searchQuery, tasks]);
 
   return (
     <div className={'flex items-center w-full max-sm:justify-between gap-2'}>
@@ -137,10 +126,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
                 <span className="ml-1">{t('common:clear')}</span>
               </Button>
             </TooltipButton>
-            <div className="w-max mx-2">
-              {/* TODO */}
-              {`${[].length} ${[].length > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}
-            </div>
+            <div className="w-max mx-2">{`${tasksCount} ${tasksCount > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}</div>
           </div>
         )}
         {!!selectedTasks.length && (
