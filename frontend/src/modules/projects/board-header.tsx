@@ -29,8 +29,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
 
   const { tasksCount, workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, labels } = useContext(WorkspaceContext);
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
+  const Electric = useElectric();
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet />, {
@@ -77,7 +76,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   };
 
   return (
-    <div className={'flex items-center w-full max-sm:justify-between gap-2'}>
+    <div className={'flex items-center w-full max-sm:justify-between sm:gap-2'}>
       <TableFilterBar
         onResetFilters={() => {
           setSearchQuery('');
@@ -146,7 +145,10 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
             </TooltipButton>
           </div>
         )}
-        <FilterBarContent className="max-sm:ml-1 w-full">
+
+        <div className="grow sm:hidden" />
+
+        <FilterBarContent className="w-full">
           <BoardSearch />
         </FilterBarContent>
       </TableFilterBar>

@@ -69,8 +69,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   const { user } = useUserStore(({ user }) => ({ user }));
 
   const { tasks } = useContext(WorkspaceContext);
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
+  const Electric = useElectric();
 
   const { project, labels } = useContext(ProjectContext);
 

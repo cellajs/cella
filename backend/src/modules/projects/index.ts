@@ -104,7 +104,7 @@ const projectsRoutes = app
     );
   })
   /*
-   * Get projects
+   * Get list of projects
    */
   .openapi(getProjectsRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit, workspace } = ctx.req.valid('query');
