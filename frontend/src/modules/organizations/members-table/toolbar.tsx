@@ -111,7 +111,7 @@ function Toolbar({
   return (
     <>
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered} id={organization.id}>
           <FilterBarActions>
             {selectedMembers.length > 0 ? (
               <>
