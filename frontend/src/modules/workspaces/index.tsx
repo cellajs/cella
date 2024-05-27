@@ -55,7 +55,7 @@ const WorkspacePage = () => {
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  // biome-ignore lint/style/noNonNullAssertion: ElectricSuspense will block rendering until Electric is ready
   const Electric = useElectric()!;
 
   const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id));

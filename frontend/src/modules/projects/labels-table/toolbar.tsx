@@ -1,7 +1,7 @@
-import { Plus, Trash, XSquare } from 'lucide-react';
+import { Trash, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import { FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { useElectric } from '~/modules/common/electric/electrify';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -23,8 +23,7 @@ interface Props {
 export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelectedLabels, isFiltered, onResetFilters }: Props) => {
   const { t } = useTranslation();
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
+  const Electric = useElectric();
 
   const removeLabel = () => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
@@ -46,21 +45,9 @@ export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelect
   return (
     <div className={'flex  w-full max-sm:justify-between gap-2'}>
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-        {!selectedLabels.length && !searchQuery.length && (
-          <FilterBarActions>
-            <TooltipButton toolTipContent={t('common:add_label')}>
-              <Button
-                variant="plain"
-                onClick={() => {
-                  console.log('add new label');
-                }}
-              >
-                <Plus size={16} />
-                <span className="max-sm:hidden ml-1">{t('common:add')}</span>
-              </Button>
-            </TooltipButton>
-          </FilterBarActions>
-        )}
+        {/* {!selectedLabels.length && !searchQuery.length && (
+          <FilterBarActions />
+        )} */}
         {!!selectedLabels.length && (
           <div className="inline-flex align-center items-center gap-2">
             <TooltipButton toolTipContent={t('common:remove_task')}>

@@ -37,8 +37,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
   const { task, focusedTaskId } = useContext(TaskContext);
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
+  const Electric = useElectric();
 
   const handleSelectClick = (value?: string) => {
     if (!value) return;

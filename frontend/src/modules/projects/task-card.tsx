@@ -43,8 +43,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
 
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
+  const Electric = useElectric();
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof TaskWithLabels, value: any) => {
