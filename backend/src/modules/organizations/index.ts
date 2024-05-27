@@ -394,18 +394,6 @@ const organizationsRoutes = app
    *  Get access requests
    */
   .openapi(accessRequestsConfig, async (ctx) => {
-    console.log(22);
-
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-
-    console.log(22);
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 
