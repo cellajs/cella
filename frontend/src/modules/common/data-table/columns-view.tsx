@@ -2,7 +2,6 @@ import { SlidersHorizontal } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useMemo, useState } from 'react';
 import type { ColumnOrColumnGroup as BaseColumnOrColumnGroup } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/lib/utils';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -39,9 +38,9 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
         setColumnSearch('');
       }}
     >
-      <TooltipButton toolTipContent={t('common:columns_view')}>
+      <TooltipButton className={className} toolTipContent={t('common:columns_view')}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className={cn('relative flex', className)}>
+          <Button variant="outline" className="relative flex">
             {filteredColumns.some((column) => !column.visible) && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0" />}
             <SlidersHorizontal className="h-4 w-4" />
             <span className="ml-1 max-xl:hidden">{t('common:view')}</span>

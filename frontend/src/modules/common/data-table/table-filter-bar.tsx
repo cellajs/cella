@@ -35,7 +35,7 @@ export const FilterBarContent = ({ children, className = '' }: FilterBarChildPro
   const { isFilterActive } = useContext(TableFilterBarContext);
   return (
     <div
-      className={cn('flex items-center max-sm:w-full gap-2 max-sm:relative max-sm:-ml-2 max-sm:mr-2', className, !isFilterActive && 'max-sm:hidden')}
+      className={cn('flex items-center max-sm:w-full gap-2 max-sm:relative max-sm:mr-2', className, !isFilterActive && 'max-sm:hidden')}
     >
       {children}
     </div>

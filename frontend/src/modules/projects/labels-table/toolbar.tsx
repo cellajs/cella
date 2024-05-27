@@ -65,7 +65,7 @@ export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelect
             </TooltipButton>
           </div>
         )}
-        <FilterBarContent className="max-sm:ml-1 w-full">
+        <FilterBarContent className="w-full">
           <TableSearch value={searchQuery} setQuery={setSearchQuery} />
         </FilterBarContent>
       </TableFilterBar>

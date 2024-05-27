@@ -209,11 +209,11 @@ export const suggestionsConfig = createRouteConfig({
   path: '/suggestions',
   guard: isAuthenticated(),
   tags: ['general'],
-  summary: 'Get suggestions',
+  summary: 'Get search suggestions',
   request: {
     query: z.object({
-      q: z.string().optional().openapi({ description: 'Search by user/org name or user email' }),
-      type: resourceTypeSchema.optional().openapi({ description: 'Type of suggestions' }),
+      q: z.string().optional().openapi({ description: 'Search by name through all page resources' }),
+      type: resourceTypeSchema.optional().openapi({ description: 'Type of page resource' }),
     }),
   },
   responses: {

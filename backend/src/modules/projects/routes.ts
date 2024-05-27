@@ -76,7 +76,7 @@ export const getProjectsRouteConfig = createRouteConfig({
   path: '/projects',
   guard: [isAuthenticated(), isAllowedTo('read', 'project')],
   tags: ['projects'],
-  summary: 'Get projects',
+  summary: 'Get list of projects',
   description: `
         Permissions:
         - Users with role 'ADMIN'
@@ -102,7 +102,7 @@ export const updateProjectRouteConfig = createRouteConfig({
   path: '/projects/{project}',
   guard: [isAuthenticated(), isAllowedTo('update', 'project')],
   tags: ['projects'],
-  summary: 'Update projects',
+  summary: 'Update project',
   description: `
     Permissions:
       - Users with role 'ADMIN'
