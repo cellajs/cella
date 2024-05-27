@@ -8,6 +8,7 @@ import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { actionRequests } from '~/api/general';
+import { becomeMemberRequests } from '~/api/organizations';
 import { useDebounce } from '~/hooks/use-debounce';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { OrganizationContext } from '~/modules/organizations/organization';
@@ -16,7 +17,6 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { becomeMemberRequests } from '~/api/organizations';
 
 export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
@@ -130,7 +130,7 @@ const RequestsTable = ({ mode }: RequestsTableModes) => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:results'.toLowerCase()) })} />,
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:results').toLowerCase() })} />,
         }}
       />
     </div>

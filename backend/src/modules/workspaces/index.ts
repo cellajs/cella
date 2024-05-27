@@ -58,13 +58,16 @@ const workspacesRoutes = app
       type: 'WORKSPACE',
     });
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...createdWorkspace,
-        role: 'ADMIN' as const,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...createdWorkspace,
+          role: 'ADMIN' as const,
+        },
       },
-    }, 200);
+      200,
+    );
   })
 
   /*
@@ -79,13 +82,16 @@ const workspacesRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.workspaceId, workspace.id)));
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...workspace,
-        role: membership?.role || null,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...workspace,
+          role: membership?.role || null,
+        },
       },
-    }, 200);
+      200,
+    );
   })
 
   /*
@@ -132,13 +138,16 @@ const workspacesRoutes = app
 
     logEvent('Workspace updated', { workspace: updatedWorkspace.id });
 
-    return ctx.json({
-      success: true,
-      data: {
-        ...updatedWorkspace,
-        role: membership?.role || null,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...updatedWorkspace,
+          role: membership?.role || null,
+        },
       },
-    }, 200);
+      200,
+    );
   })
 
   /*
@@ -192,10 +201,13 @@ const workspacesRoutes = app
 
     // * If the user doesn't have permission to delete any of the workspaces, return an error
     if (allowedTargets.length === 0) {
-      return ctx.json({
-        success: false,
-        errors: errors,
-      }, 200);
+      return ctx.json(
+        {
+          success: false,
+          errors: errors,
+        },
+        200,
+      );
     }
 
     // * Delete the workspaces
@@ -216,10 +228,13 @@ const workspacesRoutes = app
       logEvent('Workspace deleted', { workspace: workspace.id });
     }
 
-    return ctx.json({
-      success: true,
-      errors: errors,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+        errors: errors,
+      },
+      200,
+    );
   });
 
 export default workspacesRoutes;

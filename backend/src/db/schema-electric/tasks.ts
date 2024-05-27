@@ -1,8 +1,6 @@
 import { integer, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from '../../../nanoid';
+import { nanoid } from '../../lib/nanoid';
 
-// Add a 'type' column or virtual property with a static value of "task" to directly identify the resource type from the data
-// TODO: Store organizationId and workspaceId (full parent tree) to directly retrieve all user tasks within various contexts
 export const tasksTable = pgTable('tasks', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   slug: varchar('slug').notNull(),

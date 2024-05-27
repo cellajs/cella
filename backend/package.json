@@ -14,12 +14,14 @@
     "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/src/index.cjs\"",
     "seed:user": "tsx seed/user.ts",
     "seed:data": "tsx seed/data.ts",
-    "generate": "drizzle-kit generate",
+    "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
+    "generate:electric": "drizzle-kit generate --config drizzle.config.electric.ts",
     "push": "drizzle-kit push",
-    "migrate": "tsx src/db/migrate.ts",
+    "migrate:pg": "tsx src/db/migrate.ts",
+    "migrate:electric": "tsx src/db/migrate.electric.ts",
     "migrate:script": "tsx dist/src/db/migrate.cjs",
     "seeds:script": "tsx dist/seed/user.cjs && tsx dist/seed/data.cjs",
-    "studio": "drizzle-kit studio",
+    "studio": "drizzle-kit studio --config drizzle.config.ts",
     "proxy": "electric-sql proxy-tunnel --service https://cella-electric-sync-service.onrender.com --local-port 65432",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend ./dist && sentry-cli sourcemaps upload --org cella --project backend ./dist"
   },
@@ -74,9 +76,7 @@
     "tsx": "^4.10.5"
   },
   "babel": {
-    "presets": [
-      "@babel/preset-typescript"
-    ]
+    "presets": ["@babel/preset-typescript"]
   },
   "exports": {
     "./*": "./src/*.ts"

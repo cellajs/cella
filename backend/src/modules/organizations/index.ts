@@ -5,6 +5,7 @@ import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
 
 import { config } from 'config';
+import { requestsTable } from '../../db/schema/requests';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSE } from '../../lib/sse';
@@ -20,7 +21,6 @@ import {
   getUsersByOrganizationIdRouteConfig,
   updateOrganizationRouteConfig,
 } from './routes';
-import { requestsTable } from '../../db/schema/requests';
 
 const app = new CustomHono();
 

@@ -4,13 +4,18 @@ import { Argon2id } from 'oslo/password';
 
 import { config } from 'config';
 import { db } from '../src/db/db';
+import { nanoid } from '../src/lib/nanoid';
+import type { Stage, Status } from './data';
+
 import { type InsertMembershipModel, membershipsTable } from '../src/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '../src/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '../src/db/schema/projects';
 import { type InsertUserModel, usersTable } from '../src/db/schema/users';
 import { type InsertWorkspaceModel, workspacesTable } from '../src/db/schema/workspaces';
-import { nanoid } from '../src/lib/nanoid';
-import type { Stage, Status } from './data';
+
+// Electric schema
+import { type InsertLabelModel, labelsTable } from '../src/db/schema-electric/labels';
+import { type InsertTaskModel, tasksTable } from '../src/db/schema-electric/tasks';
 
 // Seed an admin user to access app first time
 export const userSeed = async () => {
@@ -41,7 +46,7 @@ export const userSeed = async () => {
   console.info(`Created admin user with verified email ${email} and password ${password}.`);
 };
 
-// Seed 100 organizations with 100 members each
+// Seed organizations with data
 export const dataSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
@@ -55,7 +60,7 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
   const organizations: (InsertOrganizationModel & {
     id: string;
   })[] = Array.from({
-    length: 100,
+    length: 10,
   }).map(() => {
     const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
@@ -84,7 +89,9 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
   let organizationsCount = 0;
   let workspacesCount = 0;
   let projectsCount = 0;
-  let relationsCount = 0;
+  let tasksCount = 0;
+  let labelsCount = 0;
+  let membershipsCount = 0;
   // Create 100 users for each organization
   for (const organization of organizations) {
     organizationsCount++;
@@ -134,15 +141,14 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
         id: nanoid(),
         userId: user.id,
         organizationId: organization.id,
-        type: 'ORGANIZATION',
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
         createdAt: faker.date.past(),
       };
     });
 
-    relationsCount += memberships.length;
+    membershipsCount += memberships.length;
     if (progressCallback) {
-      progressCallback('relations', relationsCount, 'inserting');
+      progressCallback('memberships', membershipsCount, 'inserting');
     }
 
     await db.insert(membershipsTable).values(memberships).onConflictDoNothing();
@@ -181,7 +187,6 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
         return {
           id: nanoid(),
           userId: user.id,
-          type: 'WORKSPACE',
           organizationId: organization.id,
           workspaceId: workspace.id,
           role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
@@ -189,9 +194,9 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
         };
       });
 
-      relationsCount += workspaceMemberships.length;
+      membershipsCount += workspaceMemberships.length;
       if (progressCallback) {
-        progressCallback('relations', relationsCount, 'inserting');
+        progressCallback('memberships', membershipsCount, 'inserting');
       }
 
       await db.insert(membershipsTable).values(workspaceMemberships).onConflictDoNothing();
@@ -225,7 +230,6 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
           return {
             id: nanoid(),
             userId: user.id,
-            type: 'PROJECT',
             organizationId: organization.id,
             workspaceId: workspace.id,
             projectId: project.id,
@@ -234,18 +238,68 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
           };
         });
 
-        relationsCount += projectMemberships.length;
+        membershipsCount += projectMemberships.length;
         if (progressCallback) {
-          progressCallback('relations', relationsCount, 'inserting');
+          progressCallback('memberships', membershipsCount, 'inserting');
         }
 
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
+
+        const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).map(() => {
+          const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+
+          return {
+            id: nanoid(),
+            projectId: project.id,
+            summary: name,
+            slug: faker.helpers.slugify(name).toLowerCase(),
+            // random integer between 0 and 6
+            status: Math.floor(Math.random() * 7),
+            type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
+            // random integer between 0 and 3
+            impact: Math.floor(Math.random() * 4),
+            markdown: faker.lorem.paragraphs(),
+            createdAt: faker.date.past(),
+            createdBy: usersGroup[Math.floor(Math.random() * usersGroup.length)].id,
+            modifiedAt: faker.date.past(),
+            modifiedBy: usersGroup[Math.floor(Math.random() * usersGroup.length)].id,
+            assignedAt: faker.date.past(),
+            assignedBy: usersGroup[Math.floor(Math.random() * usersGroup.length)].id,
+          };
+        });
+
+        tasksCount += insertTasks.length;
+        if (progressCallback) {
+          progressCallback('tasks', tasksCount, 'inserting');
+        }
+
+        await db.insert(tasksTable).values(insertTasks).onConflictDoNothing();
+
+        const insertLabels: InsertLabelModel[] = Array.from({ length: 5 }).map(() => {
+          const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+
+          return {
+            id: nanoid(),
+            projectId: project.id,
+            name,
+            color: faker.internet.color(),
+          };
+        });
+
+        labelsCount += insertLabels.length;
+        if (progressCallback) {
+          progressCallback('labels', labelsCount, 'inserting');
+        }
+
+        await db.insert(labelsTable).values(insertLabels).onConflictDoNothing();
       }
     }
   }
 
   if (progressCallback) {
-    progressCallback('relations', relationsCount, 'done');
+    progressCallback('memberships', membershipsCount, 'done');
+    progressCallback('labels', labelsCount, 'done');
+    progressCallback('tasks', tasksCount, 'done');
     progressCallback('projects', projectsCount, 'done');
     progressCallback('workspaces', workspacesCount, 'done');
     progressCallback('users', usersCount, 'done');

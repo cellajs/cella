@@ -1,18 +1,18 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
+import type { checkTokenSchema } from 'backend/modules/general/schema';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import type { z } from 'zod';
 import type { ApiError } from '~/api';
 import { acceptInvite as baseAcceptInvite } from '~/api/general';
 import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
-import AuthPage from '../auth/auth-page';
-import { ArrowRight, Loader2 } from 'lucide-react';
-import { Button, buttonVariants } from '../ui/button';
 import { cn } from '~/lib/utils';
-import type { checkTokenSchema } from 'backend/modules/general/schema';
-import type { z } from 'zod';
+import AuthPage from '../auth/auth-page';
+import { Button, buttonVariants } from '../ui/button';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 

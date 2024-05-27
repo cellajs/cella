@@ -276,7 +276,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
         {!tasks.length && !searchQuery && (
           <ContentPlaceholder
             Icon={Palmtree}
-            title={t('common:no_resource_yet', { resource: t('common:tasks'.toLowerCase()) })}
+            title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
             text={
               !createForm && (
                 <>

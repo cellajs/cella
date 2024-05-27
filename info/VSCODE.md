@@ -1,4 +1,4 @@
-# VS Code tasks
+# VSCode
 
 To enable automatic Docker startup and open two additional terminals when you launch VS Code, follow these steps:
 

@@ -3,10 +3,10 @@ import { Column, Heading, Img, Row, Section, Text } from '@react-email/component
 import { config } from 'config';
 import type { i18n } from '../../backend/src/lib/i18n';
 
-import { Logo } from './components/logo';
-import { Footer } from './components/footer';
-import { EmailButton } from './components/email-button';
 import { EmailContainer } from './components/container';
+import { EmailButton } from './components/email-button';
+import { Footer } from './components/footer';
+import { Logo } from './components/logo';
 
 interface Props {
   i18n: typeof i18n;

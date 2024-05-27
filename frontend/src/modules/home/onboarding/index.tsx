@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
@@ -12,7 +13,6 @@ import type { Organization } from '~/types';
 import InviteUsers from '../../users/invite-users';
 import StepperFooter from './footer';
 import { OnboardingStart } from './start';
-import { config } from 'config';
 
 const steps: StepItem[] = [
   { id: 'profile', label: 'Tune your profile', optional: true },

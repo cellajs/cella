@@ -17,7 +17,7 @@ import UpdateOrganizationForm from './update-organization-form';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
-  { id: 'delete-organization', label: 'common:delete_resource', values: { resource: useTranslation().t('common:organization').toLowerCase() } },
+  { id: 'delete-organization', label: 'common:delete_resource', resource: 'common:organization' },
 ];
 
 const OrganizationSettings = () => {

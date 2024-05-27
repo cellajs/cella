@@ -1,19 +1,20 @@
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
-import { Construction, Loader } from 'lucide-react';
+import { config } from 'config';
+import { Construction } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
-import { useElectric } from '~/modules/common/electric/electrify';
-import ErrorNotice from '~/modules/common/error-notice';
-import Workspace, { workspaceQueryOptions } from '~/modules/workspaces';
-import { IndexRoute } from './routeTree';
-import { config } from 'config';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import ErrorNotice from '~/modules/common/error-notice';
+import { workspaceQueryOptions } from '~/modules/workspaces';
+import { IndexRoute } from './routeTree';
 
 // Lazy-loaded components
+const Workspace = lazy(() => import('~/modules/workspaces'));
 const Board = lazy(() => import('~/modules/projects/board'));
 const TasksTable = lazy(() => import('~/modules/projects/tasks-table'));
+const ElectricSuspense = lazy(() => import('~/modules/common/electric/suspense'));
 
 export const WorkspaceRoute = createRoute({
   path: 'workspace/$idOrSlug',
@@ -25,20 +26,11 @@ export const WorkspaceRoute = createRoute({
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
-    const Electric = useElectric();
-
-    // TODO: review this
-    if (!Electric) {
-      return (
-        <div className="flex items-center justify-center grow">
-          <Loader className="animate-spin" size={36} />
-        </div>
-      );
-    }
-
     return (
       <Suspense>
-        <Workspace />
+        <ElectricSuspense>
+          <Workspace />
+        </ElectricSuspense>
       </Suspense>
     );
   },
