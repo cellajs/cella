@@ -110,7 +110,7 @@ const usersRoutes = app
         membership: membershipsTable,
       })
       .from(organizationsTable)
-      .where(eq(membershipsTable.userId, user.id))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'ORGANIZATION')))
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
@@ -120,7 +120,7 @@ const usersRoutes = app
         membership: membershipsTable,
       })
       .from(workspacesTable)
-      .where(eq(membershipsTable.userId, user.id))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'WORKSPACE')))
       .orderBy(desc(workspacesTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.workspaceId, workspacesTable.id));
 
@@ -130,7 +130,7 @@ const usersRoutes = app
         membership: membershipsTable,
       })
       .from(projectsTable)
-      .where(eq(membershipsTable.userId, user.id))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'PROJECT')))
       .orderBy(desc(projectsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id));
 
