@@ -327,6 +327,7 @@ const organizationsRoutes = app
     const roles = db
       .select({
         userId: membershipsTable.userId,
+        id: membershipsTable.id,
         role: membershipsTable.role,
       })
       .from(membershipsTable)
@@ -350,6 +351,7 @@ const organizationsRoutes = app
         createdAt: usersTable.createdAt,
         lastSeenAt: usersTable.lastSeenAt,
         organizationRole: roles.role,
+        membershipId: roles.id,
       },
       sort,
       usersTable.id,
@@ -360,6 +362,7 @@ const organizationsRoutes = app
       .select({
         user: usersTable,
         organizationRole: roles.role,
+        membershipId: roles.id,
         counts: {
           memberships: membershipCount.memberships,
         },
@@ -374,10 +377,11 @@ const organizationsRoutes = app
     const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
 
     const members = await Promise.all(
-      result.map(async ({ user, organizationRole, counts }) => ({
+      result.map(async ({ user, organizationRole, membershipId, counts }) => ({
         ...user,
         sessions: [],
         organizationRole,
+        membershipId,
         counts,
       })),
     );

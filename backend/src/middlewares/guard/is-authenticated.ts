@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
-import type { User } from 'lucia';
 import { db } from '../../db/db';
 import { auth as luciaAuth } from '../../db/lucia';
 import { usersTable } from '../../db/schema/users';
@@ -8,9 +7,7 @@ import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { removeSessionCookie } from '../../modules/auth/helpers/cookies';
 
-const auth =
-  (accessibleFor?: User['role'][]): MiddlewareHandler =>
-  async (ctx, next) => {
+const isAuthenticated: MiddlewareHandler = async (ctx, next) => {
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = luciaAuth.readSessionCookie(cookieHeader ?? '');
 
@@ -25,11 +22,6 @@ const auth =
     if (!session) {
       removeSessionCookie(ctx);
       return errorResponse(ctx, 401, 'no_session', 'warn');
-    }
-
-    if (accessibleFor && !accessibleFor.includes(user.role)) {
-      // t('common:error.forbidden.text')
-      return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
     }
 
     if (session?.fresh) {
@@ -50,9 +42,10 @@ const auth =
 
     ctx.set('user', user);
 
+    // TODO: Perf impact test
     await i18n.changeLanguage(user.language || 'en');
 
     await next();
   };
 
-export default auth;
+export default isAuthenticated;

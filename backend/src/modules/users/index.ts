@@ -144,6 +144,7 @@ const usersRoutes = app
         thumbnailUrl: organization.thumbnailUrl,
         archived: membership.inactive || false,
         muted: membership.muted || false,
+        membershipId: membership.id,
         role: membership?.role || null,
         type: 'ORGANIZATION' as PageResourceType,
       };
@@ -159,6 +160,7 @@ const usersRoutes = app
         thumbnailUrl: workspace.thumbnailUrl,
         archived: membership.inactive || false,
         muted: membership.muted || false,
+        membershipId: membership.id,
         role: membership?.role || null,
         type: 'WORKSPACE' as PageResourceType,
       };
@@ -174,6 +176,7 @@ const usersRoutes = app
         color: project.color,
         archived: membership.inactive || false,
         muted: membership.muted || false,
+        membershipId: membership.id,
         role: membership?.role || null,
         type: 'PROJECT' as PageResourceType,
       };

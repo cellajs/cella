@@ -50,6 +50,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
   const onLeave = () => {
     leave({
       idOrSlug: organization.id,
+      entityType: 'ORGANIZATION',
       ids: [user.id],
     });
   };
