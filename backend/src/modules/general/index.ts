@@ -42,6 +42,7 @@ import {
   requestActionConfig,
   suggestionsConfig,
 } from './routes';
+import { projectsTable } from '../../db/schema/projects';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -426,6 +427,7 @@ const generalRoutes = app
     const usersResult = [];
     const workspacesResult = [];
     const organizationsResult = [];
+    const projectsResult = [];
 
     if (type === 'USER' || !type) {
       const users = await db
@@ -473,6 +475,20 @@ const generalRoutes = app
       workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'WORKSPACE' as const })));
     }
 
+    if (type === 'PROJECT' || !type) {
+      const projects = await db
+        .select({
+          id: projectsTable.id,
+          slug: projectsTable.slug,
+          name: projectsTable.name,
+        })
+        .from(projectsTable)
+        .where(ilike(projectsTable.name, `%${q}%`))
+        .limit(10);
+
+      projectsResult.push(...projects.map((project) => ({ ...project, type: 'PROJECT' as const })));
+    }
+
     return ctx.json(
       {
         success: true,
@@ -480,7 +496,8 @@ const generalRoutes = app
           users: usersResult,
           organizations: organizationsResult,
           workspaces: workspacesResult,
-          total: usersResult.length + workspacesResult.length + organizationsResult.length,
+          projects: projectsResult,
+          total: usersResult.length + workspacesResult.length + organizationsResult.length + projectsResult.length,
         },
       },
       200,
