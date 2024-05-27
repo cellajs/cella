@@ -64,7 +64,9 @@ export const specificDataSeed = async (progressCallback?: (stage: Stage, count: 
       const workspaceMemberships: InsertMembershipModel[] = membersGroup.map((user) => {
         return {
           id: nanoid(),
+          type: 'WORKSPACE',
           userId: user.id,
+          organizationId: organization.id,
           workspaceId: workspace.id,
           role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
           createdAt: faker.date.past(),
@@ -107,6 +109,9 @@ export const specificDataSeed = async (progressCallback?: (stage: Stage, count: 
           return {
             id: nanoid(),
             userId: user.id,
+            type: 'PROJECT',
+            organizationId: organization.id,
+            workspaceId: workspace.id,
             projectId: project.id,
             role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
             createdAt: faker.date.past(),
