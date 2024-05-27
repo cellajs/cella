@@ -315,7 +315,10 @@ const organizationsRoutes = app
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
-    const membersFilters = [eq(membershipsTable.organizationId, organization.id)];
+    const membersFilters = [
+      eq(membershipsTable.organizationId, organization.id),
+      eq(membershipsTable.type, 'ORGANIZATION'),
+    ];
 
     if (role) {
       membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
