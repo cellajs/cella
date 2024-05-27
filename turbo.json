@@ -26,8 +26,8 @@
     "generate:electric": {},
     "studio": {},
     "seed:user": {},
-    "seed:template": {},
-    "seed:specific": {},
+    "seed:organizations": {},
+    "seed:data": {},
     "check:types": {},
     "prepare:electric": {},
     "prepare:electric:dev": {}

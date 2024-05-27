@@ -3,13 +3,13 @@ import { UniqueEnforcer } from 'enforce-unique';
 import { Argon2id } from 'oslo/password';
 
 import { config } from 'config';
-import { db } from '../../src/db/db';
-import { nanoid } from '../../src/lib/nanoid';
-import type { Stage, Status } from './data';
+import { db } from '../src/db/db';
+import { nanoid } from '../src/lib/nanoid';
+import type { Stage, Status } from './organizations';
 
-import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
-import { type InsertOrganizationModel, organizationsTable } from '../../src/db/schema/organizations';
-import { type InsertUserModel, usersTable } from '../../src/db/schema/users';
+import { membershipsTable, type InsertMembershipModel } from '../src/db/schema/memberships';
+import { organizationsTable, type InsertOrganizationModel } from '../src/db/schema/organizations';
+import { usersTable, type InsertUserModel } from '../src/db/schema/users';
 
 // Seed an admin user to access app first time
 export const userSeed = async () => {
@@ -42,7 +42,7 @@ export const userSeed = async () => {
 };
 
 // Seed organizations with data
-export const templateDataSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
+export const organizationsSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
   if (organizationsInTable.length > 0) {

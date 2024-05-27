@@ -12,7 +12,7 @@ import { type InsertProjectModel, projectsTable } from '../../src/db/schema/proj
 import { UniqueEnforcer } from 'enforce-unique';
 import type { Stage, Status } from './data';
 
-export const specificDataSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
+export const dataSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
   const memberships = await db.select().from(membershipsTable);
 
