@@ -29,7 +29,7 @@ const projectsRoutes = app
     const user = ctx.get('user');
     const { workspaceId, organizationId } = ctx.get('project');
 
-    const slugAvailable = await checkSlugAvailable(slug, 'PROJECT');
+    const slugAvailable = await checkSlugAvailable(slug);
 
     if (!slugAvailable) {
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'PROJECT', { slug });
@@ -196,7 +196,7 @@ const projectsRoutes = app
     const { name, slug, color } = ctx.req.valid('json');
 
     if (slug && slug !== project.slug) {
-      const slugAvailable = await checkSlugAvailable(slug, 'PROJECT');
+      const slugAvailable = await checkSlugAvailable(slug);
 
       if (!slugAvailable) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'PROJECT', { slug });

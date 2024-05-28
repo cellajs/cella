@@ -120,6 +120,12 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
     setSelectedLabels(formValue || []);
   }, [formValue]);
 
+  // watch for changes in the viewValue
+  useEffect(() => {
+    if (mode === 'create') return;
+    setSelectedLabels(viewValue || []);
+  }, [viewValue]);
+
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>

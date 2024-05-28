@@ -15,7 +15,7 @@ import { useWorkspaceStore } from '~/store/workspace';
 import type { DraggableItemData, Project } from '~/types/index.ts';
 import ContentPlaceholder from '../common/content-placeholder';
 import { DropIndicator } from '../common/drop-indicator';
-import type { Task, TaskWithLabels } from '../common/electric/electrify';
+import type { TaskWithLabels } from '../common/electric/electrify';
 import { sheet } from '../common/sheeter/state';
 import { WorkspaceContext } from '../workspaces';
 import { ProjectContext } from './board';
@@ -25,7 +25,7 @@ import { DraggableTaskCard } from './draggable-task-card';
 import { ProjectSettings } from './project-settings';
 
 interface BoardColumnProps {
-  tasks: Task[];
+  tasks: TaskWithLabels[];
   setFocusedTask: (taskId: string) => void;
   focusedTask: string | null;
 }

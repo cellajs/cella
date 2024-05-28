@@ -11,7 +11,7 @@ import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import type { Project, Workspace } from '~/types';
 import ContentPlaceholder from '../common/content-placeholder';
-import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/electric/electrify';
+import { type Label, type TaskWithLabels, type Task, useElectric } from '../common/electric/electrify';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -74,7 +74,7 @@ const WorkspacePage = () => {
         },
       },
     }),
-  ) as { results: TaskWithTaskLabels[] };
+  ) as { results: Task[] };
 
   const { results: labels = [] } = useLiveQuery(
     Electric.db.labels.liveMany({
@@ -125,7 +125,7 @@ const WorkspacePage = () => {
         projects,
         tasks: filteredByViewOptionsTasks.map((task) => ({
           ...task,
-          labels: task.task_labels?.map((tl) => tl.labels || []).flatMap((labels) => labels) || [],
+          labels: labels.filter((label) => task.labels?.includes(label.id)),
         })),
         tasksCount: filteredByViewOptionsTasks.length,
         labels,

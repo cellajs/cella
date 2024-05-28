@@ -1,5 +1,5 @@
 {
-  "id": "71c76e4a-641c-4eb3-895e-5dfb9250591e",
+  "id": "69adf258-2b5c-4606-9ad1-91981786d87f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "6",
   "dialect": "postgresql",
@@ -89,6 +89,18 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "labels": {
+          "name": "labels",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "project_id": {
           "name": "project_id",

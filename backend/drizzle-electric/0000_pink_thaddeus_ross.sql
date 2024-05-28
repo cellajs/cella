@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS "tasks" (
 	"impact" integer,
 	"sort_order" integer,
 	"status" integer NOT NULL,
+	"labels" jsonb,
+	"assigned_to" jsonb,
 	"project_id" varchar NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"created_by" varchar NOT NULL,

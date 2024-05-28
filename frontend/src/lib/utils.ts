@@ -118,7 +118,7 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
 };
 
 // To sort Tasks by its status & order
-export const sortTaskOrder = (task1: Task, task2: Task) => {
+export const sortTaskOrder = (task1: Pick<Task, 'status' | 'sort_order'>, task2: Pick<Task, 'status' | 'sort_order'>) => {
   if (task1.status !== task2.status) return task2.status - task1.status;
   // same status, sort by sort_order
   if (task1.sort_order !== null && task2.sort_order !== null) return task2.sort_order - task1.sort_order;

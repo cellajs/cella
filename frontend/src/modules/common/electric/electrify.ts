@@ -1,18 +1,17 @@
 import { makeElectricContext } from 'electric-sql/react';
 import type { Electric } from '~/generated/client';
-import type { Labels as Label, Tasks as Task } from '~/generated/client';
+import type { Labels as Label, Tasks as BaseTask } from '~/generated/client';
 
 export { schema } from '~/generated/client';
-export type { Task, Electric, Label };
+export type { Electric, Label };
 
-export type TaskWithTaskLabels = Task & {
-  task_labels?: {
-    labels?: Label[];
-  }[];
+export type Task = Omit<BaseTask, 'labels' | 'assignedTo'> & {
+  labels: string[] | null;
+  assignedTo: string[] | null;
 };
 
-export type TaskWithLabels = Task & {
-  labels?: Label[];
+export type TaskWithLabels = Omit<Task, 'labels'> & {
+  labels: Label[];
 };
 
 export const { ElectricProvider, useElectric } = makeElectricContext<Electric>();

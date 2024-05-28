@@ -33,7 +33,7 @@ const organizationsRoutes = app
     const { name, slug } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    const slugAvailable = await checkSlugAvailable(slug, 'ORGANIZATION');
+    const slugAvailable = await checkSlugAvailable(slug);
 
     if (!slugAvailable) {
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
@@ -186,7 +186,7 @@ const organizationsRoutes = app
     } = ctx.req.valid('json');
 
     if (slug && slug !== organization.slug) {
-      const slugAvailable = await checkSlugAvailable(slug, 'ORGANIZATION');
+      const slugAvailable = await checkSlugAvailable(slug);
 
       if (!slugAvailable) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
@@ -379,6 +379,7 @@ const organizationsRoutes = app
     const members = await Promise.all(
       result.map(async ({ user, organizationRole, membershipId, counts }) => ({
         ...user,
+        electricJWTToken: null,
         sessions: [],
         organizationRole,
         membershipId,

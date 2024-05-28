@@ -22,7 +22,7 @@ const workspacesRoutes = app
     const user = ctx.get('user');
     const { organizationId } = ctx.get('workspace');
 
-    const slugAvailable = await checkSlugAvailable(slug, 'WORKSPACE');
+    const slugAvailable = await checkSlugAvailable(slug);
 
     if (!slugAvailable) {
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
@@ -104,7 +104,7 @@ const workspacesRoutes = app
     const { name, slug } = ctx.req.valid('json');
 
     if (slug && slug !== workspace.slug) {
-      const slugAvailable = await checkSlugAvailable(slug, 'WORKSPACE');
+      const slugAvailable = await checkSlugAvailable(slug);
 
       if (!slugAvailable) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
