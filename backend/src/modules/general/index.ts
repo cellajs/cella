@@ -85,9 +85,9 @@ const generalRoutes = app
    * Check if slug is available
    */
   .openapi(checkSlugRouteConfig, async (ctx) => {
-    const { slug, type } = ctx.req.valid('param');
+    const { slug } = ctx.req.valid('param');
 
-    const slugAvailable = await checkSlugAvailable(slug, type);
+    const slugAvailable = await checkSlugAvailable(slug);
 
     return ctx.json(
       {

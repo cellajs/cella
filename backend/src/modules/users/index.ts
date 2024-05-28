@@ -220,7 +220,7 @@ const usersRoutes = app
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
 
     if (slug && slug !== targetUser.slug) {
-      const slugAvailable = await checkSlugAvailable(slug, 'USER');
+      const slugAvailable = await checkSlugAvailable(slug);
 
       if (!slugAvailable) {
         return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
