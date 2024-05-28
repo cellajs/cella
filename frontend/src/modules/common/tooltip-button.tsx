@@ -13,7 +13,7 @@ interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof Toolt
 }
 
 export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>(function TooltipButton(
-  { children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, hideWhenDetached, portal = false, ...props }: TooltipButtonProps,
+  { children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, className, hideWhenDetached, portal = false, ...props }: TooltipButtonProps,
   ref,
 ) {
   if (disabled) {
@@ -22,7 +22,7 @@ export const TooltipButton = forwardRef<HTMLButtonElement, TooltipButtonProps>(f
 
   return (
     <Tooltip>
-      <TooltipTrigger ref={ref} asChild>
+      <TooltipTrigger ref={ref} className={className} asChild>
         {children}
       </TooltipTrigger>
       {portal ? (
