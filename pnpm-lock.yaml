@@ -315,10 +315,10 @@ importers:
         specifier: ^5.37.1
         version: 5.37.1(react@18.3.1)
       '@tanstack/react-router':
-        specifier: 1.34.5
+        specifier: ^1.34.5
         version: 1.34.5(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/router-devtools':
-        specifier: 1.34.5
+        specifier: ^1.34.5
         version: 1.34.5(@tanstack/react-router@1.34.5)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1)
       '@tippyjs/react':
         specifier: ^4.2.6
