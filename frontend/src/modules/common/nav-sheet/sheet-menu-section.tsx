@@ -20,7 +20,7 @@ interface MenuSectionProps {
 export type MenuList = UserMenu[keyof UserMenu]['items'];
 export type MenuItem = MenuList[0];
 
-export const sortById = (a: MenuItem, b: MenuItem, order: string[]) => {
+export const sortMenuItemById = (a: MenuItem, b: MenuItem, order: string[]) => {
   const indexA = order.indexOf(a.id);
   const indexB = order.indexOf(b.id);
   if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
@@ -109,6 +109,7 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
           {!!data.items.length && (
             <>
               <MenuArchiveToggle
+                isSubmenu={isSubmenu}
                 archiveToggleClick={archiveToggleClick}
                 inactiveCount={data.items.filter((i) => i.archived).length}
                 isArchivedVisible={isArchivedVisible}

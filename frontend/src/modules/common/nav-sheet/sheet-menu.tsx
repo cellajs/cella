@@ -98,11 +98,26 @@ export const SheetMenu = memo(() => {
       {!searchTerm && <div className="mt-2">{renderedSections}</div>}
 
       {!searchTerm && (
-        <div className="max-xl:hidden my-4 flex items-center justify-center space-x-2">
-          <Checkbox id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
-          <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
-            {t('common:keep_menu_open')}
-          </label>
+        <div className="flex flex-col">
+          <div className="max-xl:hidden my-4 flex items-center justify-center space-x-2">
+            <Checkbox id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
+            <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
+              {t('common:keep_menu_open')}
+            </label>
+          </div>
+          <div className="max-xl:hidden my-4 flex items-center justify-center space-x-2">
+            <Checkbox
+              id="hideSubmenuProjects"
+              //checked={hideSubmenu}
+              onCheckedChange={() => {
+                console.log('hide projects');
+              }}
+              aria-label={t('common:hide_submenu_projects')}
+            />
+            <label htmlFor="hideSubmenuProjects" className="cursor-pointer select-none text-sm font-medium leading-none">
+              {t('common:hide_submenu_projects')}
+            </label>
+          </div>
         </div>
       )}
     </>
