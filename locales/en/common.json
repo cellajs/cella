@@ -66,7 +66,7 @@
   "delete_account": "Delete account",
   "delete_account.text": "Want to permanently delete your {{appName}} account? Use the button below. Please note that this action is irreversible.",
   "delete_resource": "Delete {{resource}}",
-  "delete_delete_resource_notice.text": "As an admin you can permanently delete the {{resource}} {{name}}. All members will loose access to this {{resource}} and its data. Please note that this action is irreversible.",
+  "delete_resource_notice.text": "As an admin you can permanently delete the {{resource}} {{name}}. All members will loose access to this {{resource}} and its data. Please note that this action is irreversible.",
   "deliver": "Deliver",
   "delivered": "Delivered",
   "decline_request": "Decline request",
