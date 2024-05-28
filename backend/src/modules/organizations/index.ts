@@ -376,6 +376,7 @@ const organizationsRoutes = app
     const members = await Promise.all(
       result.map(async ({ user, organizationRole, counts }) => ({
         ...user,
+        electricJWTToken: null,
         sessions: [],
         organizationRole,
         counts,

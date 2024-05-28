@@ -2,7 +2,6 @@ import { config } from 'config';
 import { ElectricDatabase, electrify } from 'electric-sql/browser';
 import { uniqueTabId } from 'electric-sql/util';
 import { LIB_VERSION } from 'electric-sql/version';
-import * as jose from 'jose';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
@@ -12,19 +11,6 @@ import { ElectricProvider as BaseElectricProvider, type Electric, schema } from 
 
 interface Props {
   children: React.ReactNode;
-}
-
-async function unsignedJWT(userId: string, customClaims?: object) {
-  const textEncoder = new TextEncoder();
-  const jwt = await new jose.SignJWT({ sub: userId, ...customClaims })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setIssuer('urn:example:issuer')
-    .setAudience('urn:example:audience')
-    .setExpirationTime('2h')
-    .sign(textEncoder.encode('secret'));
-
-  return jwt;
 }
 
 function deleteDB(dbName: string) {
@@ -57,8 +43,7 @@ const ElectricProvider = ({ children }: Props) => {
           url: config.electricUrl,
         });
 
-        const token = await unsignedJWT(user?.id || '0');
-        await electric.connect(token);
+        await electric.connect(user?.electricJWTToken || '0');
 
         if (!isMounted) {
           return;

@@ -25,6 +25,8 @@ import {
   updateUserConfig,
 } from './routes';
 
+import { generateElectricJWTToken } from '../../lib/utils'
+
 const app = new CustomHono();
 
 // User endpoints
@@ -50,12 +52,16 @@ const usersRoutes = app
       current: session.id === currentSessionId,
     }));
 
+    // Generate a JWT token for eletric
+    const electricJWTToken = await generateElectricJWTToken({ userId: user.id });
+
     return ctx.json(
       {
         success: true,
         data: {
           ...transformDatabaseUser(user),
           sessions: preparedSessions,
+          electricJWTToken,
           counts: {
             memberships,
           },
@@ -252,6 +258,7 @@ const usersRoutes = app
         success: true,
         data: {
           ...transformDatabaseUser(updatedUser),
+          electricJWTToken: null,
           sessions: [],
           counts: {
             memberships,
@@ -323,6 +330,7 @@ const usersRoutes = app
 
     const users = result.map(({ user, counts }) => ({
       ...transformDatabaseUser(user),
+      electricJWTToken: null,
       sessions: [],
       counts,
     }));
@@ -370,6 +378,7 @@ const usersRoutes = app
         success: true,
         data: {
           ...transformDatabaseUser(targetUser),
+          electricJWTToken: null,
           sessions: [],
           counts: {
             memberships,

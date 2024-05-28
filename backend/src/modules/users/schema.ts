@@ -24,6 +24,7 @@ export const apiUserSchema = createSelectSchema(usersTable, {
   .omit({
     hashedPassword: true,
   })
+  .setKey('electricJWTToken', z.string().nullable())
   .setKey(
     'counts',
     z.object({
