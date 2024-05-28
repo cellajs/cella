@@ -114,7 +114,7 @@ const organizationsRoutes = app
         role: membershipsTable.role,
       })
       .from(membershipsTable)
-      .where(eq(membershipsTable.userId, user.id))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'ORGANIZATION')))
       .as('membership_roles');
 
     const orderColumn = getOrderColumn(

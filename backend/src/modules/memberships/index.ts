@@ -33,10 +33,13 @@ const membershipRoutes = app
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
-    const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', context);
+    // * Check if user has permission to someone elses membership
+    if (user.id !== currentMembership.userId) {
+      const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', context);
 
-    if (!isAllowed && user.role !== 'ADMIN') {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', type, { user: user.id, id: context.id });
+      if (!isAllowed && user.role !== 'ADMIN') {
+        return errorResponse(ctx, 403, 'forbidden', 'warn', type, { user: user.id, id: context.id });
+      }
     }
 
     const [membership] = await db
