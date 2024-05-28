@@ -52,46 +52,14 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
 
     // TODO: Review this
     if (field === 'labels' && Array.isArray(value)) {
-      const currentLabels = task.labels?.map((label) => label.id) || [];
-      const newLabels = value.map((label) => label.id);
-
-      const labelsToRemove = currentLabels.filter((label) => !newLabels.includes(label));
-
-      const labelsToAdd = newLabels.filter((label) => !currentLabels.includes(label));
-
-      if (labelsToRemove.length > 0) {
-        // TODO: Create relation between tasks and labels
-        // db.task_labels.deleteMany({
-        //   where: {
-        //     task_id: task.id,
-        //     label_id: {
-        //       in: labelsToRemove,
-        //     },
-        //   },
-        // });
-      }
-
-      for (const label of labelsToAdd) {
-        const labelData = value.find((l) => l.id === label);
-        db.labels
-          .upsert({
-            where: {
-              id: label,
-            },
-            create: labelData,
-            update: labelData,
-          })
-          .then((_label) => {
-            // TODO: Create relation between tasks and labels
-            // db.task_labels.create({
-            //   data: {
-            //     task_id: task.id,
-            //     label_id: label.id,
-            //   },
-            // });
-          });
-      }
-
+      db.tasks.update({
+        data: {
+          [field]: value.map((label) => label.id),
+        },
+        where: {
+          id: task.id,
+        },
+      });
       return;
     }
 

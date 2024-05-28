@@ -1,4 +1,4 @@
-import { integer, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 
 export const tasksTable = pgTable('tasks', {
@@ -13,6 +13,8 @@ export const tasksTable = pgTable('tasks', {
   // order is a reserved keyword in Postgres, so we need to use a different name
   order: integer('sort_order'),
   status: integer('status').notNull(),
+  labels: jsonb('labels').$type<string[]>(),
+  assignedTo: jsonb('assigned_to').$type<string[]>(),
   projectId: varchar('project_id').notNull(),
   createdAt: timestamp('created_at')
     // .defaultNow()

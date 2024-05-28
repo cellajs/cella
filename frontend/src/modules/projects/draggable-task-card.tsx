@@ -7,7 +7,7 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { getDraggableItemData } from '~/lib/utils';
 import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '../common/drop-indicator';
-import type { Task } from '../common/electric/electrify';
+import type { TaskWithLabels } from '../common/electric/electrify';
 import { TaskContext } from './board-column';
 import { TaskCard } from './task-card';
 
@@ -19,7 +19,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
+  type TaskDraggableItemData = DraggableItemData<TaskWithLabels> & { type: 'task' };
 
   const dragIsOn = () => {
     setClosestEdge(null);
@@ -48,7 +48,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   useEffect(() => {
     const element = taskDragRef.current;
     const dragButton = taskDragButtonRef.current;
-    const data = getDraggableItemData<Task>(task, taskIndex, 'task');
+    const data = getDraggableItemData<TaskWithLabels>(task, taskIndex, 'task');
     if (!element || !dragButton) return;
 
     return combine(
