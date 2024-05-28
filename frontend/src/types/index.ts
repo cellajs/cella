@@ -20,12 +20,12 @@ export enum UserRole {
 export type DraggableItemData<T> = {
   type: string;
   item: T;
+  itemType: PageResourceType;
   dragItem: true;
   index: number;
 };
 
 export interface Page {
-  type: PageResourceType;
   id: string;
   slug: string;
   name: string;

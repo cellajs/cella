@@ -11,33 +11,86 @@ import { arrayMove, getDraggableItemData, getReorderDestinationIndex } from '~/l
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { DraggableItemData, Page } from '~/types';
+import type { DraggableItemData, UserMenu } from '~/types';
 import { DropIndicator } from '../drop-indicator';
+import type { PageResourceType } from 'backend/types/common';
+import { sortById, type MenuItem } from './sheet-menu-section';
 
-interface SheetMenuItemProps {
-  item: Page;
-  sectionName: 'organizations' | 'projects' | 'workspaces';
+interface MenuItemProps {
+  sectionType: 'organizations' | 'workspaces';
   isGlobalDragging: boolean;
   setGlobalDragging: (dragging: boolean) => void;
+  submenu?: boolean;
 }
 
-type PageDraggableItemData = DraggableItemData<Page>;
+type PageDraggableItemData = DraggableItemData<MenuItem>;
 
 const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
   return data.dragItem === true && typeof data.index === 'number';
 };
 
-export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setGlobalDragging }: SheetMenuItemProps) => {
+export const SheetMenuItemsOptions = ({
+  data,
+  shownOption,
+  sectionType,
+  isGlobalDragging,
+  submenu,
+  setGlobalDragging,
+}: MenuItemProps & { data: UserMenu[keyof UserMenu]; shownOption: 'archived' | 'unarchive' }) => {
+  const { t } = useTranslation();
+  const { activeItemsOrder, submenuItemsOrder } = useNavigationStore();
+  if (data.items.length === 0) {
+    return (
+      <li className="py-2 text-muted-foreground text-sm text-light text-center">
+        {t('common:no_resource_yet', { resource: t(sectionType.toLowerCase()).toLowerCase() })}
+      </li>
+    );
+  }
+  const items = data.items
+    .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
+    .sort((a, b) => sortById(a, b, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] || [] : activeItemsOrder[sectionType]));
+
+  return items.map((item) => (
+    <div key={item.id}>
+      <ItemOptions
+        item={item}
+        itemType={data.type}
+        submenu={submenu}
+        sectionType={sectionType}
+        isGlobalDragging={isGlobalDragging}
+        setGlobalDragging={setGlobalDragging}
+      />
+      {item.submenu && !!item.submenu.items.length && (
+        <SheetMenuItemsOptions
+          data={item.submenu}
+          shownOption={shownOption}
+          sectionType="workspaces"
+          submenu
+          isGlobalDragging={isGlobalDragging}
+          setGlobalDragging={setGlobalDragging}
+        />
+      )}
+    </div>
+  ));
+};
+
+const ItemOptions = ({
+  item,
+  itemType,
+  sectionType,
+  isGlobalDragging,
+  submenu,
+  setGlobalDragging,
+}: MenuItemProps & { item: MenuItem; itemType: PageResourceType }) => {
+  const { t } = useTranslation();
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
-  const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [isItemArchived, setItemArchived] = useState(item.archived);
   const [isItemMuted, setItemMuted] = useState(item.muted);
-
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
-  const { activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
+  const { activeItemsOrder, setActiveItemsOrder, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
 
   const itemArchiveStateHandle = () => {
     const itemArchiveStatus = !isItemArchived;
@@ -72,13 +125,11 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
+    const submenuItemIndex = item.workspaceId ? submenuItemsOrder[item.workspaceId].findIndex((el) => el === item.id) : 0;
+    const itemIndex = activeItemsOrder[sectionType].findIndex((el) => el === item.id);
     const element = dragRef.current;
     const dragButton = dragButtonRef.current;
-    const data = getDraggableItemData(
-      item,
-      activeItemsOrder[sectionName].findIndex((el) => el === item.id),
-      'menuItem',
-    );
+    const data = getDraggableItemData(item, submenu ? submenuItemIndex : itemIndex, 'menuItem', itemType);
 
     if (!element || !dragButton) return;
 
@@ -98,8 +149,9 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
       }),
       dropTargetForElements({
         element,
+        // allow drop if both have sum menu or both have not
         canDrop({ source }) {
-          return isPageData(source.data);
+          return isPageData(source.data) && source.data.item.id !== item.id && source.data.itemType === itemType;
         },
         getIsSticky: () => true,
         getData({ input }) {
@@ -120,7 +172,7 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
         onDragLeave: () => onDragOver(),
       }),
     );
-  }, [item, activeItemsOrder[sectionName]]);
+  }, [item, activeItemsOrder[sectionType]]);
 
   // monitoring drop event
   useEffect(() => {
@@ -136,25 +188,36 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
         const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
         const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'vertical');
 
-        const newItemOrder = arrayMove(activeItemsOrder[sectionName], sourceData.index, destination);
-        setActiveItemsOrder(sectionName, newItemOrder);
+        if (submenu && item.workspaceId) {
+          const newItemOrder = arrayMove(submenuItemsOrder[item.workspaceId], sourceData.index, destination);
+          setSubmenuItemsOrder(item.workspaceId, newItemOrder);
+        } else {
+          const newItemOrder = arrayMove(activeItemsOrder[sectionType], sourceData.index, destination);
+          setActiveItemsOrder(sectionType, newItemOrder);
+        }
       },
     });
-  }, [item, activeItemsOrder[sectionName]]);
+  }, [item, activeItemsOrder[sectionType]]);
 
   return (
-    <div className="relative my-1" ref={dragRef}>
+    <div key={item.id} className="relative my-1" ref={dragRef}>
       <motion.div
         layoutId={`sheet-menu-item-${item.id}`}
         ref={dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
-        className={`group flex relative items-center sm:max-w-[18rem] h-14 w-full cursor-pointer justify-start rounded p-0 focus:outline-none
+        className={`group flex relative items-center sm:max-w-[18rem] ${submenu ? 'pl-2 h-12' : 'h-14'} p-0 w-full cursor-pointer justify-start rounded  focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground 
       ${!isItemArchived && 'ring-1'} `}
       >
-        <AvatarWrap className="m-2" type={item.type} id={item.id} name={item.name} url={item.thumbnailUrl} />
-        <div className="truncate grow p-2 pl-2 text-left">
-          <div className="truncate text-foreground/80 leading-5">{item.name}</div>
+        <AvatarWrap
+          className={`${submenu ? 'm-1 h-8 w-8' : 'm-2'}`}
+          type={sectionType.slice(0, -1).toUpperCase() as PageResourceType}
+          id={item.id}
+          name={item.name}
+          url={item.thumbnailUrl}
+        />
+        <div className={`truncate grow ${submenu ? 'p-0' : 'p-2'} pl-2 text-left`}>
+          <div className={`truncate text-foreground/80 ${submenu ? 'text-sm' : 'text-base'} leading-5`}>{item.name}</div>
           <div className={`flex items-center gap-4 mt-1 transition-opacity ${isGlobalDragging ? 'opacity-40 delay-0' : 'delay-500'}`}>
             <Button
               variant="link"
@@ -165,11 +228,11 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
             >
               {isItemArchived ? (
                 <>
-                  <ArchiveRestore size={14} className="mr-1" /> {t('common:restore')}
+                  <ArchiveRestore size={submenu ? 10 : 14} className="mr-1" /> {t('common:restore')}
                 </>
               ) : (
                 <>
-                  <Archive size={14} className="mr-1" />
+                  <Archive size={submenu ? 10 : 14} className="mr-1" />
                   {t('common:archive')}
                 </>
               )}
@@ -206,5 +269,3 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
     </div>
   );
 };
-
-SheetMenuItemOptions.displayName = 'SheetMenuItemOptions';

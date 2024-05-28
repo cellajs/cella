@@ -40,28 +40,32 @@ export const getUsersQuerySchema = paginationQuerySchema.merge(
   }),
 );
 
-export const menuItemSchema = z.array(
+const menuItemSchema = z.object({
+  slug: slugSchema,
+  id: idSchema,
+  createdAt: z.string(),
+  modifiedAt: z.string().nullable(),
+  name: nameSchema,
+  thumbnailUrl: imageUrlSchema.nullish(),
+  archived: z.boolean(),
+  muted: z.boolean(),
+  role: apiMembershipSchema.shape.role.nullable(),
+  membershipId: idSchema,
+  workspaceId: idSchema.optional(),
+});
+
+const menuSchema = z.array(
   z.object({
-    slug: slugSchema,
-    id: idSchema,
-    createdAt: z.string(),
-    modifiedAt: z.string().nullable(),
-    name: nameSchema,
-    thumbnailUrl: imageUrlSchema.nullish(),
-    archived: z.boolean(),
-    muted: z.boolean(),
-    membershipId: idSchema,
-    role: apiMembershipSchema.shape.role.nullable(),
-    type: resourceTypeSchema,
+    ...menuItemSchema.shape,
+    submenu: z.object({ items: z.array(menuItemSchema), canCreate: z.boolean(), type: resourceTypeSchema }).optional(),
   }),
 );
 
-const menuSectionSchema = z.object({ items: menuItemSchema, canCreate: z.boolean() });
+const menuSectionSchema = z.object({ items: menuSchema, canCreate: z.boolean(), type: resourceTypeSchema });
 
 export const userMenuSchema = z.object({
   organizations: menuSectionSchema,
   workspaces: menuSectionSchema,
-  projects: menuSectionSchema,
 });
 
 export const updateUserJsonSchema = createInsertSchema(usersTable, {

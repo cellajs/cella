@@ -152,23 +152,6 @@ const usersRoutes = app
         muted: membership.muted || false,
         membershipId: membership.id,
         role: membership?.role || null,
-        type: 'ORGANIZATION' as PageResourceType,
-      };
-    });
-
-    const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
-      return {
-        slug: workspace.slug,
-        id: workspace.id,
-        createdAt: workspace.createdAt,
-        modifiedAt: workspace.modifiedAt,
-        name: workspace.name,
-        thumbnailUrl: workspace.thumbnailUrl,
-        archived: membership.inactive || false,
-        muted: membership.muted || false,
-        membershipId: membership.id,
-        role: membership?.role || null,
-        type: 'WORKSPACE' as PageResourceType,
       };
     });
 
@@ -184,7 +167,23 @@ const usersRoutes = app
         muted: membership.muted || false,
         membershipId: membership.id,
         role: membership?.role || null,
-        type: 'PROJECT' as PageResourceType,
+        workspaceId: project.workspaceId,
+      };
+    });
+
+    const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
+      return {
+        slug: workspace.slug,
+        id: workspace.id,
+        createdAt: workspace.createdAt,
+        modifiedAt: workspace.modifiedAt,
+        name: workspace.name,
+        thumbnailUrl: workspace.thumbnailUrl,
+        archived: membership.inactive || false,
+        muted: membership.muted || false,
+        membershipId: membership.id,
+        role: membership?.role || null,
+        submenu: { items: projects.filter((p) => p.workspaceId === workspace.id), type: 'PROJECT' as PageResourceType, canCreate: false },
       };
     });
 
@@ -192,9 +191,8 @@ const usersRoutes = app
       {
         success: true,
         data: {
-          organizations: { items: organizations, canCreate: true },
-          workspaces: { items: workspaces, canCreate: true },
-          projects: { items: projects, canCreate: true },
+          organizations: { items: organizations, type: 'ORGANIZATION' as PageResourceType, canCreate: true },
+          workspaces: { items: workspaces, type: 'WORKSPACE' as PageResourceType, canCreate: true },
         },
       },
       200,
