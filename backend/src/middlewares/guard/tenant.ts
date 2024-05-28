@@ -9,20 +9,6 @@ import { errorResponse } from '../../lib/errors';
 import type { Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
-type Entity = OrganizationModel | WorkspaceModel | ProjectModel;
-
-function isOrganization(entity: Entity): entity is OrganizationModel {
-  return !('organizationId' in entity);
-}
-
-function isWorkspace(entity: Entity): entity is WorkspaceModel {
-  return 'organizationId' in entity;
-}
-
-function isProject(entity: Entity): entity is ProjectModel {
-  return 'workspaceId' in entity;
-}
-
 export const getOrganization = async (idOrSlug: string) => {
   const [organization] = await db
     .select()
@@ -76,7 +62,7 @@ const tenant =
     } else if (type === 'PROJECT') {
       entity = await getProject(idOrSlug);
     } else {
-      entity = (await getOrganization(idOrSlug)) || (await getWorkspace(idOrSlug));
+      entity = (await getOrganization(idOrSlug)) || (await getProject(idOrSlug)) || (await getWorkspace(idOrSlug));
     }
 
     if (!entity) {
@@ -85,14 +71,14 @@ const tenant =
     }
 
     let filter: SQL;
-    if (isOrganization(entity)) {
-      ctx.set('organization', entity);
+    if (entity.entity === 'ORGANIZATION') {
+      ctx.set('organization', entity as OrganizationModel);
       filter = eq(membershipsTable.organizationId, entity.id);
-    } else if (isWorkspace(entity)) {
-      ctx.set('workspace', entity);
+    } else if (entity.entity === 'WORKSPACE') {
+      ctx.set('workspace', entity as WorkspaceModel);
       filter = eq(membershipsTable.workspaceId, entity.id);
-    } else if (isProject(entity)) {
-      ctx.set('project', entity);
+    } else if (entity.entity === 'PROJECT') {
+      ctx.set('project', entity as ProjectModel);
       filter = eq(membershipsTable.projectId, entity.id);
     } else {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN', { idOrSlug });

@@ -9,7 +9,7 @@ interface Props {
   control: Control<any>;
   name: string;
   label: string;
-  collection: 'organizations' | 'workspaces' | 'projects';
+  collection: 'organizations' | 'workspaces';
   type: 'ORGANIZATION' | 'WORKSPACE' | 'PROJECT';
   placeholder?: string;
   required?: boolean;

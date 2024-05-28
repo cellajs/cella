@@ -5,6 +5,7 @@ import { usersTable } from '../../db/schema/users';
 
 import type { OrganizationModel } from '../../db/schema/organizations';
 import type { WorkspaceModel } from '../../db/schema/workspaces';
+import type { ProjectModel } from '../../db/schema/projects';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -20,12 +21,14 @@ const membershipRoutes = app
    */
   .openapi(updateMembershipRouteConfig, async (ctx) => {
     const { user: userId } = ctx.req.valid('param');
+
     const { role, inactive, muted } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    let type: 'ORGANIZATION' | 'WORKSPACE';
+    let type: 'ORGANIZATION' | 'WORKSPACE' | 'PROJECT';
     const organization = ctx.get('organization') as OrganizationModel | undefined;
     const workspace = ctx.get('workspace') as WorkspaceModel | undefined;
+    const project = ctx.get('project') as ProjectModel | undefined;
 
     let where: SQL | undefined;
     if (organization) {
@@ -34,6 +37,9 @@ const membershipRoutes = app
     } else if (workspace) {
       type = 'WORKSPACE';
       where = eq(membershipsTable.workspaceId, workspace.id);
+    } else if (project) {
+      type = 'PROJECT';
+      where = eq(membershipsTable.projectId, project.id);
     } else {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN');
     }

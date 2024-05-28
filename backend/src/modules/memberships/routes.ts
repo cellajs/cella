@@ -19,7 +19,7 @@ export const updateMembershipRouteConfig = createRouteConfig({
   summary: 'Update role, muted, or archived status',
   description: `
     Permissions:
-      - Users with role 'ADMIN'
+      - Any Users
   `,
   request: {
     params: updateMembershipParamSchema,

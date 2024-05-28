@@ -22,12 +22,14 @@ interface NavigationState {
   navLoading: boolean;
   setLoading: (status: boolean) => void;
   focusView: boolean;
+  submenuItemsOrder: Record<string, string[]>;
+  setSubmenuItemsOrder: (projectId: string, itemIds: string[]) => void;
   setFocusView: (status: boolean) => void;
   archiveStateToggle: (itemId: string, active: boolean) => void;
 }
 
 const initialMenuState: UserMenu = menuSections.reduce<UserMenu>((acc, section) => {
-  acc[section.id as keyof UserMenu] = { items: [], canCreate: false };
+  acc[section.id as keyof UserMenu] = { items: [], canCreate: false, type: 'UNKNOWN' };
   return acc;
 }, {} as UserMenu);
 
@@ -44,8 +46,8 @@ export const useNavigationStore = create<NavigationState>()(
           activeItemsOrder: {
             organizations: [],
             workspaces: [],
-            projects: [],
           },
+          submenuItemsOrder: {},
           menu: initialMenuState,
           activeSections: {},
           setRecentSearches: (searchValues: string[]) => {
@@ -98,6 +100,11 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeItemsOrder[sectionName] = itemIds;
             });
           },
+          setSubmenuItemsOrder: (workspaceId: string, itemIds: string[]) => {
+            set((state) => {
+              state.submenuItemsOrder[workspaceId] = itemIds;
+            });
+          },
         }),
         {
           version: 1,
@@ -107,6 +114,7 @@ export const useNavigationStore = create<NavigationState>()(
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
             activeItemsOrder: state.activeItemsOrder,
+            submenuItemsOrder: state.submenuItemsOrder,
           }),
           storage: createJSONStorage(() => localStorage),
         },

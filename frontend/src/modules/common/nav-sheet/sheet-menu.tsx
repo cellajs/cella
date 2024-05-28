@@ -11,15 +11,14 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
 import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import ContentPlaceholder from '../content-placeholder';
-import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
 
 export type SectionItem = {
-  id: 'organizations' | 'workspaces' | 'projects';
+  id: 'organizations' | 'workspaces';
   type: PageResourceType;
   label: string;
-  createForm?: React.ReactNode;
+  createForm: React.ReactNode;
   icon?: React.ElementType<LucideProps>;
 };
 
@@ -44,6 +43,7 @@ export type SearchResultsType = typeof initialSearchResults;
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
+
   const isSmallScreen = useBreakpoints('max', 'lg');
 
   const { keepMenuOpen, toggleKeepMenu, setSheet } = useNavigationStore();
@@ -56,12 +56,15 @@ export const SheetMenu = memo(() => {
     if (isSmallScreen || !keepMenuOpen) setSheet(null);
   };
 
-  // Render search results
+  // Render search results REDO
   const searchResultsListItems = useCallback(() => {
     return Object.entries(searchResults).flatMap(([_, items]) => {
-      return items.length > 0
-        ? items.map((item: Page) => <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} searchResults={true} />)
-        : [];
+      console.log(items);
+      return [];
+      //items.length > 0
+      //? items.map((item: Page) => (
+      // <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} searchResults={true} type={'ORGANIZATION'} />
+      //))
     });
   }, [searchResults, menuItemClick]);
 
@@ -69,7 +72,7 @@ export const SheetMenu = memo(() => {
     () =>
       menuSections.map((section) => {
         const menuSection = menu[section.id as keyof UserMenu];
-        return <MenuSection key={section.id} section={section} data={menuSection} menuItemClick={menuItemClick} />;
+        return <MenuSection key={section.id} sectionType={section.id} data={menuSection} createForm={section.createForm} />;
       }),
     [menu, menuItemClick],
   );

@@ -231,7 +231,7 @@ const CommandItemCreate = ({ searchValue, labels, onSelect }: CommandItemCreateP
   // BUG: whenever a space is appended, the Create-Button will not be shown.
   return (
     <CommandItem key={`${searchValue}`} value={`${searchValue}`} className="text-sm m-1 flex justify-center items-center" onSelect={onSelect}>
-      {t('common:create_label')}{' '}
+      {t('common:create_resource', { resource: t('common:label').toLowerCase() })}
       <Badge className="ml-2 px-2 py-0 font-light" variant="plain">
         {searchValue}
       </Badge>
