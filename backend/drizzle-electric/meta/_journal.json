@@ -15,6 +15,13 @@
       "when": 1717573404754,
       "tag": "0001_red_human_robot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1716909971457,
+      "tag": "0002_nostalgic_white_queen",
+      "breakpoints": true
     }
   ]
 }
