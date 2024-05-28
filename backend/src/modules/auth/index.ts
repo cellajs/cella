@@ -82,9 +82,12 @@ const authRoutes = app
       },
     );
 
-    return ctx.json({
-      success: true,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+      },
+      200,
+    );
   })
   /*
    * Verify email
@@ -103,9 +106,12 @@ const authRoutes = app
 
         await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
-        return ctx.json({
-          success: true,
-        }, 200);
+        return ctx.json(
+          {
+            success: true,
+          },
+          200,
+        );
       }
 
       // t('common:error.invalid_token')
@@ -125,9 +131,12 @@ const authRoutes = app
 
         await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
-        return ctx.json({
-          success: true,
-        }, 200);
+        return ctx.json(
+          {
+            success: true,
+          },
+          200,
+        );
       }
 
       return errorResponse(ctx, 400, 'invalid_token', 'warn');
@@ -142,9 +151,12 @@ const authRoutes = app
 
     await setSessionCookie(ctx, user.id, 'email_verification');
 
-    return ctx.json({
-      success: true,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+      },
+      200,
+    );
   })
   /*
    * Send verification email
@@ -185,9 +197,12 @@ const authRoutes = app
 
     logEvent('Verification email sent', { user: user.id });
 
-    return ctx.json({
-      success: true,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+      },
+      200,
+    );
   })
   /*
    * Check if email exists
@@ -197,12 +212,15 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    return ctx.json({
-      success: true,
-      data: {
-        exists: !!user,
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          exists: !!user,
+        },
       },
-    }, 200);
+      200,
+    );
   })
   /*
    * Request reset password email with token
@@ -244,10 +262,13 @@ const authRoutes = app
 
     logEvent('Reset password link sent', { user: user.id });
 
-    return ctx.json({
-      success: true,
-      data: undefined,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+        data: undefined,
+      },
+      200,
+    );
   })
   /*
    * Reset password with token
@@ -281,10 +302,13 @@ const authRoutes = app
 
     await setSessionCookie(ctx, user.id, 'password_reset');
 
-    return ctx.json({
-      success: true,
-      data: undefined,
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+        data: undefined,
+      },
+      200,
+    );
   })
   /*
    * Sign in with email and password
@@ -327,10 +351,13 @@ const authRoutes = app
       await setSessionCookie(ctx, user.id, 'password');
     }
 
-    return ctx.json({
-      success: true,
-      data: transformDatabaseUser(user),
-    }, 200);
+    return ctx.json(
+      {
+        success: true,
+        data: transformDatabaseUser(user),
+      },
+      200,
+    );
   })
   /*
    * Sign out

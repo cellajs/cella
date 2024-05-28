@@ -7,11 +7,11 @@ import { useMeasure } from '~/hooks/use-measure.tsx';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
+import type { User } from '~/types/index.ts';
 import { Kbd } from '../common/kbd.tsx';
 import { Command, CommandInput } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { TaskContext } from './board-column';
-import type { User } from '~/types/index.ts';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';

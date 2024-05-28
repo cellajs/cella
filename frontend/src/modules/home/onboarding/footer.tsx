@@ -29,7 +29,6 @@ const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
   };
 
   useEffect(() => {
-    console.log('stepper footer', activeStep, organization, hasCompletedAllSteps);
     if (activeStep === 2 && organization === null) setOnboarding('completed');
     if (hasCompletedAllSteps) setOnboarding('completed');
   }, [organization, hasCompletedAllSteps]);

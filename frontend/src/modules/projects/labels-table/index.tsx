@@ -85,7 +85,7 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
           onSelectedRowsChange: handleSelectedRowsChange,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:labels'.toLowerCase()) })} />,
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })} />,
         }}
       />
     </div>

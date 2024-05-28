@@ -5,15 +5,15 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
 
 import type { PageResourceType } from 'backend/types/common';
-import { Search, type LucideProps } from 'lucide-react';
+import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
 import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
+import ContentPlaceholder from '../content-placeholder';
 import { SheetMenuItem } from './sheet-menu-item';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
-import ContentPlaceholder from '../content-placeholder';
 
 export type SectionItem = {
   id: 'organizations' | 'workspaces' | 'projects';

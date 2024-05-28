@@ -12,10 +12,10 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import InviteUsers from '~/modules/users/invite-users';
 import { OrganizationContext } from '~/modules/organizations/organization';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import InviteUsers from '~/modules/users/invite-users';
 import { useUserStore } from '~/store/user';
 import type { Member } from '~/types';
 import type { MembersSearch } from '.';
@@ -111,7 +111,7 @@ function Toolbar({
   return (
     <>
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered} id={organization.id}>
           <FilterBarActions>
             {selectedMembers.length > 0 ? (
               <>

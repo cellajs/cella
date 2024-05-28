@@ -1,7 +1,7 @@
 import chalk from 'chalk';
-import { dataSeed } from '.';
 
 import { TaskView, renderWithTask } from 'hanji';
+import { organizationsSeed } from '.';
 
 class Spinner {
   private offset = 0;
@@ -25,7 +25,7 @@ class Spinner {
 
 type ValueOf<T> = T[keyof T];
 export type Status = 'inserting' | 'done';
-export type Stage = 'users' | 'organizations' | 'workspaces' | 'projects' | 'tasks' | 'labels' | 'memberships';
+export type Stage = 'users' | 'organizations' | 'memberships';
 type State = {
   [key in Stage]: {
     count: number;
@@ -47,26 +47,6 @@ export class Progress extends TaskView {
     users: {
       count: 0,
       name: 'users',
-      status: 'inserting',
-    },
-    workspaces: {
-      count: 0,
-      name: 'workspaces',
-      status: 'inserting',
-    },
-    projects: {
-      count: 0,
-      name: 'projects',
-      status: 'inserting',
-    },
-    tasks: {
-      count: 0,
-      name: 'tasks ⚡',
-      status: 'inserting',
-    },
-    labels: {
-      count: 0,
-      name: 'labels ⚡',
       status: 'inserting',
     },
     memberships: {
@@ -118,11 +98,7 @@ export class Progress extends TaskView {
     const spin = this.spinner.value();
     info += this.statusText(spin, this.state.organizations);
     info += this.statusText(spin, this.state.users);
-    info += this.statusText(spin, this.state.workspaces);
-    info += this.statusText(spin, this.state.projects);
     info += this.statusText(spin, this.state.memberships);
-    info += this.statusText(spin, this.state.tasks);
-    info += this.statusText(spin, this.state.labels);
     return info;
   }
 }
@@ -130,7 +106,7 @@ export class Progress extends TaskView {
 const progress = new Progress();
 renderWithTask(
   progress,
-  dataSeed((stage, count, status) => {
+  organizationsSeed((stage, count, status) => {
     progress.update(stage, count, status);
   })
     .catch((error) => {

@@ -4,14 +4,14 @@ import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
-import type { Env } from '../../types/common';
+import type { Env, PageResourceType } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
 // TODO: Refactor to make schema imports more abstract and modular,
 //       so all different schemas don't need to be individually imported/declared.
 import { organizationsTable } from '../../db/schema/organizations';
-import { workspacesTable } from '../../db/schema/workspaces';
 import { projectsTable } from '../../db/schema/projects';
+import { workspacesTable } from '../../db/schema/workspaces';
 
 // Create a map to store tables for different resource types
 export const tables = new Map<string, typeof organizationsTable | typeof workspacesTable | typeof projectsTable>([
@@ -38,7 +38,10 @@ const isAllowedTo =
 
       // Check if user or context is missing
       if (!context || !user) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN', { user: user?.id, id: context?.id || '' });
+        return errorResponse(ctx, 404, 'not_found', 'warn', resourceType.toUpperCase() as PageResourceType, {
+          user: user?.id,
+          id: context?.id || '',
+        });
       }
 
       // Fetch user's memberships from the database
@@ -49,7 +52,7 @@ const isAllowedTo =
 
       // If user is not allowed and not an admin, return a forbidden error
       if (!isAllowed && user.role !== 'ADMIN') {
-        return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id, id: context.id });
+        return errorResponse(ctx, 403, 'forbidden', 'warn', resourceType.toUpperCase() as PageResourceType, { user: user.id, id: context.id });
       }
 
       // Store the user memberships and authorized resource context in the context

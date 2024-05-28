@@ -14,8 +14,7 @@ export const apiMembershipSchema = membershipSchema.extend({
 });
 
 export const updateMembershipParamSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
-  user: idSchema,
+  membership: idSchema,
 });
 
 export const updateMembershipJsonSchema = z.object({
@@ -24,10 +23,8 @@ export const updateMembershipJsonSchema = z.object({
   inactive: z.boolean().optional(),
 });
 
-export const deleteMembersParamSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
-});
-
 export const deleteMembersQuerySchema = z.object({
+  idOrSlug: idSchema.or(slugSchema),
+  entityType: z.union([z.literal('ORGANIZATION'), z.literal('WORKSPACE'), z.literal('PROJECT')]),
   ids: z.union([z.string(), z.array(z.string())]),
 });

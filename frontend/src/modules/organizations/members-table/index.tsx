@@ -64,7 +64,7 @@ export const useUpdateUserInOrganizationMutation = (idOrSlug: string) => {
     }
   >({
     mutationKey: ['members', 'update', idOrSlug],
-    mutationFn: (params) => updateMembership(idOrSlug, params.id, params.role),
+    mutationFn: (params) => updateMembership(params.id, params.role),
     // TODO: Review onSuccess
     onSuccess: (membership) => {
       const member = queryClient.getQueryData<Member>(['users', idOrSlug]);
@@ -136,8 +136,8 @@ const MembersTable = () => {
     // mutate member
     for (const index of indexes) {
       const member = records[index];
-      if (column.key === 'organizationRole') {
-        mutateMember({ id: member.id, role: member.organizationRole });
+      if (column.key === 'membershipId') {
+        mutateMember({ id: member.membershipId, role: member.organizationRole });
       }
     }
 
@@ -200,7 +200,7 @@ const MembersTable = () => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:members'.toLowerCase()) })} />,
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:members').toLowerCase() })} />,
         }}
       />
     </div>

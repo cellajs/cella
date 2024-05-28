@@ -37,8 +37,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
   const { task, focusedTaskId } = useContext(TaskContext);
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
+  const Electric = useElectric();
 
   const handleSelectClick = (value?: string) => {
     if (!value) return;
@@ -198,7 +197,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
                 <>
                   {labels.length === 0 && (
                     <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
-                      {t('common:no_resource_yet', { resource: t('common:labels'.toLowerCase()) })}
+                      {t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })}
                     </CommandEmpty>
                   )}
                   {renderLabels(labels)}

@@ -1,5 +1,5 @@
 import { FilterX, PanelTopClose, Plus, Settings, Tag, Trash, XSquare } from 'lucide-react';
-import { useContext, useMemo } from 'react';
+import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -27,10 +27,9 @@ interface BoardHeaderProps {
 const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps) => {
   const { t } = useTranslation();
 
-  const { workspace, selectedTasks, setSelectedTasks, searchQuery, tasks, setSearchQuery, labels } = useContext(WorkspaceContext);
+  const { tasksCount, workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, labels } = useContext(WorkspaceContext);
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
+  const Electric = useElectric();
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet />, {
@@ -76,18 +75,8 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
     });
   };
 
-  const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    return tasks.filter(
-      (task) =>
-        task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [searchQuery, tasks]);
-
   return (
-    <div className={'flex items-center w-full max-sm:justify-between gap-2'}>
+    <div className={'flex items-center w-full max-sm:justify-between sm:gap-2'}>
       <TableFilterBar
         onResetFilters={() => {
           setSearchQuery('');
@@ -136,9 +125,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
                 <span className="ml-1">{t('common:clear')}</span>
               </Button>
             </TooltipButton>
-            <div className="w-max mx-2">
-              {`${filteredTasks.length} ${filteredTasks.length > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}
-            </div>
+            <div className="w-max mx-2">{`${tasksCount} ${tasksCount > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}</div>
           </div>
         )}
         {!!selectedTasks.length && (
@@ -158,7 +145,10 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
             </TooltipButton>
           </div>
         )}
-        <FilterBarContent className="max-sm:ml-1 w-full">
+
+        <div className="grow sm:hidden" />
+
+        <FilterBarContent className="w-full">
           <BoardSearch />
         </FilterBarContent>
       </TableFilterBar>

@@ -1,20 +1,15 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
-import type { Task } from '~/modules/common/electric/electrify';
-import type { Project } from '~/types';
 import { WorkspaceContext } from '../../workspaces';
 import { type TaskRow, useColumns } from './columns';
-
-interface ProjectContextValue {
-  tasks: Task[];
-  project: Project;
-}
-
-export const ProjectContext = createContext({} as ProjectContextValue);
+import { Bird } from 'lucide-react';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { useTranslation } from 'react-i18next';
 
 export default function TasksTable() {
+  const { t } = useTranslation();
   const { tasks, searchQuery, selectedTasks, setSelectedTasks } = useContext(WorkspaceContext);
   const [rows, setRows] = useState<TaskRow[]>([]);
 
@@ -59,6 +54,7 @@ export default function TasksTable() {
           onSelectedRowsChange: handleSelectedRowsChange,
           rowKeyGetter: (row) => row.id,
           enableVirtualization: false,
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
         }}
       />
     </div>

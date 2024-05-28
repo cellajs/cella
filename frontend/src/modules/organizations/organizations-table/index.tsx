@@ -1,7 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { updateMembership } from '~/api/memberships';
 import { getOrganizations } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
@@ -20,6 +19,7 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { invite } from '~/api/general';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -81,7 +81,7 @@ const OrganizationsTable = () => {
     for (const index of indexes) {
       const organization = records[index];
       if (column.key === 'userRole' && organization.userRole) {
-        updateMembership(organization.id, user.id, organization.userRole)
+        invite({idOrSlug: organization.id, emails: [user.email], role: organization.userRole })
           .then(() => {
             toast.success(t('common:success.your_role_updated'));
           })
@@ -146,7 +146,7 @@ const OrganizationsTable = () => {
           sortColumns,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: (
-            <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations'.toLowerCase()) })} />
+            <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
           ),
         }}
       />

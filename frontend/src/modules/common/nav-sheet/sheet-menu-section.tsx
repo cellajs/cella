@@ -182,7 +182,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({ section, data, menuIte
                   <Button
                     disabled={!archived.length && !unarchive.length}
                     className="w-12 px-3"
-                    variant="secondary"
+                    variant={`${globalDragging ? 'plain' : 'secondary'}`}
                     size="icon"
                     onClick={() => toggleOptionsView(!optionsView)}
                     asChild

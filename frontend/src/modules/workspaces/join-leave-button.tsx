@@ -50,6 +50,7 @@ const WorkspaceJoinLeaveButton = ({ workspace }: Props) => {
   const onLeave = () => {
     leave({
       idOrSlug: workspace.id,
+      entityType: 'WORKSPACE',
       ids: [user.id],
     });
   };

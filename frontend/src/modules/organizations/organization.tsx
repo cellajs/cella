@@ -32,10 +32,8 @@ const OrganizationPage = () => {
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
 
-  const tabs = organizationTabs.filter((el) => {
-    if (organization.userRole !== 'ADMIN') return el.id !== 'requests';
-    return true;
-  });
+  const tabs = organization.userRole === 'ADMIN' ? organizationTabs : [organizationTabs[0]];
+
   return (
     <OrganizationContext.Provider value={{ organization }}>
       <PageHeader

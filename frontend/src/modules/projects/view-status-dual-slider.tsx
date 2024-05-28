@@ -1,9 +1,9 @@
-import { useEffect, useState, forwardRef } from 'react';
-import { Slider, SliderThumb, SliderTrack, SliderRange } from '@radix-ui/react-slider';
-import { cn } from '~/lib/utils';
+import { Slider, SliderRange, SliderThumb, SliderTrack } from '@radix-ui/react-slider';
 import { cva } from 'class-variance-authority';
-import { Button } from '../ui/button';
+import { forwardRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '~/lib/utils';
+import { Button } from '../ui/button';
 
 type TaskStatuses = 'iced' | 'unstarted' | 'started' | 'finished' | 'delivered' | 'reviewed' | 'accepted' | null | undefined;
 export type SliderProps = {

@@ -11,9 +11,10 @@
     "build:sourcemaps": "NODE_ENV=production tsup && pnpm run sentry:sourcemaps",
     "build:dev": "NODE_ENV=development tsup",
     "check:types": "tsc",
-    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/src/index.cjs\"",
+    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.cjs\"",
     "seed:user": "tsx seed/user.ts",
-    "seed:data": "tsx seed/data.ts",
+    "seed:organizations": "tsx seed/organizations.ts",
+    "seed:data": "tsx seed/data/data.ts",
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
     "generate:electric": "drizzle-kit generate --config drizzle.config.electric.ts",
     "push": "drizzle-kit push",
@@ -76,9 +77,7 @@
     "tsx": "^4.10.5"
   },
   "babel": {
-    "presets": [
-      "@babel/preset-typescript"
-    ]
+    "presets": ["@babel/preset-typescript"]
   },
   "exports": {
     "./*": "./src/*.ts"

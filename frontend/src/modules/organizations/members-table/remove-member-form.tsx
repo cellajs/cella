@@ -30,6 +30,7 @@ const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }
   const onRemoveMember = () => {
     removeMembersFromResource({
       idOrSlug: organization.id,
+      entityType: 'ORGANIZATION',
       ids: members.map((member) => member.id),
     });
   };

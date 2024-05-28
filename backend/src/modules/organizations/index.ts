@@ -5,6 +5,7 @@ import { organizationsTable } from '../../db/schema/organizations';
 import { usersTable } from '../../db/schema/users';
 
 import { config } from 'config';
+import { requestsTable } from '../../db/schema/requests';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSE } from '../../lib/sse';
@@ -20,7 +21,6 @@ import {
   getUsersByOrganizationIdRouteConfig,
   updateOrganizationRouteConfig,
 } from './routes';
-import { requestsTable } from '../../db/schema/requests';
 
 const app = new CustomHono();
 
@@ -114,7 +114,7 @@ const organizationsRoutes = app
         role: membershipsTable.role,
       })
       .from(membershipsTable)
-      .where(eq(membershipsTable.userId, user.id))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'ORGANIZATION')))
       .as('membership_roles');
 
     const orderColumn = getOrderColumn(
@@ -315,7 +315,10 @@ const organizationsRoutes = app
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
-    const membersFilters = [eq(membershipsTable.organizationId, organization.id)];
+    const membersFilters = [
+      eq(membershipsTable.organizationId, organization.id),
+      eq(membershipsTable.type, 'ORGANIZATION'),
+    ];
 
     if (role) {
       membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
@@ -324,6 +327,7 @@ const organizationsRoutes = app
     const roles = db
       .select({
         userId: membershipsTable.userId,
+        id: membershipsTable.id,
         role: membershipsTable.role,
       })
       .from(membershipsTable)
@@ -347,6 +351,7 @@ const organizationsRoutes = app
         createdAt: usersTable.createdAt,
         lastSeenAt: usersTable.lastSeenAt,
         organizationRole: roles.role,
+        membershipId: roles.id,
       },
       sort,
       usersTable.id,
@@ -357,6 +362,7 @@ const organizationsRoutes = app
       .select({
         user: usersTable,
         organizationRole: roles.role,
+        membershipId: roles.id,
         counts: {
           memberships: membershipCount.memberships,
         },
@@ -371,10 +377,11 @@ const organizationsRoutes = app
     const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
 
     const members = await Promise.all(
-      result.map(async ({ user, organizationRole, counts }) => ({
+      result.map(async ({ user, organizationRole, membershipId, counts }) => ({
         ...user,
         sessions: [],
         organizationRole,
+        membershipId,
         counts,
       })),
     );
@@ -394,18 +401,6 @@ const organizationsRoutes = app
    *  Get access requests
    */
   .openapi(accessRequestsConfig, async (ctx) => {
-    console.log(22);
-
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-    console.log(22);
-
-    console.log(22);
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const organization = ctx.get('organization');
 

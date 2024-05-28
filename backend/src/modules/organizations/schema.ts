@@ -11,12 +11,13 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '../../lib/common-schemas';
+import { actionReqTableSchema } from '../general/schema';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
-import { actionReqTableSchema } from '../general/schema';
 
 export const apiOrganizationUserSchema = z.object({
   ...apiUserSchema.shape,
+  membershipId: idSchema,
   organizationRole: apiMembershipSchema.shape.role,
 });
 

@@ -1,25 +1,28 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
 import { useLiveQuery } from 'electric-sql/react';
-import { type Dispatch, type SetStateAction, createContext, useEffect, useState } from 'react';
+import { Bird, Redo } from 'lucide-react';
+import { type Dispatch, type SetStateAction, createContext, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getProjects } from '~/api/projects';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import BoardHeader from '~/modules/projects/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import type { Project, Workspace } from '~/types';
+import ContentPlaceholder from '../common/content-placeholder';
 import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/electric/electrify';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
-import { Bird, Redo } from 'lucide-react';
-import ContentPlaceholder from '../common/content-placeholder';
-import { useTranslation } from 'react-i18next';
+import { useWorkspaceStore } from '~/store/workspace';
+import { taskStatuses } from '../projects/select-status';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
   projects: Project[];
   tasks: TaskWithLabels[];
   labels: Label[];
+  tasksCount: number;
   selectedTasks: string[];
   setSelectedTasks: Dispatch<SetStateAction<string[]>>;
   searchQuery: string;
@@ -51,10 +54,12 @@ const WorkspacePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showPageHeader, setShowPageHeader] = useState(false);
 
+  const { workspaces, getWorkspaceViewOptions } = useWorkspaceStore();
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
 
+  const [viewOptions, setViewOptions] = useState(getWorkspaceViewOptions(workspace.id));
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
@@ -81,24 +86,48 @@ const WorkspacePage = () => {
     }),
   );
 
-  useEffect(() => {
-    setSearchQuery('');
-  }, [workspace]);
-
   const togglePageHeader = () => {
     if (!showPageHeader) setFocusView(false);
     setShowPageHeader(!showPageHeader);
   };
+
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery) return tasks;
+    return tasks.filter(
+      (task) =>
+        task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [searchQuery, tasks]);
+
+  const filteredByViewOptionsTasks = useMemo(() => {
+    return filteredTasks.filter(
+      (task) =>
+        viewOptions.type.includes(task.type) &&
+        (task.status === 0 || task.status === 6 || viewOptions.status.includes(taskStatuses[task.status].status)),
+      // add to task label status and filter by status of label too
+    );
+  }, [viewOptions, filteredTasks]);
+
+  useEffect(() => {
+    setSearchQuery('');
+  }, [workspace]);
+
+  useEffect(() => {
+    setViewOptions(workspaces[workspace.id].viewOptions);
+  }, [workspaces[workspace.id].viewOptions]);
 
   return (
     <WorkspaceContext.Provider
       value={{
         workspace,
         projects,
-        tasks: tasks.map((task) => ({
+        tasks: filteredByViewOptionsTasks.map((task) => ({
           ...task,
           labels: task.task_labels?.map((tl) => tl.labels || []).flatMap((labels) => labels) || [],
         })),
+        tasksCount: filteredByViewOptionsTasks.length,
         labels,
         selectedTasks,
         setSelectedTasks,
@@ -124,7 +153,7 @@ const WorkspacePage = () => {
             <ContentPlaceholder
               className=" h-[calc(100vh-64px-64px)] md:h-[calc(100vh-88px)]"
               Icon={Bird}
-              title={t('common:no_resource_yet', { resource: t('common:projects'.toLowerCase()) })}
+              title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })}
               text={
                 <>
                   <Redo

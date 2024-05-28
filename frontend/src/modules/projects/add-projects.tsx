@@ -7,7 +7,6 @@ import useFocusById from '~/hooks/use-focus-by-id';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import type { Organization } from '~/types';
 import { dialog } from '../common/dialoger/state';
-import { DialogTitle } from '../ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { workspaceQueryOptions } from '../workspaces';
 import { CreateProjectForm } from './create-project-form';
@@ -35,15 +34,15 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
 
     dialog.update('add-projects', {
       title: mode[0] ? (
-        <DialogTitle className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
             {t('common:add_projects')}
           </button>
           <ChevronRight className="opacity-50" size={16} />
           <span>{mode[0] === 'select' ? t('common:select') : t('common:create')}</span>
-        </DialogTitle>
+        </div>
       ) : (
-        <DialogTitle>{t('common:add_projects')}</DialogTitle>
+        t('common:add_projects')
       ),
     });
   };

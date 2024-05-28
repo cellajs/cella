@@ -8,7 +8,6 @@ import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { DownAlert } from '../down-alert';
-import ElectricProvider from '../electric';
 
 // Lazy load Tanstack dev tools in development
 const TanStackRouterDevtools =
@@ -25,14 +24,16 @@ const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gle
 
 function Root() {
   return (
-    <ElectricProvider>
       <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
         <ScrollRestoration />
         <Outlet />
-        <Toaster richColors />
         <Dialoger />
         <Sheeter />
+
         <ReloadPrompt />
+
+        <Toaster richColors />
+
         <Suspense fallback={null}>
           <TanStackRouterDevtools />
         </Suspense>
@@ -42,7 +43,6 @@ function Root() {
           <GleapSupport />
         </Suspense>
       </TooltipProvider>
-    </ElectricProvider>
   );
 }
 

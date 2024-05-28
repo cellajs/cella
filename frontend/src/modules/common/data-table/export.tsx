@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import router from '~/lib/router';
-import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { type Theme, useThemeStore } from '~/store/theme';
@@ -34,11 +33,11 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows, 
 
   return (
     <DropdownMenu>
-      <TooltipButton toolTipContent={t('common:export_pdf_csv')}>
+      <TooltipButton className={className} toolTipContent={t('common:export_pdf_csv')}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className={cn('flex max-xs:hidden', className)}
+            className="flex max-xs:hidden"
             onClick={() => {
               toast.error(t('common:error.image_upload_failed'));
             }}

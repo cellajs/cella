@@ -11,7 +11,6 @@ import { arrayMove, getDraggableItemData, getReorderDestinationIndex } from '~/l
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { useUserStore } from '~/store/user';
 import type { DraggableItemData, Page } from '~/types';
 import { DropIndicator } from '../drop-indicator';
 
@@ -37,14 +36,13 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
   const [isItemArchived, setItemArchived] = useState(item.archived);
   const [isItemMuted, setItemMuted] = useState(item.muted);
 
-  const user = useUserStore((state) => state.user);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
 
   const itemArchiveStateHandle = () => {
     const itemArchiveStatus = !isItemArchived;
 
-    updateMembership(item.id, user.id, item.role ? item.role : undefined, itemArchiveStatus, isItemMuted)
+    updateMembership(item.membershipId, item.role ? item.role : undefined, itemArchiveStatus, isItemMuted)
       .then(() => {
         archiveStateToggle(item.id, itemArchiveStatus);
         toast.success(itemArchiveStatus ? t('common:success.archived_organization') : t('common:success.restore_organization'));
@@ -58,7 +56,7 @@ export const SheetMenuItemOptions = ({ item, sectionName, isGlobalDragging, setG
   const itemMuteStateHandle = () => {
     const itemMuteStatus = !isItemMuted;
 
-    updateMembership(item.id, user.id, item.role ? item.role : undefined, isItemArchived, itemMuteStatus)
+    updateMembership(item.membershipId, item.role ? item.role : undefined, isItemArchived, itemMuteStatus)
       .then(() => {
         toast.success(itemMuteStatus ? t('common:success.mute_organization') : t('common:success.unmute_organization'));
         setItemMuted(itemMuteStatus);
