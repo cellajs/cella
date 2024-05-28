@@ -13,6 +13,8 @@ export const tasksTable = pgTable('tasks', {
   // order is a reserved keyword in Postgres, so we need to use a different name
   order: integer('sort_order'),
   status: integer('status').notNull(),
+  organizationId: varchar('organization_id').notNull(),
+  workspaceId: varchar('workspace_id').notNull(),
   projectId: varchar('project_id').notNull(),
   createdAt: timestamp('created_at')
     // .defaultNow()

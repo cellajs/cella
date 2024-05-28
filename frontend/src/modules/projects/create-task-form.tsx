@@ -137,6 +137,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           //       }
           //     : undefined,
           status: values.status,
+          organization_id: project.organizationId,
+          workspace_id: project.workspaceId,
           project_id: project.id,
           created_at: new Date(),
           created_by: user.id,
@@ -249,6 +251,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           }}
         /> */}
 
+        {
+          // TODO: Bind the entire project object instead of individual IDs
+        }
         <FormField
           control={form.control}
           name="labels"
@@ -256,7 +261,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels labels={labels} projectId={project.id} mode="create" changeLabels={onChange} />
+                  <SetLabels labels={labels} projectId={project.id} organizationId={project.organizationId} workspaceId={project.workspaceId} mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
