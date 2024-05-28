@@ -8,13 +8,13 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, userParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAuthenticated, systemGuard } from '../../middlewares/guard';
+import { isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
 import { apiUserSchema, getUsersQuerySchema, updateUserJsonSchema, userMenuSchema } from './schema';
 
 export const meRouteConfig = createRouteConfig({
   method: 'get',
   path: '/me',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['users'],
   summary: 'Get the current user',
   responses: {
@@ -33,7 +33,7 @@ export const meRouteConfig = createRouteConfig({
 export const getUserSessionsConfig = createRouteConfig({
   method: 'get',
   path: '/me/sessions',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['users'],
   summary: 'Get the sessions of the current user',
   responses: {
@@ -59,7 +59,7 @@ export const getUserSessionsConfig = createRouteConfig({
 export const getUsersConfig = createRouteConfig({
   method: 'get',
   path: '/users',
-  guard: systemGuard,
+  guard: [isAuthenticated, isSystemAdmin],
   tags: ['users'],
   summary: 'Get list of users',
   description: `
@@ -85,7 +85,7 @@ export const getUsersConfig = createRouteConfig({
 export const updateUserConfig = createRouteConfig({
   method: 'put',
   path: '/users/{user}',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['users'],
   summary: 'Update a user',
   description: `
@@ -119,7 +119,7 @@ export const updateUserConfig = createRouteConfig({
 export const getUserByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/users/{user}',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['users'],
   summary: 'Get user by id or slug',
   description: `
@@ -146,7 +146,7 @@ export const getUserByIdOrSlugRouteConfig = createRouteConfig({
 export const getUserMenuConfig = createRouteConfig({
   method: 'get',
   path: '/menu',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['users'],
   summary: 'Get the menu of a current user',
   description: `
@@ -168,7 +168,7 @@ export const getUserMenuConfig = createRouteConfig({
 export const terminateSessionsConfig = createRouteConfig({
   method: 'delete',
   path: '/me/sessions',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['users'],
   summary: 'Terminate sessions',
   request: {
@@ -190,7 +190,7 @@ export const terminateSessionsConfig = createRouteConfig({
 export const deleteUsersRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/users',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['users'],
   summary: 'Delete users',
   request: {

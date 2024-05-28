@@ -15,9 +15,6 @@ export interface UploadParams {
 export enum UserRole {
   ADMIN = 'Admin',
   MEMBER = 'Member',
-  // USER = 'User',
-  ASSIGNED = 'Assigned',
-  CREATED = 'Created',
 }
 
 export type DraggableItemData<T> = {
@@ -35,6 +32,7 @@ export interface Page {
   thumbnailUrl?: string | null;
   archived: boolean;
   muted: boolean;
+  membershipId: string;
   role: keyof typeof UserRole | null;
 }
 
@@ -57,7 +55,7 @@ export type Member = Extract<
 >['data']['items'][number];
 
 export type Membership = Extract<
-  InferResponseType<(typeof membershipClient)[':idOrSlug']['memberships'][':user']['$put']>,
+  InferResponseType<(typeof membershipClient)['memberships'][':membership']['$put']>,
   { data: unknown }
 >['data'];
 

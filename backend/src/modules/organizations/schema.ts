@@ -17,6 +17,7 @@ import { apiUserSchema } from '../users/schema';
 
 export const apiOrganizationUserSchema = z.object({
   ...apiUserSchema.shape,
+  membershipId: idSchema,
   organizationRole: apiMembershipSchema.shape.role,
 });
 

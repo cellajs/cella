@@ -50,6 +50,7 @@ export const menuItemSchema = z.array(
     thumbnailUrl: imageUrlSchema.nullish(),
     archived: z.boolean(),
     muted: z.boolean(),
+    membershipId: idSchema,
     role: apiMembershipSchema.shape.role.nullable(),
     type: resourceTypeSchema,
   }),
