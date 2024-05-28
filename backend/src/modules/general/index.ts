@@ -24,7 +24,6 @@ import { i18n } from '../../lib/i18n';
 import { sendSlackNotification } from '../../lib/notification';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSE } from '../../lib/sse';
-import auth from '../../middlewares/guard/auth';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { apiMembershipSchema } from '../memberships/schema';
@@ -43,6 +42,8 @@ import {
   suggestionsConfig,
 } from './routes';
 import { projectsTable } from '../../db/schema/projects';
+import { isAuthenticated } from '../../middlewares/guard';
+import { extractEntity } from '../../lib/extract-entity';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -150,14 +151,18 @@ const generalRoutes = app
    * Invite users to the system or members to an organization
    */
   .openapi(inviteRouteConfig, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('query');
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
-    const organization = ctx.get('organization') as OrganizationModel | undefined;
+
+    // Refactor
+    const organization = idOrSlug ? await extractEntity('ORGANIZATION', idOrSlug) as OrganizationModel : null
 
     if (!organization && user.role !== 'ADMIN') {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
 
+    // Check to invite on organization level
     if (organization && !checkRole(apiMembershipSchema, role)) {
       return errorResponse(ctx, 400, 'invalid_role', 'warn');
     }
@@ -629,7 +634,7 @@ const generalRoutes = app
       200,
     );
   })
-  .get('/sse', auth(), async (ctx) => {
+  .get('/sse', isAuthenticated, async (ctx) => {
     const user = ctx.get('user');
     return streamSSE(ctx, async (stream) => {
       streams.set(user.id, stream);

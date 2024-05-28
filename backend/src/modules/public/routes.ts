@@ -1,12 +1,12 @@
 import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
-import { publicGuard } from '../../middlewares/guard';
+import { isPublicAccess } from '../../middlewares/guard';
 import { apiPublicCountsSchema } from './schema';
 
 export const getPublicCountsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/public/counts',
-  guard: publicGuard,
+  guard: isPublicAccess,
   tags: ['public'],
   summary: 'Get public counts',
   responses: {

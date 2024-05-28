@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { resourceTypeSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { anyTenantGuard, isAuthenticated, publicGuard, systemGuard } from '../../middlewares/guard';
+import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteJsonSchema,
@@ -19,7 +19,7 @@ import {
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
   path: '/upload-token',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['general'],
   summary: 'Get upload token',
   description:
@@ -54,7 +54,7 @@ export const getUploadTokenRouteConfig = createRouteConfig({
 export const checkSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/check-slug/{type}/{slug}',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['general'],
   summary: 'Check if a slug is available',
   description: 'This endpoint is used to check if a slug is available. It is used for organizations and users.',
@@ -80,7 +80,7 @@ export const checkSlugRouteConfig = createRouteConfig({
 export const checkTokenRouteConfig = createRouteConfig({
   method: 'get',
   path: '/check-token/{token}',
-  guard: publicGuard,
+  guard: isPublicAccess,
   tags: ['general'],
   summary: 'Token validation check',
   description: 'This endpoint is used to check if a token is still valid. It is used for reset password and invitation tokens.',
@@ -105,7 +105,7 @@ export const checkTokenRouteConfig = createRouteConfig({
 export const inviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/invite',
-  guard: anyTenantGuard('idOrSlug', ['ADMIN']),
+  guard: isAuthenticated,
   middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
   summary: 'Invite a new member(user) to organization or system',
@@ -140,7 +140,7 @@ export const inviteRouteConfig = createRouteConfig({
 export const acceptInviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/accept-invite/{token}',
-  guard: publicGuard,
+  guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
   summary: 'Accept invitation',
@@ -178,7 +178,7 @@ export const acceptInviteRouteConfig = createRouteConfig({
 export const paddleWebhookRouteConfig = createRouteConfig({
   method: 'post',
   path: '/paddle-webhook',
-  guard: publicGuard,
+  guard: isPublicAccess,
   tags: ['general'],
   summary: 'Paddle webhook',
   description: 'Paddle webhook for subscription events',
@@ -207,7 +207,7 @@ export const paddleWebhookRouteConfig = createRouteConfig({
 export const suggestionsConfig = createRouteConfig({
   method: 'get',
   path: '/suggestions',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['general'],
   summary: 'Get search suggestions',
   request: {
@@ -232,7 +232,7 @@ export const suggestionsConfig = createRouteConfig({
 export const requestActionConfig = createRouteConfig({
   method: 'post',
   path: '/action-request',
-  guard: publicGuard,
+  guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['general'],
   summary: 'Create access-request',
@@ -261,7 +261,7 @@ export const requestActionConfig = createRouteConfig({
 export const actionRequestsConfig = createRouteConfig({
   method: 'get',
   path: '/requests',
-  guard: systemGuard,
+  guard: [isAuthenticated, isSystemAdmin],
   tags: ['general'],
   summary: 'Get requests',
   request: {

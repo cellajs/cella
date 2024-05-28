@@ -52,7 +52,7 @@ const isAllowedTo =
 
       // If user is not allowed and not an admin, return a forbidden error
       if (!isAllowed && user.role !== 'ADMIN') {
-        return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id, id: context.id });
+        return errorResponse(ctx, 403, 'forbidden', 'warn', resourceType.toUpperCase() as PageResourceType, { user: user.id, id: context.id });
       }
 
       // Store the user memberships and authorized resource context in the context
