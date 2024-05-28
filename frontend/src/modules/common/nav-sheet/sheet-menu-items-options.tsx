@@ -15,12 +15,13 @@ import { useUserStore } from '~/store/user';
 import type { DraggableItemData, UserMenu } from '~/types';
 import { DropIndicator } from '../drop-indicator';
 import type { PageResourceType } from 'backend/types/common';
-import { sortById, type MenuItem } from './sheet-menu-section';
+import { sortMenuItemById, type MenuItem } from './sheet-menu-section';
+import { MenuArchiveToggle } from './menu-archive-toggle';
 
 interface MenuItemProps {
   sectionType: 'organizations' | 'workspaces';
-  isGlobalDragging: boolean;
-  setGlobalDragging: (dragging: boolean) => void;
+  isGlobalDragging?: boolean;
+  setGlobalDragging?: (dragging: boolean) => void;
   submenu?: boolean;
 }
 
@@ -39,6 +40,7 @@ export const SheetMenuItemsOptions = ({
   setGlobalDragging,
 }: MenuItemProps & { data: UserMenu[keyof UserMenu]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();
+  const [isSubmenuArchivedVisible, setSubmenuArchivedVisible] = useState(false);
   const { activeItemsOrder, submenuItemsOrder } = useNavigationStore();
   if (data.items.length === 0) {
     return (
@@ -49,7 +51,7 @@ export const SheetMenuItemsOptions = ({
   }
   const items = data.items
     .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
-    .sort((a, b) => sortById(a, b, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] || [] : activeItemsOrder[sectionType]));
+    .sort((a, b) => sortMenuItemById(a, b, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] || [] : activeItemsOrder[sectionType]));
 
   return items.map((item) => (
     <div key={item.id}>
@@ -62,14 +64,23 @@ export const SheetMenuItemsOptions = ({
         setGlobalDragging={setGlobalDragging}
       />
       {item.submenu && !!item.submenu.items.length && (
-        <SheetMenuItemsOptions
-          data={item.submenu}
-          shownOption={shownOption}
-          sectionType="workspaces"
-          submenu
-          isGlobalDragging={isGlobalDragging}
-          setGlobalDragging={setGlobalDragging}
-        />
+        <>
+          <SheetMenuItemsOptions
+            data={item.submenu}
+            shownOption={shownOption}
+            sectionType="workspaces"
+            submenu
+            isGlobalDragging={isGlobalDragging}
+            setGlobalDragging={setGlobalDragging}
+          />
+          <MenuArchiveToggle
+            archiveToggleClick={() => setSubmenuArchivedVisible(!isSubmenuArchivedVisible)}
+            inactiveCount={item.submenu.items.filter((i) => i.archived).length}
+            isArchivedVisible={isSubmenuArchivedVisible}
+            isSubmenu
+          />
+          {isSubmenuArchivedVisible && <SheetMenuItemsOptions data={item.submenu} shownOption="archived" sectionType="workspaces" submenu />}
+        </>
       )}
     </div>
   ));
@@ -99,7 +110,7 @@ const ItemOptions = ({
 
     updateMembership(item.id, user.id, item.role ? item.role : undefined, itemArchiveStatus, isItemMuted)
       .then(() => {
-        archiveStateToggle(item.id, itemArchiveStatus);
+        archiveStateToggle(item.id, itemArchiveStatus, submenu);
         toast.success(itemArchiveStatus ? t('common:success.archived_organization') : t('common:success.restore_organization'));
         setItemArchived(itemArchiveStatus);
       })
@@ -142,11 +153,11 @@ const ItemOptions = ({
         getInitialData: () => data,
         onDragStart: () => {
           setDragging(true);
-          setGlobalDragging(true);
+          if (setGlobalDragging) setGlobalDragging(true);
         },
         onDrop: () => {
           setDragging(false);
-          setGlobalDragging(false);
+          if (setGlobalDragging) setGlobalDragging(false);
         },
       }),
       dropTargetForElements({
@@ -207,7 +218,7 @@ const ItemOptions = ({
         layoutId={`sheet-menu-item-${item.id}`}
         ref={dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
-        className={`group flex relative items-center sm:max-w-[18rem] ${submenu ? 'pl-2 h-12' : 'h-14'} p-0 w-full cursor-pointer justify-start rounded  focus:outline-none
+        className={`group flex relative items-center sm:max-w-[18rem] ${submenu ? 'pl-2 h-12 w-11/12' : 'h-14 w-full'} p-0  cursor-pointer justify-start rounded  focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground 
       ${!isItemArchived && 'ring-1'} `}
       >

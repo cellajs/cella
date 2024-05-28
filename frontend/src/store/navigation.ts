@@ -25,7 +25,7 @@ interface NavigationState {
   submenuItemsOrder: Record<string, string[]>;
   setSubmenuItemsOrder: (projectId: string, itemIds: string[]) => void;
   setFocusView: (status: boolean) => void;
-  archiveStateToggle: (itemId: string, active: boolean) => void;
+  archiveStateToggle: (itemId: string, active: boolean, submenu?: boolean) => void;
 }
 
 const initialMenuState: UserMenu = menuSections.reduce<UserMenu>((acc, section) => {
@@ -86,12 +86,14 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = sectionState;
             });
           },
-          archiveStateToggle: (itemId: string, active: boolean) => {
+          archiveStateToggle: (itemId: string, active: boolean, submenu?: boolean) => {
             set((state) => {
-              for (const sectionKey of Object.keys(state.menu)) {
-                const section = state.menu[sectionKey as keyof UserMenu];
-                const itemIndex = section.items.findIndex((item) => item.id === itemId);
-                if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = active;
+              if (!submenu) {
+                for (const sectionKey of Object.keys(state.menu)) {
+                  const section = state.menu[sectionKey as keyof UserMenu];
+                  const itemIndex = section.items.findIndex((item) => item.id === itemId);
+                  if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = active;
+                }
               }
             });
           },
