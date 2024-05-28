@@ -286,8 +286,13 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               <SelectImpact viewValue={task.impact as TaskImpact} mode="edit" changeTaskImpact={(newImpact) => handleChange('impact', newImpact)} />
             )}
 
+            {
+              // TODO: Bind the entire task object instead of individual IDs
+            }
             <SetLabels
               labels={labels}
+              organizationId={task.organization_id}
+              workspaceId={task.workspace_id}
               projectId={task.project_id}
               changeLabels={(newLabels) => handleChange('labels', newLabels)}
               viewValue={task.labels}

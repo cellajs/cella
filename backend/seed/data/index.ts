@@ -130,6 +130,8 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
 
           return {
             id: nanoid(),
+            organizationId: organization.id,
+            workspaceId: workspace.id,
             projectId: project.id,
             summary: name,
             slug: faker.helpers.slugify(name).toLowerCase(),
@@ -160,6 +162,8 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
 
           return {
             id: nanoid(),
+            organizationId: organization.id,
+            workspaceId: workspace.id,
             projectId: project.id,
             name,
             color: faker.internet.color(),
