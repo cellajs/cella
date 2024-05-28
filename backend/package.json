@@ -6,7 +6,7 @@
     "node": ">=20.9.0 <21.0.0"
   },
   "scripts": {
-    "start": "tsx dist/src/index.cjs",
+    "start": "tsx dist/index.cjs",
     "build": "NODE_ENV=production tsup",
     "build:sourcemaps": "NODE_ENV=production tsup && pnpm run sentry:sourcemaps",
     "build:dev": "NODE_ENV=development tsup",
