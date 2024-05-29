@@ -137,6 +137,15 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             minWidth: 180,
           },
           {
+            key: 'lastSeenAt',
+            name: t('common:last_seen_at'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => dateShort(row.lastSeenAt),
+            minWidth: 180,
+          },
+          {
             key: 'membershipCount',
             name: t('common:memberships'),
             sortable: false,
