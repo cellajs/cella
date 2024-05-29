@@ -67,7 +67,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
       onSuccess: (data) => {
         callback?.(data);
         if (isDialog) dialog.remove();
-        toast.success(t('common:success.update_workspace'));
+        toast.success(t('common:success.update_resource', { resource: t('common:workspace') }));
       },
     });
   };

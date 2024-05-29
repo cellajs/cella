@@ -84,13 +84,21 @@ const membershipRoutes = app
         userRole: role,
         type: 'ORGANIZATION',
       });
-    } else {
+    } else if (type === 'WORKSPACE') {
       sendSSE(membership.userId, 'update_workspace', {
         ...workspace,
         muted,
         archived: inactive,
         userRole: role,
         type: 'WORKSPACE',
+      });
+    } else if (type === 'PROJECT') {
+      sendSSE(membership.userId, 'update_project', {
+        ...project,
+        muted,
+        archived: inactive,
+        userRole: role,
+        type: 'PROJECT',
       });
     }
 
