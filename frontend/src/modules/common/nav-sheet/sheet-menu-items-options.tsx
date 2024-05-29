@@ -6,7 +6,7 @@ import { Archive, ArchiveRestore, Bell, BellOff, GripVertical } from 'lucide-rea
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { updateMembership } from '~/api/memberships';
+import { updateMembership as baseUpdateMembership, type UpdateMenuOptionsProp } from '~/api/memberships';
 import { arrayMove, getDraggableItemData, getReorderDestinationIndex } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
@@ -16,6 +16,7 @@ import { DropIndicator } from '../drop-indicator';
 import type { PageResourceType } from 'backend/types/common';
 import { sortMenuItemById, type MenuItem } from './sheet-menu-section';
 import { MenuArchiveToggle } from './menu-archive-toggle';
+import { useMutation } from '~/hooks/use-mutations';
 
 interface MenuItemProps {
   sectionType: 'organizations' | 'workspaces';
@@ -103,38 +104,41 @@ const ItemOptions = ({
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { activeItemsOrder, setActiveItemsOrder, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
 
-  const itemArchiveStateHandle = () => {
-    const itemArchiveStatus = !isItemArchived;
-    updateMembership(item.membershipId, item.role ? item.role : undefined, itemArchiveStatus, isItemMuted)
-      .then(() => {
-        archiveStateToggle(item.id, itemArchiveStatus, item.workspaceId);
+  const { mutate: updateMembership } = useMutation({
+    mutationFn: (values: UpdateMenuOptionsProp) => {
+      return baseUpdateMembership(values);
+    },
+    onSuccess: (data) => {
+      if (data.inactive !== isItemArchived) {
+        const archived = data.inactive || !isItemArchived;
+        archiveStateToggle(item.id, archived, item.workspaceId);
         toast.success(
-          itemArchiveStatus
+          data.inactive
             ? t('common:success.archived_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) })
             : t('common:success.restore_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) }),
         );
-        setItemArchived(itemArchiveStatus);
-      })
-      .catch(() => {
-        toast.error(t('common:error.error'));
-      });
-  };
-
-  const itemMuteStateHandle = () => {
-    const itemMuteStatus = !isItemMuted;
-
-    updateMembership(item.membershipId, item.role ? item.role : undefined, isItemArchived, itemMuteStatus)
-      .then(() => {
+        setItemArchived(archived);
+      }
+      if (data.muted !== isItemMuted) {
+        const muted = data.muted || !isItemMuted;
         toast.success(
-          itemMuteStatus
+          muted
             ? t('common:success.mute_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) })
             : t('common:success.unmute_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) }),
         );
-        setItemMuted(itemMuteStatus);
-      })
-      .catch(() => {
-        toast.error(t('common:error.error'));
-      });
+        setItemMuted(muted);
+      }
+    },
+    onError: () => {
+      toast.error(t('common:error.error'));
+    },
+  });
+
+  const itemOptionStatesHandle = (state: 'archive' | 'mute') => {
+    const archive = state === 'archive' ? !isItemArchived : isItemArchived;
+    const muted = state === 'mute' ? !isItemMuted : isItemMuted;
+    const role = item.role ? item.role : undefined;
+    updateMembership({ membershipId: item.membershipId, role, archive, muted });
   };
 
   const onDragOver = () => {
@@ -242,7 +246,7 @@ const ItemOptions = ({
               size="sm"
               className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover:opacity-100"
               aria-label="Toggle archive"
-              onClick={itemArchiveStateHandle}
+              onClick={() => itemOptionStatesHandle('archive')}
             >
               {isItemArchived ? (
                 <>
@@ -260,7 +264,7 @@ const ItemOptions = ({
               size="sm"
               className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover:opacity-100"
               aria-label="Toggle mute"
-              onClick={itemMuteStateHandle}
+              onClick={() => itemOptionStatesHandle('mute')}
             >
               {isItemMuted ? (
                 <>

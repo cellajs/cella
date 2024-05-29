@@ -64,7 +64,7 @@ export const useUpdateUserInOrganizationMutation = (idOrSlug: string) => {
     }
   >({
     mutationKey: ['members', 'update', idOrSlug],
-    mutationFn: (params) => updateMembership(params.id, params.role),
+    mutationFn: (params) => updateMembership({ membershipId: params.id, role: params.role }),
     // TODO: Review onSuccess
     onSuccess: (membership) => {
       const member = queryClient.getQueryData<Member>(['users', idOrSlug]);

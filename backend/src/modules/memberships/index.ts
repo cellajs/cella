@@ -52,7 +52,7 @@ const membershipRoutes = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    const sseEvent = type === 'ORGANIZATION' ? 'update_organization' : 'update_workspace';
+    const sseEvent = `update_${type.toLowerCase()}`;
     const sseData = {
       ...context,
       muted,
