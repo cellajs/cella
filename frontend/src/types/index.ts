@@ -28,16 +28,6 @@ export type DraggableItemData<T> = {
   index: number;
 };
 
-export interface Page {
-  id: string;
-  slug: string;
-  name: string;
-  thumbnailUrl?: string | null;
-  archived: boolean;
-  muted: boolean;
-  role: keyof typeof UserRole | null;
-}
-
 export type User = Extract<InferResponseType<(typeof usersClient.me)['$get']>, { data: unknown }>['data'];
 
 export type Organization = Extract<InferResponseType<(typeof organizationsClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
