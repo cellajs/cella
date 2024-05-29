@@ -62,7 +62,7 @@ export const SheetMenuItemsOptions = ({
         isGlobalDragging={isGlobalDragging}
         setGlobalDragging={setGlobalDragging}
       />
-      {item.submenu && !!item.submenu.items.length && !hideSubmenu && (
+      {!item.archived && item.submenu && !!item.submenu.items.length && !hideSubmenu && (
         <>
           <SheetMenuItemsOptions
             data={item.submenu}
