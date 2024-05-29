@@ -40,7 +40,7 @@ export const SheetMenuItemsOptions = ({
 }: MenuItemProps & { data: UserMenu[keyof UserMenu]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();
   const [isSubmenuArchivedVisible, setSubmenuArchivedVisible] = useState(false);
-  const { activeItemsOrder, submenuItemsOrder } = useNavigationStore();
+  const { activeItemsOrder, hideSubmenu, submenuItemsOrder } = useNavigationStore();
   if (data.items.length === 0) {
     return (
       <li className="py-2 text-muted-foreground text-sm text-light text-center">
@@ -50,7 +50,7 @@ export const SheetMenuItemsOptions = ({
   }
   const items = data.items
     .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
-    .sort((a, b) => sortMenuItemById(a, b, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] || [] : activeItemsOrder[sectionType]));
+    .sort((a, b) => sortMenuItemById(a, b, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
 
   return items.map((item) => (
     <div key={item.id}>
@@ -62,7 +62,7 @@ export const SheetMenuItemsOptions = ({
         isGlobalDragging={isGlobalDragging}
         setGlobalDragging={setGlobalDragging}
       />
-      {item.submenu && !!item.submenu.items.length && (
+      {item.submenu && !!item.submenu.items.length && !hideSubmenu && (
         <>
           <SheetMenuItemsOptions
             data={item.submenu}
@@ -105,11 +105,14 @@ const ItemOptions = ({
 
   const itemArchiveStateHandle = () => {
     const itemArchiveStatus = !isItemArchived;
-
     updateMembership(item.membershipId, item.role ? item.role : undefined, itemArchiveStatus, isItemMuted)
       .then(() => {
-        archiveStateToggle(item.id, itemArchiveStatus, submenu);
-        toast.success(itemArchiveStatus ? t('common:success.archived_organization') : t('common:success.restore_organization'));
+        archiveStateToggle(item.id, itemArchiveStatus, item.workspaceId);
+        toast.success(
+          itemArchiveStatus
+            ? t('common:success.archived_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) })
+            : t('common:success.restore_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) }),
+        );
         setItemArchived(itemArchiveStatus);
       })
       .catch(() => {
@@ -122,7 +125,11 @@ const ItemOptions = ({
 
     updateMembership(item.membershipId, item.role ? item.role : undefined, isItemArchived, itemMuteStatus)
       .then(() => {
-        toast.success(itemMuteStatus ? t('common:success.mute_organization') : t('common:success.unmute_organization'));
+        toast.success(
+          itemMuteStatus
+            ? t('common:success.mute_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) })
+            : t('common:success.unmute_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) }),
+        );
         setItemMuted(itemMuteStatus);
       })
       .catch(() => {
@@ -239,11 +246,11 @@ const ItemOptions = ({
             >
               {isItemArchived ? (
                 <>
-                  <ArchiveRestore size={submenu ? 10 : 14} className="mr-1" /> {t('common:restore')}
+                  <ArchiveRestore size={submenu ? 12 : 14} className="mr-1" /> {t('common:restore')}
                 </>
               ) : (
                 <>
-                  <Archive size={submenu ? 10 : 14} className="mr-1" />
+                  <Archive size={submenu ? 12 : 14} className="mr-1" />
                   {t('common:archive')}
                 </>
               )}
@@ -257,12 +264,12 @@ const ItemOptions = ({
             >
               {isItemMuted ? (
                 <>
-                  <Bell size={14} className="mr-1" />
+                  <Bell size={submenu ? 12 : 14} className="mr-1" />
                   {t('common:unmute')}
                 </>
               ) : (
                 <>
-                  <BellOff size={14} className="mr-1" />
+                  <BellOff size={submenu ? 12 : 14} className="mr-1" />
                   {t('common:mute')}
                 </>
               )}
@@ -272,11 +279,11 @@ const ItemOptions = ({
 
         {!isItemArchived && (
           <Button size="xs" variant="none" ref={dragButtonRef} className="p-2 mr-1 cursor-grab focus-visible:ring-inset focus-visible:ring-offset-0">
-            <GripVertical size={16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
+            <GripVertical size={submenu ? 14 : 16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
           </Button>
         )}
       </motion.div>
-      {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} gap="2px" />}
+      {closestEdge && <DropIndicator className={`h-[2px]  ${submenu ? 'w-11/12' : 'w-full'}`} edge={closestEdge} gap="2px" />}
     </div>
   );
 };

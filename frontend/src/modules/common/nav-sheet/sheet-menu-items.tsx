@@ -22,74 +22,71 @@ interface SheetMenuItemsProps {
 export const SheetMenuItems = ({ data, shownOption, sectionType, createDialog, className, submenu, searchResults }: SheetMenuItemsProps) => {
   const { t } = useTranslation();
   const isSmallScreen = useBreakpoints('max', 'lg');
-  const { keepMenuOpen, setSheet } = useNavigationStore();
-  const { activeItemsOrder, submenuItemsOrder } = useNavigationStore();
+  const { keepMenuOpen, hideSubmenu, setSheet, activeItemsOrder, submenuItemsOrder } = useNavigationStore();
 
-  const items = data.items
-    .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
+  const filteredItems = data.items
+    .filter((item) => (shownOption === 'archived' ? item.archived : !item.archived))
     .sort((a, b) => sortMenuItemById(a, b, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
 
-  const menuItemClick = () => {
+  const handleClick = () => {
     if (isSmallScreen || !keepMenuOpen) setSheet(null);
   };
 
-  if (data.items.length === 0) {
-    return (
-      <>
-        {data.canCreate && createDialog ? (
-          <div className="flex items-center">
-            <Button className="w-full" variant="ghost" onClick={createDialog}>
-              <Plus size={14} />
-              <span className="ml-1 text-sm text-light">
-                {t('common:create_your_first')} {t(data.type.toLowerCase()).toLowerCase()}
-              </span>
-            </Button>
-          </div>
-        ) : (
-          <li className="py-2 text-muted-foreground text-sm text-light text-center">
-            {t('common:no_resource_yet', { resource: t(data.type.toLowerCase()).toLowerCase() })}
-          </li>
-        )}
-      </>
+  const renderNoItems = () =>
+    data.canCreate && createDialog ? (
+      <div className="flex items-center">
+        <Button className="w-full" variant="ghost" onClick={createDialog}>
+          <Plus size={14} />
+          <span className="ml-1 text-sm text-light">
+            {t('common:create_your_first')} {t(data.type.toLowerCase()).toLowerCase()}
+          </span>
+        </Button>
+      </div>
+    ) : (
+      <li className="py-2 text-muted-foreground text-sm text-light text-center">
+        {t('common:no_resource_yet', { resource: t(data.type.toLowerCase()).toLowerCase() })}
+      </li>
     );
-  }
 
-  return items.map((item) => (
-    <div key={item.id}>
-      <Link
-        resetScroll={false}
-        className={cn(
-          `group ${
-            submenu ? 'my-2 ml-2 h-12 w-11/12' : 'my-1 h-14 w-full'
-          }  flex cursor-pointer items-start justify-start space-x-2 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
-          className,
-        )}
-        onClick={menuItemClick}
-        aria-label={item.name}
-        to={data.type === 'ORGANIZATION' ? '/$idOrSlug' : `/${data.type.toLowerCase()}/$idOrSlug`}
-        params={{ idOrSlug: item.slug }}
-        activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
-      >
-        <AvatarWrap
-          className={`${submenu ? 'm-1 h-8 w-8' : 'm-2'} items-center`}
-          type={data.type}
-          id={item.id}
-          name={item.name}
-          url={item.thumbnailUrl}
-        />
-        <div className={`truncate ${submenu ? '' : 'p-2 pl-0'} flex flex-col justify-center text-left`}>
-          <div className={`max-sm:pt-2 truncate ${submenu ? 'text-sm' : 'text-base'} leading-5`}>{item.name}</div>
-          <div className={`max-sm:hidden text-muted-foreground ${submenu ? 'text-xs' : 'text-sm'} font-light`}>
-            {searchResults && (
-              <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(data.type.toLowerCase())}</span>
-            )}
-            {item.role && <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">{UserRole[item.role]}</span>}
+  const renderItems = () =>
+    filteredItems.map((item) => (
+      <div key={item.id}>
+        <Link
+          resetScroll={false}
+          className={cn(
+            `group ${
+              submenu ? 'my-2 ml-2 h-12 w-11/12' : 'my-1 h-14 w-full'
+            } flex cursor-pointer items-start justify-start space-x-2 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
+            className,
+          )}
+          onClick={handleClick}
+          aria-label={item.name}
+          to={data.type === 'ORGANIZATION' ? '/$idOrSlug' : `/${data.type.toLowerCase()}/$idOrSlug`}
+          params={{ idOrSlug: item.slug }}
+          activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
+        >
+          <AvatarWrap
+            className={`${submenu ? 'm-1 h-8 w-8' : 'm-2'} items-center`}
+            type={data.type}
+            id={item.id}
+            name={item.name}
+            url={item.thumbnailUrl}
+          />
+          <div className={`truncate ${submenu ? '' : 'p-2 pl-0'} flex flex-col justify-center text-left`}>
+            <div className={`max-sm:pt-2 truncate ${submenu ? 'text-sm' : 'text-base'} leading-5`}>{item.name}</div>
+            <div className={`max-sm:hidden text-muted-foreground ${submenu ? 'text-xs' : 'text-sm'} font-light`}>
+              {searchResults && (
+                <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(data.type.toLowerCase())}</span>
+              )}
+              {item.role && <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">{UserRole[item.role]}</span>}
+            </div>
           </div>
-        </div>
-      </Link>
-      {item.submenu && !!item.submenu.items.length && (
-        <SheetMenuItems data={item.submenu} sectionType={'workspaces'} shownOption="unarchive" submenu={true} />
-      )}
-    </div>
-  ));
+        </Link>
+        {!item.archived && item.submenu && !!item.submenu.items.length && !hideSubmenu && (
+          <SheetMenuItems data={item.submenu} sectionType="workspaces" shownOption="unarchive" submenu />
+        )}
+      </div>
+    ));
+
+  return data.items.length === 0 ? renderNoItems() : renderItems();
 };

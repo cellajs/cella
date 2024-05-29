@@ -26,7 +26,6 @@ export type SectionItem = {
 export const menuSections: SectionItem[] = [
   { id: 'organizations', type: 'ORGANIZATION', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
   { id: 'workspaces', type: 'WORKSPACE', label: 'common:workspaces', createForm: <CreateWorkspaceForm dialog /> },
-  // { id: 'projects', type: 'PROJECT', label: 'common:projects' },
 ];
 
 // Set search results to empty array for each menu type
@@ -46,7 +45,7 @@ export const SheetMenu = memo(() => {
 
   const isSmallScreen = useBreakpoints('max', 'lg');
 
-  const { keepMenuOpen, toggleKeepMenu, setSheet } = useNavigationStore();
+  const { keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu, setSheet } = useNavigationStore();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<SearchResultsType>(initialSearchResults);
@@ -68,14 +67,12 @@ export const SheetMenu = memo(() => {
     });
   }, [searchResults, menuItemClick]);
 
-  const renderedSections = useMemo(
-    () =>
-      menuSections.map((section) => {
-        const menuSection = menu[section.id as keyof UserMenu];
-        return <MenuSection key={section.id} sectionType={section.id} data={menuSection} createForm={section.createForm} />;
-      }),
-    [menu, menuItemClick],
-  );
+  const renderedSections = useMemo(() => {
+    return menuSections.map((section) => {
+      const menuSection = menu[section.id as keyof UserMenu];
+      return <MenuSection key={section.id} sectionType={section.id} data={menuSection} createForm={section.createForm} />;
+    });
+  }, [menu, menuItemClick]);
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {
     setSearchResults(results);
@@ -106,16 +103,9 @@ export const SheetMenu = memo(() => {
             </label>
           </div>
           <div className="max-xl:hidden my-4 flex items-center justify-center space-x-2">
-            <Checkbox
-              id="hideSubmenuProjects"
-              //checked={hideSubmenu}
-              onCheckedChange={() => {
-                console.log('hide projects');
-              }}
-              aria-label={t('common:hide_submenu_projects')}
-            />
-            <label htmlFor="hideSubmenuProjects" className="cursor-pointer select-none text-sm font-medium leading-none">
-              {t('common:hide_submenu_projects')}
+            <Checkbox id="hideSubmenuProjects" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} aria-label={t('common:hide_submenus')} />
+            <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
+              {t('common:hide_submenus')}
             </label>
           </div>
         </div>

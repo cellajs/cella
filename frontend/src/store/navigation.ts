@@ -16,6 +16,8 @@ interface NavigationState {
   menu: UserMenu;
   keepMenuOpen: boolean;
   toggleKeepMenu: (status: boolean) => void;
+  hideSubmenu: boolean;
+  toggleHideSubmenu: (status: boolean) => void;
   activeSections: Record<string, boolean>;
   toggleSection: (section: string) => void;
   setSection: (section: string, sectionState: boolean) => void;
@@ -25,7 +27,7 @@ interface NavigationState {
   submenuItemsOrder: Record<string, string[]>;
   setSubmenuItemsOrder: (projectId: string, itemIds: string[]) => void;
   setFocusView: (status: boolean) => void;
-  archiveStateToggle: (itemId: string, active: boolean, submenu?: boolean) => void;
+  archiveStateToggle: (itemId: string, active: boolean, workspaceId?: string) => void;
 }
 
 const initialMenuState: UserMenu = menuSections.reduce<UserMenu>((acc, section) => {
@@ -41,6 +43,7 @@ export const useNavigationStore = create<NavigationState>()(
           recentSearches: [] as string[],
           activeSheet: null as NavItem | null,
           keepMenuOpen: false as boolean,
+          hideSubmenu: false as boolean,
           navLoading: false as boolean,
           focusView: false as boolean,
           activeItemsOrder: {
@@ -65,6 +68,11 @@ export const useNavigationStore = create<NavigationState>()(
               state.keepMenuOpen = status;
             });
           },
+          toggleHideSubmenu: (status) => {
+            set((state) => {
+              state.hideSubmenu = status;
+            });
+          },
           setLoading: (status) => {
             set((state) => {
               state.navLoading = status;
@@ -86,14 +94,20 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = sectionState;
             });
           },
-          archiveStateToggle: (itemId: string, active: boolean, submenu?: boolean) => {
+          archiveStateToggle: (itemId: string, active: boolean, workspaceId?: string) => {
             set((state) => {
-              if (!submenu) {
+              if (!workspaceId) {
                 for (const sectionKey of Object.keys(state.menu)) {
                   const section = state.menu[sectionKey as keyof UserMenu];
                   const itemIndex = section.items.findIndex((item) => item.id === itemId);
                   if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = active;
                 }
+              } else {
+                const section = state.menu.workspaces;
+                const workspace = section.items.find((item) => item.id === workspaceId);
+                if (!workspace || !workspace.submenu) return;
+                const itemIndex = workspace.submenu.items.findIndex((item) => item.id === itemId);
+                if (itemIndex && itemIndex !== -1) workspace.submenu.items[itemIndex].archived = active;
               }
             });
           },
@@ -113,6 +127,7 @@ export const useNavigationStore = create<NavigationState>()(
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
             keepMenuOpen: state.keepMenuOpen,
+            hideSubmenu: state.hideSubmenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
             activeItemsOrder: state.activeItemsOrder,
