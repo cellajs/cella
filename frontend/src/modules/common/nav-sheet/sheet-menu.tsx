@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import type { Page, UserMenu } from '~/types';
+import type { UserMenu } from '~/types';
 
 import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
@@ -7,12 +7,12 @@ import { useNavigationStore } from '~/store/navigation';
 import type { PageResourceType } from 'backend/types/common';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
 import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import ContentPlaceholder from '../content-placeholder';
 import { SheetMenuSearch } from './sheet-menu-search';
-import { MenuSection } from './sheet-menu-section';
+import { type MenuItem, type MenuList, MenuSection } from './sheet-menu-section';
+import { SheetMenuItem } from './sheet-menu-items';
 
 export type SectionItem = {
   id: 'organizations' | 'workspaces';
@@ -34,7 +34,7 @@ export const initialSearchResults = menuSections.reduce(
     acc[section.id] = [];
     return acc;
   },
-  {} as Record<string, Page[]>,
+  {} as Record<string, MenuList>,
 );
 
 export type SearchResultsType = typeof initialSearchResults;
@@ -42,37 +42,27 @@ export type SearchResultsType = typeof initialSearchResults;
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
-
-  const isSmallScreen = useBreakpoints('max', 'lg');
-
-  const { keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu, setSheet } = useNavigationStore();
+  const { keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<SearchResultsType>(initialSearchResults);
 
-  // Handle menu item click
-  const menuItemClick = () => {
-    if (isSmallScreen || !keepMenuOpen) setSheet(null);
-  };
-
-  // Render search results REDO
   const searchResultsListItems = useCallback(() => {
-    return Object.entries(searchResults).flatMap(([_, items]) => {
-      console.log(items);
-      return [];
-      //items.length > 0
-      //? items.map((item: Page) => (
-      // <SheetMenuItem key={item.id} item={item} menuItemClick={menuItemClick} searchResults={true} type={'ORGANIZATION'} />
-      //))
+    return Object.entries(searchResults).flatMap(([type, items]) => {
+      return items.length > 0
+        ? items.map((item: MenuItem) => (
+            <SheetMenuItem key={item.id} searchResults item={item} type={type.slice(0, -1).toUpperCase() as PageResourceType} />
+          ))
+        : [];
     });
-  }, [searchResults, menuItemClick]);
+  }, [searchResults]);
 
   const renderedSections = useMemo(() => {
     return menuSections.map((section) => {
       const menuSection = menu[section.id as keyof UserMenu];
       return <MenuSection key={section.id} sectionType={section.id} data={menuSection} createForm={section.createForm} />;
     });
-  }, [menu, menuItemClick]);
+  }, [menu]);
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {
     setSearchResults(results);
