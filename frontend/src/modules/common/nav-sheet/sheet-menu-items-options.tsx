@@ -7,14 +7,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { updateMembership as baseUpdateMembership, type UpdateMenuOptionsProp } from '~/api/memberships';
-import { arrayMove, getDraggableItemData, getReorderDestinationIndex } from '~/lib/utils';
+import { arrayMove, getDraggableItemData, getReorderDestinationIndex, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { DraggableItemData, UserMenu } from '~/types';
 import { DropIndicator } from '../drop-indicator';
 import type { PageResourceType } from 'backend/types/common';
-import { sortMenuItemById, type MenuItem } from './sheet-menu-section';
+import type { MenuItem } from './sheet-menu-section';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import { useMutation } from '~/hooks/use-mutations';
 
@@ -51,7 +51,7 @@ export const SheetMenuItemsOptions = ({
   }
   const items = data.items
     .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
-    .sort((a, b) => sortMenuItemById(a, b, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
+    .sort((a, b) => sortById(a.id, b.id, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
 
   return items.map((item) => (
     <div key={item.id}>

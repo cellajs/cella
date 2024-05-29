@@ -25,6 +25,7 @@ import { DraggableTaskCard } from './draggable-task-card';
 import { ProjectSettings } from './project-settings';
 import { useQuery } from '@tanstack/react-query';
 import { getProjectMembers } from '~/api/projects';
+import { useNavigationStore } from '~/store/navigation';
 
 interface BoardColumnProps {
   tasks: TaskWithLabels[];
@@ -43,7 +44,7 @@ export const TaskContext = createContext({} as TaskContextValue);
 
 type ProjectDraggableItemData = DraggableItemData<Project> & { type: 'column' };
 
-const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
+export const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
   return data.dragItem === true && typeof data.index === 'number';
 };
 
@@ -61,6 +62,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const { project, focusedProject, setFocusedProjectIndex } = useContext(ProjectContext);
+  const { submenuItemsOrder } = useNavigationStore();
   const { searchQuery, projects } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[project.workspaceId]?.columns.find((el) => el.columnId === project.id);
@@ -117,14 +119,6 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const dragStarted = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
     setIsDraggedOver(true);
     if (!isProjectData(source.data) || !isProjectData(self.data) || source.data.item.id === project.id) return;
-    if (source.data.index === self.data.index - 1) {
-      setClosestEdge('right');
-      return;
-    }
-    if (source.data.index === self.data.index + 1) {
-      setClosestEdge('left');
-      return;
-    }
     setClosestEdge(extractClosestEdge(self.data));
   };
 
@@ -144,7 +138,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
     const data = getDraggableItemData<Project>(
       project,
-      projects.findIndex((el) => el.id === project.id),
+      submenuItemsOrder[project.workspaceId].findIndex((el) => el === project.id),
       'column',
     );
     if (!column || !headerDragButton || !cardList) return;
@@ -197,7 +191,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
           })
         : () => {},
     );
-  }, [project, projects, sortedTasks]);
+  }, [project, projects, submenuItemsOrder[project.workspaceId], sortedTasks]);
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (focusedProject === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
@@ -308,7 +302,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
           <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
         )}
       </div>
-      {closestEdge && <DropIndicator edge={closestEdge} gap="8px" />}
+      {closestEdge && <DropIndicator className="w-[2px]" edge={closestEdge} />}
     </Card>
   );
 }

@@ -13,6 +13,11 @@ export const apiProjectSchema = z.object({
   role: apiMembershipSchema.shape.role.nullable(),
 });
 
+export const apiProjectListSchema = z.object({
+  ...apiProjectSchema.shape,
+  archived: z.boolean().nullable(),
+});
+
 export const createProjectJsonSchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,

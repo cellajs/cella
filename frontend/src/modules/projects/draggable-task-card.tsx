@@ -11,6 +11,12 @@ import type { TaskWithLabels } from '../common/electric/electrify';
 import { TaskContext } from './board-column';
 import { TaskCard } from './task-card';
 
+type TaskDraggableItemData = DraggableItemData<TaskWithLabels> & { type: 'task' };
+
+export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
+  return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
+};
+
 export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
@@ -18,8 +24,6 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   const [dragging, setDragging] = useState(false);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
-
-  type TaskDraggableItemData = DraggableItemData<TaskWithLabels> & { type: 'task' };
 
   const dragIsOn = () => {
     setClosestEdge(null);
@@ -38,10 +42,6 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
       return;
     }
     setClosestEdge(extractClosestEdge(self.data));
-  };
-
-  const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-    return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
   };
 
   // create draggable & dropTarget elements and auto scroll

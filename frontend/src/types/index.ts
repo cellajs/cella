@@ -38,14 +38,13 @@ export type Workspace = Extract<InferResponseType<(typeof workspaceClient.worksp
 
 export type Project = Extract<InferResponseType<(typeof projectClient.projects)[':project']['$get']>, { data: unknown }>['data'];
 
+export type ProjectList = Extract<InferResponseType<(typeof projectClient.projects)['$get']>, { data: unknown }>['data']['items'];
+
 export type Member = Extract<
   InferResponseType<(typeof organizationsClient.organizations)[':organization']['members']['$get']>,
   { data: unknown }
 >['data']['items'][number];
 
-export type Membership = Extract<
-  InferResponseType<(typeof membershipClient)['memberships'][':membership']['$put']>,
-  { data: unknown }
->['data'];
+export type Membership = Extract<InferResponseType<(typeof membershipClient)['memberships'][':membership']['$put']>, { data: unknown }>['data'];
 
 export type UserMenu = Extract<InferResponseType<(typeof usersClient.menu)['$get']>, { data: unknown }>['data'];

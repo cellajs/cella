@@ -9,7 +9,14 @@ import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated } from '../../middlewares/guard';
 import { apiUserSchema } from '../users/schema';
 
-import { apiProjectSchema, createProjectJsonSchema, getProjectsQuerySchema, getUsersByProjectQuerySchema, updateProjectJsonSchema } from './schema';
+import {
+  apiProjectSchema,
+  apiProjectListSchema,
+  createProjectJsonSchema,
+  getProjectsQuerySchema,
+  getUsersByProjectQuerySchema,
+  updateProjectJsonSchema,
+} from './schema';
 
 export const createProjectRouteConfig = createRouteConfig({
   method: 'post',
@@ -90,7 +97,7 @@ export const getProjectsRouteConfig = createRouteConfig({
       description: 'projects',
       content: {
         'application/json': {
-          schema: successResponseWithPaginationSchema(apiProjectSchema),
+          schema: successResponseWithPaginationSchema(apiProjectListSchema),
         },
       },
     },

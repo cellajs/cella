@@ -151,13 +151,20 @@ export const getReorderDestinationIndex = (
   axis: 'vertical' | 'horizontal',
 ): number => {
   if (targetIndex === currentIndex) return currentIndex;
-  // if (axis === 'horizontal') {
-  //   if (closestEdgeOfTarget === 'left') {
-  //     return indexOfTarget;
-  //   } else if (closestEdgeOfTarget === 'right') {
-  //     return indexOfTarget + 1;
-  //   }
-  // } else
+  if (axis === 'horizontal') {
+    if (
+      (targetIndex === currentIndex - 1 && closestEdgeOfTarget === 'right') ||
+      (targetIndex === currentIndex + 1 && closestEdgeOfTarget === 'left')
+    ) {
+      return currentIndex;
+    }
+    if ((targetIndex === 0 && closestEdgeOfTarget === 'right') || (currentIndex > targetIndex && closestEdgeOfTarget === 'right')) {
+      return targetIndex + 1;
+    }
+    if (currentIndex < targetIndex && closestEdgeOfTarget === 'left') return targetIndex - 1;
+
+    return targetIndex;
+  }
 
   if (axis === 'vertical') {
     if (
@@ -176,4 +183,11 @@ export const getReorderDestinationIndex = (
   }
 
   return currentIndex;
+};
+
+export const sortById = (a: string, b: string, order: string[]) => {
+  const indexA = order.indexOf(a);
+  const indexB = order.indexOf(b);
+  if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
+  return indexA - indexB;
 };

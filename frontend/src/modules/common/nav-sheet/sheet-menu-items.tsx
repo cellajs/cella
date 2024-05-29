@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/lib/utils';
+import { cn, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { type UserMenu, UserRole } from '~/types';
-import { type MenuItem, sortMenuItemById } from './sheet-menu-section';
+import type { MenuItem } from './sheet-menu-section';
 import { Button } from '~/modules/ui/button';
 import { Plus } from 'lucide-react';
 import { useNavigationStore } from '~/store/navigation';
@@ -70,7 +70,7 @@ export const SheetMenuItems = ({ data, shownOption, sectionType, createDialog, c
 
   const filteredItems = data.items
     .filter((item) => (shownOption === 'archived' ? item.archived : !item.archived))
-    .sort((a, b) => sortMenuItemById(a, b, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
+    .sort((a, b) => sortById(a.id, b.id, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
 
   const renderNoItems = () =>
     data.canCreate && createDialog ? (

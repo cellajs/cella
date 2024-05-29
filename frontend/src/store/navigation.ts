@@ -25,7 +25,7 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   submenuItemsOrder: Record<string, string[]>;
-  setSubmenuItemsOrder: (projectId: string, itemIds: string[]) => void;
+  setSubmenuItemsOrder: (workspaceId: string, itemIds: string[]) => void;
   setFocusView: (status: boolean) => void;
   archiveStateToggle: (itemId: string, active: boolean, workspaceId?: string) => void;
 }

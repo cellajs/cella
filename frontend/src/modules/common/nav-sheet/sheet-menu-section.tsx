@@ -20,13 +20,6 @@ interface MenuSectionProps {
 export type MenuList = UserMenu[keyof UserMenu]['items'];
 export type MenuItem = MenuList[0];
 
-export const sortMenuItemById = (a: MenuItem, b: MenuItem, order: string[]) => {
-  const indexA = order.indexOf(a.id);
-  const indexB = order.indexOf(b.id);
-  if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
-  return indexA - indexB;
-};
-
 export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSectionProps) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
