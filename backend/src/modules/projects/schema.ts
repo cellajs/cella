@@ -36,3 +36,7 @@ export const updateProjectJsonSchema = createInsertSchema(projectsTable, {
   name: true,
   color: true,
 });
+
+export const getUsersByProjectQuerySchema = paginationQuerySchema.extend({
+  sort: z.enum(['id', 'name', 'email', 'createdAt']).default('createdAt').optional(),
+});

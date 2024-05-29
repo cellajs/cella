@@ -12,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { DraggableItemData, Project } from '~/types/index.ts';
+import type { DraggableItemData, Project, User } from '~/types/index.ts';
 import ContentPlaceholder from '../common/content-placeholder';
 import { DropIndicator } from '../common/drop-indicator';
 import type { TaskWithLabels } from '../common/electric/electrify';
@@ -23,6 +23,8 @@ import { BoardColumnHeader } from './board-column-header';
 import CreateTaskForm from './create-task-form';
 import { DraggableTaskCard } from './draggable-task-card';
 import { ProjectSettings } from './project-settings';
+import { useQuery } from '@tanstack/react-query';
+import { getProjectMembers } from '~/api/projects';
 
 interface BoardColumnProps {
   tasks: TaskWithLabels[];
@@ -32,6 +34,7 @@ interface BoardColumnProps {
 
 interface TaskContextValue {
   task: TaskWithLabels;
+  projectMembers: User[];
   focusedTaskId: string | null;
   setFocusedTask: (taskId: string) => void;
 }
@@ -61,6 +64,12 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const { searchQuery, projects } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[project.workspaceId]?.columns.find((el) => el.columnId === project.id);
+
+  const { data: members } = useQuery({
+    queryKey: ['projects', 'members', project.id],
+    queryFn: () => getProjectMembers(project.id).then((data) => data.items),
+    initialData: [],
+  });
 
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
@@ -254,7 +263,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
                   return t.status !== 0 && t.status !== 6;
                 })
                 .map((task) => (
-                  <TaskContext.Provider key={task.id} value={{ task, focusedTaskId: focusedTask, setFocusedTask }}>
+                  <TaskContext.Provider key={task.id} value={{ task, projectMembers: members, focusedTaskId: focusedTask, setFocusedTask }}>
                     <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
                   </TaskContext.Provider>
                 ))}

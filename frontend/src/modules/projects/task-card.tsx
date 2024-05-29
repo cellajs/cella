@@ -22,6 +22,7 @@ import { TaskContext } from './board-column.tsx';
 import { ProjectContext } from './board.tsx';
 import SetLabels from './select-labels.tsx';
 import { TaskEditor } from './task-editor.tsx';
+import AssignMembers from './select-members.tsx';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
@@ -37,7 +38,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
   const { labels } = useContext(ProjectContext);
 
-  const { task, focusedTaskId, setFocusedTask } = useContext(TaskContext);
+  const { task, focusedTaskId, setFocusedTask, projectMembers } = useContext(TaskContext);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -50,11 +51,23 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
     const db = Electric.db;
 
+    if (field === 'assigned_to' && Array.isArray(value)) {
+      db.tasks.update({
+        data: {
+          assigned_to: value.map((user) => user.id),
+        },
+        where: {
+          id: task.id,
+        },
+      });
+      return;
+    }
+
     // TODO: Review this
     if (field === 'labels' && Array.isArray(value)) {
       db.tasks.update({
         data: {
-          [field]: value.map((label) => label.id),
+          labels: value.map((label) => label.id),
         },
         where: {
           id: task.id,
@@ -257,7 +270,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
             <div className="grow h-0" />
 
             <div className="flex gap-2 ml-auto">
-              {/* <AssignMembers mode="edit" viewValue={innerTask.assignedTo} changeAssignedTo={(newMembers) => handleChange('assignedTo', newMembers)} /> */}
+              <AssignMembers
+                mode="edit"
+                users={projectMembers}
+                viewValue={projectMembers.filter((member) => task.assigned_to?.includes(member.id))}
+                changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers)}
+              />
               <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
             </div>
           </div>
