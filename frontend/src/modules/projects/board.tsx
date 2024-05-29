@@ -85,12 +85,16 @@ export default function Board() {
             setSubmenuItemsOrder(workspace.id, newItemOrder);
           }
 
-          // Drag a task in different column
-          if (isTaskData(sourceData) && isProjectData(target.data)) {
-            // Drop to -1
-          }
-          // Drag a task in same column
+          // Drag a task
           if (isTaskData(sourceData) && isTaskData(target.data)) {
+            // Drag a task in different column
+            if (sourceData.item.project_id !== target.data.item.project_id) {
+              console.log('ChangeProject');
+            }
+            // Drag a task in same column
+            if (sourceData.item.project_id === target.data.item.project_id) {
+              console.log('ChangeIndex');
+            }
           }
         },
       }),
