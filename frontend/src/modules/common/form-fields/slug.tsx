@@ -61,6 +61,11 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     return regex.test(value) && !value.startsWith('-') && !value.endsWith('-') && value.replaceAll(' ', '') !== '';
   };
 
+  // Show red ring
+  const isSlugNotValid = () => {
+    return (!isSlugAvailable && slug !== previousSlug) || (!isValidSlug(slug) && slug.length !== 0);
+  };
+
   // Check on change
   useEffect(() => {
     if (isValidSlug(slug)) checkAvailability({ slug, type });
@@ -81,7 +86,9 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     <InputFormField
       control={control}
       name="slug"
-      inputClassName={isSlugAvailable && isValidSlug(slug) ? 'ring-2 ring-green-500 focus-visible:ring-2 focus-visible:ring-green-500' : ''}
+      inputClassName={`
+        ${isSlugAvailable && isValidSlug(slug) ? 'ring-2 focus-visible:ring-2 ring-green-500  focus-visible:ring-green-500' : ''} 
+        ${isSlugNotValid() ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : ''}`}
       onFocus={() => setDeviating(true)}
       label={label}
       prefix={`${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'ORGANIZATION' ? '' : `${type.toLowerCase()}/`}`}
