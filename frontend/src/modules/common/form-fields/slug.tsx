@@ -27,7 +27,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   }>();
   const { t } = useTranslation();
   const [isDeviating, setDeviating] = useState(false);
-  const [isSlugAvailable, setSlugAvailable] = useState(false);
+  const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
 
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });
@@ -42,15 +42,13 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     },
     onSuccess: (isAvailable) => {
       if (isValidSlug(slug)) form.clearErrors('slug');
-      if (previousSlug && slug === previousSlug) return setSlugAvailable(false);
-      if (isAvailable) return setSlugAvailable(true);
-
+      if (isAvailable && isValidSlug(slug)) return setSlugAvailable('available');
       // Slug is not available
       form.setError('slug', {
         type: 'manual',
         message: t('common:error.slug_exists'),
       });
-      setSlugAvailable(false);
+      setSlugAvailable('notAvailable');
     },
   });
 
@@ -61,14 +59,11 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     return regex.test(value) && !value.startsWith('-') && !value.endsWith('-') && value.replaceAll(' ', '') !== '';
   };
 
-  // Show red ring
-  const isSlugNotValid = () => {
-    return (!isSlugAvailable && slug !== previousSlug) || (!isValidSlug(slug) && slug.length !== 0);
-  };
-
   // Check on change
   useEffect(() => {
-    if (isValidSlug(slug)) checkAvailability({ slug, type });
+    if (slug.length < 2 || (isValidSlug(slug) && previousSlug && previousSlug === slug)) return setSlugAvailable('blank');
+    if (isValidSlug(slug)) return checkAvailability({ slug, type });
+    if (!isValidSlug(slug)) return setSlugAvailable('notAvailable');
   }, [slug]);
 
   // In create forms, auto-generate slug from name
@@ -87,8 +82,8 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
       control={control}
       name="slug"
       inputClassName={`
-        ${isSlugAvailable && isValidSlug(slug) ? 'ring-2 focus-visible:ring-2 ring-green-500  focus-visible:ring-green-500' : ''} 
-        ${isSlugNotValid() ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : ''}`}
+        ${isSlugAvailable === 'available' ? 'ring-2 focus-visible:ring-2 ring-green-500  focus-visible:ring-green-500' : ''} 
+        ${isSlugAvailable === 'notAvailable' ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : ''}`}
       onFocus={() => setDeviating(true)}
       label={label}
       prefix={`${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'ORGANIZATION' ? '' : `${type.toLowerCase()}/`}`}
@@ -97,7 +92,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
       subComponent={
         previousSlug &&
         previousSlug !== slug && (
-          <div className="absolute inset-y-1 right-1 flex justify-end">
+          <div id="slug-subComponent" className="absolute inset-y-1 right-1 flex justify-end">
             <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
               <Undo size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert_to')}</span>
               <strong className="max-sm:hidden ml-1">{previousSlug}</strong>
