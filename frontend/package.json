@@ -155,6 +155,7 @@
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
+    "@electric-sql/debug-toolbar": "^1.2.0",
     "@faker-js/faker": "^8.4.1",
     "@redux-devtools/extension": "^3.3.0",
     "@rollup/plugin-terser": "^0.4.4",
@@ -183,7 +184,11 @@
     "vite-plugin-static-copy": "^1.0.5",
     "workbox-window": "^7.1.0"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},

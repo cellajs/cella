@@ -49,6 +49,11 @@ const ElectricProvider = ({ children }: Props) => {
           return;
         }
 
+        if (config.debug) {
+          const { addToolbar } = await import('@electric-sql/debug-toolbar');
+          addToolbar(electric);
+        }
+
         setElectric(electric);
 
         // Resolves when the shape subscription has been established.
