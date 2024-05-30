@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS "tasks" (
 	"impact" integer,
 	"sort_order" integer,
 	"status" integer NOT NULL,
+	"parent_id" varchar,
 	"labels" jsonb,
 	"assigned_to" jsonb,
 	"project_id" varchar NOT NULL,
@@ -22,5 +23,6 @@ CREATE TABLE IF NOT EXISTS "tasks" (
 	"assigned_by" varchar,
 	"assigned_at" timestamp,
 	"modified_at" timestamp,
-	"modified_by" varchar
+	"modified_by" varchar,
+	CONSTRAINT "tasks_parent_id_tasks_id_fk" FOREIGN KEY ("parent_id") REFERENCES "tasks"("id") ON DELETE no action ON UPDATE no action
 );

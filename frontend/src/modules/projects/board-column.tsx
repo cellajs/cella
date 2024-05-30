@@ -15,7 +15,7 @@ import { useWorkspaceStore } from '~/store/workspace';
 import type { DraggableItemData, Project, User } from '~/types/index.ts';
 import ContentPlaceholder from '../common/content-placeholder';
 import { DropIndicator } from '../common/drop-indicator';
-import type { TaskWithLabels } from '../common/electric/electrify';
+import type { PreparedTask } from '../common/electric/electrify';
 import { sheet } from '../common/sheeter/state';
 import { WorkspaceContext } from '../workspaces';
 import { ProjectContext } from './board';
@@ -28,13 +28,13 @@ import { getProjectMembers } from '~/api/projects';
 import { useNavigationStore } from '~/store/navigation';
 
 interface BoardColumnProps {
-  tasks: TaskWithLabels[];
+  tasks: PreparedTask[];
   setFocusedTask: (taskId: string) => void;
   focusedTask: string | null;
 }
 
 interface TaskContextValue {
-  task: TaskWithLabels;
+  task: PreparedTask;
   projectMembers: User[];
   focusedTaskId: string | null;
   setFocusedTask: (taskId: string) => void;

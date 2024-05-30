@@ -40,7 +40,7 @@ export const SheetMenuItemsOptions = ({
   setGlobalDragging,
 }: MenuItemProps & { data: UserMenu[keyof UserMenu]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();
-  const [isSubmenuArchivedVisible, setSubmenuArchivedVisible] = useState(false);
+  const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
   const { activeItemsOrder, hideSubmenu, submenuItemsOrder } = useNavigationStore();
   if (data.items.length === 0) {
     return (
@@ -53,37 +53,48 @@ export const SheetMenuItemsOptions = ({
     .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
     .sort((a, b) => sortById(a.id, b.id, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
 
-  return items.map((item) => (
-    <div key={item.id}>
-      <ItemOptions
-        item={item}
-        itemType={data.type}
-        submenu={submenu}
-        sectionType={sectionType}
-        isGlobalDragging={isGlobalDragging}
-        setGlobalDragging={setGlobalDragging}
-      />
-      {!item.archived && item.submenu && !!item.submenu.items.length && !hideSubmenu && (
-        <>
-          <SheetMenuItemsOptions
-            data={item.submenu}
-            shownOption={shownOption}
-            sectionType="workspaces"
-            submenu
-            isGlobalDragging={isGlobalDragging}
-            setGlobalDragging={setGlobalDragging}
-          />
-          <MenuArchiveToggle
-            archiveToggleClick={() => setSubmenuArchivedVisible(!isSubmenuArchivedVisible)}
-            inactiveCount={item.submenu.items.filter((i) => i.archived).length}
-            isArchivedVisible={isSubmenuArchivedVisible}
-            isSubmenu
-          />
-          {isSubmenuArchivedVisible && <SheetMenuItemsOptions data={item.submenu} shownOption="archived" sectionType="workspaces" submenu />}
-        </>
-      )}
-    </div>
-  ));
+  const toggleSubmenuVisibility = (itemId: string) => {
+    setSubmenuVisibility((prevState) => ({
+      ...prevState,
+      [itemId]: !prevState[itemId],
+    }));
+  };
+
+  return items.map((item) => {
+    const isSubmenuArchivedVisible = submenuVisibility[item.id] || false;
+
+    return (
+      <div key={item.id}>
+        <ItemOptions
+          item={item}
+          itemType={data.type}
+          submenu={submenu}
+          sectionType={sectionType}
+          isGlobalDragging={isGlobalDragging}
+          setGlobalDragging={setGlobalDragging}
+        />
+        {!item.archived && item.submenu && !!item.submenu.items.length && !hideSubmenu && (
+          <>
+            <SheetMenuItemsOptions
+              data={item.submenu}
+              shownOption={shownOption}
+              sectionType="workspaces"
+              submenu
+              isGlobalDragging={isGlobalDragging}
+              setGlobalDragging={setGlobalDragging}
+            />
+            <MenuArchiveToggle
+              archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
+              inactiveCount={item.submenu.items.filter((i) => i.archived).length}
+              isArchivedVisible={isSubmenuArchivedVisible}
+              isSubmenu
+            />
+            {isSubmenuArchivedVisible && <SheetMenuItemsOptions data={item.submenu} shownOption="archived" sectionType="workspaces" submenu />}
+          </>
+        )}
+      </div>
+    );
+  });
 };
 
 const ItemOptions = ({

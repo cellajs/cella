@@ -38,8 +38,8 @@ export const SheetMenuItem = ({ item, type, className, submenu, searchResults }:
       )}
       onClick={handleClick}
       aria-label={item.name}
-      to={type === 'ORGANIZATION' ? '/$idOrSlug' : `/${type.toLowerCase()}/$idOrSlug`}
-      params={{ idOrSlug: item.slug }}
+      to={type === 'ORGANIZATION' ? '/$idOrSlug' : '/workspace/$idOrSlug'}
+      params={{ idOrSlug: type === 'PROJECT' ? (item.workspaceId as string) : item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
       <AvatarWrap className={`${submenu ? 'm-1 h-8 w-8' : 'm-2'} items-center`} type={type} id={item.id} name={item.name} url={item.thumbnailUrl} />

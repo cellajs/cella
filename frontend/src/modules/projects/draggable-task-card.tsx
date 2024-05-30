@@ -7,11 +7,11 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { getDraggableItemData } from '~/lib/utils';
 import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '../common/drop-indicator';
-import type { TaskWithLabels } from '../common/electric/electrify';
+import type { PreparedTask } from '../common/electric/electrify';
 import { TaskContext } from './board-column';
 import { TaskCard } from './task-card';
 
-type TaskDraggableItemData = DraggableItemData<TaskWithLabels> & { type: 'task' };
+type TaskDraggableItemData = DraggableItemData<PreparedTask> & { type: 'task' };
 
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
   return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
@@ -40,7 +40,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   useEffect(() => {
     const element = taskDragRef.current;
     const dragButton = taskDragButtonRef.current;
-    const data = getDraggableItemData<TaskWithLabels>(task, taskIndex, 'task');
+    const data = getDraggableItemData<PreparedTask>(task, taskIndex, 'task');
     if (!element || !dragButton) return;
 
     return combine(
