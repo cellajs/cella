@@ -1,6 +1,6 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { Fragment, createContext, useContext, useEffect, useState } from 'react';
+import { Fragment, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { arrayMove, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -28,7 +28,7 @@ export default function Board() {
 
   const [focusedProjectIndex, setFocusedProjectIndex] = useState<number | null>(null);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
-  const { submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
+  const { submenuItemsOrder, setSubmenuItemsOrder, menu } = useNavigationStore();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
     projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, submenuItemsOrder[workspace.id])),
   );
@@ -38,12 +38,12 @@ export default function Board() {
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (!tasks.length || !projects.length) return;
+    if (!tasks.length || !mappedProjects.length) return;
     const currentIndex = focusedProjectIndex !== null ? focusedProjectIndex : -1;
     let nextIndex = currentIndex;
-    if (event.key === 'ArrowRight') nextIndex = currentIndex === projects.length - 1 ? 0 : currentIndex + 1;
-    if (event.key === 'ArrowLeft') nextIndex = currentIndex <= 0 ? projects.length - 1 : currentIndex - 1;
-    const indexedProject = projects[nextIndex];
+    if (event.key === 'ArrowRight') nextIndex = currentIndex === mappedProjects.length - 1 ? 0 : currentIndex + 1;
+    if (event.key === 'ArrowLeft') nextIndex = currentIndex <= 0 ? mappedProjects.length - 1 : currentIndex - 1;
+    const indexedProject = mappedProjects[nextIndex];
     const currentProjectSettings = workspaces[indexedProject.workspaceId]?.columns.find((el) => el.columnId === indexedProject.id);
     const sortedProjectTasks = tasks.filter((t) => t.project_id === indexedProject.id).sort((a, b) => sortTaskOrder(a, b));
     const lengthWithoutAccepted = sortedProjectTasks.filter((t) => t.status !== 6).length;
@@ -62,9 +62,17 @@ export default function Board() {
     ['ArrowLeft', handleKeyDown],
   ]);
 
+  const currentWorkspace = useMemo(() => {
+    return menu.workspaces.items.find((w) => w.id === workspace.id);
+  }, [menu.workspaces.items, workspace.id]);
+
   useEffect(() => {
-    setMappedProjects(projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, submenuItemsOrder[workspace.id])));
-  }, [submenuItemsOrder[workspace.id]]);
+    //Fix types
+    if (currentWorkspace) {
+      const currentActiveProjects = currentWorkspace.submenu?.items.filter((p) => !p.archived) as unknown as Project[];
+      setMappedProjects(currentActiveProjects.sort((a, b) => sortById(a.id, b.id, submenuItemsOrder[workspace.id])));
+    }
+  }, [currentWorkspace, submenuItemsOrder, workspace.id]);
 
   useEffect(() => {
     return combine(
@@ -123,7 +131,7 @@ export default function Board() {
                 />
               </ProjectContext.Provider>
             </ResizablePanel>
-            {projects.length > index + 1 && (
+            {mappedProjects.length > index + 1 && (
               <ResizableHandle className="w-[6px] rounded border border-background -mx-[7px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
             )}
           </Fragment>
