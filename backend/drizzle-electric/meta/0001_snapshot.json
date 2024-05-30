@@ -1,6 +1,6 @@
 {
-  "id": "93e3f4ef-d220-4415-92d6-81e63d909287",
-  "prevId": "69adf258-2b5c-4606-9ad1-91981786d87f",
+  "id": "81189ee9-9637-4c19-b24a-4962f71296f4",
+  "prevId": "f5037b49-e484-4a40-ab7b-538328a0a699",
   "version": "6",
   "dialect": "postgresql",
   "tables": {
@@ -90,6 +90,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "labels": {
           "name": "labels",
           "type": "jsonb",
@@ -146,7 +152,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "tasks_parent_id_tasks_id_fk": {
+          "name": "tasks_parent_id_tasks_id_fk",
+          "tableFrom": "tasks",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "tableTo": "tasks",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     }

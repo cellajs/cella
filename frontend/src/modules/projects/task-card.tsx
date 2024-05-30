@@ -9,7 +9,7 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { type TaskWithLabels, useElectric } from '../common/electric/electrify.ts';
+import { type PreparedTask, useElectric } from '../common/electric/electrify.ts';
 import { Checkbox } from '../ui/checkbox';
 import { WorkspaceContext } from '../workspaces';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
@@ -23,6 +23,8 @@ import { ProjectContext } from './board.tsx';
 import SetLabels from './select-labels.tsx';
 import { TaskEditor } from './task-editor.tsx';
 import AssignMembers from './select-members.tsx';
+import SelectParent from './select-parent.tsx';
+import SetSubTasks from './select-sub-tasks.tsx';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
@@ -35,7 +37,7 @@ interface TaskCardProps {
 export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { setSelectedTasks, selectedTasks } = useContext(WorkspaceContext);
+  const { setSelectedTasks, selectedTasks, tasks } = useContext(WorkspaceContext);
   const { labels } = useContext(ProjectContext);
 
   const { task, focusedTaskId, setFocusedTask, projectMembers } = useContext(TaskContext);
@@ -47,9 +49,36 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   const Electric = useElectric();
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const handleChange = (field: keyof TaskWithLabels, value: any) => {
+  const handleChange = (field: keyof PreparedTask, value: any) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
     const db = Electric.db;
+
+    if (field === 'parent_id') {
+      db.tasks.update({
+        data: {
+          parent_id: value,
+        },
+        where: {
+          id: task.id,
+        },
+      });
+      return;
+    }
+
+    if (field === 'other_tasks' && Array.isArray(value)) {
+      const subTasks = tasks.filter((t) => t.parent_id === task.id);
+      for (const subTask of subTasks.length > 0 ? subTasks : value) {
+        db.tasks.update({
+          data: {
+            parent_id: value.find((t) => t.id === subTask.id) ? task.id : null,
+          },
+          where: {
+            id: subTask.id,
+          },
+        });
+      }
+      return;
+    }
 
     if (field === 'assigned_to' && Array.isArray(value)) {
       db.tasks.update({
@@ -267,6 +296,22 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               viewValue={task.labels}
               mode="edit"
             />
+
+            <SelectParent
+              mode="edit"
+              tasks={tasks.filter((t) => t.id !== task.id)}
+              parent={task.tasks}
+              onChange={(newParentTask) => handleChange('parent_id', newParentTask?.id || null)}
+            />
+
+            <SetSubTasks
+              mode="edit"
+              tasks={tasks.filter((t) => t.id !== task.id && t.id !== task.parent_id)}
+              // TODO: refactor this with db relation
+              viewValue={tasks.filter((t) => t.parent_id === task.id)}
+              onChange={(newSubTasks) => handleChange('other_tasks', newSubTasks)}
+            />
+
             <div className="grow h-0" />
 
             <div className="flex gap-2 ml-auto">
