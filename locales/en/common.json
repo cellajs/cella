@@ -257,6 +257,8 @@
   "placeholder.mdEditor": "Type your task here ... \nFirst paragraph = summary",
   "placeholder.search": "Search ...",
   "placeholder.search-label": "Search label..",
+  "placeholder.search_parent_task": "Search parent task ...",
+  "placeholder.search_sub_tasks": "Search sub tasks ...",
   "placeholder.search_country": "Search country ...",
   "placeholder.search_labels": "Search labels ...",
   "placeholder.search_timezone": "Search timezone ...",

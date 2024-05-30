@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { dateShort } from '~/lib/utils';
-import type { TaskWithLabels } from '~/modules/common/electric/electrify';
+import type { PreparedTask } from '~/modules/common/electric/electrify';
 
-const Expand = ({ row }: { row: TaskWithLabels }) => {
+const Expand = ({ row }: { row: PreparedTask }) => {
   const { t } = useTranslation();
 
   return (
