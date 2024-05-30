@@ -22,10 +22,11 @@ import {
   getUsersConfig,
   meRouteConfig,
   terminateSessionsConfig,
+  updateSelfConfig,
   updateUserConfig,
 } from './routes';
 
-import { generateElectricJWTToken } from '../../lib/utils'
+import { generateElectricJWTToken } from '../../lib/utils';
 
 const app = new CustomHono();
 
@@ -204,7 +205,6 @@ const usersRoutes = app
   .openapi(updateUserConfig, async (ctx) => {
     const { user: userId } = ctx.req.valid('param');
     const user = ctx.get('user');
-
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
@@ -243,6 +243,68 @@ const usersRoutes = app
         modifiedBy: user.id,
       })
       .where(eq(usersTable.id, userId))
+      .returning();
+
+    const [{ memberships }] = await db
+      .select({
+        memberships: count(),
+      })
+      .from(membershipsTable)
+      .where(eq(membershipsTable.userId, updatedUser.id));
+
+    logEvent('User updated', { user: updatedUser.id });
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...transformDatabaseUser(updatedUser),
+          electricJWTToken: null,
+          sessions: [],
+          counts: {
+            memberships,
+          },
+        },
+      },
+      200,
+    );
+  })
+  /*
+   * Update self
+   */
+  .openapi(updateSelfConfig, async (ctx) => {
+    const user = ctx.get('user');
+    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+
+    if (!targetUser) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: user.id });
+    }
+
+    const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+
+    if (slug && slug !== targetUser.slug) {
+      const slugAvailable = await checkSlugAvailable(slug);
+
+      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
+    }
+
+    const [updatedUser] = await db
+      .update(usersTable)
+      .set({
+        email,
+        bannerUrl,
+        bio,
+        firstName,
+        lastName,
+        language,
+        newsletter,
+        thumbnailUrl,
+        slug,
+        name: [firstName, lastName].filter(Boolean).join(' ') || slug,
+        modifiedAt: new Date(),
+        modifiedBy: user.id,
+      })
+      .where(eq(usersTable.id, user.id))
       .returning();
 
     const [{ memberships }] = await db

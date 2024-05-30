@@ -18,6 +18,7 @@ import { UsersTableRoute } from '~/routes/system';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { useUserStore } from '~/store/user';
 
 // export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
 export type UserRow = User & { _type: 'MASTER' | 'DETAIL'; _expanded?: boolean; _parent?: User };
@@ -29,7 +30,7 @@ const LIMIT = 40;
 const UsersTable = () => {
   const search = useSearch({ from: UsersTableRoute.id });
   const { t } = useTranslation();
-
+  const { user: currentUser } = useUserStore();
   const [rows, setRows] = useState<UserRow[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
@@ -94,12 +95,15 @@ const UsersTable = () => {
     for (const index of indexes) {
       if (column.key === 'role') {
         const user = rows[index] as User;
+        const isSelf = currentUser.id === user.id;
+        if (isSelf) return toast.error(t('common:error.self_system_role'));
         updateUser(user.id, { role: user.role })
           .then(() => {
             callback([user], 'update');
             toast.success(t('common:success.user_role_updated'));
           })
-          .catch(() => {
+          .catch((err) => {
+            console.log(err);
             toast.error(t('common:error.error'));
           });
       }
