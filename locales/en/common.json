@@ -335,7 +335,7 @@
   "start.github.message": "Get started on Github",
   "started": "Started",
   "subject": "Subject",
-  "system_request": "Get into waitlist",
+  "waitlist_request": "Get into waitlist",
   "subscription": "Subscription",
   "success.archived_resource": "{{resource}} has been archived.",
   "success.create_newsletter": "Newsletter has been sent.",

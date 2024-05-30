@@ -95,7 +95,7 @@ export const acceptInvite = async ({
 
 interface ActionRequestProp {
   email: string;
-  type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
+  type: 'ORGANIZATION_REQUEST' | 'WAITLIST_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
   userId?: string;
   organizationId?: string;
   message?: string;

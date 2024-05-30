@@ -156,7 +156,7 @@ const generalRoutes = app
     const user = ctx.get('user');
 
     // Refactor
-    const organization = idOrSlug ? await extractEntity('ORGANIZATION', idOrSlug) as OrganizationModel : null
+    const organization = idOrSlug ? ((await extractEntity('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
 
     if (!organization && user.role !== 'ADMIN') {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
@@ -526,7 +526,7 @@ const generalRoutes = app
       .returning();
 
     // slack notifications
-    if (type === 'SYSTEM_REQUEST') await sendSlackNotification('to join the waitlist.', email);
+    if (type === 'WAITLIST_REQUEST') await sendSlackNotification('to join the waitlist.', email);
     if (type === 'ORGANIZATION_REQUEST') await sendSlackNotification('to join an organization.', email);
     if (type === 'NEWSLETTER_REQUEST') await sendSlackNotification('to become a donate or build member.', email);
     if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${message}.`, email);
