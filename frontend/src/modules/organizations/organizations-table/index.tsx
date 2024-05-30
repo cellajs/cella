@@ -19,7 +19,7 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { invite } from '~/api/general';
+import { inviteMember } from '~/api/memberships';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -81,7 +81,7 @@ const OrganizationsTable = () => {
     for (const index of indexes) {
       const organization = records[index];
       if (column.key === 'userRole' && organization.userRole) {
-        invite({idOrSlug: organization.id, emails: [user.email], role: organization.userRole })
+        inviteMember({ idOrSlug: organization.id, emails: [user.email], role: organization.userRole })
           .then(() => {
             toast.success(t('common:success.your_role_updated'));
           })

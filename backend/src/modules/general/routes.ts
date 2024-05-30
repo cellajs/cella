@@ -12,7 +12,6 @@ import {
   getRequestsQuerySchema,
   getRequestsSchema,
   inviteJsonSchema,
-  inviteQuerySchema,
   suggestionsSchema,
 } from './schema';
 
@@ -105,17 +104,15 @@ export const checkTokenRouteConfig = createRouteConfig({
 export const inviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/invite',
-  guard: isAuthenticated,
+  guard: [isAuthenticated, isSystemAdmin],
   middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
-  summary: 'Invite a new member(user) to organization or system',
+  summary: 'Invite a new member(user) to system',
   description: `
     Permissions:
       - Users with role 'ADMIN'
-      - Users, who are members of the organization and have role 'ADMIN' in the organization
   `,
   request: {
-    query: inviteQuerySchema,
     body: {
       content: {
         'application/json': {

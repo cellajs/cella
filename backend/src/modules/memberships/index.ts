@@ -6,10 +6,21 @@ import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
+import { deleteMembershipsRouteConfig, inviteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
 import permissionManager from '../../lib/permission-manager';
 import { extractEntity } from '../../lib/extract-entity';
-
+import type { OrganizationModel } from '../../db/schema/organizations';
+import { checkRole } from '../general/helpers/check-role';
+import { apiMembershipSchema } from './schema';
+import { usersTable } from '../../db/schema/users';
+import { generateId, type User } from 'lucia';
+import { type TokenModel, tokensTable } from '../../db/schema/tokens';
+import { createDate, TimeSpan } from 'oslo';
+import { config } from 'config';
+import { i18n } from '../../lib/i18n';
+import { render } from '@react-email/render';
+import { InviteEmail } from '../../../../email/emails/invite';
+import { emailSender } from 'email';
 const app = new CustomHono();
 
 // * Membership endpoints
@@ -69,6 +80,128 @@ const membershipRoutes = app
       {
         success: true,
         data: membership,
+      },
+      200,
+    );
+  })
+  /*
+   * Invite members to an organization
+   */
+  .openapi(inviteMembershipRouteConfig, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('query');
+    const { emails, role } = ctx.req.valid('json');
+    const user = ctx.get('user');
+
+    // Refactor
+    const organization = idOrSlug ? ((await extractEntity('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
+
+    if (!organization) return errorResponse(ctx, 403, 'forbidden', 'warn');
+
+    // Check to invite on organization level
+    if (organization && !checkRole(apiMembershipSchema, role)) {
+      return errorResponse(ctx, 400, 'invalid_role', 'warn');
+    }
+
+    for (const email of emails) {
+      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
+
+      // Check if it's invitation to organization
+      if (targetUser && organization) {
+        // Check if user is already member of organization
+        const [existingMembership] = await db
+          .select()
+          .from(membershipsTable)
+          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
+        if (existingMembership) {
+          logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
+
+          // Update role if different
+          if (role && existingMembership.role !== role && existingMembership.organizationId && existingMembership.userId) {
+            await db
+              .update(membershipsTable)
+              .set({ role: role as MembershipModel['role'] })
+              .where(
+                and(eq(membershipsTable.organizationId, existingMembership.organizationId), eq(membershipsTable.userId, existingMembership.userId)),
+              );
+            logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
+
+            sendSSE(targetUser.id, 'update_organization', {
+              ...organization,
+              userRole: role,
+              type: 'ORGANIZATION',
+            });
+          }
+
+          continue;
+        }
+
+        // Check if user is trying to invite themselves
+        if (user.id === targetUser.id) {
+          await db
+            .insert(membershipsTable)
+            .values({
+              organizationId: organization.id,
+              userId: user.id,
+              role: (role as MembershipModel['role']) || 'MEMBER',
+              createdBy: user.id,
+            })
+            .returning();
+
+          logEvent('User added to organization', { user: user.id, organization: organization.id });
+
+          sendSSE(user.id, 'new_organization_membership', {
+            ...organization,
+            userRole: role || 'MEMBER',
+            type: 'ORGANIZATION',
+          });
+
+          continue;
+        }
+      }
+
+      const token = generateId(40);
+      await db.insert(tokensTable).values({
+        id: token,
+        type: 'ORGANIZATION_INVITATION',
+        userId: targetUser?.id,
+        email: email.toLowerCase(),
+        role: (role as TokenModel['role']) || 'USER',
+        organizationId: organization?.id,
+        expiresAt: createDate(new TimeSpan(7, 'd')),
+      });
+
+      const emailLanguage = organization?.defaultLanguage || targetUser?.language || config.defaultLanguage;
+
+      const emailHtml = render(
+        InviteEmail({
+          i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
+          orgName: organization.name || '',
+          orgImage: organization.logoUrl || '',
+          userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
+          username: targetUser?.name || email.toLowerCase() || '',
+          invitedBy: user.name,
+          inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
+          replyTo: user.email,
+        }),
+      );
+      logEvent('User invited to organization', { organization: organization?.id });
+
+      emailSender
+        .send(
+          config.senderIsReceiver ? user.email : email.toLowerCase(),
+          organization ? `Invitation to ${organization.name} on Cella` : 'Invitation to Cella',
+          emailHtml,
+          user.email,
+        )
+        .catch((error) => {
+          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+        });
+    }
+
+    return ctx.json(
+      {
+        success: true,
+        data: undefined,
       },
       200,
     );

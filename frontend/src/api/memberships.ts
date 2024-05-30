@@ -1,6 +1,22 @@
 import type { Member } from '~/types';
 import { membershipClient as client, handleResponse } from '.';
 
+export interface InviteMemberProps {
+  emails: string[];
+  role?: Member['organizationRole'];
+  idOrSlug: string;
+}
+
+// Invite users
+export const inviteMember = async ({ idOrSlug, ...rest }: InviteMemberProps) => {
+  const response = await client.membership.$post({
+    query: { idOrSlug },
+    json: rest,
+  });
+
+  await handleResponse(response);
+};
+
 export const removeMembersFromResource = async ({
   idOrSlug,
   entityType,

@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { invite as baseInvite } from '~/api/general';
+import { inviteMember, type InviteMemberProps } from '~/api/memberships';
+import { invite as inviteSystem, type InviteSystemProps } from '~/api/general';
 import type { Organization } from '~/types';
 
 import { config } from 'config';
@@ -18,6 +19,7 @@ import MultipleSelector from '~/modules/common/multi-select';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 
 interface Props {
   organization?: Organization | null;
@@ -29,6 +31,7 @@ interface Props {
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
   role: z.enum(['USER', 'MEMBER', 'ADMIN']).optional(),
+  idOrSlug: idSchema.or(slugSchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,15 +53,14 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
   const form = useFormWithDraft<FormValues>('invite-users', formOptions);
 
   const { mutate: invite, isPending } = useMutation({
-    mutationFn: baseInvite,
+    mutationFn: (values: FormValues) => {
+      if (type === 'system') return inviteSystem(values as InviteSystemProps);
+      return inviteMember(values as InviteMemberProps);
+    },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
       callback?.();
-
-      if (isDialog) {
-        dialog.remove();
-      }
-
+      if (isDialog) dialog.remove();
       toast.success(t('common:success.user_invited'));
     },
   });
@@ -68,8 +70,7 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
 
   const onSubmit = (values: FormValues) => {
     invite({
-      emails: values.emails,
-      role: values.role,
+      ...values,
       idOrSlug: organization?.id,
     });
   };
