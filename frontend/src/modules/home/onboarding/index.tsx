@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
@@ -14,7 +14,7 @@ import InviteUsers from '../../users/invite-users';
 import StepperFooter from './footer';
 import { OnboardingStart } from './start';
 
-const steps: StepItem[] = [
+export const onDefaultBoardingSteps: StepItem[] = [
   { id: 'profile', label: 'Tune your profile', optional: true },
   { id: 'organization', label: 'Create organization', optional: true },
   { id: 'invitation', label: 'Invite others', optional: true },
@@ -28,19 +28,22 @@ interface OnboardingProps {
 }
 
 const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) => {
+  const [steps, setSteps] = useState(onDefaultBoardingSteps);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const { hasStarted } = useMounted();
   const { t } = useTranslation();
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
-  const user = useUserStore((state) => state.user);
-
   const { menu } = useNavigationStore();
-  steps[1].optional = menu.organizations.items.length > 0;
+  const user = useUserStore((state) => state.user);
 
   const onCreateOrganization = (organization: Organization) => {
     setOrganization(organization);
   };
+
+  useEffect(() => {
+    if (menu.organizations.items.length > 0) setSteps([onDefaultBoardingSteps[0]]);
+  }, []);
 
   return (
     <div className="flex flex-col min-h-[90vh] sm:min-h-screen items-center">

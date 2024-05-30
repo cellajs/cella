@@ -4,8 +4,11 @@ import { ArrowLeft, Redo } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStepper } from '~/modules/common/stepper';
 import type { Organization } from '~/types';
-import type { OnboardingStates } from '.';
+import { onDefaultBoardingSteps, type OnboardingStates } from '.';
 import { Button } from '../../ui/button';
+import { dialog } from '~/modules/common/dialoger/state';
+import { SkipOrganizationCreation } from './skipOrganizationCreation';
+import { useNavigationStore } from '~/store/navigation';
 
 interface StepperFooterProps {
   organization?: Organization | null;
@@ -15,10 +18,21 @@ interface StepperFooterProps {
 const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
   const { nextStep, prevStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
   const { t } = useTranslation();
+  const { menu } = useNavigationStore();
+  const haveOrganizations = menu.organizations.items.length > 0;
 
   // prevent accidental submit
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
+    if (onDefaultBoardingSteps[activeStep].id === 'organization' && !haveOrganizations) {
+      dialog(<SkipOrganizationCreation />, {
+        className: 'md:max-w-xl',
+        title: `${t('common:skip')} ${t('common:create_resource', { resource: t('common:organization') }).toLowerCase()}`,
+        text: t('common:skip_org_creation.text'),
+        id: 'skip_org_creation',
+      });
+      return;
+    }
     nextStep();
   };
 
