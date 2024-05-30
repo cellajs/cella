@@ -1,5 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
+import type { PageResourceType } from 'backend/types/common';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
@@ -133,8 +134,13 @@ export const arrayMove = (array: string[], startIndex: number, endIndex: number)
   return newArray;
 };
 
-export const getDraggableItemData = <T>(item: T, itemIndex: number, type: 'task' | 'column' | 'menuItem'): DraggableItemData<T> => {
-  return { dragItem: true, item, index: itemIndex, type };
+export const getDraggableItemData = <T>(
+  item: T,
+  itemIndex: number,
+  type: 'task' | 'column' | 'menuItem',
+  itemType?: PageResourceType,
+): DraggableItemData<T> => {
+  return { dragItem: true, item, index: itemIndex, type, itemType: itemType ? itemType : 'UNKNOWN' };
 };
 
 // To get target index for drop on DnD
@@ -145,13 +151,20 @@ export const getReorderDestinationIndex = (
   axis: 'vertical' | 'horizontal',
 ): number => {
   if (targetIndex === currentIndex) return currentIndex;
-  // if (axis === 'horizontal') {
-  //   if (closestEdgeOfTarget === 'left') {
-  //     return indexOfTarget;
-  //   } else if (closestEdgeOfTarget === 'right') {
-  //     return indexOfTarget + 1;
-  //   }
-  // } else
+  if (axis === 'horizontal') {
+    if (
+      (targetIndex === currentIndex - 1 && closestEdgeOfTarget === 'right') ||
+      (targetIndex === currentIndex + 1 && closestEdgeOfTarget === 'left')
+    ) {
+      return currentIndex;
+    }
+    if ((targetIndex === 0 && closestEdgeOfTarget === 'right') || (currentIndex > targetIndex && closestEdgeOfTarget === 'right')) {
+      return targetIndex + 1;
+    }
+    if (currentIndex < targetIndex && closestEdgeOfTarget === 'left') return targetIndex - 1;
+
+    return targetIndex;
+  }
 
   if (axis === 'vertical') {
     if (
@@ -170,4 +183,11 @@ export const getReorderDestinationIndex = (
   }
 
   return currentIndex;
+};
+
+export const sortById = (a: string, b: string, order: string[]) => {
+  const indexA = order.indexOf(a);
+  const indexB = order.indexOf(b);
+  if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
+  return indexA - indexB;
 };

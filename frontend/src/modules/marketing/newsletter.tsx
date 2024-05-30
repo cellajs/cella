@@ -1,45 +1,34 @@
 import { config } from 'config';
 import { Send } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { requestAction } from '~/api/general';
+import { requestAction as baseRequestAction } from '~/api/general';
+import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
-
-export async function addEmail(email: string) {
-  if (!email) return { success: false };
-
-  try {
-    requestAction({ email, type: 'NEWSLETTER_REQUEST' });
-    return true;
-  } catch (error) {
-    console.error('Error in addEmail:', error);
-    return false;
-  }
-}
 
 const NewsletterForm = () => {
   const { t } = useTranslation();
-  const [isPending, setPending] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const { mutate: requestAction, isPending } = useMutation({
+    mutationFn: baseRequestAction,
+    onSuccess: () => {
+      toast.success(t('common:success.newsletter_sign_up', { appName: config.name }));
+      formRef.current?.reset();
+    },
+    onError: () => {
+      toast.error(t('common:error.newsletter_sign_up'));
+    },
+  });
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     let email = formRef.current?.email.value;
     if (!email) return;
     email = email.trim().toLowerCase();
-
-    setPending(true);
-    const response = await addEmail(email);
-
-    if (response) {
-      toast.success(t('common:success.newsletter_sign_up', { appName: config.name }));
-    } else {
-      toast.error(t('common:error.newsletter_sign_up'));
-    }
-    setPending(false);
-    formRef.current?.reset();
+    requestAction({ email, type: 'NEWSLETTER_REQUEST' });
   };
 
   return (

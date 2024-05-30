@@ -1,4 +1,4 @@
-import { UserX } from 'lucide-react';
+import { Check, UserX } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -9,17 +9,18 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { Button } from '~/modules/ui/button';
 import type { User } from '~/types/index.ts';
 import { Kbd } from '../common/kbd.tsx';
-import { Command, CommandInput } from '../ui/command.tsx';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
 import { TaskContext } from './board-column';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';
-  viewValue?: User[];
+  users: User[];
+  viewValue?: User[] | null;
   changeAssignedTo?: (users: User[]) => void;
 }
 
-const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps) => {
+const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembersProps) => {
   // const { project } = useContext(ProjectContext);
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('assignedTo');
@@ -29,19 +30,19 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
   const { task, focusedTaskId } = useContext(TaskContext);
-  // const handleSelectClick = (name: string) => {
-  // if (!name) return;
-  // const existingUser = selectedUsers.find((user) => user.name === name);
-  // if (existingUser) {
-  //   setSelectedUsers(selectedUsers.filter((user) => user.name !== name));
-  //   return;
-  // }
-  // const newUser = project.members.find((user) => user.name === name);
-  // if (newUser) {
-  //   setSelectedUsers([...selectedUsers, newUser]);
-  //   return;
-  // }
-  // };
+  const handleSelectClick = (id: string) => {
+  if (!id) return;
+  const existingUser = selectedUsers.find((user) => user.id === id);
+  if (existingUser) {
+    setSelectedUsers(selectedUsers.filter((user) => user.id !== id));
+    return;
+  }
+  const newUser = users.find((user) => user.id === id);
+  if (newUser) {
+    setSelectedUsers([...selectedUsers, newUser]);
+    return;
+  }
+  };
   // Open on key press
   useHotkeys([
     [
@@ -53,7 +54,7 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
   ]);
 
   useEffect(() => {
-    if (changeAssignedTo && selectedUsers.length > 0) changeAssignedTo(selectedUsers);
+    if (changeAssignedTo && JSON.stringify(selectedUsers) !== JSON.stringify(viewValue)) changeAssignedTo(selectedUsers);
   }, [selectedUsers]);
 
   // Whenever the form value changes (also on reset), update the internal state
@@ -61,6 +62,12 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
     if (mode === 'edit') return;
     setSelectedUsers(formValue || []);
   }, [formValue]);
+
+    // watch for changes in the viewValue
+    useEffect(() => {
+      if (mode === 'create') return;
+      setSelectedUsers(viewValue || []);
+    }, [viewValue]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
@@ -120,33 +127,33 @@ const AssignMembers = ({ mode, viewValue, changeAssignedTo }: AssignMembersProps
             placeholder={t('common:placeholder.assign')}
           />
           {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
-          {/* <CommandList>
-            {project?.members && (
+          <CommandList>
+            {users && (
               <CommandGroup>
-                {project.members.map((member, index) => (
+                {users.map((user, index) => (
                   <CommandItem
-                    key={member.name}
-                    value={member.name}
-                    onSelect={(name) => {
-                      handleSelectClick(name);
+                    key={user.id}
+                    value={user.id}
+                    onSelect={(id) => {
+                      handleSelectClick(id);
                       setSearchValue('');
                     }}
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
                     <div className="flex items-center gap-3">
-                      <AvatarWrap type="USER" id={member.id} name={member.name} url={member.thumbnailUrl} className="h-6 w-6 text-xs" />
-                      <span>{member.name}</span>
+                      <AvatarWrap type="USER" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                      <span>{user.name}</span>
                     </div>
 
                     <div className="flex items-center">
-                      {selectedUsers.some((user) => user.id === member.id) && <Check size={16} className="text-success" />}
+                      {selectedUsers.some((u) => u.id === user.id) && <Check size={16} className="text-success" />}
                       {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
                     </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
             )}
-          </CommandList> */}
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

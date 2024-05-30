@@ -43,10 +43,17 @@ const InputFormField = <TFieldValues extends FieldValues>({
   const { setFocus } = useFormContext();
 
   let prefixPadding = '0px';
+  let subComponentPadding = '0px';
 
   if (prefix) {
     const spanPrefix = document.querySelector(`#${name.toString()}-prefix`);
     prefixPadding = prefix && spanPrefix && 'offsetWidth' in spanPrefix ? `${Number(spanPrefix.offsetWidth) + 16}px` : '12px';
+  }
+  if (subComponent) {
+    const elSubComponent = document.querySelector('#slug-subComponent');
+
+    subComponentPadding = subComponent && elSubComponent && 'offsetWidth' in elSubComponent ? `${Number(elSubComponent.offsetWidth)}px` : '12px';
+    console.log('subComponentPadding:', subComponentPadding);
   }
 
   const prefixClick = () => {
@@ -91,7 +98,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
               ) : (
                 <Input
                   className={inputClassName}
-                  style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '' }}
+                  style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '', paddingRight: subComponentPadding }}
                   type={type}
                   onFocus={onFocus}
                   placeholder={placeholder}

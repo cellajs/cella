@@ -7,8 +7,16 @@ import {
 import { deleteByIdsQuerySchema, projectParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated } from '../../middlewares/guard';
+import { apiUserSchema } from '../users/schema';
 
-import { apiProjectSchema, createProjectJsonSchema, getProjectsQuerySchema, updateProjectJsonSchema } from './schema';
+import {
+  apiProjectSchema,
+  apiProjectListSchema,
+  createProjectJsonSchema,
+  getProjectsQuerySchema,
+  getUsersByProjectQuerySchema,
+  updateProjectJsonSchema,
+} from './schema';
 
 export const createProjectRouteConfig = createRouteConfig({
   method: 'post',
@@ -89,7 +97,7 @@ export const getProjectsRouteConfig = createRouteConfig({
       description: 'projects',
       content: {
         'application/json': {
-          schema: successResponseWithPaginationSchema(apiProjectSchema),
+          schema: successResponseWithPaginationSchema(apiProjectListSchema),
         },
       },
     },
@@ -150,6 +158,34 @@ export const deleteProjectsRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithErrorsSchema(),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const getUsersByProjectIdRouteConfig = createRouteConfig({
+  method: 'get',
+  path: '/projects/{project}/members',
+  guard: [isAuthenticated, isAllowedTo('read', 'project')],
+  tags: ['projects'],
+  summary: 'Get members of project',
+  description: `
+    Permissions:
+      - Users with role 'ADMIN'
+      - Users, who are members of the project
+  `,
+  request: {
+    params: projectParamSchema,
+    query: getUsersByProjectQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Members of project',
+      content: {
+        'application/json': {
+          schema: successResponseWithPaginationSchema(apiUserSchema),
         },
       },
     },

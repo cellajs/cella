@@ -11,6 +11,12 @@ import type { TaskWithLabels } from '../common/electric/electrify';
 import { TaskContext } from './board-column';
 import { TaskCard } from './task-card';
 
+type TaskDraggableItemData = DraggableItemData<TaskWithLabels> & { type: 'task' };
+
+export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
+  return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
+};
+
 export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
@@ -18,8 +24,6 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   const [dragging, setDragging] = useState(false);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
-
-  type TaskDraggableItemData = DraggableItemData<TaskWithLabels> & { type: 'task' };
 
   const dragIsOn = () => {
     setClosestEdge(null);
@@ -29,19 +33,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   const dragIsOver = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
     setIsDraggedOver(true);
     if (!isTaskData(source.data) || !isTaskData(self.data)) return;
-    if (source.data.index === self.data.index - 1 && source.data.item.project_id === self.data.item.project_id) {
-      setClosestEdge('bottom');
-      return;
-    }
-    if (source.data.index === self.data.index + 1 && source.data.item.project_id === self.data.item.project_id) {
-      setClosestEdge('top');
-      return;
-    }
     setClosestEdge(extractClosestEdge(self.data));
-  };
-
-  const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-    return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
   };
 
   // create draggable & dropTarget elements and auto scroll
@@ -83,11 +75,8 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
     );
   }, [task]);
   return (
-    <>
+    <div className="relative">
       <TaskCard
-        // focusedTask={focusedTask}
-        // setFocusedTask={setFocusedTask}
-        // task={task}
         taskRef={taskDragRef}
         taskDragButtonRef={taskDragButtonRef}
         dragging={dragging}
@@ -95,7 +84,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
         className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary' : 'border-l-transparent'}`}
       />
 
-      {closestEdge && <DropIndicator edge={closestEdge} />}
-    </>
+      {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} gap="-2px" />}
+    </div>
   );
 };

@@ -12,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { DraggableItemData, Project } from '~/types/index.ts';
+import type { DraggableItemData, Project, User } from '~/types/index.ts';
 import ContentPlaceholder from '../common/content-placeholder';
 import { DropIndicator } from '../common/drop-indicator';
 import type { TaskWithLabels } from '../common/electric/electrify';
@@ -23,6 +23,9 @@ import { BoardColumnHeader } from './board-column-header';
 import CreateTaskForm from './create-task-form';
 import { DraggableTaskCard } from './draggable-task-card';
 import { ProjectSettings } from './project-settings';
+import { useQuery } from '@tanstack/react-query';
+import { getProjectMembers } from '~/api/projects';
+import { useNavigationStore } from '~/store/navigation';
 
 interface BoardColumnProps {
   tasks: TaskWithLabels[];
@@ -32,6 +35,7 @@ interface BoardColumnProps {
 
 interface TaskContextValue {
   task: TaskWithLabels;
+  projectMembers: User[];
   focusedTaskId: string | null;
   setFocusedTask: (taskId: string) => void;
 }
@@ -40,7 +44,7 @@ export const TaskContext = createContext({} as TaskContextValue);
 
 type ProjectDraggableItemData = DraggableItemData<Project> & { type: 'column' };
 
-const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
+export const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
   return data.dragItem === true && typeof data.index === 'number';
 };
 
@@ -58,9 +62,16 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const { project, focusedProject, setFocusedProjectIndex } = useContext(ProjectContext);
+  const { submenuItemsOrder } = useNavigationStore();
   const { searchQuery, projects } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[project.workspaceId]?.columns.find((el) => el.columnId === project.id);
+
+  const { data: members } = useQuery({
+    queryKey: ['projects', 'members', project.id],
+    queryFn: () => getProjectMembers(project.id).then((data) => data.items),
+    initialData: [],
+  });
 
   const acceptedCount = useMemo(() => tasks?.filter((t) => t.status === 6).length, [tasks]);
   const icedCount = useMemo(() => tasks?.filter((t) => t.status === 0).length, [tasks]);
@@ -108,14 +119,6 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const dragStarted = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
     setIsDraggedOver(true);
     if (!isProjectData(source.data) || !isProjectData(self.data) || source.data.item.id === project.id) return;
-    if (source.data.index === self.data.index - 1) {
-      setClosestEdge('right');
-      return;
-    }
-    if (source.data.index === self.data.index + 1) {
-      setClosestEdge('left');
-      return;
-    }
     setClosestEdge(extractClosestEdge(self.data));
   };
 
@@ -135,7 +138,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
     const data = getDraggableItemData<Project>(
       project,
-      projects.findIndex((el) => el.id === project.id),
+      submenuItemsOrder[project.workspaceId].findIndex((el) => el === project.id),
       'column',
     );
     if (!column || !headerDragButton || !cardList) return;
@@ -188,7 +191,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
           })
         : () => {},
     );
-  }, [project, projects, sortedTasks]);
+  }, [project, projects, submenuItemsOrder[project.workspaceId], sortedTasks]);
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (focusedProject === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
@@ -254,7 +257,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
                   return t.status !== 0 && t.status !== 6;
                 })
                 .map((task) => (
-                  <TaskContext.Provider key={task.id} value={{ task, focusedTaskId: focusedTask, setFocusedTask }}>
+                  <TaskContext.Provider key={task.id} value={{ task, projectMembers: members, focusedTaskId: focusedTask, setFocusedTask }}>
                     <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
                   </TaskContext.Provider>
                 ))}
@@ -299,7 +302,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
           <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
         )}
       </div>
-      {closestEdge && <DropIndicator edge={closestEdge} gap="8px" />}
+      {closestEdge && <DropIndicator className="w-[2px]" edge={closestEdge} />}
     </Card>
   );
 }

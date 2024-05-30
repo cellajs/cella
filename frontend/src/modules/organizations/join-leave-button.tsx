@@ -3,8 +3,7 @@ import { Check, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { invite as baseInvite } from '~/api/general';
-import { removeMembersFromResource } from '~/api/memberships';
+import { removeMembersFromResource, inviteMember as baseInvite } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
@@ -23,7 +22,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
   const [openPopover, setOpenPopover] = useState(false);
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(organization.slug));
 
-  const { mutate: invite } = useMutation({
+  const { mutate: inviteMember } = useMutation({
     mutationFn: baseInvite,
     onSuccess: () => {
       organizationQuery.refetch();
@@ -40,7 +39,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
   });
 
   const onJoin = () => {
-    invite({
+    inviteMember({
       emails: [user.email],
       role: 'MEMBER',
       idOrSlug: organization.slug,

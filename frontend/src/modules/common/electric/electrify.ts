@@ -5,9 +5,9 @@ import type { Labels as Label, Tasks as BaseTask } from '~/generated/client';
 export { schema } from '~/generated/client';
 export type { Electric, Label };
 
-export type Task = Omit<BaseTask, 'labels' | 'assignedTo'> & {
+export type Task = Omit<BaseTask, 'labels' | 'assigned_to'> & {
   labels: string[] | null;
-  assignedTo: string[] | null;
+  assigned_to: string[] | null;
 };
 
 export type TaskWithLabels = Omit<Task, 'labels'> & {

@@ -14,8 +14,10 @@ import {
   deleteProjectsRouteConfig,
   getProjectByIdOrSlugRouteConfig,
   getProjectsRouteConfig,
+  getUsersByProjectIdRouteConfig,
   updateProjectRouteConfig,
 } from './routes';
+import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 
@@ -136,10 +138,11 @@ const projectsRoutes = app
       .groupBy(membershipsTable.projectId)
       .as('counts');
 
-    const membershipRoles = db
+    const membership = db
       .select({
         projectId: membershipsTable.projectId,
         role: membershipsTable.role,
+        archived: membershipsTable.inactive,
       })
       .from(membershipsTable)
       .where(and(...membershipsFilters))
@@ -150,7 +153,7 @@ const projectsRoutes = app
         id: projectsTable.id,
         name: projectsTable.name,
         createdAt: projectsTable.createdAt,
-        userRole: membershipRoles.role,
+        userRole: membership.role,
       },
       sort,
       projectsTable.id,
@@ -160,12 +163,13 @@ const projectsRoutes = app
     const projects = await db
       .select({
         project: projectsTable,
-        role: membershipRoles.role,
+        role: membership.role,
+        archived: membership.archived,
         admins: counts.admins,
         members: counts.members,
       })
       .from(projectsQuery.as('projects'))
-      .leftJoin(membershipRoles, eq(membershipRoles.projectId, projectsTable.id))
+      .leftJoin(membership, eq(membership.projectId, projectsTable.id))
       .leftJoin(counts, eq(projectsTable.id, counts.projectId))
       .orderBy(orderColumn)
       .limit(Number(limit))
@@ -175,9 +179,10 @@ const projectsRoutes = app
       {
         success: true,
         data: {
-          items: projects.map(({ project, role, admins, members }) => ({
+          items: projects.map(({ project, role, admins, members, archived }) => ({
             ...project,
             role,
+            archived: archived,
             counts: { admins, members },
           })),
           total,
@@ -324,6 +329,89 @@ const projectsRoutes = app
       {
         success: true,
         errors: errors,
+      },
+      200,
+    );
+  })
+  /*
+   * Get members by project id
+   */
+  .openapi(getUsersByProjectIdRouteConfig, async (ctx) => {
+    const { q, sort, order, offset, limit } = ctx.req.valid('query');
+    const project = ctx.get('project');
+
+    const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
+
+    const usersQuery = db.select().from(usersTable).where(filter).as('users');
+
+    const membersFilters = [eq(membershipsTable.projectId, project.id), eq(membershipsTable.type, 'PROJECT')];
+
+    const roles = db
+      .select({
+        userId: membershipsTable.userId,
+        id: membershipsTable.id,
+        role: membershipsTable.role,
+      })
+      .from(membershipsTable)
+      .where(and(...membersFilters))
+      .as('roles');
+
+    const membershipCount = db
+      .select({
+        userId: membershipsTable.userId,
+        memberships: count().as('memberships'),
+      })
+      .from(membershipsTable)
+      .groupBy(membershipsTable.userId)
+      .as('membership_count');
+
+    const orderColumn = getOrderColumn(
+      {
+        id: usersTable.id,
+        name: usersTable.name,
+        email: usersTable.email,
+        createdAt: usersTable.createdAt,
+        membershipId: roles.id,
+      },
+      sort,
+      usersTable.id,
+      order,
+    );
+
+    const membersQuery = db
+      .select({
+        user: usersTable,
+        membershipId: roles.id,
+        counts: {
+          memberships: membershipCount.memberships,
+        },
+      })
+      .from(usersQuery)
+      .innerJoin(roles, eq(usersTable.id, roles.userId))
+      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
+      .orderBy(orderColumn);
+
+    const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
+
+    const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
+
+    const members = await Promise.all(
+      result.map(async ({ user, membershipId, counts }) => ({
+        ...user,
+        electricJWTToken: null,
+        sessions: [],
+        membershipId,
+        counts,
+      })),
+    );
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          items: members,
+          total,
+        },
       },
       200,
     );

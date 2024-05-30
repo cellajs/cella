@@ -22,10 +22,11 @@ import {
   getUsersConfig,
   meRouteConfig,
   terminateSessionsConfig,
+  updateSelfConfig,
   updateUserConfig,
 } from './routes';
 
-import { generateElectricJWTToken } from '../../lib/utils'
+import { generateElectricJWTToken } from '../../lib/utils';
 
 const app = new CustomHono();
 
@@ -152,23 +153,6 @@ const usersRoutes = app
         muted: membership.muted || false,
         membershipId: membership.id,
         role: membership?.role || null,
-        type: 'ORGANIZATION' as PageResourceType,
-      };
-    });
-
-    const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
-      return {
-        slug: workspace.slug,
-        id: workspace.id,
-        createdAt: workspace.createdAt,
-        modifiedAt: workspace.modifiedAt,
-        name: workspace.name,
-        thumbnailUrl: workspace.thumbnailUrl,
-        archived: membership.inactive || false,
-        muted: membership.muted || false,
-        membershipId: membership.id,
-        role: membership?.role || null,
-        type: 'WORKSPACE' as PageResourceType,
       };
     });
 
@@ -184,7 +168,23 @@ const usersRoutes = app
         muted: membership.muted || false,
         membershipId: membership.id,
         role: membership?.role || null,
-        type: 'PROJECT' as PageResourceType,
+        workspaceId: project.workspaceId,
+      };
+    });
+
+    const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
+      return {
+        slug: workspace.slug,
+        id: workspace.id,
+        createdAt: workspace.createdAt,
+        modifiedAt: workspace.modifiedAt,
+        name: workspace.name,
+        thumbnailUrl: workspace.thumbnailUrl,
+        archived: membership.inactive || false,
+        muted: membership.muted || false,
+        membershipId: membership.id,
+        role: membership?.role || null,
+        submenu: { items: projects.filter((p) => p.workspaceId === workspace.id), type: 'PROJECT' as PageResourceType, canCreate: false },
       };
     });
 
@@ -192,9 +192,8 @@ const usersRoutes = app
       {
         success: true,
         data: {
-          organizations: { items: organizations, canCreate: true },
-          workspaces: { items: workspaces, canCreate: true },
-          projects: { items: projects, canCreate: true },
+          organizations: { items: organizations, type: 'ORGANIZATION' as PageResourceType, canCreate: true },
+          workspaces: { items: workspaces, type: 'WORKSPACE' as PageResourceType, canCreate: true },
         },
       },
       200,
@@ -206,7 +205,6 @@ const usersRoutes = app
   .openapi(updateUserConfig, async (ctx) => {
     const { user: userId } = ctx.req.valid('param');
     const user = ctx.get('user');
-
     const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
 
     if (!targetUser) {
@@ -245,6 +243,68 @@ const usersRoutes = app
         modifiedBy: user.id,
       })
       .where(eq(usersTable.id, userId))
+      .returning();
+
+    const [{ memberships }] = await db
+      .select({
+        memberships: count(),
+      })
+      .from(membershipsTable)
+      .where(eq(membershipsTable.userId, updatedUser.id));
+
+    logEvent('User updated', { user: updatedUser.id });
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...transformDatabaseUser(updatedUser),
+          electricJWTToken: null,
+          sessions: [],
+          counts: {
+            memberships,
+          },
+        },
+      },
+      200,
+    );
+  })
+  /*
+   * Update self
+   */
+  .openapi(updateSelfConfig, async (ctx) => {
+    const user = ctx.get('user');
+    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+
+    if (!targetUser) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: user.id });
+    }
+
+    const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+
+    if (slug && slug !== targetUser.slug) {
+      const slugAvailable = await checkSlugAvailable(slug);
+
+      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
+    }
+
+    const [updatedUser] = await db
+      .update(usersTable)
+      .set({
+        email,
+        bannerUrl,
+        bio,
+        firstName,
+        lastName,
+        language,
+        newsletter,
+        thumbnailUrl,
+        slug,
+        name: [firstName, lastName].filter(Boolean).join(' ') || slug,
+        modifiedAt: new Date(),
+        modifiedBy: user.id,
+      })
+      .where(eq(usersTable.id, user.id))
       .returning();
 
     const [{ memberships }] = await db

@@ -3,7 +3,7 @@ import { nanoid } from '../../lib/nanoid';
 import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 
-const requestTypeEnum = ['ORGANIZATION_REQUEST', 'SYSTEM_REQUEST', 'NEWSLETTER_REQUEST', 'CONTACT_REQUEST'] as const;
+const requestTypeEnum = ['ORGANIZATION_REQUEST', 'WAITLIST_REQUEST', 'NEWSLETTER_REQUEST', 'CONTACT_REQUEST'] as const;
 
 export const requestsTable = pgTable(
   'requests',

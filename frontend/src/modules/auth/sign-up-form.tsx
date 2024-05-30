@@ -64,7 +64,7 @@ export const SignUpForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData ? t('common:invite_create_account') : `${t('common:create_account')}?`} <br />
+        {tokenData ? t('common:invite_create_account') : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`} <br />
         {!tokenData && (
           <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-2 text-xl">
             {email}

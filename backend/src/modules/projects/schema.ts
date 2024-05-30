@@ -13,6 +13,11 @@ export const apiProjectSchema = z.object({
   role: apiMembershipSchema.shape.role.nullable(),
 });
 
+export const apiProjectListSchema = z.object({
+  ...apiProjectSchema.shape,
+  archived: z.boolean().nullable(),
+});
+
 export const createProjectJsonSchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
@@ -35,4 +40,8 @@ export const updateProjectJsonSchema = createInsertSchema(projectsTable, {
   slug: true,
   name: true,
   color: true,
+});
+
+export const getUsersByProjectQuerySchema = paginationQuerySchema.extend({
+  sort: z.enum(['id', 'name', 'email', 'createdAt']).default('createdAt').optional(),
 });

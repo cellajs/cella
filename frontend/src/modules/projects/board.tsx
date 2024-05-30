@@ -2,13 +2,16 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, createContext, useContext, useEffect, useState } from 'react';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { sortTaskOrder } from '~/lib/utils';
+import { arrayMove, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
-import type { Label, Task } from '../common/electric/electrify';
+import type { Label } from '../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { WorkspaceContext } from '../workspaces';
-import { BoardColumn } from './board-column';
+import { BoardColumn, isProjectData } from './board-column';
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { isTaskData } from './draggable-task-card';
+import { useNavigationStore } from '~/store/navigation';
 
 interface ProjectContextValue {
   project: Project;
@@ -21,9 +24,14 @@ export const ProjectContext = createContext({} as ProjectContextValue);
 
 export default function Board() {
   const { workspaces } = useWorkspaceStore();
-  const { projects, tasks, labels } = useContext(WorkspaceContext);
+  const { projects, tasks, labels, workspace } = useContext(WorkspaceContext);
+
   const [focusedProjectIndex, setFocusedProjectIndex] = useState<number | null>(null);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
+  const { submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
+  const [mappedProjects, setMappedProjects] = useState<Project[]>(
+    projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, submenuItemsOrder[workspace.id])),
+  );
 
   const handleTaskClick = (taskId: string) => {
     setFocusedTaskId(taskId);
@@ -55,43 +63,48 @@ export default function Board() {
   ]);
 
   useEffect(() => {
+    setMappedProjects(projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, submenuItemsOrder[workspace.id])));
+  }, [submenuItemsOrder[workspace.id]]);
+
+  useEffect(() => {
     return combine(
       monitorForElements({
         canMonitor({ source }) {
           return source.data.type === 'column' || source.data.type === 'task';
         },
         onDrop({ location, source }) {
-          if (!location.current.dropTargets.length) return;
+          const target = location.current.dropTargets[0];
+          const sourceData = source.data;
+          if (!target) return;
 
-          if (source.data.type === 'column') {
-            //TODO Dragging a column
+          // Drag a column
+          if (isProjectData(sourceData) && isProjectData(target.data)) {
+            const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
+            const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'horizontal');
+            const newItemOrder = arrayMove(submenuItemsOrder[workspace.id], sourceData.index, destination);
+            setSubmenuItemsOrder(workspace.id, newItemOrder);
           }
 
-          // Dragging a task
-          if (source.data.type === 'task') {
-            const sourceTask = source.data.item as Task;
-            const sourceProjectId = sourceTask.project_id;
-
-            const [destinationTask] = location.current.dropTargets;
-            const destinationItem = destinationTask.data.item as Task;
-            const destinationProjectId = destinationItem.project_id;
-
-            // reordering in same project
-            if (sourceProjectId === destinationProjectId) {
-              return;
+          // Drag a task
+          if (isTaskData(sourceData) && isTaskData(target.data)) {
+            // Drag a task in different column
+            if (sourceData.item.project_id !== target.data.item.project_id) {
+              console.log('ChangeProject');
             }
-            // moving to a new project
-            return;
+            // Drag a task in same column
+            if (sourceData.item.project_id === target.data.item.project_id) {
+              console.log('ChangeIndex');
+            }
           }
         },
       }),
     );
-  }, []);
+  }, [submenuItemsOrder[workspace.id]]);
 
   return (
     <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)]">
       <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels">
-        {projects.map((project, index) => (
+        {mappedProjects.map((project, index) => (
           <Fragment key={project.id}>
             <ResizablePanel key={`${project.id}-panel`}>
               <ProjectContext.Provider

@@ -85,13 +85,12 @@ export const getUsersConfig = createRouteConfig({
 export const updateUserConfig = createRouteConfig({
   method: 'put',
   path: '/users/{user}',
-  guard: isAuthenticated,
+  guard: [isAuthenticated, isSystemAdmin],
   tags: ['users'],
   summary: 'Update a user',
   description: `
     Permissions:
       - Users with role 'ADMIN'
-      - Users, who are the user
   `,
   request: {
     params: userParamSchema,
@@ -99,6 +98,37 @@ export const updateUserConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: updateUserJsonSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'User',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(apiUserSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const updateSelfConfig = createRouteConfig({
+  method: 'put',
+  path: '/me',
+  guard: isAuthenticated,
+  tags: ['users'],
+  summary: 'Update a self',
+  description: 'Permissions: - Users, who are the user',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: updateUserJsonSchema.omit({
+            role: true,
+          }),
         },
       },
     },

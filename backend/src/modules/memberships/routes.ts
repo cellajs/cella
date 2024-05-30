@@ -1,14 +1,10 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema } from '../../lib/common-responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import {
-  apiMembershipSchema,
-  deleteMembersQuerySchema,
-  updateMembershipJsonSchema,
-  updateMembershipParamSchema,
-} from './schema';
+import { apiMembershipSchema, deleteMembersQuerySchema, updateMembershipJsonSchema, updateMembershipParamSchema } from './schema';
+import { inviteJsonSchema, inviteQuerySchema } from '../general/schema';
 
 export const updateMembershipRouteConfig = createRouteConfig({
   method: 'put',
@@ -36,6 +32,40 @@ export const updateMembershipRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(apiMembershipSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const inviteMembershipRouteConfig = createRouteConfig({
+  method: 'post',
+  path: '/membership',
+  guard: isAuthenticated,
+  tags: ['memberships'],
+  summary: 'Invite a new member(user) to organization',
+  description: `
+    Permissions:
+      - Users with role 'ADMIN'
+      - Users, who are members of the organization and have role 'ADMIN' in the organization
+  `,
+  request: {
+    query: inviteQuerySchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: inviteJsonSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Invitation was sent',
+      content: {
+        'application/json': {
+          schema: successResponseWithoutDataSchema,
         },
       },
     },

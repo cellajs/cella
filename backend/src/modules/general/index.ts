@@ -14,7 +14,7 @@ import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
-import { type OrganizationModel, organizationsTable } from '../../db/schema/organizations';
+import { organizationsTable } from '../../db/schema/organizations';
 import { requestsTable } from '../../db/schema/requests';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
@@ -26,7 +26,6 @@ import { getOrderColumn } from '../../lib/order-column';
 import { sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
 import { checkRole } from './helpers/check-role';
 import { checkSlugAvailable } from './helpers/check-slug';
@@ -43,7 +42,6 @@ import {
 } from './routes';
 import { projectsTable } from '../../db/schema/projects';
 import { isAuthenticated } from '../../middlewares/guard';
-import { extractEntity } from '../../lib/extract-entity';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -148,145 +146,46 @@ const generalRoutes = app
     );
   })
   /*
-   * Invite users to the system or members to an organization
+   * Invite users to the system
    */
   .openapi(inviteRouteConfig, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('query');
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    // Refactor
-    const organization = idOrSlug ? await extractEntity('ORGANIZATION', idOrSlug) as OrganizationModel : null
+    if (user.role !== 'ADMIN') return errorResponse(ctx, 403, 'forbidden', 'warn');
 
-    if (!organization && user.role !== 'ADMIN') {
-      return errorResponse(ctx, 403, 'forbidden', 'warn');
-    }
-
-    // Check to invite on organization level
-    if (organization && !checkRole(apiMembershipSchema, role)) {
-      return errorResponse(ctx, 400, 'invalid_role', 'warn');
-    }
-
-    if (!organization && !checkRole(apiUserSchema, role)) {
-      return errorResponse(ctx, 400, 'invalid_role', 'warn');
-    }
+    if (!checkRole(apiUserSchema, role)) return errorResponse(ctx, 400, 'invalid_role', 'warn');
 
     for (const email of emails) {
       const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
 
-      // Check if it's invitation to organization
-      if (targetUser && organization) {
-        // Check if user is already member of organization
-        const [existingMembership] = await db
-          .select()
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
-        if (existingMembership) {
-          logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
-
-          // Update role if different
-          if (role && existingMembership.role !== role && existingMembership.organizationId && existingMembership.userId) {
-            await db
-              .update(membershipsTable)
-              .set({ role: role as MembershipModel['role'] })
-              .where(
-                and(eq(membershipsTable.organizationId, existingMembership.organizationId), eq(membershipsTable.userId, existingMembership.userId)),
-              );
-            logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
-
-            sendSSE(targetUser.id, 'update_organization', {
-              ...organization,
-              userRole: role,
-              type: 'ORGANIZATION',
-            });
-          }
-
-          continue;
-        }
-
-        // Check if user is trying to invite themselves
-        if (user.id === targetUser.id) {
-          await db
-            .insert(membershipsTable)
-            .values({
-              organizationId: organization.id,
-              userId: user.id,
-              role: (role as MembershipModel['role']) || 'MEMBER',
-              createdBy: user.id,
-            })
-            .returning();
-
-          logEvent('User added to organization', { user: user.id, organization: organization.id });
-
-          sendSSE(user.id, 'new_organization_membership', {
-            ...organization,
-            userRole: role || 'MEMBER',
-            type: 'ORGANIZATION',
-          });
-
-          continue;
-        }
-      }
-
       const token = generateId(40);
       await db.insert(tokensTable).values({
         id: token,
-        type: organization ? 'ORGANIZATION_INVITATION' : 'SYSTEM_INVITATION',
+        type: 'SYSTEM_INVITATION',
         userId: targetUser?.id,
         email: email.toLowerCase(),
         role: (role as TokenModel['role']) || 'USER',
-        organizationId: organization?.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 
-      const emailLanguage = organization?.defaultLanguage || targetUser?.language || config.defaultLanguage;
+      const emailLanguage = targetUser?.language || config.defaultLanguage;
 
-      let emailHtml: string;
+      const emailHtml = render(
+        InviteEmail({
+          i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
+          username: email.toLowerCase(),
+          inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
+          invitedBy: user.name,
+          type: 'system',
+          replyTo: user.email,
+        }),
+      );
+      logEvent('User invited on system level');
 
-      if (!organization) {
-        if (!targetUser) {
-          // Send invitation email in system level
-          emailHtml = render(
-            InviteEmail({
-              i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
-              username: email.toLowerCase(),
-              inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
-              invitedBy: user.name,
-              type: 'system',
-              replyTo: user.email,
-            }),
-          );
-          logEvent('User invited on system level');
-        } else {
-          logEvent('User already exists', { user: targetUser.id }, 'warn');
-          continue;
-        }
-      } else {
-        // Send invitation email in organization level
-        emailHtml = render(
-          InviteEmail({
-            i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
-            orgName: organization.name || '',
-            orgImage: organization.logoUrl || '',
-            userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
-            username: targetUser?.name || email.toLowerCase() || '',
-            invitedBy: user.name,
-            inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
-            replyTo: user.email,
-          }),
-        );
-        logEvent('User invited to organization', { organization: organization?.id });
-      }
-      emailSender
-        .send(
-          config.senderIsReceiver ? user.email : email.toLowerCase(),
-          organization ? `Invitation to ${organization.name} on Cella` : 'Invitation to Cella',
-          emailHtml,
-          user.email,
-        )
-        .catch((error) => {
-          logEvent('Error sending email', { error: (error as Error).message }, 'error');
-        });
+      emailSender.send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email).catch((error) => {
+        logEvent('Error sending email', { error: (error as Error).message }, 'error');
+      });
     }
 
     return ctx.json(
@@ -526,7 +425,7 @@ const generalRoutes = app
       .returning();
 
     // slack notifications
-    if (type === 'SYSTEM_REQUEST') await sendSlackNotification('to join the waitlist.', email);
+    if (type === 'WAITLIST_REQUEST') await sendSlackNotification('to join the waitlist.', email);
     if (type === 'ORGANIZATION_REQUEST') await sendSlackNotification('to join an organization.', email);
     if (type === 'NEWSLETTER_REQUEST') await sendSlackNotification('to become a donate or build member.', email);
     if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${message}.`, email);

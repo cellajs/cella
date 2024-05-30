@@ -9,7 +9,7 @@ import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import BoardHeader from '~/modules/projects/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
-import type { Project, Workspace } from '~/types';
+import type { ProjectList, Workspace } from '~/types';
 import ContentPlaceholder from '../common/content-placeholder';
 import { type Label, type TaskWithLabels, type Task, useElectric } from '../common/electric/electrify';
 import { FocusViewContainer } from '../common/focus-view';
@@ -19,7 +19,7 @@ import { taskStatuses } from '../projects/select-status';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
-  projects: Project[];
+  projects: ProjectList;
   tasks: TaskWithLabels[];
   labels: Label[];
   tasksCount: number;
