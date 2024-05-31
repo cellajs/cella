@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
 import { SheetState, type SheetT, type SheetToRemove, type SheetToReset } from './state';
+import StickyBox from 'react-sticky-box';
 
 export function Sheeter() {
   const { t } = useTranslation();
@@ -64,22 +65,26 @@ export function Sheeter() {
     return (
       <Sheet key={sheet.id} open={open} onOpenChange={onOpenChange(sheet)} modal={true}>
         <SheetPortal>
-          <SheetContent className={sheet.className}>
-            {sheet.title || sheet.text ? (
-              <SheetHeader>
+          <SheetContent className={`${sheet.className} items-start`}>
+            {sheet.title && (
+              <StickyBox className="z-10 flex items-center justify-between bg-background py-3">
                 {existingSheet?.title ? (
                   <SheetTitle>{existingSheet.title}</SheetTitle>
-                ) : sheet.title ? (
+                ) : (
                   <SheetTitle>{typeof sheet.title === 'string' ? <span>{sheet.title}</span> : sheet.title}</SheetTitle>
-                ) : null}
-                {sheet.text && <SheetDescription>{sheet.text}</SheetDescription>}
+                )}
+                <SheetClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                  <X size={24} strokeWidth={1.25} />
+                  <span className="sr-only">{t('common:close')}</span>
+                </SheetClose>
+              </StickyBox>
+            )}
+            {sheet.text && (
+              <SheetHeader>
+                <SheetDescription>{sheet.text}</SheetDescription>
               </SheetHeader>
-            ) : null}
+            )}
             {sheet.content}
-            <SheetClose className="absolute right-4 top-5 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-              <X size={24} strokeWidth={1.25} />
-              <span className="sr-only">{t('common:close')}</span>
-            </SheetClose>
           </SheetContent>
         </SheetPortal>
       </Sheet>
