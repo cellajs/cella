@@ -5,6 +5,7 @@ import type { User } from '~/types';
 import { Pencil } from 'lucide-react';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '~/modules/ui/card';
 
 interface Props {
   user: User;
@@ -16,11 +17,21 @@ const RowEdit = ({ user, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
   const openUpdateSheet = () => {
-    sheet(<UpdateUserForm user={user} sheet callback={(user) => callback([user], 'update')} />, {
-      id: 'edit-user',
-      className: 'sm:max-w-2xl',
-      title: t('common:edit_user'),
-    });
+    sheet(
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('common:general')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UpdateUserForm user={user} sheet callback={(user) => callback([user], 'update')} />
+        </CardContent>
+      </Card>,
+      {
+        id: 'edit-user',
+        className: 'sm:max-w-2xl',
+        title: t('common:edit_user'),
+      },
+    );
   };
 
   return (
