@@ -249,7 +249,7 @@ const ItemOptions = ({
           name={item.name}
           url={item.thumbnailUrl}
         />
-        <div className='truncate grow py-2 text-left'>
+        <div className="truncate grow py-2 text-left">
           <div className={`truncate text-foreground/80 ${submenu ? 'text-sm' : 'text-base mb-1'} leading-5`}>{item.name}</div>
           <div className={`flex items-center gap-4 transition-opacity ${isGlobalDragging ? 'opacity-40 delay-0' : 'delay-500'}`}>
             <Button

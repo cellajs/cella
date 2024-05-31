@@ -40,7 +40,7 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
   };
 
   const toggleOptionsView = () => {
-    if (optionsView) toast(t('common:configure_menu.text'));
+    if (!optionsView) toast(t('common:configure_menu.text'));
     setOptionsView(!optionsView);
   };
 
