@@ -6,12 +6,12 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import { TooltipButton } from '../common/tooltip-button.tsx';
-import { Badge } from '../ui/badge.tsx';
-import ThreeStateSwitch from '../ui/three-state-switch.tsx';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
-import { WorkspaceContext } from '../workspaces/index.tsx';
-import { taskTypes } from './create-task-form.tsx';
+import { TooltipButton } from '../../../common/tooltip-button.tsx';
+import { Badge } from '../../../ui/badge.tsx';
+import ThreeStateSwitch from '../../../ui/three-state-switch.tsx';
+import { ToggleGroup, ToggleGroupItem } from '../../../ui/toggle-group.tsx';
+import { WorkspaceContext } from '../../../workspaces/index.tsx';
+import { taskTypes } from '../../task/create-task-form.tsx';
 import { DualSlider } from './view-status-dual-slider.tsx';
 
 interface Props {

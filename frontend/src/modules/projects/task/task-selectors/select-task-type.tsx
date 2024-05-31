@@ -5,9 +5,9 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Button } from '../ui/button';
-import { TaskContext } from './board-column';
-import type { TaskType } from './create-task-form';
+import { Button } from '../../../ui/button';
+import { TaskContext } from '../../board/board-column';
+import type { TaskType } from '../create-task-form';
 
 type Type = {
   value: (typeof types)[number]['value'];

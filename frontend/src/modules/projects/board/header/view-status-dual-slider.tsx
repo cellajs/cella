@@ -3,7 +3,7 @@ import { cva } from 'class-variance-authority';
 import { forwardRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
-import { Button } from '../ui/button';
+import { Button } from '../../../ui/button';
 
 type TaskStatuses = 'iced' | 'unstarted' | 'started' | 'finished' | 'delivered' | 'reviewed' | 'accepted' | null | undefined;
 export type SliderProps = {

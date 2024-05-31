@@ -8,12 +8,12 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { nanoid } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
-import { type Label, useElectric } from '../common/electric/electrify.ts';
-import { Kbd } from '../common/kbd.tsx';
-import { Badge } from '../ui/badge.tsx';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
-import { TaskContext } from './board-column.tsx';
+import { type Label, useElectric } from '../../../common/electric/electrify.ts';
+import { Kbd } from '../../../common/kbd.tsx';
+import { Badge } from '../../../ui/badge.tsx';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
+import { TaskContext } from '../../board/board-column.tsx';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};

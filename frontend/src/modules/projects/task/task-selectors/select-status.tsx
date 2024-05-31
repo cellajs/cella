@@ -7,9 +7,9 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn } from '~/lib/utils';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Kbd } from '../common/kbd';
-import { Button } from '../ui/button';
-import { TaskContext } from './board-column';
+import { Kbd } from '../../../common/kbd';
+import { Button } from '../../../ui/button';
+import { TaskContext } from '../../board/board-column';
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];

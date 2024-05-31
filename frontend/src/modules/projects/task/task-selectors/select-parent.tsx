@@ -4,44 +4,41 @@ import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
-import type { User } from '~/types/index.ts';
-import { Kbd } from '../common/kbd.tsx';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
-import { TaskContext } from './board-column';
+import { Kbd } from '../../../common/kbd.tsx';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
+import { TaskContext } from '../../board/board-column.tsx';
+import type { PreparedTask, Task } from '../../../common/electric/electrify.ts';
 
-interface AssignMembersProps {
+interface Props {
   mode: 'create' | 'edit';
-  users: User[];
-  viewValue?: User[] | null;
-  changeAssignedTo?: (users: User[]) => void;
+  tasks: PreparedTask[];
+  parent: Task | null;
+  onChange: (parent: Pick<Task, 'id'> | null) => void;
 }
 
-const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembersProps) => {
-  // const { project } = useContext(ProjectContext);
+const SelectParent = ({ tasks, mode, parent, onChange }: Props) => {
   const { t } = useTranslation();
-  const formValue = useFormContext?.()?.getValues('assignedTo');
+  const formValue = useFormContext?.()?.getValues('parentId');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<User[]>(viewValue ? viewValue : formValue || []);
+  const [selectedTask, setSelectedTask] = useState<PreparedTask | Task | null>(parent ? parent : tasks.find((task) => task.id === formValue) || null);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
   const { task, focusedTaskId } = useContext(TaskContext);
   const handleSelectClick = (id: string) => {
-  if (!id) return;
-  const existingUser = selectedUsers.find((user) => user.id === id);
-  if (existingUser) {
-    setSelectedUsers(selectedUsers.filter((user) => user.id !== id));
-    return;
-  }
-  const newUser = users.find((user) => user.id === id);
-  if (newUser) {
-    setSelectedUsers([...selectedUsers, newUser]);
-    return;
-  }
+    if (!id) return;
+    const existingTask = selectedTask?.id === id;
+    if (existingTask) {
+      setSelectedTask(null);
+      return;
+    }
+    const newTask = tasks.find((task) => task.id === id);
+    if (newTask) {
+      setSelectedTask(newTask);
+      return;
+    }
   };
   // Open on key press
   useHotkeys([
@@ -54,20 +51,22 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
   ]);
 
   useEffect(() => {
-    if (changeAssignedTo && JSON.stringify(selectedUsers) !== JSON.stringify(viewValue)) changeAssignedTo(selectedUsers);
-  }, [selectedUsers]);
+    if (onChange && JSON.stringify(selectedTask) !== JSON.stringify(parent)) onChange(selectedTask);
+  }, [selectedTask]);
 
   // Whenever the form value changes (also on reset), update the internal state
   useEffect(() => {
     if (mode === 'edit') return;
-    setSelectedUsers(formValue || []);
+    setSelectedTask(tasks.find((task) => task.id === formValue) || null);
   }, [formValue]);
 
-    // watch for changes in the viewValue
-    useEffect(() => {
-      if (mode === 'create') return;
-      setSelectedUsers(viewValue || []);
-    }, [viewValue]);
+  // watch for changes in the viewValue
+  useEffect(() => {
+    if (mode === 'create') return;
+    setSelectedTask(parent);
+  }, [parent]);
+
+  if (!selectedTask) return null;
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
@@ -78,28 +77,11 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
           className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${
-            mode === 'edit' && selectedUsers.length && 'px-0 hover:bg-transparent'
+            mode === 'edit' && selectedTask && 'px-0 hover:bg-transparent'
           }`}
         >
-          {!selectedUsers.length && <UserX className="h-4 w-4 opacity-50" />}
-          {!!selectedUsers.length && (
-            <AvatarGroup limit={3}>
-              <AvatarGroupList>
-                {selectedUsers.map((user) => {
-                  return <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />;
-                })}
-              </AvatarGroupList>
-              <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
-            </AvatarGroup>
-          )}
-          {mode === 'create' && (
-            <span className="ml-2 truncate">
-              {selectedUsers.length === 0 && 'Assign to'}
-              {selectedUsers.length === 1 && selectedUsers[0].name}
-              {selectedUsers.length === 2 && selectedUsers.map(({ name }) => name).join(', ')}
-              {selectedUsers.length > 2 && `${selectedUsers.length} assigned`}
-            </span>
-          )}
+          {!selectedTask && <UserX className="h-4 w-4 opacity-50" />}
+          {!!selectedTask && <span className="ml-2 truncate">{selectedTask.summary}</span>}
         </Button>
       </PopoverTrigger>
 
@@ -124,16 +106,16 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
             }}
             clearValue={setSearchValue}
             className="leading-normal"
-            placeholder={t('common:placeholder.assign')}
+            placeholder={t('common:placeholder.search_parent_task')}
           />
           {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
           <CommandList>
-            {users && (
+            {tasks && (
               <CommandGroup>
-                {users.map((user, index) => (
+                {tasks.map((task, index) => (
                   <CommandItem
-                    key={user.id}
-                    value={user.id}
+                    key={task.id}
+                    value={task.id}
                     onSelect={(id) => {
                       handleSelectClick(id);
                       setSearchValue('');
@@ -141,12 +123,11 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
                     <div className="flex items-center gap-3">
-                      <AvatarWrap type="USER" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
-                      <span>{user.name}</span>
+                      <span>{task.summary}</span>
                     </div>
 
                     <div className="flex items-center">
-                      {selectedUsers.some((u) => u.id === user.id) && <Check size={16} className="text-success" />}
+                      {selectedTask?.id === task.id && <Check size={16} className="text-success" />}
                       {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
                     </div>
                   </CommandItem>
@@ -160,4 +141,4 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
   );
 };
 
-export default AssignMembers;
+export default SelectParent;

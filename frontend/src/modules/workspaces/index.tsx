@@ -6,7 +6,7 @@ import { type Dispatch, type SetStateAction, createContext, useEffect, useMemo, 
 import { useTranslation } from 'react-i18next';
 import { getProjects } from '~/api/projects';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
-import BoardHeader from '~/modules/projects/board-header';
+import BoardHeader from '~/modules/projects/board/header/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import type { ProjectList, Workspace } from '~/types';
@@ -15,7 +15,7 @@ import { type Label, type PreparedTask, type Task, useElectric } from '../common
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
 import { useWorkspaceStore } from '~/store/workspace';
-import { taskStatuses } from '../projects/select-status';
+import { taskStatuses } from '../projects/task/task-selectors/select-status';
 
 interface WorkspaceContextValue {
   workspace: Workspace;

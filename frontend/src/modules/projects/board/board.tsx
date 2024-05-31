@@ -5,12 +5,12 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { arrayMove, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
-import type { Label } from '../common/electric/electrify';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
-import { WorkspaceContext } from '../workspaces';
+import type { Label } from '../../common/electric/electrify';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
+import { WorkspaceContext } from '../../workspaces';
 import { BoardColumn, isProjectData } from './board-column';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { isTaskData } from './draggable-task-card';
+import { isTaskData } from '../task/draggable-task-card';
 import { useNavigationStore } from '~/store/navigation';
 
 interface ProjectContextValue {
