@@ -108,7 +108,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
           <Button
             onClick={() => {
               dialog(<CreateOrganizationForm callback={organizationCreated} dialog />, {
-                className: 'md:max-w-xl',
+                className: 'md:max-w-2xl',
                 id: 'create-organization',
                 title: t('common:create_organization'),
               });
