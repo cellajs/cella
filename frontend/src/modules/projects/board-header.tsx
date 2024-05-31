@@ -32,7 +32,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   const Electric = useElectric();
 
   const openSettingsSheet = () => {
-    sheet(<WorkspaceSettings sheet />, {
+    sheet(<WorkspaceSettings sheet workspace={workspace} />, {
       className: 'sm:max-w-[52rem]',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),
@@ -67,7 +67,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   };
 
   const handleAddProjects = () => {
-    dialog(<AddProjects dialog />, {
+    dialog(<AddProjects dialog workspace={workspace} />, {
       //callback={(project) => callback([project], 'create')} dialog
       className: 'md:max-w-4xl',
       id: 'add-projects',

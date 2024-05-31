@@ -1,24 +1,20 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import { workspaceQueryOptions } from '.';
 import { dialog } from '../common/dialoger/state';
 import { Button } from '../ui/button';
 import DeleteWorkspaces from './delete-workspace';
 import UpdateWorkspaceForm from './update-workspace-form';
+import type { Workspace } from '~/types';
 
-export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
+export const WorkspaceSettings = ({ workspace, sheet: isSheet }: { workspace: Workspace; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
-
-  const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
-  const workspace = workspaceQuery.data;
 
   const openDeleteDialog = () => {
     dialog(
@@ -26,8 +22,8 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
         dialog
         workspaces={[workspace]}
         callback={() => {
+          if (isSheet) sheet.remove('edit-workspace');
           toast.success(t('success.delete_resource', { resource: t('common:workspace') }));
-          sheet.remove('workspace_settings');
           navigate({ to: '/', replace: true });
         }}
       />,

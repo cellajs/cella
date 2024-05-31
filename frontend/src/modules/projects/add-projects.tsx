@@ -1,30 +1,23 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { useParams } from '@tanstack/react-router';
 import { ChevronRight, Shrub, SquareMousePointer } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useFocusById from '~/hooks/use-focus-by-id';
-import { WorkspaceRoute } from '~/routes/workspaces';
-import type { Organization } from '~/types';
+import type { Organization, Workspace } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { workspaceQueryOptions } from '../workspaces';
 import { CreateProjectForm } from './create-project-form';
 
 interface AddProjectsProps {
+  workspace: Workspace;
   organization?: Organization | null;
   callback?: () => void;
   dialog?: boolean;
   mode?: 'create' | 'select' | null;
 }
 
-const AddProjects = ({ mode }: AddProjectsProps) => {
+const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
   //organization, callback, dialog: isDialog,
   const { t } = useTranslation();
-
-  const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
-  const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
-  const workspace = workspaceQuery.data;
 
   const [creationMode, setCreationMode] = useState(mode);
   if (!mode) useFocusById('create-project-option');
@@ -84,7 +77,7 @@ const AddProjects = ({ mode }: AddProjectsProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <CreateProjectForm workspace={workspace} callback={() => {}} dialog />
+      <CreateProjectForm workspace={workspace} dialog />
     </div>
   );
 };

@@ -3,23 +3,23 @@ import { useSSE } from './use-sse';
 
 type EntityType = 'organizations' | 'workspaces';
 const SSE = () => {
-  const updateProject = (e: MessageEvent<string>) => {
+  const createUpdateProject = (e: MessageEvent<string>) => {
     try {
-      const entity = JSON.parse(e.data);
+      const project = JSON.parse(e.data);
       useNavigationStore.setState((state) => {
-        const workspace = state.menu.workspaces.items.find((el) => el.id === entity.workspaceId);
+        const workspace = state.menu.workspaces.items.find((el) => el.id === project.workspaceId);
         // Ensure the workspace exists
         if (!workspace) return state;
-        // Check if the entity exists in the submenu
-        const notExist = workspace.submenu?.items.every((item) => item.id !== entity.id);
-        // If entity does not exist in the list, add it
+        // Check if the project exists in the submenu
+        const notExist = workspace.submenu?.items.every((item) => item.id !== project.id);
+        // If project does not exist in the list, add it
         if (notExist && workspace.submenu) {
-          workspace.submenu.items = [entity, ...workspace.submenu.items];
+          workspace.submenu.items = [project, ...workspace.submenu.items];
           return state;
         }
-        // Merge entity with existing item
+        // Merge project with existing item
         if (workspace.submenu) {
-          workspace.submenu.items = workspace.submenu.items.map((item) => (item.id === entity.id ? { ...item, ...entity } : item));
+          workspace.submenu.items = workspace.submenu.items.map((item) => (item.id === project.id ? { ...item, ...project } : item));
         }
 
         return state;
@@ -55,9 +55,8 @@ const SSE = () => {
         const exist = state.menu[entityType].items.some((item) => item.id === entity.id);
 
         // If entity already exists in the list, do nothing
-        if (exist) {
-          return state;
-        }
+        if (exist) return state;
+        if (entity.type === 'WORKSPACE') state.submenuItemsOrder[entity.id] = [];
 
         state.menu[entityType].items = [entity, ...state.menu[entityType].items];
         return state;
@@ -89,7 +88,8 @@ const SSE = () => {
   useSSE('new_workspace_membership', (e) => addEntity(e, 'workspaces'));
   useSSE('remove_workspace_membership', (e) => removeEntity(e, 'workspaces'));
 
-  useSSE('update_project', (e) => updateProject(e));
+  useSSE('update_project', (e) => createUpdateProject(e));
+  useSSE('new_project_membership', (e) => createUpdateProject(e));
 
   return null;
 };

@@ -70,6 +70,7 @@ export default function Board() {
     //Fix types
     if (currentWorkspace) {
       const currentActiveProjects = currentWorkspace.submenu?.items.filter((p) => !p.archived) as unknown as Project[];
+      if (!currentActiveProjects) return setMappedProjects(projects);
       setMappedProjects(currentActiveProjects.sort((a, b) => sortById(a.id, b.id, submenuItemsOrder[workspace.id])));
     }
   }, [currentWorkspace, submenuItemsOrder, workspace.id]);

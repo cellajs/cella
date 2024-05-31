@@ -69,12 +69,11 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       toast.success(t('success.create_resource', { resource: t('common:workspace') }));
       setActiveItemsOrder('workspaces', [...activeItemsOrder.workspaces, result.id]);
       setSheet(null);
+      if (isDialog) dialog.remove();
       navigate({
         to: '/workspace/$idOrSlug/board',
         params: { idOrSlug: result.slug },
       });
-
-      if (isDialog) dialog.remove();
     },
   });
 
