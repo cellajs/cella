@@ -67,6 +67,12 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
     setSelectedImpact(impacts[formValue] || null);
   }, [formValue]);
 
+  // Whenever the form value changes (also on reset), update the internal state
+  useEffect(() => {
+    if (viewValue !== null && viewValue !== undefined) return setSelectedImpact(impacts[viewValue]);
+    setSelectedImpact(null);
+  }, [viewValue]);
+
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>

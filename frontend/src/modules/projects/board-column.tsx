@@ -54,7 +54,6 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const headerRef = useRef<HTMLButtonElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
   const scrollableRef = useRef<HTMLDivElement | null>(null);
-
   const containerRef = useRef(null);
 
   const [dragging, setDragging] = useState(false);
@@ -129,6 +128,32 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   //   });
   // };
 
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (focusedProject === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
+    if (projects[focusedProject || 0].id !== project.id) return;
+
+    let filteredTasks = sortedTasks;
+
+    if (!showAccepted) filteredTasks = filteredTasks.filter((t) => t.status !== 6); // if accepted tasks hidden do not focus on them
+    if (!showIced) filteredTasks = filteredTasks.filter((t) => t.status !== 0); // if iced tasks hidden do not focus on them
+
+    const currentIndex = filteredTasks.findIndex((t) => t.id === focusedTask);
+    let nextIndex = currentIndex;
+
+    if (event.key === 'ArrowDown') nextIndex = currentIndex === filteredTasks.length - 1 ? 0 : currentIndex + 1;
+    if (event.key === 'ArrowUp') nextIndex = currentIndex === 0 ? filteredTasks.length - 1 : currentIndex - 1;
+
+    // Ensure there are tasks in the filtered list before setting focused task
+    if (filteredTasks.length > 0) {
+      setFocusedTask(filteredTasks[nextIndex].id); // Set the focused task id
+    }
+  };
+
+  useHotkeys([
+    ['ArrowDown', handleKeyDown],
+    ['ArrowUp', handleKeyDown],
+  ]);
+
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const column = columnRef.current;
@@ -192,32 +217,6 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
         : () => {},
     );
   }, [project, projects, submenuItemsOrder[project.workspaceId], sortedTasks]);
-
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (focusedProject === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
-    if (projects[focusedProject || 0].id !== project.id) return;
-
-    let filteredTasks = sortedTasks;
-
-    if (!showAccepted) filteredTasks = filteredTasks.filter((t) => t.status !== 6); // if accepted tasks hidden do not focus on them
-    if (!showIced) filteredTasks = filteredTasks.filter((t) => t.status !== 0); // if iced tasks hidden do not focus on them
-
-    const currentIndex = filteredTasks.findIndex((t) => t.id === focusedTask);
-    let nextIndex = currentIndex;
-
-    if (event.key === 'ArrowDown') nextIndex = currentIndex === filteredTasks.length - 1 ? 0 : currentIndex + 1;
-    if (event.key === 'ArrowUp') nextIndex = currentIndex === 0 ? filteredTasks.length - 1 : currentIndex - 1;
-
-    // Ensure there are tasks in the filtered list before setting focused task
-    if (filteredTasks.length > 0) {
-      setFocusedTask(filteredTasks[nextIndex].id); // Set the focused task id
-    }
-  };
-
-  useHotkeys([
-    ['ArrowDown', handleKeyDown],
-    ['ArrowUp', handleKeyDown],
-  ]);
 
   return (
     <Card

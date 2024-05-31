@@ -175,13 +175,11 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     setFocusedTask(task.id);
   }, [dragging]);
 
-  useEffect(() => {
-    if (focusedTaskId !== task.id) return;
-    taskRef.current?.focus();
-  }, [focusedTaskId]);
-
   return (
     <Card
+      onMouseDown={() => {
+        taskRef.current?.focus();
+      }}
       tabIndex={focusedTaskId === task.id ? 0 : -1}
       ref={taskRef}
       className={cn(
@@ -198,20 +196,18 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
         <div className="flex flex-col gap-1">
           <div className="flex gap-2 w-full">
             <div className="flex flex-col gap-2 mt-[2px]">
-              <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType)} />
-
+              <SelectTaskType className="z-20" currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType)} />
               <Checkbox
                 className={cn(
                   'transition-all duration-700 bg-background',
-                  !isExpanded && 'opacity-0 mt-[-18px] ml-[-6px] scale-[.6]',
+                  !isExpanded && 'opacity-0 mt-[-18px] ml-[-6px] scale-[.6] cursor-default z-0',
                   isExpanded && 'opacity-100',
                 )}
                 checked={selectedTasks.includes(task.id)}
                 onCheckedChange={(checked) => {
+                  if (!isExpanded) return;
                   setSelectedTasks((prev) => {
-                    if (checked) {
-                      return [...prev, task.id];
-                    }
+                    if (checked) return [...prev, task.id];
                     return prev.filter((id) => id !== task.id);
                   });
                 }}

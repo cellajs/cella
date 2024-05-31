@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, CircleDotDashed, Dot, type LucideIcon, Snowflake } from 'lucide-react';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -86,6 +86,10 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
     setOpenPopover(false);
     setSearchValue('');
   };
+
+  useEffect(() => {
+    setSelectedStatus(taskStatuses[taskStatus]);
+  }, [taskStatus]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
