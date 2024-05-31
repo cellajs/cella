@@ -68,10 +68,11 @@ const WorkspacePage = () => {
 
   const { results: tasks = [] } = useLiveQuery(
     Electric.db.tasks.liveMany({
-      include: {
-        tasks: true,
-        other_tasks: true,
-      },
+      // Cause Cannot read properties of undefined (reading 'relationName')
+      // include: {
+      //   tasks: true,
+      //   other_tasks: true,
+      // },
       where: {
         project_id: {
           in: projects.map((project) => project.id),

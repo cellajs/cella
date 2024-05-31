@@ -43,7 +43,7 @@ export const SheetMenuItem = ({ item, type, className, submenu, searchResults }:
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
       <AvatarWrap className={`${submenu ? 'm-1 h-8 w-8' : 'm-2'} items-center`} type={type} id={item.id} name={item.name} url={item.thumbnailUrl} />
-      <div className={`truncate ${submenu ? '' : 'p-2 pl-0'} flex flex-col justify-center text-left`}>
+      <div className={`truncate ${submenu ? 'p-1' : 'p-2'} flex flex-col justify-center text-left`}>
         <div className={`max-sm:pt-2 truncate ${submenu ? 'text-sm' : 'text-base'} leading-5`}>{item.name}</div>
         <div className={`max-sm:hidden text-muted-foreground ${submenu ? 'text-xs' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
