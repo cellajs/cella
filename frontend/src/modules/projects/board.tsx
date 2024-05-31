@@ -1,6 +1,6 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { Fragment, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { arrayMove, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -22,9 +22,18 @@ interface ProjectContextValue {
 
 export const ProjectContext = createContext({} as ProjectContextValue);
 
+const PANEL_MIN_WIDTH = 300;
+// Allow resizing of panels
+const EMPTY_SPACE_WIDTH = 300;
+
+function getScrollerWidth(containerWidth: number, projectsLength: number) {
+  if (containerWidth === 0) return '100%';
+  return containerWidth / projectsLength > PANEL_MIN_WIDTH ? '100%' : projectsLength * PANEL_MIN_WIDTH + EMPTY_SPACE_WIDTH;
+}
+
 export default function Board() {
   const { workspaces } = useWorkspaceStore();
-  const { projects, tasks, labels, workspace } = useContext(WorkspaceContext);
+  const { workspace, projects, tasks, labels } = useContext(WorkspaceContext);
 
   const [focusedProjectIndex, setFocusedProjectIndex] = useState<number | null>(null);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
@@ -32,6 +41,11 @@ export default function Board() {
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
     projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, submenuItemsOrder[workspace.id])),
   );
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(() => containerRef.current?.clientWidth ?? 0);
+  const scrollerWidth = getScrollerWidth(containerWidth, projects.length);
+  const panelMinSize = typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
 
   const handleTaskClick = (taskId: string) => {
     setFocusedTaskId(taskId);
@@ -110,34 +124,52 @@ export default function Board() {
     );
   }, [submenuItemsOrder[workspace.id]]);
 
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   return (
-    <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)]">
-      <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels">
-        {mappedProjects.map((project, index) => (
-          <Fragment key={project.id}>
-            <ResizablePanel key={`${project.id}-panel`}>
-              <ProjectContext.Provider
-                value={{
-                  project,
-                  labels: labels.filter((l) => l.project_id === project.id),
-                  focusedProject: focusedProjectIndex,
-                  setFocusedProjectIndex,
-                }}
-              >
-                <BoardColumn
-                  tasks={tasks.filter((t) => t.project_id === project.id)}
-                  key={`${project.id}-column`}
-                  setFocusedTask={(taskId: string) => handleTaskClick(taskId)}
-                  focusedTask={focusedTaskId}
-                />
-              </ProjectContext.Provider>
-            </ResizablePanel>
-            {mappedProjects.length > index + 1 && (
-              <ResizableHandle className="w-[6px] rounded border border-background -mx-[7px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
-            )}
-          </Fragment>
-        ))}
-      </ResizablePanelGroup>
+    <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)] overflow-x-auto" ref={containerRef}>
+      <div className="h-[inherit]" style={{ width: scrollerWidth }}>
+        <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspace.id}>
+          {mappedProjects.map((project, index) => (
+            <Fragment key={project.id}>
+              <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
+                <ProjectContext.Provider
+                  value={{
+                    project,
+                    labels: labels.filter((l) => l.project_id === project.id),
+                    focusedProject: focusedProjectIndex,
+                    setFocusedProjectIndex,
+                  }}
+                >
+                  <BoardColumn
+                    key={project.id}
+                    tasks={tasks.filter((t) => t.project_id === project.id)}
+                    setFocusedTask={(taskId: string) => handleTaskClick(taskId)}
+                    focusedTask={focusedTaskId}
+                  />
+                </ProjectContext.Provider>
+              </ResizablePanel>
+              {mappedProjects.length > index + 1 && (
+                <ResizableHandle className="w-[6px] rounded border border-background -mx-[7px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
+              )}
+            </Fragment>
+          ))}
+        </ResizablePanelGroup>
+      </div>
     </div>
   );
 }
