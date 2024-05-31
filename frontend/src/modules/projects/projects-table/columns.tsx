@@ -5,12 +5,13 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import type { Project } from '~/types';
+import type { ProjectRow } from '.';
+
 export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const mobileColumns: ColumnOrColumnGroup<Project>[] = [
+  const mobileColumns: ColumnOrColumnGroup<ProjectRow>[] = [
     {
       key: 'name',
       name: t('common:name'),
@@ -24,7 +25,7 @@ export const useColumns = () => {
     },
   ];
 
-  return useState<ColumnOrColumnGroup<Project>[]>(
+  return useState<ColumnOrColumnGroup<ProjectRow>[]>(
     isMobile
       ? mobileColumns
       : [

@@ -4,21 +4,26 @@ import { useColumns } from './columns';
 import { Bird } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useTranslation } from 'react-i18next';
-import type { Project } from '~/types';
 
-export default function ProjectsTable({ projects }: { projects: Project[] }) {
+export interface ProjectRow {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export default function ProjectsTable({ projects = [] }: { projects?: ProjectRow[] }) {
   const { t } = useTranslation();
-  const [rows, setRows] = useState<Project[]>(projects || []);
+  const [rows, setRows] = useState<ProjectRow[]>(projects || []);
 
   const [columns] = useColumns();
 
-  const onRowsChange = (records: Project[]) => {
+  const onRowsChange = (records: ProjectRow[]) => {
     setRows(records);
   };
 
   return (
     <div className="space-y-4 h-full">
-      <DataTable<Project>
+      <DataTable<ProjectRow>
         {...{
           columns: columns.filter((column) => column.visible),
           rows,

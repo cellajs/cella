@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getUserBySlugOrId } from '~/api/users';
+import { getProjectByUserId } from '~/api/projects';
 import { dateShort } from '~/lib/utils';
 import ProjectsTable from '~/modules/projects/projects-table';
 import type { User } from '~/types';
@@ -14,6 +15,13 @@ const Expand = ({ row }: { row: User }) => {
     queryKey: ['getUserBySlugOrId', row.modifiedBy],
     queryFn: () => getUserBySlugOrId(row.modifiedBy ?? ''),
     enabled: !!row.modifiedBy,
+  });
+
+  // Get user projects
+  const { data: projects, isFetching } = useQuery({
+    queryKey: ['getProjectByUserId', row.id],
+    queryFn: () => getProjectByUserId(row.id ?? ''),
+    enabled: !!row.id,
   });
 
   return (
@@ -35,7 +43,13 @@ const Expand = ({ row }: { row: User }) => {
           </div>
         </div>
       </div>
-      <ProjectsTable projects={[]} />
+      {isFetching ? (
+        <div className="flex items-center w-full h-[244px] justify-center relative">
+          <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
+        </div>
+      ) : (
+        <ProjectsTable projects={projects} />
+      )}
     </div>
   );
 };

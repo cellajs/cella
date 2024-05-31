@@ -25,6 +25,16 @@ export const getProjectBySlugOrId = async (project: string) => {
   return json.data;
 };
 
+// Get user projects by userId
+export const getProjectByUserId = async (userId: string) => {
+  const response = await client.projects['by-user'][':userId'].$get({
+    param: { userId },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
 export type GetProjectsParams = Partial<
   Omit<Parameters<(typeof client.projects)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;

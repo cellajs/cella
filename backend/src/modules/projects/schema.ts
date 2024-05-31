@@ -24,6 +24,18 @@ export const createProjectJsonSchema = z.object({
   color: colorSchema,
 });
 
+export const getUserProjectsParamSchema = z.object({
+  userId: idSchema,
+});
+
+export const apiUserProjectSchema = z.array(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    createdAt: z.string(),
+  }),
+);
+
 export const getProjectsQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),

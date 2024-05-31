@@ -14,6 +14,7 @@ import {
   deleteProjectsRouteConfig,
   getProjectByIdOrSlugRouteConfig,
   getProjectsRouteConfig,
+  getUserProjectsRouteConfig,
   getUsersByProjectIdRouteConfig,
   updateProjectRouteConfig,
 } from './routes';
@@ -187,6 +188,35 @@ const projectsRoutes = app
           })),
           total,
         },
+      },
+      200,
+    );
+  })
+  /*
+   * Get user projects
+   */
+  .openapi(getUserProjectsRouteConfig, async (ctx) => {
+    const { userId } = ctx.req.valid('param');
+
+    // * Get the membership
+    const projects = await db
+      .select({
+        id: projectsTable.id,
+        name: projectsTable.name,
+        createdAt: projectsTable.createdAt,
+      })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, membershipsTable.projectId))
+      .innerJoin(membershipsTable, and(eq(membershipsTable.userId, userId), eq(membershipsTable.type, 'PROJECT')));
+
+    if (!projects) return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN', { user: userId });
+
+    logEvent('Get user projects', { user: userId });
+
+    return ctx.json(
+      {
+        success: true,
+        data: projects,
       },
       200,
     );
