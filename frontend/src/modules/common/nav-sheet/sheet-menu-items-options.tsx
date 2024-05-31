@@ -238,20 +238,20 @@ const ItemOptions = ({
         layoutId={`sheet-menu-item-${item.id}`}
         ref={dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
-        className={`group flex relative items-center sm:max-w-[18rem] ${submenu ? 'pl-2 h-12 w-11/12' : 'h-14 w-full'} p-0  cursor-pointer justify-start rounded  focus:outline-none
-      ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground 
+        className={`group flex relative items-center sm:max-w-[18rem] ${submenu ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0  cursor-pointer justify-start rounded  focus:outline-none
+      ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground space-x-1
       ${!isItemArchived && 'ring-1'} `}
       >
         <AvatarWrap
-          className={`${submenu ? 'm-1 h-8 w-8' : 'm-2'}`}
+          className={`${submenu ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'}`}
           type={sectionType.slice(0, -1).toUpperCase() as PageResourceType}
           id={item.id}
           name={item.name}
           url={item.thumbnailUrl}
         />
-        <div className={`truncate grow ${submenu ? 'p-0' : 'p-2'} pl-2 text-left`}>
-          <div className={`truncate text-foreground/80 ${submenu ? 'text-sm' : 'text-base'} leading-5`}>{item.name}</div>
-          <div className={`flex items-center gap-4 mt-1 transition-opacity ${isGlobalDragging ? 'opacity-40 delay-0' : 'delay-500'}`}>
+        <div className='truncate grow py-2 text-left'>
+          <div className={`truncate text-foreground/80 ${submenu ? 'text-sm' : 'text-base mb-1'} leading-5`}>{item.name}</div>
+          <div className={`flex items-center gap-4 transition-opacity ${isGlobalDragging ? 'opacity-40 delay-0' : 'delay-500'}`}>
             <Button
               variant="link"
               size="sm"
@@ -293,8 +293,8 @@ const ItemOptions = ({
         </div>
 
         {!isItemArchived && (
-          <Button size="xs" variant="none" ref={dragButtonRef} className="p-2 mr-1 cursor-grab focus-visible:ring-inset focus-visible:ring-offset-0">
-            <GripVertical size={submenu ? 14 : 16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
+          <Button size="xs" variant="none" ref={dragButtonRef} className="p-2 px-3 cursor-grab focus-visible:ring-inset focus-visible:ring-offset-0">
+            <GripVertical size={16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
           </Button>
         )}
       </motion.div>
