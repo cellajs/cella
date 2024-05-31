@@ -144,12 +144,11 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   };
 
   useDoubleClick({
-    onSingleClick: () => setFocusedTask(task.id),
     onDoubleClick: () => {
       toggleEditorState();
       setIsExpanded(true);
-      setFocusedTask(task.id);
     },
+    allowedTargets: ['p', 'div'],
     ref: taskRef,
     latency: 250,
   });
@@ -172,12 +171,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     if (!dragging) return;
     setIsEditing(false);
     setIsExpanded(false);
-    setFocusedTask(task.id);
   }, [dragging]);
 
   return (
     <Card
       onMouseDown={() => {
+        setFocusedTask(task.id);
         taskRef.current?.focus();
       }}
       tabIndex={focusedTaskId === task.id ? 0 : -1}
