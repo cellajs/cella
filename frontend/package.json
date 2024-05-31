@@ -141,6 +141,7 @@
     "react-joyride": "^2.8.2",
     "react-resizable-panels": "^2.0.19",
     "react-sticky-box": "^2.0.5",
+    "react-use-measure": "^2.1.1",
     "slugify": "1.6.6",
     "sonner": "^1.4.41",
     "tailwind-merge": "^2.3.0",
@@ -183,7 +184,11 @@
     "vite-plugin-static-copy": "^1.0.5",
     "workbox-window": "^7.1.0"
   },
-  "browserslist": [">0.2%", "not dead", "not op_mini all"],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ],
   "postcss": {
     "plugins": {
       "postcss-import": {},

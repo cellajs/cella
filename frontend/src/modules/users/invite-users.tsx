@@ -5,10 +5,10 @@ import useFocusById from '~/hooks/use-focus-by-id';
 import { AppAlert } from '~/modules/common/app-alert';
 import { dialog } from '~/modules/common/dialoger/state';
 import type { Organization } from '~/types';
-import { DialogTitle } from '../ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 
 interface InviteUsersProps {
   organization?: Organization | null;
@@ -29,67 +29,95 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
     dialog.update('user-invite', {
-      title: mode[0] ? (
-        <DialogTitle className="flex items-center gap-2">
-          <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
-            {t('common:invite')}
-          </button>
-          <ChevronRight className="opacity-50" size={16} />
-          <span>{mode[0] === 'search' ? t('common:search') : t('common:email')}</span>
-        </DialogTitle>
-      ) : (
-        <DialogTitle>{t('common:invite')}</DialogTitle>
+      title: (
+        <div className="flex items-center gap-2">
+          {mode[0] ? (
+            <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
+              {t('common:invite')}
+            </button>
+          ) : (
+            <div>{t('common:invite')}</div>
+          )}
+          <AnimatePresence>
+            {mode[0] && (
+              <motion.span
+                className="flex items-center gap-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+              >
+                <ChevronRight className="opacity-50" size={16} />
+                {mode[0] === 'search' ? t('common:search') : t('common:email')}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </div>
       ),
     });
   };
 
-  if (!inviteMode) {
-    return (
-      <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
-        <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
-          <Search size={48} strokeWidth={1} />
-          <div className="flex flex-col p-4">
-            <div className="font-light">{t('common:invite_by_name')}</div>
-            <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
-              <strong>{t('common:continue')}</strong>
-              <ChevronRight className="ml-1" size={16} />
-            </div>
-          </div>
-        </ToggleGroupItem>
-        <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by emails">
-          <AtSign size={48} strokeWidth={1} />
-          <div className="flex flex-col p-4">
-            <p className="font-light">{t('common:invite_by_email')}</p>
-            <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
-              <strong>{t('common:continue')}</strong>
-              <ChevronRight className="ml-1" size={16} />
-            </div>
-          </div>
-        </ToggleGroupItem>
-      </ToggleGroup>
-    );
-  }
-
-  if (inviteMode === 'search') {
-    return (
-      <div className="flex flex-col gap-4">
-        <AppAlert id="invite_search" variant="success" Icon={Info}>
-          {t('common:explain.invite_search.text')}
-        </AppAlert>
-        <InviteSearchForm organization={organization} type={type} callback={callback} dialog={isDialog} />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-4">
-      <AppAlert id="invite_email" variant="success" Icon={Info}>
-        {t('common:explain.invite_email.text')}
-      </AppAlert>
-      <InviteEmailForm organization={organization} type={type} callback={callback} dialog={isDialog}>
-        {children}
-      </InviteEmailForm>
-    </div>
+    <MotionConfig transition={{ type: 'spring', bounce: 0, duration: 0.4 }}>
+      <AnimatePresence mode="popLayout">
+        {!inviteMode ? (
+          <motion.div key="initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}>
+            <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
+              <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
+                <Search size={48} strokeWidth={1} />
+                <div className="flex flex-col p-4">
+                  <div className="font-light">{t('common:invite_by_name')}</div>
+                  <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
+                    <strong>{t('common:continue')}</strong>
+                    <ChevronRight className="ml-1" size={16} />
+                  </div>
+                </div>
+              </ToggleGroupItem>
+              <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by emails">
+                <AtSign size={48} strokeWidth={1} />
+                <div className="flex flex-col p-4">
+                  <p className="font-light">{t('common:invite_by_email')}</p>
+                  <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
+                    <strong>{t('common:continue')}</strong>
+                    <ChevronRight className="ml-1" size={16} />
+                  </div>
+                </div>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </motion.div>
+        ) : inviteMode === 'search' ? (
+          <motion.div
+            key="search"
+            initial={{ x: 40, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -40, opacity: 0 }}
+            className="flex flex-col gap-4"
+          >
+            <AppAlert id="invite_search" variant="success" Icon={Info}>
+              {t('common:explain.invite_search.text')}
+            </AppAlert>
+            <InviteSearchForm organization={organization} type={type} callback={callback} dialog={isDialog} />
+          </motion.div>
+        ) : (
+          inviteMode === 'email' && (
+            <motion.div
+              key="search"
+              initial={{ x: 40, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -40, opacity: 0 }}
+              className="flex flex-col gap-4"
+            >
+              <AppAlert id="invite_email" variant="success" Icon={Info}>
+                {t('common:explain.invite_email.text')}
+              </AppAlert>
+              <InviteEmailForm organization={organization} type={type} callback={callback} dialog={isDialog}>
+                {children}
+              </InviteEmailForm>
+            </motion.div>
+          )
+        )}
+      </AnimatePresence>
+    </MotionConfig>
   );
 };
 
