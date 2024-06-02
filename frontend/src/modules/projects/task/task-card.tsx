@@ -184,7 +184,9 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
       className={cn(
         `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
         focus-visible:none
-        via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''}`,
+        via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''} ${
+          isExpanded ? 'is-expanded' : 'is-collapsed'
+        }`,
         variants({
           status: task.status as TaskStatus,
         }),
@@ -194,17 +196,17 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
       <CardContent id={`${task.id}-content`} className="p-2 space-between gap-1 flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-2 w-full">
-            <div className="flex flex-col gap-2 mt-[2px]">
+            <div className="flex flex-col gap-2 relative mt-[2px]">
               <SelectTaskType className="z-20" currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType)} />
               <Checkbox
                 className={cn(
-                  'transition-all duration-700 bg-background',
-                  !isExpanded && 'opacity-0 mt-[-18px] ml-[-6px] scale-[.6] cursor-default z-0',
-                  isExpanded && 'opacity-100',
+                  'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:scale-100 group-[.is-selected]/column:m-0',
+                  'transition-all duration-700 bg-background absolute',
+                  !isExpanded && 'opacity-0 mt-2 ml-[6px] scale-[.6] cursor-default z-0',
+                  isExpanded && 'opacity-100 mt-6',
                 )}
                 checked={selectedTasks.includes(task.id)}
                 onCheckedChange={(checked) => {
-                  if (!isExpanded) return;
                   setSelectedTasks((prev) => {
                     if (checked) return [...prev, task.id];
                     return prev.filter((id) => id !== task.id);
@@ -224,38 +226,38 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                 />
               )}
               {!isEditing && (
-                <div className="flex w-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                  <div
-                    ref={contentRef}
-                    // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
-                    tabIndex={0}
-                    onClick={handleMarkdownClick}
-                    className="flex ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <MDEditor.Markdown
-                      source={isExpanded ? task.markdown || '' : task.summary}
-                      style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                      className="inline-flex prose font-light text-start max-w-none"
-                    />
+                // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                <div
+                  ref={contentRef}
+                  // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
+                  tabIndex={0}
+                  onClick={handleMarkdownClick}
+                  className="inline ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <MDEditor.Markdown
+                    source={isExpanded ? task.markdown || '' : task.summary}
+                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                    className={` ${
+                      isExpanded ? 'markdown' : 'summary'
+                    } inline before:!content-none after:!content-none prose font-light text-start max-w-none`}
+                  />
 
-                    {!isExpanded && (
-                      <div className="opacity-50 group-hover/task:opacity-70 text-xs inline-block font-light ml-1 gap-1">
-                        <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
-                          {t('common:more').toLowerCase()}
-                        </Button>
-                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
-                          <span className="text-success">1</span>
-                          <span className="font-light">/</span>
-                          <span className="font-light">3</span>
-                        </Button>
-                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
-                          <Paperclip size={10} className="transition-transform -rotate-45" />
-                          <span>3</span>
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  {!isExpanded && (
+                    <div className="opacity-50 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 text-xs inline font-light gap-1">
+                      <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
+                        {t('common:more').toLowerCase()}
+                      </Button>
+                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
+                        <span className="text-success">1</span>
+                        <span className="font-light">/</span>
+                        <span className="font-light">3</span>
+                      </Button>
+                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
+                        <Paperclip size={10} className="transition-transform -rotate-45" />
+                        <span>3</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -274,7 +276,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
             <Button
               ref={taskDragButtonRef}
               variant={'ghost'}
-              className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35"
+              className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35"
             >
               <span className="sr-only"> {t('common:move_task')}</span>
               <GripVertical size={16} />

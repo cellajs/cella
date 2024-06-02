@@ -106,7 +106,9 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
           className={`flex h-auto justify-start font-light ${
-            mode === 'create' ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20' : 'py-[2px] group-hover/task:opacity-70 opacity-50'
+            mode === 'create'
+              ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20'
+              : 'py-[2px] group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
           } ${mode === 'edit' && selectedTasks.length && ''}`}
         >
           {!selectedTasks.length && <ListTodo size={16} className="opacity-50" />}

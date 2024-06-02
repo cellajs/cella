@@ -76,7 +76,7 @@ const SelectParent = ({ tasks, mode, parent, onChange }: Props) => {
           aria-label="Assign"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${
+          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'} ${
             mode === 'edit' && selectedTask && 'px-0 hover:bg-transparent'
           }`}
         >

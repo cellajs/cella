@@ -13,3 +13,9 @@
 .w-md-editor {
   box-shadow: none !important;
 }
+
+.wmde-markdown.summary {
+  > p {
+    display: inline;
+  }
+}

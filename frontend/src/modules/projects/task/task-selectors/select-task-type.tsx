@@ -52,7 +52,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger className={className} asChild>
-        <Button aria-label="Set status" variant="ghost" size="micro" className={'group-hover/task:opacity-100 -m-1 opacity-70'}>
+        <Button aria-label="Set status" variant="ghost" size="micro" className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 -m-1 opacity-70'}>
           {selectedType.icon()}
         </Button>
       </PopoverTrigger>

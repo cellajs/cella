@@ -77,7 +77,7 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
           aria-label="Assign"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${
+          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'} ${
             mode === 'edit' && selectedUsers.length && 'px-0 hover:bg-transparent'
           }`}
         >

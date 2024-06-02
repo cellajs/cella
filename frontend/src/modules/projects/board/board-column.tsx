@@ -7,7 +7,7 @@ import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { getDraggableItemData, sortTaskOrder } from '~/lib/utils';
+import { cn, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
@@ -62,7 +62,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
   const { project, focusedProject, setFocusedProjectIndex } = useContext(ProjectContext);
   const { submenuItemsOrder } = useNavigationStore();
-  const { searchQuery, projects } = useContext(WorkspaceContext);
+  const { searchQuery, projects, selectedTasks } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[project.workspaceId]?.columns.find((el) => el.columnId === project.id);
 
@@ -221,8 +221,8 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   return (
     <Card
       ref={columnRef}
-      className={`h-full relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center
-      opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`}
+      className={cn(`h-full relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center
+      opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`, selectedTasks.length && 'is-selected')}
     >
       <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
 

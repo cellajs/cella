@@ -81,7 +81,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
         taskDragButtonRef={taskDragButtonRef}
         dragging={dragging}
         dragOver={isDraggedOver}
-        className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary' : 'border-l-transparent'}`}
+        className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary is-focused' : 'border-l-transparent'}`}
       />
 
       {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} gap="-2px" />}
