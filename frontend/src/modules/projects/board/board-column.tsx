@@ -17,7 +17,7 @@ import { DropIndicator } from '../../common/drop-indicator';
 import type { PreparedTask } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
 import { WorkspaceContext } from '../../workspaces';
-import { ProjectContext } from './board';
+import { ProjectContext } from './project-context';
 import { BoardColumnHeader } from './board-column-header';
 import CreateTaskForm from '../task/create-task-form';
 import { DraggableTaskCard } from '../task/draggable-task-card';

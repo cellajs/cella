@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
-import { ProjectContext } from './board';
+import { ProjectContext } from './project-context';
 import ToolTipButtons from './tooltip-buttons';
 
 interface BoardColumnHeaderProps {

@@ -1,6 +1,6 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { arrayMove, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -13,15 +13,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { isTaskData } from '../task/draggable-task-card';
 import { useNavigationStore } from '~/store/navigation';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-
-interface ProjectContextValue {
-  project: Project;
-  labels: Label[];
-  focusedProject: number | null;
-  setFocusedProjectIndex: (index: number) => void;
-}
-
-export const ProjectContext = createContext({} as ProjectContextValue);
+import { ProjectContext } from './project-context';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
