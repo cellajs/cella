@@ -76,7 +76,8 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   };
 
   return (
-    <div className={'flex items-center w-full max-sm:justify-between sm:gap-2'}>
+    // z-40 to appear on top of sticky background in `BoardColumn`
+    <div className={'flex items-center w-full max-sm:justify-between sm:gap-2 z-40'}>
       <TableFilterBar
         onResetFilters={() => {
           setSearchQuery('');
