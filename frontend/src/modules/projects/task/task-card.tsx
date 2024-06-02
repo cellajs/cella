@@ -19,7 +19,7 @@ import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
 import { toast } from 'sonner';
 import { TaskContext } from '../board/board-column.tsx';
-import { ProjectContext } from '../board/board.tsx';
+import { ProjectContext } from '../board/project-context.ts';
 import SetLabels from './task-selectors/select-labels.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';

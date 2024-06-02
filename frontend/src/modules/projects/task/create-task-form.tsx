@@ -19,7 +19,7 @@ import { type Task, useElectric } from '../../common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
 import { WorkspaceContext } from '../../workspaces/index.tsx';
-import { ProjectContext } from '../board/board.tsx';
+import { ProjectContext } from '../board/project-context.ts';
 import { SelectImpact } from './task-selectors/select-impact.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import SelectStatus from './task-selectors/select-status.tsx';
