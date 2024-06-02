@@ -50,11 +50,11 @@ export const SheetMenuItem = ({ item, type, className, submenu, searchResults }:
         url={item.thumbnailUrl}
       />
       <div className="truncate py-2 flex flex-col justify-center text-left">
-        <div className={`truncate ${submenu ? 'max-sm:pt-[6px] text-sm' : 'max-sm:pt-[10px] text-base'} leading-5`}>{item.name}</div>
+        <div className={`truncate ${submenu ? 'max-sm:pt-[6px] text-sm sm:-mb-1 sm:-mt-[2px]' : 'max-sm:pt-[10px] text-base'} leading-5`}>{item.name}</div>
         <div className={`max-sm:hidden text-muted-foreground ${submenu ? 'text-xs' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
-            {type === 'WORKSPACE' ? `${t('common:projects')} amount: ${item.submenu?.items.length || 0}` : item.role ? UserRole[item.role] : ''}
+            {type === 'WORKSPACE' ? `${item.submenu?.items.length || 0} ${t('common:projects').toLowerCase()}` : item.role ? UserRole[item.role] : ''}
           </span>
         </div>
       </div>

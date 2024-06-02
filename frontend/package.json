@@ -124,7 +124,6 @@
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
     "locales": "workspace:*",
-    "lodash.clonedeep": "^4.5.0",
     "lowlight": "^3.1.0",
     "lucide-react": "^0.358.0",
     "nanoid": "^5.0.7",

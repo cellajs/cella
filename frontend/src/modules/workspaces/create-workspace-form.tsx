@@ -110,11 +110,11 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
               dialog(<CreateOrganizationForm callback={organizationCreated} dialog />, {
                 className: 'md:max-w-2xl',
                 id: 'create-organization',
-                title: t('common:create_organization'),
+                title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
               });
             }}
           >
-            <span>{t('common:create_organization')}</span>
+            <span>{t('common:create_resource', { resource: t('common:organization').toLowerCase() })}</span>
           </Button>
         </AlertDescription>
       </Alert>

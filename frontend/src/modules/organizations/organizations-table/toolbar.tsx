@@ -111,7 +111,7 @@ function Toolbar({
                     dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
                       className: 'md:max-w-2xl',
                       id: 'create-organization',
-                      title: t('common:create_organization'),
+                      title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
                     });
                   }}
                 >
