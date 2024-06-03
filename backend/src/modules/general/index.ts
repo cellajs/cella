@@ -40,7 +40,7 @@ import {
   suggestionsConfig,
 } from './routes';
 import { isAuthenticated } from '../../middlewares/guard';
-import { entityTables } from '../../lib/entity-tables';
+import { entityTables } from '../../lib/entity';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

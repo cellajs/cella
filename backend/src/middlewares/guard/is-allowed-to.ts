@@ -1,4 +1,4 @@
-import { eq, or } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
@@ -6,7 +6,7 @@ import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
 import type { Env, PageResourceType } from '../../types/common';
 import { logEvent } from '../logger/log-event';
-import { entityTables } from '../../lib/entity-tables';
+import { resolveEntity } from '../../lib/entity';
 
 /**
  * Middleware to protect routes by checking user permissions.
@@ -70,31 +70,11 @@ async function getResourceContext(ctx: any, resourceType: string) {
   const idOrSlug = ctx.req.param(resourceType)?.toLowerCase() || ctx.req.query(resourceType)?.toLowerCase();
   if (idOrSlug) {
     // Handles resolve for direct resource operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
-    return await resolveResourceByIdOrSlug(resourceType, idOrSlug);
+    return await resolveEntity(resourceType, idOrSlug);
   }
 
   // Generate a context using the lowest parent for resource operations, such as fetching or creating child resources
   return await createResourceContext(resourceType, ctx);
-}
-
-/**
- * Resolves resource based on ID or Slug and sets the context accordingly.
- * @param resourceType - The type of the resource.
- * @param idOrSlug - The unique identifier (ID or Slug) of the resource.
- * @param ctx - The context object containing request and response details.
- */
-export async function resolveResourceByIdOrSlug(resourceType: string, idOrSlug: string) {
-  const table = entityTables.get(resourceType.toUpperCase());
-
-  // Return early if table is not available
-  if (!table) throw new Error(`Invalid entity: ${resourceType}`);
-
-  const [resource] = await db
-    .select()
-    .from(table)
-    .where(or(eq(table.id, idOrSlug), eq(table.slug, idOrSlug)));
-
-  return resource;
 }
 
 /**
@@ -134,7 +114,7 @@ async function createResourceContext(resourceType: string, ctx: any) {
 
       // If identifier is found, resolve the lowest ancestor
       if (lowestAncestorIdOrSlug) {
-        lowestAncestor = await resolveResourceByIdOrSlug(ancestor.name, lowestAncestorIdOrSlug);
+        lowestAncestor = await resolveEntity(ancestor.name, lowestAncestorIdOrSlug);
         if (lowestAncestor) {
           // Set the lowest ancestor as parent in context
           context[`${ancestor.name}Id`] = lowestAncestor.id;

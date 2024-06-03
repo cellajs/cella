@@ -20,7 +20,7 @@ import { i18n } from '../../lib/i18n';
 import { render } from '@react-email/render';
 import { InviteEmail } from '../../../../email/emails/invite';
 import { emailSender } from 'email';
-import { resolveResourceByIdOrSlug } from '../../middlewares/guard/is-allowed-to';
+import { resolveEntity } from '../../lib/entity';
 
 const app = new CustomHono();
 
@@ -41,10 +41,7 @@ const membershipRoutes = app
     const type = currentMembership.type;
 
     // TODO: Refactor
-    const context = await resolveResourceByIdOrSlug(
-      type,
-      currentMembership.projectId || currentMembership.workspaceId || currentMembership.organizationId || '',
-    );
+    const context = await resolveEntity(type, currentMembership.projectId || currentMembership.workspaceId || currentMembership.organizationId || '');
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
@@ -97,7 +94,7 @@ const membershipRoutes = app
     const user = ctx.get('user');
 
     // Refactor
-    const organization = idOrSlug ? ((await resolveResourceByIdOrSlug('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
+    const organization = idOrSlug ? ((await resolveEntity('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
 
     if (!organization) return errorResponse(ctx, 403, 'forbidden', 'warn');
 
@@ -221,7 +218,7 @@ const membershipRoutes = app
     const memberIds = Array.isArray(ids) ? ids : [ids];
 
     // Check if the user has permission to delete the memberships
-    const context = await resolveResourceByIdOrSlug(entityType, idOrSlug);
+    const context = await resolveEntity(entityType, idOrSlug);
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', context);
