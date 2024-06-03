@@ -8,7 +8,6 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { deleteMembershipsRouteConfig, inviteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
 import permissionManager from '../../lib/permission-manager';
-import { extractEntity } from '../../lib/extract-entity';
 import type { OrganizationModel } from '../../db/schema/organizations';
 import { checkRole } from '../general/helpers/check-role';
 import { apiMembershipSchema } from './schema';
@@ -21,6 +20,8 @@ import { i18n } from '../../lib/i18n';
 import { render } from '@react-email/render';
 import { InviteEmail } from '../../../../email/emails/invite';
 import { emailSender } from 'email';
+import { resolveResourceByIdOrSlug } from '../../middlewares/guard/is-allowed-to';
+
 const app = new CustomHono();
 
 // * Membership endpoints
@@ -35,12 +36,15 @@ const membershipRoutes = app
 
     // * Get the membership
     const [currentMembership] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
-    if (!currentMembership) return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN', { membership: membershipId });
+    if (!currentMembership) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { membership: membershipId });
 
     const type = currentMembership.type;
 
     // TODO: Refactor
-    const context = await extractEntity(type, currentMembership.projectId || currentMembership.workspaceId || currentMembership.organizationId || '');
+    const context = await resolveResourceByIdOrSlug(
+      type,
+      currentMembership.projectId || currentMembership.workspaceId || currentMembership.organizationId || '',
+    );
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
@@ -93,7 +97,7 @@ const membershipRoutes = app
     const user = ctx.get('user');
 
     // Refactor
-    const organization = idOrSlug ? ((await extractEntity('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
+    const organization = idOrSlug ? ((await resolveResourceByIdOrSlug('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
 
     if (!organization) return errorResponse(ctx, 403, 'forbidden', 'warn');
 
@@ -217,7 +221,7 @@ const membershipRoutes = app
     const memberIds = Array.isArray(ids) ? ids : [ids];
 
     // Check if the user has permission to delete the memberships
-    const context = await extractEntity(entityType, idOrSlug);
+    const context = await resolveResourceByIdOrSlug(entityType, idOrSlug);
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', context);
@@ -231,10 +235,11 @@ const membershipRoutes = app
     let where: SQL;
     if (entityType === 'ORGANIZATION') {
       where = eq(membershipsTable.organizationId, context.id);
-    } else if (entityType === 'WORKSPACE') {
+    }
+    if (entityType === 'WORKSPACE') {
       where = eq(membershipsTable.workspaceId, context.id);
     } else {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN');
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
     }
 
     // * Get the user membership
@@ -298,13 +303,14 @@ const membershipRoutes = app
     for (const membership of allowedTargets) {
       // * Send the event to the user if they are a member of the organization
 
-      if (entityType === 'ORGANIZATION') {
-        sendSSE(membership.userId, 'remove_organization_membership', {
+      if (membership.type === 'WORKSPACE') {
+        sendSSE(membership.userId, 'remove_workspace_membership', {
           id: context.id,
           userId: membership.userId,
         });
-      } else {
-        sendSSE(membership.userId, 'remove_workspace_membership', {
+      }
+      if (membership.type === 'ORGANIZATION') {
+        sendSSE(membership.userId, 'remove_organization_membership', {
           id: context.id,
           userId: membership.userId,
         });

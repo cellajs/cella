@@ -1,4 +1,5 @@
 const oauthProviders = ['Github'];
+const membershipEntityTypes = ['WORKSPACE', 'PROJECT'] as const;
 
 export const config = {
   mode: 'development',
@@ -136,6 +137,9 @@ export const config = {
     ],
     timezones: [],
   },
+
+  entityTypes: ['USER', 'ORGANIZATION', ...membershipEntityTypes] as const,
+  contextEntityTypes: ['ORGANIZATION', ...membershipEntityTypes] as const,
 };
 
 export default config;

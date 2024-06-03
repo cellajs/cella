@@ -6,6 +6,7 @@ import { tokensTable } from '../../db/schema/tokens';
 import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, passwordSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
+import { config } from 'config';
 
 export const tokensSchema = createSelectSchema(tokensTable);
 
@@ -39,17 +40,14 @@ const suggestionSchema = z.object({
   slug: slugSchema,
   id: idSchema,
   name: nameSchema,
-  thumbnailUrl: imageUrlSchema.nullable(),
+  email: z.string().optional(),
+  thumbnailUrl: imageUrlSchema.nullable().optional(),
 });
 
-export const userSuggestionSchema = suggestionSchema.extend({ email: z.string(), type: z.literal('USER') });
-export const organizationSuggestionSchema = suggestionSchema.extend({ type: z.literal('ORGANIZATION') });
-export const workspaceSuggestionSchema = suggestionSchema.extend({ type: z.literal('WORKSPACE') });
+export const entitySuggestionSchema = suggestionSchema.extend({ type: z.enum(config.entityTypes) });
 
 export const suggestionsSchema = z.object({
-  users: z.array(userSuggestionSchema),
-  organizations: z.array(organizationSuggestionSchema),
-  workspaces: z.array(workspaceSuggestionSchema),
+  entities: z.array(entitySuggestionSchema),
   total: z.number(),
 });
 

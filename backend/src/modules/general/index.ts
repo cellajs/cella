@@ -18,7 +18,6 @@ import { organizationsTable } from '../../db/schema/organizations';
 import { requestsTable } from '../../db/schema/requests';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
-import { workspacesTable } from '../../db/schema/workspaces';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { sendSlackNotification } from '../../lib/notification';
@@ -40,8 +39,8 @@ import {
   requestActionConfig,
   suggestionsConfig,
 } from './routes';
-import { projectsTable } from '../../db/schema/projects';
 import { isAuthenticated } from '../../middlewares/guard';
+import { entityTables } from '../../lib/entity-tables';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -328,80 +327,48 @@ const generalRoutes = app
    */
   .openapi(suggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
-    const usersResult = [];
-    const workspacesResult = [];
-    const organizationsResult = [];
-    const projectsResult = [];
+    const entitiesResult = [];
+    if (type === undefined) {
+      for (const defaultEntity of config.entityTypes) {
+        const table = entityTables.get(defaultEntity);
+        if (!table) continue;
+        const entities = await db
+          .select({
+            id: table.id,
+            slug: table.slug,
+            name: table.name,
+            ...('email' in table && { email: table.email }),
+            ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
+          })
+          .from(table)
+          .where('email' in table ? or(ilike(table.name, `%${q}%`), ilike(table.email, `%${q}%`)) : ilike(table.name, `%${q}%`))
+          .limit(10);
+        entitiesResult.push(...entities.map((entity) => ({ ...entity, type: defaultEntity })));
+      }
+    } else {
+      const table = entityTables.get(type);
+      if (table) {
+        const entities = await db
+          .select({
+            id: table.id,
+            slug: table.slug,
+            name: table.name,
+            ...('email' in table && { email: table.email }),
+            ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
+          })
+          .from(table)
+          .where('email' in table ? or(ilike(table.name, `%${q}%`), ilike(table.email, `%${q}%`)) : ilike(table.name, `%${q}%`))
+          .limit(10);
 
-    if (type === 'USER' || !type) {
-      const users = await db
-        .select({
-          id: usersTable.id,
-          slug: usersTable.slug,
-          name: usersTable.name,
-          email: usersTable.email,
-          thumbnailUrl: usersTable.thumbnailUrl,
-        })
-        .from(usersTable)
-        .where(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)))
-        .limit(10);
-
-      usersResult.push(...users.map((user) => ({ ...user, type: 'USER' as const })));
+        entitiesResult.push(...entities.map((entity) => ({ ...entity, type })));
+      }
     }
-
-    if (type === 'ORGANIZATION' || !type) {
-      const organizations = await db
-        .select({
-          id: organizationsTable.id,
-          slug: organizationsTable.slug,
-          name: organizationsTable.name,
-          thumbnailUrl: organizationsTable.thumbnailUrl,
-        })
-        .from(organizationsTable)
-        .where(ilike(organizationsTable.name, `%${q}%`))
-        .limit(10);
-
-      organizationsResult.push(...organizations.map((organization) => ({ ...organization, type: 'ORGANIZATION' as const })));
-    }
-
-    if (type === 'WORKSPACE' || !type) {
-      const workspaces = await db
-        .select({
-          id: workspacesTable.id,
-          slug: workspacesTable.slug,
-          name: workspacesTable.name,
-          thumbnailUrl: workspacesTable.thumbnailUrl,
-        })
-        .from(workspacesTable)
-        .where(ilike(workspacesTable.name, `%${q}%`))
-        .limit(10);
-
-      workspacesResult.push(...workspaces.map((workspace) => ({ ...workspace, type: 'WORKSPACE' as const })));
-    }
-
-    if (type === 'PROJECT' || !type) {
-      const projects = await db
-        .select({
-          id: projectsTable.id,
-          slug: projectsTable.slug,
-          name: projectsTable.name,
-        })
-        .from(projectsTable)
-        .where(ilike(projectsTable.name, `%${q}%`))
-        .limit(10);
-
-      projectsResult.push(...projects.map((project) => ({ ...project, type: 'PROJECT' as const })));
-    }
-
     return ctx.json(
       {
         success: true,
         data: {
-          users: usersResult,
-          organizations: organizationsResult,
-          workspaces: workspacesResult,
-          projects: projectsResult,
-          total: usersResult.length + workspacesResult.length + organizationsResult.length + projectsResult.length,
+          entities: entitiesResult,
+          total: entitiesResult.length,
         },
       },
       200,

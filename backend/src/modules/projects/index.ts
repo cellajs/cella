@@ -209,7 +209,7 @@ const projectsRoutes = app
       .where(eq(projectsTable.id, membershipsTable.projectId))
       .innerJoin(membershipsTable, and(eq(membershipsTable.userId, userId), eq(membershipsTable.type, 'PROJECT')));
 
-    if (!projects) return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN', { user: userId });
+    if (!projects) return errorResponse(ctx, 404, 'not_found', 'warn', 'PROJECT', { user: userId });
 
     logEvent('Get user projects', { user: userId });
 

@@ -76,7 +76,7 @@ const Combobox: React.FC<ComboboxProps> = ({
           {selectedOption ? (
             <div className="flex items-center gap-2">
               {name !== 'timezone' && name !== 'country' && (
-                <AvatarWrap className="h-6 w-6 text-xs" type="UNKNOWN" id={selectedOption.value} name={name} url={selectedOption.url} />
+                <AvatarWrap className="h-6 w-6 text-xs" type="ORGANIZATION" id={selectedOption.value} name={name} url={selectedOption.url} />
               )}
               {renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}
             </div>
@@ -112,7 +112,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
                     <div className="flex items-center gap-2">
-                      {name !== 'timezone' && name !== 'country' && <AvatarWrap type="UNKNOWN" id={option.value} name={name} url={option.url} />}
+                      {name !== 'timezone' && name !== 'country' && <AvatarWrap type="ORGANIZATION" id={option.value} name={name} url={option.url} />}
                       {renderOption ? renderOption(option) : <> {option.label}</>}
                     </div>
                     <Check size={16} className={cn('text-success', formValue === option.value ? 'opacity-100' : 'opacity-0')} />
