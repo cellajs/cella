@@ -240,7 +240,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
           {!!tasks.length && (
             <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-1px]">
               <ScrollBar size="indicatorVertical" />
-              <div className="flex flex-col px-0 pb-14">
+              <div className="flex flex-col px-0">
                 <Button
                   onClick={handleAcceptedClick}
                   variant="ghost"

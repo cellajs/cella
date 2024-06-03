@@ -30,8 +30,8 @@ export const workspacesTable = pgTable(
   },
   (table) => {
     return {
-      nameIndex: index('workspace_name_index').on(table.name).desc(),
-      createdAtIndex: index('workspace_created_at_index').on(table.createdAt).desc(),
+      nameIndex: index('workspace_name_index').on(table.name.desc()),
+      createdAtIndex: index('workspace_created_at_index').on(table.createdAt.desc()),
     };
   },
 );

@@ -43,8 +43,8 @@ export const organizationsTable = pgTable(
   },
   (table) => {
     return {
-      nameIndex: index('organizations_name_index').on(table.name).desc(),
-      createdAtIndex: index('organizations_created_at_index').on(table.createdAt).desc(),
+      nameIndex: index('organizations_name_index').on(table.name.desc()),
+      createdAtIndex: index('organizations_created_at_index').on(table.createdAt.desc()),
     };
   },
 );
