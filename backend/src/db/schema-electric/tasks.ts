@@ -17,7 +17,6 @@ export const tasksTable = pgTable('tasks', {
   labels: jsonb('labels').$type<string[]>(),
   assignedTo: jsonb('assigned_to').$type<string[]>(),
   organizationId: varchar('organization_id').notNull(),
-  workspaceId: varchar('workspace_id').notNull(),
   projectId: varchar('project_id').notNull(),
   createdAt: timestamp('created_at')
     // .defaultNow()

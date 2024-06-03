@@ -6,7 +6,6 @@ export const labelsTable = pgTable('labels', {
   name: varchar('name').notNull(),
   color: varchar('color'),
   organizationId: varchar('organization_id').notNull(),
-  workspaceId: varchar('workspace_id').notNull(),
   projectId: varchar('project_id').notNull(),
 });
 
