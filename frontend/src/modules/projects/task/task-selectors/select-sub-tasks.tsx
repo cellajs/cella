@@ -1,5 +1,5 @@
 import { CommandEmpty } from 'cmdk';
-import { Check, Dot, History, ListTodo, X } from 'lucide-react';
+import { Check, Dot, History } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -8,11 +8,9 @@ import { useMeasure } from '~/hooks/use-measure.tsx';
 import { Button } from '~/modules/ui/button';
 import type { PreparedTask, Task } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
-import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
 import { TaskContext } from '../../board/board-column.tsx';
-import { Checkbox } from '../../../ui/checkbox.tsx';
 import { ScrollArea } from '~/modules/ui/scroll-area.tsx';
 
 interface Props {
@@ -111,38 +109,7 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
               : 'py-[2px] group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
           } ${mode === 'edit' && selectedTasks.length && ''}`}
         >
-          {!selectedTasks.length && <ListTodo size={16} className="opacity-50" />}
-          <div className="flex truncate flex-wrap gap-[1px]">
-            {mode === 'create' && selectedTasks.length === 0 && <span className="ml-2">Choose sub tasks</span>}
-            {selectedTasks.length > 0 &&
-              selectedTasks.map(({ summary, id, status }) => {
-                return (
-                  <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
-                    <Badge
-                      variant="outline"
-                      key={id}
-                      className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm h-6' : 'h-5 bg-transparent'} last:mr-0`}
-                    >
-                      <Checkbox checked={status === 6} className="mr-1 w-3 h-3" />
-                      {summary}
-                    </Badge>
-                    {mode === 'create' && (
-                      <Button
-                        className="opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:!ring-offset-0"
-                        size="micro"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleSelectClick(id);
-                        }}
-                      >
-                        <X size={16} strokeWidth={3} />
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
+          <div>+ Add Sub Task</div>
         </Button>
       </PopoverTrigger>
 

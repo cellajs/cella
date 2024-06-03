@@ -1,4 +1,4 @@
-import { Check, UserX } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,7 @@ import type { PreparedTask, Task } from '../../../common/electric/electrify.ts';
 interface Props {
   mode: 'create' | 'edit';
   tasks: PreparedTask[];
-  parent: Task | null;
+  parent: PreparedTask | null;
   onChange: (parent: Pick<Task, 'id'> | null) => void;
 }
 
@@ -73,22 +73,22 @@ const SelectParent = ({ tasks, mode, parent, onChange }: Props) => {
       <PopoverTrigger asChild>
         <Button
           ref={ref as React.LegacyRef<HTMLButtonElement>}
-          aria-label="Assign"
+          aria-label="Set parent task"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'} ${
-            mode === 'edit' && selectedTask && 'px-0 hover:bg-transparent'
-          }`}
+          className={`flex justify-start font-light ${
+            mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'
+          } ${mode === 'edit' && selectedTask && 'px-0 hover:bg-transparent'}`}
         >
-          {!selectedTask && <UserX className="h-4 w-4 opacity-50" />}
-          {!!selectedTask && <span className="ml-2 truncate">{selectedTask.summary}</span>}
+          {/* {!selectedTask && <UserX className="h-4 w-4 opacity-50" />} */}
+          <span className="ml-2 truncate">Sub task of "{selectedTask.summary}"</span>
         </Button>
       </PopoverTrigger>
 
       <PopoverContent
         style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right + 2)}` : '240'}px` }}
         className="p-0 rounded-lg"
-        align="end"
+        align="start"
         onCloseAutoFocus={(e) => e.preventDefault()}
         sideOffset={4}
       >
