@@ -137,6 +137,12 @@ const projectsRoutes = app
     const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
     const projectsFilters = [filter];
 
+    // TODO: Avoid separate queries for projects-to-workspace relations
+    if (workspace) {
+      const projectsIds = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.workspaceId, workspace));
+      if (projectsIds?.length) projectsFilters.push(inArray(projectsTable.id, projectsIds.map(el => el.projectId)))
+    }
+
     const projectsQuery = db
       .select()
       .from(projectsTable)
