@@ -2,6 +2,7 @@ import { type SQL, and, count, eq, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { projectsTable } from '../../db/schema/projects';
+import { workspacesTable } from '../../db/schema/workspaces';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
@@ -136,18 +137,10 @@ const projectsRoutes = app
     const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
     const projectsFilters = [filter];
 
-    // TODO: Avoid separate queries for projects-to-workspace relations
-    if (workspace) {
-      const projectsIds = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.workspaceId, workspace));
-      if (projectsIds?.length) projectsFilters.push(inArray(projectsTable.id, projectsIds.map(el => el.projectId)))
-    }
-
     const projectsQuery = db
       .select()
       .from(projectsTable)
       .where(and(...projectsFilters));
-
-    const [{ total }] = await db.select({ total: count() }).from(projectsQuery.as('projects'));
 
     const counts = db
       .select({
@@ -181,7 +174,14 @@ const projectsRoutes = app
       order,
     );
 
-    const projects = await db
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    let projects: Array<any>;
+    let total = 0;
+
+    if (!workspace) {
+      const [{ total: matches }] = await db.select({ total: count() }).from(projectsQuery.as('projects'));
+      total = matches;
+      projects = await db
       .select({
         project: projectsTable,
         role: membership.role,
@@ -195,6 +195,34 @@ const projectsRoutes = app
       .orderBy(orderColumn)
       .limit(Number(limit))
       .offset(Number(offset));
+    } else {
+      projectsFilters.push(eq(projectsToWorkspacesTable.workspaceId, workspace))
+
+      const [{ total: matches }] = await db
+        .select({ total: count() })
+        .from(projectsToWorkspacesTable)
+        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id),  ...projectsFilters))
+        .where(eq(projectsToWorkspacesTable.workspaceId, workspace))
+        
+      total = matches;
+
+      projects = await db
+        .select({
+          project: projectsTable,
+          role: membership.role,
+          archived: membership.archived,
+          admins: counts.admins,
+          members: counts.members,
+        })
+        .from(projectsToWorkspacesTable)
+        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id),  ...projectsFilters))
+        .leftJoin(counts, eq(projectsTable.id, counts.projectId))
+        .leftJoin(membership, eq(membership.projectId, projectsTable.id))
+        .where(eq(projectsToWorkspacesTable.workspaceId, workspace))
+        .orderBy(orderColumn)
+        .limit(Number(limit))
+        .offset(Number(offset));
+    }
 
     return ctx.json(
       {
