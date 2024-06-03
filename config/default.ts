@@ -1,6 +1,4 @@
-const oauthProviders = ['Github'];
-const membershipEntityTypes = ['WORKSPACE', 'PROJECT'] as const;
-
+//
 export const config = {
   mode: 'development',
   name: 'Cella',
@@ -68,18 +66,18 @@ export const config = {
     },
   },
 
-  // Enabled OAuth providers
-  oauthProviders,
-
-  // Auth methods
-  authMethods: [...oauthProviders, 'email'], // Spread operator to include elements of oauthProviders
+  // OAuth providers
+  oauthProviderOptions: ['GITHUB', 'GOOGLE', 'MICROSOFT'] as const,
+  enabledOauthProviders: ['GITHUB'] as const,
 
   // Optional settings
   has: {
-    pwa: false,
-    signUp: true,
-    waitList: false,
-    onboarding: true,
+    pwa: false, // Progressive Web App support for preloading static assets and offline support
+    signUp: true, // Allow users to sign up. If disabled, the app is by invitation only
+    waitList: false, // Suggest a waitlist for unknown emails when sign up is disabled
+    onboarding: true, // TODO: Show onboarding steps for new users
+    oauth: true, // TODO: Enable OAuth authentication
+    password: true, // TODO: Enable password authentication
   },
 
   // Languages
@@ -125,21 +123,15 @@ export const config = {
     },
   },
 
-  // Common timezones and countries
+  // Common countries
   common: {
-    countries: [
-      { name: 'France', code: 'FR' },
-      { name: 'Germany', code: 'DE' },
-      { name: 'Netherlands', code: 'NL' },
-      { name: 'Ukraine', code: 'UA' },
-      { name: 'United States', code: 'US' },
-      { name: 'United Kingdom', code: 'GB' },
-    ],
+    countries: ['FR','DE','NL','UA', 'US', 'GB'],
     timezones: [],
   },
 
-  entityTypes: ['USER', 'ORGANIZATION', ...membershipEntityTypes] as const,
-  contextEntityTypes: ['ORGANIZATION', ...membershipEntityTypes] as const,
+  // App specific entity types
+  entityTypes: ['USER', 'ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const,
+  contextEntityTypes: ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const,
 };
 
 export default config;

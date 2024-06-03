@@ -86,7 +86,8 @@ const WorkspacePage = () => {
     })[];
   };
 
-  const { results: labels = [] } = useLiveQuery(
+  // TODO: TS complains about a prisma issue with the type of labels
+  const { results: labels = [] as Label[] } = useLiveQuery(
     Electric.db.labels.liveMany({
       where: {
         project_id: {
@@ -135,10 +136,12 @@ const WorkspacePage = () => {
         projects,
         tasks: filteredByViewOptionsTasks.map((task) => ({
           ...task,
-          labels: labels.filter((label) => Array.isArray(task.labels) && task.labels.includes(label.id)),
+          // TODO: TS complains about a prisma issue with the type of labels
+          labels: (labels as unknown as Label[]).filter((label) => Array.isArray(task.labels) && task.labels.includes(label.id)),
         })),
         tasksCount: filteredByViewOptionsTasks.length,
-        labels,
+        // TODO: TS complains about a prisma issue with the type of labels
+        labels: labels as unknown as Label[],
         selectedTasks,
         setSelectedTasks,
         searchQuery,

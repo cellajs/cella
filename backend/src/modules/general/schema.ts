@@ -28,7 +28,7 @@ export const inviteQuerySchema = z.object({
 
 export const acceptInviteJsonSchema = z.object({
   password: passwordSchema.optional(),
-  oauth: z.enum(['google', 'microsoft', 'github']).optional(),
+  oauth: z.enum(config.oauthProviderOptions).optional(),
 });
 
 export const apiPublicCountsSchema = z.object({

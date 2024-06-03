@@ -12,7 +12,7 @@ import type { config } from 'config';
 
 export type PageResourceType = (typeof config.entityTypes)[number];
 
-export type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
+export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
 
 export type NonEmptyArray<T> = readonly [T, ...T[]];
 

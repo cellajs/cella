@@ -1,12 +1,11 @@
 import { pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from './users';
-
-const providerIdEnum = ['GITHUB', 'GOOGLE', 'MICROSOFT'] as const;
+import { config } from 'config';
 
 export const oauthAccountsTable = pgTable(
   'oauth_accounts',
   {
-    providerId: varchar('provider_id', { enum: providerIdEnum }).notNull(),
+    providerId: varchar('provider_id', { enum: config.oauthProviderOptions }).notNull(),
     providerUserId: varchar('provider_user_id').notNull(),
     userId: varchar('user_id')
       .notNull()
