@@ -127,7 +127,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   //   });
   // };
 
-  const handleKeyDown = (event: KeyboardEvent) => {
+  const handleArrowKeyDown = (event: KeyboardEvent) => {
     if (focusedProject === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
     if (projects[focusedProject || 0].id !== project.id) return;
 
@@ -149,8 +149,8 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   };
 
   useHotkeys([
-    ['ArrowDown', handleKeyDown],
-    ['ArrowUp', handleKeyDown],
+    ['ArrowDown', handleArrowKeyDown],
+    ['ArrowUp', handleArrowKeyDown],
   ]);
 
   // create draggable & dropTarget elements and auto scroll
@@ -219,16 +219,19 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
   // Hides underscroll elements
   // 64px refers to the header height
-  const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-[64px] z-30 -mt-4"/>
+  const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-[64px] z-30 -mt-4" />;
 
   return (
     <div
       ref={columnRef}
-      className={cn(`h-full relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b
-      opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`, selectedTasks.length && 'is-selected')}
+      className={cn(
+        `h-full relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b
+      opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
+        selectedTasks.length && 'is-selected',
+      )}
     >
       {stickyBackground}
-      
+
       <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
 
       <div className="h-full border-l border-r">

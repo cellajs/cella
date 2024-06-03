@@ -90,11 +90,13 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
                   onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
                     const data = await getSuggestions(query, 'USER');
-
-                    return data.users.map((u) => ({
-                      label: u.name || u.email,
-                      value: u.email,
-                    }));
+                    if (data.entities.length > 0) {
+                      return data.entities.map((u) => ({
+                        label: u.name || u.email || '',
+                        value: u.email || '',
+                      }));
+                    }
+                    return [];
                   }}
                   basicSignValue={t('common:invite_members_search.text', { appName: config.name })}
                   hidePlaceholderWhenSelected

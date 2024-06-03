@@ -22,7 +22,7 @@ import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { sendSlackNotification } from '../../lib/notification';
 import { getOrderColumn } from '../../lib/order-column';
-import { sendSSE } from '../../lib/sse';
+import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { apiUserSchema } from '../users/schema';
@@ -274,10 +274,10 @@ const generalRoutes = app
         role: token.role as MembershipModel['role'],
         createdBy: user.id,
       });
-
-      sendSSE(user.id, 'new_membership', {
+      sendSSEToUsers([user.id], 'create_main_entity', {
         ...organization,
-        userRole: token.role,
+        storageType: 'organizations',
+        type: 'ORGANIZATIONS',
       });
     }
 
