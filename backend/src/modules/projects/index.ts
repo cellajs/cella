@@ -2,6 +2,7 @@ import { type SQL, and, count, eq, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { projectsTable } from '../../db/schema/projects';
+import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
@@ -19,6 +20,7 @@ import {
   updateProjectRouteConfig,
 } from './routes';
 import { usersTable } from '../../db/schema/users';
+import permissionManager from '../../lib/permission-manager';
 
 const app = new CustomHono();
 
@@ -28,9 +30,10 @@ const projectsRoutes = app
    * Create project
    */
   .openapi(createProjectRouteConfig, async (ctx) => {
-    const { name, slug, color } = ctx.req.valid('json');
+    const { name, slug, color, workspace } = ctx.req.valid('json');
     const user = ctx.get('user');
-    const { workspaceId, organizationId } = ctx.get('project');
+    const memberships = ctx.get('memberships');
+    const { organizationId } = ctx.get('project');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -38,11 +41,14 @@ const projectsRoutes = app
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'PROJECT', { slug });
     }
 
+    if (workspace && !permissionManager.isPermissionAllowed(memberships, 'update', { type: 'WORKSPACE', id: workspace, organizationId })) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'PROJECT', { user: user.id, id: workspace });
+    }
+
     const [createdProject] = await db
       .insert(projectsTable)
       .values({
         organizationId,
-        workspaceId,
         name,
         slug,
         color,
@@ -50,12 +56,11 @@ const projectsRoutes = app
       })
       .returning();
 
-    logEvent('Project created', { project: createdProject.id });
+    logEvent('Project created', { project: createdProject.id });    
 
     await db.insert(membershipsTable).values({
       userId: user.id,
       organizationId,
-      workspaceId,
       projectId: createdProject.id,
       type: 'PROJECT',
       role: 'ADMIN',
@@ -65,6 +70,19 @@ const projectsRoutes = app
       user: user.id,
       project: createdProject.id,
     });
+
+    if (workspace) {
+      await db.insert(projectsToWorkspacesTable).values({
+        projectId: createdProject.id,
+        workspaceId: workspace,
+      })
+
+      logEvent('Project added to workspace', {
+        project: createdProject.id,
+        workspace,
+      });
+    }
+    
 
     sendSSE(user.id, 'new_project_membership', {
       ...createdProject,
@@ -118,8 +136,10 @@ const projectsRoutes = app
     const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
     const projectsFilters = [filter];
 
+    // TODO: Avoid separate queries for projects-to-workspace relations
     if (workspace) {
-      projectsFilters.push(eq(projectsTable.workspaceId, workspace));
+      const projectsIds = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.workspaceId, workspace));
+      if (projectsIds?.length) projectsFilters.push(inArray(projectsTable.id, projectsIds.map(el => el.projectId)))
     }
 
     const projectsQuery = db

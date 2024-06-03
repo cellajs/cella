@@ -37,12 +37,13 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
     queryFn: () => getWorkspaceBySlugOrId(idOrSlug),
   });
 
-export const workspaceProjectsQueryOptions = (workspace: string) =>
+export const workspaceProjectsQueryOptions = (workspace: string, organization: string) =>
   queryOptions({
     queryKey: ['workspaces', workspace, 'projects'],
     queryFn: () =>
       getProjects({
         workspace,
+        organization,
       }),
   });
 
@@ -63,7 +64,7 @@ const WorkspacePage = () => {
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
-  const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id));
+  const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id, workspace.organizationId));
   const projects = projectsQuery.data.items;
 
   const { results: tasks = [] } = useLiveQuery(

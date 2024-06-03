@@ -27,6 +27,7 @@ import {
 } from './routes';
 
 import { generateElectricJWTToken } from '../../lib/utils';
+import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 
 const app = new CustomHono();
 
@@ -141,6 +142,12 @@ const usersRoutes = app
       .orderBy(desc(projectsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id));
 
+    // TODO: Integrate querying projects-to-workspace relations into the workspace/project query
+    const projectsToWorkspaces = await db
+      .select()
+      .from(projectsToWorkspacesTable)
+      .where(inArray(projectsToWorkspacesTable.workspaceId, workspacesWithMemberships.map(({workspace}) => workspace.id)));
+
     const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
       return {
         slug: organization.slug,
@@ -168,11 +175,13 @@ const usersRoutes = app
         muted: membership.muted || false,
         membershipId: membership.id,
         role: membership?.role || null,
-        workspaceId: project.workspaceId,
       };
     });
 
     const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
+      // TODO: Enhance project filtering by integrating the query of workspace-project relations
+      const projectsids = projectsToWorkspaces.filter(p => p.workspaceId === workspace.id).map(({ projectId }) => projectId)
+
       return {
         slug: workspace.slug,
         id: workspace.id,
@@ -184,7 +193,7 @@ const usersRoutes = app
         muted: membership.muted || false,
         membershipId: membership.id,
         role: membership?.role || null,
-        submenu: { items: projects.filter((p) => p.workspaceId === workspace.id), type: 'PROJECT' as PageResourceType, canCreate: false },
+        submenu: { items: projects.filter(({id}) => projectsids.includes(id)), type: 'PROJECT' as PageResourceType, canCreate: false },
       };
     });
 

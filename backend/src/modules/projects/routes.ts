@@ -4,7 +4,7 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, projectParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, projectParamSchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
 import { apiUserSchema } from '../users/schema';
@@ -22,16 +22,16 @@ import {
 
 export const createProjectRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/workspaces/{workspace}/projects',
+  path: '/organizations/{organization}/projects',
   guard: [isAuthenticated, isAllowedTo('create', 'project')],
   tags: ['projects'],
   summary: 'Create a new project',
   description: `
     Permissions:
-      - Users with system or workspace role 'ADMIN'
+      - Users with system or organization role 'MEMBER'
   `,
   request: {
-    params: workspaceParamSchema,
+    params: organizationParamSchema,
     body: {
       required: true,
       content: {

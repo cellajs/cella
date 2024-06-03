@@ -1,13 +1,13 @@
 import { projectClient as client, handleResponse } from '.';
 
-export type CreateProjectParams = Parameters<(typeof client.workspaces)[':workspace']['projects']['$post']>['0']['json'] & {
-  workspace: string;
+export type CreateProjectParams = Parameters<(typeof client.organizations)[':organization']['projects']['$post']>['0']['json'] & {
+  organization: string;
 };
 
 // Create a new project
-export const createProject = async ({ workspace, ...rest }: CreateProjectParams) => {
-  const response = await client.workspaces[':workspace'].projects.$post({
-    param: { workspace },
+export const createProject = async ({ organization, ...rest }: CreateProjectParams) => {
+  const response = await client.organizations[':organization'].projects.$post({
+    param: { organization },
     json: rest,
   });
 
@@ -44,7 +44,7 @@ export type GetProjectsParams = Partial<
 
 // Get a list of projects
 export const getProjects = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, workspace }: GetProjectsParams = {},
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50, workspace, organization }: GetProjectsParams = {},
   signal?: AbortSignal,
 ) => {
   const response = await client.projects.$get(
@@ -56,6 +56,7 @@ export const getProjects = async (
         offset: String(page * limit),
         limit: String(limit),
         workspace,
+        organization
       },
     },
     {

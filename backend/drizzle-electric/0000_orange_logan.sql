@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS "labels" (
 	"name" varchar NOT NULL,
 	"color" varchar,
 	"organization_id" varchar NOT NULL,
-	"workspace_id" varchar NOT NULL,
 	"project_id" varchar NOT NULL
 );
 --> statement-breakpoint
@@ -20,7 +19,6 @@ CREATE TABLE IF NOT EXISTS "tasks" (
 	"labels" jsonb,
 	"assigned_to" jsonb,
 	"organization_id" varchar NOT NULL,
-	"workspace_id" varchar NOT NULL,
 	"project_id" varchar NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"created_by" varchar NOT NULL,
