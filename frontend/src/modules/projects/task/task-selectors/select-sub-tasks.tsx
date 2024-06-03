@@ -1,18 +1,17 @@
 import { CommandEmpty } from 'cmdk';
-import { Check, Dot, History, ListTodo, X } from 'lucide-react';
+import { Check, Dot, History } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { Button } from '~/modules/ui/button';
-import type { PreparedTask, Task } from '../common/electric/electrify.ts';
-import { Kbd } from '../common/kbd.tsx';
-import { Badge } from '../ui/badge.tsx';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
-import { TaskContext } from './board-column.tsx';
-import { Checkbox } from '../ui/checkbox.tsx';
+import type { PreparedTask, Task } from '../../../common/electric/electrify.ts';
+import { Kbd } from '../../../common/kbd.tsx';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
+import { TaskContext } from '../../board/board-column.tsx';
+import { ScrollArea } from '~/modules/ui/scroll-area.tsx';
 
 interface Props {
   mode: 'create' | 'edit';
@@ -48,7 +47,7 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
   const renderTasks = (tasks: PreparedTask[]) => {
     return (
       <>
-        {tasks.map((task, index) => (
+        {tasks.map((task) => (
           <CommandItem
             key={task.id}
             value={task.id}
@@ -62,10 +61,7 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
               {isSearching ? <Dot size={16} strokeWidth={8} /> : <History size={16} />}
               <span>{task.summary}</span>
             </div>
-            <div className="flex items-center">
-              {selectedTasks.some((t) => t.id === task.id) && <Check size={16} className="text-success" />}
-              {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
-            </div>
+            {selectedTasks.some((t) => t.id === task.id) && <Check size={16} className="text-success" />}
           </CommandItem>
         ))}
       </>
@@ -108,50 +104,18 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
           className={`flex h-auto justify-start font-light ${
-            mode === 'create' ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20' : 'py-[2px] group-hover/task:opacity-70 opacity-50'
+            mode === 'create'
+              ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20'
+              : 'py-[2px] group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
           } ${mode === 'edit' && selectedTasks.length && ''}`}
         >
-          {!selectedTasks.length && <ListTodo size={16} className="opacity-50" />}
-          <div className="flex truncate flex-wrap gap-[1px]">
-            {mode === 'create' && selectedTasks.length === 0 && <span className="ml-2">Choose sub tasks</span>}
-            {selectedTasks.length > 0 &&
-              selectedTasks.map(({ summary, id, status }) => {
-                return (
-                  <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
-                    <Badge
-                      variant="outline"
-                      key={id}
-                      className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm h-6' : 'h-5 bg-transparent'} last:mr-0`}
-                    >
-                      <Checkbox
-                        checked={status === 6}
-                        className="mr-1 w-3 h-3"
-                      />
-                      {summary}
-                    </Badge>
-                    {mode === 'create' && (
-                      <Button
-                        className="opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:!ring-offset-0"
-                        size="micro"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleSelectClick(id);
-                        }}
-                      >
-                        <X size={16} strokeWidth={3} />
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
+          <div>+ Add Sub Task</div>
         </Button>
       </PopoverTrigger>
 
       <PopoverContent
         style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right + 2)}` : '260'}px` }}
-        className="p-0 rounded-lg"
+        className="p-0  rounded-lg"
         align="start"
         onCloseAutoFocus={(e) => e.preventDefault()}
         sideOffset={4}
@@ -160,12 +124,6 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
           <CommandInput
             value={searchValue}
             onValueChange={(searchValue) => {
-              // If the label types a number, select the label like useHotkeys
-              if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(Number.parseInt(searchValue))) {
-                handleSelectClick(tasks[Number.parseInt(searchValue)]?.id);
-                setSearchValue('');
-                return;
-              }
               setSearchValue(searchValue.toLowerCase());
             }}
             clearValue={setSearchValue}
@@ -174,18 +132,20 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
           />
           {!isSearching && <Kbd value="L" className="absolute top-3 right-[10px]" />}
           <CommandList>
-            <CommandGroup>
-              {!searchValue.length && (
-                <>
-                  {tasks.length === 0 && (
-                    <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
-                      {t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })}
-                    </CommandEmpty>
-                  )}
-                  {renderTasks(tasks)}
-                </>
-              )}
-            </CommandGroup>
+            <ScrollArea size="indicatorVertical" className="max-h-60 overflow-auto">
+              <CommandGroup>
+                {!searchValue.length && (
+                  <>
+                    {tasks.length === 0 && (
+                      <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
+                        {t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })}
+                      </CommandEmpty>
+                    )}
+                    {renderTasks(tasks)}
+                  </>
+                )}
+              </CommandGroup>
+            </ScrollArea>
           </CommandList>
         </Command>
       </PopoverContent>

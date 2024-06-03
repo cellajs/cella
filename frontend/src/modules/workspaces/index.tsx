@@ -6,7 +6,7 @@ import { type Dispatch, type SetStateAction, createContext, useEffect, useMemo, 
 import { useTranslation } from 'react-i18next';
 import { getProjects } from '~/api/projects';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
-import BoardHeader from '~/modules/projects/board-header';
+import BoardHeader from '~/modules/projects/board/header/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import type { ProjectList, Workspace } from '~/types';
@@ -15,7 +15,7 @@ import { type Label, type PreparedTask, type Task, useElectric } from '../common
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
 import { useWorkspaceStore } from '~/store/workspace';
-import { taskStatuses } from '../projects/select-status';
+import { taskStatuses } from '../projects/task/task-selectors/select-status';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
@@ -68,10 +68,11 @@ const WorkspacePage = () => {
 
   const { results: tasks = [] } = useLiveQuery(
     Electric.db.tasks.liveMany({
-      include: {
-        tasks: true,
-        other_tasks: true,
-      },
+      // Cause Cannot read properties of undefined (reading 'relationName')
+      // include: {
+      //   tasks: true,
+      //   other_tasks: true,
+      // },
       where: {
         project_id: {
           in: projects.map((project) => project.id),
@@ -85,7 +86,8 @@ const WorkspacePage = () => {
     })[];
   };
 
-  const { results: labels = [] } = useLiveQuery(
+  // TODO: TS complains about a prisma issue with the type of labels
+  const { results: labels = [] as Label[] } = useLiveQuery(
     Electric.db.labels.liveMany({
       where: {
         project_id: {
@@ -134,10 +136,12 @@ const WorkspacePage = () => {
         projects,
         tasks: filteredByViewOptionsTasks.map((task) => ({
           ...task,
-          labels: labels.filter((label) => Array.isArray(task.labels) && task.labels.includes(label.id)),
+          // TODO: TS complains about a prisma issue with the type of labels
+          labels: (labels as unknown as Label[]).filter((label) => Array.isArray(task.labels) && task.labels.includes(label.id)),
         })),
         tasksCount: filteredByViewOptionsTasks.length,
-        labels,
+        // TODO: TS complains about a prisma issue with the type of labels
+        labels: labels as unknown as Label[],
         selectedTasks,
         setSelectedTasks,
         searchQuery,

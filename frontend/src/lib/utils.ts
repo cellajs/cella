@@ -140,7 +140,7 @@ export const getDraggableItemData = <T>(
   type: 'task' | 'column' | 'menuItem',
   itemType?: PageResourceType,
 ): DraggableItemData<T> => {
-  return { dragItem: true, item, index: itemIndex, type, itemType: itemType ? itemType : 'UNKNOWN' };
+  return { dragItem: true, item, index: itemIndex, type, itemType: itemType ? itemType : 'ORGANIZATION' };
 };
 
 // To get target index for drop on DnD

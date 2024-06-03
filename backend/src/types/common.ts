@@ -7,11 +7,12 @@ import type { MembershipModel } from '../db/schema/memberships';
 import type { OrganizationModel } from '../db/schema/organizations';
 import type { ProjectModel } from '../db/schema/projects';
 import type { WorkspaceModel } from '../db/schema/workspaces';
-import type { errorResponseSchema, resourceTypeSchema } from '../lib/common-schemas';
+import type { errorResponseSchema } from '../lib/common-schemas';
+import type { config } from 'config';
 
-export type PageResourceType = z.infer<typeof resourceTypeSchema>;
+export type PageResourceType = (typeof config.entityTypes)[number];
 
-export type ProviderId = 'GITHUB' | 'MICROSOFT' | 'GOOGLE';
+export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
 
 export type NonEmptyArray<T> = readonly [T, ...T[]];
 

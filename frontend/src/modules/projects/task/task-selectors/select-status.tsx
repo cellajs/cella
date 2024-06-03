@@ -1,15 +1,15 @@
 import { cva } from 'class-variance-authority';
 import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, CircleDotDashed, Dot, type LucideIcon, Snowflake } from 'lucide-react';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn } from '~/lib/utils';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Kbd } from '../common/kbd';
-import { Button } from '../ui/button';
-import { TaskContext } from './board-column';
+import { Kbd } from '../../../common/kbd';
+import { Button } from '../../../ui/button';
+import { TaskContext } from '../../board/board-column';
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];
@@ -86,6 +86,10 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
     setOpenPopover(false);
     setSearchValue('');
   };
+
+  useEffect(() => {
+    setSelectedStatus(taskStatuses[taskStatus]);
+  }, [taskStatus]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>

@@ -3,9 +3,8 @@ import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BackgroundPicker } from '~/modules/common/background-picker';
 import { Button } from '~/modules/ui/button';
-import { CardHeader } from '~/modules/ui/card';
 import { useWorkspaceStore } from '~/store/workspace';
-import { ProjectContext } from './board';
+import { ProjectContext } from './project-context';
 import ToolTipButtons from './tooltip-buttons';
 
 interface BoardColumnHeaderProps {
@@ -31,8 +30,11 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
   // TODO
   const [background, setBackground] = useState('#ff75c3');
 
+  // 72px is 64px for the header and 8px for the gap between the header and content
+  const stickyStyles = 'sticky sm:relative top-[72px] sm:top-0 bg-background z-50'
+
   return (
-    <CardHeader className="p-3 border-b rounded-lg rounded-b-none text-normal leading-4 font-semibold flex flex-row gap-2 space-between items-center">
+    <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 font-semibold flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
       <Button ref={dragRef} variant={'ghost'} size="xs" className="max-xs:hidden px-0 text-primary/50 -ml-1 cursor-grab relative">
         <GripVertical size={16} />
       </Button>
@@ -44,6 +46,6 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
         <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />
         <span className="ml-1">{t('common:task')}</span>
       </Button>
-    </CardHeader>
+    </div>
   );
 }

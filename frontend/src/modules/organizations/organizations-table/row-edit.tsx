@@ -6,6 +6,7 @@ import { Pencil } from 'lucide-react';
 // import { dialog } from '../../common/dialoger/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
+import { Card, CardTitle, CardContent, CardHeader } from '~/modules/ui/card';
 
 interface Props {
   organization: Organization;
@@ -17,11 +18,21 @@ const RowEdit = ({ organization, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
   const openUpdateDialog = () => {
-    sheet(<UpdateOrganizationForm organization={organization} sheet callback={(organization) => callback([organization], 'update')} />, {
-      id: 'edit-organization',
-      className: 'sm:max-w-2xl',
-      title: t('common:edit_organization'),
-    });
+    sheet(
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('common:general')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UpdateOrganizationForm organization={organization} sheet callback={(organization) => callback([organization], 'update')} />
+        </CardContent>
+      </Card>,
+      {
+        id: 'edit-organization',
+        className: 'sm:max-w-2xl',
+        title: t('common:edit_organization'),
+      },
+    );
   };
 
   return (

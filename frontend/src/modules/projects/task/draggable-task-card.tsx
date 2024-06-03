@@ -6,9 +6,9 @@ import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/externa
 import { useContext, useEffect, useRef, useState } from 'react';
 import { getDraggableItemData } from '~/lib/utils';
 import type { DraggableItemData } from '~/types';
-import { DropIndicator } from '../common/drop-indicator';
-import type { PreparedTask } from '../common/electric/electrify';
-import { TaskContext } from './board-column';
+import { DropIndicator } from '../../common/drop-indicator';
+import type { PreparedTask } from '../../common/electric/electrify';
+import { TaskContext } from '../board/board-column';
 import { TaskCard } from './task-card';
 
 type TaskDraggableItemData = DraggableItemData<PreparedTask> & { type: 'task' };
@@ -81,7 +81,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
         taskDragButtonRef={taskDragButtonRef}
         dragging={dragging}
         dragOver={isDraggedOver}
-        className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary' : 'border-l-transparent'}`}
+        className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary is-focused' : 'border-l-transparent'}`}
       />
 
       {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} gap="-2px" />}

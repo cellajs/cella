@@ -6,7 +6,7 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, projectParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
 import { apiUserSchema } from '../users/schema';
 
 import {
@@ -16,6 +16,8 @@ import {
   getProjectsQuerySchema,
   getUsersByProjectQuerySchema,
   updateProjectJsonSchema,
+  getUserProjectsParamSchema,
+  apiUserProjectSchema,
 } from './schema';
 
 export const createProjectRouteConfig = createRouteConfig({
@@ -72,6 +74,32 @@ export const getProjectByIdOrSlugRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(apiProjectSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const getUserProjectsRouteConfig = createRouteConfig({
+  method: 'get',
+  path: '/projects/by-user/{userId}',
+  guard: [isAuthenticated, isSystemAdmin],
+  tags: ['projects'],
+  summary: 'Get user project by memberships',
+  description: `
+    Permissions:
+      - Users role 'ADMIN'
+  `,
+  request: {
+    params: getUserProjectsParamSchema,
+  },
+  responses: {
+    200: {
+      description: 'User project',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(apiUserProjectSchema),
         },
       },
     },

@@ -24,6 +24,7 @@ import { SlugFormField } from '../common/form-fields/slug';
 import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
 import UnsavedBadge from '../common/unsaved-badge';
 
+// Lazy load to prevent JSON from being loaded on initial load
 const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
 const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
 
@@ -79,7 +80,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       onSuccess: (data) => {
         if (isSheet) sheet.remove('edit-organization');
         callback?.(data);
-        toast.success(t('common:success.update_organization'));
+        toast.success(t('common:success.update_resource', { resource: t('common:organization') }));
       },
     });
   };

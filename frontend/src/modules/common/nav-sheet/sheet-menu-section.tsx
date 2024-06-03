@@ -33,14 +33,14 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
 
   const createDialog = () => {
     dialog(createForm, {
-      className: 'md:max-w-xl',
+      className: 'md:max-w-2xl',
       id: `create-${data.type.toLowerCase()}`,
       title: t('common:create_resource', { resource: t(`common:${data.type.toLowerCase()}`).toLowerCase() }),
     });
   };
 
   const toggleOptionsView = () => {
-    if (optionsView) toast(t('common:configure_menu.text'));
+    if (!optionsView) toast(t('common:configure_menu.text'));
     setOptionsView(!optionsView);
   };
 

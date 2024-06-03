@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { idSchema, slugSchema } from '../../lib/common-schemas';
+import { config } from 'config';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
 
@@ -25,6 +26,6 @@ export const updateMembershipJsonSchema = z.object({
 
 export const deleteMembersQuerySchema = z.object({
   idOrSlug: idSchema.or(slugSchema),
-  entityType: z.union([z.literal('ORGANIZATION'), z.literal('WORKSPACE'), z.literal('PROJECT')]),
+  entityType: z.enum(config.contextEntityTypes),
   ids: z.union([z.string(), z.array(z.string())]),
 });

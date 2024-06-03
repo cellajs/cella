@@ -1,8 +1,8 @@
 import { EllipsisVertical, Minimize2, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
-import { TooltipButton } from '../common/tooltip-button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { TooltipButton } from '../../common/tooltip-button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../../ui/dropdown-menu';
 
 const ToolTipButtons = ({
   rolledUp,

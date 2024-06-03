@@ -10,7 +10,7 @@ import type { User } from 'lucia';
 import slugify from 'slugify';
 import { db } from '../../db/db';
 import { logEvent } from '../../middlewares/logger/log-event';
-import type { ProviderId } from '../../types/common';
+import type { OauthProviderOptions } from '../../types/common';
 import { sendVerificationEmail } from './helpers/verify-email';
 
 // * Create a session before redirecting to the oauth provider
@@ -33,12 +33,12 @@ export const getRedirectUrl = (ctx: Context, firstSignIn?: boolean): string => {
 };
 
 // * Insert oauth account into db
-export const insertOauthAccount = async (userId: string, providerId: ProviderId, providerUserId: string) => {
+export const insertOauthAccount = async (userId: string, providerId: OauthProviderOptions, providerUserId: string) => {
   db.insert(oauthAccountsTable).values({ providerId, providerUserId, userId });
 };
 
 // * Find oauth account in db
-export const findOauthAccount = async (providerId: ProviderId, providerUserId: string) => {
+export const findOauthAccount = async (providerId: OauthProviderOptions, providerUserId: string) => {
   return db
     .select()
     .from(oauthAccountsTable)
@@ -66,7 +66,7 @@ export const splitFullName = (name: string) => {
 export const handleExistingUser = async (
   ctx: Context,
   existingUser: User,
-  providerId: ProviderId,
+  providerId: OauthProviderOptions,
   {
     providerUser,
     isEmailVerified,

@@ -22,8 +22,8 @@ export const requestsTable = pgTable(
   },
   (table) => {
     return {
-      emailIndex: index('requests_emails').on(table.email).desc(),
-      createdAtIndex: index('requests_created_at').on(table.createdAt).desc(),
+      emailIndex: index('requests_emails').on(table.email.desc()),
+      createdAtIndex: index('requests_created_at').on(table.createdAt.desc()),
     };
   },
 );

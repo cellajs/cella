@@ -68,10 +68,10 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             width: 32,
             visible: true,
             colSpan(args) {
-              return args.type === 'ROW' && args.row._type === 'DETAIL' ? 8 : undefined;
+              return args.type === 'ROW' && args.row._type === 'DETAIL' ? 9 : undefined;
             },
             cellClass(row) {
-              return row._type === 'DETAIL' ? 'p-2 rdg-expand-cell relative' : undefined;
+              return row._type === 'DETAIL' ? 'p-2  relative' : undefined;
             },
             renderCell: ({ row, tabIndex, onRowChange }) => {
               if (row._type === 'DETAIL' && row._parent) {

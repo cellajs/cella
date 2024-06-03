@@ -43,7 +43,7 @@ export const Toolbar = ({ searchQuery, setSearchQuery, selectedLabels, setSelect
   };
 
   return (
-    <div className={'flex  w-full max-sm:justify-between gap-2'}>
+    <div className={'flex pt-2 w-full max-sm:justify-between gap-2'}>
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         {/* {!selectedLabels.length && !searchQuery.length && (
           <FilterBarActions />

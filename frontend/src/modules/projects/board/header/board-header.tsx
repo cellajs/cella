@@ -5,19 +5,19 @@ import { toast } from 'sonner';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
-import BoardSearch from '~/modules/projects/board-search';
-import DisplayOptions from '~/modules/projects/display-options';
-import WorkspaceView from '~/modules/projects/view-options';
+import BoardSearch from '~/modules/projects/board/header/board-search';
+import DisplayOptions from '~/modules/projects/board/header/display-options';
+import WorkspaceView from '~/modules/projects/board/header/view-options';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
-import { AvatarWrap } from '../common/avatar-wrap';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
-import { useElectric } from '../common/electric/electrify';
-import { TooltipButton } from '../common/tooltip-button';
-import { Badge } from '../ui/badge';
-import { WorkspaceContext } from '../workspaces';
-import AddProjects from './add-projects';
-import LabelsTable from './labels-table';
+import { AvatarWrap } from '../../../common/avatar-wrap';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '../../../common/data-table/table-filter-bar';
+import { useElectric } from '../../../common/electric/electrify';
+import { TooltipButton } from '../../../common/tooltip-button';
+import { Badge } from '../../../ui/badge';
+import { WorkspaceContext } from '../../../workspaces';
+import AddProjects from '../../add-project';
+import LabelsTable from '../../labels-table';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;
@@ -32,7 +32,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   const Electric = useElectric();
 
   const openSettingsSheet = () => {
-    sheet(<WorkspaceSettings sheet />, {
+    sheet(<WorkspaceSettings sheet workspace={workspace} />, {
       className: 'sm:max-w-[52rem]',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),
@@ -67,7 +67,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   };
 
   const handleAddProjects = () => {
-    dialog(<AddProjects dialog />, {
+    dialog(<AddProjects dialog workspace={workspace} />, {
       //callback={(project) => callback([project], 'create')} dialog
       className: 'md:max-w-4xl',
       id: 'add-projects',
@@ -76,7 +76,8 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   };
 
   return (
-    <div className={'flex items-center w-full max-sm:justify-between sm:gap-2'}>
+    // z-40 to appear on top of sticky background in `BoardColumn`
+    <div className={'flex items-center w-full max-sm:justify-between sm:gap-2 z-40'}>
       <TableFilterBar
         onResetFilters={() => {
           setSearchQuery('');

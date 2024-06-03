@@ -8,12 +8,12 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { nanoid } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
-import { type Label, useElectric } from '../common/electric/electrify.ts';
-import { Kbd } from '../common/kbd.tsx';
-import { Badge } from '../ui/badge.tsx';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
-import { TaskContext } from './board-column.tsx';
+import { type Label, useElectric } from '../../../common/electric/electrify.ts';
+import { Kbd } from '../../../common/kbd.tsx';
+import { Badge } from '../../../ui/badge.tsx';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
+import { TaskContext } from '../../board/board-column.tsx';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -135,7 +135,9 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
           className={`flex h-auto justify-start font-light ${
-            mode === 'create' ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20' : 'py-[2px] group-hover/task:opacity-70 opacity-50'
+            mode === 'create'
+              ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20'
+              : 'py-[2px] group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
           } ${mode === 'edit' && selectedLabels.length && ''}`}
         >
           {!selectedLabels.length && <Tag size={16} className="opacity-50" />}

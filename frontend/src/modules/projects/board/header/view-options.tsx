@@ -6,12 +6,12 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import { TooltipButton } from '../common/tooltip-button.tsx';
-import { Badge } from '../ui/badge.tsx';
-import ThreeStateSwitch from '../ui/three-state-switch.tsx';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group.tsx';
-import { WorkspaceContext } from '../workspaces/index.tsx';
-import { taskTypes } from './create-task-form.tsx';
+import { TooltipButton } from '../../../common/tooltip-button.tsx';
+import { Badge } from '../../../ui/badge.tsx';
+import ThreeStateSwitch from '../../../ui/three-state-switch.tsx';
+import { ToggleGroup, ToggleGroupItem } from '../../../ui/toggle-group.tsx';
+import { WorkspaceContext } from '../../../workspaces/index.tsx';
+import { taskTypes } from '../../task/create-task-form.tsx';
 import { DualSlider } from './view-status-dual-slider.tsx';
 
 interface Props {
@@ -55,6 +55,9 @@ const WorkspaceView = ({ className = '' }: Props) => {
   const [workspaceId, setWorkspaceId] = useState(workspace.id);
   const [innerViewOptions, setInnerViewOptions] = useState(getWorkspaceViewOptions(workspaceId));
 
+  const [showToolTip, setShowToolTip] = useState(false);
+  const [firstFocus, setFirstFocus] = useState(false);
+
   const currentLength = Object.values(innerViewOptions).flat().length;
   const [switchState, setSwitchState] = useState<'none' | 'partly' | 'all'>(currentLength < 1 ? 'none' : currentLength === 10 ? 'all' : 'partly');
 
@@ -67,6 +70,14 @@ const WorkspaceView = ({ className = '' }: Props) => {
     newInnerViewOptions[viewOption] = values;
     setInnerViewOptions(newInnerViewOptions);
     setWorkspaceViewOptions(workspaceId, viewOption, values);
+  };
+
+  const handleSliderChange = (values: number[]) => {
+    if (values[0] === 1 && values[1] === 1) return handleViewOptionsChange('status', ['unstarted']);
+    if (values[0] === 5 && values[1] === 5) return handleViewOptionsChange('status', ['reviewed']);
+    if (values[0] === 0 && values[1] === 0) return handleViewOptionsChange('status', []);
+    const selectedStatuses = statusesForDualSelect.slice(values[0], values[1] + 1);
+    handleViewOptionsChange('status', selectedStatuses);
   };
 
   useEffect(() => {
@@ -96,25 +107,23 @@ const WorkspaceView = ({ className = '' }: Props) => {
     setInnerViewOptions(getWorkspaceViewOptions(workspace.id));
   }, [workspace]);
 
-  const handleSliderChange = (values: number[]) => {
-    if (values[0] === 1 && values[1] === 1) return handleViewOptionsChange('status', ['unstarted']);
-    if (values[0] === 5 && values[1] === 5) return handleViewOptionsChange('status', ['reviewed']);
-    if (values[0] === 0 && values[1] === 0) return handleViewOptionsChange('status', []);
-    const selectedStatuses = statusesForDualSelect.slice(values[0], values[1] + 1);
-    handleViewOptionsChange('status', selectedStatuses);
-  };
-
   return (
     <DropdownMenu>
-      <TooltipButton toolTipContent={t('common:view_options')}>
+      <TooltipButton disabled={showToolTip} toolTipContent={t('common:view_options')}>
         <DropdownMenuTrigger asChild>
-          <div>
-            <Button variant="outline" className={cn('relative flex', className)}>
-              {switchState !== 'all' && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0" />}
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
-            </Button>
-          </div>
+          <Button
+            onFocus={() => setFirstFocus(true)}
+            onMouseLeave={() => {
+              if (firstFocus) setShowToolTip(true);
+            }}
+            onMouseEnter={() => setShowToolTip(false)}
+            variant="outline"
+            className={cn('relative flex', className)}
+          >
+            {switchState !== 'all' && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0" />}
+            <SlidersHorizontal className="h-4 w-4" />
+            <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
+          </Button>
         </DropdownMenuTrigger>
       </TooltipButton>
 

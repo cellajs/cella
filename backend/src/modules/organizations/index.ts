@@ -8,7 +8,7 @@ import { config } from 'config';
 import { requestsTable } from '../../db/schema/requests';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
-import { sendSSE } from '../../lib/sse';
+import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -64,9 +64,9 @@ const organizationsRoutes = app
       organization: createdOrganization.id,
     });
 
-    sendSSE(user.id, 'new_organization_membership', {
+    sendSSEToUsers([user.id], 'create_main_entity', {
       ...createdOrganization,
-      userRole: 'ADMIN',
+      storageType: 'organizations',
       type: 'ORGANIZATION',
     });
 
@@ -219,15 +219,16 @@ const organizationsRoutes = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
-    const [membership] = await db
+    const memberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
+      .where(and(eq(membershipsTable.type, 'ORGANIZATION'), eq(membershipsTable.organizationId, organization.id)));
 
-    if (membership) {
-      sendSSE(user.id, 'update_organization', {
+    if (memberships.length > 0) {
+      const membersId = memberships.map((member) => member.id);
+      sendSSEToUsers(membersId, 'update_main_entity', {
         ...updatedOrganization,
-        userRole: membership.role,
+        storageType: 'organizations',
         type: 'ORGANIZATION',
       });
     }
@@ -236,8 +237,7 @@ const organizationsRoutes = app
       .select({
         admins: count(),
       })
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.role, 'ADMIN')));
+      .from(membershipsTable);
 
     const [{ members }] = await db
       .select({
@@ -253,7 +253,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...updatedOrganization,
-          userRole: membership?.role || null,
+          userRole: memberships.find((member) => member.id === user.id)?.role || null,
           counts: {
             admins,
             members,
@@ -315,10 +315,7 @@ const organizationsRoutes = app
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
-    const membersFilters = [
-      eq(membershipsTable.organizationId, organization.id),
-      eq(membershipsTable.type, 'ORGANIZATION'),
-    ];
+    const membersFilters = [eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'ORGANIZATION')];
 
     if (role) {
       membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
@@ -522,6 +519,28 @@ const organizationsRoutes = app
       );
     }
 
+    // // * Deleted organizations members
+    // await db.delete(membershipsTable).where(
+    //   inArray(
+    //     organizationsTable.id,
+    //     allowedTargets.map((target) => target.organization.id),
+    //   ),
+    // );
+
+    // * Get members
+    const organizationsMembers = await db
+      .select({ id: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(
+        and(
+          eq(membershipsTable.type, 'ORGANIZATION'),
+          inArray(
+            membershipsTable.organizationId,
+            allowedTargets.map((target) => target.organization.id),
+          ),
+        ),
+      );
+
     // * Delete the organizations
     await db.delete(organizationsTable).where(
       inArray(
@@ -531,10 +550,12 @@ const organizationsRoutes = app
     );
 
     // * Send SSE events for the organizations that were deleted
-    for (const { organization, userRole } of allowedTargets) {
+    for (const { organization } of allowedTargets) {
       // * Send the event to the user if they are a member of the organization
-      if (userRole) {
-        sendSSE(user.id, 'remove_organization', organization);
+
+      if (organizationsMembers.length > 0) {
+        const membersId = organizationsMembers.map((member) => member.id).filter(Boolean) as string[];
+        sendSSEToUsers(membersId, 'remove_main_entity', { ...organization, storageType: 'organizations' });
       }
 
       logEvent('Organization deleted', { organization: organization.id });

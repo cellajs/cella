@@ -3,12 +3,11 @@ import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
-import { sendSSE } from '../../lib/sse';
+import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { deleteMembershipsRouteConfig, inviteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
 import permissionManager from '../../lib/permission-manager';
-import { extractEntity } from '../../lib/extract-entity';
 import type { OrganizationModel } from '../../db/schema/organizations';
 import { checkRole } from '../general/helpers/check-role';
 import { apiMembershipSchema } from './schema';
@@ -21,6 +20,8 @@ import { i18n } from '../../lib/i18n';
 import { render } from '@react-email/render';
 import { InviteEmail } from '../../../../email/emails/invite';
 import { emailSender } from 'email';
+import { resolveEntity } from '../../lib/entity';
+
 const app = new CustomHono();
 
 // * Membership endpoints
@@ -34,52 +35,65 @@ const membershipRoutes = app
     const user = ctx.get('user');
 
     // * Get the membership
-    const [currentMembership] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
-    if (!currentMembership) return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN', { membership: membershipId });
+    const [membershipToUpdate] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
+    if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { membership: membershipId });
 
-    const type = currentMembership.type;
+    const updatedType = membershipToUpdate.type;
 
     // TODO: Refactor
-    const context = await extractEntity(type, currentMembership.projectId || currentMembership.workspaceId || currentMembership.organizationId || '');
-
-    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+    const membershipContext = await resolveEntity(
+      updatedType,
+      membershipToUpdate.projectId || membershipToUpdate.workspaceId || membershipToUpdate.organizationId || '',
+    );
+    const permissionMemberships = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable.userId, user.id)));
 
     // * Check if user has permission to someone elses membership
-    if (user.id !== currentMembership.userId) {
-      const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', context);
-
+    if (user.id !== membershipToUpdate.userId) {
+      const isAllowed = permissionManager.isPermissionAllowed(permissionMemberships, 'update', membershipContext);
       if (!isAllowed && user.role !== 'ADMIN') {
-        return errorResponse(ctx, 403, 'forbidden', 'warn', type, { user: user.id, id: context.id });
+        return errorResponse(ctx, 403, 'forbidden', 'warn', updatedType, { user: user.id, id: membershipContext.id });
       }
     }
 
-    const [membership] = await db
+    const [updatedMembership] = await db
       .update(membershipsTable)
-      .set(
-        role
-          ? { role, inactive, muted, modifiedBy: user.id, modifiedAt: new Date() }
-          : { inactive, muted, modifiedBy: user.id, modifiedAt: new Date() },
-      )
+      .set({ ...(role && { role }), inactive, muted, modifiedBy: user.id, modifiedAt: new Date() })
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    const sseEvent = `update_${type.toLowerCase()}`;
+    let allMembershipsFilter: SQL<unknown> | undefined;
+    if (updatedType === 'ORGANIZATION') allMembershipsFilter = eq(membershipsTable.organizationId, membershipContext.id);
+    if (updatedType === 'WORKSPACE') allMembershipsFilter = eq(membershipsTable.workspaceId, membershipContext.id);
+    if (updatedType === 'PROJECT') allMembershipsFilter = eq(membershipsTable.projectId, membershipContext.id);
+
+    const allMembers = await db
+      .select({ id: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.type, updatedType), allMembershipsFilter));
+
+    const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
     const sseData = {
-      ...context,
+      ...membershipContext,
       muted,
       archived: inactive,
-      userRole: role,
-      type: type,
+      storageType: updatedType === 'ORGANIZATION' ? 'organizations' : 'workspaces',
+      type: updatedType,
     };
+    if (updatedType === 'PROJECT') {
+      sendSSEToUsers(membersIds, 'update_sub_entity', sseData);
+    } else {
+      sendSSEToUsers(membersIds, 'update_main_entity', sseData);
+    }
 
-    sendSSE(membership.userId, sseEvent, sseData);
-
-    logEvent('Membership updated', { user: membership.userId, membership: membership.id });
+    logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 
     return ctx.json(
       {
         success: true,
-        data: membership,
+        data: updatedMembership,
       },
       200,
     );
@@ -93,7 +107,7 @@ const membershipRoutes = app
     const user = ctx.get('user');
 
     // Refactor
-    const organization = idOrSlug ? ((await extractEntity('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
+    const organization = idOrSlug ? ((await resolveEntity('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
 
     if (!organization) return errorResponse(ctx, 403, 'forbidden', 'warn');
 
@@ -125,9 +139,9 @@ const membershipRoutes = app
               );
             logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
 
-            sendSSE(targetUser.id, 'update_organization', {
+            sendSSEToUsers([targetUser.id], 'update_main_entity', {
               ...organization,
-              userRole: role,
+              storageType: 'organizations',
               type: 'ORGANIZATION',
             });
           }
@@ -149,12 +163,11 @@ const membershipRoutes = app
 
           logEvent('User added to organization', { user: user.id, organization: organization.id });
 
-          sendSSE(user.id, 'new_organization_membership', {
+          sendSSEToUsers([user.id], 'update_main_entity', {
             ...organization,
-            userRole: role || 'MEMBER',
+            storageType: 'organizations',
             type: 'ORGANIZATION',
           });
-
           continue;
         }
       }
@@ -217,7 +230,7 @@ const membershipRoutes = app
     const memberIds = Array.isArray(ids) ? ids : [ids];
 
     // Check if the user has permission to delete the memberships
-    const context = await extractEntity(entityType, idOrSlug);
+    const context = await resolveEntity(entityType, idOrSlug);
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', context);
@@ -231,10 +244,11 @@ const membershipRoutes = app
     let where: SQL;
     if (entityType === 'ORGANIZATION') {
       where = eq(membershipsTable.organizationId, context.id);
-    } else if (entityType === 'WORKSPACE') {
+    }
+    if (entityType === 'WORKSPACE') {
       where = eq(membershipsTable.workspaceId, context.id);
     } else {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN');
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
     }
 
     // * Get the user membership
@@ -298,17 +312,18 @@ const membershipRoutes = app
     for (const membership of allowedTargets) {
       // * Send the event to the user if they are a member of the organization
 
-      if (entityType === 'ORGANIZATION') {
-        sendSSE(membership.userId, 'remove_organization_membership', {
-          id: context.id,
-          userId: membership.userId,
-        });
-      } else {
-        sendSSE(membership.userId, 'remove_workspace_membership', {
-          id: context.id,
-          userId: membership.userId,
-        });
-      }
+      // if (membership.type === 'WORKSPACE') {
+      //   sendSSE(membership.userId, 'remove_workspace_membership', {
+      //     id: context.id,
+      //     userId: membership.userId,
+      //   });
+      // }
+      // if (membership.type === 'ORGANIZATION') {
+      //   sendSSE(membership.userId, 'remove_organization_membership', {
+      //     id: context.id,
+      //     userId: membership.userId,
+      //   });
+      // }
 
       logEvent('Member deleted', { membership: membership.id });
     }

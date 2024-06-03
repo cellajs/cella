@@ -1,95 +1,112 @@
 import { useNavigationStore } from '~/store/navigation';
 import { useSSE } from './use-sse';
 
-type EntityType = 'organizations' | 'workspaces';
+type StorageEntityType = 'organizations' | 'workspaces';
+
 const SSE = () => {
-  const updateProject = (e: MessageEvent<string>) => {
+  const updateEntity = (e: MessageEvent<string>) => {
     try {
       const entity = JSON.parse(e.data);
+      const storageType = entity.storageType as StorageEntityType;
       useNavigationStore.setState((state) => {
-        const workspace = state.menu.workspaces.items.find((el) => el.id === entity.workspaceId);
-        // Ensure the workspace exists
-        if (!workspace) return state;
-        // Check if the entity exists in the submenu
-        const notExist = workspace.submenu?.items.every((item) => item.id !== entity.id);
-        // If entity does not exist in the list, add it
-        if (notExist && workspace.submenu) {
-          workspace.submenu.items = [entity, ...workspace.submenu.items];
-          return state;
-        }
-        // Merge entity with existing item
-        if (workspace.submenu) {
-          workspace.submenu.items = workspace.submenu.items.map((item) => (item.id === entity.id ? { ...item, ...entity } : item));
-        }
-
-        return state;
-      });
-    } catch (error) {
-      console.error('Error parsing project event', error);
-    }
-  };
-
-  const updateEntity = (e: MessageEvent<string>, entityType: EntityType) => {
-    try {
-      const entity = JSON.parse(e.data);
-      useNavigationStore.setState((state) => {
-        const notExist = state.menu[entityType].items.every((item) => item.id !== entity.id);
+        const notExist = state.menu[storageType].items.every((item) => item.id !== entity.id);
         // If entity does not exist in the list, add it
         if (notExist) {
-          state.menu[entityType].items = [entity, ...state.menu[entityType].items];
+          state.menu[storageType].items = [entity, ...state.menu[storageType].items];
           return state;
         }
         // Merge entity with existing item
-        state.menu[entityType].items = state.menu[entityType].items.map((item) => (item.id === entity.id ? { ...item, ...entity } : item));
+        state.menu[storageType].items = state.menu[storageType].items.map((item) => (item.id === entity.id ? { ...item, ...entity } : item));
         return state;
       });
     } catch (error) {
-      console.error(`Error parsing ${entityType} event`, error);
+      console.error('Error parsing main update event', error);
     }
   };
 
-  const addEntity = (e: MessageEvent<string>, entityType: EntityType) => {
+  const addEntity = (e: MessageEvent<string>) => {
     try {
       const entity = JSON.parse(e.data);
+      const storageType = entity.storageType as StorageEntityType;
       useNavigationStore.setState((state) => {
-        const exist = state.menu[entityType].items.some((item) => item.id === entity.id);
+        const exist = state.menu[storageType].items.some((item) => item.id === entity.id);
 
         // If entity already exists in the list, do nothing
-        if (exist) {
-          return state;
-        }
+        if (exist) return state;
+        if (entity.haveSubMenu) state.submenuItemsOrder[entity.id] = [];
 
-        state.menu[entityType].items = [entity, ...state.menu[entityType].items];
+        state.menu[storageType].items = [entity, ...state.menu[storageType].items];
         return state;
       });
     } catch (error) {
-      console.error(`Error parsing new_${entityType} event`, error);
+      console.error('Error parsing main create new event', error);
     }
   };
 
-  const removeEntity = (e: MessageEvent<string>, entityType: EntityType) => {
+  const removeEntity = (e: MessageEvent<string>) => {
     try {
       const entity = JSON.parse(e.data);
+      const storageType = entity.storageType as StorageEntityType;
       useNavigationStore.setState((state) => {
-        state.menu[entityType].items = state.menu[entityType].items.filter((item) => item.id !== entity.id);
+        state.menu[storageType].items = state.menu[storageType].items.filter((item) => item.id !== entity.id);
         return state;
       });
     } catch (error) {
-      console.error(`Error parsing remove_${entityType} event`, error);
+      console.error('Error parsing main remove event', error);
+    }
+  };
+  const createUpdateSubEntity = (e: MessageEvent<string>) => {
+    try {
+      const subEntity = JSON.parse(e.data);
+      const storageType = subEntity.storageType as StorageEntityType;
+      useNavigationStore.setState((state) => {
+        const mainEntity = state.menu[storageType].items.find((el) => el.id === subEntity.workspaceId);
+        // Ensure the mainEntity exists
+        if (!mainEntity) return state;
+        // Check if the subEntity exists in the submenu
+        const notExist = mainEntity.submenu?.items.every((item) => item.id !== subEntity.id);
+        // If subEntity does not exist in the list, add it
+        if (notExist && mainEntity.submenu) {
+          mainEntity.submenu.items = [subEntity, ...mainEntity.submenu.items];
+          return state;
+        }
+        // Merge project with existing item
+        if (mainEntity.submenu) {
+          mainEntity.submenu.items = mainEntity.submenu.items.map((item) => (item.id === subEntity.id ? { ...item, ...subEntity } : item));
+        }
+        return state;
+      });
+    } catch (error) {
+      console.error('Error parsing subEntity create/update event', error);
     }
   };
 
-  useSSE('update_organization', (e) => updateEntity(e, 'organizations'));
-  useSSE('remove_organization', (e) => removeEntity(e, 'organizations'));
-  useSSE('new_organization_membership', (e) => addEntity(e, 'organizations'));
-  useSSE('remove_organization_membership', (e) => removeEntity(e, 'organizations'));
+  const removeSubEntity = (e: MessageEvent<string>) => {
+    try {
+      const subEntity = JSON.parse(e.data);
+      const storageType = subEntity.storageType as StorageEntityType;
+      useNavigationStore.setState((state) => {
+        const mainEntity = state.menu[storageType].items.find((el) => el.id === subEntity.workspaceId);
+        // Ensure the mainEntity exists
+        if (!mainEntity) return state;
+        // Merge project with existing item
+        if (mainEntity.submenu) {
+          mainEntity.submenu.items = mainEntity.submenu.items.map((item) => (item.id !== subEntity.id ? { ...item, ...subEntity } : item));
+        }
+        return state;
+      });
+    } catch (error) {
+      console.error('Error parsing main remove event', error);
+    }
+  };
 
-  useSSE('update_workspace', (e) => updateEntity(e, 'workspaces'));
-  useSSE('remove_workspace', (e) => removeEntity(e, 'workspaces'));
-  useSSE('new_workspace_membership', (e) => addEntity(e, 'workspaces'));
-  useSSE('remove_workspace_membership', (e) => removeEntity(e, 'workspaces'));
+  useSSE('create_main_entity', (e) => addEntity(e));
+  useSSE('update_main_entity', (e) => updateEntity(e));
+  useSSE('remove_main_entity', (e) => removeEntity(e));
 
-  useSSE('update_project', (e) => updateProject(e));
+  useSSE('update_sub_entity', (e) => createUpdateSubEntity(e));
+  useSSE('create_sub_entity', (e) => createUpdateSubEntity(e));
+  useSSE('remove_sub_entity', (e) => removeSubEntity(e));
 
   return null;
 };

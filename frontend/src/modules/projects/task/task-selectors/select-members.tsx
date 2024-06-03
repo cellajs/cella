@@ -8,10 +8,10 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
 import type { User } from '~/types/index.ts';
-import { Kbd } from '../common/kbd.tsx';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.tsx';
-import { TaskContext } from './board-column';
+import { Kbd } from '../../../common/kbd.tsx';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
+import { TaskContext } from '../../board/board-column.tsx';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';
@@ -31,17 +31,17 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
   const { ref, bounds } = useMeasure();
   const { task, focusedTaskId } = useContext(TaskContext);
   const handleSelectClick = (id: string) => {
-  if (!id) return;
-  const existingUser = selectedUsers.find((user) => user.id === id);
-  if (existingUser) {
-    setSelectedUsers(selectedUsers.filter((user) => user.id !== id));
-    return;
-  }
-  const newUser = users.find((user) => user.id === id);
-  if (newUser) {
-    setSelectedUsers([...selectedUsers, newUser]);
-    return;
-  }
+    if (!id) return;
+    const existingUser = selectedUsers.find((user) => user.id === id);
+    if (existingUser) {
+      setSelectedUsers(selectedUsers.filter((user) => user.id !== id));
+      return;
+    }
+    const newUser = users.find((user) => user.id === id);
+    if (newUser) {
+      setSelectedUsers([...selectedUsers, newUser]);
+      return;
+    }
   };
   // Open on key press
   useHotkeys([
@@ -63,11 +63,11 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
     setSelectedUsers(formValue || []);
   }, [formValue]);
 
-    // watch for changes in the viewValue
-    useEffect(() => {
-      if (mode === 'create') return;
-      setSelectedUsers(viewValue || []);
-    }, [viewValue]);
+  // watch for changes in the viewValue
+  useEffect(() => {
+    if (mode === 'create') return;
+    setSelectedUsers(viewValue || []);
+  }, [viewValue]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
@@ -77,7 +77,7 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
           aria-label="Assign"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 opacity-70'} ${
+          className={`flex justify-start font-light ${mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'} ${
             mode === 'edit' && selectedUsers.length && 'px-0 hover:bg-transparent'
           }`}
         >

@@ -8,34 +8,18 @@ import { SignInRoute } from '~/routes/authentication';
 import { useThemeStore } from '~/store/theme';
 import type { Step } from '.';
 
-const oauthProviders = [
-  {
-    name: 'Github',
-    url: githubSignInUrl,
-    acceptInvite: (token: string) =>
-      acceptInvite({
-        token,
-        oauth: 'github',
-      }),
-  },
-  {
-    name: 'Google',
-    url: googleSignInUrl,
-    acceptInvite: (token: string) =>
-      acceptInvite({
-        token,
-        oauth: 'google',
-      }),
-  },
-  {
-    name: 'Microsoft',
-    url: microsoftSignInUrl,
-    acceptInvite: (token: string) =>
-      acceptInvite({
-        token,
-        oauth: 'microsoft',
-      }),
-  },
+export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
+
+type OauthProvider = {
+  id: OauthProviderOptions;
+  name: string;
+  url: string;
+};
+
+export const oauthProviders: OauthProvider[] = [
+  { id: 'GITHUB', name: 'Github', url: githubSignInUrl },
+  { id: 'GOOGLE', name: 'Google', url: googleSignInUrl },
+  { id: 'MICROSOFT', name: 'Microsoft', url: microsoftSignInUrl },
 ];
 
 interface OauthOptionsProps {
@@ -64,8 +48,9 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
       </div>
 
       <div className="flex flex-col space-y-2">
-        {oauthProviders.map((option) => {
-          if (!config.oauthProviders.includes(option.name)) return null;
+        {config.enabledOauthProviders.map((id) => {
+          const option = oauthProviders.find((provider) => provider.id === id);
+          if (!option) return;
 
           return (
             <Button
@@ -75,9 +60,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
               onClick={
                 token
                   ? () =>
-                      option.acceptInvite(token).then(() => {
-                        // TODO: we need to handle the redirect here
-                        // window.location.href = url;
+                      acceptInvite({ token, oauth: option.id }).then(() => {
                         window.location.href = '/home';
                       })
                   : () => {
@@ -88,7 +71,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
               <img
                 src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
                 alt={option.name}
-                className={`w-4 h-4 mr-2 ${option.name === 'Github' ? invertClass : ''}`}
+                className={`w-4 h-4 mr-2 ${option.id === 'GITHUB' ? invertClass : ''}`}
                 loading="lazy"
               />
               {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with {option.name}

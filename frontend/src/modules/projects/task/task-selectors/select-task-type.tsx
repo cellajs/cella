@@ -1,13 +1,13 @@
 import { Bolt, Bug, Check, Star } from 'lucide-react';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Button } from '../ui/button';
-import { TaskContext } from './board-column';
-import type { TaskType } from './create-task-form';
+import { Button } from '../../../ui/button';
+import { TaskContext } from '../../board/board-column';
+import type { TaskType } from '../create-task-form';
 
 type Type = {
   value: (typeof types)[number]['value'];
@@ -27,7 +27,7 @@ export interface SelectTaskTypeProps {
   changeTaskType?: (value: TaskType) => void;
 }
 
-export const SelectTaskType = ({ currentType, changeTaskType }: SelectTaskTypeProps) => {
+export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
 
   const [openPopover, setOpenPopover] = useState(false);
@@ -45,10 +45,14 @@ export const SelectTaskType = ({ currentType, changeTaskType }: SelectTaskTypePr
     ],
   ]);
 
+  useEffect(() => {
+    setSelectedType(types[types.findIndex((type) => type.value === currentType)]);
+  }, [currentType]);
+
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <PopoverTrigger asChild>
-        <Button aria-label="Set status" variant="ghost" size="micro" className={'group-hover/task:opacity-100 -m-1 opacity-70'}>
+      <PopoverTrigger className={className} asChild>
+        <Button aria-label="Set status" variant="ghost" size="micro" className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 -m-1 opacity-70'}>
           {selectedType.icon()}
         </Button>
       </PopoverTrigger>

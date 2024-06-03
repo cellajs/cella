@@ -71,6 +71,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
     onSuccess: (project) => {
       form.reset();
       callback([project], 'create');
+      if (isDialog) dialog.remove();
       toast.success(t('success.create_resource', { resource: t('common:project') }));
       setSubmenuItemsOrder(workspace.id, [...submenuItemsOrder[workspace.id], project.id]);
       setSheet(null);
@@ -78,8 +79,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       //   to: '/workspace/$idOrSlug/board',
       //   params: { idOrSlug: result.slug },
       // });
-
-      if (isDialog) dialog.remove();
     },
   });
 

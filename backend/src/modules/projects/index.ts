@@ -5,7 +5,7 @@ import { projectsTable } from '../../db/schema/projects';
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
-import { sendSSE } from '../../lib/sse';
+import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -14,6 +14,7 @@ import {
   deleteProjectsRouteConfig,
   getProjectByIdOrSlugRouteConfig,
   getProjectsRouteConfig,
+  getUserProjectsRouteConfig,
   getUsersByProjectIdRouteConfig,
   updateProjectRouteConfig,
 } from './routes';
@@ -65,8 +66,9 @@ const projectsRoutes = app
       project: createdProject.id,
     });
 
-    sendSSE(user.id, 'new_project_membership', {
+    sendSSEToUsers([user.id], 'create_sub_entity', {
       ...createdProject,
+      storageType: 'workspaces',
       type: 'PROJECT',
     });
 
@@ -192,6 +194,35 @@ const projectsRoutes = app
     );
   })
   /*
+   * Get user projects
+   */
+  .openapi(getUserProjectsRouteConfig, async (ctx) => {
+    const { userId } = ctx.req.valid('param');
+
+    // * Get the membership
+    const projects = await db
+      .select({
+        id: projectsTable.id,
+        name: projectsTable.name,
+        createdAt: projectsTable.createdAt,
+      })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, membershipsTable.projectId))
+      .innerJoin(membershipsTable, and(eq(membershipsTable.userId, userId), eq(membershipsTable.type, 'PROJECT')));
+
+    if (!projects) return errorResponse(ctx, 404, 'not_found', 'warn', 'PROJECT', { user: userId });
+
+    logEvent('Get user projects', { user: userId });
+
+    return ctx.json(
+      {
+        success: true,
+        data: projects,
+      },
+      200,
+    );
+  })
+  /*
    * Update project
    */
   .openapi(updateProjectRouteConfig, async (ctx) => {
@@ -220,15 +251,16 @@ const projectsRoutes = app
       .where(eq(projectsTable.id, project.id))
       .returning();
 
-    const [membership] = await db
+    const memberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.projectId, project.id)));
+      .where(and(eq(membershipsTable.type, 'PROJECT'), eq(membershipsTable.projectId, project.id)));
 
-    if (membership) {
-      sendSSE(user.id, 'update_project', {
+    if (memberships.length > 0) {
+      const membersId = memberships.map((member) => member.id);
+      sendSSEToUsers(membersId, 'update_sub_entity', {
         ...updatedProject,
-        role: membership.role,
+        storageType: 'workspaces',
         type: 'PROJECT',
       });
     }
@@ -240,7 +272,7 @@ const projectsRoutes = app
         success: true,
         data: {
           ...updatedProject,
-          role: membership?.role || null,
+          role: memberships.find((member) => member.id === user.id)?.role || null,
         },
       },
       200,
@@ -307,6 +339,20 @@ const projectsRoutes = app
       );
     }
 
+    // * Get members
+    const projectsMembers = await db
+      .select({ id: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(
+        and(
+          eq(membershipsTable.type, 'PROJECT'),
+          inArray(
+            membershipsTable.organizationId,
+            allowedTargets.map((target) => target.project.id),
+          ),
+        ),
+      );
+
     // * Delete the projectId
     await db.delete(projectsTable).where(
       inArray(
@@ -316,10 +362,11 @@ const projectsRoutes = app
     );
 
     // * Send SSE events for the projects that were deleted
-    for (const { project, userRole } of allowedTargets) {
+    for (const { project } of allowedTargets) {
       // * Send the event to the user if they are a member of the project
-      if (userRole) {
-        sendSSE(user.id, 'remove_project', project);
+      if (projectsMembers.length > 0) {
+        const membersId = projectsMembers.map((member) => member.id).filter(Boolean) as string[];
+        sendSSEToUsers(membersId, 'remove_sub_entity', { ...project, storageType: 'workspaces' });
       }
 
       logEvent('Project deleted', { project: project.id });

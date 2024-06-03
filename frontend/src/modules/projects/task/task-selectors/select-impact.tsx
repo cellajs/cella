@@ -9,9 +9,9 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Kbd } from '../common/kbd';
-import { TaskContext } from './board-column';
-import type { TaskImpact } from './create-task-form';
+import { Kbd } from '../../../common/kbd';
+import { TaskContext } from '../../board/board-column';
+import type { TaskImpact } from '../create-task-form';
 import { HighIcon } from './impact-icons/high';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
@@ -67,6 +67,12 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
     setSelectedImpact(impacts[formValue] || null);
   }, [formValue]);
 
+  // Whenever the form value changes (also on reset), update the internal state
+  useEffect(() => {
+    if (viewValue !== null && viewValue !== undefined) return setSelectedImpact(impacts[viewValue]);
+    setSelectedImpact(null);
+  }, [viewValue]);
+
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
@@ -75,7 +81,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
           aria-label="Set impact"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'micro'}
-          className={mode === 'create' ? 'w-full text-left font-light flex gap-2 justify-start border' : 'group-hover/task:opacity-100 opacity-70'}
+          className={mode === 'create' ? 'w-full text-left font-light flex gap-2 justify-start border' : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
         >
           {selectedImpact !== null ? (
             <>

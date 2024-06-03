@@ -1,10 +1,11 @@
+import { config } from 'config';
 import { z } from 'zod';
 
 export const passwordSchema = z.string().min(8).max(100);
 
 export const cookieSchema = z.string();
 
-export const resourceTypeSchema = z.enum(['ORGANIZATION', 'WORKSPACE', 'PROJECT', 'USER', 'UNKNOWN']);
+export const resourceTypeSchema = z.enum(config.entityTypes);
 
 export const idSchema = z.string();
 

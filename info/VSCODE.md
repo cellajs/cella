@@ -1,10 +1,41 @@
 # VSCode
 
+## Workspace settings
+
+- Create a folder named `.vscode` in your project directory if it doesn't exist already.
+- Inside the `.vscode` folder, create a file named tasks.json.
+- Paste the following configuration inside `settings.json`:
+
+```json
+{
+  // Enable Tailwind CSS Intellisense for class attributes and variable declarations ending in `Styles`
+  // E.g.,: const fooStyles = 'bg-red-500 text-white';
+  "tailwindCSS.classAttributes": ["class", "className", ".*Styles"],
+
+  "editor.formatOnSave": true,
+
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  }
+}
+```
+
+## Tasks
+
 To enable automatic Docker startup and open two additional terminals when you launch VS Code, follow these steps:
 
-- Create a folder named .vscode in your project directory if it doesn't exist already.
-- Inside the .vscode folder, create a file named tasks.json.
-- Paste the following configuration inside tasks.json:
+- Create a folder named `.vscode` in your project directory if it doesn't exist already.
+- Inside the `.vscode` folder, create a file named tasks.json.
+- Paste the following configuration inside `tasks.json`:
 
 ```
 {
@@ -56,4 +87,5 @@ To enable automatic Docker startup and open two additional terminals when you la
   ]
 }
 ```
+
 Now, every time you open your project in VS Code, Docker will start automatically, and you'll have two additional terminals ready for your tasks.

@@ -4,7 +4,7 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
-import { sendSSE } from '../../lib/sse';
+import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -52,9 +52,10 @@ const workspacesRoutes = app
       workspace: createdWorkspace.id,
     });
 
-    sendSSE(user.id, 'new_workspace_membership', {
+    sendSSEToUsers([user.id], 'create_main_entity', {
       ...createdWorkspace,
-      role: 'ADMIN',
+      storageType: 'workspaces',
+      haveSubMenu: true,
       type: 'WORKSPACE',
     });
 
@@ -123,15 +124,17 @@ const workspacesRoutes = app
       .where(eq(workspacesTable.id, workspace.id))
       .returning();
 
-    const [membership] = await db
+    const memberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.workspaceId, workspace.id)));
+      .where(and(eq(membershipsTable.type, 'WORKSPACE'), eq(membershipsTable.workspaceId, workspace.id)));
 
-    if (membership) {
-      sendSSE(user.id, 'update_workspace', {
+    if (memberships.length > 0) {
+      const membersId = memberships.map((member) => member.id);
+      sendSSEToUsers(membersId, 'update_main_entity', {
         ...updatedWorkspace,
-        role: membership.role,
+        storageType: 'workspaces',
+        haveSubMenu: true,
         type: 'WORKSPACE',
       });
     }
@@ -143,7 +146,7 @@ const workspacesRoutes = app
         success: true,
         data: {
           ...updatedWorkspace,
-          role: membership?.role || null,
+          role: memberships.find((member) => member.id === user.id)?.role || null,
         },
       },
       200,
@@ -210,6 +213,20 @@ const workspacesRoutes = app
       );
     }
 
+    // * Get members
+    const workspaceMembers = await db
+      .select({ id: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(
+        and(
+          eq(membershipsTable.type, 'WORKSPACE'),
+          inArray(
+            membershipsTable.organizationId,
+            allowedTargets.map((target) => target.workspace.id),
+          ),
+        ),
+      );
+
     // * Delete the workspaces
     await db.delete(workspacesTable).where(
       inArray(
@@ -219,10 +236,11 @@ const workspacesRoutes = app
     );
 
     // * Send SSE events for the workspaces that were deleted
-    for (const { workspace, userRole } of allowedTargets) {
+    for (const { workspace } of allowedTargets) {
       // * Send the event to the user if they are a member of the workspace
-      if (userRole) {
-        sendSSE(user.id, 'remove_workspace', workspace);
+      if (workspaceMembers.length > 0) {
+        const membersId = workspaceMembers.map((member) => member.id).filter(Boolean) as string[];
+        sendSSEToUsers(membersId, 'remove_main_entity', { ...workspace, storageType: 'workspaces' });
       }
 
       logEvent('Workspace deleted', { workspace: workspace.id });
