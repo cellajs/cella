@@ -21,6 +21,7 @@ interface WorkspaceContextValue {
   workspace: Workspace;
   projects: ProjectList;
   tasks: PreparedTask[];
+  tasksLoading: boolean;
   labels: Label[];
   tasksCount: number;
   selectedTasks: string[];
@@ -66,7 +67,7 @@ const WorkspacePage = () => {
   const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id));
   const projects = projectsQuery.data.items;
 
-  const { results: tasks = [] } = useLiveQuery(
+  const { results: tasks } = useLiveQuery(
     Electric.db.tasks.liveMany({
       // Cause Cannot read properties of undefined (reading 'relationName')
       // include: {
@@ -103,6 +104,7 @@ const WorkspacePage = () => {
   };
 
   const filteredTasks = useMemo(() => {
+    if (!tasks) return [];
     if (!searchQuery) return tasks;
     return tasks.filter(
       (task) =>
@@ -134,6 +136,7 @@ const WorkspacePage = () => {
       value={{
         workspace,
         projects,
+        tasksLoading: !tasks,
         tasks: filteredByViewOptionsTasks.map((task) => ({
           ...task,
           // TODO: TS complains about a prisma issue with the type of labels
