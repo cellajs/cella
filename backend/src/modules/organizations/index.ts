@@ -64,11 +64,7 @@ const organizationsRoutes = app
       organization: createdOrganization.id,
     });
 
-    sendSSEToUsers([user.id], 'create_main_entity', {
-      ...createdOrganization,
-      storageType: 'organizations',
-      type: 'ORGANIZATION',
-    });
+    sendSSEToUsers([user.id], 'create_entity', createdOrganization);
 
     return ctx.json(
       {
@@ -226,11 +222,7 @@ const organizationsRoutes = app
 
     if (memberships.length > 0) {
       const membersId = memberships.map((member) => member.id);
-      sendSSEToUsers(membersId, 'update_main_entity', {
-        ...updatedOrganization,
-        storageType: 'organizations',
-        type: 'ORGANIZATION',
-      });
+      sendSSEToUsers(membersId, 'update_entity', updatedOrganization);
     }
 
     const [{ admins }] = await db
@@ -555,7 +547,7 @@ const organizationsRoutes = app
 
       if (organizationsMembers.length > 0) {
         const membersId = organizationsMembers.map((member) => member.id).filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_main_entity', { ...organization, storageType: 'organizations' });
+        sendSSEToUsers(membersId, 'remove_entity', organization);
       }
 
       logEvent('Organization deleted', { organization: organization.id });

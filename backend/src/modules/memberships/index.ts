@@ -79,13 +79,12 @@ const membershipRoutes = app
       ...membershipContext,
       muted,
       archived: inactive,
-      storageType: updatedType === 'ORGANIZATION' ? 'organizations' : 'workspaces',
-      type: updatedType,
+      entity: updatedType,
     };
     if (updatedType === 'PROJECT') {
-      sendSSEToUsers(membersIds, 'update_sub_entity', sseData);
+      sendSSEToUsers(membersIds, 'update_entity', sseData);
     } else {
-      sendSSEToUsers(membersIds, 'update_main_entity', sseData);
+      sendSSEToUsers(membersIds, 'update_entity', sseData);
     }
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
@@ -139,11 +138,7 @@ const membershipRoutes = app
               );
             logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
 
-            sendSSEToUsers([targetUser.id], 'update_main_entity', {
-              ...organization,
-              storageType: 'organizations',
-              type: 'ORGANIZATION',
-            });
+            sendSSEToUsers([targetUser.id], 'update_entity', organization);
           }
 
           continue;
@@ -163,11 +158,7 @@ const membershipRoutes = app
 
           logEvent('User added to organization', { user: user.id, organization: organization.id });
 
-          sendSSEToUsers([user.id], 'update_main_entity', {
-            ...organization,
-            storageType: 'organizations',
-            type: 'ORGANIZATION',
-          });
+          sendSSEToUsers([user.id], 'update_entity', organization);
           continue;
         }
       }

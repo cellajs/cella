@@ -15,27 +15,52 @@ import { type MenuItem, type MenuList, MenuSection } from './sheet-menu-section'
 import { SheetMenuItem } from './sheet-menu-items';
 
 export type SectionItem = {
-  id: 'organizations' | 'workspaces';
+  storageType: 'organizations' | 'workspaces';
   type: PageResourceType;
   label: string;
-  createForm: React.ReactNode;
+  createForm?: React.ReactNode;
+  isSubmenu?: boolean;
+  hasSubmenu?: boolean;
   icon?: React.ElementType<LucideProps>;
 };
 
 // Here you declare the menu sections
 export const menuSections: SectionItem[] = [
-  { id: 'organizations', type: 'ORGANIZATION', label: 'common:organizations', createForm: <CreateOrganizationForm dialog /> },
-  { id: 'workspaces', type: 'WORKSPACE', label: 'common:workspaces', createForm: <CreateWorkspaceForm dialog /> },
+  {
+    storageType: 'organizations',
+    type: 'ORGANIZATION',
+    label: 'common:organizations',
+    hasSubmenu: false,
+    isSubmenu: false,
+    createForm: <CreateOrganizationForm dialog />,
+  },
+  {
+    storageType: 'workspaces',
+    isSubmenu: false,
+    hasSubmenu: true,
+    type: 'WORKSPACE',
+    label: 'common:workspaces',
+    createForm: <CreateWorkspaceForm dialog />,
+  },
+  {
+    storageType: 'workspaces',
+    isSubmenu: true,
+    hasSubmenu: false,
+    type: 'PROJECT',
+    label: 'common:projects',
+  },
 ];
 
 // Set search results to empty array for each menu type
-export const initialSearchResults = menuSections.reduce(
-  (acc, section) => {
-    acc[section.id] = [];
-    return acc;
-  },
-  {} as Record<string, MenuList>,
-);
+export const initialSearchResults = menuSections
+  .filter((el) => !el.isSubmenu)
+  .reduce(
+    (acc, section) => {
+      acc[section.storageType] = [];
+      return acc;
+    },
+    {} as Record<string, MenuList>,
+  );
 
 export type SearchResultsType = typeof initialSearchResults;
 
@@ -58,10 +83,20 @@ export const SheetMenu = memo(() => {
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return menuSections.map((section) => {
-      const menuSection = menu[section.id as keyof UserMenu];
-      return <MenuSection key={section.id} sectionType={section.id} data={menuSection} createForm={section.createForm} />;
-    });
+    return menuSections
+      .filter((el) => !el.isSubmenu)
+      .map((section) => {
+        const menuSection = menu[section.storageType as keyof UserMenu];
+        return (
+          <MenuSection
+            key={section.type}
+            sectionType={section.storageType}
+            isSubmenu={section.isSubmenu}
+            data={menuSection}
+            createForm={section.createForm}
+          />
+        );
+      });
   }, [menu]);
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {

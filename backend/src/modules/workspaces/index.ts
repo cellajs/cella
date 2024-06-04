@@ -52,12 +52,7 @@ const workspacesRoutes = app
       workspace: createdWorkspace.id,
     });
 
-    sendSSEToUsers([user.id], 'create_main_entity', {
-      ...createdWorkspace,
-      storageType: 'workspaces',
-      haveSubMenu: true,
-      type: 'WORKSPACE',
-    });
+    sendSSEToUsers([user.id], 'create_entity', createdWorkspace);
 
     return ctx.json(
       {
@@ -131,12 +126,7 @@ const workspacesRoutes = app
 
     if (memberships.length > 0) {
       const membersId = memberships.map((member) => member.id);
-      sendSSEToUsers(membersId, 'update_main_entity', {
-        ...updatedWorkspace,
-        storageType: 'workspaces',
-        haveSubMenu: true,
-        type: 'WORKSPACE',
-      });
+      sendSSEToUsers(membersId, 'update_entity', updatedWorkspace);
     }
 
     logEvent('Workspace updated', { workspace: updatedWorkspace.id });
@@ -240,7 +230,7 @@ const workspacesRoutes = app
       // * Send the event to the user if they are a member of the workspace
       if (workspaceMembers.length > 0) {
         const membersId = workspaceMembers.map((member) => member.id).filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_main_entity', { ...workspace, storageType: 'workspaces' });
+        sendSSEToUsers(membersId, 'remove_entity', workspace);
       }
 
       logEvent('Workspace deleted', { workspace: workspace.id });

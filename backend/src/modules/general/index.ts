@@ -274,11 +274,7 @@ const generalRoutes = app
         role: token.role as MembershipModel['role'],
         createdBy: user.id,
       });
-      sendSSEToUsers([user.id], 'create_main_entity', {
-        ...organization,
-        storageType: 'organizations',
-        type: 'ORGANIZATIONS',
-      });
+      sendSSEToUsers([user.id], 'create_entity', organization);
     }
 
     return ctx.json(

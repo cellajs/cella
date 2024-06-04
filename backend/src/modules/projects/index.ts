@@ -66,11 +66,7 @@ const projectsRoutes = app
       project: createdProject.id,
     });
 
-    sendSSEToUsers([user.id], 'create_sub_entity', {
-      ...createdProject,
-      storageType: 'workspaces',
-      type: 'PROJECT',
-    });
+    sendSSEToUsers([user.id], 'create_entity', createdProject);
 
     return ctx.json(
       {
@@ -258,11 +254,7 @@ const projectsRoutes = app
 
     if (memberships.length > 0) {
       const membersId = memberships.map((member) => member.id);
-      sendSSEToUsers(membersId, 'update_sub_entity', {
-        ...updatedProject,
-        storageType: 'workspaces',
-        type: 'PROJECT',
-      });
+      sendSSEToUsers(membersId, 'update_entity', updatedProject);
     }
 
     logEvent('Project updated', { project: updatedProject.id });
@@ -366,7 +358,7 @@ const projectsRoutes = app
       // * Send the event to the user if they are a member of the project
       if (projectsMembers.length > 0) {
         const membersId = projectsMembers.map((member) => member.id).filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_sub_entity', { ...project, storageType: 'workspaces' });
+        sendSSEToUsers(membersId, 'remove_entity', project);
       }
 
       logEvent('Project deleted', { project: project.id });
