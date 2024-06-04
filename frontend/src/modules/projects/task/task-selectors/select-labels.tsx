@@ -133,10 +133,10 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
           ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Set labels"
           variant="ghost"
-          size={mode === 'create' ? 'sm' : 'micro'}
-          className={`flex h-auto justify-start font-light ${
+          size={mode === 'create' ? 'sm' : 'xs'}
+          className={`flex h-auto min-h-8 justify-start font-light ${
             mode === 'create'
-              ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20'
+              ? 'w-full text-left py-1 border hover:bg-accent/20'
               : 'py-[2px] group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
           } ${mode === 'edit' && selectedLabels.length && ''}`}
         >
@@ -158,7 +158,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
                     {mode === 'create' && (
                       <Button
                         className="opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:!ring-offset-0"
-                        size="micro"
+                        size="xs"
                         variant="ghost"
                         onClick={(e) => {
                           e.preventDefault();

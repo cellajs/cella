@@ -32,14 +32,14 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
 
   return (
     <div
-      className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 font-semibold flex flex-row gap-2 space-between items-center ${stickyStyles}`}
+      className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}
     >
-      <Button ref={dragRef} variant={'ghost'} size="xs" className="max-xs:hidden px-0 text-primary/50 -ml-1 cursor-grab relative">
+      <Button ref={dragRef} variant={'ghost'} size="xs" className="max-sm:hidden px-0 text-primary/50 cursor-grab relative">
         <GripVertical size={16} />
       </Button>
       {/* Omit style background if projects will be without a color preference. */}
-      <AvatarWrap className="h-8 w-8" name={project.name} style={{ background: `#${project.color}` }} />
-      <div>{project.name}</div>
+      <AvatarWrap className="h-8 w-8 text-xs" name={project.name} style={{ background: `#${project.color}` }} />
+      <div className="truncate">{project.name}</div>
       <div className="grow" />
       <ToolTipButtons rolledUp={false} onSettingsClick={openSettings} onMinimizeClick={MinimizeClick} />
       <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>

@@ -35,7 +35,7 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizat
           <AvatarWrap className="m-2" type={type} id={id} name={title} url={thumbnailUrl} />
           <div className="my-auto">
             {/* Page title */}
-            <h1 className="md:text-xl !leading-4 font-semibold">{title}</h1>
+            <h1 className="md:text-xl truncate !leading-4 font-semibold">{title}</h1>
             {/* Breadcrumb */}
 
             <Breadcrumb className="mt-[6px]">

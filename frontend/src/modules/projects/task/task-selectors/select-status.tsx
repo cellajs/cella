@@ -97,7 +97,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
         {mode === 'edit' && (
           <Button
             variant="outlineGhost"
-            size="micro"
+            size="xs"
             className={cn('border-r-0 rounded-r-none [&:not(.absolute)]:active:translate-y-0', variants({ status: selectedStatus.value }))}
             onClick={nextStatusClick}
             disabled={selectedStatus.value === 6}
@@ -109,7 +109,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
           <Button
             aria-label="Set status"
             variant={mode === 'edit' ? 'outlineGhost' : 'default'}
-            size={mode === 'edit' ? 'micro' : 'xs'}
+            size='xs'
             className={cn(
               mode === 'edit' && variants({ status: selectedStatus.value }),
               mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25',

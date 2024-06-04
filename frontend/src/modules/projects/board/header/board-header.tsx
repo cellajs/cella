@@ -77,7 +77,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
 
   return (
     // z-40 to appear on top of sticky background in `BoardColumn`
-    <div className={'flex items-center w-full max-sm:justify-between sm:gap-2 z-40'}>
+    <div className={'flex items-center w-full max-sm:justify-between sm:gap-2 z-100'}>
       <TableFilterBar
         onResetFilters={() => {
           setSearchQuery('');
@@ -86,18 +86,17 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
         isFiltered={!!selectedTasks.length || !!searchQuery.length}
       >
         <FilterBarActions>
-          <TooltipButton toolTipContent={t('common:page_view')}>
-            <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleShowPageHeader}>
-              {showPageHeader ? (
-                <PanelTopClose size={16} />
-              ) : (
-                <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
-              )}
-            </Button>
-          </TooltipButton>
-
           {!selectedTasks.length && !searchQuery.length && (
             <div className="flex gap-2">
+              <TooltipButton toolTipContent={t('common:page_view')}>
+                <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleShowPageHeader}>
+                  {showPageHeader ? (
+                    <PanelTopClose size={16} />
+                  ) : (
+                    <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+                  )}
+                </Button>
+              </TooltipButton>
               <TooltipButton toolTipContent={t('common:add_project')}>
                 <Button variant="plain" onClick={handleAddProjects}>
                   <Plus size={16} />

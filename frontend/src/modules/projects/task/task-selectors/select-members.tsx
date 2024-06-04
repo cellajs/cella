@@ -76,10 +76,10 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
           ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Assign"
           variant="ghost"
-          size={mode === 'create' ? 'sm' : 'micro'}
+          size={mode === 'create' ? 'sm' : 'xs'}
           className={`flex justify-start font-light ${
             mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'
-          } ${mode === 'edit' && selectedUsers.length && 'px-0 hover:bg-transparent'}`}
+          }`}
         >
           {!selectedUsers.length && <UserX className="h-4 w-4 opacity-50" />}
           {!!selectedUsers.length && (

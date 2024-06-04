@@ -102,7 +102,7 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
           ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Set labels"
           variant="ghost"
-          size={mode === 'create' ? 'sm' : 'micro'}
+          size={mode === 'create' ? 'sm' : 'xs'}
           className={`flex h-auto justify-start font-light ${
             mode === 'create'
               ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20'

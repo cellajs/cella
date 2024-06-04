@@ -80,7 +80,7 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
           ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Set impact"
           variant="ghost"
-          size={mode === 'create' ? 'sm' : 'micro'}
+          size={mode === 'create' ? 'sm' : 'xs'}
           className={
             mode === 'create'
               ? 'w-full text-left font-light flex gap-2 justify-start border'

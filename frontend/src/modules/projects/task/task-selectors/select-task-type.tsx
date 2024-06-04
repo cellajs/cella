@@ -55,8 +55,8 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
         <Button
           aria-label="Set status"
           variant="ghost"
-          size="micro"
-          className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 -m-1 opacity-70'}
+          size="xs"
+          className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
         >
           {selectedType.icon()}
         </Button>
