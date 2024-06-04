@@ -37,8 +37,8 @@ interface TaskCardProps {
 export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { setSelectedTasks, selectedTasks, tasks } = useContext(WorkspaceContext);
-  const { labels } = useContext(ProjectContext);
+  const { setSelectedTasks, selectedTasks, tasks, projects } = useContext(WorkspaceContext);
+  const { labels, setFocusedProjectIndex } = useContext(ProjectContext);
 
   const { task, focusedTaskId, setFocusedTask, projectMembers } = useContext(TaskContext);
   const [isEditing, setIsEditing] = useState(false);
@@ -192,6 +192,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     <Card
       onMouseDown={() => {
         setFocusedTask(task.id);
+        setFocusedProjectIndex(projects.findIndex((p) => p.id === task.project_id) || 0);
         taskRef.current?.focus();
       }}
       tabIndex={focusedTaskId === task.id ? 0 : -1}
@@ -212,11 +213,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
         <div className="flex flex-col gap-1">
           <div className="flex gap-2 w-full">
             <div className="flex flex-col gap-2 relative mt-[2px]">
-              <SelectTaskType
-                className="z-20"
-                currentType={task.type as TaskType}
-                changeTaskType={(newType) => handleChange('type', newType)}
-              />
+              <SelectTaskType className="z-20" currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType)} />
               <Checkbox
                 className={cn(
                   'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:scale-100 group-[.is-selected]/column:m-0',
@@ -263,32 +260,17 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
 
                   {!isExpanded && (
                     <div className="opacity-50 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 text-xs inline font-light gap-1">
-                      <Button
-                        variant="link"
-                        size="micro"
-                        onClick={() => setIsExpanded(true)}
-                        className="inline-flex py-0 h-5 ml-1"
-                      >
+                      <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
                         {t('common:more').toLowerCase()}
                       </Button>
                       {subTasks.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="micro"
-                          onClick={() => setIsExpanded(true)}
-                          className="inline-flex py-0 h-5 ml-1 gap-[1px]"
-                        >
+                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
                           <span className="text-success">{subTasks.filter((t) => t.status === 6).length}</span>
                           <span className="font-light">/</span>
                           <span className="font-light">{subTasks.length}</span>
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="micro"
-                        onClick={() => setIsExpanded(true)}
-                        className="inline-flex py-0 h-5 ml-1 gap-[1px]"
-                      >
+                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
                         <Paperclip size={10} className="transition-transform -rotate-45" />
                         <span>3</span>
                       </Button>
@@ -300,12 +282,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               {isExpanded && (
                 <div>
                   <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>
-                  <Button
-                    variant="link"
-                    size="micro"
-                    onClick={() => setIsExpanded(false)}
-                    className="py-0 h-5 -ml-1 opacity-70"
-                  >
+                  <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 h-5 -ml-1 opacity-70">
                     {t('common:less').toLowerCase()}
                   </Button>
                 </div>
@@ -324,11 +301,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
             </Button>
 
             {task.type !== 'bug' && (
-              <SelectImpact
-                viewValue={task.impact as TaskImpact}
-                mode="edit"
-                changeTaskImpact={(newImpact) => handleChange('impact', newImpact)}
-              />
+              <SelectImpact viewValue={task.impact as TaskImpact} mode="edit" changeTaskImpact={(newImpact) => handleChange('impact', newImpact)} />
             )}
 
             <SetLabels
@@ -346,10 +319,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                 viewValue={projectMembers.filter((member) => task.assigned_to?.includes(member.id))}
                 changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers)}
               />
-              <SelectStatus
-                taskStatus={task.status as TaskStatus}
-                changeTaskStatus={(newStatus) => handleChange('status', newStatus)}
-              />
+              <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
             </div>
           </div>
           <div className="flex flex-col gap-2">

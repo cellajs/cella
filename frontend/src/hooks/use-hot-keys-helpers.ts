@@ -13,10 +13,13 @@ type Hotkey = KeyboardModifiers & {
 type CheckHotkeyMatch = (event: KeyboardEvent) => boolean;
 
 function parseHotkey(hotkey: string): Hotkey {
-  const keys = hotkey
-    .toLowerCase()
-    .split('+')
-    .map((part) => part.trim());
+  const keys =
+    hotkey === '+'
+      ? ['+']
+      : hotkey
+          .toLowerCase()
+          .split('+')
+          .map((part) => part.trim());
 
   const modifiers: KeyboardModifiers = {
     alt: keys.includes('alt'),

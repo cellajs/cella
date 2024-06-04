@@ -148,9 +148,16 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
     }
   };
 
+  const handlePlusKeyDown = () => {
+    if (focusedProject === null) setFocusedProjectIndex(0);
+    if (projects[focusedProject || 0].id !== project.id) return;
+    setCreateForm(!createForm);
+  };
+
   useHotkeys([
     ['ArrowDown', handleArrowKeyDown],
     ['ArrowUp', handleArrowKeyDown],
+    ['+', handlePlusKeyDown],
   ]);
 
   // create draggable & dropTarget elements and auto scroll
