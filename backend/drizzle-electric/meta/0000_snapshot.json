@@ -1,7 +1,5 @@
 {
-  "id": "f5037b49-e484-4a40-ab7b-538328a0a699",
-  "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "6",
+  "version": "7",
   "dialect": "postgresql",
   "tables": {
     "public.labels": {
@@ -156,15 +154,15 @@
         "tasks_parent_id_tasks_id_fk": {
           "name": "tasks_parent_id_tasks_id_fk",
           "tableFrom": "tasks",
-          "tableTo": "tasks",
           "columnsFrom": [
             "parent_id"
           ],
+          "tableTo": "tasks",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -174,8 +172,10 @@
   "enums": {},
   "schemas": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
-  }
+    "tables": {},
+    "columns": {}
+  },
+  "id": "f5037b49-e484-4a40-ab7b-538328a0a699",
+  "prevId": "00000000-0000-0000-0000-000000000000"
 }
