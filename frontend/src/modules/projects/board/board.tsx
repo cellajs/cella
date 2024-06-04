@@ -115,13 +115,14 @@ export default function Board() {
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
+    const { workspace } = useContext(WorkspaceContext);
     if (!tasks.length || !mappedProjects.length) return;
     const currentIndex = focusedProjectIndex !== null ? focusedProjectIndex : -1;
     let nextIndex = currentIndex;
     if (event.key === 'ArrowRight') nextIndex = currentIndex === mappedProjects.length - 1 ? 0 : currentIndex + 1;
     if (event.key === 'ArrowLeft') nextIndex = currentIndex <= 0 ? mappedProjects.length - 1 : currentIndex - 1;
     const indexedProject = mappedProjects[nextIndex];
-    const currentProjectSettings = workspaces[indexedProject.workspaceId]?.columns.find((el) => el.columnId === indexedProject.id);
+    const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === indexedProject.id);
     const sortedProjectTasks = tasks.filter((t) => t.project_id === indexedProject.id).sort((a, b) => sortTaskOrder(a, b));
     const lengthWithoutAccepted = sortedProjectTasks.filter((t) => t.status !== 6).length;
 

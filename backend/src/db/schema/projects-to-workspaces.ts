@@ -23,7 +23,7 @@ export const projectsToWorkspacesTable = pgTable(
       pk: primaryKey({ 
         columns: [table.projectId, table.workspaceId] 
       }),
-      workspaceIndex: index('workspace_id_index').on(table.workspaceId).desc(),
+      workspaceIndex: index('workspace_id_index').on(table.workspaceId.desc()),
     };
   },
 );
