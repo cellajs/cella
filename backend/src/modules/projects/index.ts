@@ -2,7 +2,6 @@ import { type SQL, and, count, eq, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { projectsTable } from '../../db/schema/projects';
-import { workspacesTable } from '../../db/schema/workspaces';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
@@ -195,6 +194,7 @@ const projectsRoutes = app
       .orderBy(orderColumn)
       .limit(Number(limit))
       .offset(Number(offset));
+
     } else {
       projectsFilters.push(eq(projectsToWorkspacesTable.workspaceId, workspace))
 

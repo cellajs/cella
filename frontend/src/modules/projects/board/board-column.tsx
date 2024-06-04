@@ -64,7 +64,8 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const { submenuItemsOrder } = useNavigationStore();
   const { searchQuery, projects, selectedTasks, tasksLoading } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
-  const currentProjectSettings = workspaces[project.workspaceId]?.columns.find((el) => el.columnId === project.id);
+  const { workspace } = useContext(WorkspaceContext);
+  const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
 
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
@@ -82,13 +83,13 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
-    changeColumn(project.workspaceId, project.id, {
+    changeColumn(workspace.id, project.id, {
       expandIced: !showIced,
     });
   };
   const handleAcceptedClick = () => {
     setShowAccepted(!showAccepted);
-    changeColumn(project.workspaceId, project.id, {
+    changeColumn(workspace.id, project.id, {
       expandAccepted: !showAccepted,
     });
   };
@@ -170,7 +171,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
     const data = getDraggableItemData<Project>(
       project,
-      submenuItemsOrder[project.workspaceId].findIndex((el) => el === project.id),
+      submenuItemsOrder[workspace.id].findIndex((el) => el === project.id),
       'column',
     );
     if (!column || !headerDragButton || !cardList) return;
@@ -223,7 +224,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
           })
         : () => {},
     );
-  }, [project, projects, submenuItemsOrder[project.workspaceId], sortedTasks]);
+  }, [project, projects, submenuItemsOrder[workspace.id], sortedTasks]);
 
   // Hides underscroll elements
   // 64px refers to the header height

@@ -41,8 +41,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   // const navigate = useNavigate();
   const { setSheet, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
 
-  console.log('workspace: ', workspace)
-
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),

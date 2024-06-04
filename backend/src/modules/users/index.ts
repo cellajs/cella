@@ -175,6 +175,7 @@ const usersRoutes = app
         muted: membership.muted || false,
         membershipId: membership.id,
         role: membership?.role || null,
+        organizationId: project.organizationId,
       };
     });
 

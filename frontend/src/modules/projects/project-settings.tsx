@@ -16,7 +16,8 @@ export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; 
 
   const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
 
-  const callback = useMutateQueryData(['workspaces', project.workspaceId, 'projects']);
+  // const callback = useMutateQueryData(['workspaces', project.workspaceId, 'projects']);
+  const callback = useMutateQueryData([]);
 
   const openDeleteDialog = () => {
     dialog(

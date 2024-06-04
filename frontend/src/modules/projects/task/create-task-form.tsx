@@ -120,6 +120,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     const projectTasks = tasks.filter((task) => task.project_id === project.id);
     const order = projectTasks.length > 0 ? projectTasks[0].sort_order / 1.1 : 1;
 
+    console.log(project)
+
     Electric.db.tasks
       .create({
         data: {
@@ -142,7 +144,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           // assigned_to: values.assignedTo.map((user) => user.id),
           status: values.status,
           organization_id: project.organizationId,
-          workspace_id: project.workspaceId,
           project_id: project.id,
           created_at: new Date(),
           created_by: user.id,
@@ -269,7 +270,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels labels={labels} projectId={project.id} organizationId={project.organizationId} workspaceId={project.workspaceId} mode="create" changeLabels={onChange} />
+                  <SetLabels labels={labels} projectId={project.id} organizationId={project.organizationId} mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
