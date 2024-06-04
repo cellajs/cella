@@ -23,14 +23,13 @@ const badgeStyle = (color?: string | null) => {
 interface SetLabelsProps {
   mode: 'create' | 'edit';
   organizationId: string;
-  workspaceId: string;
   projectId: string;
   viewValue?: Label[];
   changeLabels?: (labels: Label[]) => void;
   labels: Label[];
 }
 
-const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, workspaceId, labels }: SetLabelsProps) => {
+const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, labels }: SetLabelsProps) => {
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('labels');
   const [openPopover, setOpenPopover] = useState(false);
@@ -63,7 +62,6 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, w
       name: value,
       color: '#fff',
       organization_id: organizationId,
-      workspace_id: workspaceId,
       project_id: projectId,
     };
     setSelectedLabels((prev) => [...prev, newLabel]);
