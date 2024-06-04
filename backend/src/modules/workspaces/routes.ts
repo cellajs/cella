@@ -1,7 +1,7 @@
 import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
 import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchema } from './schema';
 
@@ -103,7 +103,7 @@ export const updateWorkspaceRouteConfig = createRouteConfig({
 export const deleteWorkspacesRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/workspaces',
-  guard: [isAuthenticated, isSystemAdmin],
+  guard: [isAuthenticated, splitByAllowance('delete', 'workspace')],
   tags: ['workspaces'],
   summary: 'Delete workspaces',
   description: `

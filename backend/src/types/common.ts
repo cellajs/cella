@@ -25,6 +25,8 @@ export type Env = {
     workspace: WorkspaceModel;
     memberships: [MembershipModel];
     project: ProjectModel;
+    allowedIds: Array<string>,
+    disallowedIds: Array<string>,
   };
 };
 

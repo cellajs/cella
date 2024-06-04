@@ -6,7 +6,7 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, projectParamSchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
 import { apiUserSchema } from '../users/schema';
 
 import {
@@ -170,7 +170,7 @@ export const updateProjectRouteConfig = createRouteConfig({
 export const deleteProjectsRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/projects',
-  guard: [isAuthenticated, isAllowedTo('delete', 'project')],
+  guard: [isAuthenticated, splitByAllowance('delete', 'project')],
   tags: ['projects'],
   summary: 'Delete projects',
   description: `

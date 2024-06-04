@@ -326,93 +326,36 @@ const projectsRoutes = app
    * Delete projects
    */
   .openapi(deleteProjectsRouteConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    // * Extract allowed and disallowed ids
+    const allowedIds = ctx.get('allowedIds');
+    const disallowedIds = ctx.get('disallowedIds')
 
-    // * Convert the projects ids to an array
-    const projectsIds = Array.isArray(ids) ? ids : [ids];
-
-    const errors: ErrorType[] = [];
-
-    // * Get the projects and the user role
-    const targets = await db
-      .select({
-        project: projectsTable,
-        userRole: membershipsTable.role,
-      })
-      .from(projectsTable)
-      .leftJoin(membershipsTable, and(eq(membershipsTable.projectId, projectsTable.id), eq(membershipsTable.userId, user.id)))
-      .where(inArray(projectsTable.id, projectsIds));
-
-    // * Check if the projects exist
-    for (const id of projectsIds) {
-      if (!targets.some((target) => target.project.id === id)) {
-        errors.push(
-          createError(ctx, 404, 'not_found', 'warn', 'PROJECT', {
-            project: id,
-          }),
-        );
-      }
-    }
-
-    // * Filter out projects that the user doesn't have permission to delete
-    const allowedTargets = targets.filter((target) => {
-      const projectId = target.project.id;
-
-      if (user.role !== 'ADMIN' && target.userRole !== 'ADMIN') {
-        errors.push(
-          createError(ctx, 403, 'delete_forbidden', 'warn', 'PROJECT', {
-            project: projectId,
-          }),
-        );
-        return false;
-      }
-
-      return true;
-    });
-
-    // * If the user doesn't have permission to delete any of the projects, return an error
-    if (allowedTargets.length === 0) {
-      return ctx.json(
-        {
-          success: false,
-          errors: errors,
-        },
-        200,
-      );
-    }
+    // * Map errors of workspaces user is not allowed to delete 
+    const errors: ErrorType[] = disallowedIds.map(id => createError(ctx, 404, 'not_found', 'warn', 'PROJECT', { project: id }));
 
     // * Get members
     const projectsMembers = await db
-      .select({ id: membershipsTable.userId })
+      .select({ id: membershipsTable.userId, projectId: membershipsTable.projectId })
       .from(membershipsTable)
       .where(
         and(
           eq(membershipsTable.type, 'PROJECT'),
-          inArray(
-            membershipsTable.organizationId,
-            allowedTargets.map((target) => target.project.id),
-          ),
+          inArray(membershipsTable.projectId, allowedIds),
         ),
       );
 
     // * Delete the projectId
-    await db.delete(projectsTable).where(
-      inArray(
-        projectsTable.id,
-        allowedTargets.map((target) => target.project.id),
-      ),
-    );
+    await db.delete(projectsTable).where(inArray(projectsTable.id, allowedIds));
 
     // * Send SSE events for the projects that were deleted
-    for (const { project } of allowedTargets) {
+    for (const id of allowedIds) {
       // * Send the event to the user if they are a member of the project
       if (projectsMembers.length > 0) {
-        const membersId = projectsMembers.map((member) => member.id).filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', project);
+        const membersId = projectsMembers.filter(({projectId}) => projectId === id).map((member) => member.id).filter(Boolean) as string[];
+        sendSSEToUsers(membersId, 'remove_entity', { id, type: 'PROJECT' });
       }
 
-      logEvent('Project deleted', { project: project.id });
+      logEvent('Project deleted', { project: id });
     }
 
     return ctx.json(
