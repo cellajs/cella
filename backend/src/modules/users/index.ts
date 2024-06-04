@@ -171,11 +171,11 @@ const usersRoutes = app
         modifiedAt: project.modifiedAt,
         name: project.name,
         color: project.color,
+        organizationId: project.organizationId,
         archived: membership.inactive || false,
         muted: membership.muted || false,
         membershipId: membership.id,
         role: membership?.role || null,
-        organizationId: project.organizationId,
       };
     });
 
@@ -190,6 +190,7 @@ const usersRoutes = app
         modifiedAt: workspace.modifiedAt,
         name: workspace.name,
         thumbnailUrl: workspace.thumbnailUrl,
+        organizationId: workspace.organizationId,
         archived: membership.inactive || false,
         muted: membership.muted || false,
         membershipId: membership.id,
