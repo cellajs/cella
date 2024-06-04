@@ -108,10 +108,8 @@ const MembersTable = () => {
     }),
     [debounceQuery, role, sortColumns],
   );
-  useSaveInSearchParams(filters, {
-    sort: 'createdAt',
-    order: 'desc',
-  });
+
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   const callback = useMutateInfiniteQueryData([
     'members',

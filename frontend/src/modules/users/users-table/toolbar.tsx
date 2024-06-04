@@ -12,7 +12,6 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
-import type { UserRow } from '.';
 import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import TableCount from '../../common/data-table/table-count';
 import { dialog } from '../../common/dialoger/state';
@@ -29,8 +28,10 @@ interface Props {
   selectedUsers: User[];
   onResetFilters: () => void;
   onResetSelectedRows?: () => void;
-  columns: ColumnOrColumnGroup<UserRow>[];
-  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<UserRow>[]>>;
+  columns: ColumnOrColumnGroup<User>[];
+  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<User>[]>>;
+  // sort: MembersSearch['sort'];
+  // order: MembersSearch['order'];
 }
 
 const selectRoleOptions = [

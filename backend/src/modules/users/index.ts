@@ -359,6 +359,7 @@ const usersRoutes = app
         name: usersTable.name,
         email: usersTable.email,
         createdAt: usersTable.createdAt,
+        lastSeenAt: usersTable.lastSeenAt,
         membershipCount: membershipCounts.count,
         role: usersTable.role,
       },

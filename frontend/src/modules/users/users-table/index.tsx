@@ -1,8 +1,7 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, infiniteQueryOptions } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-
-import { getUsers, updateUser } from '~/api/users';
+import { getUsers, type GetUsersParams, updateUser } from '~/api/users';
 import type { User } from '~/types';
 
 import type { getUsersQuerySchema } from 'backend/modules/users/schema';
@@ -13,35 +12,61 @@ import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { DataTable } from '~/modules/common/data-table';
-import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
 import { UsersTableRoute } from '~/routes/system';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { useUserStore } from '~/store/user';
 
-// export type UserRow = (User & { type: 'MASTER'; expanded: boolean }) | { type: 'DETAIL'; id: string; parent: User };
-export type UserRow = User & { _type: 'MASTER' | 'DETAIL'; _expanded?: boolean; _parent?: User };
-
 export type UsersSearch = z.infer<typeof getUsersQuerySchema>;
+
+export const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, role }: GetUsersParams) => {
+  const sort = initialSort || 'createdAt';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['users', q, sort, order, role],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam, signal }) => {
+      const fetchedData = await getUsers(
+        {
+          page: pageParam,
+          q,
+          sort,
+          order,
+          role,
+          limit: LIMIT,
+        },
+        signal,
+      );
+
+      return fetchedData;
+    },
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+    refetchOnWindowFocus: false,
+  });
+};
 
 const LIMIT = 40;
 
 const UsersTable = () => {
+  // Save filters in search params
   const search = useSearch({ from: UsersTableRoute.id });
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
-  const [rows, setRows] = useState<UserRow[]>([]);
+
+  const [rows, setRows] = useState<User[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
+  const [query, setQuery] = useState<UsersSearch['q']>(search.q);
+  const [role, setRole] = useState<UsersSearch['role']>(search.role);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order
       ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
       : [{ columnKey: 'createdAt', direction: 'DESC' }],
   );
-  const [query, setQuery] = useState<UsersSearch['q']>(search.q);
-  const [role, setRole] = useState<UsersSearch['role']>(search.role);
 
   const debounceQuery = useDebounce(query, 300);
+
   // Save filters in search params
   const filters = useMemo(
     () => ({
@@ -57,27 +82,15 @@ const UsersTable = () => {
 
   const callback = useMutateInfiniteQueryData(['users', debounceQuery, sortColumns, role]);
 
-  const queryResult = useInfiniteQuery({
-    queryKey: ['users', debounceQuery, sortColumns, role],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getUsers(
-        {
-          page: pageParam,
-          q: debounceQuery,
-          sort: sortColumns[0]?.columnKey as UsersSearch['sort'],
-          order: sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
-          role,
-          limit: LIMIT,
-        },
-        signal,
-      );
-      return fetchedData;
-    },
-
-    getNextPageParam: (_lastGroup, groups) => groups.length,
-    refetchOnWindowFocus: false,
-  });
+  const queryResult = useInfiniteQuery(
+    usersQueryOptions({
+      q: debounceQuery,
+      sort: sortColumns[0]?.columnKey as UsersSearch['sort'],
+      order: sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
+      role,
+      limit: LIMIT,
+    }),
+  );
   const [columns, setColumns] = useColumns(callback);
 
   const isFiltered = role !== undefined || !!debounceQuery;
@@ -88,13 +101,11 @@ const UsersTable = () => {
     setRole(undefined);
   };
 
-  const onRowsChange = (changedRows: UserRow[], { indexes, column }: RowsChangeData<UserRow>) => {
-    const rows = toggleExpand(changedRows, indexes);
-
+  const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
     // mutate member
     for (const index of indexes) {
       if (column.key === 'role') {
-        const user = rows[index] as User;
+        const user = changedRows[index];
         const isSelf = currentUser.id === user.id;
         if (isSelf) return toast.error(t('common:error.self_system_role'));
         updateUser(user.id, { role: user.role })
@@ -108,17 +119,15 @@ const UsersTable = () => {
           });
       }
     }
-
-    setRows(rows);
+    setRows(changedRows);
   };
 
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
-    const rows = data?.map((item) => ({ ...item, _type: 'MASTER' as const, _expanded: false }));
 
-    if (rows) {
-      setSelectedRows(new Set<string>([...selectedRows].filter((id) => rows.some((row) => row.id === id))));
-      setRows(rows);
+    if (data) {
+      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
+      setRows(data);
     }
   }, [queryResult.data]);
 
@@ -138,7 +147,7 @@ const UsersTable = () => {
         columns={columns}
         setColumns={setColumns}
       />
-      <DataTable<UserRow>
+      <DataTable<User>
         {...{
           columns: columns.filter((column) => column.visible),
           rowHeight: 42,
