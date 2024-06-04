@@ -191,6 +191,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   return (
     <Card
       onMouseDown={() => {
+        if (isExpanded) return;
         setFocusedTask(task.id);
         setFocusedProjectIndex(projects.findIndex((p) => p.id === task.project_id) || 0);
         taskRef.current?.focus();

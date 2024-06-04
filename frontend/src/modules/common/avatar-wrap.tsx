@@ -9,6 +9,7 @@ export interface AvatarWrapProps extends AvatarProps {
   type?: PageResourceType;
   name?: string | null;
   url?: string | null;
+  backgroundColor?: string;
   className?: string;
 }
 
