@@ -37,7 +37,7 @@ const DrawerContent = React.forwardRef<
         className={cn('fixed inset-x-0 bottom-0 z-[150] mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background', className)}
         {...props}
       >
-        <motion.div animate={{ height: bounds.height }}>
+        <motion.div animate={{ height: bounds.height }} transition={{ type: 'spring', duration: 0.2, bounce: 0 }}>
           <div className="" ref={MeasureRef}>
             <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
             {children}

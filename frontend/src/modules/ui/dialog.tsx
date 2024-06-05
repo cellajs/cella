@@ -47,7 +47,7 @@ const DialogContent = React.forwardRef<
       )}
       {...props}
     >
-      <motion.div animate={{ height: bounds.height }}>
+      <motion.div animate={{ height: bounds.height }} transition={{ type: 'spring', duration: 0.2, bounce: 0 }}>
         <div ref={MeasureRef} className="gap-4 grid">
           {children}
           {!hideClose && (
