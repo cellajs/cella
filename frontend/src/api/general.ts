@@ -1,6 +1,7 @@
 import type { PageResourceType } from 'backend/types/common';
-import { type Member, type UploadParams, UploadType, type User } from '~/types';
+import { type UploadParams, UploadType, type User } from '~/types';
 import { generalClient as client, handleResponse } from '.';
+import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
@@ -25,17 +26,15 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
   return json.data;
 };
 
-export interface InviteProps {
+export interface InviteSystemProps {
   emails: string[];
-  role?: Member['organizationRole'] | User['role'];
-  idOrSlug?: string;
+  role?: User['role'];
 }
 
 // Invite users
-export const invite = async ({ idOrSlug, ...rest }: InviteProps) => {
+export const invite = async (values: InviteSystemProps) => {
   const response = await client.invite.$post({
-    query: { idOrSlug },
-    json: rest,
+    json: values,
   });
 
   await handleResponse(response);
@@ -82,7 +81,7 @@ export const acceptInvite = async ({
 }: {
   token: string;
   password?: string;
-  oauth?: 'github' | 'google' | 'microsoft';
+  oauth?: OauthProviderOptions | undefined;
 }) => {
   const response = await client['accept-invite'][':token'].$post({
     param: { token },
@@ -95,7 +94,7 @@ export const acceptInvite = async ({
 
 interface ActionRequestProp {
   email: string;
-  type: 'ORGANIZATION_REQUEST' | 'SYSTEM_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
+  type: 'ORGANIZATION_REQUEST' | 'WAITLIST_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
   userId?: string;
   organizationId?: string;
   message?: string;

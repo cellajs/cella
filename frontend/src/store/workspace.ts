@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { Label } from '~/modules/common/electric/electrify';
-import { type ViewOptions, viewOptions } from '~/modules/projects/view-options';
+import { type ViewOptions, viewOptions } from '~/modules/projects/board/header/view-options';
 
 type Column = {
   columnId: string;

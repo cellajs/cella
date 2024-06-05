@@ -1,19 +1,18 @@
 import { useTranslation } from 'react-i18next';
 import { removeMembersFromResource as baseremoveMembersFromResource } from '~/api/memberships';
-import type { Member, Organization } from '~/types';
-
+import type { User } from '~/types';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 
 interface Props {
-  organization: Organization;
-  members: Member[];
-  callback?: (members: Member[]) => void;
+  organizationIdOrSlug: string;
+  members: User[];
+  callback?: (members: User[]) => void;
   dialog?: boolean;
 }
 
-const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }: Props) => {
+const RemoveMembersForm = ({ members, organizationIdOrSlug, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
 
   const { mutate: removeMembersFromResource, isPending } = useMutation({
@@ -29,7 +28,8 @@ const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }
 
   const onRemoveMember = () => {
     removeMembersFromResource({
-      idOrSlug: organization.id,
+      idOrSlug: organizationIdOrSlug,
+      entityType: 'ORGANIZATION',
       ids: members.map((member) => member.id),
     });
   };

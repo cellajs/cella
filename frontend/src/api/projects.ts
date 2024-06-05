@@ -1,13 +1,13 @@
 import { projectClient as client, handleResponse } from '.';
 
-export type CreateProjectParams = Parameters<(typeof client.workspaces)[':workspace']['projects']['$post']>['0']['json'] & {
-  workspace: string;
+export type CreateProjectParams = Parameters<(typeof client.organizations)[':organization']['projects']['$post']>['0']['json'] & {
+  organization: string;
 };
 
 // Create a new project
-export const createProject = async ({ workspace, ...rest }: CreateProjectParams) => {
-  const response = await client.workspaces[':workspace'].projects.$post({
-    param: { workspace },
+export const createProject = async ({ organization, ...rest }: CreateProjectParams) => {
+  const response = await client.organizations[':organization'].projects.$post({
+    param: { organization },
     json: rest,
   });
 
@@ -25,6 +25,16 @@ export const getProjectBySlugOrId = async (project: string) => {
   return json.data;
 };
 
+// Get user projects by userId
+export const getProjectByUserId = async (userId: string) => {
+  const response = await client.projects['by-user'][':userId'].$get({
+    param: { userId },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
 export type GetProjectsParams = Partial<
   Omit<Parameters<(typeof client.projects)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
@@ -34,7 +44,7 @@ export type GetProjectsParams = Partial<
 
 // Get a list of projects
 export const getProjects = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, workspace }: GetProjectsParams = {},
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50, workspace, organization }: GetProjectsParams = {},
   signal?: AbortSignal,
 ) => {
   const response = await client.projects.$get(
@@ -46,6 +56,7 @@ export const getProjects = async (
         offset: String(page * limit),
         limit: String(limit),
         workspace,
+        organization
       },
     },
     {
@@ -83,4 +94,43 @@ export const deleteProjects = async (ids: string[]) => {
   });
 
   await handleResponse(response);
+};
+
+export type GetMembersParams = Partial<
+  Omit<Parameters<(typeof client.projects)[':project']['members']['$get']>['0']['query'], 'limit' | 'offset'> & {
+    limit: number;
+    page: number;
+  }
+>;
+
+// Get a list of members in an project
+export const getProjectMembers = async (
+  project: string,
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetMembersParams = {},
+  signal?: AbortSignal,
+) => {
+  const response = await client.projects[':project'].members.$get(
+    {
+      param: { project },
+      query: {
+        q,
+        sort,
+        order,
+        offset: String(page * limit),
+        limit: String(limit),
+      },
+    },
+    {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        return fetch(input, {
+          ...init,
+          credentials: 'include',
+          signal,
+        });
+      },
+    },
+  );
+
+  const json = await handleResponse(response);
+  return json.data;
 };

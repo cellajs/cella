@@ -83,6 +83,16 @@ export const updateUser = async (user: string, params: UpdateUserParams) => {
   return json.data;
 };
 
+// Update self
+export const updateSelf = async (params: Omit<UpdateUserParams, 'role'>) => {
+  const response = await client.me.$put({
+    json: params,
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
 // Terminate a user sessions
 export const terminateMySessions = async (sessionIds: string[]) => {
   const response = await client.me.sessions.$delete({

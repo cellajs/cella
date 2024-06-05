@@ -4,6 +4,7 @@ import { nanoid } from '../../lib/nanoid';
 import { membershipsTable } from './memberships';
 import { organizationsTable } from './organizations';
 import { usersTable } from './users';
+import { projectsToWorkspacesTable } from './projects-to-workspaces';
 
 export const workspacesTable = pgTable(
   'workspaces',
@@ -30,14 +31,15 @@ export const workspacesTable = pgTable(
   },
   (table) => {
     return {
-      nameIndex: index('workspace_name_index').on(table.name).desc(),
-      createdAtIndex: index('workspace_created_at_index').on(table.createdAt).desc(),
+      nameIndex: index('workspace_name_index').on(table.name.desc()),
+      createdAtIndex: index('workspace_created_at_index').on(table.createdAt.desc()),
     };
   },
 );
 
 export const workspaceTableRelations = relations(workspacesTable, ({ many }) => ({
   users: many(membershipsTable),
+  projects: many(projectsToWorkspacesTable),
 }));
 
 export type WorkspaceModel = typeof workspacesTable.$inferSelect;

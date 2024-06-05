@@ -4,7 +4,7 @@ import { db } from '../../../db/db';
 import { type InsertUserModel, usersTable } from '../../../db/schema/users';
 import { errorResponse } from '../../../lib/errors';
 import { logEvent } from '../../../middlewares/logger/log-event';
-import type { ProviderId } from '../../../types/common';
+import type { OauthProviderOptions } from '../../../types/common';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { insertOauthAccount } from '../oauth-helpers';
 import { setSessionCookie } from './cookies';
@@ -16,7 +16,7 @@ export const handleCreateUser = async (
   data: InsertUserModel,
   options?: {
     provider?: {
-      id: ProviderId;
+      id: OauthProviderOptions;
       userId: string;
     };
     isEmailVerified?: boolean;
@@ -29,7 +29,7 @@ export const handleCreateUser = async (
   }
 
   // * Check if the slug is available
-  const slugAvailable = await checkSlugAvailable(data.slug, 'USER');
+  const slugAvailable = await checkSlugAvailable(data.slug);
 
   try {
     // * Insert the user into the database

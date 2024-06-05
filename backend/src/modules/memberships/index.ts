@@ -1,15 +1,26 @@
-import { type SQL, and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, or } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
-import { usersTable } from '../../db/schema/users';
 
-import type { OrganizationModel } from '../../db/schema/organizations';
-import type { WorkspaceModel } from '../../db/schema/workspaces';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
-import { sendSSE } from '../../lib/sse';
+import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
+import { deleteMembershipsRouteConfig, inviteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
+import permissionManager from '../../lib/permission-manager';
+import type { OrganizationModel } from '../../db/schema/organizations';
+import { checkRole } from '../general/helpers/check-role';
+import { apiMembershipSchema } from './schema';
+import { usersTable } from '../../db/schema/users';
+import { generateId, type User } from 'lucia';
+import { type TokenModel, tokensTable } from '../../db/schema/tokens';
+import { createDate, TimeSpan } from 'oslo';
+import { config } from 'config';
+import { i18n } from '../../lib/i18n';
+import { render } from '@react-email/render';
+import { InviteEmail } from '../../../../email/emails/invite';
+import { emailSender } from 'email';
+import { resolveEntity } from '../../lib/entity';
 
 const app = new CustomHono();
 
@@ -19,113 +30,215 @@ const membershipRoutes = app
    * Update user membership
    */
   .openapi(updateMembershipRouteConfig, async (ctx) => {
-    const { user: userId } = ctx.req.valid('param');
+    const { membership: membershipId } = ctx.req.valid('param');
     const { role, inactive, muted } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    let type: 'ORGANIZATION' | 'WORKSPACE';
-    const organization = ctx.get('organization') as OrganizationModel | undefined;
-    const workspace = ctx.get('workspace') as WorkspaceModel | undefined;
+    // * Get the membership
+    const [membershipToUpdate] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
+    if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { membership: membershipId });
 
-    let where: SQL | undefined;
-    if (organization) {
-      type = 'ORGANIZATION';
-      where = eq(membershipsTable.organizationId, organization.id);
-    } else if (workspace) {
-      type = 'WORKSPACE';
-      where = eq(membershipsTable.workspaceId, workspace.id);
-    } else {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN');
-    }
+    const updatedType = membershipToUpdate.type;
 
-    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    // TODO: Refactor
+    const membershipContext = await resolveEntity(
+      updatedType,
+      membershipToUpdate.projectId || membershipToUpdate.workspaceId || membershipToUpdate.organizationId || '',
+    );
 
-    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: userId });
-
-    let [membership] = await db
-      .update(membershipsTable)
-      .set(
-        role
-          ? { role, inactive, muted, modifiedBy: user.id, modifiedAt: new Date() }
-          : { inactive, muted, modifiedBy: user.id, modifiedAt: new Date() },
-      )
-      .where(and(eq(membershipsTable.userId, userId), where))
-      .returning();
-
-    if (!membership) {
-      if (targetUser.id === user.id) {
-        [membership] = await db
-          .insert(membershipsTable)
-          .values({
-            userId: user.id,
-            organizationId: organization?.id || workspace?.organizationId,
-            workspaceId: workspace?.id,
-            role,
-          })
-          .returning();
-      } else {
-        return errorResponse(ctx, 404, 'not_found', 'warn', type, {
-          user: userId,
-        });
+    // * Check if user has permission to someone elses membership
+    if (user.id !== membershipToUpdate.userId) {
+      const permissionMemberships = await db
+        .select()
+        .from(membershipsTable)
+        .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable.userId, user.id)));
+      const isAllowed = permissionManager.isPermissionAllowed(permissionMemberships, 'update', membershipContext);
+      if (!isAllowed && user.role !== 'ADMIN') {
+        return errorResponse(ctx, 403, 'forbidden', 'warn', updatedType, { user: user.id, id: membershipContext.id });
       }
     }
 
-    if (type === 'ORGANIZATION') {
-      sendSSE(membership.userId, 'update_organization', {
-        ...organization,
-        muted,
-        archived: inactive,
-        userRole: role,
-        type: 'ORGANIZATION',
-      });
-    } else {
-      sendSSE(membership.userId, 'update_workspace', {
-        ...workspace,
-        muted,
-        archived: inactive,
-        userRole: role,
-        type: 'WORKSPACE',
-      });
-    }
+    const [updatedMembership] = await db
+      .update(membershipsTable)
+      .set({ ...(role && { role }), inactive, muted, modifiedBy: user.id, modifiedAt: new Date() })
+      .where(and(eq(membershipsTable.id, membershipId)))
+      .returning();
 
-    logEvent('Membership updated', {
-      user: userId,
+    const allMembers = await db
+      .select({ id: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(
+        and(
+          eq(membershipsTable.type, updatedType),
+          or(
+            eq(membershipsTable.organizationId, membershipContext.id),
+            eq(membershipsTable.workspaceId, membershipContext.id),
+            eq(membershipsTable.projectId, membershipContext.id),
+          ),
+        ),
+      );
+
+    const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
+
+    sendSSEToUsers(membersIds, 'update_entity', {
+      ...updatedMembership,
+      ...membershipContext,
     });
+
+    logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 
     return ctx.json(
       {
         success: true,
-        data: membership,
+        data: updatedMembership,
       },
       200,
     );
   })
   /*
-   * Delete users from organization
+   * Invite members to an organization
    */
-  .openapi(deleteMembershipsRouteConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+  .openapi(inviteMembershipRouteConfig, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('query');
+    const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
 
+    // Refactor
+    const organization = idOrSlug ? ((await resolveEntity('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
+
+    if (!organization) return errorResponse(ctx, 403, 'forbidden', 'warn');
+
+    // Check to invite on organization level
+    if (organization && !checkRole(apiMembershipSchema, role)) {
+      return errorResponse(ctx, 400, 'invalid_role', 'warn');
+    }
+
+    for (const email of emails) {
+      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
+
+      // Check if it's invitation to organization
+      if (targetUser && organization) {
+        // Check if user is already member of organization
+        const [existingMembership] = await db
+          .select()
+          .from(membershipsTable)
+          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
+        if (existingMembership) {
+          logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
+
+          // Update role if different
+          if (role && existingMembership.role !== role && existingMembership.organizationId && existingMembership.userId) {
+            await db
+              .update(membershipsTable)
+              .set({ role: role as MembershipModel['role'] })
+              .where(
+                and(eq(membershipsTable.organizationId, existingMembership.organizationId), eq(membershipsTable.userId, existingMembership.userId)),
+              );
+            logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
+
+            sendSSEToUsers([targetUser.id], 'update_entity', organization);
+          }
+
+          continue;
+        }
+
+        // Check if user is trying to invite themselves
+        if (user.id === targetUser.id) {
+          await db
+            .insert(membershipsTable)
+            .values({
+              organizationId: organization.id,
+              userId: user.id,
+              role: (role as MembershipModel['role']) || 'MEMBER',
+              createdBy: user.id,
+            })
+            .returning();
+
+          logEvent('User added to organization', { user: user.id, organization: organization.id });
+
+          sendSSEToUsers([user.id], 'update_entity', organization);
+          continue;
+        }
+      }
+
+      const token = generateId(40);
+      await db.insert(tokensTable).values({
+        id: token,
+        type: 'ORGANIZATION_INVITATION',
+        userId: targetUser?.id,
+        email: email.toLowerCase(),
+        role: (role as TokenModel['role']) || 'USER',
+        organizationId: organization?.id,
+        expiresAt: createDate(new TimeSpan(7, 'd')),
+      });
+
+      const emailLanguage = organization?.defaultLanguage || targetUser?.language || config.defaultLanguage;
+
+      const emailHtml = render(
+        InviteEmail({
+          i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
+          orgName: organization.name || '',
+          orgImage: organization.logoUrl || '',
+          userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
+          username: targetUser?.name || email.toLowerCase() || '',
+          invitedBy: user.name,
+          inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
+          replyTo: user.email,
+        }),
+      );
+      logEvent('User invited to organization', { organization: organization?.id });
+
+      emailSender
+        .send(
+          config.senderIsReceiver ? user.email : email.toLowerCase(),
+          organization ? `Invitation to ${organization.name} on Cella` : 'Invitation to Cella',
+          emailHtml,
+          user.email,
+        )
+        .catch((error) => {
+          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+        });
+    }
+
+    return ctx.json(
+      {
+        success: true,
+        data: undefined,
+      },
+      200,
+    );
+  })
+  /*
+   * Delete users from entity
+   */
+  .openapi(deleteMembershipsRouteConfig, async (ctx) => {
+    const { idOrSlug, entityType, ids } = ctx.req.valid('query');
+    const user = ctx.get('user');
+
+    if (config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
     // * Convert the member ids to an array
-    const memberIds = Array.isArray(ids) ? ids : [ids];
+    const memberToDeleteIds = Array.isArray(ids) ? ids : [ids];
+
+    // Check if the user has permission to delete the memberships
+    const membershipContext = await resolveEntity(entityType, idOrSlug);
+    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+
+    const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', membershipContext);
+
+    if (!isAllowed && user.role !== 'ADMIN') {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', entityType, { user: user.id, id: membershipContext.id });
+    }
 
     const errors: ErrorType[] = [];
 
-    let type: 'ORGANIZATION' | 'WORKSPACE';
-    const organization = ctx.get('organization') as OrganizationModel | undefined;
-    const workspace = ctx.get('workspace') as WorkspaceModel | undefined;
-
-    let where: SQL;
-    if (organization) {
-      type = 'ORGANIZATION';
-      where = eq(membershipsTable.organizationId, organization.id);
-    } else if (workspace) {
-      type = 'WORKSPACE';
-      where = eq(membershipsTable.workspaceId, workspace.id);
-    } else {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'UNKNOWN');
-    }
+    const where = and(
+      eq(membershipsTable.type, entityType),
+      or(
+        eq(membershipsTable.organizationId, membershipContext.id),
+        eq(membershipsTable.workspaceId, membershipContext.id),
+        eq(membershipsTable.projectId, membershipContext.id),
+      ),
+    );
 
     // * Get the user membership
     const [currentUserMembership] = (await db
@@ -137,13 +250,13 @@ const membershipRoutes = app
     const targets = await db
       .select()
       .from(membershipsTable)
-      .where(and(inArray(membershipsTable.userId, memberIds), where));
+      .where(and(inArray(membershipsTable.userId, memberToDeleteIds), where));
 
     // * Check if the memberships exist
-    for (const id of memberIds) {
+    for (const id of memberToDeleteIds) {
       if (!targets.some((target) => target.userId === id)) {
         errors.push(
-          createError(ctx, 404, 'not_found', 'warn', type, {
+          createError(ctx, 404, 'not_found', 'warn', entityType, {
             user: id,
           }),
         );
@@ -154,7 +267,7 @@ const membershipRoutes = app
     const allowedTargets = targets.filter((target) => {
       if (user.role !== 'ADMIN' && currentUserMembership?.role !== 'ADMIN') {
         errors.push(
-          createError(ctx, 403, 'delete_forbidden', 'warn', type, {
+          createError(ctx, 403, 'delete_forbidden', 'warn', entityType, {
             user: target.userId,
             membership: target.id,
           }),
@@ -187,18 +300,8 @@ const membershipRoutes = app
     // * Send SSE events for the memberships that were deleted
     for (const membership of allowedTargets) {
       // * Send the event to the user if they are a member of the organization
-
-      if (type === 'ORGANIZATION') {
-        sendSSE(membership.userId, 'remove_organization_membership', {
-          id: organization?.id,
-          userId: membership.userId,
-        });
-      } else {
-        sendSSE(membership.userId, 'remove_workspace_membership', {
-          id: workspace?.id,
-          userId: membership.userId,
-        });
-      }
+      const memberIds = targets.map((el) => el.userId).filter(Boolean) as string[];
+      sendSSEToUsers(memberIds, 'remove_entity', { ...membershipContext, ...membership });
 
       logEvent('Member deleted', { membership: membership.id });
     }

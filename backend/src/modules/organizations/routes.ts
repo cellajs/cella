@@ -6,7 +6,7 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, organizationTenantGuard, systemGuard } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
@@ -21,7 +21,7 @@ import {
 export const createOrganizationRouteConfig = createRouteConfig({
   method: 'post',
   path: '/organizations',
-  guard: isAuthenticated(),
+  guard: isAuthenticated,
   tags: ['organizations'],
   summary: 'Create a new organization',
   // TODO: all users can create, but somehow we need to restrict it to just one and with more needing manual activation by an admin?
@@ -55,7 +55,7 @@ export const createOrganizationRouteConfig = createRouteConfig({
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
   path: '/organizations/{organization}',
-  guard: [isAuthenticated(), isAllowedTo('update', 'organization')],
+  guard: [isAuthenticated, isAllowedTo('update', 'organization')],
   tags: ['organizations'],
   summary: 'Update organization',
   description: `
@@ -89,7 +89,7 @@ export const updateOrganizationRouteConfig = createRouteConfig({
 export const getOrganizationsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations',
-  guard: systemGuard,
+  guard: [isAuthenticated, isSystemAdmin],
   tags: ['organizations'],
   summary: 'Get list of organizations',
   description: `
@@ -115,7 +115,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organization}',
-  guard: [isAuthenticated(), isAllowedTo('read', 'organization')],
+  guard: [isAuthenticated, isAllowedTo('read', 'organization')],
   tags: ['organizations'],
   summary: 'Get organization by id or slug',
   description: `
@@ -142,7 +142,7 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
 export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organization}/members',
-  guard: [isAuthenticated(), isAllowedTo('read', 'organization')],
+  guard: [isAuthenticated, isAllowedTo('read', 'organization')],
   tags: ['organizations'],
   summary: 'Get members of organization',
   description: `
@@ -170,7 +170,7 @@ export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
 export const accessRequestsConfig = createRouteConfig({
   method: 'get',
   path: '/organizations/{organization}/requests',
-  guard: organizationTenantGuard('organization', ['ADMIN']),
+  guard: [isAuthenticated, isAllowedTo('update', 'organization')],
   tags: ['organizations'],
   summary: 'Get organizations requests',
   request: {
@@ -193,7 +193,7 @@ export const accessRequestsConfig = createRouteConfig({
 export const deleteOrganizationsRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/organizations',
-  guard: systemGuard,
+  guard: [isAuthenticated, splitByAllowance('delete', 'organization')],
   tags: ['organizations'],
   summary: 'Delete organizations',
   description: `

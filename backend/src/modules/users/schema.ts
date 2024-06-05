@@ -24,6 +24,7 @@ export const apiUserSchema = createSelectSchema(usersTable, {
   .omit({
     hashedPassword: true,
   })
+  .setKey('electricJWTToken', z.string().nullable())
   .setKey(
     'counts',
     z.object({
@@ -34,32 +35,37 @@ export const apiUserSchema = createSelectSchema(usersTable, {
 
 export const getUsersQuerySchema = paginationQuerySchema.merge(
   z.object({
-    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'membershipCount']).default('createdAt').optional(),
+    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),
     role: z.enum(['admin', 'user']).default('user').optional(),
   }),
 );
 
-export const menuItemSchema = z.array(
+const menuItemSchema = z.object({
+  slug: slugSchema,
+  id: idSchema,
+  createdAt: z.string(),
+  modifiedAt: z.string().nullable(),
+  name: nameSchema,
+  thumbnailUrl: imageUrlSchema.nullish(),
+  archived: z.boolean(),
+  muted: z.boolean(),
+  role: apiMembershipSchema.shape.role.nullable(),
+  membershipId: idSchema,
+  workspaceId: idSchema.optional(),
+});
+
+const menuSchema = z.array(
   z.object({
-    slug: slugSchema,
-    id: idSchema,
-    createdAt: z.string(),
-    modifiedAt: z.string().nullable(),
-    name: nameSchema,
-    thumbnailUrl: imageUrlSchema.nullish(),
-    archived: z.boolean(),
-    muted: z.boolean(),
-    role: apiMembershipSchema.shape.role.nullable(),
-    type: resourceTypeSchema,
+    ...menuItemSchema.shape,
+    submenu: z.object({ items: z.array(menuItemSchema), canCreate: z.boolean(), type: resourceTypeSchema }).optional(),
   }),
 );
 
-const menuSectionSchema = z.object({ items: menuItemSchema, canCreate: z.boolean() });
+const menuSectionSchema = z.object({ items: menuSchema, canCreate: z.boolean(), type: resourceTypeSchema });
 
 export const userMenuSchema = z.object({
   organizations: menuSectionSchema,
   workspaces: menuSectionSchema,
-  projects: menuSectionSchema,
 });
 
 export const updateUserJsonSchema = createInsertSchema(usersTable, {

@@ -16,13 +16,14 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
-import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl, sendResetPasswordEmail } from '~/api/authentication';
+import { sendResetPasswordEmail } from '~/api/authentication';
 import { useMutation } from '~/hooks/use-mutations';
 import { AsideNav } from '~/modules/common/aside-nav';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
+import { oauthProviders } from '../auth/oauth-options';
 
 type Session = {
   id: string;
@@ -36,21 +37,6 @@ const tabs = [
   { id: 'oauth', label: 'common:oauth' },
   { id: 'reset-password', label: 'common:reset_password' },
   { id: 'delete-account', label: 'common:delete_account' },
-];
-
-const oauthProviders = [
-  {
-    name: 'Github',
-    url: githubSignInUrl,
-  },
-  {
-    name: 'Google',
-    url: googleSignInUrl,
-  },
-  {
-    name: 'Microsoft',
-    url: microsoftSignInUrl,
-  },
 ];
 
 interface SessionTileProps {
@@ -207,8 +193,9 @@ const UserSettings = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col space-y-2">
-                {oauthProviders.map((option) => {
-                  if (!config.oauthProviders.includes(option.name)) return null;
+                {config.enabledOauthProviders.map((id) => {
+                  const option = oauthProviders.find((provider) => provider.id === id);
+                  if (!option) return;
 
                   return (
                     <Button
@@ -222,7 +209,7 @@ const UserSettings = () => {
                       <img
                         src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
                         alt={option.name}
-                        className={`w-4 h-4 mr-2 ${option.name === 'Github' ? invertClass : ''}`}
+                        className={`w-4 h-4 mr-2 ${option.id === 'GITHUB' ? invertClass : ''}`}
                         loading="lazy"
                       />
                       Add {option.name} account

@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { invite as baseInvite } from '~/api/general';
-import type { Organization } from '~/types';
+import { inviteMember, type InviteMemberProps } from '~/api/memberships';
+import { invite as inviteSystem, type InviteSystemProps } from '~/api/general';
 
 import { config } from 'config';
 import { Send } from 'lucide-react';
@@ -18,9 +18,10 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 
 interface Props {
-  organization?: Organization | null;
+  organizationIdOrSlug?: string;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
@@ -30,11 +31,12 @@ interface Props {
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
   role: z.enum(['USER', 'MEMBER', 'ADMIN']).optional(),
+  idOrSlug: idSchema.or(slugSchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDialog, children }: Props) => {
+const InviteEmailForm = ({ organizationIdOrSlug, type = 'system', callback, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
@@ -52,17 +54,15 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
   const form = useFormWithDraft<FormValues>('invite-users', formOptions);
 
   const { mutate: invite, isPending } = useMutation({
-    mutationFn: baseInvite,
+    mutationFn: (values: FormValues) => {
+      if (type === 'system') return inviteSystem(values as InviteSystemProps);
+      return inviteMember(values as InviteMemberProps);
+    },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
       callback?.();
-
       nextStep?.();
-
-      if (isDialog) {
-        dialog.remove();
-      }
-
+      if (isDialog) dialog.remove();
       toast.success(t('common:success.user_invited'));
     },
   });
@@ -72,9 +72,8 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
 
   const onSubmit = (values: FormValues) => {
     invite({
-      emails: values.emails,
-      role: values.role,
-      idOrSlug: organization?.id,
+      ...values,
+      idOrSlug: organizationIdOrSlug,
     });
   };
 

@@ -1,33 +1,12 @@
 {
-  "version": "6",
+  "version": "1",
   "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1716548276280,
-      "tag": "0000_freezing_winter_soldier",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1716554481686,
-      "tag": "0001_lying_mephisto",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1716555064109,
-      "tag": "0002_fat_pretty_boy",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1716555553016,
-      "tag": "0003_tiresome_dragon_man",
+      "version": "7",
+      "when": 1717592551334,
+      "tag": "0000_petite_meggan",
       "breakpoints": true
     }
   ]

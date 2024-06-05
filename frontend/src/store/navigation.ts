@@ -1,3 +1,4 @@
+import type { PageResourceType } from 'backend/types/common';
 import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -16,20 +17,26 @@ interface NavigationState {
   menu: UserMenu;
   keepMenuOpen: boolean;
   toggleKeepMenu: (status: boolean) => void;
+  hideSubmenu: boolean;
+  toggleHideSubmenu: (status: boolean) => void;
   activeSections: Record<string, boolean>;
   toggleSection: (section: string) => void;
   setSection: (section: string, sectionState: boolean) => void;
   navLoading: boolean;
   setLoading: (status: boolean) => void;
   focusView: boolean;
+  submenuItemsOrder: Record<string, string[]>;
+  setSubmenuItemsOrder: (workspaceId: string, itemIds: string[]) => void;
   setFocusView: (status: boolean) => void;
-  archiveStateToggle: (itemId: string, active: boolean) => void;
+  archiveStateToggle: (itemId: string, active: boolean, workspaceId?: string) => void;
 }
 
-const initialMenuState: UserMenu = menuSections.reduce<UserMenu>((acc, section) => {
-  acc[section.id as keyof UserMenu] = { items: [], canCreate: false };
-  return acc;
-}, {} as UserMenu);
+const initialMenuState: UserMenu = menuSections
+  .filter((el) => !el.isSubmenu)
+  .reduce<UserMenu>((acc, section) => {
+    acc[section.storageType as keyof UserMenu] = { items: [], canCreate: false, type: null as unknown as PageResourceType };
+    return acc;
+  }, {} as UserMenu);
 
 export const useNavigationStore = create<NavigationState>()(
   devtools(
@@ -39,13 +46,14 @@ export const useNavigationStore = create<NavigationState>()(
           recentSearches: [] as string[],
           activeSheet: null as NavItem | null,
           keepMenuOpen: false as boolean,
+          hideSubmenu: false as boolean,
           navLoading: false as boolean,
           focusView: false as boolean,
           activeItemsOrder: {
             organizations: [],
             workspaces: [],
-            projects: [],
           },
+          submenuItemsOrder: {},
           menu: initialMenuState,
           activeSections: {},
           setRecentSearches: (searchValues: string[]) => {
@@ -61,6 +69,11 @@ export const useNavigationStore = create<NavigationState>()(
           toggleKeepMenu: (status) => {
             set((state) => {
               state.keepMenuOpen = status;
+            });
+          },
+          toggleHideSubmenu: (status) => {
+            set((state) => {
+              state.hideSubmenu = status;
             });
           },
           setLoading: (status) => {
@@ -84,12 +97,20 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = sectionState;
             });
           },
-          archiveStateToggle: (itemId: string, active: boolean) => {
+          archiveStateToggle: (itemId: string, active: boolean, workspaceId?: string) => {
             set((state) => {
-              for (const sectionKey of Object.keys(state.menu)) {
-                const section = state.menu[sectionKey as keyof UserMenu];
-                const itemIndex = section.items.findIndex((item) => item.id === itemId);
-                if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = active;
+              if (!workspaceId) {
+                for (const sectionKey of Object.keys(state.menu)) {
+                  const section = state.menu[sectionKey as keyof UserMenu];
+                  const itemIndex = section.items.findIndex((item) => item.id === itemId);
+                  if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = active;
+                }
+              } else {
+                const section = state.menu.workspaces;
+                const workspace = section.items.find((item) => item.id === workspaceId);
+                if (!workspace || !workspace.submenu) return;
+                const itemIndex = workspace.submenu.items.findIndex((item) => item.id === itemId);
+                if (itemIndex && itemIndex !== -1) workspace.submenu.items[itemIndex].archived = active;
               }
             });
           },
@@ -98,15 +119,22 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeItemsOrder[sectionName] = itemIds;
             });
           },
+          setSubmenuItemsOrder: (workspaceId: string, itemIds: string[]) => {
+            set((state) => {
+              state.submenuItemsOrder[workspaceId] = itemIds;
+            });
+          },
         }),
         {
           version: 1,
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
             keepMenuOpen: state.keepMenuOpen,
+            hideSubmenu: state.hideSubmenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
             activeItemsOrder: state.activeItemsOrder,
+            submenuItemsOrder: state.submenuItemsOrder,
           }),
           storage: createJSONStorage(() => localStorage),
         },

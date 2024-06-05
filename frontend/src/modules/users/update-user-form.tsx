@@ -7,7 +7,7 @@ import type { z } from 'zod';
 import type { User } from '~/types';
 import AvatarFormField from '../common/form-fields/avatar';
 
-import { type UpdateUserParams, updateUser } from '~/api/users';
+import { type UpdateUserParams, updateSelf, updateUser } from '~/api/users';
 
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -41,9 +41,11 @@ const formSchema = updateUserJsonSchema;
 type FormValues = z.infer<typeof formSchema>;
 
 export const useUpdateUserMutation = (idOrSlug: string) => {
+  const { user: currentUser } = useUserStore();
+  const isSelf = currentUser.id === idOrSlug;
   return useMutation<User, DefaultError, UpdateUserParams>({
     mutationKey: ['me', 'update', idOrSlug],
-    mutationFn: (params) => updateUser(idOrSlug, params),
+    mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
     onSuccess: (user) => {
       queryClient.setQueryData(['users', user.id], user);
     },

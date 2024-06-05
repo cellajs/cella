@@ -50,7 +50,6 @@ function Toolbar({
   query,
   setQuery,
   setRole,
-  callback,
   isFiltered,
   selectedMembers,
   onResetFilters,
@@ -68,7 +67,7 @@ function Toolbar({
   const containerRef = useRef(null);
 
   const openInviteDialog = () => {
-    dialog(<InviteUsers organization={organization} type="organization" dialog />, {
+    dialog(<InviteUsers organizationIdOrSlug={organization.id} type="organization" dialog />, {
       id: 'user-invite',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[100] max-w-4xl',
@@ -81,10 +80,10 @@ function Toolbar({
   const openRemoveDialog = () => {
     dialog(
       <RemoveMembersForm
-        organization={organization}
+        organizationIdOrSlug={organization.id}
         dialog
-        callback={(members) => {
-          callback(members, 'delete');
+        callback={() => {
+          // callback(members as Member[], 'delete');
           toast.success(t('common:success.delete_members'));
         }}
         members={selectedMembers}

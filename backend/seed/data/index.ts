@@ -86,7 +86,6 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
         return {
           id: nanoid(),
           organizationId: organization.id,
-          workspaceId: workspace.id,
           name,
           color: faker.internet.color(),
           slug: faker.helpers.slugify(name).toLowerCase(),
@@ -111,7 +110,6 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
             userId: user.id,
             type: 'PROJECT',
             organizationId: organization.id,
-            workspaceId: workspace.id,
             projectId: project.id,
             role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
             createdAt: faker.date.past(),
@@ -125,14 +123,17 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
 
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
 
-        const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).map(() => {
+        const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).map((_, index) => {
           const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
           return {
             id: nanoid(),
+            organizationId: organization.id,
             projectId: project.id,
             summary: name,
             slug: faker.helpers.slugify(name).toLowerCase(),
+            // TODO: fix this
+            order: index,
             // random integer between 0 and 6
             status: Math.floor(Math.random() * 7),
             type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
@@ -160,6 +161,7 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
 
           return {
             id: nanoid(),
+            organizationId: organization.id,
             projectId: project.id,
             name,
             color: faker.internet.color(),

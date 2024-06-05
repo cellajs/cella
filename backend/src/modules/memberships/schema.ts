@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { idSchema, slugSchema } from '../../lib/common-schemas';
+import { config } from 'config';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
 
@@ -14,8 +15,7 @@ export const apiMembershipSchema = membershipSchema.extend({
 });
 
 export const updateMembershipParamSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
-  user: idSchema,
+  membership: idSchema,
 });
 
 export const updateMembershipJsonSchema = z.object({
@@ -24,10 +24,8 @@ export const updateMembershipJsonSchema = z.object({
   inactive: z.boolean().optional(),
 });
 
-export const deleteMembersParamSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
-});
-
 export const deleteMembersQuerySchema = z.object({
+  idOrSlug: idSchema.or(slugSchema),
+  entityType: z.enum(config.contextEntityTypes),
   ids: z.union([z.string(), z.array(z.string())]),
 });

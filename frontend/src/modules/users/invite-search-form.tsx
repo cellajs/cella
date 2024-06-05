@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { invite as baseInvite } from '~/api/general';
-import type { Organization } from '~/types';
+import { inviteMember, type InviteMemberProps } from '~/api/memberships';
+import { invite as inviteSystem, type InviteSystemProps } from '~/api/general';
 
 import { config } from 'config';
 import { Send } from 'lucide-react';
@@ -18,9 +18,10 @@ import MultipleSelector from '~/modules/common/multi-select';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 
 interface Props {
-  organization?: Organization | null;
+  organizationIdOrSlug?: string;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
@@ -29,11 +30,12 @@ interface Props {
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
   role: z.enum(['USER', 'MEMBER', 'ADMIN']).optional(),
+  idOrSlug: idSchema.or(slugSchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isDialog }: Props) => {
+const InviteSearchForm = ({ organizationIdOrSlug, type = 'system', callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -50,15 +52,14 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
   const form = useFormWithDraft<FormValues>('invite-users', formOptions);
 
   const { mutate: invite, isPending } = useMutation({
-    mutationFn: baseInvite,
+    mutationFn: (values: FormValues) => {
+      if (type === 'system') return inviteSystem(values as InviteSystemProps);
+      return inviteMember(values as InviteMemberProps);
+    },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
       callback?.();
-
-      if (isDialog) {
-        dialog.remove();
-      }
-
+      if (isDialog) dialog.remove();
       toast.success(t('common:success.user_invited'));
     },
   });
@@ -68,9 +69,8 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
 
   const onSubmit = (values: FormValues) => {
     invite({
-      emails: values.emails,
-      role: values.role,
-      idOrSlug: organization?.id,
+      ...values,
+      idOrSlug: organizationIdOrSlug,
     });
   };
 
@@ -89,11 +89,13 @@ const InviteSearchForm = ({ organization, type = 'system', callback, dialog: isD
                   onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
                     const data = await getSuggestions(query, 'USER');
-
-                    return data.users.map((u) => ({
-                      label: u.name || u.email,
-                      value: u.email,
-                    }));
+                    if (data.entities.length > 0) {
+                      return data.entities.map((u) => ({
+                        label: u.name || u.email || '',
+                        value: u.email || '',
+                      }));
+                    }
+                    return [];
                   }}
                   basicSignValue={t('common:invite_members_search.text', { appName: config.name })}
                   hidePlaceholderWhenSelected

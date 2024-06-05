@@ -84,6 +84,19 @@
 }
 
 @layer components {
+  .menu-item-sub:before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: -9px;
+    left: 27px;
+    opacity: .5;
+    z-index: 0;
+    width: 1px;
+    height: 14px;
+    background-color: hsl(var(--foreground));
+  }
+
   .rich-gradient:after {
     content: '';
     display: block;

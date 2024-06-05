@@ -78,7 +78,7 @@ const AppNav = () => {
           focusView && 'hidden',
         )}
       >
-        <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1">
+        <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1 md:my-1">
           {navItems.map((navItem: NavItem, index: number) => {
             const isSecondItem = index === 1;
             const isActive = activeSheet?.id === navItem.id;

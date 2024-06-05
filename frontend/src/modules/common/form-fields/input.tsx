@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { type Control, type FieldValues, type Path, useFormContext } from 'react-hook-form';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -41,13 +41,19 @@ const InputFormField = <TFieldValues extends FieldValues>({
   inputClassName,
 }: Props<TFieldValues>) => {
   const { setFocus } = useFormContext();
+  const [prefixPadding, setPrefixPadding] = useState('12px');
+  const [subComponentPadding, setSubComponentPadding] = useState('12px');
 
-  let prefixPadding = '0px';
-
-  if (prefix) {
-    const spanPrefix = document.querySelector(`#${name.toString()}-prefix`);
-    prefixPadding = prefix && spanPrefix && 'offsetWidth' in spanPrefix ? `${Number(spanPrefix.offsetWidth) + 16}px` : '12px';
-  }
+  useEffect(() => {
+    if (prefix) {
+      const spanPrefix = document.querySelector(`#${name.toString()}-prefix`);
+      if (prefix && spanPrefix && 'offsetWidth' in spanPrefix) setPrefixPadding(`${Number(spanPrefix.offsetWidth) + 16}px`);
+    }
+    if (subComponent) {
+      const elSubComponent = document.querySelector('#slug-subComponent');
+      if (subComponent && elSubComponent && 'offsetWidth' in elSubComponent) setSubComponentPadding(`${Number(elSubComponent.offsetWidth)}px`);
+    }
+  }, [subComponent, prefix]);
 
   const prefixClick = () => {
     setFocus(name.toString());
@@ -91,7 +97,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
               ) : (
                 <Input
                   className={inputClassName}
-                  style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '' }}
+                  style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '', paddingRight: subComponentPadding }}
                   type={type}
                   onFocus={onFocus}
                   placeholder={placeholder}

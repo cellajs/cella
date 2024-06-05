@@ -37,14 +37,14 @@ export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step
       email: email,
       userId: null,
       organizationId: null,
-      type: 'SYSTEM_REQUEST',
+      type: 'WAITLIST_REQUEST',
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     requestAction({
       email: values.email,
-      type: 'SYSTEM_REQUEST',
+      type: 'WAITLIST_REQUEST',
     });
   };
 

@@ -40,7 +40,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setSheet, menu } = useNavigationStore();
+  const { setSheet, menu, activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
 
   const organizations = menu.organizations.items;
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -67,14 +67,13 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       form.reset();
       callback?.(result);
       toast.success(t('success.create_resource', { resource: t('common:workspace') }));
-
+      setActiveItemsOrder('workspaces', [...activeItemsOrder.workspaces, result.id]);
       setSheet(null);
+      if (isDialog) dialog.remove();
       navigate({
         to: '/workspace/$idOrSlug/board',
         params: { idOrSlug: result.slug },
       });
-
-      if (isDialog) dialog.remove();
     },
   });
 
@@ -109,13 +108,13 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
           <Button
             onClick={() => {
               dialog(<CreateOrganizationForm callback={organizationCreated} dialog />, {
-                className: 'md:max-w-xl',
+                className: 'md:max-w-2xl',
                 id: 'create-organization',
-                title: t('common:create_organization'),
+                title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
               });
             }}
           >
-            <span>{t('common:create_organization')}</span>
+            <span>{t('common:create_resource', { resource: t('common:organization').toLowerCase() })}</span>
           </Button>
         </AlertDescription>
       </Alert>

@@ -7,22 +7,36 @@ import { type RefObject, useEffect } from 'react';
  * @param {number} [latency=300] The amount of time (in milliseconds) to wait before differentiating a single from a double click
  * @param {function} onSingleClick A callback function for single click events
  * @param {function} onDoubleClick A callback function for double click events
+ * @param {string[]} allowedTargets Set a Lover case element name that allow to be tracked by hook
  */
 
 interface UseDoubleClickOptions {
   ref: RefObject<HTMLButtonElement | HTMLElement>;
+  allowedTargets?: string[];
   latency?: number;
   onSingleClick?: (event: MouseEvent) => void;
   onDoubleClick?: (event: MouseEvent) => void;
 }
 
-const useDoubleClick = ({ ref, latency = 300, onSingleClick = () => null, onDoubleClick = () => null }: UseDoubleClickOptions) => {
+const useDoubleClick = ({
+  ref,
+  latency = 300,
+  allowedTargets = [],
+  onSingleClick = () => null,
+  onDoubleClick = () => null,
+}: UseDoubleClickOptions) => {
   useEffect(() => {
     const clickRef = ref.current;
     if (!clickRef) return;
 
     let clickCount = 0;
     const handleClick = (e: Event) => {
+      // Ignore the click if it matches an allowed target
+      if (allowedTargets.length > 0 && e.target) {
+        const targetElement = e.target as Element;
+        if (!allowedTargets.includes(targetElement.localName)) return;
+      }
+
       // Update the type of the event parameter to Event
       clickCount += 1;
 

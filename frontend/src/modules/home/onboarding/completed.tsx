@@ -28,6 +28,7 @@ export const OnboardingCompleted = () => {
           createProject({
             name: `Demo project ${namingArr[i - 1]}`,
             slug: `${lastCreatedOrganization.slug.replace(/---/g, '-')}-project-${i}`,
+            organization: lastCreatedOrganization.id,
             workspace: workspace.id,
             color: '#000000',
           });

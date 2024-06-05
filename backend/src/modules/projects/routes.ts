@@ -4,24 +4,34 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, projectParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, projectParamSchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, systemGuard } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
+import { apiUserSchema } from '../users/schema';
 
-import { apiProjectSchema, createProjectJsonSchema, getProjectsQuerySchema, updateProjectJsonSchema } from './schema';
+import {
+  apiProjectSchema,
+  apiProjectListSchema,
+  createProjectJsonSchema,
+  getProjectsQuerySchema,
+  getUsersByProjectQuerySchema,
+  updateProjectJsonSchema,
+  getUserProjectsParamSchema,
+  apiUserProjectSchema,
+} from './schema';
 
 export const createProjectRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/workspaces/{workspace}/projects',
-  guard: [isAuthenticated(), isAllowedTo('create', 'project')],
+  path: '/organizations/{organization}/projects',
+  guard: [isAuthenticated, isAllowedTo('create', 'project')],
   tags: ['projects'],
   summary: 'Create a new project',
   description: `
     Permissions:
-      - Users with system or workspace role 'ADMIN'
+      - Users with system or organization role 'MEMBER'
   `,
   request: {
-    params: workspaceParamSchema,
+    params: organizationParamSchema,
     body: {
       required: true,
       content: {
@@ -47,7 +57,7 @@ export const createProjectRouteConfig = createRouteConfig({
 export const getProjectByIdOrSlugRouteConfig = createRouteConfig({
   method: 'get',
   path: '/projects/{project}',
-  guard: [isAuthenticated(), isAllowedTo('read', 'project')],
+  guard: [isAuthenticated, isAllowedTo('read', 'project')],
   tags: ['projects'],
   summary: 'Get project by id or slug',
   description: `
@@ -71,10 +81,36 @@ export const getProjectByIdOrSlugRouteConfig = createRouteConfig({
   },
 });
 
+export const getUserProjectsRouteConfig = createRouteConfig({
+  method: 'get',
+  path: '/projects/by-user/{userId}',
+  guard: [isAuthenticated, isSystemAdmin],
+  tags: ['projects'],
+  summary: 'Get user project by memberships',
+  description: `
+    Permissions:
+      - Users role 'ADMIN'
+  `,
+  request: {
+    params: getUserProjectsParamSchema,
+  },
+  responses: {
+    200: {
+      description: 'User project',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(apiUserProjectSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
 export const getProjectsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/projects',
-  guard: [isAuthenticated(), isAllowedTo('read', 'project')],
+  guard: [isAuthenticated, isAllowedTo('read', 'project')],
   tags: ['projects'],
   summary: 'Get list of projects',
   description: `
@@ -89,7 +125,7 @@ export const getProjectsRouteConfig = createRouteConfig({
       description: 'projects',
       content: {
         'application/json': {
-          schema: successResponseWithPaginationSchema(apiProjectSchema),
+          schema: successResponseWithPaginationSchema(apiProjectListSchema),
         },
       },
     },
@@ -100,7 +136,7 @@ export const getProjectsRouteConfig = createRouteConfig({
 export const updateProjectRouteConfig = createRouteConfig({
   method: 'put',
   path: '/projects/{project}',
-  guard: [isAuthenticated(), isAllowedTo('update', 'project')],
+  guard: [isAuthenticated, isAllowedTo('update', 'project')],
   tags: ['projects'],
   summary: 'Update project',
   description: `
@@ -134,7 +170,7 @@ export const updateProjectRouteConfig = createRouteConfig({
 export const deleteProjectsRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/projects',
-  guard: systemGuard,
+  guard: [isAuthenticated, splitByAllowance('delete', 'project')],
   tags: ['projects'],
   summary: 'Delete projects',
   description: `
@@ -150,6 +186,34 @@ export const deleteProjectsRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithErrorsSchema(),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const getUsersByProjectIdRouteConfig = createRouteConfig({
+  method: 'get',
+  path: '/projects/{project}/members',
+  guard: [isAuthenticated, isAllowedTo('read', 'project')],
+  tags: ['projects'],
+  summary: 'Get members of project',
+  description: `
+    Permissions:
+      - Users with role 'ADMIN'
+      - Users, who are members of the project
+  `,
+  request: {
+    params: projectParamSchema,
+    query: getUsersByProjectQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Members of project',
+      content: {
+        'application/json': {
+          schema: successResponseWithPaginationSchema(apiUserSchema),
         },
       },
     },

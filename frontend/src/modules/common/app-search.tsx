@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import type { organizationSuggestionSchema, userSuggestionSchema, workspaceSuggestionSchema } from 'backend/modules/general/schema';
+import type { entitySuggestionSchema } from 'backend/modules/general/schema';
 import type { PageResourceType } from 'backend/types/common';
 import { config } from 'config';
 import { History, Loader2, Search, X } from 'lucide-react';
@@ -16,10 +16,10 @@ import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
 import ContentPlaceholder from './content-placeholder';
 
-type SuggestionType = z.infer<typeof userSuggestionSchema> | z.infer<typeof organizationSuggestionSchema> | z.infer<typeof workspaceSuggestionSchema>;
+type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
 interface SuggestionSection {
-  id: 'users' | 'organizations' | 'workspaces';
+  id: 'users' | 'organizations' | 'workspaces' | 'projects';
   label: string;
   type: PageResourceType;
 }
@@ -28,6 +28,7 @@ const suggestionSections: SuggestionSection[] = [
   { id: 'users', label: 'common:users', type: 'USER' },
   { id: 'organizations', label: 'common:organizations', type: 'ORGANIZATION' },
   { id: 'workspaces', label: 'common:workspaces', type: 'WORKSPACE' },
+  { id: 'projects', label: 'common:projects', type: 'PROJECT' },
 ];
 
 export const AppSearch = () => {
@@ -72,7 +73,7 @@ export const AppSearch = () => {
     queryKey: ['search', searchValue],
     queryFn: () => getSuggestions(searchValue),
     enabled: searchValue.length > 0,
-    initialData: { users: [], organizations: [], workspaces: [], total: 0 },
+    initialData: { entities: [], total: 0 },
   });
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {
@@ -159,31 +160,28 @@ export const AppSearch = () => {
             )}
             {suggestions.total > 0 && (
               <>
-                {suggestionSections.map((section, index) => {
-                  const hasPrevious = index > 0 && suggestions[suggestionSections[index - 1].id].length > 0;
-                  const hasNext = index < suggestionSections.length - 1 && suggestions[suggestionSections[index + 1].id].length > 0;
-
+                {suggestionSections.map((section) => {
                   return (
                     <Fragment key={section.id}>
-                      {hasPrevious && hasNext && <CommandSeparator />}
+                      <CommandSeparator />
                       <CommandGroup className="">
-                        {hasNext && (
-                          <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
-                        )}
-                        {suggestions[section.id].map((suggestion: SuggestionType) => (
-                          <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
-                            <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                              <AvatarWrap
-                                type={section.type}
-                                className="h-8 w-8"
-                                id={suggestion.id}
-                                name={suggestion.name}
-                                url={suggestion.thumbnailUrl}
-                              />
-                              <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
-                            </div>
-                          </CommandItem>
-                        ))}
+                        <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
+                        {suggestions.entities
+                          .filter((el) => el.type === section.type)
+                          .map((suggestion: SuggestionType) => (
+                            <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
+                              <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                                <AvatarWrap
+                                  type={section.type}
+                                  className="h-8 w-8"
+                                  id={suggestion.id}
+                                  name={suggestion.name}
+                                  url={suggestion.thumbnailUrl}
+                                />
+                                <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
                       </CommandGroup>
                     </Fragment>
                   );

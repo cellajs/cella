@@ -2,29 +2,16 @@ import { config } from 'config';
 import { ElectricDatabase, electrify } from 'electric-sql/browser';
 import { uniqueTabId } from 'electric-sql/util';
 import { LIB_VERSION } from 'electric-sql/version';
-import * as jose from 'jose';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useUserStore } from '~/store/user';
+import { useNavigationStore } from '~/store/navigation';
 import type { User } from '~/types';
 import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
 
 interface Props {
   children: React.ReactNode;
-}
-
-async function unsignedJWT(userId: string, customClaims?: object) {
-  const textEncoder = new TextEncoder();
-  const jwt = await new jose.SignJWT({ sub: userId, ...customClaims })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setIssuer('urn:example:issuer')
-    .setAudience('urn:example:audience')
-    .setExpirationTime('2h')
-    .sign(textEncoder.encode('secret'));
-
-  return jwt;
 }
 
 function deleteDB(dbName: string) {
@@ -41,6 +28,10 @@ function deleteDB(dbName: string) {
 
 const ElectricProvider = ({ children }: Props) => {
   const user = useUserStore((state) => state.user) as User | null;
+  // TODO: Temporary fix to prevent loading all projects and labels. Only sync the projects and labels of organizations the user is a member of.
+  // TODO: Consider exposing organizationIds the user is part of on the user object, as the menu can be undefined.
+  const { menu } = useNavigationStore();
+
   const [electric, setElectric] = useState<Electric>();
 
   useEffect(() => {
@@ -57,18 +48,38 @@ const ElectricProvider = ({ children }: Props) => {
           url: config.electricUrl,
         });
 
-        const token = await unsignedJWT(user?.id || '0');
-        await electric.connect(token);
+        await electric.connect(user?.electricJWTToken || '0');
 
         if (!isMounted) {
           return;
         }
 
+        if (config.debug) {
+          const { addToolbar } = await import('@electric-sql/debug-toolbar');
+          addToolbar(electric);
+        }
+
         setElectric(electric);
 
-        // Resolves when the shape subscription has been established.
-        const tasksShape = await electric.db.tasks.sync();
-        const labelsShape = await electric.db.labels.sync();
+      // Resolves when the shape subscription has been established.
+      // TODO: Improve the following section by deriving organization IDs differently.
+      // TODO: Update organizationIds to sync whenever the user's menu changes.
+      const organizationIds = menu.organizations.items.map(item => item.id)
+        const tasksShape = await electric.db.tasks.sync({
+          where: {
+            organization_id: { 
+              in: organizationIds 
+            }
+          }
+        });
+
+        const labelsShape = await electric.db.labels.sync({
+          where: {
+            organization_id: { 
+              in: organizationIds 
+            }
+          }
+        });
 
         // Resolves when the data has been synced into the local database.
         await tasksShape.synced;

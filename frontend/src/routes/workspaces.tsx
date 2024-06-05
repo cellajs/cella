@@ -12,7 +12,7 @@ import { IndexRoute } from './routeTree';
 
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));
-const Board = lazy(() => import('~/modules/projects/board'));
+const Board = lazy(() => import('~/modules/projects/board/board'));
 const TasksTable = lazy(() => import('~/modules/projects/tasks-table'));
 const ElectricSuspense = lazy(() => import('~/modules/common/electric/suspense'));
 

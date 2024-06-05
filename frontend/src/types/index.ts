@@ -15,28 +15,15 @@ export interface UploadParams {
 export enum UserRole {
   ADMIN = 'Admin',
   MEMBER = 'Member',
-  // USER = 'User',
-  ASSIGNED = 'Assigned',
-  CREATED = 'Created',
 }
 
 export type DraggableItemData<T> = {
   type: string;
   item: T;
+  itemType: PageResourceType;
   dragItem: true;
   index: number;
 };
-
-export interface Page {
-  type: PageResourceType;
-  id: string;
-  slug: string;
-  name: string;
-  thumbnailUrl?: string | null;
-  archived: boolean;
-  muted: boolean;
-  role: keyof typeof UserRole | null;
-}
 
 export type User = Extract<InferResponseType<(typeof usersClient.me)['$get']>, { data: unknown }>['data'];
 
@@ -51,14 +38,13 @@ export type Workspace = Extract<InferResponseType<(typeof workspaceClient.worksp
 
 export type Project = Extract<InferResponseType<(typeof projectClient.projects)[':project']['$get']>, { data: unknown }>['data'];
 
+export type ProjectList = Extract<InferResponseType<(typeof projectClient.projects)['$get']>, { data: unknown }>['data']['items'];
+
 export type Member = Extract<
   InferResponseType<(typeof organizationsClient.organizations)[':organization']['members']['$get']>,
   { data: unknown }
 >['data']['items'][number];
 
-export type Membership = Extract<
-  InferResponseType<(typeof membershipClient)[':idOrSlug']['memberships'][':user']['$put']>,
-  { data: unknown }
->['data'];
+export type Membership = Extract<InferResponseType<(typeof membershipClient)['memberships'][':membership']['$put']>, { data: unknown }>['data'];
 
 export type UserMenu = Extract<InferResponseType<(typeof usersClient.menu)['$get']>, { data: unknown }>['data'];

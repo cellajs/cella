@@ -1,31 +1,15 @@
-import { eq } from 'drizzle-orm';
-import { db } from '../../../db/db';
+import { config } from 'config';
+import { resolveEntity } from '../../../lib/entity';
 
-import { organizationsTable } from '../../../db/schema/organizations';
-import { projectsTable } from '../../../db/schema/projects';
-import { usersTable } from '../../../db/schema/users';
-import { workspacesTable } from '../../../db/schema/workspaces';
-import type { PageResourceType } from '../../../types/common';
+// * Check if a slug is available in any of the entities
+export const checkSlugAvailable = async (slug: string) => {
+  const entities = config.entityTypes;
 
-export const checkSlugAvailable = async (slug: string, type: PageResourceType) => {
-  let entity: unknown;
+  const promises = entities.map((entity) => resolveEntity(entity, slug));
+  const results = await Promise.all(promises);
 
-  switch (type) {
-    case 'USER':
-      [entity] = await db.select().from(usersTable).where(eq(usersTable.slug, slug));
-      break;
-    case 'ORGANIZATION':
-      [entity] = await db.select().from(organizationsTable).where(eq(organizationsTable.slug, slug));
-      break;
-    case 'WORKSPACE':
-      [entity] = await db.select().from(workspacesTable).where(eq(workspacesTable.slug, slug));
-      break;
-    case 'PROJECT':
-      [entity] = await db.select().from(projectsTable).where(eq(projectsTable.slug, slug));
-      break;
-    default:
-      return false;
-  }
+  // Check if any result is found, if so, slug is not available
+  const isAvailable = results.every((result) => !result);
 
-  return !entity;
+  return isAvailable;
 };

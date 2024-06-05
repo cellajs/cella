@@ -39,7 +39,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
   // const navigate = useNavigate();
-  const { setSheet } = useNavigationStore();
+  const { setSheet, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -66,20 +66,20 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
         ...values,
         color: '#000000',
         workspace: workspace.id,
+        organization: workspace.organizationId,
       });
     },
     onSuccess: (project) => {
       form.reset();
       callback([project], 'create');
+      if (isDialog) dialog.remove();
       toast.success(t('success.create_resource', { resource: t('common:project') }));
-
+      setSubmenuItemsOrder(workspace.id, [...submenuItemsOrder[workspace.id], project.id]);
       setSheet(null);
       // navigate({
       //   to: '/workspace/$idOrSlug/board',
       //   params: { idOrSlug: result.slug },
       // });
-
-      if (isDialog) dialog.remove();
     },
   });
 

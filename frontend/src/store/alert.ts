@@ -10,6 +10,7 @@ interface AlertState {
   alertsSeen: string[];
   downAlert: downLevels;
   setAlertSeen: (alertSeen: string) => void;
+  resetAlertSeen: (alertSeen: string[]) => void;
   setDownAlert: (downLevel: downLevels) => void;
 }
 
@@ -19,7 +20,7 @@ export const useAlertStore = create<AlertState>()(
       persist(
         (set) => ({
           downAlert: null,
-          alertsSeen: [],
+          alertsSeen: ['skip_org_creation'],
           setAlertSeen: (alertSeen) => {
             set((state) => {
               state.alertsSeen.push(alertSeen);
@@ -28,6 +29,11 @@ export const useAlertStore = create<AlertState>()(
           setDownAlert: (downLevel) => {
             set((state) => {
               state.downAlert = downLevel;
+            });
+          },
+          resetAlertSeen: (alertsSeen) => {
+            set((state) => {
+              state.alertsSeen = alertsSeen;
             });
           },
         }),

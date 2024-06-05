@@ -1,27 +1,25 @@
-import type { MiddlewareHandler } from 'hono';
-import auth from './auth';
+import type { Context, MiddlewareHandler } from 'hono';
+import isAuthenticated from './is-authenticated';
 import isAllowedTo from './is-allowed-to';
-import tenant from './tenant';
+import splitByAllowance from './split-by-allowance';
+import { errorResponse } from '../../lib/errors';
 
-type TenantAccessibleFor = Parameters<typeof tenant>[2];
+export { isAuthenticated };
+export { isAllowedTo };
+export { splitByAllowance };
 
-export const isAuthenticated = (accessibleFor?: Parameters<typeof auth>[0]): MiddlewareHandler => auth(accessibleFor);
+export const isSystemAdmin: MiddlewareHandler = async (ctx: Context, next) => {
+  // Extract user
+  const user = ctx.get('user');
 
-export const organizationTenantGuard = (paramName: string, accessibleFor?: TenantAccessibleFor) =>
-  [auth(), tenant(paramName, 'ORGANIZATION', accessibleFor)] as const;
+  // TODO: Add more checks for system admin, such as IP address, 2FA etc.
+  if (!user || !user.role.includes('ADMIN')) {
+    return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
+  }
 
-export const workspaceTenantGuard = (paramName: string, accessibleFor?: TenantAccessibleFor) =>
-  [auth(), tenant(paramName, 'WORKSPACE', accessibleFor)] as const;
-
-export const projectTenantGuard = (paramName: string, accessibleFor?: TenantAccessibleFor) =>
-  [auth(), tenant(paramName, 'PROJECT', accessibleFor)] as const;
-
-export const anyTenantGuard = (paramName: string, accessibleFor?: TenantAccessibleFor) => [auth(), tenant(paramName, 'ANY', accessibleFor)] as const;
-
-export const systemGuard = auth(['ADMIN']);
-
-export const publicGuard: MiddlewareHandler = async (_, next) => {
   await next();
 };
 
-export { isAllowedTo };
+export const isPublicAccess: MiddlewareHandler = async (_, next) => {
+  await next();
+};

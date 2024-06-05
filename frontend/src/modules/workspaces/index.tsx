@@ -6,21 +6,22 @@ import { type Dispatch, type SetStateAction, createContext, useEffect, useMemo, 
 import { useTranslation } from 'react-i18next';
 import { getProjects } from '~/api/projects';
 import { getWorkspaceBySlugOrId } from '~/api/workspaces';
-import BoardHeader from '~/modules/projects/board-header';
+import BoardHeader from '~/modules/projects/board/header/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
-import type { Project, Workspace } from '~/types';
+import type { ProjectList, Workspace } from '~/types';
 import ContentPlaceholder from '../common/content-placeholder';
-import { type Label, type TaskWithLabels, type TaskWithTaskLabels, useElectric } from '../common/electric/electrify';
+import { type Label, type PreparedTask, type Task, useElectric } from '../common/electric/electrify';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
 import { useWorkspaceStore } from '~/store/workspace';
-import { taskStatuses } from '../projects/select-status';
+import { taskStatuses } from '../projects/task/task-selectors/select-status';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
-  projects: Project[];
-  tasks: TaskWithLabels[];
+  projects: ProjectList;
+  tasks: PreparedTask[];
+  tasksLoading: boolean;
   labels: Label[];
   tasksCount: number;
   selectedTasks: string[];
@@ -37,12 +38,13 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
     queryFn: () => getWorkspaceBySlugOrId(idOrSlug),
   });
 
-export const workspaceProjectsQueryOptions = (workspace: string) =>
+export const workspaceProjectsQueryOptions = (workspace: string, organization: string) =>
   queryOptions({
-    queryKey: ['workspaces', workspace, 'projects'],
+    queryKey: ['projects', workspace],
     queryFn: () =>
       getProjects({
         workspace,
+        organization,
       }),
   });
 
@@ -63,20 +65,34 @@ const WorkspacePage = () => {
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
-  const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id));
+  const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id, workspace.organizationId));
   const projects = projectsQuery.data.items;
 
-  const { results: tasks = [] } = useLiveQuery(
+  const { results: tasks } = useLiveQuery(
     Electric.db.tasks.liveMany({
+      // Cause Cannot read properties of undefined (reading 'relationName')
+      // include: {
+      //   tasks: true,
+      //   other_tasks: true,
+      // },
       where: {
         project_id: {
           in: projects.map((project) => project.id),
         },
       },
+      orderBy: {
+        sort_order: 'asc',
+      }
     }),
-  ) as { results: TaskWithTaskLabels[] };
+  ) as {
+    results: (Task & {
+      other_tasks: Task[];
+      tasks: Task | null;
+    })[];
+  };
 
-  const { results: labels = [] } = useLiveQuery(
+  // TODO: TS complains about a prisma issue with the type of labels
+  const { results: labels = [] as Label[] } = useLiveQuery(
     Electric.db.labels.liveMany({
       where: {
         project_id: {
@@ -92,6 +108,7 @@ const WorkspacePage = () => {
   };
 
   const filteredTasks = useMemo(() => {
+    if (!tasks) return [];
     if (!searchQuery) return tasks;
     return tasks.filter(
       (task) =>
@@ -123,12 +140,15 @@ const WorkspacePage = () => {
       value={{
         workspace,
         projects,
+        tasksLoading: !tasks,
         tasks: filteredByViewOptionsTasks.map((task) => ({
           ...task,
-          labels: task.task_labels?.map((tl) => tl.labels || []).flatMap((labels) => labels) || [],
+          // TODO: TS complains about a prisma issue with the type of labels
+          labels: (labels as unknown as Label[]).filter((label) => Array.isArray(task.labels) && task.labels.includes(label.id)),
         })),
         tasksCount: filteredByViewOptionsTasks.length,
-        labels,
+        // TODO: TS complains about a prisma issue with the type of labels
+        labels: labels as unknown as Label[],
         selectedTasks,
         setSelectedTasks,
         searchQuery,

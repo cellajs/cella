@@ -8,7 +8,7 @@ import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state
 
 import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { requestAction } from '~/api/general';
+import { requestAction as baserequestAction } from '~/api/general';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { i18n } from '~/lib/i18n';
@@ -17,6 +17,7 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../form-fields/input';
+import { useMutation } from '~/hooks/use-mutations';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
@@ -27,17 +28,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-export async function submitContactForm(data: FormValues) {
-  try {
-    const { name, email, message } = data;
-    requestAction({ email, type: 'CONTACT_REQUEST', message: `${name} with the message: ${message}` });
-    return true;
-  } catch (error) {
-    console.error('Error in contact form:', error);
-    return false;
-  }
-}
 
 // Main contact form map component
 const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
@@ -55,18 +45,21 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     isDialog && dialog.remove();
   };
 
-  const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    const isSuccess = await submitContactForm(data);
-
-    if (isSuccess) {
+  const { mutate: requestAction } = useMutation({
+    mutationFn: baserequestAction,
+    onSuccess: () => {
       toast.success(t('common:message_sent.text'));
-      if (isDialog) {
-        dialog.remove();
-      }
+      if (isDialog) dialog.remove();
       form.reset();
-    } else {
+    },
+    onError: () => {
       toast.error(t('common:error.reported_try_later'));
-    }
+    },
+  });
+
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
+    const { name, email, message } = data;
+    requestAction({ email, type: 'CONTACT_REQUEST', message: `${name} with the message: ${message}` });
   };
 
   // Update dialog title with unsaved changes

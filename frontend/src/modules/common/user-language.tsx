@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { toast } from 'sonner';
-import { updateUser } from '~/api/users';
+import { updateSelf } from '~/api/users';
 import { i18n } from '~/lib/i18n';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -17,11 +17,10 @@ const UserLanguage = ({ align = 'end', className = '' }: Props) => {
   const { user, setUser } = useUserStore(({ user, setUser }) => ({ user, setUser }));
   const language = i18n.resolvedLanguage || i18n.language;
   const changeLanguage = (lng: string) => {
-    if (user) {
-      updateUser(user.id, { language: lng as 'en' | 'nl' }).then((res) => {
-        setUser(res);
-      });
-    }
+    if (!user) return;
+    updateSelf({ language: lng as 'en' | 'nl' }).then((res) => {
+      setUser(res);
+    });
     if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);
   };

@@ -56,7 +56,7 @@
 git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
-Create a `.env` in `/env` folder with `.env.example`. Minimum is `DATABASE_URL` and `ELECTRIC_SYNC_URL` (recommended to use existing defaults). Then install:
+Create a `.env` in `/env` folder. Minimum is `DATABASE_URL`, `ELECTRIC_SYNC_URL`, `ELECTRIC_PRIVATE_KEY_ES256`. Recommended defaults are in `.env.example`. Then install:
 
 ```bash
 pnpm install

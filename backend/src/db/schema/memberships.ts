@@ -5,15 +5,14 @@ import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
+import { config } from 'config';
 
-const typeEnum = ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const;
-const roleEnum = ['MEMBER', 'ADMIN', 'ASSIGNED', 'CREATED'] as const;
+const roleEnum = ['MEMBER', 'ADMIN'] as const;
 
-// TODO: Implement different roles for various contexts (e.g., a user can now have the role 'ASSIGNED' within an organization)
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   type: varchar('type', {
-    enum: typeEnum,
+    enum: config.contextEntityTypes,
   })
     .notNull()
     .default('ORGANIZATION'),

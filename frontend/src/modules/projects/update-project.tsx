@@ -31,7 +31,6 @@ const formSchema = z.object({
   slug: z.string(),
   name: z.string(),
   color: z.string(),
-  workspaceId: z.string(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,7 +62,6 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
       slug: project.slug,
       name: project.name,
       color: project.color,
-      workspaceId: project.workspaceId,
     },
   };
 
@@ -78,12 +76,12 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
     mutate();
     console.log(values);
 
-    toast.success(t('common:success.update_project'));
+    toast.success(t('common:success.update_resource', { resource: t('common:project') }));
     // mutate(values, {
     //   onSuccess: (data) => {
     //     callback?.(data as Project);
     //     if (isDialog) dialog.remove();
-    //     toast.success(t('common:success.update_project'));
+    //     toast.success(t('common:success.update_resource', { resource: t('common:project') }));
     //   },
     // });
   };
