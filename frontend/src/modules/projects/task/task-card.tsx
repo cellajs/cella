@@ -216,7 +216,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
             <div className="flex flex-col justify-between gap-[2px] relative">
               <Checkbox
                 className={cn(
-                  'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30',
+                  'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
                   'transition-all bg-background absolute top-[6px] left-[6px]',
                   !isExpanded && 'opacity-0 -z-[1] pointer-events-none',
                   isExpanded && 'opacity-100',
