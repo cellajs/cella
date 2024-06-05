@@ -117,7 +117,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
-    const order = tasks.length > 0 ? tasks[0].sort_order / 1.1 : 0;
+    const projectTasks = tasks.filter((task) => task.project_id === project.id);
+    const order = projectTasks.length > 0 ? projectTasks[0].sort_order / 1.1 : 1;
 
     Electric.db.tasks
       .create({
