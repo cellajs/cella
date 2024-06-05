@@ -37,6 +37,7 @@
     "migrate:pg": "dotenv -e env/.env -- turbo migrate:pg --filter backend --force",
     "migrate:electric": "dotenv -e env/.env -- turbo migrate:electric --filter backend --force",
     "seed": "pnpm run seed:user && pnpm run seed:organizations && pnpm run seed:data",
+    "seed:pivotal": "dotenv -e env/.env -- turbo run seed:pivotal --filter backend --force",
     "seed:user": "dotenv -e env/.env -- turbo seed:user --filter backend --force",
     "seed:organizations": "dotenv -e env/.env -- turbo seed:organizations --filter backend --force",
     "seed:data": "dotenv -e env/.env -- turbo seed:data --filter backend --force",
