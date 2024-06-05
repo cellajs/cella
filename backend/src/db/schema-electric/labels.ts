@@ -5,6 +5,7 @@ export const labelsTable = pgTable('labels', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   name: varchar('name').notNull(),
   color: varchar('color'),
+  organizationId: varchar('organization_id').notNull(),
   projectId: varchar('project_id').notNull(),
 });
 

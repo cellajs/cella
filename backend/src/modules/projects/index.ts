@@ -2,10 +2,11 @@ import { type SQL, and, count, eq, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { projectsTable } from '../../db/schema/projects';
+import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
-import { sendSSEToUsers } from '../../lib/sse';
+import { sendSSEToUsers, sendSSE } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -19,6 +20,7 @@ import {
   updateProjectRouteConfig,
 } from './routes';
 import { usersTable } from '../../db/schema/users';
+import permissionManager from '../../lib/permission-manager';
 
 const app = new CustomHono();
 
@@ -28,9 +30,10 @@ const projectsRoutes = app
    * Create project
    */
   .openapi(createProjectRouteConfig, async (ctx) => {
-    const { name, slug, color } = ctx.req.valid('json');
+    const { name, slug, color, workspace } = ctx.req.valid('json');
     const user = ctx.get('user');
-    const { workspaceId, organizationId } = ctx.get('project');
+    const memberships = ctx.get('memberships');
+    const { organizationId } = ctx.get('project');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -38,11 +41,14 @@ const projectsRoutes = app
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'PROJECT', { slug });
     }
 
+    if (workspace && !permissionManager.isPermissionAllowed(memberships, 'update', { type: 'WORKSPACE', id: workspace, organizationId })) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'PROJECT', { user: user.id, id: workspace });
+    }
+
     const [createdProject] = await db
       .insert(projectsTable)
       .values({
         organizationId,
-        workspaceId,
         name,
         slug,
         color,
@@ -50,12 +56,11 @@ const projectsRoutes = app
       })
       .returning();
 
-    logEvent('Project created', { project: createdProject.id });
+    logEvent('Project created', { project: createdProject.id });    
 
     await db.insert(membershipsTable).values({
       userId: user.id,
       organizationId,
-      workspaceId,
       projectId: createdProject.id,
       type: 'PROJECT',
       role: 'ADMIN',
@@ -66,7 +71,23 @@ const projectsRoutes = app
       project: createdProject.id,
     });
 
-    sendSSEToUsers([user.id], 'create_entity', createdProject);
+    if (workspace) {
+      await db.insert(projectsToWorkspacesTable).values({
+        projectId: createdProject.id,
+        workspaceId: workspace,
+      })
+
+      logEvent('Project added to workspace', {
+        project: createdProject.id,
+        workspace,
+      });
+    }
+    
+
+    sendSSE(user.id, 'new_project_membership', {
+      ...createdProject,
+      type: 'PROJECT',
+    });
 
     return ctx.json(
       {
@@ -115,16 +136,10 @@ const projectsRoutes = app
     const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
     const projectsFilters = [filter];
 
-    if (workspace) {
-      projectsFilters.push(eq(projectsTable.workspaceId, workspace));
-    }
-
     const projectsQuery = db
       .select()
       .from(projectsTable)
       .where(and(...projectsFilters));
-
-    const [{ total }] = await db.select({ total: count() }).from(projectsQuery.as('projects'));
 
     const counts = db
       .select({
@@ -158,7 +173,14 @@ const projectsRoutes = app
       order,
     );
 
-    const projects = await db
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    let projects: Array<any>;
+    let total = 0;
+
+    if (!workspace) {
+      const [{ total: matches }] = await db.select({ total: count() }).from(projectsQuery.as('projects'));
+      total = matches;
+      projects = await db
       .select({
         project: projectsTable,
         role: membership.role,
@@ -172,6 +194,35 @@ const projectsRoutes = app
       .orderBy(orderColumn)
       .limit(Number(limit))
       .offset(Number(offset));
+
+    } else {
+      projectsFilters.push(eq(projectsToWorkspacesTable.workspaceId, workspace))
+
+      const [{ total: matches }] = await db
+        .select({ total: count() })
+        .from(projectsToWorkspacesTable)
+        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id),  ...projectsFilters))
+        .where(eq(projectsToWorkspacesTable.workspaceId, workspace))
+        
+      total = matches;
+
+      projects = await db
+        .select({
+          project: projectsTable,
+          role: membership.role,
+          archived: membership.archived,
+          admins: counts.admins,
+          members: counts.members,
+        })
+        .from(projectsToWorkspacesTable)
+        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id),  ...projectsFilters))
+        .leftJoin(counts, eq(projectsTable.id, counts.projectId))
+        .leftJoin(membership, eq(membership.projectId, projectsTable.id))
+        .where(eq(projectsToWorkspacesTable.workspaceId, workspace))
+        .orderBy(orderColumn)
+        .limit(Number(limit))
+        .offset(Number(offset));
+    }
 
     return ctx.json(
       {
@@ -275,93 +326,36 @@ const projectsRoutes = app
    * Delete projects
    */
   .openapi(deleteProjectsRouteConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    // * Extract allowed and disallowed ids
+    const allowedIds = ctx.get('allowedIds');
+    const disallowedIds = ctx.get('disallowedIds')
 
-    // * Convert the projects ids to an array
-    const projectsIds = Array.isArray(ids) ? ids : [ids];
-
-    const errors: ErrorType[] = [];
-
-    // * Get the projects and the user role
-    const targets = await db
-      .select({
-        project: projectsTable,
-        userRole: membershipsTable.role,
-      })
-      .from(projectsTable)
-      .leftJoin(membershipsTable, and(eq(membershipsTable.projectId, projectsTable.id), eq(membershipsTable.userId, user.id)))
-      .where(inArray(projectsTable.id, projectsIds));
-
-    // * Check if the projects exist
-    for (const id of projectsIds) {
-      if (!targets.some((target) => target.project.id === id)) {
-        errors.push(
-          createError(ctx, 404, 'not_found', 'warn', 'PROJECT', {
-            project: id,
-          }),
-        );
-      }
-    }
-
-    // * Filter out projects that the user doesn't have permission to delete
-    const allowedTargets = targets.filter((target) => {
-      const projectId = target.project.id;
-
-      if (user.role !== 'ADMIN' && target.userRole !== 'ADMIN') {
-        errors.push(
-          createError(ctx, 403, 'delete_forbidden', 'warn', 'PROJECT', {
-            project: projectId,
-          }),
-        );
-        return false;
-      }
-
-      return true;
-    });
-
-    // * If the user doesn't have permission to delete any of the projects, return an error
-    if (allowedTargets.length === 0) {
-      return ctx.json(
-        {
-          success: false,
-          errors: errors,
-        },
-        200,
-      );
-    }
+    // * Map errors of workspaces user is not allowed to delete 
+    const errors: ErrorType[] = disallowedIds.map(id => createError(ctx, 404, 'not_found', 'warn', 'PROJECT', { project: id }));
 
     // * Get members
     const projectsMembers = await db
-      .select({ id: membershipsTable.userId })
+      .select({ id: membershipsTable.userId, projectId: membershipsTable.projectId })
       .from(membershipsTable)
       .where(
         and(
           eq(membershipsTable.type, 'PROJECT'),
-          inArray(
-            membershipsTable.organizationId,
-            allowedTargets.map((target) => target.project.id),
-          ),
+          inArray(membershipsTable.projectId, allowedIds),
         ),
       );
 
     // * Delete the projectId
-    await db.delete(projectsTable).where(
-      inArray(
-        projectsTable.id,
-        allowedTargets.map((target) => target.project.id),
-      ),
-    );
+    await db.delete(projectsTable).where(inArray(projectsTable.id, allowedIds));
 
     // * Send SSE events for the projects that were deleted
-    for (const { project } of allowedTargets) {
+    for (const id of allowedIds) {
       // * Send the event to the user if they are a member of the project
       if (projectsMembers.length > 0) {
-        const membersId = projectsMembers.map((member) => member.id).filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', project);
+        const membersId = projectsMembers.filter(({projectId}) => projectId === id).map((member) => member.id).filter(Boolean) as string[];
+        sendSSEToUsers(membersId, 'remove_entity', { id, type: 'PROJECT' });
       }
 
-      logEvent('Project deleted', { project: project.id });
+      logEvent('Project deleted', { project: id });
     }
 
     return ctx.json(

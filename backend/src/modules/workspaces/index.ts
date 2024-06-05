@@ -147,93 +147,36 @@ const workspacesRoutes = app
    * Delete workspaces
    */
   .openapi(deleteWorkspacesRouteConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    // * Extract allowed and disallowed ids
+    const allowedIds = ctx.get('allowedIds');
+    const disallowedIds = ctx.get('disallowedIds')
 
-    // * Convert the workspace ids to an array
-    const workspaceIds = Array.isArray(ids) ? ids : [ids];
-
-    const errors: ErrorType[] = [];
-
-    // * Get the workspaces and the user role
-    const targets = await db
-      .select({
-        workspace: workspacesTable,
-        userRole: membershipsTable.role,
-      })
-      .from(workspacesTable)
-      .leftJoin(membershipsTable, and(eq(membershipsTable.workspaceId, workspacesTable.id), eq(membershipsTable.userId, user.id)))
-      .where(inArray(workspacesTable.id, workspaceIds));
-
-    // * Check if the workspaces exist
-    for (const id of workspaceIds) {
-      if (!targets.some((target) => target.workspace.id === id)) {
-        errors.push(
-          createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', {
-            workspace: id,
-          }),
-        );
-      }
-    }
-
-    // * Filter out workspaces that the user doesn't have permission to delete
-    const allowedTargets = targets.filter((target) => {
-      const workspaceId = target.workspace.id;
-
-      if (user.role !== 'ADMIN' && target.userRole !== 'ADMIN') {
-        errors.push(
-          createError(ctx, 403, 'delete_forbidden', 'warn', 'WORKSPACE', {
-            workspace: workspaceId,
-          }),
-        );
-        return false;
-      }
-
-      return true;
-    });
-
-    // * If the user doesn't have permission to delete any of the workspaces, return an error
-    if (allowedTargets.length === 0) {
-      return ctx.json(
-        {
-          success: false,
-          errors: errors,
-        },
-        200,
-      );
-    }
+    // * Map errors of workspaces user is not allowed to delete 
+    const errors: ErrorType[] = disallowedIds.map(id => createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', { workspace: id }));
 
     // * Get members
     const workspaceMembers = await db
-      .select({ id: membershipsTable.userId })
+      .select({ id: membershipsTable.userId, workspaceId: membershipsTable.workspaceId })
       .from(membershipsTable)
       .where(
         and(
           eq(membershipsTable.type, 'WORKSPACE'),
-          inArray(
-            membershipsTable.organizationId,
-            allowedTargets.map((target) => target.workspace.id),
-          ),
+          inArray(membershipsTable.workspaceId, allowedIds),
         ),
       );
 
     // * Delete the workspaces
-    await db.delete(workspacesTable).where(
-      inArray(
-        workspacesTable.id,
-        allowedTargets.map((target) => target.workspace.id),
-      ),
-    );
+    await db.delete(workspacesTable).where(inArray(workspacesTable.id, allowedIds));
 
     // * Send SSE events for the workspaces that were deleted
-    for (const { workspace } of allowedTargets) {
+    for (const id of allowedIds) {
       // * Send the event to the user if they are a member of the workspace
       if (workspaceMembers.length > 0) {
-        const membersId = workspaceMembers.map((member) => member.id).filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', workspace);
+        const membersId = workspaceMembers.filter(({workspaceId}) => workspaceId === id).map((member) => member.id).filter(Boolean) as string[];
+        sendSSEToUsers(membersId, 'remove_entity', { id, type: 'WORKSPACE' });
       }
 
-      logEvent('Workspace deleted', { workspace: workspace.id });
+      logEvent('Workspace deleted', { workspace: id });
     }
 
     return ctx.json(

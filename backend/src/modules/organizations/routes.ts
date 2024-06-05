@@ -6,7 +6,7 @@ import {
 } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
 import {
   apiOrganizationSchema,
   apiOrganizationUserSchema,
@@ -193,7 +193,7 @@ export const accessRequestsConfig = createRouteConfig({
 export const deleteOrganizationsRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/organizations',
-  guard: [isAuthenticated, isSystemAdmin],
+  guard: [isAuthenticated, splitByAllowance('delete', 'organization')],
   tags: ['organizations'],
   summary: 'Delete organizations',
   description: `

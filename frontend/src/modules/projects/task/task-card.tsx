@@ -305,13 +305,17 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   />
                 )}
 
-                <SetLabels
-                  labels={labels}
-                  projectId={task.project_id}
-                  changeLabels={(newLabels) => handleChange('labels', newLabels)}
-                  viewValue={task.labels}
-                  mode="edit"
-                />
+            {
+              // TODO: Bind the entire task object instead of individual IDs
+            }
+            <SetLabels
+              labels={labels}
+              organizationId={task.organization_id}
+              projectId={task.project_id}
+              changeLabels={(newLabels) => handleChange('labels', newLabels)}
+              viewValue={task.labels}
+              mode="edit"
+            />
 
                 <div className="flex gap-1 ml-auto mr-1">
                   <AssignMembers

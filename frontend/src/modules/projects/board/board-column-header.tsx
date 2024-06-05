@@ -3,6 +3,7 @@ import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
+import { WorkspaceContext } from '../../workspaces';
 import { ProjectContext } from './project-context';
 import ToolTipButtons from './tooltip-buttons';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -16,13 +17,14 @@ interface BoardColumnHeaderProps {
 
 export function BoardColumnHeader({ createFormOpen, openSettings, createFormClick, dragRef }: BoardColumnHeaderProps) {
   const { project } = useContext(ProjectContext);
+  const { workspace } = useContext(WorkspaceContext);
   const { changeColumn } = useWorkspaceStore();
   const { t } = useTranslation();
   const [minimize, setMinimize] = useState(false);
 
   const MinimizeClick = () => {
     setMinimize(!minimize);
-    changeColumn(project.workspaceId, project.id, {
+    changeColumn(workspace.id, project.id, {
       minimized: !minimize,
     });
   };

@@ -22,6 +22,7 @@ export const createProjectJsonSchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
   color: colorSchema,
+  workspace: idSchema.optional(),
 });
 
 export const getUserProjectsParamSchema = z.object({
@@ -39,6 +40,7 @@ export const apiUserProjectSchema = z.array(
 export const getProjectsQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
+    organization: idSchema.optional(),
     workspace: idSchema.optional(),
   }),
 );
@@ -47,7 +49,6 @@ export const updateProjectJsonSchema = createInsertSchema(projectsTable, {
   slug: validSlugSchema,
   name: nameSchema,
   color: colorSchema,
-  workspaceId: idSchema,
 }).pick({
   slug: true,
   name: true,

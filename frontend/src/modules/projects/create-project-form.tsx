@@ -66,6 +66,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
         ...values,
         color: '#000000',
         workspace: workspace.id,
+        organization: workspace.organizationId,
       });
     },
     onSuccess: (project) => {
