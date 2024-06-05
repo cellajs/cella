@@ -134,10 +134,10 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
           aria-label="Set labels"
           variant="ghost"
           size={mode === 'create' ? 'sm' : 'xs'}
-          className={`flex h-auto min-h-8 justify-start font-light ${
+          className={`flex h-auto justify-start font-light ${
             mode === 'create'
-              ? 'w-full text-left py-1 border hover:bg-accent/20'
-              : 'py-[2px] group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
+              ? 'w-full text-left min-h-9 py-1 border hover:bg-accent/20'
+              : 'py-[2px] min-h-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
           } ${mode === 'edit' && selectedLabels.length && ''}`}
         >
           {!selectedLabels.length && <Tag size={16} className="opacity-50" />}
@@ -157,8 +157,8 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
                     </Badge>
                     {mode === 'create' && (
                       <Button
-                        className="opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:!ring-offset-0"
-                        size="xs"
+                        className="opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:!ring-offset-0 active:!translate-y-0"
+                        size="micro"
                         variant="ghost"
                         onClick={(e) => {
                           e.preventDefault();

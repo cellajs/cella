@@ -213,12 +213,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
       <CardContent id={`${task.id}-content`} className="p-1 space-between gap-1 flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
-            <div className="flex flex-col gap-[2px] relative">
+            <div className="flex flex-col justify-between gap-[2px] relative">
               <Checkbox
                 className={cn(
                   'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30',
                   'transition-all bg-background absolute top-[6px] left-[6px]',
-                  !isExpanded && 'opacity-0 cursor-default -z-[1]',
+                  !isExpanded && 'opacity-0 -z-[1] pointer-events-none',
                   isExpanded && 'opacity-100',
                 )}
                 checked={selectedTasks.includes(task.id)}
@@ -238,10 +238,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                 ref={taskDragButtonRef}
                 variant={'ghost'}
                 size="xs"
-                className={cn(
-                  'max-sm:hidden text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none',
-                  isExpanded && '!opacity-0 -mt-[34px] pointer-events-none',
-                )}
+                className="max-sm:hidden text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none"
               >
                 <span className="sr-only"> {t('common:move_task')}</span>
                 <GripVertical size={16} />
@@ -260,13 +257,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               )}
               {!isEditing && (
                 // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-                <div
-                  ref={contentRef}
-                  // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
-                  tabIndex={0}
-                  onClick={handleMarkdownClick}
-                  className="inline ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
+                <div ref={contentRef} onClick={handleMarkdownClick} className="inline">
                   <MDEditor.Markdown
                     source={isExpanded ? task.markdown || '' : task.summary}
                     style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
@@ -322,7 +313,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   mode="edit"
                 />
 
-                <div className="flex gap-2 ml-auto mr-1">
+                <div className="flex gap-1 ml-auto mr-1">
                   <AssignMembers
                     mode="edit"
                     users={projectMembers}

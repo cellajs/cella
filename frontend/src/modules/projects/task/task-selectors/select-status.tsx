@@ -98,7 +98,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
           <Button
             variant="outlineGhost"
             size="xs"
-            className={cn('border-r-0 rounded-r-none [&:not(.absolute)]:active:translate-y-0', variants({ status: selectedStatus.value }))}
+            className={cn('border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0', variants({ status: selectedStatus.value }))}
             onClick={nextStatusClick}
             disabled={selectedStatus.value === 6}
           >

@@ -26,7 +26,7 @@ const buttonVariants = cva(
         glow: 'outline-glow-button bg-background !rounded-full relative active:bk-background',
         gradient:
           'before:bg-primary before:rounded-md after:rounded-md z-0 bg-transparent relative text-primary-foreground gradient-button hover:before:bg-primary/80',
-        input: 'border border-input bg-background [&:not(.absolute)]:active:translate-y-0 hover:transparent',
+        input: 'border border-input bg-background active:!translate-y-0 hover:transparent',
         none: 'bg-transparent border-none',
       },
       size: {
