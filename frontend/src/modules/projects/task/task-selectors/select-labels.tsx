@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
-import { nanoid } from '~/lib/utils.ts';
-import { Button } from '~/modules/ui/button';
+import { cn, nanoid } from '~/lib/utils.ts';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import { type Label, useElectric } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
@@ -156,17 +156,17 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
                       {name}
                     </Badge>
                     {mode === 'create' && (
-                      <Button
-                        className="opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:!ring-offset-0 active:!translate-y-0"
-                        size="micro"
-                        variant="ghost"
+                      // biome-ignore lint/a11y/useValidAnchor: <explanation>
+                      <a
+                        href="#"
+                        className={cn(buttonVariants({ size: 'micro', variant: 'ghost' }), 'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0')}
                         onClick={(e) => {
                           e.preventDefault();
                           handleSelectClick(name);
                         }}
                       >
                         <X size={16} strokeWidth={3} />
-                      </Button>
+                      </a>
                     )}
                   </div>
                 );
