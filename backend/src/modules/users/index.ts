@@ -143,10 +143,10 @@ const usersRoutes = app
       .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id));
 
     // TODO: Integrate querying projects-to-workspace relations into the workspace/project query
-    const projectsToWorkspaces = await db
+    const projectsToWorkspaces = workspacesWithMemberships?.length ? await db
       .select()
       .from(projectsToWorkspacesTable)
-      .where(inArray(projectsToWorkspacesTable.workspaceId, workspacesWithMemberships.map(({workspace}) => workspace.id)));
+      .where(inArray(projectsToWorkspacesTable.workspaceId, workspacesWithMemberships.map(({workspace}) => workspace.id))) : [];
 
     const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
       return {
