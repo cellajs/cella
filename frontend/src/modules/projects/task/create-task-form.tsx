@@ -122,6 +122,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
 
     console.log(project)
 
+    console.log(project)
+
     Electric.db.tasks
       .create({
         data: {
