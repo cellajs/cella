@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS "tasks" (
 	"summary" varchar NOT NULL,
 	"type" varchar NOT NULL,
 	"impact" integer,
-	"sort_order" integer,
+	"sort_order" double precision NOT NULL,
 	"status" integer NOT NULL,
 	"parent_id" varchar,
 	"labels" jsonb,

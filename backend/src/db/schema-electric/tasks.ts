@@ -1,4 +1,4 @@
-import { type AnyPgColumn, integer, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { type AnyPgColumn, integer, jsonb, pgTable, timestamp, varchar, doublePrecision } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 
 export const tasksTable = pgTable('tasks', {
@@ -11,7 +11,7 @@ export const tasksTable = pgTable('tasks', {
   }).notNull(),
   impact: integer('impact'),
   // order is a reserved keyword in Postgres, so we need to use a different name
-  order: integer('sort_order'),
+  order: doublePrecision('sort_order').notNull(),
   status: integer('status').notNull(),
   parentId: varchar('parent_id').references((): AnyPgColumn => tasksTable.id),
   labels: jsonb('labels').$type<string[]>(),

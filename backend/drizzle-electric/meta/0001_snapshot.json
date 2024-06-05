@@ -1,4 +1,6 @@
 {
+  "id": "77b140ef-acf0-4568-a9d6-05d52b8a2473",
+  "prevId": "1d04837d-8636-4e3f-9982-97f44826dd22",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -78,9 +80,9 @@
         },
         "sort_order": {
           "name": "sort_order",
-          "type": "integer",
+          "type": "double precision",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "status": {
           "name": "status",
@@ -172,10 +174,8 @@
   "enums": {},
   "schemas": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
-  },
-  "id": "81189ee9-9637-4c19-b24a-4962f71296f4",
-  "prevId": "f5037b49-e484-4a40-ab7b-538328a0a699"
+    "tables": {}
+  }
 }

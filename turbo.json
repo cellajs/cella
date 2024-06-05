@@ -25,6 +25,7 @@
     "generate:pg": {},
     "generate:electric": {},
     "studio": {},
+    "studio:electric": {},
     "seed:user": {},
     "seed:organizations": {},
     "seed:data": {},

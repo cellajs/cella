@@ -117,6 +117,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
+    const order = tasks.length > 0 ? tasks[0].sort_order / 1.1 : 0;
 
     Electric.db.tasks
       .create({
@@ -143,7 +144,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: tasks.filter((t) => t.project_id === project.id && t.status === values.status).length,
+          sort_order: order,
         },
       })
       .then(() => {
@@ -155,7 +156,11 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   // Fix types
   return (
     <Form {...form}>
-      <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 border-b flex gap-2 flex-col shadow-inner">
+      <form
+        id="create-task"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="p-3 border-b flex gap-2 flex-col shadow-inner"
+      >
         <FormField
           control={form.control}
           name="type"
@@ -272,7 +277,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               size={'xs'}
               type="submit"
               disabled={!form.formState.isDirty}
-              className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'} [&:not(.absolute)]:active:translate-y-0`}
+              className={`grow ${
+                form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'
+              } [&:not(.absolute)]:active:translate-y-0`}
             >
               <span>{t('common:create')}</span>
             </Button>

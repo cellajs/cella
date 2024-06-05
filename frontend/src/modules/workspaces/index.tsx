@@ -79,6 +79,9 @@ const WorkspacePage = () => {
           in: projects.map((project) => project.id),
         },
       },
+      orderBy: {
+        sort_order: 'asc',
+      }
     }),
   ) as {
     results: (Task & {
@@ -86,6 +89,8 @@ const WorkspacePage = () => {
       tasks: Task | null;
     })[];
   };
+
+  console.log('tasks', tasks);
 
   // TODO: TS complains about a prisma issue with the type of labels
   const { results: labels = [] as Label[] } = useLiveQuery(

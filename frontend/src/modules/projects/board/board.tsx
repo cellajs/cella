@@ -5,7 +5,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { arrayMove, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
-import type { Label, PreparedTask } from '../../common/electric/electrify';
+import { useElectric, type Label, type PreparedTask } from '../../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { WorkspaceContext } from '../../workspaces';
 import { BoardColumn, isProjectData } from './board-column';
@@ -21,7 +21,9 @@ const EMPTY_SPACE_WIDTH = 300;
 
 function getScrollerWidth(containerWidth: number, projectsLength: number) {
   if (containerWidth === 0) return '100%';
-  return containerWidth / projectsLength > PANEL_MIN_WIDTH ? '100%' : projectsLength * PANEL_MIN_WIDTH + EMPTY_SPACE_WIDTH;
+  return containerWidth / projectsLength > PANEL_MIN_WIDTH
+    ? '100%'
+    : projectsLength * PANEL_MIN_WIDTH + EMPTY_SPACE_WIDTH;
 }
 
 function BoardDesktop({
@@ -46,7 +48,8 @@ function BoardDesktop({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(() => containerRef.current?.clientWidth ?? 0);
   const scrollerWidth = getScrollerWidth(containerWidth, projects.length);
-  const panelMinSize = typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
+  const panelMinSize =
+    typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -67,7 +70,12 @@ function BoardDesktop({
   return (
     <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)] overflow-x-auto" ref={containerRef}>
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
-        <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspaceId}>
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="flex gap-2 group/board"
+          id="project-panels"
+          autoSaveId={workspaceId}
+        >
           {projects.map((project, index) => (
             <Fragment key={project.id}>
               <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
@@ -110,6 +118,8 @@ export default function Board() {
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
+  const electric = useElectric();
+
   const handleTaskClick = (taskId: string) => {
     setFocusedTaskId(taskId);
   };
@@ -121,8 +131,12 @@ export default function Board() {
     if (event.key === 'ArrowRight') nextIndex = currentIndex === mappedProjects.length - 1 ? 0 : currentIndex + 1;
     if (event.key === 'ArrowLeft') nextIndex = currentIndex <= 0 ? mappedProjects.length - 1 : currentIndex - 1;
     const indexedProject = mappedProjects[nextIndex];
-    const currentProjectSettings = workspaces[indexedProject.workspaceId]?.columns.find((el) => el.columnId === indexedProject.id);
-    const sortedProjectTasks = tasks.filter((t) => t.project_id === indexedProject.id).sort((a, b) => sortTaskOrder(a, b));
+    const currentProjectSettings = workspaces[indexedProject.workspaceId]?.columns.find(
+      (el) => el.columnId === indexedProject.id,
+    );
+    const sortedProjectTasks = tasks
+      .filter((t) => t.project_id === indexedProject.id)
+      .sort((a, b) => sortTaskOrder(a, b));
     const lengthWithoutAccepted = sortedProjectTasks.filter((t) => t.status !== 6).length;
 
     setFocusedProjectIndex(nextIndex);
@@ -166,7 +180,12 @@ export default function Board() {
           // Drag a column
           if (isProjectData(sourceData) && isProjectData(target.data)) {
             const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
-            const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'horizontal');
+            const destination = getReorderDestinationIndex(
+              sourceData.index,
+              closestEdgeOfTarget,
+              target.data.index,
+              'horizontal',
+            );
             const newItemOrder = arrayMove(submenuItemsOrder[workspace.id], sourceData.index, destination);
             setSubmenuItemsOrder(workspace.id, newItemOrder);
           }
@@ -179,13 +198,40 @@ export default function Board() {
             }
             // Drag a task in same column
             if (sourceData.item.project_id === target.data.item.project_id) {
-              console.log('ChangeIndex');
+              let newOrder = 0;
+              if (target.data.index > 0 && target.data.index < tasks.length - 1) {
+                console.log('1');
+                const itemBefore = tasks[target.data.index - 1];
+                const itemAfter = tasks[target.data.index];
+
+                newOrder = (itemBefore.sort_order + itemAfter.sort_order) / 2;
+              } else if (target.data.index === 0 && tasks.length > 0) {
+                console.log('2');
+                const itemAfter = tasks[target.data.index];
+                newOrder = itemAfter.sort_order / 1.1;
+              } else if (target.data.index === tasks.length - 1 && tasks.length > 0) {
+                console.log('3');
+                const itemBefore = tasks[target.data.index - 1];
+                newOrder = itemBefore.sort_order * 1.1;
+              }
+
+              console.log('NewOrder', newOrder, tasks);
+
+              // Update order of dragged task
+              electric?.db.tasks.update({
+                data: {
+                  sort_order: newOrder,
+                },
+                where: {
+                  id: sourceData.item.id,
+                },
+              });
             }
           }
         },
       }),
     );
-  }, [submenuItemsOrder[workspace.id]]);
+  }, [submenuItemsOrder[workspace.id], tasks]);
 
   if (!isDesktopLayout) {
     return (

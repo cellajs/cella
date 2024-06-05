@@ -11,6 +11,7 @@ import { workspacesTable, type InsertWorkspaceModel } from '../../src/db/schema/
 import { type InsertProjectModel, projectsTable } from '../../src/db/schema/projects';
 import { UniqueEnforcer } from 'enforce-unique';
 import type { Stage, Status } from './data';
+import { sql } from 'drizzle-orm';
 
 export const dataSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
@@ -133,6 +134,8 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
             projectId: project.id,
             summary: name,
             slug: faker.helpers.slugify(name).toLowerCase(),
+            // TODO: fix this
+            order: sql`nextval('tasks_sort_order_seq')` as unknown as number,
             // random integer between 0 and 6
             status: Math.floor(Math.random() * 7),
             type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
