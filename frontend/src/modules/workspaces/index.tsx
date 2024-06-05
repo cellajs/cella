@@ -40,7 +40,7 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
 
 export const workspaceProjectsQueryOptions = (workspace: string, organization: string) =>
   queryOptions({
-    queryKey: ['workspaces', workspace],
+    queryKey: ['projects', workspace],
     queryFn: () =>
       getProjects({
         workspace,
