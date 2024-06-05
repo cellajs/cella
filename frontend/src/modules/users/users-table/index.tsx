@@ -1,64 +1,66 @@
-import { useInfiniteQuery, infiniteQueryOptions } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
-import { getUsers, type GetUsersParams, updateUser } from '~/api/users';
-import type { User } from '~/types';
+import { type InfiniteData, useInfiniteQuery, type UseInfiniteQueryOptions } from '@tanstack/react-query';
+import { useParams, useSearch } from '@tanstack/react-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { type GetUsersParams, updateUser } from '~/api/users';
+import type { GetMembersParams } from '~/api/organizations';
 
-import type { getUsersQuerySchema } from 'backend/modules/users/schema';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { DataTable } from '~/modules/common/data-table';
-import { UsersTableRoute } from '~/routes/system';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { useUserStore } from '~/store/user';
+import { dialog } from '~/modules/common/dialoger/state';
+import InviteUsers from '~/modules/users/invite-users';
+import DeleteUsers from '../delete-users';
+import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
+import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
+import type { getUsersQuerySchema } from 'backend/modules/users/schema';
+import type { Member, User } from '~/types';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 
-export type UsersSearch = z.infer<typeof getUsersQuerySchema>;
+export const LIMIT = 40;
 
-export const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, role }: GetUsersParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
-
-  return infiniteQueryOptions({
-    queryKey: ['users', q, sort, order, role],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getUsers(
-        {
-          page: pageParam,
-          q,
-          sort,
-          order,
-          role,
-          limit: LIMIT,
-        },
-        signal,
-      );
-
-      return fetchedData;
-    },
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
-    refetchOnWindowFocus: false,
-  });
+type queryOptions<T> = {
+  items: T[];
+  total: number;
 };
 
-const LIMIT = 40;
+interface Props<T, U> {
+  queryOptions: (
+    values: U,
+  ) => UseInfiniteQueryOptions<queryOptions<T>, Error, InfiniteData<queryOptions<T>, unknown>, queryOptions<T>, (string | undefined)[], number>;
+  routeFrom: '/layout/$idOrSlug/members' | '/layout/system/users';
+  passedColumns?: ColumnOrColumnGroup<T>[];
+  selectRoleOptions: { key: string; value: string }[];
+}
 
-const UsersTable = () => {
+const UsersTable = <
+  T extends Member | User,
+  U extends GetUsersParams | (GetMembersParams & { idOrSlug: string }),
+  K extends z.infer<typeof getUsersByOrganizationQuerySchema> | z.infer<typeof getUsersQuerySchema>,
+>({
+  queryOptions,
+  routeFrom,
+  passedColumns,
+  selectRoleOptions,
+}: Props<T, U>) => {
   // Save filters in search params
-  const search = useSearch({ from: UsersTableRoute.id });
+  const search = useSearch({ from: routeFrom });
+  const props = useParams({ from: routeFrom });
+  const idOrSlug = 'idOrSlug' in props ? props.idOrSlug : undefined;
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
-
-  const [rows, setRows] = useState<User[]>([]);
+  const containerRef = useRef(null);
+  const [rows, setRows] = useState<T[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<UsersSearch['q']>(search.q);
-  const [role, setRole] = useState<UsersSearch['role']>(search.role);
+  const [query, setQuery] = useState<K['q']>(search.q);
+  const [role, setRole] = useState<K['role']>(search.role);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order
       ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
@@ -82,16 +84,71 @@ const UsersTable = () => {
 
   const callback = useMutateInfiniteQueryData(['users', debounceQuery, sortColumns, role]);
 
+  const openInviteDialog = () => {
+    dialog(<InviteUsers organizationIdOrSlug={idOrSlug} type={idOrSlug ? 'organization' : 'system'} mode={idOrSlug ? 'email' : null} dialog />, {
+      id: 'user-invite',
+      drawerOnMobile: false,
+      className: 'w-auto shadow-none relative z-[100] max-w-4xl',
+      container: containerRef.current,
+      title: t('common:invite'),
+      text: `${t('common:invite_users.text')}`,
+    });
+  };
+
+  const openDeleteDialog = () => {
+    dialog(
+      idOrSlug ? (
+        <RemoveMembersForm
+          organizationIdOrSlug={idOrSlug}
+          dialog
+          callback={(members) => {
+            callback(members, 'delete');
+            toast.success(t('common:success.delete_members'));
+          }}
+          members={rows.filter((row) => selectedRows.has(row.id)) as Member[]}
+        />
+      ) : (
+        <DeleteUsers
+          dialog
+          users={rows.filter((row) => selectedRows.has(row.id)) as User[]}
+          callback={(users) => {
+            callback(users, 'delete');
+            toast.success(t('success.delete_resources', { resources: t('common:users') }));
+          }}
+        />
+      ),
+      {
+        drawerOnMobile: false,
+        className: 'max-w-xl',
+        title: idOrSlug ? t('common:delete') : t('common:remove_member'),
+        text: idOrSlug ? (
+          t('common:confirm.delete_resource', { resource: t('common:users').toLowerCase() })
+        ) : (
+          <Trans
+            i18nKey="common:confirm.remove_members"
+            values={{
+              emails: rows
+                .filter((row) => selectedRows.has(row.id))
+                .map((member) => member.email)
+                .join(', '),
+            }}
+          />
+        ),
+      },
+    );
+  };
+
   const queryResult = useInfiniteQuery(
-    usersQueryOptions({
+    queryOptions({
+      ...(idOrSlug && { idOrSlug }),
       q: debounceQuery,
-      sort: sortColumns[0]?.columnKey as UsersSearch['sort'],
-      order: sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
+      sort: sortColumns[0]?.columnKey as K['sort'],
+      order: sortColumns[0]?.direction.toLowerCase() as K['order'],
       role,
       limit: LIMIT,
-    }),
+    } as U),
   );
-  const [columns, setColumns] = useColumns(callback);
+  const [columns, setColumns] = useColumns(callback, passedColumns);
 
   const isFiltered = role !== undefined || !!debounceQuery;
 
@@ -101,7 +158,7 @@ const UsersTable = () => {
     setRole(undefined);
   };
 
-  const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
+  const onRowsChange = (changedRows: T[], { indexes, column }: RowsChangeData<T>) => {
     // mutate member
     for (const index of indexes) {
       if (column.key === 'role') {
@@ -133,21 +190,24 @@ const UsersTable = () => {
 
   return (
     <div className="space-y-4 h-full">
-      <Toolbar
+      <Toolbar<T>
+        selectRoleOptions={selectRoleOptions}
         isFiltered={isFiltered}
         total={queryResult.data?.pages[0].total}
         query={query}
-        callback={callback}
         setQuery={setQuery}
         onResetFilters={onResetFilters}
         onResetSelectedRows={() => setSelectedRows(new Set<string>())}
         role={role}
-        selectedUsers={rows.filter((row) => selectedRows.has(row.id)) as User[]}
+        selectedUsers={rows.filter((row) => selectedRows.has(row.id)) as T[]}
         setRole={setRole}
         columns={columns}
         setColumns={setColumns}
+        inviteDialog={openInviteDialog}
+        removeDialog={openDeleteDialog}
       />
-      <DataTable<User>
+      <div ref={containerRef} />
+      <DataTable<T>
         {...{
           columns: columns.filter((column) => column.visible),
           rowHeight: 42,

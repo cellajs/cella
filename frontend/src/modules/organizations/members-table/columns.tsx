@@ -38,10 +38,15 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       name: t('common:role'),
       renderCell: ({ row }) => t(row.organizationRole.toLowerCase()),
-      renderEditCell: renderSelect('organizationRole', [
-        { label: t('common:member'), value: 'MEMBER' },
-        { label: t('common:admin'), value: 'ADMIN' },
-      ]),
+      renderEditCell: (props) =>
+        renderSelect({
+          props,
+          key: 'organizationRole',
+          options: [
+            { label: t('common:admin'), value: 'ADMIN' },
+            { label: t('common:member'), value: 'MEMBER' },
+          ],
+        }),
     },
   ];
 

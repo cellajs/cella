@@ -4,14 +4,13 @@ import { useTranslation } from 'react-i18next';
 import useFocusById from '~/hooks/use-focus-by-id';
 import { AppAlert } from '~/modules/common/app-alert';
 import { dialog } from '~/modules/common/dialoger/state';
-import type { Organization } from '~/types';
 import { DialogTitle } from '../ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
 
 interface InviteUsersProps {
-  organization?: Organization | null;
+  organizationIdOrSlug?: string;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
@@ -19,7 +18,7 @@ interface InviteUsersProps {
   children?: React.ReactNode;
 }
 
-const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
+const InviteUsers = ({ organizationIdOrSlug, type = 'system', callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
@@ -76,7 +75,7 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
         <AppAlert id="invite_search" variant="success" Icon={Info}>
           {t('common:explain.invite_search.text')}
         </AppAlert>
-        <InviteSearchForm organization={organization} type={type} callback={callback} dialog={isDialog} />
+        <InviteSearchForm organizationIdOrSlug={organizationIdOrSlug} type={type} callback={callback} dialog={isDialog} />
       </div>
     );
   }
@@ -86,7 +85,7 @@ const InviteUsers = ({ organization, type = 'system', callback, dialog: isDialog
       <AppAlert id="invite_email" variant="success" Icon={Info}>
         {t('common:explain.invite_email.text')}
       </AppAlert>
-      <InviteEmailForm organization={organization} type={type} callback={callback} dialog={isDialog}>
+      <InviteEmailForm organizationIdOrSlug={organizationIdOrSlug} type={type} callback={callback} dialog={isDialog}>
         {children}
       </InviteEmailForm>
     </div>

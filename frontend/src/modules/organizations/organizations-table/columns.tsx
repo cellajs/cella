@@ -59,10 +59,15 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => (row.userRole ? t(row.userRole.toLowerCase()) : '-'),
             width: 120,
-            renderEditCell: renderSelect('userRole', [
-              { label: t('common:admin'), value: 'ADMIN' },
-              { label: t('common:member'), value: 'MEMBER' },
-            ]),
+            renderEditCell: (props) =>
+              renderSelect({
+                props,
+                key: 'userRole',
+                options: [
+                  { label: t('common:admin'), value: 'ADMIN' },
+                  { label: t('common:member'), value: 'MEMBER' },
+                ],
+              }),
           },
           {
             key: 'subscription',

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { inviteMember, type InviteMemberProps } from '~/api/memberships';
 import { invite as inviteSystem, type InviteSystemProps } from '~/api/general';
-import type { Organization } from '~/types';
 
 import { config } from 'config';
 import { Send } from 'lucide-react';
@@ -22,7 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 
 interface Props {
-  organization?: Organization | null;
+  organizationIdOrSlug?: string;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
@@ -37,7 +36,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDialog, children }: Props) => {
+const InviteEmailForm = ({ organizationIdOrSlug, type = 'system', callback, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
@@ -74,7 +73,7 @@ const InviteEmailForm = ({ organization, type = 'system', callback, dialog: isDi
   const onSubmit = (values: FormValues) => {
     invite({
       ...values,
-      idOrSlug: organization?.id,
+      idOrSlug: organizationIdOrSlug,
     });
   };
 
