@@ -91,8 +91,6 @@ const WorkspacePage = () => {
     })[];
   };
 
-  console.log('tasks', tasks);
-
   // TODO: TS complains about a prisma issue with the type of labels
   const { results: labels = [] as Label[] } = useLiveQuery(
     Electric.db.labels.liveMany({

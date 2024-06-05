@@ -82,10 +82,10 @@ const projectsRoutes = app
         workspace,
       });
     }
-    
 
-    sendSSE(user.id, 'new_project_membership', {
+    sendSSE(user.id, 'create_entity', {
       ...createdProject,
+      workspaceId: workspace,
       type: 'PROJECT',
     });
 
