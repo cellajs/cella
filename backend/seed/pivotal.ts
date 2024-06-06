@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import papaparse from 'papaparse';
 import { db } from '../src/db/db.electric';
 import { tasksTable } from '../src/db/schema-electric/tasks';
+import { projectsTable } from '../src/db/schema/projects';
+import { eq } from 'drizzle-orm';
 
 const program = new Command()
   .option('--file <file>', 'Zip file to upload')
@@ -21,6 +23,13 @@ if (!zipFile) {
 
 if (!projectId) {
   console.error('Please provide a project id');
+  process.exit(1);
+}
+
+const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, projectId));
+
+if (!project) {
+  console.error('Project not found');
   process.exit(1);
 }
 
@@ -65,7 +74,8 @@ zip.loadAsync(data).then(async (zip) => {
           summary: task.Title || 'No title',
           type: (task.Type || 'chore') as 'feature' | 'bug' | 'chore',
           createdBy: 'pivotal',
-          projectId,
+          organizationId: project.organizationId,
+          projectId: project.id,
           status:
             task['Current State'] === 'accepted'
               ? 6
