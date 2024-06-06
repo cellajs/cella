@@ -4,6 +4,7 @@ import { TooltipButton } from './tooltip-button';
 import { Button } from '../ui/button';
 import { useThemeStore } from '~/store/theme';
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 
 interface Props {
   className?: string;
@@ -46,6 +47,7 @@ const WidgetButton = ({ item, onClick }: { item: DebugItem; onClick: (item: Debu
 
 export const DebugWidget = ({ className = '' }: Props) => {
   const [showDebug, setShowDebug] = useState(window.localStorage.debug === 'true');
+  const [debugToolOpen, setDebugToolOpen] = useState(false);
 
   const closeElectricDevToolsClick = () => {
     const toolbarContainer = document.getElementById('__electric_debug_toolbar_container');
@@ -56,6 +58,7 @@ export const DebugWidget = ({ className = '' }: Props) => {
         const button = toolbarElement.querySelector('button.rt-Button') as HTMLButtonElement | null;
         toolbarContainer.style.display = 'none';
         if (button) button.click();
+        setDebugToolOpen(false);
       }
     }
   };
@@ -65,6 +68,7 @@ export const DebugWidget = ({ className = '' }: Props) => {
     if (tanstackContainer) {
       const closeButton = tanstackContainer.querySelector('.go2224423957') as HTMLButtonElement | null;
       if (closeButton) closeButton.click();
+      setDebugToolOpen(false);
     }
   };
   const debugButtonClick = (item: DebugItem) => {
@@ -84,7 +88,10 @@ export const DebugWidget = ({ className = '' }: Props) => {
         header.style.display = 'none';
       }
       const button = toolbarElement.querySelector('button.rt-Button') as HTMLButtonElement | null;
-      if (button && button.textContent?.trim() === 'SHOW') button.click();
+      if (button && button.textContent?.trim() === 'SHOW') {
+        button.click();
+        setDebugToolOpen(true);
+      }
       if (button && button.textContent?.trim() === 'HIDE') closeElectricDevToolsClick();
       return;
     }
@@ -96,6 +103,7 @@ export const DebugWidget = ({ className = '' }: Props) => {
       const openButton = tanstackContainer.querySelector('.go2279492678') as HTMLButtonElement | null;
       if (openButton) {
         openButton.click();
+        setDebugToolOpen(true);
       } else {
         closeTanstackDevToolsClick();
       }
@@ -115,20 +123,38 @@ export const DebugWidget = ({ className = '' }: Props) => {
   return (
     <>
       {showDebug && (
-        <div className={`max-xs:bottom-[68px]  fixed right-[48px] bottom-[24px] z-[99999999] ${className}`}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" aria-label="Debug widget">
-                Debug widget
+        <>
+          {debugToolOpen ? (
+            <div className="max-xs:bottom-[12px]  fixed right-[8px] bottom-[24px] z-[99999999]">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  closeTanstackDevToolsClick();
+                  closeElectricDevToolsClick();
+                }}
+                aria-label="Close toolbar"
+              >
+                <X />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-48 z-[99999999]">
-              {debugOptions.map((item) => (
-                <WidgetButton key={item.id} item={item} onClick={debugButtonClick} />
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            </div>
+          ) : (
+            <div className={`max-xs:bottom-[68px] right-[12px]  fixed right-[48px] bottom-[24px] z-[99999999] ${className}`}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" aria-label="Debug widget">
+                    Debug widget
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48 z-[99999999]">
+                  {debugOptions.map((item) => (
+                    <WidgetButton key={item.id} item={item} onClick={debugButtonClick} />
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+        </>
       )}
     </>
   );
