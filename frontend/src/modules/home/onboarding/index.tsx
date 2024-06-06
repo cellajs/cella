@@ -75,7 +75,7 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
                         </CreateOrganizationForm>
                       )}
                       {id === 'invitation' && (
-                        <InviteUsers organization={organization} type="organization" mode="email">
+                        <InviteUsers organizationIdOrSlug={organization ? organization.id : null} type="organization" mode="email">
                           <StepperFooter organization={organization} setOnboarding={setOnboarding} />
                         </InviteUsers>
                       )}

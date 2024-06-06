@@ -10,7 +10,7 @@ import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
 
 interface InviteUsersProps {
-  organizationIdOrSlug?: string;
+  organizationIdOrSlug?: string | null;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;

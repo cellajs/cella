@@ -21,7 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 
 interface Props {
-  organizationIdOrSlug?: string;
+  organizationIdOrSlug?: string | null;
   type?: 'system' | 'organization';
   callback?: () => void;
   dialog?: boolean;
@@ -70,7 +70,7 @@ const InviteSearchForm = ({ organizationIdOrSlug, type = 'system', callback, dia
   const onSubmit = (values: FormValues) => {
     invite({
       ...values,
-      idOrSlug: organizationIdOrSlug,
+      ...(organizationIdOrSlug && { idOrSlug: organizationIdOrSlug }),
     });
   };
 

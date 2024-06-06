@@ -12,6 +12,7 @@ import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import RowEdit from './row-edit';
+import { Pencil } from 'lucide-react';
 
 function isMember(row: User | Member): row is Member {
   return row && 'organizationRole' in row && 'membershipId' in row;
@@ -45,7 +46,7 @@ export const useColumns = <T extends User | Member>(
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => (isMember(row) ? <>hi</> : <RowEdit user={row} tabIndex={tabIndex} callback={callback} />),
+      renderCell: ({ row, tabIndex }) => (isMember(row) ? <Pencil size={16} /> : <RowEdit user={row} tabIndex={tabIndex} callback={callback} />),
     },
   ];
   const otherColumns: ColumnOrColumnGroup<T>[] = [
