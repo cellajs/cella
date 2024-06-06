@@ -10,7 +10,7 @@ export const getMe = async () => {
 
 // Get the current user menu
 export const getUserMenu = async () => {
-  const response = await client.menu.$get();
+  const response = await client.me.menu.$get();
 
   const json = await handleResponse(response);
   return json.data;

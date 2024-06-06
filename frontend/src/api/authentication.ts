@@ -1,9 +1,9 @@
 import { authClient as client, handleResponse } from '.';
 
 // Oath endpoints
-export const githubSignInUrl = client['sign-in'].github.$url().href;
-export const googleSignInUrl = client['sign-in'].google.$url().href;
-export const microsoftSignInUrl = client['sign-in'].microsoft.$url().href;
+export const githubSignInUrl = client.auth.github.$url().href;
+export const googleSignInUrl = client.auth.google.$url().href;
+export const microsoftSignInUrl = client.auth.microsoft.$url().href;
 
 // Sign up a user with the provided email and password
 export const signUp = async ({ email, password, token }: { email: string; password: string; token?: string }) => {

@@ -11,14 +11,14 @@ import { workspacesTable } from '../../db/schema/workspaces';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono, type PageResourceType } from '../../types/common';
+import { CustomHono, type EntityType } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
 import {
   deleteUsersRouteConfig,
-  getUserByIdOrSlugRouteConfig,
   getUserMenuConfig,
+  getUserRouteConfig,
   getUsersConfig,
   meRouteConfig,
   terminateSessionsConfig,
@@ -26,8 +26,8 @@ import {
   updateUserConfig,
 } from './routes';
 
-import { generateElectricJWTToken } from '../../lib/utils';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
+import { generateElectricJWTToken } from '../../lib/utils';
 
 const app = new CustomHono();
 
@@ -73,40 +73,6 @@ const usersRoutes = app
     );
   })
   /*
-   * Terminate a session
-   */
-  .openapi(terminateSessionsConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
-
-    const sessionIds = Array.isArray(ids) ? ids : [ids];
-
-    const cookieHeader = ctx.req.raw.headers.get('Cookie');
-    const currentSessionId = auth.readSessionCookie(cookieHeader ?? '');
-
-    const errors: ErrorType[] = [];
-
-    await Promise.all(
-      sessionIds.map(async (id) => {
-        try {
-          if (id === currentSessionId) {
-            removeSessionCookie(ctx);
-          }
-          await auth.invalidateSession(id);
-        } catch (error) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
-        }
-      }),
-    );
-
-    return ctx.json(
-      {
-        success: true,
-        errors: errors,
-      },
-      200,
-    );
-  })
-  /*
    * Get user menu
    */
   .openapi(getUserMenuConfig, async (ctx) => {
@@ -143,10 +109,17 @@ const usersRoutes = app
       .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id));
 
     // TODO: Integrate querying projects-to-workspace relations into the workspace/project query
-    const projectsToWorkspaces = workspacesWithMemberships?.length ? await db
-      .select()
-      .from(projectsToWorkspacesTable)
-      .where(inArray(projectsToWorkspacesTable.workspaceId, workspacesWithMemberships.map(({workspace}) => workspace.id))) : [];
+    const projectsToWorkspaces = workspacesWithMemberships?.length
+      ? await db
+          .select()
+          .from(projectsToWorkspacesTable)
+          .where(
+            inArray(
+              projectsToWorkspacesTable.workspaceId,
+              workspacesWithMemberships.map(({ workspace }) => workspace.id),
+            ),
+          )
+      : [];
 
     const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
       return {
@@ -181,7 +154,7 @@ const usersRoutes = app
 
     const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
       // TODO: Enhance project filtering by integrating the query of workspace-project relations
-      const projectsids = projectsToWorkspaces.filter(p => p.workspaceId === workspace.id).map(({ projectId }) => projectId)
+      const projectsids = projectsToWorkspaces.filter((p) => p.workspaceId === workspace.id).map(({ projectId }) => projectId);
 
       return {
         slug: workspace.slug,
@@ -195,7 +168,7 @@ const usersRoutes = app
         muted: membership.muted || false,
         membershipId: membership.id,
         role: membership?.role || null,
-        submenu: { items: projects.filter(({id}) => projectsids.includes(id)), type: 'PROJECT' as PageResourceType, canCreate: false },
+        submenu: { items: projects.filter(({ id }) => projectsids.includes(id)), type: 'PROJECT' as EntityType, canCreate: false },
       };
     });
 
@@ -203,9 +176,43 @@ const usersRoutes = app
       {
         success: true,
         data: {
-          organizations: { items: organizations, type: 'ORGANIZATION' as PageResourceType, canCreate: true },
-          workspaces: { items: workspaces, type: 'WORKSPACE' as PageResourceType, canCreate: true },
+          organizations: { items: organizations, type: 'ORGANIZATION' as EntityType, canCreate: true },
+          workspaces: { items: workspaces, type: 'WORKSPACE' as EntityType, canCreate: true },
         },
+      },
+      200,
+    );
+  })
+  /*
+   * Terminate a session
+   */
+  .openapi(terminateSessionsConfig, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
+
+    const sessionIds = Array.isArray(ids) ? ids : [ids];
+
+    const cookieHeader = ctx.req.raw.headers.get('Cookie');
+    const currentSessionId = auth.readSessionCookie(cookieHeader ?? '');
+
+    const errors: ErrorType[] = [];
+
+    await Promise.all(
+      sessionIds.map(async (id) => {
+        try {
+          if (id === currentSessionId) {
+            removeSessionCookie(ctx);
+          }
+          await auth.invalidateSession(id);
+        } catch (error) {
+          errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
+        }
+      }),
+    );
+
+    return ctx.json(
+      {
+        success: true,
+        errors: errors,
       },
       200,
     );
@@ -424,7 +431,7 @@ const usersRoutes = app
   /*
    * Get a user by id or slug
    */
-  .openapi(getUserByIdOrSlugRouteConfig, async (ctx) => {
+  .openapi(getUserRouteConfig, async (ctx) => {
     const idOrSlug = ctx.req.param('user').toLowerCase();
     const user = ctx.get('user');
 

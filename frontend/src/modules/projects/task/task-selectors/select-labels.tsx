@@ -161,7 +161,10 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, l
                       // biome-ignore lint/a11y/useValidAnchor: <explanation>
                       <a
                         href="#"
-                        className={cn(buttonVariants({ size: 'micro', variant: 'ghost' }), 'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0')}
+                        className={cn(
+                          buttonVariants({ size: 'micro', variant: 'ghost' }),
+                          'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0',
+                        )}
                         onClick={(e) => {
                           e.preventDefault();
                           handleSelectClick(name);

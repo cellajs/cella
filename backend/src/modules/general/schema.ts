@@ -1,12 +1,26 @@
 import { z } from 'zod';
 
+import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '../../db/schema/requests';
 import { tokensTable } from '../../db/schema/tokens';
-import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, passwordSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
+import {
+  entityTypeSchema,
+  idSchema,
+  imageUrlSchema,
+  nameSchema,
+  paginationQuerySchema,
+  passwordSchema,
+  slugSchema,
+  validSlugSchema,
+} from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
-import { config } from 'config';
+
+export const apiPublicCountsSchema = z.object({
+  organizations: z.number(),
+  users: z.number(),
+});
 
 export const tokensSchema = createSelectSchema(tokensTable);
 
@@ -31,11 +45,6 @@ export const acceptInviteJsonSchema = z.object({
   oauth: z.enum(config.oauthProviderOptions).optional(),
 });
 
-export const apiPublicCountsSchema = z.object({
-  organizations: z.number(),
-  users: z.number(),
-});
-
 const suggestionSchema = z.object({
   slug: slugSchema,
   id: idSchema,
@@ -53,32 +62,20 @@ export const suggestionsSchema = z.object({
 
 export const actionReqTableSchema = createSelectSchema(requestsTable);
 
-export const actionRequestSchema = z.object({
-  userId: idSchema.nullable(),
-  organizationId: idSchema.nullable(),
+export const createRequestSchema = z.object({
   email: z.string().min(1).email(),
   type: actionReqTableSchema.shape.type,
   message: z.string().nullable(),
 });
 
 export const actionResponseSchema = z.object({
-  userId: idSchema.nullable(),
-  organizationId: idSchema.nullable(),
   email: z.string().min(1).email(),
   type: actionReqTableSchema.shape.type,
 });
 
-export const getRequestsSchema = z.object({
-  requestsInfo: z.array(
-    z.object({
-      id: idSchema,
-      email: z.string(),
-      createdAt: z.string(),
-      type: actionReqTableSchema.shape.type,
-      message: z.string().nullable(),
-    }),
-  ),
-  total: z.number(),
+export const apiRequestSchema = z.object({
+  ...createSelectSchema(requestsTable).shape,
+  createdAt: z.string(),
 });
 
 export const getRequestsQuerySchema = paginationQuerySchema.merge(
@@ -86,3 +83,13 @@ export const getRequestsQuerySchema = paginationQuerySchema.merge(
     sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
   }),
 );
+
+export const getMembersParamSchema = z.object({
+  idOrSlug: idSchema.or(slugSchema),
+  entityType: entityTypeSchema,
+});
+
+export const getMembersQuerySchema = paginationQuerySchema.extend({
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
+  role: z.enum(config.allRoles).default('MEMBER').optional(),
+});

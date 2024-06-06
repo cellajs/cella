@@ -1,18 +1,18 @@
 import { Link } from '@tanstack/react-router';
+import type { EntityType } from 'backend/types/common';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { cn, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { type UserMenu, UserRole } from '~/types';
-import type { MenuItem } from './sheet-menu-section';
 import { Button } from '~/modules/ui/button';
-import { Plus } from 'lucide-react';
 import { useNavigationStore } from '~/store/navigation';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
-import type { PageResourceType } from 'backend/types/common';
+import type { UserMenu } from '~/types';
+import type { MenuItem } from './sheet-menu-section';
 
 interface SheetMenuItemProps {
   item: MenuItem;
-  type: PageResourceType;
+  type: EntityType;
   submenu?: boolean;
   className?: string;
   searchResults?: boolean;
@@ -56,7 +56,7 @@ export const SheetMenuItem = ({ item, type, className, submenu, searchResults }:
         <div className={`max-sm:hidden text-muted-foreground ${submenu ? 'text-xs' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
-            {item.submenu ? `${item.submenu?.items.length || 0} ${t('common:projects').toLowerCase()}` : item.role ? UserRole[item.role] : ''}
+            {item.submenu ? `${item.submenu?.items.length || 0} ${t('common:projects').toLowerCase()}` : item.role}
           </span>
         </div>
       </div>

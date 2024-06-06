@@ -23,7 +23,7 @@ export const organizationsTable = pgTable(
     languages: json('languages').$type<string[]>().notNull().default([config.defaultLanguage]),
     notificationEmail: varchar('notification_email'),
     emailDomains: json('email_domains').$type<string[]>(),
-    brandColor: varchar('brand_color'),
+    color: varchar('color'),
     thumbnailUrl: varchar('thumbnail_url'),
     logoUrl: varchar('logo_url'),
     bannerUrl: varchar('banner_url'),

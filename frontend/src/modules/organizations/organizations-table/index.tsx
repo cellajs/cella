@@ -9,6 +9,7 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
+import { inviteMember } from '~/api/memberships';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -19,28 +20,28 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { inviteMember } from '~/api/memberships';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
 const LIMIT = 40;
 
 const OrganizationsTable = () => {
-  const search = useSearch({
-    from: OrganizationsTableRoute.id,
-  });
+  const search = useSearch({ from: OrganizationsTableRoute.id });
   const { t } = useTranslation();
+
   const user = useUserStore((state) => state.user);
+
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
+  const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order
       ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
       : [{ columnKey: 'createdAt', direction: 'DESC' }],
   );
-  const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
 
   const debounceQuery = useDebounce(query, 300);
+
   // Save filters in search params
   const filters = useMemo(
     () => ({

@@ -1,4 +1,4 @@
-import type { PageResourceType } from 'backend/types/common';
+import type { EntityType } from 'backend/types/common';
 import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -34,7 +34,7 @@ interface NavigationState {
 const initialMenuState: UserMenu = menuSections
   .filter((el) => !el.isSubmenu)
   .reduce<UserMenu>((acc, section) => {
-    acc[section.storageType as keyof UserMenu] = { items: [], canCreate: false, type: null as unknown as PageResourceType };
+    acc[section.storageType as keyof UserMenu] = { items: [], canCreate: false, type: null as unknown as EntityType };
     return acc;
   }, {} as UserMenu);
 

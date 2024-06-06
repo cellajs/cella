@@ -3,13 +3,13 @@ import { faker } from '@faker-js/faker';
 import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
 
-import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
-import { organizationsTable } from '../../src/db/schema/organizations';
+import { UniqueEnforcer } from 'enforce-unique';
 import { type InsertLabelModel, labelsTable } from '../../src/db/schema-electric/labels';
 import { type InsertTaskModel, tasksTable } from '../../src/db/schema-electric/tasks';
-import { workspacesTable, type InsertWorkspaceModel } from '../../src/db/schema/workspaces';
+import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
+import { organizationsTable } from '../../src/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '../../src/db/schema/projects';
-import { UniqueEnforcer } from 'enforce-unique';
+import { type InsertWorkspaceModel, workspacesTable } from '../../src/db/schema/workspaces';
 import type { Stage, Status } from './data';
 
 export const dataSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {

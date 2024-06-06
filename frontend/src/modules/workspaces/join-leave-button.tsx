@@ -3,7 +3,7 @@ import { Check, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { removeMembersFromResource, inviteMember as baseInvite } from '~/api/memberships';
+import { inviteMember as baseInvite, removeMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Workspace } from '~/types';
@@ -32,7 +32,7 @@ const WorkspaceJoinLeaveButton = ({ workspace }: Props) => {
   });
 
   const { mutate: leave } = useMutation({
-    mutationFn: removeMembersFromResource,
+    mutationFn: removeMembers,
     onSuccess: () => {
       workspaceQuery.refetch();
       toast.success(t('common:success.you_left_workspace'));

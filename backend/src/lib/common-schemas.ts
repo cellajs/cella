@@ -5,7 +5,7 @@ export const passwordSchema = z.string().min(8).max(100);
 
 export const cookieSchema = z.string();
 
-export const resourceTypeSchema = z.enum(config.entityTypes);
+export const entityTypeSchema = z.enum(config.entityTypes);
 
 export const idSchema = z.string();
 
@@ -16,7 +16,7 @@ export const errorSchema = z.object({
   type: z.string(),
   status: z.number(),
   severity: z.string(),
-  resourceType: resourceTypeSchema.optional(),
+  entityType: entityTypeSchema.optional(),
   logId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),

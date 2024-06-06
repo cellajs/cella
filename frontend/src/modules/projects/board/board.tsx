@@ -1,18 +1,18 @@
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { arrayMove, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
+import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
-import { useElectric, type Label, type PreparedTask } from '../../common/electric/electrify';
+import { type Label, type PreparedTask, useElectric } from '../../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { WorkspaceContext } from '../../workspaces';
-import { BoardColumn, isProjectData } from './board-column';
-import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { isTaskData } from '../task/draggable-task-card';
-import { useNavigationStore } from '~/store/navigation';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { BoardColumn, isProjectData } from './board-column';
 import { ProjectContext } from './project-context';
 
 const PANEL_MIN_WIDTH = 300;
@@ -21,9 +21,7 @@ const EMPTY_SPACE_WIDTH = 300;
 
 function getScrollerWidth(containerWidth: number, projectsLength: number) {
   if (containerWidth === 0) return '100%';
-  return containerWidth / projectsLength > PANEL_MIN_WIDTH
-    ? '100%'
-    : projectsLength * PANEL_MIN_WIDTH + EMPTY_SPACE_WIDTH;
+  return containerWidth / projectsLength > PANEL_MIN_WIDTH ? '100%' : projectsLength * PANEL_MIN_WIDTH + EMPTY_SPACE_WIDTH;
 }
 
 function BoardDesktop({
@@ -48,8 +46,7 @@ function BoardDesktop({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(() => containerRef.current?.clientWidth ?? 0);
   const scrollerWidth = getScrollerWidth(containerWidth, projects.length);
-  const panelMinSize =
-    typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
+  const panelMinSize = typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -70,12 +67,7 @@ function BoardDesktop({
   return (
     <div className="h-[calc(100vh-64px-64px)] transition md:h-[calc(100vh-88px)] overflow-x-auto" ref={containerRef}>
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="flex gap-2 group/board"
-          id="project-panels"
-          autoSaveId={workspaceId}
-        >
+        <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspaceId}>
           {projects.map((project, index) => (
             <Fragment key={project.id}>
               <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
@@ -177,12 +169,7 @@ export default function Board() {
           // Drag a column
           if (isProjectData(sourceData) && isProjectData(target.data)) {
             const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
-            const destination = getReorderDestinationIndex(
-              sourceData.index,
-              closestEdgeOfTarget,
-              target.data.index,
-              'horizontal',
-            );
+            const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'horizontal');
             const newItemOrder = arrayMove(submenuItemsOrder[workspace.id], sourceData.index, destination);
             setSubmenuItemsOrder(workspace.id, newItemOrder);
           }

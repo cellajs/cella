@@ -8,7 +8,7 @@ import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
-import type { User, Member } from '~/types';
+import type { ContextEntity, Member, Role, User } from '~/types';
 import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import TableCount from '../../common/data-table/table-count';
 
@@ -21,8 +21,9 @@ interface Props<T> {
   query?: string;
   setQuery: (value?: string) => void;
   isFiltered?: boolean;
-  role: 'admin' | 'member' | 'user' | undefined;
-  setRole: React.Dispatch<React.SetStateAction<'admin' | 'member' | 'user' | undefined>>;
+  role?: Role;
+  entityType?: ContextEntity;
+  setRole: React.Dispatch<React.SetStateAction<Role | undefined>>;
   selectedUsers: T[];
   onResetFilters: () => void;
   onResetSelectedRows?: () => void;
@@ -31,15 +32,13 @@ interface Props<T> {
   fetchForExport?: (limit: number) => Promise<T[]>;
   inviteDialog: () => void;
   removeDialog: () => void;
-  selectRoleOptions: { key: string; value: string }[];
   // refetch?: () => void;
   // sort: MembersSearch['sort'];
   // order: MembersSearch['order'];
 }
 
-const defaultSelectRoleOptions = [{ key: 'all', value: 'All' }];
-
 function Toolbar<T extends User | Member>({
+  entityType,
   selectedUsers,
   isFiltered,
   total,
@@ -54,13 +53,12 @@ function Toolbar<T extends User | Member>({
   inviteDialog,
   removeDialog,
   fetchForExport,
-  selectRoleOptions,
 }: Props<T>) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
 
   const onRoleChange = (role?: string) => {
-    setRole(role === 'all' ? undefined : (role as 'admin' | 'member' | 'user'));
+    setRole(role === 'all' ? undefined : (role as Role | undefined));
   };
 
   return (
@@ -118,12 +116,7 @@ function Toolbar<T extends User | Member>({
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
             <TableSearch value={query} setQuery={setQuery} />
-            <SelectRole
-              roles={[...selectRoleOptions, ...defaultSelectRoleOptions]}
-              value={role === undefined ? 'all' : role}
-              onChange={onRoleChange}
-              className="h-10 sm:min-w-32"
-            />
+            <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>
 

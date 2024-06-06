@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { relations } from 'drizzle-orm';
 import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
@@ -5,9 +6,8 @@ import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
 import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
-import { config } from 'config';
 
-const roleEnum = ['MEMBER', 'ADMIN'] as const;
+const roleEnum = config.entityRoles;
 
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),

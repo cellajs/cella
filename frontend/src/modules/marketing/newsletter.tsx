@@ -4,7 +4,7 @@ import { useRef } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { requestAction as baseRequestAction } from '~/api/general';
+import { createRequest as baseCreateRequest } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 
@@ -12,8 +12,8 @@ const NewsletterForm = () => {
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const { mutate: requestAction, isPending } = useMutation({
-    mutationFn: baseRequestAction,
+  const { mutate: createRequest, isPending } = useMutation({
+    mutationFn: baseCreateRequest,
     onSuccess: () => {
       toast.success(t('common:success.newsletter_sign_up', { appName: config.name }));
       formRef.current?.reset();
@@ -28,7 +28,7 @@ const NewsletterForm = () => {
     let email = formRef.current?.email.value;
     if (!email) return;
     email = email.trim().toLowerCase();
-    requestAction({ email, type: 'NEWSLETTER_REQUEST' });
+    createRequest({ email, type: 'NEWSLETTER_REQUEST' });
   };
 
   return (

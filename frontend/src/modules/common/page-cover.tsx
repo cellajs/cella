@@ -1,4 +1,4 @@
-import type { PageResourceType } from 'backend/types/common';
+import type { EntityType } from 'backend/types/common';
 import { Upload } from 'lucide-react';
 import { Suspense, lazy, memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,7 @@ const UploadUppy = lazy(() => import('~/modules/common/upload/upload-uppy'));
 
 export interface PageCoverProps {
   id: string;
-  type: PageResourceType;
+  type: EntityType;
   url?: string | null;
 }
 

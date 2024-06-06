@@ -1,12 +1,12 @@
+import { Bird } from 'lucide-react';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
+import { useTranslation } from 'react-i18next';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
 import { WorkspaceContext } from '../../workspaces';
 import { type TaskRow, useColumns } from './columns';
-import { Bird } from 'lucide-react';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { useTranslation } from 'react-i18next';
 
 export default function TasksTable() {
   const { t } = useTranslation();

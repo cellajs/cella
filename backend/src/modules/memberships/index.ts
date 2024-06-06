@@ -2,25 +2,25 @@ import { and, eq, inArray, or } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 
+import { render } from '@react-email/render';
+import { config } from 'config';
+import { emailSender } from 'email';
+import { type User, generateId } from 'lucia';
+import { TimeSpan, createDate } from 'oslo';
+import { InviteEmail } from '../../../../email/emails/invite';
+import type { OrganizationModel } from '../../db/schema/organizations';
+import { type TokenModel, tokensTable } from '../../db/schema/tokens';
+import { usersTable } from '../../db/schema/users';
+import { resolveEntity } from '../../lib/entity';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
+import { i18n } from '../../lib/i18n';
+import permissionManager from '../../lib/permission-manager';
 import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { deleteMembershipsRouteConfig, inviteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
-import permissionManager from '../../lib/permission-manager';
-import type { OrganizationModel } from '../../db/schema/organizations';
 import { checkRole } from '../general/helpers/check-role';
+import { deleteMembershipsRouteConfig, inviteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
 import { apiMembershipSchema } from './schema';
-import { usersTable } from '../../db/schema/users';
-import { generateId, type User } from 'lucia';
-import { type TokenModel, tokensTable } from '../../db/schema/tokens';
-import { createDate, TimeSpan } from 'oslo';
-import { config } from 'config';
-import { i18n } from '../../lib/i18n';
-import { render } from '@react-email/render';
-import { InviteEmail } from '../../../../email/emails/invite';
-import { emailSender } from 'email';
-import { resolveEntity } from '../../lib/entity';
 
 const app = new CustomHono();
 
@@ -200,16 +200,10 @@ const membershipRoutes = app
         });
     }
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
-   * Delete users from entity
+   * Delete memberships to remove users from entity
    */
   .openapi(deleteMembershipsRouteConfig, async (ctx) => {
     const { idOrSlug, entityType, ids } = ctx.req.valid('query');
@@ -306,13 +300,7 @@ const membershipRoutes = app
       logEvent('Member deleted', { membership: membership.id });
     }
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   });
 
 export default membershipRoutes;

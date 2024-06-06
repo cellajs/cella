@@ -1,28 +1,28 @@
-import { type InfiniteData, useInfiniteQuery, type UseInfiniteQueryOptions } from '@tanstack/react-query';
+import { type InfiniteData, type UseInfiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { GetMembersParams } from '~/api/general';
 import { type GetUsersParams, updateUser } from '~/api/users';
-import type { GetMembersParams } from '~/api/organizations';
 
+import type { getMembersQuerySchema } from 'backend/modules/general/schema';
+import type { getUsersQuerySchema } from 'backend/modules/users/schema';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
+import { updateMembership } from '~/api/memberships';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { DataTable } from '~/modules/common/data-table';
-import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
-import { useColumns } from './columns';
-import Toolbar from './toolbar';
-import { useUserStore } from '~/store/user';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { dialog } from '~/modules/common/dialoger/state';
 import InviteUsers from '~/modules/users/invite-users';
+import RemoveMembersForm from '~/modules/users/users-table/remove-member-form';
+import type { ContextEntity, Member, User } from '~/types';
+import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import DeleteUsers from '../delete-users';
-import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
-import type { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
-import type { getUsersQuerySchema } from 'backend/modules/users/schema';
-import type { Member, User } from '~/types';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import { useColumns } from './columns';
+import Toolbar from './toolbar';
 
 export const LIMIT = 40;
 
@@ -30,33 +30,34 @@ type queryOptions<T> = {
   items: T[];
   total: number;
 };
-
+// Users table renders members when entityType is provided, defaults to users in the system
 interface Props<T, U> {
+  entityType?: ContextEntity;
   queryOptions: (
     values: U,
   ) => UseInfiniteQueryOptions<queryOptions<T>, Error, InfiniteData<queryOptions<T>, unknown>, queryOptions<T>, (string | undefined)[], number>;
   routeFrom: '/layout/$idOrSlug/members' | '/layout/system/users';
-  passedColumns?: ColumnOrColumnGroup<T>[];
-  selectRoleOptions: { key: string; value: string }[];
+  customColumns?: ColumnOrColumnGroup<T>[];
 }
 
 const UsersTable = <
   T extends Member | User,
   U extends GetUsersParams | (GetMembersParams & { idOrSlug: string }),
-  K extends z.infer<typeof getUsersByOrganizationQuerySchema> | z.infer<typeof getUsersQuerySchema>,
+  K extends z.infer<typeof getMembersQuerySchema> | z.infer<typeof getUsersQuerySchema>,
 >({
+  entityType,
   queryOptions,
   routeFrom,
-  passedColumns,
-  selectRoleOptions,
+  customColumns,
 }: Props<T, U>) => {
   // Save filters in search params
   const search = useSearch({ from: routeFrom });
   const props = useParams({ from: routeFrom });
-  const idOrSlug = 'idOrSlug' in props ? props.idOrSlug : undefined;
   const { t } = useTranslation();
-  const { user: currentUser } = useUserStore();
+
+  const idOrSlug = 'idOrSlug' in props ? props.idOrSlug : undefined;
   const containerRef = useRef(null);
+
   const [rows, setRows] = useState<T[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<K['q']>(search.q);
@@ -85,7 +86,7 @@ const UsersTable = <
   const callback = useMutateInfiniteQueryData(['users', debounceQuery, sortColumns, role]);
 
   const openInviteDialog = () => {
-    dialog(<InviteUsers organizationIdOrSlug={idOrSlug} type={idOrSlug ? 'organization' : 'system'} mode={idOrSlug ? 'email' : null} dialog />, {
+    dialog(<InviteUsers entityId={idOrSlug} entityType={entityType} mode={idOrSlug ? 'email' : null} dialog />, {
       id: 'user-invite',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[100] max-w-4xl',
@@ -99,7 +100,8 @@ const UsersTable = <
     dialog(
       idOrSlug ? (
         <RemoveMembersForm
-          organizationIdOrSlug={idOrSlug}
+          entityId={idOrSlug}
+          entityType={entityType}
           dialog
           callback={(members) => {
             callback(members, 'delete');
@@ -148,7 +150,7 @@ const UsersTable = <
       limit: LIMIT,
     } as U),
   );
-  const [columns, setColumns] = useColumns(callback, passedColumns);
+  const [columns, setColumns] = useColumns(callback, customColumns);
 
   const isFiltered = role !== undefined || !!debounceQuery;
 
@@ -163,8 +165,9 @@ const UsersTable = <
     for (const index of indexes) {
       if (column.key === 'role') {
         const user = changedRows[index];
-        const isSelf = currentUser.id === user.id;
-        if (isSelf) return toast.error(t('common:error.self_system_role'));
+
+        if (entityType) return updateMembership({ membershipId: user.membershipId, role: user.role });
+
         updateUser(user.id, { role: user.role })
           .then(() => {
             callback([user], 'update');
@@ -191,7 +194,7 @@ const UsersTable = <
   return (
     <div className="space-y-4 h-full">
       <Toolbar<T>
-        selectRoleOptions={selectRoleOptions}
+        entityType={entityType}
         isFiltered={isFiltered}
         total={queryResult.data?.pages[0].total}
         query={query}

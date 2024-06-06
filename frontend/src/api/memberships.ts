@@ -1,9 +1,9 @@
-import type { Member } from '~/types';
+import type { ContextEntity, Member } from '~/types';
 import { membershipClient as client, handleResponse } from '.';
 
 export interface InviteMemberProps {
   emails: string[];
-  role?: Member['organizationRole'];
+  role?: Member['role'];
   idOrSlug: string;
 }
 
@@ -17,11 +17,7 @@ export const inviteMember = async ({ idOrSlug, ...rest }: InviteMemberProps) => 
   await handleResponse(response);
 };
 
-export const removeMembersFromResource = async ({
-  idOrSlug,
-  entityType,
-  ids,
-}: { idOrSlug: string; ids: string[]; entityType: 'ORGANIZATION' | 'WORKSPACE' | 'PROJECT' }) => {
+export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: string; ids: string[]; entityType: ContextEntity }) => {
   const response = await client.memberships.$delete({
     query: { idOrSlug, entityType, ids },
   });
@@ -29,7 +25,7 @@ export const removeMembersFromResource = async ({
   const json = await handleResponse(response);
   return json.data;
 };
-export type UpdateMenuOptionsProp = { membershipId: string; role?: Member['organizationRole']; archive?: boolean; muted?: boolean };
+export type UpdateMenuOptionsProp = { membershipId: string; role?: Member['role']; archive?: boolean; muted?: boolean };
 
 export const updateMembership = async (values: UpdateMenuOptionsProp) => {
   const { membershipId, role, archive, muted } = values;

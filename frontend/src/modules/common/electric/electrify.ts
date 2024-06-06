@@ -1,6 +1,6 @@
 import { makeElectricContext } from 'electric-sql/react';
 import type { Electric } from '~/generated/client';
-import type { Labels as Label, Tasks as BaseTask } from '~/generated/client';
+import type { Tasks as BaseTask, Labels as Label } from '~/generated/client';
 
 export { schema } from '~/generated/client';
 export type { Electric, Label };

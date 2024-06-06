@@ -1,12 +1,12 @@
 import { workspaceClient as client, handleResponse } from '.';
 
-export type CreateWorkspaceParams = Parameters<(typeof client.organizations)[':organization']['workspaces']['$post']>['0']['json'] & {
+export type CreateWorkspaceParams = Parameters<(typeof client.workspaces)['$post']>['0']['json'] & {
   organization: string;
 };
 
 // Create a new workspace
 export const createWorkspace = async ({ organization, ...rest }: CreateWorkspaceParams) => {
-  const response = await client.organizations[':organization'].workspaces.$post({
+  const response = await client.workspaces.$post({
     param: { organization },
     json: rest,
   });

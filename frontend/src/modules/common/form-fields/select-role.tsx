@@ -1,16 +1,21 @@
+import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import type { ContextEntity } from '~/types';
 
 interface SelectRoleProps {
-  roles: readonly { key: string; value: string }[];
+  entityType?: ContextEntity;
   onChange: (value?: string) => void;
   value?: string;
   className?: string;
 }
 
-const SelectRole = ({ roles, onChange, value, className }: SelectRoleProps) => {
+const SelectRole = ({ entityType, onChange, value, className }: SelectRoleProps) => {
   const { t } = useTranslation();
+
+  const roles = entityType ? config.entityRoles : config.systemRoles;
+
   return (
     <Select
       value={value === undefined ? 'all' : value}
@@ -22,9 +27,9 @@ const SelectRole = ({ roles, onChange, value, className }: SelectRoleProps) => {
         <SelectValue placeholder={t('common:placeholder.select_role')} />
       </SelectTrigger>
       <SelectContent>
-        {roles.map(({ key, value }) => (
-          <SelectItem key={key} value={key}>
-            {t(value)}
+        {roles.map((role) => (
+          <SelectItem key={role} value={role}>
+            {t(`common:${role.toLowerCase()}`)}
           </SelectItem>
         ))}
       </SelectContent>

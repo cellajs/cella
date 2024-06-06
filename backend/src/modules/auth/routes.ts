@@ -9,12 +9,45 @@ import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { apiUserSchema } from '../users/schema';
 import { checkEmailJsonSchema, emailExistsJsonSchema, resetPasswordJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
 
+export const checkEmailRouteConfig = createRouteConfig({
+  method: 'post',
+  path: '/check-email',
+  guard: isPublicAccess,
+  middleware: [authRateLimiter],
+  tags: ['auth'],
+  summary: 'Check if email exists',
+  description: 'Check if email address exists in the database.',
+  security: [],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: checkEmailJsonSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'User email address exists or not',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(emailExistsJsonSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
 export const signUpRouteConfig = createRouteConfig({
   method: 'post',
   path: '/sign-up',
   guard: isPublicAccess,
   tags: ['auth'],
-  summary: 'Sign up a new user',
+  summary: 'Sign up with password',
+  description: 'Sign up with email and password. User will receive a verification email.',
+  middleware: [authRateLimiter],
   security: [],
   request: {
     body: {
@@ -27,7 +60,7 @@ export const signUpRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'User signed up successfully (cookie set automatically)',
+      description: 'User signed up',
       headers: z.object({
         'Set-Cookie': cookieSchema,
       }),
@@ -47,7 +80,8 @@ export const verifyEmailRouteConfig = createRouteConfig({
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
-  summary: 'Verify a user email address',
+  summary: 'Verify email by token',
+  description: 'Verify email address by token from the verification email. Sign in when successful.',
   security: [],
   request: {
     query: z.object({
@@ -76,7 +110,8 @@ export const sendVerificationEmailRouteConfig = createRouteConfig({
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
-  summary: 'Resend a verification email',
+  summary: 'Resend verification email',
+  description: 'Resend verification email to user based on email address.',
   security: [],
   request: {
     body: {
@@ -108,7 +143,8 @@ export const resetPasswordRouteConfig = createRouteConfig({
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
-  summary: 'Request a reset password email',
+  summary: 'Request reset password',
+  description: 'An email will be sent with a link to reset password.',
   security: [],
   request: {
     body: {
@@ -140,7 +176,8 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
-  summary: 'Submit a new password',
+  summary: 'Submit new password',
+  description: 'Submit new password and directly get session.',
   security: [],
   request: {
     params: z.object({
@@ -167,43 +204,14 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
   },
 });
 
-export const checkEmailRouteConfig = createRouteConfig({
-  method: 'post',
-  path: '/check-email',
-  guard: isPublicAccess,
-  middleware: [authRateLimiter],
-  tags: ['auth'],
-  summary: 'Check if an email address exists',
-  security: [],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: checkEmailJsonSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'User email address exists or not',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(emailExistsJsonSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const signInRouteConfig = createRouteConfig({
   method: 'post',
   path: '/sign-in',
   guard: isPublicAccess,
   middleware: [signInRateLimiter()],
   tags: ['auth'],
-  summary: 'Sign in a user',
+  summary: 'Sign in with password',
+  description: 'Sign in with email and password.',
   security: [],
   request: {
     body: {
@@ -216,7 +224,7 @@ export const signInRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'User signed in successfully (cookie set automatically)',
+      description: 'User signed in',
       headers: z.object({
         'Set-Cookie': cookieSchema,
       }),
@@ -238,10 +246,11 @@ export const signInRouteConfig = createRouteConfig({
 
 export const githubSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/sign-in/github',
+  path: '/auth/github',
   guard: isPublicAccess,
   tags: ['auth'],
-  summary: 'Sign in a user with GitHub',
+  summary: 'Authenticate with GitHub',
+  description: 'Authenticate with Github to sign in or sign up.',
   security: [],
   request: {
     query: z.object({
@@ -261,10 +270,11 @@ export const githubSignInRouteConfig = createRouteConfig({
 
 export const githubSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/sign-in/github/callback',
+  path: '/auth/github/callback',
   guard: isPublicAccess,
   tags: ['auth'],
-  summary: 'Callback for GitHub sign in',
+  summary: 'Callback for GitHub',
+  description: 'Callback to receive authorization and basic user data.',
   security: [],
   request: {
     query: z.object({
@@ -285,10 +295,11 @@ export const githubSignInCallbackRouteConfig = createRouteConfig({
 
 export const googleSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/sign-in/google',
+  path: '/auth/google',
   guard: isPublicAccess,
   tags: ['auth'],
-  summary: 'Sign in a user with Google',
+  summary: 'Authenticate with Google',
+  description: 'Authenticate with Google to sign in or sign up.',
   security: [],
   request: {
     query: z.object({
@@ -308,10 +319,11 @@ export const googleSignInRouteConfig = createRouteConfig({
 
 export const googleSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/sign-in/google/callback',
+  path: '/auth/google/callback',
   guard: isPublicAccess,
   tags: ['auth'],
-  summary: 'Callback for Google sign in',
+  summary: 'Callback for Google',
+  description: 'Callback to receive authorization and basic user data.',
   security: [],
   request: {
     query: z.object({
@@ -332,10 +344,11 @@ export const googleSignInCallbackRouteConfig = createRouteConfig({
 
 export const microsoftSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/sign-in/microsoft',
+  path: '/auth/microsoft',
   guard: isPublicAccess,
   tags: ['auth'],
-  summary: 'Sign in a user with Microsoft',
+  summary: 'Authenticate with Microsoft',
+  description: 'Authenticate with Microsoft to sign in or sign up.',
   security: [],
   request: {
     query: z.object({
@@ -355,10 +368,11 @@ export const microsoftSignInRouteConfig = createRouteConfig({
 
 export const microsoftSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/sign-in/microsoft/callback',
+  path: '/auth/microsoft/callback',
   guard: isPublicAccess,
   tags: ['auth'],
-  summary: 'Callback for Microsoft sign in',
+  summary: 'Callback for Microsoft',
+  description: 'Callback to receive authorization and basic user data.',
   security: [],
   request: {
     query: z.object({
@@ -382,7 +396,8 @@ export const signOutRouteConfig = createRouteConfig({
   path: '/sign-out',
   guard: isPublicAccess,
   tags: ['auth'],
-  summary: 'Sign out a user',
+  summary: 'Sign out',
+  description: 'Sign out yourself and clear session.',
   responses: {
     200: {
       description: 'User signed out',

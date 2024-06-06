@@ -1,6 +1,6 @@
-import { createContext } from "react";
-import type { Project } from "~/types";
-import type { Label } from "../../common/electric/electrify";
+import { createContext } from 'react';
+import type { Project } from '~/types';
+import type { Label } from '../../common/electric/electrify';
 
 interface ProjectContextValue {
   project: Project;

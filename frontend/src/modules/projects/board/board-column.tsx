@@ -3,29 +3,29 @@ import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/prag
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { DraggableItemData, Project, User } from '~/types/index.ts';
+import type { DraggableItemData, Member, Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
 import { DropIndicator } from '../../common/drop-indicator';
 import type { PreparedTask } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
 import { WorkspaceContext } from '../../workspaces';
-import { ProjectContext } from './project-context';
-import { BoardColumnHeader } from './board-column-header';
+import { ProjectSettings } from '../project-settings';
 import CreateTaskForm from '../task/create-task-form';
 import { DraggableTaskCard } from '../task/draggable-task-card';
-import { ProjectSettings } from '../project-settings';
-import { useQuery } from '@tanstack/react-query';
-import { getProjectMembers } from '~/api/projects';
-import { useNavigationStore } from '~/store/navigation';
+import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './board-column-skeleton';
+import { ProjectContext } from './project-context';
 
 interface BoardColumnProps {
   tasks: PreparedTask[];
@@ -35,7 +35,7 @@ interface BoardColumnProps {
 
 interface TaskContextValue {
   task: PreparedTask;
-  projectMembers: User[];
+  projectMembers: Member[];
   focusedTaskId: string | null;
   setFocusedTask: (taskId: string) => void;
 }
@@ -69,7 +69,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
-    queryFn: () => getProjectMembers(project.id).then((data) => data.items),
+    queryFn: () => getMembers(project.id, 'PROJECT').then((data) => data.items),
     initialData: [],
   });
 

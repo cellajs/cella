@@ -1,5 +1,3 @@
-import { z } from '@hono/zod-openapi';
-
 import {
   errorResponses,
   successResponseWithDataSchema,
@@ -16,7 +14,8 @@ export const meRouteConfig = createRouteConfig({
   path: '/me',
   guard: isAuthenticated,
   tags: ['users'],
-  summary: 'Get the current user',
+  summary: 'Get self',
+  description: 'Get the current user (self).',
   responses: {
     200: {
       description: 'User',
@@ -30,42 +29,13 @@ export const meRouteConfig = createRouteConfig({
   },
 });
 
-export const getUserSessionsConfig = createRouteConfig({
-  method: 'get',
-  path: '/me/sessions',
-  guard: isAuthenticated,
-  tags: ['users'],
-  summary: 'Get the sessions of the current user',
-  responses: {
-    200: {
-      description: 'Sessions',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(
-            z
-              .object({
-                id: z.string(),
-                expiresAt: z.string(),
-              })
-              .array(),
-          ),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const getUsersConfig = createRouteConfig({
   method: 'get',
   path: '/users',
   guard: [isAuthenticated, isSystemAdmin],
   tags: ['users'],
   summary: 'Get list of users',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
+  description: 'Get a list of users on system level.',
   request: {
     query: getUsersQuerySchema,
   },
@@ -87,11 +57,8 @@ export const updateUserConfig = createRouteConfig({
   path: '/users/{user}',
   guard: [isAuthenticated, isSystemAdmin],
   tags: ['users'],
-  summary: 'Update a user',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
+  summary: 'Update user',
+  description: 'Update a user by id or slug.',
   request: {
     params: userParamSchema,
     body: {
@@ -120,8 +87,8 @@ export const updateSelfConfig = createRouteConfig({
   path: '/me',
   guard: isAuthenticated,
   tags: ['users'],
-  summary: 'Update a self',
-  description: 'Permissions: - Users, who are the user',
+  summary: 'Update self',
+  description: 'Update the current user (self).',
   request: {
     body: {
       content: {
@@ -146,17 +113,13 @@ export const updateSelfConfig = createRouteConfig({
   },
 });
 
-export const getUserByIdOrSlugRouteConfig = createRouteConfig({
+export const getUserRouteConfig = createRouteConfig({
   method: 'get',
   path: '/users/{user}',
   guard: isAuthenticated,
   tags: ['users'],
-  summary: 'Get user by id or slug',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are the user
-  `,
+  summary: 'Get user',
+  description: 'Get a user by id or slug.',
   request: {
     params: userParamSchema,
   },
@@ -175,16 +138,14 @@ export const getUserByIdOrSlugRouteConfig = createRouteConfig({
 
 export const getUserMenuConfig = createRouteConfig({
   method: 'get',
-  path: '/menu',
+  path: '/me/menu',
   guard: isAuthenticated,
   tags: ['users'],
-  summary: 'Get the menu of a current user',
-  description: `
-    Receive all resources of which the current user is a member.
-  `,
+  summary: 'Get menu of self',
+  description: 'Receive all contextual entities of which the current user is a member.',
   responses: {
     200: {
-      description: 'Menu of a user',
+      description: 'Menu of user',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(userMenuSchema),
@@ -201,6 +162,7 @@ export const terminateSessionsConfig = createRouteConfig({
   guard: isAuthenticated,
   tags: ['users'],
   summary: 'Terminate sessions',
+  description: 'Terminate all sessions of the current user, except for current session.',
   request: {
     query: deleteByIdsQuerySchema,
   },
@@ -220,17 +182,13 @@ export const terminateSessionsConfig = createRouteConfig({
 export const deleteUsersRouteConfig = createRouteConfig({
   method: 'delete',
   path: '/users',
-  guard: isAuthenticated,
+  guard: [isAuthenticated, isSystemAdmin],
   tags: ['users'],
   summary: 'Delete users',
+  description: 'Delete users from system by list of ids.',
   request: {
     query: deleteByIdsQuerySchema,
   },
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are the user
-  `,
   responses: {
     200: {
       description: 'Success',

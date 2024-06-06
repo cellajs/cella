@@ -4,21 +4,23 @@ import { useTranslation } from 'react-i18next';
 import useFocusById from '~/hooks/use-focus-by-id';
 import { AppAlert } from '~/modules/common/app-alert';
 import { dialog } from '~/modules/common/dialoger/state';
+import type { ContextEntity } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 
 interface InviteUsersProps {
-  organizationIdOrSlug?: string | null;
-  type?: 'system' | 'organization';
+  entityId?: string;
+  entityType?: ContextEntity;
   callback?: () => void;
   dialog?: boolean;
   mode?: string | null;
   children?: React.ReactNode;
 }
 
-const InviteUsers = ({ organizationIdOrSlug, type = 'system', callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
+// When no entity type, it's a system invite
+const InviteUsers = ({ entityId, entityType, callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
@@ -95,7 +97,7 @@ const InviteUsers = ({ organizationIdOrSlug, type = 'system', callback, dialog: 
             <AppAlert id="invite_search" variant="success" Icon={Info}>
               {t('common:explain.invite_search.text')}
             </AppAlert>
-            <InviteSearchForm organizationIdOrSlug={organizationIdOrSlug} type={type} callback={callback} dialog={isDialog} />
+            <InviteSearchForm entityId={entityId} entityType={entityType} callback={callback} dialog={isDialog} />
           </motion.div>
         ) : (
           inviteMode === 'email' && (
@@ -109,7 +111,7 @@ const InviteUsers = ({ organizationIdOrSlug, type = 'system', callback, dialog: 
               <AppAlert id="invite_email" variant="success" Icon={Info}>
                 {t('common:explain.invite_email.text')}
               </AppAlert>
-              <InviteEmailForm organizationIdOrSlug={organizationIdOrSlug} type={type} callback={callback} dialog={isDialog}>
+              <InviteEmailForm entityId={entityId} entityType={entityType} callback={callback} dialog={isDialog}>
                 {children}
               </InviteEmailForm>
             </motion.div>

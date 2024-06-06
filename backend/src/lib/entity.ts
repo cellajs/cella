@@ -1,4 +1,4 @@
-import { eq, or, inArray } from 'drizzle-orm';
+import { eq, inArray, or } from 'drizzle-orm';
 import { db } from '../db/db';
 import { organizationsTable } from '../db/schema/organizations';
 import { projectsTable } from '../db/schema/projects';
@@ -48,10 +48,7 @@ export const resolveEntities = async (entityType: string, ids: Array<string>) =>
   if (!Array.isArray(ids) || !ids.length) throw new Error(`Missing or invalid query identifiers for entity: ${entityType}`);
 
   // Query for multiple entities by IDs
-  const resources = await db
-    .select()
-    .from(table)
-    .where(inArray(table.id, ids));
+  const resources = await db.select().from(table).where(inArray(table.id, ids));
 
   return resources;
 };

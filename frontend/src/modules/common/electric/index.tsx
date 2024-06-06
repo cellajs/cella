@@ -5,8 +5,8 @@ import { LIB_VERSION } from 'electric-sql/version';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
-import { useUserStore } from '~/store/user';
 import { useNavigationStore } from '~/store/navigation';
+import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
 import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
 interface Props {

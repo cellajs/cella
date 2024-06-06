@@ -1,20 +1,13 @@
 import { index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
-import { organizationsTable } from './organizations';
-import { usersTable } from './users';
 
-const requestTypeEnum = ['ORGANIZATION_REQUEST', 'WAITLIST_REQUEST', 'NEWSLETTER_REQUEST', 'CONTACT_REQUEST'] as const;
+const requestTypeEnum = ['WAITLIST_REQUEST', 'NEWSLETTER_REQUEST', 'CONTACT_REQUEST'] as const;
+export type RequestType = (typeof requestTypeEnum)[number];
 
 export const requestsTable = pgTable(
   'requests',
   {
     id: varchar('id').primaryKey().$defaultFn(nanoid),
-    user_id: varchar('user_id').references(() => usersTable.id, {
-      onDelete: 'set null',
-    }),
-    organization_id: varchar('organization_id').references(() => organizationsTable.id, {
-      onDelete: 'set null',
-    }),
     message: varchar('message'),
     email: varchar('email').notNull(),
     type: varchar('type', { enum: requestTypeEnum }).notNull(),
@@ -28,5 +21,5 @@ export const requestsTable = pgTable(
   },
 );
 
-export type actionRequestsModel = typeof requestsTable.$inferSelect;
-export type InsertactionRequestsModel = typeof requestsTable.$inferInsert;
+export type RequestsModel = typeof requestsTable.$inferSelect;
+export type InsertRequestModel = typeof requestsTable.$inferInsert;

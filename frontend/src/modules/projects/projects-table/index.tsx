@@ -1,9 +1,9 @@
+import { Bird } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useColumns } from './columns';
-import { Bird } from 'lucide-react';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { useTranslation } from 'react-i18next';
 
 export interface ProjectRow {
   id: string;

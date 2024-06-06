@@ -6,21 +6,18 @@ import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspace
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
-import { sendSSEToUsers, sendSSE } from '../../lib/sse';
+import permissionManager from '../../lib/permission-manager';
+import { sendSSE, sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import {
   createProjectRouteConfig,
   deleteProjectsRouteConfig,
-  getProjectByIdOrSlugRouteConfig,
+  getProjectRouteConfig,
   getProjectsRouteConfig,
-  getUserProjectsRouteConfig,
-  getUsersByProjectIdRouteConfig,
   updateProjectRouteConfig,
 } from './routes';
-import { usersTable } from '../../db/schema/users';
-import permissionManager from '../../lib/permission-manager';
 
 const app = new CustomHono();
 
@@ -56,7 +53,7 @@ const projectsRoutes = app
       })
       .returning();
 
-    logEvent('Project created', { project: createdProject.id });    
+    logEvent('Project created', { project: createdProject.id });
 
     await db.insert(membershipsTable).values({
       userId: user.id,
@@ -75,7 +72,7 @@ const projectsRoutes = app
       await db.insert(projectsToWorkspacesTable).values({
         projectId: createdProject.id,
         workspaceId: workspace,
-      })
+      });
 
       logEvent('Project added to workspace', {
         project: createdProject.id,
@@ -104,7 +101,7 @@ const projectsRoutes = app
   /*
    * Get project by id or slug
    */
-  .openapi(getProjectByIdOrSlugRouteConfig, async (ctx) => {
+  .openapi(getProjectRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const project = ctx.get('project');
 
@@ -181,29 +178,28 @@ const projectsRoutes = app
       const [{ total: matches }] = await db.select({ total: count() }).from(projectsQuery.as('projects'));
       total = matches;
       projects = await db
-      .select({
-        project: projectsTable,
-        role: membership.role,
-        archived: membership.archived,
-        admins: counts.admins,
-        members: counts.members,
-      })
-      .from(projectsQuery.as('projects'))
-      .leftJoin(membership, eq(membership.projectId, projectsTable.id))
-      .leftJoin(counts, eq(projectsTable.id, counts.projectId))
-      .orderBy(orderColumn)
-      .limit(Number(limit))
-      .offset(Number(offset));
-
+        .select({
+          project: projectsTable,
+          role: membership.role,
+          archived: membership.archived,
+          admins: counts.admins,
+          members: counts.members,
+        })
+        .from(projectsQuery.as('projects'))
+        .leftJoin(membership, eq(membership.projectId, projectsTable.id))
+        .leftJoin(counts, eq(projectsTable.id, counts.projectId))
+        .orderBy(orderColumn)
+        .limit(Number(limit))
+        .offset(Number(offset));
     } else {
-      projectsFilters.push(eq(projectsToWorkspacesTable.workspaceId, workspace))
+      projectsFilters.push(eq(projectsToWorkspacesTable.workspaceId, workspace));
 
       const [{ total: matches }] = await db
         .select({ total: count() })
         .from(projectsToWorkspacesTable)
-        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id),  ...projectsFilters))
-        .where(eq(projectsToWorkspacesTable.workspaceId, workspace))
-        
+        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), ...projectsFilters))
+        .where(eq(projectsToWorkspacesTable.workspaceId, workspace));
+
       total = matches;
 
       projects = await db
@@ -215,7 +211,7 @@ const projectsRoutes = app
           members: counts.members,
         })
         .from(projectsToWorkspacesTable)
-        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id),  ...projectsFilters))
+        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), ...projectsFilters))
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
         .leftJoin(membership, eq(membership.projectId, projectsTable.id))
         .where(eq(projectsToWorkspacesTable.workspaceId, workspace))
@@ -236,35 +232,6 @@ const projectsRoutes = app
           })),
           total,
         },
-      },
-      200,
-    );
-  })
-  /*
-   * Get user projects
-   */
-  .openapi(getUserProjectsRouteConfig, async (ctx) => {
-    const { userId } = ctx.req.valid('param');
-
-    // * Get the membership
-    const projects = await db
-      .select({
-        id: projectsTable.id,
-        name: projectsTable.name,
-        createdAt: projectsTable.createdAt,
-      })
-      .from(projectsTable)
-      .where(eq(projectsTable.id, membershipsTable.projectId))
-      .innerJoin(membershipsTable, and(eq(membershipsTable.userId, userId), eq(membershipsTable.type, 'PROJECT')));
-
-    if (!projects) return errorResponse(ctx, 404, 'not_found', 'warn', 'PROJECT', { user: userId });
-
-    logEvent('Get user projects', { user: userId });
-
-    return ctx.json(
-      {
-        success: true,
-        data: projects,
       },
       200,
     );
@@ -328,21 +295,16 @@ const projectsRoutes = app
   .openapi(deleteProjectsRouteConfig, async (ctx) => {
     // * Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
-    const disallowedIds = ctx.get('disallowedIds')
+    const disallowedIds = ctx.get('disallowedIds');
 
-    // * Map errors of workspaces user is not allowed to delete 
-    const errors: ErrorType[] = disallowedIds.map(id => createError(ctx, 404, 'not_found', 'warn', 'PROJECT', { project: id }));
+    // * Map errors of workspaces user is not allowed to delete
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'PROJECT', { project: id }));
 
     // * Get members
     const projectsMembers = await db
       .select({ id: membershipsTable.userId, projectId: membershipsTable.projectId })
       .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.type, 'PROJECT'),
-          inArray(membershipsTable.projectId, allowedIds),
-        ),
-      );
+      .where(and(eq(membershipsTable.type, 'PROJECT'), inArray(membershipsTable.projectId, allowedIds)));
 
     // * Delete the projectId
     await db.delete(projectsTable).where(inArray(projectsTable.id, allowedIds));
@@ -351,7 +313,10 @@ const projectsRoutes = app
     for (const id of allowedIds) {
       // * Send the event to the user if they are a member of the project
       if (projectsMembers.length > 0) {
-        const membersId = projectsMembers.filter(({projectId}) => projectId === id).map((member) => member.id).filter(Boolean) as string[];
+        const membersId = projectsMembers
+          .filter(({ projectId }) => projectId === id)
+          .map((member) => member.id)
+          .filter(Boolean) as string[];
         sendSSEToUsers(membersId, 'remove_entity', { id, type: 'PROJECT' });
       }
 
@@ -362,89 +327,6 @@ const projectsRoutes = app
       {
         success: true,
         errors: errors,
-      },
-      200,
-    );
-  })
-  /*
-   * Get members by project id
-   */
-  .openapi(getUsersByProjectIdRouteConfig, async (ctx) => {
-    const { q, sort, order, offset, limit } = ctx.req.valid('query');
-    const project = ctx.get('project');
-
-    const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
-
-    const usersQuery = db.select().from(usersTable).where(filter).as('users');
-
-    const membersFilters = [eq(membershipsTable.projectId, project.id), eq(membershipsTable.type, 'PROJECT')];
-
-    const roles = db
-      .select({
-        userId: membershipsTable.userId,
-        id: membershipsTable.id,
-        role: membershipsTable.role,
-      })
-      .from(membershipsTable)
-      .where(and(...membersFilters))
-      .as('roles');
-
-    const membershipCount = db
-      .select({
-        userId: membershipsTable.userId,
-        memberships: count().as('memberships'),
-      })
-      .from(membershipsTable)
-      .groupBy(membershipsTable.userId)
-      .as('membership_count');
-
-    const orderColumn = getOrderColumn(
-      {
-        id: usersTable.id,
-        name: usersTable.name,
-        email: usersTable.email,
-        createdAt: usersTable.createdAt,
-        membershipId: roles.id,
-      },
-      sort,
-      usersTable.id,
-      order,
-    );
-
-    const membersQuery = db
-      .select({
-        user: usersTable,
-        membershipId: roles.id,
-        counts: {
-          memberships: membershipCount.memberships,
-        },
-      })
-      .from(usersQuery)
-      .innerJoin(roles, eq(usersTable.id, roles.userId))
-      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
-      .orderBy(orderColumn);
-
-    const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
-
-    const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
-
-    const members = await Promise.all(
-      result.map(async ({ user, membershipId, counts }) => ({
-        ...user,
-        electricJWTToken: null,
-        sessions: [],
-        membershipId,
-        counts,
-      })),
-    );
-
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          items: members,
-          total,
-        },
       },
       200,
     );

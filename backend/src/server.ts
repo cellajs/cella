@@ -7,7 +7,6 @@ import generalRoutes from './modules/general';
 import membershipRoutes from './modules/memberships';
 import organizationsRoutes from './modules/organizations';
 import projectsRoutes from './modules/projects';
-import publicRoutes from './modules/public';
 import usersRoutes from './modules/users';
 import workspacesRoutes from './modules/workspaces';
 
@@ -40,10 +39,9 @@ app.onError((err, ctx) => {
 app
   .route('/', authRoutes)
   .route('/', usersRoutes)
+  .route('/', membershipRoutes)
   .route('/', organizationsRoutes)
   .route('/', generalRoutes)
-  .route('/', publicRoutes)
-  .route('/', membershipRoutes)
 
   // App-specific routes go here
   .route('/', workspacesRoutes)

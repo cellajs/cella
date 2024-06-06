@@ -25,8 +25,8 @@ const onError = (error: Error) => {
 
     // Translate, try most specific first
     const errorMessage =
-      error.resourceType && i18next.exists(`common:error.resource_${error.type}`)
-        ? i18n.t(`error.resource_${error.type}`, { resource: i18n.t(error.resourceType.toLowerCase()) })
+      error.entityType && i18next.exists(`common:error.resource_${error.type}`)
+        ? i18n.t(`error.resource_${error.type}`, { resource: i18n.t(error.entityType.toLowerCase()) })
         : error.type && i18next.exists(`common:error.${error.type}`)
           ? i18n.t(`common:error.${error.type}`)
           : fallback[error.status as keyof typeof fallback];

@@ -1,10 +1,9 @@
 import { config } from 'config';
 import { Mailbox, Trash, XSquare } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useContext } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { actionRequests } from '~/api/general';
-import { becomeMemberRequests } from '~/api/organizations';
+import { getRequests } from '~/api/general';
 import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -12,26 +11,24 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
-import { OrganizationContext } from '~/modules/organizations/organization';
 import NewsletterForm from '~/modules/system/newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { Requests } from '~/types';
+import type { Request } from '~/types';
 import type { RequestsSearch } from '.';
 
 interface Props {
   total?: number;
   query?: string;
-  selectedRequests: Requests[];
+  selectedRequests: Request[];
   setQuery: (value?: string) => void;
   isFiltered?: boolean;
   onResetFilters: () => void;
   onResetSelectedRows?: () => void;
-  columns: ColumnOrColumnGroup<Requests>[];
-  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Requests>[]>>;
+  columns: ColumnOrColumnGroup<Request>[];
+  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Request>[]>>;
   sort: RequestsSearch['sort'];
   order: RequestsSearch['order'];
-  mode: 'system' | 'organization';
 }
 
 function Toolbar({
@@ -46,7 +43,6 @@ function Toolbar({
   selectedRequests,
   sort,
   order,
-  mode,
 }: Props) {
   const { t } = useTranslation();
 
@@ -102,11 +98,8 @@ function Toolbar({
           columns={columns}
           selectedRows={selectedRequests}
           fetchRows={async (limit) => {
-            const requestData = { limit, q: query, sort, order };
-            const { organization } = useContext(OrganizationContext);
-            const { requestsInfo } =
-              mode === 'organization' ? await becomeMemberRequests(organization?.id || '', requestData) : await actionRequests(requestData);
-            return requestsInfo;
+            const { items } = await getRequests({ limit, q: query, sort, order });
+            return items;
           }}
         />
         <FocusView iconOnly />

@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
+import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { idSchema, slugSchema } from '../../lib/common-schemas';
-import { config } from 'config';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
 

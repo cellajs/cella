@@ -1,6 +1,6 @@
 import { useNavigationStore } from '~/store/navigation';
-import { useSSE } from './use-sse';
 import { menuSections } from '../nav-sheet/sheet-menu';
+import { useSSE } from './use-sse';
 
 const SSE = () => {
   const updateEntity = (e: MessageEvent<string>) => {

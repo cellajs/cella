@@ -7,8 +7,8 @@ import type { UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import { MenuSectionSticky } from './menu-section-sticky';
-import { SheetMenuItemsOptions } from './sheet-menu-items-options';
 import { SheetMenuItems } from './sheet-menu-items';
+import { SheetMenuItemsOptions } from './sheet-menu-items-options';
 
 interface MenuSectionProps {
   data: UserMenu[keyof UserMenu];

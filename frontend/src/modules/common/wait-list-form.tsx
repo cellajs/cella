@@ -1,13 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
-import { actionRequestSchema } from 'backend/modules/general/schema';
+import { createRequestSchema } from 'backend/modules/general/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { requestAction as baserequestAction } from '~/api/general';
+import { createRequest as baseCreateRequest } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
@@ -15,14 +15,14 @@ import { Input } from '~/modules/ui/input';
 import { LegalText } from '../marketing/legals';
 import { dialog } from './dialoger/state';
 
-const formSchema = actionRequestSchema;
+const formSchema = createRequestSchema;
 
 export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step: string) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { mutate: requestAction, isPending } = useMutation({
-    mutationFn: baserequestAction,
+  const { mutate: createRequest, isPending } = useMutation({
+    mutationFn: baseCreateRequest,
     onSuccess: () => {
       navigate({
         to: '/about',
@@ -35,14 +35,12 @@ export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: email,
-      userId: null,
-      organizationId: null,
       type: 'WAITLIST_REQUEST',
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    requestAction({
+    createRequest({
       email: values.email,
       type: 'WAITLIST_REQUEST',
     });

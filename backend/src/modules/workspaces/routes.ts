@@ -7,14 +7,11 @@ import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSche
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/organizations/{organization}/workspaces',
+  path: '/workspaces',
   guard: [isAuthenticated, isAllowedTo('create', 'workspace')],
   tags: ['workspaces'],
-  summary: 'Create a new workspace',
-  description: `
-    Permissions:
-      - Users with system or organization role 'ADMIN'
-  `,
+  summary: 'Create new workspace',
+  description: 'Create personal workspace to organize projects and tasks.',
   request: {
     params: organizationParamSchema,
     body: {
@@ -39,23 +36,19 @@ export const createWorkspaceRouteConfig = createRouteConfig({
   },
 });
 
-export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
+export const getWorkspaceRouteConfig = createRouteConfig({
   method: 'get',
   path: '/workspaces/{workspace}',
   guard: [isAuthenticated, isAllowedTo('read', 'workspace')],
   tags: ['workspaces'],
-  summary: 'Get workspace by id or slug',
-  description: `
-    Permissions:
-      - Users with system or organization role 'ADMIN'
-      - Users who are part of the workspace
-  `,
+  summary: 'Get workspace',
+  description: 'Get workspace by id or slug.',
   request: {
     params: workspaceParamSchema,
   },
   responses: {
     200: {
-      description: 'workspace',
+      description: 'Workspace',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(apiWorkspacesSchema),
@@ -72,11 +65,7 @@ export const updateWorkspaceRouteConfig = createRouteConfig({
   guard: [isAuthenticated, isAllowedTo('update', 'workspace')],
   tags: ['workspaces'],
   summary: 'Update workspace',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the workspaces and have role 'ADMIN' in the workspace
-  `,
+  description: 'Update workspace by id or slug.',
   request: {
     params: workspaceParamSchema,
     body: {
@@ -89,7 +78,7 @@ export const updateWorkspaceRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'Workspace was updated',
+      description: 'Workspace updated',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(apiWorkspacesSchema),
@@ -106,10 +95,7 @@ export const deleteWorkspacesRouteConfig = createRouteConfig({
   guard: [isAuthenticated, splitByAllowance('delete', 'workspace')],
   tags: ['workspaces'],
   summary: 'Delete workspaces',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
+  description: 'Delete workspaces by ids.',
   request: {
     query: deleteByIdsQuerySchema,
   },

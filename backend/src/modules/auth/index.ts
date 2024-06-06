@@ -45,6 +45,24 @@ type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 // * Authentication endpoints
 const authRoutes = app
   /*
+   * Check if email exists
+   */
+  .openapi(checkEmailRouteConfig, async (ctx) => {
+    const { email } = ctx.req.valid('json');
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          exists: !!user,
+        },
+      },
+      200,
+    );
+  })
+  /*
    * Sign up with email and password
    */
   .openapi(signUpRouteConfig, async (ctx) => {
@@ -149,14 +167,10 @@ const authRoutes = app
       })
       .where(eq(usersTable.id, user.id));
 
+    // Sign in user
     await setSessionCookie(ctx, user.id, 'email_verification');
 
-    return ctx.json(
-      {
-        success: true,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Send verification email
@@ -197,30 +211,7 @@ const authRoutes = app
 
     logEvent('Verification email sent', { user: user.id });
 
-    return ctx.json(
-      {
-        success: true,
-      },
-      200,
-    );
-  })
-  /*
-   * Check if email exists
-   */
-  .openapi(checkEmailRouteConfig, async (ctx) => {
-    const { email } = ctx.req.valid('json');
-
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
-
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          exists: !!user,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Request reset password email with token
@@ -262,13 +253,7 @@ const authRoutes = app
 
     logEvent('Reset password link sent', { user: user.id });
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Reset password with token
@@ -300,15 +285,10 @@ const authRoutes = app
     // * update user password
     await db.update(usersTable).set({ hashedPassword }).where(eq(usersTable.id, user.id));
 
+    // Sign in user
     await setSessionCookie(ctx, user.id, 'password_reset');
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Sign in with email and password
@@ -380,7 +360,7 @@ const authRoutes = app
     removeSessionCookie(ctx);
     logEvent('User signed out', { user: session?.userId || 'na' });
 
-    return ctx.json({ success: true, data: undefined }, 200);
+    return ctx.json({ success: true }, 200);
   });
 
 const allRoutes = authRoutes.route('/', oauthRoutes);

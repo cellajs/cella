@@ -9,12 +9,12 @@ import { getWorkspaceBySlugOrId } from '~/api/workspaces';
 import BoardHeader from '~/modules/projects/board/header/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
+import { useWorkspaceStore } from '~/store/workspace';
 import type { ProjectList, Workspace } from '~/types';
 import ContentPlaceholder from '../common/content-placeholder';
 import { type Label, type PreparedTask, type Task, useElectric } from '../common/electric/electrify';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
-import { useWorkspaceStore } from '~/store/workspace';
 import { taskStatuses } from '../projects/task/task-selectors/select-status';
 
 interface WorkspaceContextValue {
@@ -82,7 +82,7 @@ const WorkspacePage = () => {
       },
       orderBy: {
         sort_order: 'asc',
-      }
+      },
     }),
   ) as {
     results: (Task & {

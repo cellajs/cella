@@ -21,9 +21,9 @@ import { useMutation } from '~/hooks/use-mutations';
 import { AsideNav } from '~/modules/common/aside-nav';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
+import { oauthProviders } from '../auth/oauth-options';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
-import { oauthProviders } from '../auth/oauth-options';
 
 type Session = {
   id: string;

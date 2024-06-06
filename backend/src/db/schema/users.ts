@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { membershipsTable } from './memberships';
 
-const roleEnum = ['USER', 'ADMIN'] as const;
+const roleEnum = config.systemRoles;
 
 export const usersTable = pgTable(
   'users',

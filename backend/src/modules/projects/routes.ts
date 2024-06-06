@@ -4,32 +4,20 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, projectParamSchema, organizationParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, organizationParamSchema, projectParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
-import { apiUserSchema } from '../users/schema';
+import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import {
-  apiProjectSchema,
-  apiProjectListSchema,
-  createProjectJsonSchema,
-  getProjectsQuerySchema,
-  getUsersByProjectQuerySchema,
-  updateProjectJsonSchema,
-  getUserProjectsParamSchema,
-  apiUserProjectSchema,
-} from './schema';
+import { apiProjectListSchema, apiProjectSchema, createProjectJsonSchema, getProjectsQuerySchema, updateProjectJsonSchema } from './schema';
 
 export const createProjectRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/organizations/{organization}/projects',
+  path: '/projects',
   guard: [isAuthenticated, isAllowedTo('create', 'project')],
   tags: ['projects'],
-  summary: 'Create a new project',
-  description: `
-    Permissions:
-      - Users with system or organization role 'MEMBER'
-  `,
+  summary: 'Create new project',
+  description: 'Create a new project in an organization. Creator will become admin and can invite other members.',
+  security: [{ bearerAuth: [] }],
   request: {
     params: organizationParamSchema,
     body: {
@@ -43,7 +31,7 @@ export const createProjectRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'Project was created',
+      description: 'Project',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(apiProjectSchema),
@@ -54,52 +42,22 @@ export const createProjectRouteConfig = createRouteConfig({
   },
 });
 
-export const getProjectByIdOrSlugRouteConfig = createRouteConfig({
+export const getProjectRouteConfig = createRouteConfig({
   method: 'get',
   path: '/projects/{project}',
   guard: [isAuthenticated, isAllowedTo('read', 'project')],
   tags: ['projects'],
-  summary: 'Get project by id or slug',
-  description: `
-    Permissions:
-      - Users with system or workspace role 'ADMIN'
-      - Users who are part of the project
-  `,
+  summary: 'Get project',
+  description: 'Get project by id or slug.',
   request: {
     params: projectParamSchema,
   },
   responses: {
     200: {
-      description: 'projects',
+      description: 'Project',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(apiProjectSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const getUserProjectsRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/projects/by-user/{userId}',
-  guard: [isAuthenticated, isSystemAdmin],
-  tags: ['projects'],
-  summary: 'Get user project by memberships',
-  description: `
-    Permissions:
-      - Users role 'ADMIN'
-  `,
-  request: {
-    params: getUserProjectsParamSchema,
-  },
-  responses: {
-    200: {
-      description: 'User project',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(apiUserProjectSchema),
         },
       },
     },
@@ -113,16 +71,13 @@ export const getProjectsRouteConfig = createRouteConfig({
   guard: [isAuthenticated, isAllowedTo('read', 'project')],
   tags: ['projects'],
   summary: 'Get list of projects',
-  description: `
-        Permissions:
-        - Users with role 'ADMIN'
-    `,
+  description: 'Get list of projects in which you have a membership.',
   request: {
     query: getProjectsQuerySchema,
   },
   responses: {
     200: {
-      description: 'projects',
+      description: 'Projects',
       content: {
         'application/json': {
           schema: successResponseWithPaginationSchema(apiProjectListSchema),
@@ -139,11 +94,7 @@ export const updateProjectRouteConfig = createRouteConfig({
   guard: [isAuthenticated, isAllowedTo('update', 'project')],
   tags: ['projects'],
   summary: 'Update project',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the projects and have role 'ADMIN' in the workspace
-  `,
+  description: 'Update project by id or slug.',
   request: {
     params: projectParamSchema,
     body: {
@@ -156,7 +107,7 @@ export const updateProjectRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'Project was updated',
+      description: 'Project updated',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(apiProjectSchema),
@@ -173,10 +124,7 @@ export const deleteProjectsRouteConfig = createRouteConfig({
   guard: [isAuthenticated, splitByAllowance('delete', 'project')],
   tags: ['projects'],
   summary: 'Delete projects',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
+  description: 'Delete projects by ids.',
   request: {
     query: deleteByIdsQuerySchema,
   },
@@ -186,34 +134,6 @@ export const deleteProjectsRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithErrorsSchema(),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const getUsersByProjectIdRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/projects/{project}/members',
-  guard: [isAuthenticated, isAllowedTo('read', 'project')],
-  tags: ['projects'],
-  summary: 'Get members of project',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the project
-  `,
-  request: {
-    params: projectParamSchema,
-    query: getUsersByProjectQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Members of project',
-      content: {
-        'application/json': {
-          schema: successResponseWithPaginationSchema(apiUserSchema),
         },
       },
     },

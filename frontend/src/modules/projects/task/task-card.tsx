@@ -1,7 +1,7 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
-import { type MouseEventHandler, useContext, useEffect, useRef, useState, useMemo } from 'react';
+import { type MouseEventHandler, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -21,10 +21,10 @@ import { toast } from 'sonner';
 import { TaskContext } from '../board/board-column.tsx';
 import { ProjectContext } from '../board/project-context.ts';
 import SetLabels from './task-selectors/select-labels.tsx';
-import { TaskEditor } from './task-selectors/task-editor.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import SelectParent from './task-selectors/select-parent.tsx';
 import SetSubTasks from './task-selectors/select-sub-tasks.tsx';
+import { TaskEditor } from './task-selectors/task-editor.tsx';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
@@ -305,17 +305,17 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   />
                 )}
 
-            {
-              // TODO: Bind the entire task object instead of individual IDs
-            }
-            <SetLabels
-              labels={labels}
-              organizationId={task.organization_id}
-              projectId={task.project_id}
-              changeLabels={(newLabels) => handleChange('labels', newLabels)}
-              viewValue={task.labels}
-              mode="edit"
-            />
+                {
+                  // TODO: Bind the entire task object instead of individual IDs
+                }
+                <SetLabels
+                  labels={labels}
+                  organizationId={task.organization_id}
+                  projectId={task.project_id}
+                  changeLabels={(newLabels) => handleChange('labels', newLabels)}
+                  viewValue={task.labels}
+                  mode="edit"
+                />
 
                 <div className="flex gap-1 ml-auto mr-1">
                   <AssignMembers

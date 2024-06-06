@@ -5,7 +5,7 @@ import type { User } from '~/types';
 import { Pencil } from 'lucide-react';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '~/modules/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 interface Props {
   user: User;

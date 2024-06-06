@@ -25,10 +25,6 @@ export const createProjectJsonSchema = z.object({
   workspace: idSchema.optional(),
 });
 
-export const getUserProjectsParamSchema = z.object({
-  userId: idSchema,
-});
-
 export const apiUserProjectSchema = z.array(
   z.object({
     id: z.string(),
@@ -53,8 +49,4 @@ export const updateProjectJsonSchema = createInsertSchema(projectsTable, {
   slug: true,
   name: true,
   color: true,
-});
-
-export const getUsersByProjectQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'email', 'createdAt']).default('createdAt').optional(),
 });

@@ -1,7 +1,16 @@
-import type { PageResourceType } from 'backend/types/common';
-import { type UploadParams, UploadType, type User } from '~/types';
-import { generalClient as client, handleResponse } from '.';
+import type { RequestType } from 'backend/db/schema/requests';
+import type { EntityType } from 'backend/types/common';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
+import { type ContextEntity, type UploadParams, UploadType, type User } from '~/types';
+import { generalClient as client, handleResponse } from '.';
+
+// Get public counts for about page
+export const getPublicCounts = async () => {
+  const response = await client.public.counts.$get();
+
+  const json = await handleResponse(response);
+  return json.data;
+};
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
@@ -41,11 +50,8 @@ export const invite = async (values: InviteSystemProps) => {
 };
 
 // Check if slug is available
-export const checkSlugAvailable = async (params: {
-  slug: string;
-  type: PageResourceType;
-}) => {
-  const response = await client['check-slug'][':type'][':slug'].$get({
+export const checkSlugAvailable = async (params: { slug: string }) => {
+  const response = await client['check-slug'][':slug'].$get({
     param: params,
   });
 
@@ -64,7 +70,7 @@ export const checkToken = async (token: string) => {
 };
 
 // Get suggestions
-export const getSuggestions = async (query: string, type?: PageResourceType | undefined) => {
+export const getSuggestions = async (query: string, type?: EntityType | undefined) => {
   const response = await client.suggestions.$get({
     query: { q: query, type },
   });
@@ -92,21 +98,61 @@ export const acceptInvite = async ({
   return json.success;
 };
 
-interface ActionRequestProp {
+export type GetMembersParams = Partial<
+  Omit<Parameters<(typeof client.members)['$get']>['0']['query'], 'limit' | 'offset'> & {
+    limit: number;
+    page: number;
+  }
+>;
+
+// Get a list of members in an entity
+export const getMembers = async (
+  idOrSlug: string,
+  entityType: ContextEntity,
+  { q, sort = 'id', order = 'asc', role, page = 0, limit = 50 }: GetMembersParams = {},
+  signal?: AbortSignal,
+) => {
+  const response = await client.members.$get(
+    {
+      param: { idOrSlug, entityType },
+      query: {
+        q,
+        sort,
+        order,
+        offset: String(page * limit),
+        limit: String(limit),
+        role,
+      },
+    },
+    {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        return fetch(input, {
+          ...init,
+          credentials: 'include',
+          signal,
+        });
+      },
+    },
+  );
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+//TODO: infer from backend?
+interface CreateRequestProp {
   email: string;
-  type: 'ORGANIZATION_REQUEST' | 'WAITLIST_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
+  type: RequestType;
   userId?: string;
   organizationId?: string;
   message?: string;
 }
-// Action request
-export const requestAction = async (requestInfo: ActionRequestProp) => {
-  const response = await client['action-request'].$post({
+// Request access or request info
+export const createRequest = async (requestInfo: CreateRequestProp) => {
+  const response = await client.requests.$post({
     json: {
       type: requestInfo.type,
       email: requestInfo.email,
-      userId: requestInfo.userId || null,
-      organizationId: requestInfo.organizationId || null,
       message: requestInfo.message || null,
     },
   });
@@ -121,9 +167,7 @@ export type GetRequestsParams = Partial<
   }
 >;
 
-// TODO: fix this
-// Get system action requests
-export const actionRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {}, signal?: AbortSignal) => {
+export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {}, signal?: AbortSignal) => {
   const response = await client.requests.$get(
     {
       query: {

@@ -1,12 +1,12 @@
 import { GripVertical, Plus } from 'lucide-react';
 import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
 import { WorkspaceContext } from '../../workspaces';
 import { ProjectContext } from './project-context';
 import ToolTipButtons from './tooltip-buttons';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 
 interface BoardColumnHeaderProps {
   createFormOpen: boolean;
@@ -33,9 +33,7 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
   const stickyStyles = 'sticky sm:relative top-[72px] sm:top-0 bg-background z-50';
 
   return (
-    <div
-      className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}
-    >
+    <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
       <Button ref={dragRef} variant={'ghost'} size="xs" className="max-sm:hidden px-0 text-primary/50 cursor-grab relative">
         <GripVertical size={16} />
       </Button>

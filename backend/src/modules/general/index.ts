@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, ne, or } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, or, sql } from 'drizzle-orm';
 import { emailSender } from '../../../../email';
 import { InviteEmail } from '../../../../email/emails/invite';
 
@@ -18,11 +18,13 @@ import { organizationsTable } from '../../db/schema/organizations';
 import { requestsTable } from '../../db/schema/requests';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
+import { entityTables } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { sendSlackNotification } from '../../lib/notification';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSEToUsers } from '../../lib/sse';
+import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { apiUserSchema } from '../users/schema';
@@ -30,17 +32,17 @@ import { checkRole } from './helpers/check-role';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
   acceptInviteRouteConfig,
-  actionRequestsConfig,
   checkSlugRouteConfig,
   checkTokenRouteConfig,
+  createRequestConfig,
+  getMembersRouteConfig,
+  getPublicCountsRouteConfig,
+  getRequestsConfig,
   getUploadTokenRouteConfig,
   inviteRouteConfig,
   paddleWebhookRouteConfig,
-  requestActionConfig,
   suggestionsConfig,
 } from './routes';
-import { isAuthenticated } from '../../middlewares/guard';
-import { entityTables } from '../../lib/entity';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -50,6 +52,37 @@ export const streams = new Map<string, SSEStreamingApi>();
 
 // * General endpoints
 const generalRoutes = app
+  /*
+   * Get public counts
+   */
+  .openapi(getPublicCountsRouteConfig, async (ctx) => {
+    const [organizationsResult, usersResult] = await Promise.all([
+      db
+        .select({
+          total: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(organizationsTable),
+      db
+        .select({
+          total: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(usersTable),
+    ]);
+
+    const organizations = organizationsResult[0].total;
+    const users = usersResult[0].total;
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          organizations,
+          users,
+        },
+      },
+      200,
+    );
+  })
   /*
    * Get upload token
    */
@@ -187,23 +220,20 @@ const generalRoutes = app
       });
     }
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Accept invite token
    */
   .openapi(acceptInviteRouteConfig, async (ctx) => {
     const verificationToken = ctx.req.valid('param').token;
+
     const [token] = await db
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, verificationToken)));
+
+    // Delete token
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
     if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
@@ -213,11 +243,10 @@ const generalRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, token.email));
 
     if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', {
-        email: token.email,
-      });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { email: token.email });
     }
 
+    // If it is a system invitation, update user role
     if (token.type === 'SYSTEM_INVITATION') {
       if (token.role === 'ADMIN') {
         await db.update(usersTable).set({ role: 'ADMIN' }).where(eq(usersTable.id, user.id));
@@ -242,9 +271,7 @@ const generalRoutes = app
         .where(and(eq(organizationsTable.id, token.organizationId)));
 
       if (!organization) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', {
-          organizationId: token.organizationId,
-        });
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: token.organizationId });
       }
 
       const [existingMembership] = await db
@@ -260,12 +287,7 @@ const generalRoutes = app
             .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
         }
 
-        return ctx.json(
-          {
-            success: true,
-          },
-          200,
-        );
+        return ctx.json({ success: true }, 200);
       }
 
       await db.insert(membershipsTable).values({
@@ -277,12 +299,7 @@ const generalRoutes = app
       sendSSEToUsers([user.id], 'create_entity', organization);
     }
 
-    return ctx.json(
-      {
-        success: true,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Paddle webhook
@@ -310,13 +327,7 @@ const generalRoutes = app
       logEvent('Error handling paddle webhook', { error: (error as Error).message }, 'error');
     }
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Get suggestions
@@ -371,25 +382,113 @@ const generalRoutes = app
     );
   })
   /*
+   * Get members by entity id and type
+   */
+  .openapi(getMembersRouteConfig, async (ctx) => {
+    const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const organization = ctx.get('organization');
+
+    const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
+
+    const usersQuery = db.select().from(usersTable).where(filter).as('users');
+
+    const membersFilters = [eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'ORGANIZATION')];
+
+    if (role) {
+      membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
+    }
+
+    const roles = db
+      .select({
+        userId: membershipsTable.userId,
+        id: membershipsTable.id,
+        role: membershipsTable.role,
+      })
+      .from(membershipsTable)
+      .where(and(...membersFilters))
+      .as('roles');
+
+    const membershipCount = db
+      .select({
+        userId: membershipsTable.userId,
+        memberships: count().as('memberships'),
+      })
+      .from(membershipsTable)
+      .groupBy(membershipsTable.userId)
+      .as('membership_count');
+
+    const orderColumn = getOrderColumn(
+      {
+        id: usersTable.id,
+        name: usersTable.name,
+        email: usersTable.email,
+        createdAt: usersTable.createdAt,
+        lastSeenAt: usersTable.lastSeenAt,
+        role: roles.role,
+        membershipId: roles.id,
+      },
+      sort,
+      usersTable.id,
+      order,
+    );
+
+    const membersQuery = db
+      .select({
+        user: usersTable,
+        role: roles.role,
+        membershipId: roles.id,
+        counts: {
+          memberships: membershipCount.memberships,
+        },
+      })
+      .from(usersQuery)
+      .innerJoin(roles, eq(usersTable.id, roles.userId))
+      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
+      .orderBy(orderColumn);
+
+    const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
+
+    const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
+
+    const members = await Promise.all(
+      result.map(async ({ user, role, membershipId, counts }) => ({
+        ...user,
+        electricJWTToken: null,
+        sessions: [],
+        role,
+        membershipId,
+        counts,
+      })),
+    );
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          items: members,
+          total,
+        },
+      },
+      200,
+    );
+  })
+  /*
    *  Create request
    */
-  .openapi(requestActionConfig, async (ctx) => {
-    const { email, userId, organizationId, type, message } = ctx.req.valid('json');
+  .openapi(createRequestConfig, async (ctx) => {
+    const { email, type, message } = ctx.req.valid('json');
 
     const [createdAccessRequest] = await db
       .insert(requestsTable)
       .values({
         email,
         type,
-        user_id: userId,
-        organization_id: organizationId,
         message: message,
       })
       .returning();
 
     // slack notifications
     if (type === 'WAITLIST_REQUEST') await sendSlackNotification('to join the waitlist.', email);
-    if (type === 'ORGANIZATION_REQUEST') await sendSlackNotification('to join an organization.', email);
     if (type === 'NEWSLETTER_REQUEST') await sendSlackNotification('to become a donate or build member.', email);
     if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${message}.`, email);
 
@@ -399,28 +498,18 @@ const generalRoutes = app
         data: {
           email: createdAccessRequest.email,
           type: createdAccessRequest.type,
-          userId: createdAccessRequest.user_id,
-          organizationId: createdAccessRequest.organization_id,
         },
       },
       200,
     );
   })
   /*
-   *  Get requests
+   *  Get list of requests for system admins
    */
-  .openapi(actionRequestsConfig, async (ctx) => {
+  .openapi(getRequestsConfig, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
-    const filter: SQL | undefined = q
-      ? and(ilike(requestsTable.email, `%${q}%`), ne(requestsTable.type, 'ORGANIZATION_REQUEST'))
-      : ne(requestsTable.type, 'ORGANIZATION_REQUEST');
-
-    // if (mode === 'organization') {
-    //   filter = q
-    //     ? and(ilike(requestsTable.email, `%${q}%`), eq(requestsTable.type, 'ORGANIZATION_REQUEST'))
-    //     : eq(requestsTable.type, 'ORGANIZATION_REQUEST');
-    // }
+    const filter: SQL | undefined = q ? ilike(requestsTable.email, `%${q}%`) : undefined;
 
     const requestsQuery = db.select().from(requestsTable).where(filter);
 
@@ -438,64 +527,13 @@ const generalRoutes = app
       order,
     );
 
-    // const organizationJoinFilter = organizationId
-    //   ? and(eq(organizationsTable.id, requestsTable.organization_id), eq(organizationsTable.id, organizationId))
-    //   : eq(organizationsTable.id, requestsTable.organization_id);
-    // const requests = await db
-    //   .select({
-    //     requests: requestsTable,
-    //     user: usersTable,
-    //     organization: organizationsTable,
-    //   })
-    //   .from(requestsQuery.as('requests'))
-    //   .leftJoin(organizationsTable, organizationJoinFilter)
-    //   .leftJoin(usersTable, eq(usersTable.id, requestsTable.user_id))
-    //   .orderBy(orderColumn)
-    //   .limit(Number(limit))
-    //   .offset(Number(offset));
-
     const requests = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
-    // return ctx.json(
-    //   {
-    //     success: true,
-    //     data: {
-    //       requestsInfo: requests.map(({ requests }) => ({
-    //         id: requests.id,
-    //         email: requests.email,
-    //         createdAt: requests.createdAt,
-    //         type: requests.type,
-    //         message: requests.message,
-    //         userId: user?.id || null,
-    //         userName: user?.name || null,
-    //         userThumbnail: user?.thumbnailUrl || null,
-    //         organizationId: organization?.id || null,
-    //         organizationSlug: organization?.slug || null,
-    //         organizationName: organization?.name || null,
-    //         organizationThumbnail: organization?.thumbnailUrl || null,
-    //       })),
-    //       total,
-    //     },
-    //   },
-    //   200,
-    // );
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          requestsInfo: requests.map((el) => ({
-            id: el.id,
-            email: el.email,
-            createdAt: el.createdAt,
-            type: el.type,
-            message: el.message,
-          })),
-          total,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: { items: requests, total } }, 200);
   })
+  /*
+   *  Get SSE stream
+   */
   .get('/sse', isAuthenticated, async (ctx) => {
     const user = ctx.get('user');
     return streamSSE(ctx, async (stream) => {

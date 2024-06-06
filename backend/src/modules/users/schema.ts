@@ -1,16 +1,9 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { config } from 'config';
 import { usersTable } from '../../db/schema/users';
-import {
-  idSchema,
-  imageUrlSchema,
-  nameSchema,
-  paginationQuerySchema,
-  resourceTypeSchema,
-  slugSchema,
-  validSlugSchema,
-} from '../../lib/common-schemas';
+import { entityTypeSchema, idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
@@ -36,7 +29,7 @@ export const apiUserSchema = createSelectSchema(usersTable, {
 export const getUsersQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),
-    role: z.enum(['admin', 'user']).default('user').optional(),
+    role: z.enum(config.systemRoles).default('USER').optional(),
   }),
 );
 
@@ -57,11 +50,11 @@ const menuItemSchema = z.object({
 const menuSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
-    submenu: z.object({ items: z.array(menuItemSchema), canCreate: z.boolean(), type: resourceTypeSchema }).optional(),
+    submenu: z.object({ items: z.array(menuItemSchema), canCreate: z.boolean(), type: entityTypeSchema }).optional(),
   }),
 );
 
-const menuSectionSchema = z.object({ items: menuSchema, canCreate: z.boolean(), type: resourceTypeSchema });
+const menuSectionSchema = z.object({ items: menuSchema, canCreate: z.boolean(), type: entityTypeSchema });
 
 export const userMenuSchema = z.object({
   organizations: menuSectionSchema,

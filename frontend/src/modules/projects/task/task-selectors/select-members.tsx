@@ -7,7 +7,7 @@ import { useMeasure } from '~/hooks/use-measure.tsx';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
-import type { User } from '~/types/index.ts';
+import type { Member } from '~/types/index.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
@@ -15,9 +15,9 @@ import { TaskContext } from '../../board/board-column.tsx';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';
-  users: User[];
-  viewValue?: User[] | null;
-  changeAssignedTo?: (users: User[]) => void;
+  users: Member[];
+  viewValue?: Member[] | null;
+  changeAssignedTo?: (users: Member[]) => void;
 }
 
 const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembersProps) => {
@@ -25,7 +25,7 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('assignedTo');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<User[]>(viewValue ? viewValue : formValue || []);
+  const [selectedUsers, setSelectedUsers] = useState<Member[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
