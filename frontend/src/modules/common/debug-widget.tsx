@@ -115,7 +115,7 @@ export const DebugWidget = ({ className = '' }: Props) => {
   return (
     <>
       {showDebug && (
-        <div className={`fixed right-[48px] bottom-[24px] z-[99999999] ${className}`}>
+        <div className={`max-xs:bottom-[68px]  fixed right-[48px] bottom-[24px] z-[99999999] ${className}`}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" aria-label="Debug widget">

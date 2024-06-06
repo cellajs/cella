@@ -78,10 +78,10 @@ const AppNav = () => {
 
   useEffect(() => {
     if (!debugState) {
-      setNavItemsToMap([...navItems.slice(0, -1), { id: 'debugOn', icon: Bug, mirrorOnMobile: true }, navItems.slice(-1)[0]]);
+      setNavItemsToMap([...navItems.slice(0, -1), { id: 'debugOn', icon: Bug }, navItems.slice(-1)[0]]);
       return;
     }
-    setNavItemsToMap([...navItems.slice(0, -1), { id: 'debugOff', icon: BugOff, mirrorOnMobile: true }, navItems.slice(-1)[0]]);
+    setNavItemsToMap([...navItems.slice(0, -1), { id: 'debugOff', icon: BugOff }, navItems.slice(-1)[0]]);
   }, [debugState]);
 
   return (
