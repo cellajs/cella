@@ -140,6 +140,7 @@
     "react-joyride": "^2.8.2",
     "react-resizable-panels": "^2.0.19",
     "react-sticky-box": "^2.0.5",
+    "react-use-measure": "^2.1.1",
     "slugify": "1.6.6",
     "sonner": "^1.4.41",
     "tailwind-merge": "^2.3.0",
