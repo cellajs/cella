@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Bell, Home, type LucideProps, Menu, Search, User } from 'lucide-react';
+import { Bell, Home, type LucideProps, Menu, Search, User, Bug, BugOff } from 'lucide-react';
 import type React from 'react';
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -39,10 +39,19 @@ const AppNav = () => {
   const isSmallScreen = useBreakpoints('max', 'xl');
   const { activeSheet, setSheet, keepMenuOpen, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
-
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
+  const [navItemsToMap, setNavItemsToMap] = useState([] as NavItem[]);
+  const [debugState, setDebugState] = useState(window.localStorage.debug === 'true');
 
   const navButtonClick = (navItem: NavItem) => {
+    //Toggle debugclick
+    if (navItem.id.includes('debug')) {
+      window.localStorage.setItem('debug', `${!debugState}`);
+      setDebugState(!debugState);
+      window.dispatchEvent(new Event('storage'));
+      if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
+      return;
+    }
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
       dialog(<AppSearch />, {
@@ -67,19 +76,27 @@ const AppNav = () => {
     }
   };
 
+  useEffect(() => {
+    if (!debugState) {
+      setNavItemsToMap([...navItems.slice(0, -1), { id: 'debugOn', icon: Bug, mirrorOnMobile: true }, navItems.slice(-1)[0]]);
+      return;
+    }
+    setNavItemsToMap([...navItems.slice(0, -1), { id: 'debugOff', icon: BugOff, mirrorOnMobile: true }, navItems.slice(-1)[0]]);
+  }, [debugState]);
+
   return (
     <>
       <nav
         id="app-nav"
         className={cn(
-          'fixed z-[140] w-full overflow-y-auto transition-transform ease-out md:fixed md:left-0 md:top-0 md:h-screen md:w-16',
+          'fixed z-[400] w-full max-xs:bottom-0 overflow-y-auto transition-transform ease-out md:fixed md:left-0 md:top-0 md:h-screen md:w-16',
           navBackground,
-          !hasStarted && 'max-md:-translate-y-full md:-translate-x-full',
+          !hasStarted && 'max-md:translate-y-full md:-translate-x-full',
           focusView && 'hidden',
         )}
       >
         <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1 md:my-1">
-          {navItems.map((navItem: NavItem, index: number) => {
+          {navItemsToMap.map((navItem: NavItem, index: number) => {
             const isSecondItem = index === 1;
             const isActive = activeSheet?.id === navItem.id;
 

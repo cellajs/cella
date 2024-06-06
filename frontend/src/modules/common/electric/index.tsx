@@ -9,7 +9,6 @@ import { useUserStore } from '~/store/user';
 import { useNavigationStore } from '~/store/navigation';
 import type { User } from '~/types';
 import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
-
 interface Props {
   children: React.ReactNode;
 }
@@ -37,6 +36,7 @@ const ElectricProvider = ({ children }: Props) => {
   useEffect(() => {
     let isMounted = true;
 
+    const debug = config.mode !== 'production';
     const { tabId } = uniqueTabId();
     const scopedDbName = `basic-${LIB_VERSION}-${tabId}.db`;
 
@@ -44,7 +44,7 @@ const ElectricProvider = ({ children }: Props) => {
       try {
         const conn = await ElectricDatabase.init(scopedDbName);
         const electric = await electrify(conn, schema, {
-          debug: config.debug,
+          debug: debug,
           url: config.electricUrl,
         });
 
@@ -54,31 +54,34 @@ const ElectricProvider = ({ children }: Props) => {
           return;
         }
 
-        if (config.debug) {
+        if (debug) {
           const { addToolbar } = await import('@electric-sql/debug-toolbar');
           addToolbar(electric);
+
+          const toolbarContainer = document.getElementById('__electric_debug_toolbar_container');
+          if (toolbarContainer) toolbarContainer.style.display = 'none';
         }
 
         setElectric(electric);
 
-      // Resolves when the shape subscription has been established.
-      // TODO: Improve the following section by deriving organization IDs differently.
-      // TODO: Update organizationIds to sync whenever the user's menu changes.
-      const organizationIds = menu.organizations.items.map(item => item.id)
+        // Resolves when the shape subscription has been established.
+        // TODO: Improve the following section by deriving organization IDs differently.
+        // TODO: Update organizationIds to sync whenever the user's menu changes.
+        const organizationIds = menu.organizations.items.map((item) => item.id);
         const tasksShape = await electric.db.tasks.sync({
           where: {
-            organization_id: { 
-              in: organizationIds 
-            }
-          }
+            organization_id: {
+              in: organizationIds,
+            },
+          },
         });
 
         const labelsShape = await electric.db.labels.sync({
           where: {
-            organization_id: { 
-              in: organizationIds 
-            }
-          }
+            organization_id: {
+              in: organizationIds,
+            },
+          },
         });
 
         // Resolves when the data has been synced into the local database.
@@ -86,7 +89,7 @@ const ElectricProvider = ({ children }: Props) => {
         await labelsShape.synced;
 
         const timeToSync = performance.now();
-        if (config.debug) {
+        if (debug) {
           console.log(`Synced in ${timeToSync}ms from page load`);
         }
       } catch (error) {
@@ -108,7 +111,7 @@ const ElectricProvider = ({ children }: Props) => {
     <>
       <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>
       {electric === undefined && (
-        <div className="fixed z-[300] bottom-0 border-0 p-4 flex w-full justify-center">
+        <div className="fixed z-[300] max-xs:bottom-[64px]  bottom-0 border-0 p-4 flex w-full justify-center">
           <Alert variant="plain" className="border-0 w-auto">
             <AlertDescription className="pr-8 font-light flex items-center justify-center">
               <Loader2 className="h-4 w-4 animate-spin" />
