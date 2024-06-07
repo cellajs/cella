@@ -38,6 +38,7 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
+import type { Suggestion } from './schema'
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -331,20 +332,17 @@ const generalRoutes = app
     const { q, type } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    // Retrieve user memberships to filter suggestions, ensuring they only include organizations the user is part of, except for ADMIN users who can see everything
+    // Retrieve user memberships to filter suggestions by relevant organization,  ADMIN users see everything
+    const memberships = await db.select()
+      .from(membershipsTable)
+      .where(eq(membershipsTable.userId, user.id));
+
+    // Retrieve organizationIds for non-admin users and check if the user has at least one organization membership
     let organizationIds: string[] = [];
 
     if (user.role !== 'ADMIN') {
-      const memberships = await db.select()
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'ORGANIZATION')));
-
-      organizationIds = memberships.map(el => String(el.organizationId));
-    }
-
-    // Check if the user is an ADMIN or has at least one organization membership
-    if (!organizationIds.length && user.role !== 'ADMIN') {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', undefined ,{ user: user.id });
+      organizationIds = memberships.filter(el => el.type === 'ORGANIZATION').map(el => String(el.organizationId));
+      if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined ,{ user: user.id });
     }
 
     // Provide suggestions for all entities or narrow them down to a specific type if specified
@@ -369,55 +367,42 @@ const generalRoutes = app
         ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
       }
 
+      // Build search filters
       const $or = [ilike(table.name, `%${q}%`)]
       if ('email' in table) $or.push(ilike(table.email, `%${q}%`))
 
+      // Build organization filters
       const $and = [];
-      if (organizationIds.length && 'organizationId' in table) $and.push(inArray(table.organizationId, organizationIds));
-      $and.push($or.length > 1 ? or(...$or) : $or[0]);
       
+      if (organizationIds.length) {
+        if ('organizationId' in table) {
+          $and.push(inArray(table.organizationId, organizationIds));
+        } else if (entityType === 'ORGANIZATION') {
+          $and.push(inArray(table.id, organizationIds));
+        } else if (entityType === 'USER') {
+          // Filter users based on their memberships in specified organizations
+          const userMemberships = await db.select({userId: membershipsTable.userId})
+            .from(membershipsTable)
+            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')));
+          
+          if (!userMemberships.length) continue; 
+          $and.push(inArray(table.id, userMemberships.map(el => String(el.userId))));
+        }
+      }
+      
+      $and.push($or.length > 1 ? or(...$or) : $or[0]);
       const $where = $and.length > 1 ? and(...$and) : $and[0]
 
       // Build query
       queries.push(db.select(select).from(table).where($where).limit(10));
     }
 
+    const results = await Promise.all(queries);
     const entitiesResult = [];
-    if (type === undefined) {
-      for (const defaultEntity of config.entityTypes) {
-        const table = entityTables.get(defaultEntity);
-        if (!table) continue;
-        const entities = await db
-          .select({
-            id: table.id,
-            slug: table.slug,
-            name: table.name,
-            ...('email' in table && { email: table.email }),
-            ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
-          })
-          .from(table)
-          .where('email' in table ? or(ilike(table.name, `%${q}%`), ilike(table.email, `%${q}%`)) : ilike(table.name, `%${q}%`))
-          .limit(10);
-        entitiesResult.push(...entities.map((entity) => ({ ...entity, type: defaultEntity })));
-      }
-    } else {
-      const table = entityTables.get(type);
-      if (table) {
-        const entities = await db
-          .select({
-            id: table.id,
-            slug: table.slug,
-            name: table.name,
-            ...('email' in table && { email: table.email }),
-            ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
-          })
-          .from(table)
-          .where('email' in table ? or(ilike(table.name, `%${q}%`), ilike(table.email, `%${q}%`)) : ilike(table.name, `%${q}%`))
-          .limit(10);
+    
+    // @TODO: Tmp Typescript type solution
+    for (const entities of results as unknown as Array<Suggestion[]>) entitiesResult.push(...entities.map(e => e))
 
-        entitiesResult.push(...entities.map((entity) => ({ ...entity, type })));
-      }
-    }
     return ctx.json(
       {
         success: true,

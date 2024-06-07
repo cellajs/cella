@@ -48,11 +48,13 @@ const suggestionSchema = z.object({
   slug: slugSchema,
   id: idSchema,
   name: nameSchema,
+  organizationId: idSchema,
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
 });
 
-export const entitySuggestionSchema = suggestionSchema.extend({ type: z.enum(config.entityTypes) });
+export const entitySuggestionSchema = suggestionSchema.extend({ entity: z.enum(config.entityTypes) });
+export type Suggestion = z.infer<typeof entitySuggestionSchema>;
 
 export const suggestionsSchema = z.object({
   entities: z.array(entitySuggestionSchema),
