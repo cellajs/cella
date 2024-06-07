@@ -5,7 +5,7 @@ import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '../../db/schema/requests';
 import { tokensTable } from '../../db/schema/tokens';
 import {
-  entityTypeSchema,
+  contextEntityTypeSchema,
   idSchema,
   imageUrlSchema,
   nameSchema,
@@ -60,17 +60,23 @@ export const suggestionsSchema = z.object({
   total: z.number(),
 });
 
-export const actionReqTableSchema = createSelectSchema(requestsTable);
+export const requestsSchema = createSelectSchema(requestsTable);
 
 export const createRequestSchema = z.object({
   email: z.string().min(1).email(),
-  type: actionReqTableSchema.shape.type,
+  type: requestsSchema.shape.type,
   message: z.string().nullable(),
 });
 
-export const actionResponseSchema = z.object({
+export const apiMemberSchema = z.object({
+  ...apiUserSchema.shape,
+  membershipId: idSchema,
+  role: apiMembershipSchema.shape.role,
+});
+
+export const requestResponseSchema = z.object({
   email: z.string().min(1).email(),
-  type: actionReqTableSchema.shape.type,
+  type: requestsSchema.shape.type,
 });
 
 export const apiRequestSchema = z.object({
@@ -84,12 +90,9 @@ export const getRequestsQuerySchema = paginationQuerySchema.merge(
   }),
 );
 
-export const getMembersParamSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
-  entityType: entityTypeSchema,
-});
-
 export const getMembersQuerySchema = paginationQuerySchema.extend({
+  idOrSlug: idSchema.or(slugSchema),
+  entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
   role: z.enum(config.allRoles).default('MEMBER').optional(),
 });

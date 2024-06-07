@@ -40,6 +40,10 @@ interface Props<T, U> {
   customColumns?: ColumnOrColumnGroup<T>[];
 }
 
+export const  isMember = (resource: User | Member): resource is Member => {
+  return (resource as Member).membershipId !== undefined;
+}
+
 const UsersTable = <
   T extends Member | User,
   U extends GetUsersParams | (GetMembersParams & { idOrSlug: string }),
@@ -86,7 +90,7 @@ const UsersTable = <
   const callback = useMutateInfiniteQueryData(['users', debounceQuery, sortColumns, role]);
 
   const openInviteDialog = () => {
-    dialog(<InviteUsers entityId={idOrSlug} entityType={entityType} mode={idOrSlug ? 'email' : null} dialog />, {
+    dialog(<InviteUsers entityId={idOrSlug} entityType={entityType} mode={idOrSlug ? null : 'email'} dialog />, {
       id: 'user-invite',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[100] max-w-4xl',
@@ -166,7 +170,7 @@ const UsersTable = <
       if (column.key === 'role') {
         const user = changedRows[index];
 
-        if (entityType) return updateMembership({ membershipId: user.membershipId, role: user.role });
+        if (isMember(user)) return updateMembership({ membershipId: user.membershipId, role: user.role });
 
         updateUser(user.id, { role: user.role })
           .then(() => {

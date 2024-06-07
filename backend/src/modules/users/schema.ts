@@ -42,7 +42,7 @@ const menuItemSchema = z.object({
   thumbnailUrl: imageUrlSchema.nullish(),
   archived: z.boolean(),
   muted: z.boolean(),
-  role: apiMembershipSchema.shape.role.nullable(),
+  role: apiMembershipSchema.shape.role,
   membershipId: idSchema,
   workspaceId: idSchema.optional(),
 });

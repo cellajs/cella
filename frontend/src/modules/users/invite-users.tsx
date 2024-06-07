@@ -61,8 +61,8 @@ const InviteUsers = ({ entityId, entityType, callback, dialog: isDialog, mode, c
   return (
     <MotionConfig transition={{ type: 'spring', bounce: 0, duration: 0.4 }}>
       <AnimatePresence mode="popLayout">
-        {!inviteMode ? (
-          <motion.div key="initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}>
+        {!inviteMode && (
+          <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
             <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
               <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
                 <Search size={48} strokeWidth={1} />
@@ -86,36 +86,20 @@ const InviteUsers = ({ entityId, entityType, callback, dialog: isDialog, mode, c
               </ToggleGroupItem>
             </ToggleGroup>
           </motion.div>
-        ) : inviteMode === 'search' ? (
-          <motion.div
-            key="search"
-            initial={{ x: 40, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -40, opacity: 0 }}
-            className="flex flex-col gap-4"
-          >
-            <AppAlert id="invite_search" variant="success" Icon={Info}>
-              {t('common:explain.invite_search.text')}
+        )}
+        {inviteMode && (
+          <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
+            <AppAlert id={`invite_${inviteMode}`} variant="success" Icon={Info}>
+              {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
             </AppAlert>
-            <InviteSearchForm entityId={entityId} entityType={entityType} callback={callback} dialog={isDialog} />
-          </motion.div>
-        ) : (
-          inviteMode === 'email' && (
-            <motion.div
-              key="search"
-              initial={{ x: 40, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -40, opacity: 0 }}
-              className="flex flex-col gap-4"
-            >
-              <AppAlert id="invite_email" variant="success" Icon={Info}>
-                {t('common:explain.invite_email.text')}
-              </AppAlert>
+            {inviteMode === 'email' ? (
               <InviteEmailForm entityId={entityId} entityType={entityType} callback={callback} dialog={isDialog}>
                 {children}
               </InviteEmailForm>
-            </motion.div>
-          )
+            ) : (
+              <InviteSearchForm entityId={entityId} entityType={entityType} callback={callback} dialog={isDialog} />
+            )}
+          </motion.div>
         )}
       </AnimatePresence>
     </MotionConfig>

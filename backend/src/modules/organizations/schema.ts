@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '../../db/schema/organizations';
 import {
-  idSchema,
   imageUrlSchema,
   nameSchema,
   paginationQuerySchema,
@@ -12,13 +11,6 @@ import {
   validUrlSchema,
 } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
-import { apiUserSchema } from '../users/schema';
-
-export const apiOrganizationUserSchema = z.object({
-  ...apiUserSchema.shape,
-  membershipId: idSchema,
-  role: apiMembershipSchema.shape.role,
-});
 
 export const apiOrganizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,

@@ -14,8 +14,7 @@ export const membershipsTable = pgTable('memberships', {
   type: varchar('type', {
     enum: config.contextEntityTypes,
   })
-    .notNull()
-    .default('ORGANIZATION'),
+    .notNull(),
   organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
@@ -29,8 +28,8 @@ export const membershipsTable = pgTable('memberships', {
   modifiedBy: varchar('modified_by').references(() => usersTable.id, {
     onDelete: 'set null',
   }),
-  inactive: boolean('inactive').default(false),
-  muted: boolean('muted').default(false),
+  inactive: boolean('inactive').default(false).notNull(),
+  muted: boolean('muted').default(false).notNull(),
 });
 
 export const membershipsTableRelations = relations(membershipsTable, ({ one }) => ({

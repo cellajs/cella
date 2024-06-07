@@ -129,10 +129,10 @@ const usersRoutes = app
         modifiedAt: organization.modifiedAt,
         name: organization.name,
         thumbnailUrl: organization.thumbnailUrl,
-        archived: membership.inactive || false,
-        muted: membership.muted || false,
+        archived: membership.inactive,
+        muted: membership.muted,
         membershipId: membership.id,
-        role: membership?.role || null,
+        role: membership.role,
       };
     });
 
@@ -145,10 +145,10 @@ const usersRoutes = app
         name: project.name,
         color: project.color,
         organizationId: project.organizationId,
-        archived: membership.inactive || false,
-        muted: membership.muted || false,
+        archived: membership.inactive,
+        muted: membership.muted,
         membershipId: membership.id,
-        role: membership?.role || null,
+        role: membership.role,
       };
     });
 
@@ -164,10 +164,10 @@ const usersRoutes = app
         name: workspace.name,
         thumbnailUrl: workspace.thumbnailUrl,
         organizationId: workspace.organizationId,
-        archived: membership.inactive || false,
-        muted: membership.muted || false,
+        archived: membership.inactive,
+        muted: membership.muted,
         membershipId: membership.id,
-        role: membership?.role || null,
+        role: membership.role,
         submenu: { items: projects.filter(({ id }) => projectsids.includes(id)), type: 'PROJECT' as EntityType, canCreate: false },
       };
     });

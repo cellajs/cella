@@ -6,6 +6,7 @@ export const passwordSchema = z.string().min(8).max(100);
 export const cookieSchema = z.string();
 
 export const entityTypeSchema = z.enum(config.entityTypes);
+export const contextEntityTypeSchema = z.enum(config.contextEntityTypes);
 
 export const idSchema = z.string();
 

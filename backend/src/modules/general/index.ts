@@ -18,7 +18,7 @@ import { organizationsTable } from '../../db/schema/organizations';
 import { requestsTable } from '../../db/schema/requests';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
-import { entityTables } from '../../lib/entity';
+import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { sendSlackNotification } from '../../lib/notification';
@@ -292,6 +292,7 @@ const generalRoutes = app
 
       await db.insert(membershipsTable).values({
         organizationId: organization.id,
+        type: 'ORGANIZATION',
         userId: user.id,
         role: token.role as MembershipModel['role'],
         createdBy: user.id,
@@ -385,14 +386,14 @@ const generalRoutes = app
    * Get members by entity id and type
    */
   .openapi(getMembersRouteConfig, async (ctx) => {
-    const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
-    const organization = ctx.get('organization');
+    const {idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const entity = await resolveEntity(entityType, idOrSlug)
 
     const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
-    const membersFilters = [eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'ORGANIZATION')];
+    const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];
 
     if (role) {
       membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));

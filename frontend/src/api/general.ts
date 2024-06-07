@@ -1,7 +1,7 @@
 import type { RequestType } from 'backend/db/schema/requests';
 import type { EntityType } from 'backend/types/common';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
-import { type ContextEntity, type UploadParams, UploadType, type User } from '~/types';
+import { type UploadParams, UploadType, type User, type ContextEntity } from '~/types';
 import { generalClient as client, handleResponse } from '.';
 
 // Get public counts for about page
@@ -98,24 +98,29 @@ export const acceptInvite = async ({
   return json.success;
 };
 
-export type GetMembersParams = Partial<
-  Omit<Parameters<(typeof client.members)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit: number;
-    page: number;
-  }
->;
+type RequiredGetMembersParams = {
+  idOrSlug: string;
+  entityType: ContextEntity;
+};
+
+type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof client.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
+  limit?: number;
+  page?: number;
+};
+
+// Combined type
+export type GetMembersParams = RequiredGetMembersParams & OptionalGetMembersParams;
 
 // Get a list of members in an entity
 export const getMembers = async (
-  idOrSlug: string,
-  entityType: ContextEntity,
-  { q, sort = 'id', order = 'asc', role, page = 0, limit = 50 }: GetMembersParams = {},
+  { idOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50 }: GetMembersParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.members.$get(
     {
-      param: { idOrSlug, entityType },
       query: {
+        idOrSlug,
+        entityType,
         q,
         sort,
         order,
@@ -143,10 +148,9 @@ export const getMembers = async (
 interface CreateRequestProp {
   email: string;
   type: RequestType;
-  userId?: string;
-  organizationId?: string;
   message?: string;
 }
+
 // Request access or request info
 export const createRequest = async (requestInfo: CreateRequestProp) => {
   const response = await client.requests.$post({

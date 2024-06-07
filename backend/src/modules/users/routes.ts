@@ -142,7 +142,7 @@ export const getUserMenuConfig = createRouteConfig({
   guard: isAuthenticated,
   tags: ['users'],
   summary: 'Get menu of self',
-  description: 'Receive all contextual entities of which the current user is a member.',
+  description: 'Receive a menu data with all contextual entities of which the current user is a member.',
   responses: {
     200: {
       description: 'Menu of user',

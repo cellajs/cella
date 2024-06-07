@@ -56,7 +56,7 @@ export const SheetMenuItem = ({ item, type, className, submenu, searchResults }:
         <div className={`max-sm:hidden text-muted-foreground ${submenu ? 'text-xs' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
-            {item.submenu ? `${item.submenu?.items.length || 0} ${t('common:projects').toLowerCase()}` : item.role}
+            {item.submenu ? `${item.submenu?.items.length || 0} ${t('common:projects').toLowerCase()}` : t(item.role.toLowerCase())}
           </span>
         </div>
       </div>

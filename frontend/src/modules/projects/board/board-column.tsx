@@ -69,7 +69,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
-    queryFn: () => getMembers(project.id, 'PROJECT').then((data) => data.items),
+    queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'PROJECT' }).then((data) => data.items),
     initialData: [],
   });
 

@@ -11,7 +11,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import UsersTable from '~/modules/users/users-table';
-import type { Member } from '~/types';
+import type { ContextEntity, Member } from '~/types';
 import { IndexRoute } from './routeTree';
 
 // Lazy-loaded components
@@ -19,18 +19,18 @@ import { IndexRoute } from './routeTree';
 
 const membersSearchSchema = getMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
-const membersQueryOptions = ({ idOrSlug, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams & { idOrSlug: string }) => {
+const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams & { idOrSlug: string, entityType: ContextEntity }) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['members', idOrSlug, q, sort, order, role],
+    queryKey: ['members', idOrSlug, entityType, q, sort, order, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
       const fetchedData = await getMembers(
-        idOrSlug,
-        'ORGANIZATION',
         {
+          idOrSlug,
+          entityType: 'ORGANIZATION',
           page: pageParam,
           q,
           sort,
@@ -71,7 +71,8 @@ export const OrganizationMembersRoute = createRoute({
   validateSearch: membersSearchSchema,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
-    const membersInfiniteQueryOptions = membersQueryOptions({ idOrSlug, q, sort, order, role });
+    const entityType = 'ORGANIZATION'
+    const membersInfiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role });
     const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
     if (!cachedMembers) {
       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
@@ -79,7 +80,7 @@ export const OrganizationMembersRoute = createRoute({
   },
   component: () => (
     <Suspense>
-      <UsersTable<Member, GetMembersParams & { idOrSlug: string }, z.infer<typeof getMembersQuerySchema>>
+      <UsersTable<Member, GetMembersParams & { idOrSlug: string, entityType: ContextEntity }, z.infer<typeof getMembersQuerySchema>>
         entityType="ORGANIZATION"
         queryOptions={membersQueryOptions}
         routeFrom={OrganizationMembersRoute.id}

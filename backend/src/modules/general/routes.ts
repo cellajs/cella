@@ -9,18 +9,17 @@ import { entityTypeSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
-import { apiOrganizationUserSchema } from '../organizations/schema';
 import {
   acceptInviteJsonSchema,
-  actionResponseSchema,
+  apiMemberSchema,
   apiPublicCountsSchema,
   apiRequestSchema,
   checkTokenSchema,
   createRequestSchema,
-  getMembersParamSchema,
   getMembersQuerySchema,
   getRequestsQuerySchema,
   inviteJsonSchema,
+  requestResponseSchema,
   suggestionsSchema,
 } from './schema';
 
@@ -272,7 +271,7 @@ export const createRequestConfig = createRouteConfig({
       description: 'Requests',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(actionResponseSchema),
+          schema: successResponseWithDataSchema(requestResponseSchema),
         },
       },
     },
@@ -288,7 +287,6 @@ export const getMembersRouteConfig = createRouteConfig({
   summary: 'Get list of members',
   description: 'Get members of an entity by id or slug. It returns members (users) with their role.',
   request: {
-    params: getMembersParamSchema,
     query: getMembersQuerySchema,
   },
   responses: {
@@ -296,7 +294,7 @@ export const getMembersRouteConfig = createRouteConfig({
       description: 'Members',
       content: {
         'application/json': {
-          schema: successResponseWithPaginationSchema(apiOrganizationUserSchema),
+          schema: successResponseWithPaginationSchema(apiMemberSchema),
         },
       },
     },

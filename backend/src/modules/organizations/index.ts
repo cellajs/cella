@@ -50,6 +50,7 @@ const organizationsRoutes = app
     logEvent('Organization created', { organization: createdOrganization.id });
 
     await db.insert(membershipsTable).values({
+      type: 'ORGANIZATION',
       userId: user.id,
       organizationId: createdOrganization.id,
       role: 'ADMIN',

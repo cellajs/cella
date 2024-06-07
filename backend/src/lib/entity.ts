@@ -24,12 +24,12 @@ export const resolveEntity = async (entityType: string, idOrSlug: string) => {
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);
 
-  const [resource] = await db
+  const [entity] = await db
     .select()
     .from(table)
     .where(or(eq(table.id, idOrSlug), eq(table.slug, idOrSlug)));
 
-  return resource;
+  return entity;
 };
 
 /**
@@ -41,14 +41,14 @@ export const resolveEntities = async (entityType: string, ids: Array<string>) =>
   // Get the corresponding table for the entity type
   const table = entityTables.get(entityType.toUpperCase());
 
-  // Validate the table existence
+  // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);
 
-  // Validate the presence of IDs
+  // Validate presence of IDs
   if (!Array.isArray(ids) || !ids.length) throw new Error(`Missing or invalid query identifiers for entity: ${entityType}`);
 
   // Query for multiple entities by IDs
-  const resources = await db.select().from(table).where(inArray(table.id, ids));
+  const entities = await db.select().from(table).where(inArray(table.id, ids));
 
-  return resources;
+  return entities;
 };

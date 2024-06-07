@@ -149,6 +149,7 @@ const membershipRoutes = app
             .values({
               organizationId: organization.id,
               userId: user.id,
+              type: 'ORGANIZATION',
               role: (role as MembershipModel['role']) || 'MEMBER',
               createdBy: user.id,
             })
