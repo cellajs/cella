@@ -3,7 +3,8 @@ import { config } from 'config';
 import type { CustomHono } from '../types/common';
 
 const openAPITags = [
-  { name: 'users', description: 'Self and other users. a `USER` is also an entity, but NOT a contextual entity.' },
+  { name: 'me', description: 'Current user endpoints. They are split from `users` due to a different authorization flow.' },
+  { name: 'users', description: '`USER` is also an entity, but NOT a contextual entity.' },
   {
     name: 'memberships',
     description:

@@ -6,39 +6,9 @@ import { isAuthenticated } from '../../middlewares/guard';
 import { inviteJsonSchema, inviteQuerySchema } from '../general/schema';
 import { apiMembershipSchema, deleteMembersQuerySchema, updateMembershipJsonSchema, updateMembershipParamSchema } from './schema';
 
-export const updateMembershipRouteConfig = createRouteConfig({
-  method: 'put',
-  path: '/memberships/{membership}',
-  guard: isAuthenticated,
-  tags: ['memberships'],
-  summary: 'Update membership',
-  description: 'Update role, muted, or archived status in a membership.',
-  request: {
-    params: updateMembershipParamSchema,
-    body: {
-      content: {
-        'application/json': {
-          schema: updateMembershipJsonSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Membership updated',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(apiMembershipSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const inviteMembershipRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/membership',
+  path: '/',
   guard: isAuthenticated,
   tags: ['memberships'],
   summary: 'Invite members',
@@ -68,7 +38,7 @@ export const inviteMembershipRouteConfig = createRouteConfig({
 
 export const deleteMembershipsRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/memberships',
+  path: '/',
   guard: isAuthenticated,
   tags: ['memberships'],
   summary: 'Delete memberships',
@@ -82,6 +52,36 @@ export const deleteMembershipsRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const updateMembershipRouteConfig = createRouteConfig({
+  method: 'put',
+  path: '/{membership}',
+  guard: isAuthenticated,
+  tags: ['memberships'],
+  summary: 'Update membership',
+  description: 'Update role, muted, or archived status in a membership.',
+  request: {
+    params: updateMembershipParamSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: updateMembershipJsonSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Membership updated',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(apiMembershipSchema),
         },
       },
     },

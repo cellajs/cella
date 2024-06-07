@@ -88,7 +88,7 @@ export const acceptInvite = async ({
   password?: string;
   oauth?: OauthProviderOptions | undefined;
 }) => {
-  const response = await client['accept-invite'][':token'].$post({
+  const response = await client.invite[':token'].$post({
     param: { token },
     json: { password, oauth },
   });

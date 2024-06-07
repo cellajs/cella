@@ -11,7 +11,7 @@ import { apiOrganizationSchema, createOrganizationJsonSchema, getOrganizationsQu
 
 export const createOrganizationRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/organizations',
+  path: '/',
   guard: isAuthenticated,
   tags: ['organizations'],
   summary: 'Create new organization',
@@ -39,9 +39,32 @@ export const createOrganizationRouteConfig = createRouteConfig({
   },
 });
 
+export const getOrganizationsRouteConfig = createRouteConfig({
+  method: 'get',
+  path: '/',
+  guard: [isAuthenticated, isSystemAdmin],
+  tags: ['organizations'],
+  summary: 'Get list of organizations',
+  description: 'Get list of organizations. Currently only available to system admins.',
+  request: {
+    query: getOrganizationsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Organizations',
+      content: {
+        'application/json': {
+          schema: successResponseWithPaginationSchema(apiOrganizationSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/organizations/{organization}',
+  path: '/{organization}',
   guard: [isAuthenticated, isAllowedTo('update', 'organization')],
   tags: ['organizations'],
   summary: 'Update organization',
@@ -69,32 +92,9 @@ export const updateOrganizationRouteConfig = createRouteConfig({
   },
 });
 
-export const getOrganizationsRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/organizations',
-  guard: [isAuthenticated, isSystemAdmin],
-  tags: ['organizations'],
-  summary: 'Get list of organizations',
-  description: 'Get list of organizations. Currently only available to system admins.',
-  request: {
-    query: getOrganizationsQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Organizations',
-      content: {
-        'application/json': {
-          schema: successResponseWithPaginationSchema(apiOrganizationSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const getOrganizationRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations/{organization}',
+  path: '/{organization}',
   guard: [isAuthenticated, isAllowedTo('read', 'organization')],
   tags: ['organizations'],
   summary: 'Get organization',
@@ -117,7 +117,7 @@ export const getOrganizationRouteConfig = createRouteConfig({
 
 export const deleteOrganizationsRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/organizations',
+  path: '/',
   guard: [isAuthenticated, splitByAllowance('delete', 'organization')],
   tags: ['organizations'],
   summary: 'Delete organizations',

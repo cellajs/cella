@@ -1,10 +1,10 @@
 import { organizationsClient as client, handleResponse } from '.';
 
-export type CreateOrganizationParams = Parameters<(typeof client.organizations)['$post']>['0']['json'];
+export type CreateOrganizationParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Create a new organization
 export const createOrganization = async (params: CreateOrganizationParams) => {
-  const response = await client.organizations.$post({
+  const response = await client.index.$post({
     json: params,
   });
 
@@ -14,7 +14,7 @@ export const createOrganization = async (params: CreateOrganizationParams) => {
 
 // Get an organization by slug or ID
 export const getOrganizationBySlugOrId = async (organization: string) => {
-  const response = await client.organizations[':organization'].$get({
+  const response = await client[':organization'].$get({
     param: { organization },
   });
 
@@ -23,7 +23,7 @@ export const getOrganizationBySlugOrId = async (organization: string) => {
 };
 
 export type GetOrganizationsParams = Partial<
-  Omit<Parameters<(typeof client.organizations)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
     page: number;
   }
@@ -34,7 +34,7 @@ export const getOrganizations = async (
   { q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetOrganizationsParams = {},
   signal?: AbortSignal,
 ) => {
-  const response = await client.organizations.$get(
+  const response = await client.index.$get(
     {
       query: {
         q,
@@ -59,11 +59,11 @@ export const getOrganizations = async (
   return json.data;
 };
 
-export type UpdateOrganizationParams = Parameters<(typeof client.organizations)[':organization']['$put']>['0']['json'];
+export type UpdateOrganizationParams = Parameters<(typeof client)[':organization']['$put']>['0']['json'];
 
 // Update an organization
 export const updateOrganization = async (organization: string, params: UpdateOrganizationParams) => {
-  const response = await client.organizations[':organization'].$put({
+  const response = await client[':organization'].$put({
     param: { organization },
     json: params,
   });
@@ -74,7 +74,7 @@ export const updateOrganization = async (organization: string, params: UpdateOrg
 
 // Delete organizations
 export const deleteOrganizations = async (ids: string[]) => {
-  const response = await client.organizations.$delete({
+  const response = await client.index.$delete({
     query: { ids },
   });
 

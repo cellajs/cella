@@ -6,7 +6,7 @@ import { apiRequestSchema, createRequestSchema, getRequestsQuerySchema, requestR
 
 export const createRequestConfig = createRouteConfig({
   method: 'post',
-  path: '/requests',
+  path: '/',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['requests'],
@@ -36,7 +36,7 @@ export const createRequestConfig = createRouteConfig({
 
 export const getRequestsConfig = createRouteConfig({
   method: 'get',
-  path: '/requests',
+  path: '/',
   guard: [isAuthenticated, isSystemAdmin],
   tags: ['requests'],
   summary: 'Get list of requests',

@@ -3,7 +3,7 @@ import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
 import { Send } from 'lucide-react';
-import { terminateMySessions as baseTerminateMySessions } from '~/api/users';
+import { terminateMySessions as baseTerminateMySessions } from '~/api/me';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';

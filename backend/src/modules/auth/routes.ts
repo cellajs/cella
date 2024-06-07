@@ -74,39 +74,9 @@ export const signUpRouteConfig = createRouteConfig({
   },
 });
 
-export const verifyEmailRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/verify-email/{token}',
-  guard: isPublicAccess,
-  middleware: [authRateLimiter],
-  tags: ['auth'],
-  summary: 'Verify email by token',
-  description: 'Verify email address by token from the verification email. Sign in when successful.',
-  security: [],
-  request: {
-    query: z.object({
-      resend: z.string().optional(),
-    }),
-    params: z.object({
-      token: z.string(),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'Email address verified',
-      content: {
-        'application/json': {
-          schema: successResponseWithoutDataSchema,
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const sendVerificationEmailRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/send-verification-email',
+  path: '/verify-email',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -127,6 +97,36 @@ export const sendVerificationEmailRouteConfig = createRouteConfig({
   responses: {
     200: {
       description: 'Verification email sent',
+      content: {
+        'application/json': {
+          schema: successResponseWithoutDataSchema,
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const verifyEmailRouteConfig = createRouteConfig({
+  method: 'get',
+  path: '/verify-email/{token}',
+  guard: isPublicAccess,
+  middleware: [authRateLimiter],
+  tags: ['auth'],
+  summary: 'Verify email by token',
+  description: 'Verify email address by token from the verification email. Sign in when successful.',
+  security: [],
+  request: {
+    query: z.object({
+      resend: z.string().optional(),
+    }),
+    params: z.object({
+      token: z.string(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Email address verified',
       content: {
         'application/json': {
           schema: successResponseWithoutDataSchema,
@@ -246,7 +246,7 @@ export const signInRouteConfig = createRouteConfig({
 
 export const githubSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/github',
+  path: '/github',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Authenticate with GitHub',
@@ -270,7 +270,7 @@ export const githubSignInRouteConfig = createRouteConfig({
 
 export const githubSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/github/callback',
+  path: '/github/callback',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Callback for GitHub',
@@ -295,7 +295,7 @@ export const githubSignInCallbackRouteConfig = createRouteConfig({
 
 export const googleSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/google',
+  path: '/google',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Authenticate with Google',
@@ -319,7 +319,7 @@ export const googleSignInRouteConfig = createRouteConfig({
 
 export const googleSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/google/callback',
+  path: '/google/callback',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Callback for Google',
@@ -344,7 +344,7 @@ export const googleSignInCallbackRouteConfig = createRouteConfig({
 
 export const microsoftSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/microsoft',
+  path: '/microsoft',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Authenticate with Microsoft',
@@ -368,7 +368,7 @@ export const microsoftSignInRouteConfig = createRouteConfig({
 
 export const microsoftSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/microsoft/callback',
+  path: '/microsoft/callback',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Callback for Microsoft',

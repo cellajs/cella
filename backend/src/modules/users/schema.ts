@@ -3,8 +3,7 @@ import { z } from 'zod';
 
 import { config } from 'config';
 import { usersTable } from '../../db/schema/users';
-import { entityTypeSchema, idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
-import { apiMembershipSchema } from '../memberships/schema';
+import { imageUrlSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
 
 export const apiUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
@@ -32,34 +31,6 @@ export const getUsersQuerySchema = paginationQuerySchema.merge(
     role: z.enum(config.rolesByType.systemRoles).default('USER').optional(),
   }),
 );
-
-const menuItemSchema = z.object({
-  slug: slugSchema,
-  id: idSchema,
-  createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
-  name: nameSchema,
-  thumbnailUrl: imageUrlSchema.nullish(),
-  archived: z.boolean(),
-  muted: z.boolean(),
-  role: apiMembershipSchema.shape.role,
-  membershipId: idSchema,
-  workspaceId: idSchema.optional(),
-});
-
-const menuSchema = z.array(
-  z.object({
-    ...menuItemSchema.shape,
-    submenu: z.object({ items: z.array(menuItemSchema), canCreate: z.boolean(), type: entityTypeSchema }).optional(),
-  }),
-);
-
-const menuSectionSchema = z.object({ items: menuSchema, canCreate: z.boolean(), type: entityTypeSchema });
-
-export const userMenuSchema = z.object({
-  organizations: menuSectionSchema,
-  workspaces: menuSectionSchema,
-});
 
 export const updateUserJsonSchema = createInsertSchema(usersTable, {
   email: z.string().email(),

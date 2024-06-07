@@ -7,7 +7,7 @@ import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSche
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/workspaces',
+  path: '/',
   guard: [isAuthenticated, isAllowedTo('create', 'workspace')],
   tags: ['workspaces'],
   summary: 'Create new workspace',
@@ -38,7 +38,7 @@ export const createWorkspaceRouteConfig = createRouteConfig({
 
 export const getWorkspaceRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/workspaces/{workspace}',
+  path: '/{workspace}',
   guard: [isAuthenticated, isAllowedTo('read', 'workspace')],
   tags: ['workspaces'],
   summary: 'Get workspace',
@@ -61,7 +61,7 @@ export const getWorkspaceRouteConfig = createRouteConfig({
 
 export const updateWorkspaceRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/workspaces/{workspace}',
+  path: '/{workspace}',
   guard: [isAuthenticated, isAllowedTo('update', 'workspace')],
   tags: ['workspaces'],
   summary: 'Update workspace',
@@ -91,7 +91,7 @@ export const updateWorkspaceRouteConfig = createRouteConfig({
 
 export const deleteWorkspacesRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/workspaces',
+  path: '/',
   guard: [isAuthenticated, splitByAllowance('delete', 'workspace')],
   tags: ['workspaces'],
   summary: 'Delete workspaces',

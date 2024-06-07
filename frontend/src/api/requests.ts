@@ -11,7 +11,7 @@ interface CreateRequestProp {
 
 // Request access or request info
 export const createRequest = async (requestInfo: CreateRequestProp) => {
-  const response = await client.requests.$post({
+  const response = await client.index.$post({
     json: {
       type: requestInfo.type,
       email: requestInfo.email,
@@ -23,14 +23,14 @@ export const createRequest = async (requestInfo: CreateRequestProp) => {
 };
 
 export type GetRequestsParams = Partial<
-  Omit<Parameters<(typeof client.requests)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
     page: number;
   }
 >;
 
 export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {}, signal?: AbortSignal) => {
-  const response = await client.requests.$get(
+  const response = await client.index.$get(
     {
       query: {
         q,

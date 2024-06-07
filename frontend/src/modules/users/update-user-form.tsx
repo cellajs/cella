@@ -7,7 +7,8 @@ import type { z } from 'zod';
 import type { User } from '~/types';
 import AvatarFormField from '../common/form-fields/avatar';
 
-import { type UpdateUserParams, updateSelf, updateUser } from '~/api/users';
+import { type UpdateUserParams, updateUser } from '~/api/users';
+import { updateSelf } from '~/api/me';
 
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';

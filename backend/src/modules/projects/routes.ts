@@ -12,7 +12,7 @@ import { apiProjectListSchema, apiProjectSchema, createProjectJsonSchema, getPro
 
 export const createProjectRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/projects',
+  path: '/',
   guard: [isAuthenticated, isAllowedTo('create', 'project')],
   tags: ['projects'],
   summary: 'Create new project',
@@ -44,7 +44,7 @@ export const createProjectRouteConfig = createRouteConfig({
 
 export const getProjectRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/projects/{project}',
+  path: '/{project}',
   guard: [isAuthenticated, isAllowedTo('read', 'project')],
   tags: ['projects'],
   summary: 'Get project',
@@ -67,7 +67,7 @@ export const getProjectRouteConfig = createRouteConfig({
 
 export const getProjectsRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/projects',
+  path: '/',
   guard: [isAuthenticated, isAllowedTo('read', 'project')],
   tags: ['projects'],
   summary: 'Get list of projects',
@@ -90,7 +90,7 @@ export const getProjectsRouteConfig = createRouteConfig({
 
 export const updateProjectRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/projects/{project}',
+  path: '/{project}',
   guard: [isAuthenticated, isAllowedTo('update', 'project')],
   tags: ['projects'],
   summary: 'Update project',
@@ -120,7 +120,7 @@ export const updateProjectRouteConfig = createRouteConfig({
 
 export const deleteProjectsRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/projects',
+  path: '/',
   guard: [isAuthenticated, splitByAllowance('delete', 'project')],
   tags: ['projects'],
   summary: 'Delete projects',

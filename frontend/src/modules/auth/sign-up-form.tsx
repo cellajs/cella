@@ -28,7 +28,7 @@ export const SignUpForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   const { mutate: signUp, isPending } = useMutation({
     mutationFn: baseSignUp,
     onSuccess: () => {
-      const to = tokenData ? '/auth/accept-invite/$token' : '/auth/verify-email';
+      const to = tokenData ? '/auth/invite/$token' : '/auth/verify-email';
 
       navigate({
         to,

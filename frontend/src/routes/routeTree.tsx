@@ -5,7 +5,7 @@ import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
-import { getMe, getUserMenu } from '~/api/users';
+import { getMe, getUserMenu } from '~/api/me';
 
 import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
@@ -93,7 +93,7 @@ export const IndexRoute = createRoute({
 });
 
 export const acceptInviteRoute = createRoute({
-  path: '/auth/accept-invite/$token',
+  path: '/auth/invite/$token',
   staticData: { pageTitle: 'Accept Invite' },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ params }) => {

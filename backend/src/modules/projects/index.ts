@@ -97,7 +97,6 @@ const projectsRoutes = app
       200,
     );
   })
-
   /*
    * Get project by id or slug
    */

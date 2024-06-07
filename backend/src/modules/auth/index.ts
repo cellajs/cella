@@ -108,6 +108,47 @@ const authRoutes = app
     );
   })
   /*
+   * Send verification email
+   */
+  .openapi(sendVerificationEmailRouteConfig, async (ctx) => {
+    const { email } = ctx.req.valid('json');
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
+
+    if (!user) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
+    }
+
+    // * creating email verification token
+    await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
+    const token = generateId(40);
+    await db.insert(tokensTable).values({
+      id: token,
+      type: 'EMAIL_VERIFICATION',
+      userId: user.id,
+      email,
+      expiresAt: createDate(new TimeSpan(2, 'h')),
+    });
+
+    const emailLanguage = user?.language || config.defaultLanguage;
+
+    // * generating email html
+    const emailHtml = render(
+      VerificationEmail({
+        i18n: i18n.cloneInstance({
+          lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
+        }),
+        verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
+      }),
+    );
+
+    emailSender.send(email, 'Verify email for Cella', emailHtml);
+
+    logEvent('Verification email sent', { user: user.id });
+
+    return ctx.json({ success: true }, 200);
+  })
+  /*
    * Verify email
    */
   .openapi(verifyEmailRouteConfig, async (ctx) => {
@@ -169,47 +210,6 @@ const authRoutes = app
 
     // Sign in user
     await setSessionCookie(ctx, user.id, 'email_verification');
-
-    return ctx.json({ success: true }, 200);
-  })
-  /*
-   * Send verification email
-   */
-  .openapi(sendVerificationEmailRouteConfig, async (ctx) => {
-    const { email } = ctx.req.valid('json');
-
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
-
-    if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
-    }
-
-    // * creating email verification token
-    await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
-    const token = generateId(40);
-    await db.insert(tokensTable).values({
-      id: token,
-      type: 'EMAIL_VERIFICATION',
-      userId: user.id,
-      email,
-      expiresAt: createDate(new TimeSpan(2, 'h')),
-    });
-
-    const emailLanguage = user?.language || config.defaultLanguage;
-
-    // * generating email html
-    const emailHtml = render(
-      VerificationEmail({
-        i18n: i18n.cloneInstance({
-          lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
-        }),
-        verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
-      }),
-    );
-
-    emailSender.send(email, 'Verify email for Cella', emailHtml);
-
-    logEvent('Verification email sent', { user: user.id });
 
     return ctx.json({ success: true }, 200);
   })

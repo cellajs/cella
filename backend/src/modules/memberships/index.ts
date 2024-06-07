@@ -1,18 +1,18 @@
 import { and, eq, inArray, or } from 'drizzle-orm';
 import { db } from '../../db/db';
-import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { membershipsTable, type MembershipModel } from '../../db/schema/memberships';
 
 import { render } from '@react-email/render';
 import { config } from 'config';
 import { emailSender } from 'email';
-import { type User, generateId } from 'lucia';
+import { generateId, type User } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
 import { InviteEmail } from '../../../../email/emails/invite';
 import type { OrganizationModel } from '../../db/schema/organizations';
-import { type TokenModel, tokensTable } from '../../db/schema/tokens';
+import { tokensTable, type TokenModel } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { resolveEntity } from '../../lib/entity';
-import { type ErrorType, createError, errorResponse } from '../../lib/errors';
+import { createError, errorResponse, type ErrorType } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import permissionManager from '../../lib/permission-manager';
 import { sendSSEToUsers } from '../../lib/sse';
@@ -25,76 +25,7 @@ import { apiMembershipSchema } from './schema';
 const app = new CustomHono();
 
 // * Membership endpoints
-const membershipRoutes = app
-  /*
-   * Update user membership
-   */
-  .openapi(updateMembershipRouteConfig, async (ctx) => {
-    const { membership: membershipId } = ctx.req.valid('param');
-    const { role, inactive, muted } = ctx.req.valid('json');
-    const user = ctx.get('user');
-
-    // * Get the membership
-    const [membershipToUpdate] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
-    if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { membership: membershipId });
-
-    const updatedType = membershipToUpdate.type;
-
-    // TODO: Refactor
-    const membershipContext = await resolveEntity(
-      updatedType,
-      membershipToUpdate.projectId || membershipToUpdate.workspaceId || membershipToUpdate.organizationId || '',
-    );
-
-    // * Check if user has permission to someone elses membership
-    if (user.id !== membershipToUpdate.userId) {
-      const permissionMemberships = await db
-        .select()
-        .from(membershipsTable)
-        .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable.userId, user.id)));
-      const isAllowed = permissionManager.isPermissionAllowed(permissionMemberships, 'update', membershipContext);
-      if (!isAllowed && user.role !== 'ADMIN') {
-        return errorResponse(ctx, 403, 'forbidden', 'warn', updatedType, { user: user.id, id: membershipContext.id });
-      }
-    }
-
-    const [updatedMembership] = await db
-      .update(membershipsTable)
-      .set({ ...(role && { role }), inactive, muted, modifiedBy: user.id, modifiedAt: new Date() })
-      .where(and(eq(membershipsTable.id, membershipId)))
-      .returning();
-
-    const allMembers = await db
-      .select({ id: membershipsTable.userId })
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.type, updatedType),
-          or(
-            eq(membershipsTable.organizationId, membershipContext.id),
-            eq(membershipsTable.workspaceId, membershipContext.id),
-            eq(membershipsTable.projectId, membershipContext.id),
-          ),
-        ),
-      );
-
-    const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
-
-    sendSSEToUsers(membersIds, 'update_entity', {
-      ...updatedMembership,
-      ...membershipContext,
-    });
-
-    logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
-
-    return ctx.json(
-      {
-        success: true,
-        data: updatedMembership,
-      },
-      200,
-    );
-  })
+const MembershipsRoutes = app
   /*
    * Invite members to an organization
    */
@@ -183,7 +114,7 @@ const membershipRoutes = app
           userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
           username: targetUser?.name || email.toLowerCase() || '',
           invitedBy: user.name,
-          inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
+          inviteUrl: `${config.frontendUrl}/auth/invite/${token}`,
           replyTo: user.email,
         }),
       );
@@ -250,11 +181,7 @@ const membershipRoutes = app
     // * Check if the memberships exist
     for (const id of memberToDeleteIds) {
       if (!targets.some((target) => target.userId === id)) {
-        errors.push(
-          createError(ctx, 404, 'not_found', 'warn', entityType, {
-            user: id,
-          }),
-        );
+        errors.push(createError(ctx, 404, 'not_found', 'warn', entityType, { user: id }));
       }
     }
 
@@ -275,13 +202,7 @@ const membershipRoutes = app
 
     // * If the user doesn't have permission to delete any of the memberships, return an error
     if (allowedTargets.length === 0) {
-      return ctx.json(
-        {
-          success: false,
-          errors: errors,
-        },
-        200,
-      );
+      return ctx.json({ success: false, errors: errors }, 200);
     }
 
     // * Delete the memberships
@@ -302,8 +223,71 @@ const membershipRoutes = app
     }
 
     return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Update user membership
+   */
+  .openapi(updateMembershipRouteConfig, async (ctx) => {
+    const { membership: membershipId } = ctx.req.valid('param');
+    const { role, inactive, muted } = ctx.req.valid('json');
+    const user = ctx.get('user');
+
+    // * Get the membership
+    const [membershipToUpdate] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
+    if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { membership: membershipId });
+
+    const updatedType = membershipToUpdate.type;
+
+    // TODO: Refactor
+    const membershipContext = await resolveEntity(
+      updatedType,
+      membershipToUpdate.projectId || membershipToUpdate.workspaceId || membershipToUpdate.organizationId || '',
+    );
+
+    // * Check if user has permission to someone elses membership
+    if (user.id !== membershipToUpdate.userId) {
+      const permissionMemberships = await db
+        .select()
+        .from(membershipsTable)
+        .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable.userId, user.id)));
+      const isAllowed = permissionManager.isPermissionAllowed(permissionMemberships, 'update', membershipContext);
+      if (!isAllowed && user.role !== 'ADMIN') {
+        return errorResponse(ctx, 403, 'forbidden', 'warn', updatedType, { user: user.id, id: membershipContext.id });
+      }
+    }
+
+    const [updatedMembership] = await db
+      .update(membershipsTable)
+      .set({ ...(role && { role }), inactive, muted, modifiedBy: user.id, modifiedAt: new Date() })
+      .where(and(eq(membershipsTable.id, membershipId)))
+      .returning();
+
+    const allMembers = await db
+      .select({ id: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(
+        and(
+          eq(membershipsTable.type, updatedType),
+          or(
+            eq(membershipsTable.organizationId, membershipContext.id),
+            eq(membershipsTable.workspaceId, membershipContext.id),
+            eq(membershipsTable.projectId, membershipContext.id),
+          ),
+        ),
+      );
+
+    const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
+
+    sendSSEToUsers(membersIds, 'update_entity', {
+      ...updatedMembership,
+      ...membershipContext,
+    });
+
+    logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
+
+    return ctx.json({ success: true, data: updatedMembership }, 200);
   });
 
-export default membershipRoutes;
+export default MembershipsRoutes;
 
-export type MembershipRoutes = typeof membershipRoutes;
+export type MembershipsRoutes = typeof MembershipsRoutes;

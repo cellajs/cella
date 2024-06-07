@@ -1,5 +1,5 @@
 import type { ContextEntity, Member } from '~/types';
-import { membershipClient as client, handleResponse } from '.';
+import { membershipsClient as client, handleResponse } from '.';
 
 export interface InviteMemberProps {
   emails: string[];
@@ -9,7 +9,7 @@ export interface InviteMemberProps {
 
 // Invite users
 export const inviteMember = async ({ idOrSlug, ...rest }: InviteMemberProps) => {
-  const response = await client.membership.$post({
+  const response = await client.index.$post({
     query: { idOrSlug },
     json: rest,
   });
@@ -18,7 +18,7 @@ export const inviteMember = async ({ idOrSlug, ...rest }: InviteMemberProps) => 
 };
 
 export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: string; ids: string[]; entityType: ContextEntity }) => {
-  const response = await client.memberships.$delete({
+  const response = await client.index.$delete({
     query: { idOrSlug, entityType, ids },
   });
 
@@ -31,7 +31,7 @@ export const updateMembership = async (values: UpdateMenuOptionsProp) => {
   console.log('values:', values);
   console.log('values:', values);
   const { membershipId, role, archive, muted } = values;
-  const response = await client.memberships[':membership'].$put({
+  const response = await client[':membership'].$put({
     param: {
       membership: membershipId,
     },

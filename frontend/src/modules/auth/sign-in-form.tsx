@@ -46,7 +46,7 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
 
       setUser(result as User);
 
-      const to = tokenData ? '/auth/accept-invite/$token' : redirect || '/';
+      const to = tokenData ? '/auth/invite/$token' : redirect || '/';
 
       navigate({
         to,

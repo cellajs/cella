@@ -1,12 +1,12 @@
-import { projectClient as client, handleResponse } from '.';
+import { projectsClient as client, handleResponse } from '.';
 
-export type CreateProjectParams = Parameters<(typeof client.projects)['$post']>['0']['json'] & {
+export type CreateProjectParams = Parameters<(typeof client.index)['$post']>['0']['json'] & {
   organization: string;
 };
 
 // Create a new project
 export const createProject = async ({ organization, ...rest }: CreateProjectParams) => {
-  const response = await client.projects.$post({
+  const response = await client.index.$post({
     param: { organization },
     json: rest,
   });
@@ -17,7 +17,7 @@ export const createProject = async ({ organization, ...rest }: CreateProjectPara
 
 // Get an project by its slug or ID
 export const getProjectBySlugOrId = async (project: string) => {
-  const response = await client.projects[':project'].$get({
+  const response = await client[':project'].$get({
     param: { project },
   });
 
@@ -26,7 +26,7 @@ export const getProjectBySlugOrId = async (project: string) => {
 };
 
 export type GetProjectsParams = Partial<
-  Omit<Parameters<(typeof client.projects)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
     page: number;
   }
@@ -37,7 +37,7 @@ export const getProjects = async (
   { q, sort = 'id', order = 'asc', page = 0, limit = 50, workspace, organization }: GetProjectsParams = {},
   signal?: AbortSignal,
 ) => {
-  const response = await client.projects.$get(
+  const response = await client.index.$get(
     {
       query: {
         q,
@@ -64,11 +64,11 @@ export const getProjects = async (
   return json.data;
 };
 
-export type UpdateProjectParams = Parameters<(typeof client.projects)[':project']['$put']>['0']['json'];
+export type UpdateProjectParams = Parameters<(typeof client)[':project']['$put']>['0']['json'];
 
 // Update a project
 export const updateProject = async (project: string, params: UpdateProjectParams) => {
-  const response = await client.projects[':project'].$put({
+  const response = await client[':project'].$put({
     param: { project },
     json: params,
   });
@@ -79,7 +79,7 @@ export const updateProject = async (project: string, params: UpdateProjectParams
 
 // Delete projects
 export const deleteProjects = async (ids: string[]) => {
-  const response = await client.projects.$delete({
+  const response = await client.index.$delete({
     query: { ids },
   });
 

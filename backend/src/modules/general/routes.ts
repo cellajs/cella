@@ -153,7 +153,7 @@ export const inviteRouteConfig = createRouteConfig({
 
 export const acceptInviteRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/accept-invite/{token}',
+  path: '/invite/{token}',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['general'],

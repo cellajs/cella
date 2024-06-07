@@ -203,7 +203,7 @@ const generalRoutes = app
         InviteEmail({
           i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
           username: email.toLowerCase(),
-          inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
+          inviteUrl: `${config.frontendUrl}/auth/invite/${token}`,
           invitedBy: user.name,
           type: 'system',
           replyTo: user.email,
