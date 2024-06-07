@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, or, sql } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, or, sql, inArray } from 'drizzle-orm';
 import { emailSender } from '../../../../email';
 import { InviteEmail } from '../../../../email/emails/invite';
 
@@ -331,6 +331,59 @@ const generalRoutes = app
    */
   .openapi(suggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
+    const user = ctx.get('user');
+
+    // Retrieve user memberships to filter suggestions, ensuring they only include organizations the user is part of, except for ADMIN users who can see everything
+    let organizationIds: string[] = [];
+
+    if (user.role !== 'ADMIN') {
+      const memberships = await db.select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'ORGANIZATION')));
+
+      organizationIds = memberships.map(el => String(el.organizationId));
+    }
+
+    // Check if the user is an ADMIN or has at least one organization membership
+    if (!organizationIds.length && user.role !== 'ADMIN') {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', undefined ,{ user: user.id });
+    }
+
+    // Provide suggestions for all entities or narrow them down to a specific type if specified
+    const entityTypes = type ? [type] : config.entityTypes;
+
+    // Array to hold queries for concurrent execution
+    const queries = [];
+
+    // Build queries
+    for (const entityType of entityTypes) {
+      const table = entityTables.get(entityType);
+      if (!table) continue;
+
+      // Build selection
+      const select = {
+        id: table.id,
+        slug: table.slug,
+        name: table.name,
+        entity: table.entity,
+        ...('email' in table && { email: table.email }),
+        ...('organizationId' in table && { organizationId: table.organizationId }),
+        ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
+      }
+
+      const $or = [ilike(table.name, `%${q}%`)]
+      if ('email' in table) $or.push(ilike(table.email, `%${q}%`))
+
+      const $and = [];
+      if (organizationIds.length && 'organizationId' in table) $and.push(inArray(table.organizationId, organizationIds));
+      $and.push($or.length > 1 ? or(...$or) : $or[0]);
+      
+      const $where = $and.length > 1 ? and(...$and) : $and[0]
+
+      // Build query
+      queries.push(db.select(select).from(table).where($where).limit(10));
+    }
+
     const entitiesResult = [];
     if (type === undefined) {
       for (const defaultEntity of config.entityTypes) {
