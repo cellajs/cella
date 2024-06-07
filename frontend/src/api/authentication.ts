@@ -1,4 +1,6 @@
-import { authClient as client, handleResponse } from '.';
+import { authClient, handleResponse } from '.';
+
+const client = authClient.auth;
 
 // Oath endpoints
 export const githubSignInUrl = client.github.$url().href;

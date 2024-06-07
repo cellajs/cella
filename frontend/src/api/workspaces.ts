@@ -1,8 +1,6 @@
 import { workspacesClient as client, handleResponse } from '.';
 
-export type CreateWorkspaceParams = Parameters<(typeof client.index)['$post']>['0']['json'] & {
-  organization: string;
-};
+export type CreateWorkspaceParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Create new workspace
 export const createWorkspace = async ({ ...rest }: CreateWorkspaceParams) => {
@@ -15,7 +13,7 @@ export const createWorkspace = async ({ ...rest }: CreateWorkspaceParams) => {
 };
 
 // Get workspace by its slug or ID
-export const getWorkspaceBySlugOrId = async (idOrSlug: string) => {
+export const getWorkspace = async (idOrSlug: string) => {
   const response = await client[':idOrSlug'].$get({
     param: { idOrSlug },
   });

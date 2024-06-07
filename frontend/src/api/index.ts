@@ -68,6 +68,6 @@ export const membershipsClient = hc<MembershipsRoutes>(`${config.backendUrl}/mem
 export const organizationsClient = hc<OrganizationsRoutes>(`${config.backendUrl}/organizations`, clientConfig);
 export const requestsClient = hc<RequestsRoutes>(`${config.backendUrl}/requests`, clientConfig);
 export const generalClient = hc<GeneralRoutes>(config.backendUrl, clientConfig);
-export const authClient = hc<AuthRoutes>(`${config.backendUrl}/auth`, clientConfig);
+export const authClient = hc<AuthRoutes>(config.backendUrl, clientConfig);
 export const workspacesClient = hc<WorkspacesRoutes>(`${config.backendUrl}/workspaces`, clientConfig);
 export const projectsClient = hc<ProjectsRoutes>(`${config.backendUrl}/projects`, clientConfig);
