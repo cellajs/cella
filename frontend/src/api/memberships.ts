@@ -28,6 +28,8 @@ export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: s
 export type UpdateMenuOptionsProp = { membershipId: string; role?: Member['role']; archive?: boolean; muted?: boolean };
 
 export const updateMembership = async (values: UpdateMenuOptionsProp) => {
+  console.log('values:', values);
+  console.log('values:', values);
   const { membershipId, role, archive, muted } = values;
   const response = await client.memberships[':membership'].$put({
     param: {

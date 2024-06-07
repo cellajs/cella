@@ -29,7 +29,7 @@ interface Props {
 
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
-  role: z.enum(config.entityRoles).optional(),
+  role: z.enum(config.rolesByType.entityRoles).optional(),
   idOrSlug: idSchema.or(slugSchema).optional(),
 });
 

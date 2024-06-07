@@ -12,11 +12,8 @@ import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import RowEdit from './row-edit';
-import { Pencil } from 'lucide-react';
-
-function isMember(row: User | Member): row is Member {
-  return row && 'role' in row && 'membershipId' in row;
-}
+import { isMember } from '.';
+import { config } from 'config';
 
 export const useColumns = <T extends User | Member>(
   callback: (users: User[], action: 'create' | 'update' | 'delete') => void,
@@ -46,7 +43,7 @@ export const useColumns = <T extends User | Member>(
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => (isMember(row) ? <Pencil size={16} /> : <RowEdit user={row} tabIndex={tabIndex} callback={callback} />),
+      renderCell: ({ row, tabIndex }) => <RowEdit user={row as User} tabIndex={tabIndex} callback={callback} />,
     },
   ];
   const columns: ColumnOrColumnGroup<T>[] = [
@@ -71,16 +68,12 @@ export const useColumns = <T extends User | Member>(
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (isMember(row) ? t(row.role.toLowerCase()) : t(row.role.toLowerCase())),
+      renderCell: ({ row }) => t(row.role.toLowerCase()),
       width: 100,
       renderEditCell: (props) =>
-        //TODO: role should not be hardcoded, use config.rolesByType
         renderSelect({
           props,
-          options: [
-            { label: t('common:admin'), value: 'ADMIN' },
-            isMember(props.row) ? { label: t('common:member'), value: 'MEMBER' } : { label: t('common:user'), value: 'USER' },
-          ],
+          options: isMember(props.row) ? config.rolesByType.entityRoles : config.rolesByType.systemRoles,
           key: 'role',
         }),
     },

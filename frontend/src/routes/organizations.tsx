@@ -19,7 +19,15 @@ import { IndexRoute } from './routeTree';
 
 const membersSearchSchema = getMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
-const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams & { idOrSlug: string, entityType: ContextEntity }) => {
+const membersQueryOptions = ({
+  idOrSlug,
+  entityType,
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  role,
+  limit,
+}: GetMembersParams & { idOrSlug: string; entityType: ContextEntity }) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -71,7 +79,7 @@ export const OrganizationMembersRoute = createRoute({
   validateSearch: membersSearchSchema,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
-    const entityType = 'ORGANIZATION'
+    const entityType = 'ORGANIZATION';
     const membersInfiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role });
     const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
     if (!cachedMembers) {
@@ -80,10 +88,11 @@ export const OrganizationMembersRoute = createRoute({
   },
   component: () => (
     <Suspense>
-      <UsersTable<Member, GetMembersParams & { idOrSlug: string, entityType: ContextEntity }, z.infer<typeof getMembersQuerySchema>>
+      <UsersTable<Member, GetMembersParams & { idOrSlug: string; entityType: ContextEntity }, z.infer<typeof getMembersQuerySchema>>
         entityType="ORGANIZATION"
         queryOptions={membersQueryOptions}
         routeFrom={OrganizationMembersRoute.id}
+        fetchForExport={getMembers}
       />
     </Suspense>
   ),

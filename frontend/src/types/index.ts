@@ -21,7 +21,7 @@ export type DraggableItemData<T> = {
   index: number;
 };
 
-export type Role = (typeof config.systemRoles)[number] | (typeof config.entityRoles)[number];
+export type Role = (typeof config.rolesByType.systemRoles)[number] | (typeof config.rolesByType.entityRoles)[number];
 
 export type Entity = (typeof config.entityTypes)[number];
 export type ContextEntity = (typeof config.contextEntityTypes)[number];

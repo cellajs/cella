@@ -4,7 +4,7 @@ import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 
 const tokenTypeEnum = ['EMAIL_VERIFICATION', 'PASSWORD_RESET', 'SYSTEM_INVITATION', 'ORGANIZATION_INVITATION'] as const;
-const roleEnum = config.allRoles;
+const roleEnum = config.rolesByType.allRoles;
 
 export const tokensTable = pgTable('tokens', {
   id: varchar('id').primaryKey(),

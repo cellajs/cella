@@ -31,7 +31,7 @@ interface Props {
 
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
-  role: z.enum(config.allRoles),
+  role: z.enum(config.rolesByType.allRoles),
   idOrSlug: idSchema.or(slugSchema).optional(),
 });
 

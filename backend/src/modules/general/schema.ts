@@ -69,5 +69,5 @@ export const getMembersQuerySchema = paginationQuerySchema.extend({
   idOrSlug: idSchema.or(slugSchema),
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-  role: z.enum(config.allRoles).default('MEMBER').optional(),
+  role: z.enum(config.rolesByType.allRoles).default('MEMBER').optional(),
 });

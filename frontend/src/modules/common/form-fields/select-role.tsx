@@ -14,11 +14,11 @@ interface SelectRoleProps {
 const SelectRole = ({ entityType, onChange, value, className }: SelectRoleProps) => {
   const { t } = useTranslation();
 
-  const roles = entityType ? config.entityRoles : config.systemRoles;
+  const roles = entityType ? config.rolesByType.entityRoles : config.rolesByType.systemRoles;
 
   return (
     <Select
-      value={value === undefined ? 'all' : value}
+      value={value === undefined || value === 'all' ? 'all' : value}
       onValueChange={(role) => {
         onChange(role === 'all' ? undefined : role);
       }}
@@ -32,6 +32,7 @@ const SelectRole = ({ entityType, onChange, value, className }: SelectRoleProps)
             {t(`common:${role.toLowerCase()}`)}
           </SelectItem>
         ))}
+        <SelectItem value={'all'}> {t('common:all')}</SelectItem>
       </SelectContent>
     </Select>
   );

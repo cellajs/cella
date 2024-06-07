@@ -14,7 +14,7 @@ import TableCount from '../../common/data-table/table-count';
 
 import { motion } from 'framer-motion';
 import Export from '~/modules/common/data-table/export';
-import { LIMIT } from '.';
+import type { queryOptions } from '.';
 
 interface Props<T> {
   total?: number;
@@ -29,12 +29,9 @@ interface Props<T> {
   onResetSelectedRows?: () => void;
   columns: ColumnOrColumnGroup<T>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<T>[]>>;
-  fetchForExport?: (limit: number) => Promise<T[]>;
+  fetchForExport: ((limit: number) => Promise<queryOptions<T>>) | null;
   inviteDialog: () => void;
   removeDialog: () => void;
-  // refetch?: () => void;
-  // sort: MembersSearch['sort'];
-  // order: MembersSearch['order'];
 }
 
 function Toolbar<T extends User | Member>({
@@ -125,10 +122,13 @@ function Toolbar<T extends User | Member>({
         {fetchForExport && (
           <Export
             className="max-lg:hidden"
-            filename="Members"
+            filename={entityType ? `${entityType} members` : 'Members'}
             columns={columns}
             selectedRows={selectedUsers}
-            fetchRows={async () => await fetchForExport(LIMIT)}
+            fetchRows={async (limit) => {
+              const { items } = await fetchForExport(limit);
+              return items;
+            }}
           />
         )}
 
