@@ -4,7 +4,7 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, organizationParamSchema, projectParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
@@ -19,7 +19,6 @@ export const createProjectRouteConfig = createRouteConfig({
   description: 'Create a new project in an organization. Creator will become admin and can invite other members.',
   security: [{ bearerAuth: [] }],
   request: {
-    params: organizationParamSchema,
     body: {
       required: true,
       content: {
@@ -44,13 +43,13 @@ export const createProjectRouteConfig = createRouteConfig({
 
 export const getProjectRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/{project}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('read', 'project')],
   tags: ['projects'],
   summary: 'Get project',
   description: 'Get project by id or slug.',
   request: {
-    params: projectParamSchema,
+    params: entityParamSchema,
   },
   responses: {
     200: {
@@ -68,7 +67,7 @@ export const getProjectRouteConfig = createRouteConfig({
 export const getProjectsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/',
-  guard: [isAuthenticated, isAllowedTo('read', 'project')],
+  guard: [isAuthenticated],
   tags: ['projects'],
   summary: 'Get list of projects',
   description: 'Get list of projects in which you have a membership.',
@@ -90,13 +89,13 @@ export const getProjectsRouteConfig = createRouteConfig({
 
 export const updateProjectRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/{project}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('update', 'project')],
   tags: ['projects'],
   summary: 'Update project',
   description: 'Update project by id or slug.',
   request: {
-    params: projectParamSchema,
+    params: entityParamSchema,
     body: {
       content: {
         'application/json': {

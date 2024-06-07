@@ -4,7 +4,7 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
 import { apiOrganizationSchema, createOrganizationJsonSchema, getOrganizationsQuerySchema, updateOrganizationJsonSchema } from './schema';
@@ -64,13 +64,13 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/{organization}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('update', 'organization')],
   tags: ['organizations'],
   summary: 'Update organization',
   description: 'Update organization by id or slug.',
   request: {
-    params: organizationParamSchema,
+    params: entityParamSchema,
     body: {
       content: {
         'application/json': {
@@ -94,13 +94,13 @@ export const updateOrganizationRouteConfig = createRouteConfig({
 
 export const getOrganizationRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/{organization}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('read', 'organization')],
   tags: ['organizations'],
   summary: 'Get organization',
   description: 'Get an organization by id or slug.',
   request: {
-    params: organizationParamSchema,
+    params: entityParamSchema,
   },
   responses: {
     200: {

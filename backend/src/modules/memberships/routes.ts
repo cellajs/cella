@@ -4,7 +4,8 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithoutDa
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
 import { inviteJsonSchema, inviteQuerySchema } from '../general/schema';
-import { apiMembershipSchema, deleteMembersQuerySchema, updateMembershipJsonSchema, updateMembershipParamSchema } from './schema';
+import { apiMembershipSchema, deleteMembersQuerySchema, updateMembershipJsonSchema } from './schema';
+import { idSchema } from '../../lib/common-schemas';
 
 export const inviteMembershipRouteConfig = createRouteConfig({
   method: 'post',
@@ -61,13 +62,13 @@ export const deleteMembershipsRouteConfig = createRouteConfig({
 
 export const updateMembershipRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/{membership}',
+  path: '/{id}',
   guard: isAuthenticated,
   tags: ['memberships'],
   summary: 'Update membership',
   description: 'Update role, muted, or archived status in a membership.',
   request: {
-    params: updateMembershipParamSchema,
+    params: z.object({ id: idSchema }),
     body: {
       content: {
         'application/json': {

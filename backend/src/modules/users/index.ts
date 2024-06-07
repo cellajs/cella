@@ -169,7 +169,7 @@ const usersRoutes = app
    * Get a user by id or slug
    */
   .openapi(getUserRouteConfig, async (ctx) => {
-    const idOrSlug = ctx.req.param('user').toLowerCase();
+    const idOrSlug = ctx.req.param('idOrSlug');
     const user = ctx.get('user');
 
     const [targetUser] = await db
@@ -208,19 +208,23 @@ const usersRoutes = app
     );
   })
   /*
-   * Update a user
+   * Update a user by id or slug
    */
   .openapi(updateUserConfig, async (ctx) => {
-    const { user: userId } = ctx.req.valid('param');
+    const { idOrSlug } = ctx.req.valid('param');
+
     const user = ctx.get('user');
-    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    const [targetUser] = await db
+      .select()
+      .from(usersTable)
+      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: userId });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: idOrSlug });
     }
 
     if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'USER', { user: userId });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'USER', { user: idOrSlug });
     }
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
@@ -250,7 +254,7 @@ const usersRoutes = app
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })
-      .where(eq(usersTable.id, userId))
+      .where(eq(usersTable.id, user.id))
       .returning();
 
     const [{ memberships }] = await db

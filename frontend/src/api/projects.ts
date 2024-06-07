@@ -5,9 +5,8 @@ export type CreateProjectParams = Parameters<(typeof client.index)['$post']>['0'
 };
 
 // Create a new project
-export const createProject = async ({ organization, ...rest }: CreateProjectParams) => {
+export const createProject = async ({ ...rest }: CreateProjectParams) => {
   const response = await client.index.$post({
-    param: { organization },
     json: rest,
   });
 
@@ -16,9 +15,9 @@ export const createProject = async ({ organization, ...rest }: CreateProjectPara
 };
 
 // Get an project by its slug or ID
-export const getProjectBySlugOrId = async (project: string) => {
-  const response = await client[':project'].$get({
-    param: { project },
+export const getProjectBySlugOrId = async (idOrSlug: string) => {
+  const response = await client[':idOrSlug'].$get({
+    param: { idOrSlug },
   });
 
   const json = await handleResponse(response);
@@ -64,12 +63,12 @@ export const getProjects = async (
   return json.data;
 };
 
-export type UpdateProjectParams = Parameters<(typeof client)[':project']['$put']>['0']['json'];
+export type UpdateProjectParams = Parameters<(typeof client)[':idOrSlug']['$put']>['0']['json'];
 
 // Update a project
-export const updateProject = async (project: string, params: UpdateProjectParams) => {
-  const response = await client[':project'].$put({
-    param: { project },
+export const updateProject = async (idOrSlug: string, params: UpdateProjectParams) => {
+  const response = await client[':idOrSlug'].$put({
+    param: { idOrSlug },
     json: params,
   });
 

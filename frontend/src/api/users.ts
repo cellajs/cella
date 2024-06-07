@@ -1,9 +1,9 @@
 import { usersClient as client, handleResponse } from '.';
 
 // Get user by slug or ID
-export const getUserBySlugOrId = async (user: string) => {
-  const response = await client[':user'].$get({
-    param: { user },
+export const getUserBySlugOrId = async (idOrSlug: string) => {
+  const response = await client[':idOrSlug'].$get({
+    param: { idOrSlug },
   });
 
   const json = await handleResponse(response);
@@ -54,12 +54,12 @@ export const deleteUsers = async (userIds: string[]) => {
   await handleResponse(response);
 };
 
-export type UpdateUserParams = Parameters<(typeof client)[':user']['$put']>['0']['json'];
+export type UpdateUserParams = Parameters<(typeof client)[':idOrSlug']['$put']>['0']['json'];
 
 // Update user
-export const updateUser = async (user: string, params: UpdateUserParams) => {
-  const response = await client[':user'].$put({
-    param: { user },
+export const updateUser = async (idOrSlug: string, params: UpdateUserParams) => {
+  const response = await client[':idOrSlug'].$put({
+    param: { idOrSlug },
     json: params,
   });
 

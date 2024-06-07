@@ -14,10 +14,6 @@ export const apiMembershipSchema = membershipSchema.extend({
   modifiedAt: z.string().nullable(),
 });
 
-export const updateMembershipParamSchema = z.object({
-  membership: idSchema,
-});
-
 export const updateMembershipJsonSchema = z.object({
   role: membershipSchema.shape.role.optional(),
   muted: z.boolean().optional(),

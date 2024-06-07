@@ -8,10 +8,6 @@ export const signInJsonSchema = z.object({
   token: z.string().optional(),
 });
 
-export const resetPasswordJsonSchema = z.object({
-  password: passwordSchema,
-});
-
 export const signUpJsonSchema = z.object({
   email: apiUserSchema.shape.email,
   password: passwordSchema,

@@ -1,13 +1,13 @@
 import { z } from '@hono/zod-openapi';
 
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
-import { cookieSchema } from '../../lib/common-schemas';
+import { cookieSchema, passwordSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isPublicAccess } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { apiUserSchema } from '../users/schema';
-import { checkEmailJsonSchema, emailExistsJsonSchema, resetPasswordJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
+import { checkEmailJsonSchema, emailExistsJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
 
 export const checkEmailRouteConfig = createRouteConfig({
   method: 'post',
@@ -180,13 +180,11 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
   description: 'Submit new password and directly get session.',
   security: [],
   request: {
-    params: z.object({
-      token: z.string(),
-    }),
+    params: z.object({ token: z.string() }),
     body: {
       content: {
         'application/json': {
-          schema: resetPasswordJsonSchema,
+          schema: z.object({ password: passwordSchema }),
         },
       },
     },
@@ -236,9 +234,7 @@ export const signInRouteConfig = createRouteConfig({
     },
     302: {
       description: 'Email address not verified',
-      headers: z.object({
-        Location: z.string(),
-      }),
+      headers: z.object({ Location: z.string() }),
     },
     ...errorResponses,
   },
@@ -253,16 +249,12 @@ export const githubSignInRouteConfig = createRouteConfig({
   description: 'Authenticate with Github to sign in or sign up.',
   security: [],
   request: {
-    query: z.object({
-      redirect: z.string().optional(),
-    }),
+    query: z.object({ redirect: z.string().optional() }),
   },
   responses: {
     302: {
       description: 'Redirect to GitHub',
-      headers: z.object({
-        Location: z.string(),
-      }),
+      headers: z.object({ Location: z.string() }),
     },
     ...errorResponses,
   },
@@ -302,16 +294,12 @@ export const googleSignInRouteConfig = createRouteConfig({
   description: 'Authenticate with Google to sign in or sign up.',
   security: [],
   request: {
-    query: z.object({
-      redirect: z.string().optional(),
-    }),
+    query: z.object({ redirect: z.string().optional() }),
   },
   responses: {
     302: {
       description: 'Redirect to Google',
-      headers: z.object({
-        Location: z.string(),
-      }),
+      headers: z.object({ Location: z.string() }),
     },
     ...errorResponses,
   },

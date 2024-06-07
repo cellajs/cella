@@ -70,20 +70,8 @@ export const validDomainsSchema = z
   )
   .optional();
 
-export const userParamSchema = z.object({
-  user: idSchema.or(slugSchema),
-});
-
-export const organizationParamSchema = z.object({
-  organization: idSchema.or(slugSchema),
-});
-
-export const workspaceParamSchema = z.object({
-  workspace: idSchema.or(slugSchema),
-});
-
-export const projectParamSchema = z.object({
-  project: idSchema.or(slugSchema),
+export const entityParamSchema = z.object({
+  idOrSlug: idSchema.or(slugSchema),
 });
 
 export const imageUrlSchema = z

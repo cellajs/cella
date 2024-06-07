@@ -13,9 +13,9 @@ export const createOrganization = async (params: CreateOrganizationParams) => {
 };
 
 // Get an organization by slug or ID
-export const getOrganizationBySlugOrId = async (organization: string) => {
-  const response = await client[':organization'].$get({
-    param: { organization },
+export const getOrganizationBySlugOrId = async (idOrSlug: string) => {
+  const response = await client[':idOrSlug'].$get({
+    param: { idOrSlug },
   });
 
   const json = await handleResponse(response);
@@ -59,12 +59,12 @@ export const getOrganizations = async (
   return json.data;
 };
 
-export type UpdateOrganizationParams = Parameters<(typeof client)[':organization']['$put']>['0']['json'];
+export type UpdateOrganizationParams = Parameters<(typeof client)[':idOrSlug']['$put']>['0']['json'];
 
 // Update an organization
-export const updateOrganization = async (organization: string, params: UpdateOrganizationParams) => {
-  const response = await client[':organization'].$put({
-    param: { organization },
+export const updateOrganization = async (idOrSlug: string, params: UpdateOrganizationParams) => {
+  const response = await client[':idOrSlug'].$put({
+    param: { idOrSlug },
     json: params,
   });
 

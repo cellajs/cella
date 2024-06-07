@@ -1,5 +1,5 @@
 import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, organizationParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
@@ -13,7 +13,6 @@ export const createWorkspaceRouteConfig = createRouteConfig({
   summary: 'Create new workspace',
   description: 'Create personal workspace to organize projects and tasks.',
   request: {
-    params: organizationParamSchema,
     body: {
       required: true,
       content: {
@@ -38,13 +37,13 @@ export const createWorkspaceRouteConfig = createRouteConfig({
 
 export const getWorkspaceRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/{workspace}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('read', 'workspace')],
   tags: ['workspaces'],
   summary: 'Get workspace',
   description: 'Get workspace by id or slug.',
   request: {
-    params: workspaceParamSchema,
+    params: entityParamSchema,
   },
   responses: {
     200: {
@@ -61,13 +60,13 @@ export const getWorkspaceRouteConfig = createRouteConfig({
 
 export const updateWorkspaceRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/{workspace}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('update', 'workspace')],
   tags: ['workspaces'],
   summary: 'Update workspace',
   description: 'Update workspace by id or slug.',
   request: {
-    params: workspaceParamSchema,
+    params: entityParamSchema,
     body: {
       content: {
         'application/json': {

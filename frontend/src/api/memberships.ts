@@ -31,9 +31,9 @@ export const updateMembership = async (values: UpdateMenuOptionsProp) => {
   console.log('values:', values);
   console.log('values:', values);
   const { membershipId, role, archive, muted } = values;
-  const response = await client[':membership'].$put({
+  const response = await client[':id'].$put({
     param: {
-      membership: membershipId,
+      id: membershipId,
     },
     json: { role, inactive: archive, muted },
   });

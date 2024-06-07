@@ -4,7 +4,7 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, userParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
 import { apiUserSchema, getUsersQuerySchema, updateUserJsonSchema } from './schema';
@@ -57,13 +57,13 @@ export const deleteUsersRouteConfig = createRouteConfig({
 
 export const getUserRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/{user}',
+  path: '/{idOrSlug}',
   guard: isAuthenticated,
   tags: ['users'],
   summary: 'Get user',
   description: 'Get a user by id or slug.',
   request: {
-    params: userParamSchema,
+    params: entityParamSchema,
   },
   responses: {
     200: {
@@ -80,13 +80,13 @@ export const getUserRouteConfig = createRouteConfig({
 
 export const updateUserConfig = createRouteConfig({
   method: 'put',
-  path: '/{user}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isSystemAdmin],
   tags: ['users'],
   summary: 'Update user',
   description: 'Update a user by id or slug.',
   request: {
-    params: userParamSchema,
+    params: entityParamSchema,
     body: {
       content: {
         'application/json': {

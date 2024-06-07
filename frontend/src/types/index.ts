@@ -32,14 +32,14 @@ export type Organization = Extract<InferResponseType<(typeof organizationsClient
 
 export type Request = Extract<InferResponseType<(typeof requestsClient.index)['$get']>, { data: unknown }>['data']['items'][number];
 
-export type Workspace = Extract<InferResponseType<(typeof workspacesClient)[':workspace']['$get']>, { data: unknown }>['data'];
+export type Workspace = Extract<InferResponseType<(typeof workspacesClient)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 
-export type Project = Extract<InferResponseType<(typeof projectsClient)[':project']['$get']>, { data: unknown }>['data'];
+export type Project = Extract<InferResponseType<(typeof projectsClient)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 
 export type ProjectList = Extract<InferResponseType<(typeof projectsClient.index)['$get']>, { data: unknown }>['data']['items'];
 
 export type Member = Extract<InferResponseType<(typeof generalClient.members)['$get']>, { data: unknown }>['data']['items'][number];
 
-export type Membership = Extract<InferResponseType<(typeof membershipsClient)[':membership']['$put']>, { data: unknown }>['data'];
+export type Membership = Extract<InferResponseType<(typeof membershipsClient)[':id']['$put']>, { data: unknown }>['data'];
 
 export type UserMenu = Extract<InferResponseType<(typeof meClient.menu)['$get']>, { data: unknown }>['data'];

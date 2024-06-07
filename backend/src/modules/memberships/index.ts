@@ -228,7 +228,7 @@ const MembershipsRoutes = app
    * Update user membership
    */
   .openapi(updateMembershipRouteConfig, async (ctx) => {
-    const { membership: membershipId } = ctx.req.valid('param');
+    const { id: membershipId } = ctx.req.valid('param');
     const { role, inactive, muted } = ctx.req.valid('json');
     const user = ctx.get('user');
 
