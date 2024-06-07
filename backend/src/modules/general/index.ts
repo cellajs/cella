@@ -15,13 +15,11 @@ import { db } from '../../db/db';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
-import { requestsTable } from '../../db/schema/requests';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
-import { sendSlackNotification } from '../../lib/notification';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSEToUsers } from '../../lib/sse';
 import { isAuthenticated } from '../../middlewares/guard';
@@ -34,10 +32,8 @@ import {
   acceptInviteRouteConfig,
   checkSlugRouteConfig,
   checkTokenRouteConfig,
-  createRequestConfig,
   getMembersRouteConfig,
   getPublicCountsRouteConfig,
-  getRequestsConfig,
   getUploadTokenRouteConfig,
   inviteRouteConfig,
   paddleWebhookRouteConfig,
@@ -472,65 +468,6 @@ const generalRoutes = app
       },
       200,
     );
-  })
-  /*
-   *  Create request
-   */
-  .openapi(createRequestConfig, async (ctx) => {
-    const { email, type, message } = ctx.req.valid('json');
-
-    const [createdAccessRequest] = await db
-      .insert(requestsTable)
-      .values({
-        email,
-        type,
-        message: message,
-      })
-      .returning();
-
-    // slack notifications
-    if (type === 'WAITLIST_REQUEST') await sendSlackNotification('to join the waitlist.', email);
-    if (type === 'NEWSLETTER_REQUEST') await sendSlackNotification('to become a donate or build member.', email);
-    if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${message}.`, email);
-
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          email: createdAccessRequest.email,
-          type: createdAccessRequest.type,
-        },
-      },
-      200,
-    );
-  })
-  /*
-   *  Get list of requests for system admins
-   */
-  .openapi(getRequestsConfig, async (ctx) => {
-    const { q, sort, order, offset, limit } = ctx.req.valid('query');
-
-    const filter: SQL | undefined = q ? ilike(requestsTable.email, `%${q}%`) : undefined;
-
-    const requestsQuery = db.select().from(requestsTable).where(filter);
-
-    const [{ total }] = await db.select({ total: count() }).from(requestsQuery.as('requests'));
-
-    const orderColumn = getOrderColumn(
-      {
-        id: requestsTable.id,
-        email: requestsTable.email,
-        createdAt: requestsTable.createdAt,
-        type: requestsTable.type,
-      },
-      sort,
-      requestsTable.id,
-      order,
-    );
-
-    const requests = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
-
-    return ctx.json({ success: true, data: { items: requests, total } }, 200);
   })
   /*
    *  Get SSE stream

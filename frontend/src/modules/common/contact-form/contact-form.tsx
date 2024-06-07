@@ -8,7 +8,7 @@ import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state
 
 import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createRequest as baseCreateRequest } from '~/api/general';
+import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';

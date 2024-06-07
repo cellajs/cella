@@ -6,6 +6,7 @@ import authRoutes from './modules/auth';
 import generalRoutes from './modules/general';
 import membershipRoutes from './modules/memberships';
 import organizationsRoutes from './modules/organizations';
+import requestsRoutes from './modules/requests';
 import projectsRoutes from './modules/projects';
 import usersRoutes from './modules/users';
 import workspacesRoutes from './modules/workspaces';
@@ -41,6 +42,7 @@ app
   .route('/', usersRoutes)
   .route('/', membershipRoutes)
   .route('/', organizationsRoutes)
+  .route('/', requestsRoutes)
   .route('/', generalRoutes)
 
   // App-specific routes go here

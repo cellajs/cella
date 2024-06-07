@@ -13,13 +13,9 @@ import {
   acceptInviteJsonSchema,
   apiMemberSchema,
   apiPublicCountsSchema,
-  apiRequestSchema,
   checkTokenSchema,
-  createRequestSchema,
   getMembersQuerySchema,
-  getRequestsQuerySchema,
   inviteJsonSchema,
-  requestResponseSchema,
   suggestionsSchema,
 } from './schema';
 
@@ -249,36 +245,6 @@ export const suggestionsConfig = createRouteConfig({
   },
 });
 
-export const createRequestConfig = createRouteConfig({
-  method: 'post',
-  path: '/requests',
-  guard: isPublicAccess,
-  middleware: [authRateLimiter],
-  tags: ['general'],
-  summary: 'Create request',
-  description: 'Create a request on system level. Request supports waitlist, contact form and newsletter.',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: createRequestSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Requests',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(requestResponseSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const getMembersRouteConfig = createRouteConfig({
   method: 'get',
   path: '/members',
@@ -295,29 +261,6 @@ export const getMembersRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithPaginationSchema(apiMemberSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const getRequestsConfig = createRouteConfig({
-  method: 'get',
-  path: '/requests',
-  guard: [isAuthenticated, isSystemAdmin],
-  tags: ['general'],
-  summary: 'Get list of requests',
-  description: 'Get list of requests on system level for waitlist, contact form or newsletter.',
-  request: {
-    query: getRequestsQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Requests',
-      content: {
-        'application/json': {
-          schema: successResponseWithPaginationSchema(apiRequestSchema),
         },
       },
     },

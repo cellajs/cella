@@ -1,7 +1,7 @@
 import type { EntityType } from 'backend/types/common';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
-import type { generalClient, membershipClient, organizationsClient, projectClient, usersClient, workspaceClient } from '~/api';
+import type { generalClient, membershipClient, organizationsClient, projectClient, usersClient, workspaceClient, requestsClient } from '~/api';
 
 export enum UploadType {
   Personal,
@@ -30,7 +30,7 @@ export type User = Extract<InferResponseType<(typeof usersClient.me)['$get']>, {
 
 export type Organization = Extract<InferResponseType<(typeof organizationsClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
 
-export type Request = Extract<InferResponseType<(typeof generalClient.requests)['$get']>, { data: unknown }>['data']['items'][number];
+export type Request = Extract<InferResponseType<(typeof requestsClient.requests)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Workspace = Extract<InferResponseType<(typeof workspaceClient.workspaces)[':workspace']['$get']>, { data: unknown }>['data'];
 

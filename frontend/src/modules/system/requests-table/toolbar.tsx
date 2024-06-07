@@ -3,7 +3,7 @@ import { Mailbox, Trash, XSquare } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { getRequests } from '~/api/general';
+import { getRequests } from '~/api/requests';
 import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';

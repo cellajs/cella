@@ -10,6 +10,7 @@ const openAPITags = [
       'Memberships are one-on-one relations between a user and a contextual entity, such as an organization. It contains a role and archived, muted status',
   },
   { name: 'organizations', description: 'Organizations - `ORGANIZATION` - are obviously a central `entity`.' },
+  { name: 'requests', description: 'Receive public requests such as contact form, newsletter and waitlist requests.' },
   { name: 'general', description: 'Endpoints that overlap multiple entities or are meant to support the system in general.' },
   {
     name: 'auth',

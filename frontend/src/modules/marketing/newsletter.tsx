@@ -4,7 +4,7 @@ import { useRef } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { createRequest as baseCreateRequest } from '~/api/general';
+import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 

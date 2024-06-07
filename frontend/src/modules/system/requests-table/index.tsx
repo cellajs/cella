@@ -2,12 +2,12 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 
-import type { getRequestsQuerySchema } from 'backend/modules/general/schema';
+import type { getRequestsQuerySchema } from 'backend/modules/requests/schema';
 import { Bird } from 'lucide-react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { getRequests } from '~/api/general';
+import { getRequests } from '~/api/requests';
 import { useDebounce } from '~/hooks/use-debounce';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { RequestsTableRoute } from '~/routes/system';

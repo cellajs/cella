@@ -1,13 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
-import { createRequestSchema } from 'backend/modules/general/schema';
+import { createRequestSchema } from 'backend/modules/requests/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { createRequest as baseCreateRequest } from '~/api/general';
+import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';

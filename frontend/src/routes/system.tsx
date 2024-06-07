@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
-import { getRequestsQuerySchema } from 'backend/modules/general/schema';
+import { getRequestsQuerySchema } from 'backend/modules/requests/schema';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersQuerySchema } from 'backend/modules/users/schema';
 import { UserRoundCheck } from 'lucide-react';
