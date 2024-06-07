@@ -1,7 +1,7 @@
 import { usersClient as client, handleResponse } from '.';
 
 // Get user by slug or ID
-export const getUserBySlugOrId = async (idOrSlug: string) => {
+export const getUser = async (idOrSlug: string) => {
   const response = await client[':idOrSlug'].$get({
     param: { idOrSlug },
   });

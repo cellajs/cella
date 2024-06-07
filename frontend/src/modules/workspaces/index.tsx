@@ -5,7 +5,7 @@ import { Bird, Redo } from 'lucide-react';
 import { type Dispatch, type SetStateAction, createContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getProjects } from '~/api/projects';
-import { getWorkspaceBySlugOrId } from '~/api/workspaces';
+import { getWorkspace } from '~/api/workspaces';
 import BoardHeader from '~/modules/projects/board/header/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
@@ -35,16 +35,16 @@ export const WorkspaceContext = createContext({} as WorkspaceContextValue);
 export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: ['workspaces', idOrSlug],
-    queryFn: () => getWorkspaceBySlugOrId(idOrSlug),
+    queryFn: () => getWorkspace(idOrSlug),
   });
 
-export const workspaceProjectsQueryOptions = (workspace: string, organization: string) =>
+export const workspaceProjectsQueryOptions = (workspaceId: string, organizationId: string) =>
   queryOptions({
-    queryKey: ['projects', workspace],
+    queryKey: ['projects', workspaceId],
     queryFn: () =>
       getProjects({
-        workspace,
-        organization,
+        workspaceId,
+        organizationId,
       }),
   });
 

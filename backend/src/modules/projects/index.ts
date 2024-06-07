@@ -6,7 +6,6 @@ import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspace
 
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
-import permissionManager from '../../lib/permission-manager';
 import { sendSSE, sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
@@ -27,10 +26,8 @@ const projectsRoutes = app
    * Create project
    */
   .openapi(createProjectRouteConfig, async (ctx) => {
-    const { name, slug, color, workspace } = ctx.req.valid('json');
+    const { name, slug, color, organizationId, workspaceId } = ctx.req.valid('json');
     const user = ctx.get('user');
-    const memberships = ctx.get('memberships');
-    const { organizationId } = ctx.get('project');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -38,11 +35,7 @@ const projectsRoutes = app
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'PROJECT', { slug });
     }
 
-    if (workspace && !permissionManager.isPermissionAllowed(memberships, 'update', { type: 'WORKSPACE', id: workspace, organizationId })) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'PROJECT', { user: user.id, id: workspace });
-    }
-
-    const [createdProject] = await db
+    const [project] = await db
       .insert(projectsTable)
       .values({
         organizationId,
@@ -53,49 +46,33 @@ const projectsRoutes = app
       })
       .returning();
 
-    logEvent('Project created', { project: createdProject.id });
+    logEvent('Project created', { project: project.id });
 
     await db.insert(membershipsTable).values({
       userId: user.id,
       organizationId,
-      projectId: createdProject.id,
+      projectId: project.id,
       type: 'PROJECT',
       role: 'ADMIN',
     });
 
-    logEvent('User added to project', {
-      user: user.id,
-      project: createdProject.id,
-    });
+    logEvent('User added to project', { user: user.id, project: project.id });
 
-    if (workspace) {
+    // If project created in workspace, add project to it
+    if (workspaceId) {
       await db.insert(projectsToWorkspacesTable).values({
-        projectId: createdProject.id,
-        workspaceId: workspace,
+        projectId: project.id,
+        workspaceId: workspaceId,
       });
 
-      logEvent('Project added to workspace', {
-        project: createdProject.id,
-        workspace,
-      });
+      logEvent('Project added to workspace', { project: project.id, workspace: workspaceId });
     }
 
-    sendSSE(user.id, 'create_entity', {
-      ...createdProject,
-      workspaceId: workspace,
-      type: 'PROJECT',
-    });
+    const createdProject = { ...project, role: 'ADMIN' as const };
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...createdProject,
-          role: 'ADMIN' as const,
-        },
-      },
-      200,
-    );
+    sendSSE(user.id, 'create_entity', createdProject);
+
+    return ctx.json({ success: true, data: createdProject }, 200);
   })
   /*
    * Get project by id or slug
@@ -124,7 +101,8 @@ const projectsRoutes = app
    * Get list of projects
    */
   .openapi(getProjectsRouteConfig, async (ctx) => {
-    const { q, sort, order, offset, limit, workspace } = ctx.req.valid('query');
+    // also be able to filter on organizationId
+    const { q, sort, order, offset, limit, workspaceId } = ctx.req.valid('query');
     const user = ctx.get('user');
 
     const membershipsFilters = [eq(membershipsTable.userId, user.id)];
@@ -173,7 +151,7 @@ const projectsRoutes = app
     let projects: Array<any>;
     let total = 0;
 
-    if (!workspace) {
+    if (!workspaceId) {
       const [{ total: matches }] = await db.select({ total: count() }).from(projectsQuery.as('projects'));
       total = matches;
       projects = await db
@@ -191,13 +169,13 @@ const projectsRoutes = app
         .limit(Number(limit))
         .offset(Number(offset));
     } else {
-      projectsFilters.push(eq(projectsToWorkspacesTable.workspaceId, workspace));
+      projectsFilters.push(eq(projectsToWorkspacesTable.workspaceId, workspaceId));
 
       const [{ total: matches }] = await db
         .select({ total: count() })
         .from(projectsToWorkspacesTable)
         .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), ...projectsFilters))
-        .where(eq(projectsToWorkspacesTable.workspaceId, workspace));
+        .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId));
 
       total = matches;
 
@@ -213,7 +191,7 @@ const projectsRoutes = app
         .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), ...projectsFilters))
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
         .leftJoin(membership, eq(membership.projectId, projectsTable.id))
-        .where(eq(projectsToWorkspacesTable.workspaceId, workspace))
+        .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId))
         .orderBy(orderColumn)
         .limit(Number(limit))
         .offset(Number(offset));

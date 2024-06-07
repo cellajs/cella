@@ -18,9 +18,8 @@ const workspacesRoutes = app
    * Create workspace
    */
   .openapi(createWorkspaceRouteConfig, async (ctx) => {
-    const { name, slug } = ctx.req.valid('json');
+    const { name, slug, organizationId } = ctx.req.valid('json');
     const user = ctx.get('user');
-    const { organizationId } = ctx.get('workspace');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -28,7 +27,7 @@ const workspacesRoutes = app
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
     }
 
-    const [createdWorkspace] = await db
+    const [workspace] = await db
       .insert(workspacesTable)
       .values({
         organizationId,
@@ -37,25 +36,25 @@ const workspacesRoutes = app
       })
       .returning();
 
-    logEvent('Workspace created', { workspace: createdWorkspace.id });
+    logEvent('Workspace created', { workspace: workspace.id });
 
     await db.insert(membershipsTable).values({
       userId: user.id,
       organizationId,
-      workspaceId: createdWorkspace.id,
+      workspaceId: workspace.id,
       type: 'WORKSPACE',
       role: 'ADMIN',
     });
 
-    logEvent('User added to workspace', { user: user.id, workspace: createdWorkspace.id });
+    logEvent('User added to workspace', { user: user.id, workspace: workspace.id });
 
-    sendSSEToUsers([user.id], 'create_entity', createdWorkspace);
+    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...workspace});
 
     return ctx.json(
       {
         success: true,
         data: {
-          ...createdWorkspace,
+          ...workspace,
           role: 'ADMIN' as const,
         },
       },

@@ -44,6 +44,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const useUpdateUserMutation = (idOrSlug: string) => {
   const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === idOrSlug;
+
   return useMutation<User, DefaultError, UpdateUserParams>({
     mutationKey: ['me', 'update', idOrSlug],
     mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
@@ -56,9 +57,10 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
 
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
+  const { nextStep } = useStepper();
+  
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
-  const { nextStep } = useStepper();
 
   // Hide fields if requested
   if (hiddenFields) {

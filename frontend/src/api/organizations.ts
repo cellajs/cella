@@ -13,7 +13,7 @@ export const createOrganization = async (params: CreateOrganizationParams) => {
 };
 
 // Get an organization by slug or ID
-export const getOrganizationBySlugOrId = async (idOrSlug: string) => {
+export const getOrganization = async (idOrSlug: string) => {
   const response = await client[':idOrSlug'].$get({
     param: { idOrSlug },
   });

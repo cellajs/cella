@@ -56,12 +56,9 @@ const organizationsRoutes = app
       role: 'ADMIN',
     });
 
-    logEvent('User added to organization', {
-      user: user.id,
-      organization: createdOrganization.id,
-    });
+    logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
 
-    sendSSEToUsers([user.id], 'create_entity', createdOrganization);
+    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...createdOrganization });
 
     return ctx.json(
       {
@@ -91,6 +88,7 @@ const organizationsRoutes = app
 
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
+    // TODO: Try to optimize this count query and move to a helper
     const counts = db
       .select({
         organizationId: membershipsTable.organizationId,
@@ -222,7 +220,8 @@ const organizationsRoutes = app
       sendSSEToUsers(membersId, 'update_entity', updatedOrganization);
     }
 
-    const [{ admins }] = await db
+     // TODO: Try to optimize this count query and move to a helper
+     const [{ admins }] = await db
       .select({
         admins: count(),
       })

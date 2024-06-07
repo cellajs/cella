@@ -13,12 +13,7 @@ import { CustomHono, type EntityType } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
-import {
-  getUserMenuConfig,
-  meRouteConfig,
-  terminateSessionsConfig,
-  updateSelfConfig,
-} from './routes';
+import { getUserMenuConfig, meRouteConfig, terminateSessionsConfig, updateSelfConfig } from './routes';
 
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { generateElectricJWTToken } from '../../lib/utils';
@@ -203,13 +198,7 @@ const meRoutes = app
       }),
     );
 
-    return ctx.json(
-      {
-        success: true,
-        errors: errors,
-      },
-      200,
-    );
+    return ctx.json({ success: true, errors: errors }, 200);
   })
   /*
    * Update current user (self)
@@ -272,7 +261,7 @@ const meRoutes = app
       },
       200,
     );
-  })
+  });
 
 export default meRoutes;
 

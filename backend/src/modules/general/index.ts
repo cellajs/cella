@@ -21,7 +21,6 @@ import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { getOrderColumn } from '../../lib/order-column';
-import { sendSSEToUsers } from '../../lib/sse';
 import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
@@ -293,7 +292,6 @@ const generalRoutes = app
         role: token.role as MembershipModel['role'],
         createdBy: user.id,
       });
-      sendSSEToUsers([user.id], 'create_entity', organization);
     }
 
     return ctx.json({ success: true }, 200);

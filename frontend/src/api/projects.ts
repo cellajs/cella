@@ -1,7 +1,7 @@
 import { projectsClient as client, handleResponse } from '.';
 
 export type CreateProjectParams = Parameters<(typeof client.index)['$post']>['0']['json'] & {
-  organization: string;
+  organizationId: string;
 };
 
 // Create a new project
@@ -15,7 +15,7 @@ export const createProject = async ({ ...rest }: CreateProjectParams) => {
 };
 
 // Get an project by its slug or ID
-export const getProjectBySlugOrId = async (idOrSlug: string) => {
+export const getProject = async (idOrSlug: string) => {
   const response = await client[':idOrSlug'].$get({
     param: { idOrSlug },
   });
@@ -33,7 +33,7 @@ export type GetProjectsParams = Partial<
 
 // Get a list of projects
 export const getProjects = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, workspace, organization }: GetProjectsParams = {},
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50, workspaceId, organizationId }: GetProjectsParams = {},
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(
@@ -44,8 +44,8 @@ export const getProjects = async (
         order,
         offset: String(page * limit),
         limit: String(limit),
-        workspace,
-        organization,
+        workspaceId,
+        organizationId,
       },
     },
     {
