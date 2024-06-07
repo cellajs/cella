@@ -4,7 +4,7 @@ import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
 import { useAlertStore } from '~/store/alert';
 import { useUserStore } from '~/store/user';
-import type { User } from '~/types';
+import type { MeUser } from '~/types';
 import router from './router';
 
 // Fallback messages for common errors
@@ -47,7 +47,7 @@ const onError = (error: Error) => {
         redirectOptions.search = { redirect: location.pathname };
       }
 
-      useUserStore.setState({ user: null as unknown as User });
+      useUserStore.setState({ user: null as unknown as MeUser });
       router.navigate(redirectOptions);
     }
   }

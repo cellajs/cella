@@ -2,6 +2,12 @@ import { z } from 'zod';
 
 import { entityTypeSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
+import { apiUserSchema } from '../users/schema';
+
+export const meUserSchema = apiUserSchema.extend({
+  electricJWTToken: z.string(),
+  sessions: z.array(z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string() }))
+});
 
 const menuItemSchema = z.object({
   slug: slugSchema,
@@ -16,6 +22,7 @@ const menuItemSchema = z.object({
   membershipId: idSchema,
   workspaceId: idSchema.optional(),
 });
+
 
 const menuSchema = z.array(
   z.object({

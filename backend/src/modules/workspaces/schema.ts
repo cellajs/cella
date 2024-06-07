@@ -5,12 +5,6 @@ import { workspacesTable } from '../../db/schema/workspaces';
 import { idSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
 
 import { apiMembershipSchema } from '../memberships/schema';
-import { apiUserSchema } from '../users/schema';
-
-export const apiWorkspaceUserSchema = z.object({
-  ...apiUserSchema.shape,
-  workspaceRole: apiMembershipSchema.shape.role,
-});
 
 export const apiWorkspacesSchema = z.object({
   ...createSelectSchema(workspacesTable).shape,
@@ -23,7 +17,6 @@ export const createWorkspaceJsonSchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
   organizationId: idSchema,
-  workspaceId: idSchema.optional(),
 });
 
 export const updateWorkspaceJsonSchema = createInsertSchema(workspacesTable, {

@@ -418,8 +418,8 @@ const generalRoutes = app
    * Get members by entity id and type
    */
   .openapi(getMembersRouteConfig, async (ctx) => {
-    const {idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
-    const entity = await resolveEntity(entityType, idOrSlug)
+    const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const entity = await resolveEntity(entityType, idOrSlug);
 
     const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
 
@@ -486,24 +486,13 @@ const generalRoutes = app
     const members = await Promise.all(
       result.map(async ({ user, role, membershipId, counts }) => ({
         ...user,
-        electricJWTToken: null,
-        sessions: [],
         role,
         membershipId,
         counts,
       })),
     );
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          items: members,
-          total,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: { items: members, total } }, 200);
   })
   /*
    *  Get SSE stream

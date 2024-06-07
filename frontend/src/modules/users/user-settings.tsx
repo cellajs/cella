@@ -25,7 +25,7 @@ import { oauthProviders } from '../auth/oauth-options';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
 
-type Session = {
+export type Session = {
   id: string;
   type: string;
   current: boolean;
