@@ -4,7 +4,7 @@ import { updateUserJsonSchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import type { User } from '~/types';
+import type { MeUser, User } from '~/types';
 import AvatarFormField from '../common/form-fields/avatar';
 
 import { type UpdateUserParams, updateUser } from '~/api/users';
@@ -98,7 +98,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     mutate(values, {
       onSuccess: (data) => {
         if (isSelf) {
-          setUser(data);
+          setUser(data as MeUser);
           toast.success(t('common:success.you_updated'));
         } else {
           toast.success(t('common:success.updated_user'));

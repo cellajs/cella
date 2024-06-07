@@ -16,14 +16,12 @@ export const apiUserSchema = createSelectSchema(usersTable, {
   .omit({
     hashedPassword: true,
   })
-  .setKey('electricJWTToken', z.string().nullable())
   .setKey(
     'counts',
     z.object({
       memberships: z.number(),
     }),
-  )
-  .setKey('sessions', z.array(z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string() })));
+  );
 
 export const getUsersQuerySchema = paginationQuerySchema.merge(
   z.object({

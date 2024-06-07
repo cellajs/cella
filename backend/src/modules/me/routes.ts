@@ -2,8 +2,8 @@ import { errorResponses, successResponseWithDataSchema, successResponseWithError
 import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import { apiUserSchema, updateUserJsonSchema } from '../users/schema';
-import { userMenuSchema } from './schema';
+import { updateUserJsonSchema } from '../users/schema';
+import { meUserSchema, userMenuSchema } from './schema';
 
 export const meRouteConfig = createRouteConfig({
   method: 'get',
@@ -17,7 +17,7 @@ export const meRouteConfig = createRouteConfig({
       description: 'User',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiUserSchema),
+          schema: successResponseWithDataSchema(meUserSchema),
         },
       },
     },
@@ -48,7 +48,7 @@ export const updateSelfConfig = createRouteConfig({
       description: 'User',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiUserSchema),
+          schema: successResponseWithDataSchema(meUserSchema),
         },
       },
     },

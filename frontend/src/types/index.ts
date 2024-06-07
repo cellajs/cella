@@ -1,7 +1,8 @@
 import type { EntityType } from 'backend/types/common';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
-import type { generalClient, meClient, membershipsClient, organizationsClient, projectsClient, requestsClient, workspacesClient } from '~/api';
+import type { generalClient, meClient, membershipsClient, organizationsClient, projectsClient, requestsClient, usersClient, workspacesClient } from '~/api';
+import type { Session } from '~/modules/users/user-settings';
 
 export enum UploadType {
   Personal,
@@ -26,7 +27,9 @@ export type Role = (typeof config.rolesByType.systemRoles)[number] | (typeof con
 export type Entity = (typeof config.entityTypes)[number];
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
 
-export type User = Extract<InferResponseType<(typeof meClient.index)['$get']>, { data: unknown }>['data'];
+export type User = Extract<InferResponseType<(typeof usersClient)[':idOrSlug']['$get']>, { data: unknown }>['data'];
+
+export type MeUser = User & { electricJWTToken: string; sessions: Session[] };
 
 export type Organization = Extract<InferResponseType<(typeof organizationsClient.index)['$get']>, { data: unknown }>['data']['items'][number];
 

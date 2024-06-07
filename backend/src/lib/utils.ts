@@ -6,7 +6,7 @@ interface GenerateTokenOptions {
 }
 
 /**
- * Generates a JWT token for Electric for a given user.
+ * Generates a JWT token for Electric. Expires in 1 day.
  *
  * @param {string} userId - The user ID to include in the token.
  * @returns {Promise<string>} - A promise that resolves to the generated JWT token.

@@ -81,8 +81,6 @@ const usersRoutes = app
 
     const users = result.map(({ user, counts }) => ({
       ...transformDatabaseUser(user),
-      electricJWTToken: null,
-      sessions: [],
       counts,
     }));
 
@@ -197,8 +195,6 @@ const usersRoutes = app
         success: true,
         data: {
           ...transformDatabaseUser(targetUser),
-          electricJWTToken: null,
-          sessions: [],
           counts: {
             memberships,
           },
@@ -271,8 +267,6 @@ const usersRoutes = app
         success: true,
         data: {
           ...transformDatabaseUser(updatedUser),
-          electricJWTToken: null,
-          sessions: [],
           counts: {
             memberships,
           },

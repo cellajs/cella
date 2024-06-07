@@ -35,6 +35,7 @@ const meRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, user.id));
 
+    //TODO: move this to a helper function
     const sessions = await auth.getUserSessions(user.id);
     const currentSessionId = auth.readSessionCookie(ctx.req.raw.headers.get('Cookie') ?? '');
     const preparedSessions = sessions.map((session) => ({
@@ -43,7 +44,7 @@ const meRoutes = app
       current: session.id === currentSessionId,
     }));
 
-    // Generate a JWT token for eletric
+    // Generate a JWT token for electric
     const electricJWTToken = await generateElectricJWTToken({ userId: user.id });
 
     return ctx.json(
@@ -247,13 +248,25 @@ const meRoutes = app
 
     logEvent('User updated', { user: updatedUser.id });
 
+    // Generate a JWT token for electric
+    const electricJWTToken = await generateElectricJWTToken({ userId: user.id });
+
+    //TODO: move this to a helper function
+    const sessions = await auth.getUserSessions(user.id);
+    const currentSessionId = auth.readSessionCookie(ctx.req.raw.headers.get('Cookie') ?? '');
+    const preparedSessions = sessions.map((session) => ({
+      ...session,
+      type: 'DESKTOP' as const,
+      current: session.id === currentSessionId,
+    }));
+
     return ctx.json(
       {
         success: true,
         data: {
           ...transformDatabaseUser(updatedUser),
-          electricJWTToken: null,
-          sessions: [],
+          electricJWTToken,
+          sessions: preparedSessions,
           counts: {
             memberships,
           },

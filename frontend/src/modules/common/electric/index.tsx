@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { User } from '~/types';
 import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
 interface Props {
   children: React.ReactNode;
@@ -26,7 +25,7 @@ function deleteDB(dbName: string) {
 }
 
 const ElectricProvider = ({ children }: Props) => {
-  const user = useUserStore((state) => state.user) as User | null;
+  const user = useUserStore((state) => state.user);
   // TODO: Temporary fix to prevent loading all projects and labels. Only sync the projects and labels of organizations the user is a member of.
   // TODO: Consider exposing organizationIds the user is part of on the user object, as the menu can be undefined.
   const { menu } = useNavigationStore();
@@ -48,7 +47,7 @@ const ElectricProvider = ({ children }: Props) => {
           url: config.electricUrl,
         });
 
-        await electric.connect(user?.electricJWTToken || '0');
+        await electric.connect(user.electricJWTToken);
 
         if (!isMounted) {
           return;
