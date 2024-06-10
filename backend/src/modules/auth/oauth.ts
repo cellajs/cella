@@ -33,7 +33,7 @@ const microsoftScopes = { scopes: ['profile', 'email'] };
 // * Oauth endpoints
 const oauthRoutes = app
   /*
-   * Github sign in
+   * Github authentication
    */
   .openapi(githubSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
@@ -46,7 +46,7 @@ const oauthRoutes = app
     return ctx.redirect(url.toString());
   })
   /*
-   * Google sign in
+   * Google authentication
    */
   .openapi(googleSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
@@ -60,7 +60,7 @@ const oauthRoutes = app
     return ctx.redirect(url.toString());
   })
   /*
-   * Microsoft sign in
+   * Microsoft authentication
    */
   .openapi(microsoftSignInRouteConfig, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
@@ -74,7 +74,7 @@ const oauthRoutes = app
     return ctx.redirect(url.toString());
   })
   /*
-   * Github sign in callback
+   * Github authentication callback
    */
   .openapi(githubSignInCallbackRouteConfig, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
@@ -236,7 +236,7 @@ const oauthRoutes = app
     }
   })
   /*
-   * Google sign in callback
+   * Google authentication callback
    */
   .openapi(googleSignInCallbackRouteConfig, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
@@ -331,7 +331,7 @@ const oauthRoutes = app
     }
   })
   /*
-   * Microsoft sign in callback
+   * Microsoft authentication callback
    */
   .openapi(microsoftSignInCallbackRouteConfig, async (ctx) => {
     const { state, code } = ctx.req.valid('query');

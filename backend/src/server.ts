@@ -44,7 +44,7 @@ app
   .route('/memberships', MembershipsRoutes)
   .route('/organizations', organizationsRoutes)
   .route('/requests', requestsRoutes)
-  .route('/', authRoutes)
+  .route('/auth', authRoutes)
   .route('/', generalRoutes)
 
   // App-specific routes go here
