@@ -146,14 +146,13 @@ const ItemOptions = ({
   };
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const subList: Record<string, string[]> = menuOrder[itemType].subList;
+    const subList = menuOrder[itemType].subList;
     let mainMenuId: string | undefined;
     if (subList) {
       mainMenuId = Object.keys(subList).find((key) => {
         return subList[key].includes(item.id);
       });
     }
-
     const submenuItemIndex = mainMenuId ? menuOrder[itemType].subList[mainMenuId].findIndex((el) => el === item.id) : 0;
     const itemIndex = menuOrder[itemType].mainList ? menuOrder[itemType].mainList.findIndex((el) => el === item.id) : 0;
     const element = dragRef.current;
@@ -218,10 +217,11 @@ const ItemOptions = ({
         const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'vertical');
         const subList = menuOrder[itemType].subList;
 
-        const mainMenuId = Object.keys(subList).find((key) => {
-          return subList[key].includes(item.id);
-        });
-        if (mainMenuId) {
+        if (subList) {
+          const mainMenuId = Object.keys(subList).find((key) => {
+            return subList[key].includes(item.id);
+          });
+          if (!mainMenuId) return;
           const newItemOrder = arrayMove(menuOrder[itemType].subList[mainMenuId], sourceData.index, destination);
           setSubMenuOrder(itemType, mainMenuId, newItemOrder);
         } else {
