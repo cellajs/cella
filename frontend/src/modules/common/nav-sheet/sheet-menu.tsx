@@ -20,7 +20,7 @@ export type SectionItem = {
   label: string;
   createForm?: React.ReactNode;
   isSubmenu?: boolean;
-  hasSubmenu?: boolean;
+  toPrefix?: boolean;
   icon?: React.ElementType<LucideProps>;
 };
 
@@ -30,14 +30,12 @@ export const menuSections: SectionItem[] = [
     storageType: 'organizations',
     type: 'ORGANIZATION',
     label: 'common:organizations',
-    hasSubmenu: false,
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
   },
   {
     storageType: 'workspaces',
     isSubmenu: false,
-    hasSubmenu: true,
     type: 'WORKSPACE',
     label: 'common:workspaces',
     createForm: <CreateWorkspaceForm dialog />,
@@ -45,7 +43,6 @@ export const menuSections: SectionItem[] = [
   {
     storageType: 'workspaces',
     isSubmenu: true,
-    hasSubmenu: false,
     type: 'PROJECT',
     label: 'common:projects',
   },
