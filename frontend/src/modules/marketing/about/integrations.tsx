@@ -14,14 +14,11 @@ interface Integrations {
 }
 
 const integrations: Integrations[] = [
-  { name: 'TipTap', invert: true, country: 'DE', url: 'tiptap.dev', logo: 'tiptap.svg' },
   { name: 'Sentry', country: 'US', url: 'sentry.io', logo: 'sentry.svg' },
   { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', logo: 'betterstack.svg' },
   { name: 'Paddle', country: 'GB', url: 'paddle.com', logo: 'paddle.svg' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', logo: 'gleap.svg' },
   { name: 'Imado', country: 'NL', url: 'imado.eu', logo: 'imado.svg' },
-  { name: 'SimpleAnalytics', country: 'NL', url: 'simpleanalytics.com', logo: 'simpleanalytics.svg' },
-  { name: 'Oh Dear', country: 'BE', url: 'ohdear.app', logo: 'ohdear.svg' },
 ];
 
 const Integrations = () => {
