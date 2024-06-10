@@ -9,7 +9,14 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
-import { arrayMove, getDraggableItemData, getReorderDestinationIndex, sortById } from '~/lib/utils';
+import {
+  arrayMove,
+  findSubArrayByMainId,
+  findMainArrayKeyBySubitemId,
+  getDraggableItemData,
+  getReorderDestinationIndex,
+  sortById,
+} from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -41,7 +48,7 @@ export const SheetMenuItemsOptions = ({
 }: MenuItemProps & { data: UserMenu[keyof UserMenu]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
-  const { activeItemsOrder, hideSubmenu, submenuItemsOrder } = useNavigationStore();
+  const { hideSubmenu, menuOrder } = useNavigationStore();
   if (data.items.length === 0) {
     return (
       <li className="py-2 text-muted-foreground text-sm text-light text-center">
@@ -51,7 +58,15 @@ export const SheetMenuItemsOptions = ({
   }
   const items = data.items
     .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
-    .sort((a, b) => sortById(a.id, b.id, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
+    .sort((a, b) =>
+      sortById(
+        a.id,
+        b.id,
+        findMainArrayKeyBySubitemId(menuOrder[sectionType], a.id)
+          ? findSubArrayByMainId(menuOrder[sectionType], findMainArrayKeyBySubitemId(menuOrder[sectionType], a.id))
+          : menuOrder[sectionType].flatMap((el) => Object.keys(el)),
+      ),
+    );
 
   const toggleSubmenuVisibility = (itemId: string) => {
     setSubmenuVisibility((prevState) => ({
@@ -113,7 +128,7 @@ const ItemOptions = ({
   const [isItemArchived, setItemArchived] = useState(item.archived);
   const [isItemMuted, setItemMuted] = useState(item.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
-  const { activeItemsOrder, setActiveItemsOrder, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
+  const { menuOrder, setSubMenuOrder, setMainMenuOrder } = useNavigationStore();
 
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
@@ -158,8 +173,10 @@ const ItemOptions = ({
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const submenuItemIndex = item.workspaceId ? submenuItemsOrder[item.workspaceId].findIndex((el) => el === item.id) : 0;
-    const itemIndex = activeItemsOrder[sectionType].findIndex((el) => el === item.id);
+    const submenuItemIndex = findMainArrayKeyBySubitemId(menuOrder[sectionType], item.id)
+      ? findSubArrayByMainId(menuOrder[sectionType], findMainArrayKeyBySubitemId(menuOrder[sectionType], item.id)).findIndex((el) => el === item.id)
+      : 0;
+    const itemIndex = menuOrder[sectionType].findIndex((el) => Object.keys(el).includes(item.id));
     const element = dragRef.current;
     const dragButton = dragButtonRef.current;
     const data = getDraggableItemData(item, submenu ? submenuItemIndex : itemIndex, 'menuItem', itemType);
@@ -205,7 +222,7 @@ const ItemOptions = ({
         onDragLeave: () => onDragOver(),
       }),
     );
-  }, [item, activeItemsOrder[sectionType]]);
+  }, [item, menuOrder[sectionType]]);
 
   // monitoring drop event
   useEffect(() => {
@@ -220,18 +237,17 @@ const ItemOptions = ({
 
         const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
         const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'vertical');
-
-        if (submenu && item.workspaceId) {
-          const newItemOrder = arrayMove(submenuItemsOrder[item.workspaceId], sourceData.index, destination);
-          setSubmenuItemsOrder(item.workspaceId, newItemOrder);
+        const mainItemId = findMainArrayKeyBySubitemId(menuOrder[sectionType], item.id);
+        if (mainItemId) {
+          const newItemOrder = arrayMove(findSubArrayByMainId(menuOrder[sectionType], mainItemId), sourceData.index, destination);
+          setSubMenuOrder(sectionType, mainItemId, newItemOrder as string[]);
         } else {
-          const newItemOrder = arrayMove(activeItemsOrder[sectionType], sourceData.index, destination);
-          setActiveItemsOrder(sectionType, newItemOrder);
+          const newItemOrder = arrayMove(menuOrder[sectionType], sourceData.index, destination);
+          setMainMenuOrder(sectionType, newItemOrder as Record<string, string[]>[]);
         }
       },
     });
-  }, [item, activeItemsOrder[sectionType]]);
-
+  }, [item, menuOrder[sectionType]]);
   return (
     <div key={item.id} className="relative my-1" ref={dragRef}>
       <motion.div

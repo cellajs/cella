@@ -10,8 +10,6 @@ import type { UserMenu } from '~/types';
 interface NavigationState {
   recentSearches: string[];
   setRecentSearches: (searchValue: string[]) => void;
-  activeItemsOrder: Record<keyof UserMenu, string[]>;
-  setActiveItemsOrder: (sectionName: keyof UserMenu, itemIds: string[]) => void;
   activeSheet: NavItem | null;
   setSheet: (activeSheet: NavItem | null) => void;
   menu: UserMenu;
@@ -25,10 +23,12 @@ interface NavigationState {
   navLoading: boolean;
   setLoading: (status: boolean) => void;
   focusView: boolean;
-  submenuItemsOrder: Record<string, string[]>;
-  setSubmenuItemsOrder: (workspaceId: string, itemIds: string[]) => void;
   setFocusView: (status: boolean) => void;
   archiveStateToggle: (itemId: string, active: boolean, workspaceId?: string) => void;
+  menuOrder: Record<keyof UserMenu, Record<string, string[]>[]>;
+  setMainMenuOrder: (entity: keyof UserMenu, itemIds: Record<string, string[]>[]) => void;
+  setSubMenuOrder: (entity: keyof UserMenu, entityId: string, subItemIds: string[]) => void;
+  addNewMainMenuItem: (entity: keyof UserMenu, itemId: string) => void;
 }
 
 const initialMenuState: UserMenu = menuSections
@@ -43,17 +43,13 @@ export const useNavigationStore = create<NavigationState>()(
     immer(
       persist(
         (set) => ({
+          menuOrder: {} as Record<string, Record<string, string[]>[]>,
           recentSearches: [] as string[],
           activeSheet: null as NavItem | null,
           keepMenuOpen: false as boolean,
           hideSubmenu: false as boolean,
           navLoading: false as boolean,
           focusView: false as boolean,
-          activeItemsOrder: {
-            organizations: [],
-            workspaces: [],
-          },
-          submenuItemsOrder: {},
           menu: initialMenuState,
           activeSections: {},
           setRecentSearches: (searchValues: string[]) => {
@@ -114,14 +110,23 @@ export const useNavigationStore = create<NavigationState>()(
               }
             });
           },
-          setActiveItemsOrder: (sectionName: keyof UserMenu, itemIds: string[]) => {
+          setMainMenuOrder: (entity: keyof UserMenu, itemIds: Record<string, string[]>[]) => {
             set((state) => {
-              state.activeItemsOrder[sectionName] = itemIds;
+              state.menuOrder[entity] = itemIds;
             });
           },
-          setSubmenuItemsOrder: (workspaceId: string, itemIds: string[]) => {
+          addNewMainMenuItem: (entity: keyof UserMenu, itemId: string) => {
             set((state) => {
-              state.submenuItemsOrder[workspaceId] = itemIds;
+              state.menuOrder[entity].push({ [itemId]: [] });
+            });
+          },
+
+          setSubMenuOrder: (entity: keyof UserMenu, entityId: string, subItemIds: string[]) => {
+            set((state) => {
+              state.menuOrder[entity] = state.menuOrder[entity].map((item) => {
+                if (Object.prototype.hasOwnProperty.call(item, entityId)) return { ...item, [entityId]: subItemIds };
+                return item;
+              });
             });
           },
         }),
@@ -133,8 +138,7 @@ export const useNavigationStore = create<NavigationState>()(
             hideSubmenu: state.hideSubmenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
-            activeItemsOrder: state.activeItemsOrder,
-            submenuItemsOrder: state.submenuItemsOrder,
+            menuOrder: state.menuOrder,
           }),
           storage: createJSONStorage(() => localStorage),
         },

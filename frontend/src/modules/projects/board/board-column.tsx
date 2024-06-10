@@ -9,7 +9,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { cn, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
+import { cn, findSubArrayByMainId, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useNavigationStore } from '~/store/navigation';
@@ -61,7 +61,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const { project, focusedProject, setFocusedProjectIndex } = useContext(ProjectContext);
-  const { submenuItemsOrder } = useNavigationStore();
+  const { menuOrder } = useNavigationStore();
   const { searchQuery, projects, selectedTasks, tasksLoading } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
   const { workspace } = useContext(WorkspaceContext);
@@ -171,7 +171,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
     const data = getDraggableItemData<Project>(
       project,
-      submenuItemsOrder[workspace.id].findIndex((el) => el === project.id),
+      findSubArrayByMainId(menuOrder.workspaces, workspace.id).findIndex((el) => el === project.id),
       'column',
     );
     if (!column || !headerDragButton || !cardList) return;
@@ -224,7 +224,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
           })
         : () => {},
     );
-  }, [project, projects, submenuItemsOrder[workspace.id], sortedTasks]);
+  }, [project, projects, menuOrder.workspaces, sortedTasks]);
 
   // Hides underscroll elements
   // 64px refers to the header height

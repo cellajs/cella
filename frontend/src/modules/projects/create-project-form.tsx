@@ -20,6 +20,7 @@ import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import { Form } from '../ui/form';
+import { findSubArrayByMainId } from '~/lib/utils';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -34,7 +35,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
   // const navigate = useNavigate();
-  const { setSheet, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
+  const { setSheet, setSubMenuOrder, menuOrder } = useNavigationStore();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -70,7 +71,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       callback([project], 'create');
       if (isDialog) dialog.remove();
       toast.success(t('common:success.create_resource', { resource: t('common:project') }));
-      setSubmenuItemsOrder(workspace.id, [...submenuItemsOrder[workspace.id], project.id]);
+      setSubMenuOrder('workspaces', workspace.id, [...findSubArrayByMainId(menuOrder.workspaces, workspace.id), project.id]);
       setSheet(null);
     },
   });

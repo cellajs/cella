@@ -9,21 +9,22 @@ import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { DownAlert } from '../down-alert';
 import { DebugWidget } from '../debug-widget';
+import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 
 // Lazy load Tanstack dev tools in development
 const TanStackRouterDevtools =
-  config.mode === 'production'
-    ? () => null
-    : lazy(() =>
+  config.mode === 'development'
+    ? lazy(() =>
         import('@tanstack/router-devtools').then((res) => ({
           default: res.TanStackRouterDevtools,
         })),
-      );
-
-// Lazy load gleap chat support
-const GleapSupport = config.gleapToken ? lazy(() => import('~/modules/common/gleap')) : () => null;
+      )
+    : () => null;
 
 function Root() {
+  // Lazy load gleap chat support
+  const GleapSupport = config.gleapToken ? useLazyComponent(() => import('~/modules/common/gleap'), 5000) : () => null; // 5 seconds delay
+
   return (
     <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
       <ScrollRestoration />
@@ -42,9 +43,7 @@ function Root() {
       </Suspense>
       <DownAlert />
 
-      <Suspense fallback={null}>
-        <GleapSupport />
-      </Suspense>
+      <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
     </TooltipProvider>
   );
 }

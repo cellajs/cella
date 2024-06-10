@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
@@ -16,8 +16,6 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { sheet } from '../common/sheeter/state';
-
-const TiptapEditor = lazy(() => import('~/modules/tiptap'));
 
 interface NewsletterFormProps {
   sheet?: boolean;
@@ -75,7 +73,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="tiptap-container" className="space-y-6 h-max">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 h-max">
         <FormField
           control={form.control}
           name="subject"
@@ -91,7 +89,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
         />
 
         <Suspense fallback={null}>
-          <TiptapEditor />
+          Here should be blocknotejs editor
         </Suspense>
 
         <div className="flex flex-col sm:flex-row gap-2">

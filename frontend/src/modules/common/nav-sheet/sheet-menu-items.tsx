@@ -3,7 +3,7 @@ import type { EntityType } from 'backend/types/common';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { cn, sortById } from '~/lib/utils';
+import { cn, findMainArrayKeyBySubitemId, findSubArrayByMainId, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -56,7 +56,8 @@ export const SheetMenuItem = ({ item, type, className, submenu, searchResults }:
         <div className={`max-sm:hidden text-muted-foreground ${submenu ? 'text-xs' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
-            {item.submenu ? `${item.submenu?.items.length || 0} ${t('common:projects').toLowerCase()}` : t(item.role.toLowerCase())}
+            {/* On new creation cant access role REDO */}
+            {item.submenu ? `${item.submenu?.items.length || 0} ${t('common:projects').toLowerCase()}` : item.role ? t(item.role.toLowerCase()) : ''}
           </span>
         </div>
       </div>
@@ -76,11 +77,19 @@ interface SheetMenuItemsProps {
 
 export const SheetMenuItems = ({ data, shownOption, sectionType, createDialog, className, submenu, searchResults }: SheetMenuItemsProps) => {
   const { t } = useTranslation();
-  const { hideSubmenu, activeItemsOrder, submenuItemsOrder } = useNavigationStore();
+  const { hideSubmenu, menuOrder } = useNavigationStore();
 
   const filteredItems = data.items
     .filter((item) => (shownOption === 'archived' ? item.archived : !item.archived))
-    .sort((a, b) => sortById(a.id, b.id, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
+    .sort((a, b) =>
+      sortById(
+        a.id,
+        b.id,
+        findMainArrayKeyBySubitemId(menuOrder[sectionType], a.id)
+          ? findSubArrayByMainId(menuOrder[sectionType], findMainArrayKeyBySubitemId(menuOrder[sectionType], a.id))
+          : menuOrder[sectionType].flatMap((el) => Object.keys(el)),
+      ),
+    );
 
   const renderNoItems = () =>
     data.canCreate && createDialog ? (
