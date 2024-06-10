@@ -114,7 +114,7 @@ export const verifyEmailRouteConfig = createRouteConfig({
   middleware: [authRateLimiter],
   tags: ['auth'],
   summary: 'Verify email by token',
-  description: 'Verify email address by token from the verification email. Sign in when successful.',
+  description: 'Verify email address by token from the verification email. Receive a user session when successful.',
   security: [],
   request: {
     query: z.object({
@@ -176,8 +176,8 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
-  summary: 'Submit new password',
-  description: 'Submit new password and directly get session.',
+  summary: 'Submit password by token',
+  description: 'Submit new password and directly receive a user session.',
   security: [],
   request: {
     params: z.object({ token: z.string() }),
