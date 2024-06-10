@@ -363,8 +363,8 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   });
 
-const allRoutes = authRoutes.route('/', oauthRoutes);
+const allAuthRoutes = authRoutes.route('/', oauthRoutes);
 
-export default allRoutes;
+export default allAuthRoutes;
 
-export type AuthRoutes = typeof allRoutes;
+export type AuthRoutes = typeof allAuthRoutes;

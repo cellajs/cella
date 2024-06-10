@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "engines": {
-    "node": ">=20.9.0 <21.0.0"
+    "node": ">=20.14.0 <21.0.0"
   },
   "scripts": {
     "start": "tsx dist/index.cjs",

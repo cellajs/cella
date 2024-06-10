@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=20.14.0"
   },
   "scripts": {
     "prepare:electric": "pnpm proxy & (NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",

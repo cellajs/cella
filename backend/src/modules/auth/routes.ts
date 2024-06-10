@@ -11,7 +11,7 @@ import { checkEmailJsonSchema, emailExistsJsonSchema, signInJsonSchema, signUpJs
 
 export const checkEmailRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/auth/check-email',
+  path: '/check-email',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -42,7 +42,7 @@ export const checkEmailRouteConfig = createRouteConfig({
 
 export const signUpRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/auth/sign-up',
+  path: '/sign-up',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Sign up with password',
@@ -76,7 +76,7 @@ export const signUpRouteConfig = createRouteConfig({
 
 export const sendVerificationEmailRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/auth/verify-email',
+  path: '/verify-email',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -109,7 +109,7 @@ export const sendVerificationEmailRouteConfig = createRouteConfig({
 
 export const verifyEmailRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/verify-email/{token}',
+  path: '/verify-email/{token}',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -139,7 +139,7 @@ export const verifyEmailRouteConfig = createRouteConfig({
 
 export const resetPasswordRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/auth/reset-password',
+  path: '/reset-password',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -172,7 +172,7 @@ export const resetPasswordRouteConfig = createRouteConfig({
 
 export const resetPasswordCallbackRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/auth/reset-password/{token}',
+  path: '/reset-password/{token}',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -204,7 +204,7 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
 
 export const signInRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/auth/sign-in',
+  path: '/sign-in',
   guard: isPublicAccess,
   middleware: [signInRateLimiter()],
   tags: ['auth'],
@@ -242,7 +242,7 @@ export const signInRouteConfig = createRouteConfig({
 
 export const githubSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/github',
+  path: '/github',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Authenticate with GitHub',
@@ -262,7 +262,7 @@ export const githubSignInRouteConfig = createRouteConfig({
 
 export const githubSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/github/callback',
+  path: '/github/callback',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -288,7 +288,7 @@ export const githubSignInCallbackRouteConfig = createRouteConfig({
 
 export const googleSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/google',
+  path: '/google',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Authenticate with Google',
@@ -308,7 +308,7 @@ export const googleSignInRouteConfig = createRouteConfig({
 
 export const googleSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/google/callback',
+  path: '/google/callback',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -334,7 +334,7 @@ export const googleSignInCallbackRouteConfig = createRouteConfig({
 
 export const microsoftSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/microsoft',
+  path: '/microsoft',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Authenticate with Microsoft',
@@ -358,7 +358,7 @@ export const microsoftSignInRouteConfig = createRouteConfig({
 
 export const microsoftSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/microsoft/callback',
+  path: '/microsoft/callback',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -384,7 +384,7 @@ export const microsoftSignInCallbackRouteConfig = createRouteConfig({
 
 export const signOutRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/auth/sign-out',
+  path: '/sign-out',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Sign out',

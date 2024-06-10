@@ -10,7 +10,7 @@
   "homepage": "https://cellajs.com",
   "type": "module",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=20.14.0"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
