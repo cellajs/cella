@@ -80,8 +80,12 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
           ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Set impact"
           variant="ghost"
-          size={mode === 'create' ? 'sm' : 'micro'}
-          className={mode === 'create' ? 'w-full text-left font-light flex gap-2 justify-start border' : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
+          size={mode === 'create' ? 'sm' : 'xs'}
+          className={
+            mode === 'create'
+              ? 'w-full text-left font-light flex gap-2 justify-start border'
+              : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'
+          }
         >
           {selectedImpact !== null ? (
             <>

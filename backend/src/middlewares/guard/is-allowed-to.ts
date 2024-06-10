@@ -2,31 +2,31 @@ import { eq } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
+import { resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
-import type { Env, PageResourceType } from '../../types/common';
+import type { EntityType, Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
-import { resolveEntity } from '../../lib/entity';
 
 /**
  * Middleware to protect routes by checking user permissions.
  * @param action - The action to be performed (e.g., 'read', 'write').
- * @param resourceType - The type of the resource (e.g., 'organization', 'workspace').
+ * @param entityType - The type of the entity (e.g., 'USER', 'ORGANIZATION').
  * @returns MiddlewareHandler to protect routes based on user permissions.
  */
 const isAllowedTo =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    (action: string, resourceType: string): MiddlewareHandler<Env, any> =>
+    (action: string, entityType: string): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
       const user = ctx.get('user');
 
-      // Retrieve the context of the resource to be authorized (e.g., 'organization', 'workspace')
-      const context = await getResourceContext(ctx, resourceType);
+      // Retrieve the context of the entity to be authorized (e.g., 'organization', 'workspace')
+      const context = await getEntityContext(ctx, entityType);
 
       // Check if user or context is missing
       if (!context || !user) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', resourceType.toUpperCase() as PageResourceType, {
+        return errorResponse(ctx, 404, 'not_found', 'warn', entityType.toUpperCase() as EntityType, {
           user: user?.id,
           id: context?.id || '',
         });
@@ -40,12 +40,12 @@ const isAllowedTo =
 
       // If user is not allowed and not an admin, return a forbidden error
       if (!isAllowed && user.role !== 'ADMIN') {
-        return errorResponse(ctx, 403, 'forbidden', 'warn', resourceType.toUpperCase() as PageResourceType, { user: user.id, id: context.id });
+        return errorResponse(ctx, 403, 'forbidden', 'warn', entityType.toUpperCase() as EntityType, { user: user.id, id: context.id });
       }
 
-      // Store the user memberships and authorized resource context in the context
+      // Store the user memberships and authorized entity context in the context
       ctx.set('memberships', memberships);
-      ctx.set(resourceType, context);
+      ctx.set(entityType, context);
 
       // Log user allowance in the context
       logEvent(`User is allowed to ${action} ${context.entity}`, { user: user.id, id: context.id });
@@ -54,54 +54,55 @@ const isAllowedTo =
     };
 
 /**
- * Get the context based on the resource type.
- * Handles resolve for both direct resource operations (retrieval, update, deletion) and contextual operations (fetching child resources).
+ * Get the context based on the entity type.
+ * Handles resolve for both direct entity operations (retrieval, update, deletion) and contextual operations (fetching child entities).
  * @param ctx - The context object containing request and response details.
- * @param resourceType - The type of the resource (e.g., 'organization', 'workspace').
+ * @param entityType - The type of the entity (e.g., 'organization', 'workspace').
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function getResourceContext(ctx: any, resourceType: string) {
-  // Check if resource is configured; if not, return early
-  if (!HierarchicalEntity.instanceMap.has(resourceType)) {
+async function getEntityContext(ctx: any, entityType: string) {
+  // Check if entity is configured; if not, return early
+  if (!HierarchicalEntity.instanceMap.has(entityType)) {
     return;
   }
 
-  const idOrSlug = ctx.req.param(resourceType)?.toLowerCase() || ctx.req.query(resourceType)?.toLowerCase();
+  const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(entityType)?.toLowerCase();
+  
   if (idOrSlug) {
-    // Handles resolve for direct resource operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
-    return await resolveEntity(resourceType, idOrSlug);
+    // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
+    return await resolveEntity(entityType, idOrSlug);
   }
 
-  // Generate a context using the lowest parent for resource operations, such as fetching or creating child resources
-  return await createResourceContext(resourceType, ctx);
+  // Generate a context using the lowest parent for entity operations, such as fetching or creating child entities
+  return await createEntityContext(entityType, ctx);
 }
 
 /**
- * Creates a context based on the lowest parent for a resource.
- * @param resourceType - The type of the resource.
+ * Creates a context based on the lowest parent for an entity.
+ * @param entityType - The type of the entity.
  * @param ctx - The context object containing request and response details.
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function createResourceContext(resourceType: string, ctx: any) {
-  const resource = HierarchicalEntity.instanceMap.get(resourceType);
+async function createEntityContext(entityType: string, ctx: any) {
+  const entity = HierarchicalEntity.instanceMap.get(entityType);
 
-  // Return early if resource is not available
-  if (!resource) return;
+  // Return early if entity is not available
+  if (!entity) return;
 
   // Extract payload from request body
   const payload = ctx.req.valid('json');
 
-  // Initialize context to store the custom created resource context based on the lowest possible ancestor
-  const context: Record<string, string> = { entity: resourceType.toUpperCase() };
+  // Initialize context to store the custom created entity context based on the lowest possible ancestor
+  const context: Record<string, string> = { entity: entityType.toUpperCase() };
 
   // Variable to hold the lowest ancestor found
   // biome-ignore lint/suspicious/noExplicitAny: The lowest ancestor can be of different entity types (e.g., organization, workspace, project) or undefined
   let lowestAncestor: any;
 
   // Iterate over ancestors (from lowest to highest) and determine the lowest ancestor available
-  for (const ancestor of resource.descSortedAncestors) {
+  for (const ancestor of entity.descSortedAncestors) {
     // Continue searching for the lowest ancestor if not found yet
     if (!lowestAncestor) {
       // Check if ancestor identifier is provided in params or query

@@ -1,9 +1,10 @@
 import { GripVertical, Plus } from 'lucide-react';
 import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BackgroundPicker } from '~/modules/common/background-picker';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
+import { WorkspaceContext } from '../../workspaces';
 import { ProjectContext } from './project-context';
 import ToolTipButtons from './tooltip-buttons';
 
@@ -16,30 +17,29 @@ interface BoardColumnHeaderProps {
 
 export function BoardColumnHeader({ createFormOpen, openSettings, createFormClick, dragRef }: BoardColumnHeaderProps) {
   const { project } = useContext(ProjectContext);
+  const { workspace } = useContext(WorkspaceContext);
   const { changeColumn } = useWorkspaceStore();
   const { t } = useTranslation();
   const [minimize, setMinimize] = useState(false);
 
   const MinimizeClick = () => {
     setMinimize(!minimize);
-    changeColumn(project.workspaceId, project.id, {
+    changeColumn(workspace.id, project.id, {
       minimized: !minimize,
     });
   };
 
-  // TODO
-  const [background, setBackground] = useState('#ff75c3');
-
   // 72px is 64px for the header and 8px for the gap between the header and content
-  const stickyStyles = 'sticky sm:relative top-[72px] sm:top-0 bg-background z-50'
+  const stickyStyles = 'sticky sm:relative top-[72px] sm:top-0 bg-background z-50';
 
   return (
-    <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 font-semibold flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
-      <Button ref={dragRef} variant={'ghost'} size="xs" className="max-xs:hidden px-0 text-primary/50 -ml-1 cursor-grab relative">
+    <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
+      <Button ref={dragRef} variant={'ghost'} size="xs" className="max-sm:hidden px-0 text-primary/50 cursor-grab relative">
         <GripVertical size={16} />
       </Button>
-      <BackgroundPicker background={background} setBackground={setBackground} options={['solid']} />
-      <div>{project.name}</div>
+      {/* Omit style background if projects will be without a color preference. */}
+      <AvatarWrap className="h-8 w-8 text-xs" name={project.name} style={{ background: `#${project.color}` }} />
+      <div className="truncate">{project.name}</div>
       <div className="grow" />
       <ToolTipButtons rolledUp={false} onSettingsClick={openSettings} onMinimizeClick={MinimizeClick} />
       <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>

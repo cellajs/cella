@@ -1,9 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { resetPasswordJsonSchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type * as z from 'zod';
+import * as z from 'zod';
 import { Button } from '~/modules/ui/button';
 import AuthPage from './auth-page';
 
@@ -16,10 +15,13 @@ import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { passwordSchema } from 'backend/lib/common-schemas';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
-const formSchema = resetPasswordJsonSchema;
+const formSchema = z.object({
+  password: passwordSchema,
+});
 
 const ResetPassword = () => {
   const { t } = useTranslation();

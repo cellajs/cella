@@ -1,7 +1,7 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
 import { createContext } from 'react';
-import { getOrganizationBySlugOrId } from '~/api/organizations';
+import { getOrganization } from '~/api/organizations';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
@@ -15,7 +15,6 @@ interface OrganizationContextValue {
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
-  { id: 'requests', label: 'common:requests', path: '/$idOrSlug/requests' },
   { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
 ];
 
@@ -24,7 +23,7 @@ export const OrganizationContext = createContext({} as OrganizationContextValue)
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: ['organizations', idOrSlug],
-    queryFn: () => getOrganizationBySlugOrId(idOrSlug),
+    queryFn: () => getOrganization(idOrSlug),
   });
 
 const OrganizationPage = () => {

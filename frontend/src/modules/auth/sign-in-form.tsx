@@ -18,7 +18,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
-import type { User } from '~/types';
+import type { MeUser } from '~/types';
 import type { TokenData } from '.';
 
 const formSchema = signInJsonSchema;
@@ -44,9 +44,9 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
         return;
       }
 
-      setUser(result as User);
+      setUser(result as MeUser);
 
-      const to = tokenData ? '/auth/accept-invite/$token' : redirect || '/';
+      const to = tokenData ? '/auth/invite/$token' : redirect || '/';
 
       navigate({
         to,

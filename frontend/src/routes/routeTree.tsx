@@ -5,7 +5,7 @@ import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
-import { getMe, getUserMenu } from '~/api/users';
+import { getMe, getUserMenu } from '~/api/me';
 
 import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
@@ -16,7 +16,7 @@ import AcceptInvite from '~/modules/common/accept-invite';
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
-import { OrganizationMembersRoute, OrganizationRequestsRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
+import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
 import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
@@ -93,7 +93,7 @@ export const IndexRoute = createRoute({
 });
 
 export const acceptInviteRoute = createRoute({
-  path: '/auth/accept-invite/$token',
+  path: '/auth/invite/$token',
   staticData: { pageTitle: 'Accept Invite' },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ params }) => {
@@ -127,7 +127,7 @@ export const routeTree = rootRoute.addChildren([
     UserProfileRoute,
     UserSettingsRoute,
     WorkspaceRoute.addChildren([WorkspaceBoardRoute, WorkspaceTableRoute, WorkspaceOverviewRoute]),
-    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute, OrganizationRequestsRoute]),
+    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),
   ]),
 ]);
 

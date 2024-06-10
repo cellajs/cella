@@ -3,11 +3,31 @@ import { config } from 'config';
 import type { CustomHono } from '../types/common';
 
 const openAPITags = [
-  { name: 'auth', description: 'Authentication' },
-  { name: 'users', description: 'Users' },
-  { name: 'organizations', description: 'Organizations' },
-  { name: 'general', description: 'General' },
-  { name: 'public', description: 'Public' },
+  { name: 'me', description: 'Current user endpoints. They are split from `users` due to a different authorization flow.' },
+  { name: 'users', description: '`USER` is also an entity, but NOT a contextual entity.' },
+  {
+    name: 'memberships',
+    description:
+      'Memberships are one-on-one relations between a user and a contextual entity, such as an organization. It contains a role and archived, muted status',
+  },
+  { name: 'organizations', description: 'Organizations - `ORGANIZATION` - are obviously a central `entity`.' },
+  { name: 'requests', description: 'Receive public requests such as contact form, newsletter and waitlist requests.' },
+  { name: 'general', description: 'Endpoints that overlap multiple entities or are meant to support the system in general.' },
+  {
+    name: 'auth',
+    description:
+      'Multiple authentication methods are included: email/password combination, OAuth with Github. Other Oauth providers and passkey support are work in progress.',
+  },
+  {
+    name: 'workspaces',
+    description:
+      'App-specific entity (will be split from template). Workspace functions for end-users to personalize how they interact with their projects and the content in each project. Only the creator has access and no other members are possible.',
+  },
+  {
+    name: 'projects',
+    description:
+      'App-specific entity (will be split from template). Projects - like organizations - can have multiple members and are the primary entity in relation to the content-related resources: tasks, labels and attachments. Because a project can be in multiple workspaces, a relations table is maintained.',
+  },
 ];
 
 const docs = (app: CustomHono) => {
@@ -24,7 +44,21 @@ const docs = (app: CustomHono) => {
     info: {
       title: `${config.name} API`,
       version: 'v1',
-      description: 'This is a showcase API documentation built using hono middleware: zod-openapi.',
+      description: `
+      (ATTENTION: PRERELEASE!) This API documentation is split in modules. Each module relates to a module in the backend codebase. Each module should be at least loosely-coupled, but ideally entirely decoupled. The documentation is based upon zod schemas that are converted to openapi specs using hono middleware: zod-openapi.
+
+      API design differentiates between three types of resources: 
+
+      1) page-related resources are called an 'entity' (ie ORGANIZATION or USER)
+      2) a subclass are 'contextual entities' (ie ORGANIZATION, not USER)
+      3) remaining data objects are simply content-related 'resources'.
+
+      - Content-related resources - called simply 'resources' - dont have an API
+        they run through the Electric SQL sync engine
+      - SSE stream is not included in this API documentation
+      - API design is flat, not nested
+      - Production API is versioned
+      `,
     },
     openapi: '3.1.0',
     tags: openAPITags,

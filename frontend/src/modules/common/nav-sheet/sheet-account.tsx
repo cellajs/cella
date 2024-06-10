@@ -35,7 +35,7 @@ export const SheetAccount = () => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const { setSheet } = useNavigationStore();
-  const isSystemAdmin = user?.role === 'ADMIN';
+  const isSystemAdmin = user.role === 'ADMIN';
 
   const bgClass = user.bannerUrl ? 'bg-background' : getColorClass(user.id);
   const bannerClass = `relative my-4 opacity-75 group hover:opacity-100 transition-all duration-300 hover:-mx-8 -mx-4 bg-cover bg-center h-24 ${bgClass}`;

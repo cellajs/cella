@@ -1,23 +1,23 @@
 import { useTranslation } from 'react-i18next';
-import { removeMembersFromResource as baseremoveMembersFromResource } from '~/api/memberships';
-import type { Member, Organization } from '~/types';
-
+import { removeMembers as baseRemoveMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
+import type { ContextEntity, Member } from '~/types';
 
 interface Props {
-  organization: Organization;
+  entityId: string;
+  entityType?: ContextEntity;
   members: Member[];
   callback?: (members: Member[]) => void;
   dialog?: boolean;
 }
 
-const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }: Props) => {
+const RemoveMembersForm = ({ members, entityId, entityType = 'ORGANIZATION', callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
 
-  const { mutate: removeMembersFromResource, isPending } = useMutation({
-    mutationFn: baseremoveMembersFromResource,
+  const { mutate: removeMembers, isPending } = useMutation({
+    mutationFn: baseRemoveMembers,
     onSuccess: () => {
       callback?.(members);
 
@@ -28,9 +28,9 @@ const RemoveMembersForm = ({ members, organization, callback, dialog: isDialog }
   });
 
   const onRemoveMember = () => {
-    removeMembersFromResource({
-      idOrSlug: organization.id,
-      entityType: 'ORGANIZATION',
+    removeMembers({
+      idOrSlug: entityId,
+      entityType: entityType,
       ids: members.map((member) => member.id),
     });
   };

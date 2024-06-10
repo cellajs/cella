@@ -8,7 +8,7 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { createWorkspaceRouteConfig, deleteWorkspacesRouteConfig, getWorkspaceByIdOrSlugRouteConfig, updateWorkspaceRouteConfig } from './routes';
+import { createWorkspaceRouteConfig, deleteWorkspacesRouteConfig, getWorkspaceRouteConfig, updateWorkspaceRouteConfig } from './routes';
 
 const app = new CustomHono();
 
@@ -18,9 +18,8 @@ const workspacesRoutes = app
    * Create workspace
    */
   .openapi(createWorkspaceRouteConfig, async (ctx) => {
-    const { name, slug } = ctx.req.valid('json');
+    const { name, slug, organizationId } = ctx.req.valid('json');
     const user = ctx.get('user');
-    const { organizationId } = ctx.get('workspace');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -28,7 +27,7 @@ const workspacesRoutes = app
       return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
     }
 
-    const [createdWorkspace] = await db
+    const [workspace] = await db
       .insert(workspacesTable)
       .values({
         organizationId,
@@ -37,33 +36,25 @@ const workspacesRoutes = app
       })
       .returning();
 
-    logEvent('Workspace created', { workspace: createdWorkspace.id });
+    logEvent('Workspace created', { workspace: workspace.id });
 
     await db.insert(membershipsTable).values({
       userId: user.id,
       organizationId,
-      workspaceId: createdWorkspace.id,
+      workspaceId: workspace.id,
       type: 'WORKSPACE',
       role: 'ADMIN',
     });
 
-    logEvent('User added to workspace', {
-      user: user.id,
-      workspace: createdWorkspace.id,
-    });
+    logEvent('User added to workspace', { user: user.id, workspace: workspace.id });
 
-    sendSSEToUsers([user.id], 'create_main_entity', {
-      ...createdWorkspace,
-      storageType: 'workspaces',
-      haveSubMenu: true,
-      type: 'WORKSPACE',
-    });
+    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...workspace});
 
     return ctx.json(
       {
         success: true,
         data: {
-          ...createdWorkspace,
+          ...workspace,
           role: 'ADMIN' as const,
         },
       },
@@ -74,7 +65,7 @@ const workspacesRoutes = app
   /*
    * Get workspace by id or slug
    */
-  .openapi(getWorkspaceByIdOrSlugRouteConfig, async (ctx) => {
+  .openapi(getWorkspaceRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const workspace = ctx.get('workspace');
 
@@ -131,12 +122,7 @@ const workspacesRoutes = app
 
     if (memberships.length > 0) {
       const membersId = memberships.map((member) => member.id);
-      sendSSEToUsers(membersId, 'update_main_entity', {
-        ...updatedWorkspace,
-        storageType: 'workspaces',
-        haveSubMenu: true,
-        type: 'WORKSPACE',
-      });
+      sendSSEToUsers(membersId, 'update_entity', updatedWorkspace);
     }
 
     logEvent('Workspace updated', { workspace: updatedWorkspace.id });
@@ -157,102 +143,37 @@ const workspacesRoutes = app
    * Delete workspaces
    */
   .openapi(deleteWorkspacesRouteConfig, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    // * Extract allowed and disallowed ids
+    const allowedIds = ctx.get('allowedIds');
+    const disallowedIds = ctx.get('disallowedIds');
 
-    // * Convert the workspace ids to an array
-    const workspaceIds = Array.isArray(ids) ? ids : [ids];
-
-    const errors: ErrorType[] = [];
-
-    // * Get the workspaces and the user role
-    const targets = await db
-      .select({
-        workspace: workspacesTable,
-        userRole: membershipsTable.role,
-      })
-      .from(workspacesTable)
-      .leftJoin(membershipsTable, and(eq(membershipsTable.workspaceId, workspacesTable.id), eq(membershipsTable.userId, user.id)))
-      .where(inArray(workspacesTable.id, workspaceIds));
-
-    // * Check if the workspaces exist
-    for (const id of workspaceIds) {
-      if (!targets.some((target) => target.workspace.id === id)) {
-        errors.push(
-          createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', {
-            workspace: id,
-          }),
-        );
-      }
-    }
-
-    // * Filter out workspaces that the user doesn't have permission to delete
-    const allowedTargets = targets.filter((target) => {
-      const workspaceId = target.workspace.id;
-
-      if (user.role !== 'ADMIN' && target.userRole !== 'ADMIN') {
-        errors.push(
-          createError(ctx, 403, 'delete_forbidden', 'warn', 'WORKSPACE', {
-            workspace: workspaceId,
-          }),
-        );
-        return false;
-      }
-
-      return true;
-    });
-
-    // * If the user doesn't have permission to delete any of the workspaces, return an error
-    if (allowedTargets.length === 0) {
-      return ctx.json(
-        {
-          success: false,
-          errors: errors,
-        },
-        200,
-      );
-    }
+    // * Map errors of workspaces user is not allowed to delete
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', { workspace: id }));
 
     // * Get members
     const workspaceMembers = await db
-      .select({ id: membershipsTable.userId })
+      .select({ id: membershipsTable.userId, workspaceId: membershipsTable.workspaceId })
       .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.type, 'WORKSPACE'),
-          inArray(
-            membershipsTable.organizationId,
-            allowedTargets.map((target) => target.workspace.id),
-          ),
-        ),
-      );
+      .where(and(eq(membershipsTable.type, 'WORKSPACE'), inArray(membershipsTable.workspaceId, allowedIds)));
 
     // * Delete the workspaces
-    await db.delete(workspacesTable).where(
-      inArray(
-        workspacesTable.id,
-        allowedTargets.map((target) => target.workspace.id),
-      ),
-    );
+    await db.delete(workspacesTable).where(inArray(workspacesTable.id, allowedIds));
 
     // * Send SSE events for the workspaces that were deleted
-    for (const { workspace } of allowedTargets) {
+    for (const id of allowedIds) {
       // * Send the event to the user if they are a member of the workspace
       if (workspaceMembers.length > 0) {
-        const membersId = workspaceMembers.map((member) => member.id).filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_main_entity', { ...workspace, storageType: 'workspaces' });
+        const membersId = workspaceMembers
+          .filter(({ workspaceId }) => workspaceId === id)
+          .map((member) => member.id)
+          .filter(Boolean) as string[];
+        sendSSEToUsers(membersId, 'remove_entity', { id, type: 'WORKSPACE' });
       }
 
-      logEvent('Workspace deleted', { workspace: workspace.id });
+      logEvent('Workspace deleted', { workspace: id });
     }
 
-    return ctx.json(
-      {
-        success: true,
-        errors: errors,
-      },
-      200,
-    );
+    return ctx.json({ success: true, errors: errors }, 200);
   });
 
 export default workspacesRoutes;

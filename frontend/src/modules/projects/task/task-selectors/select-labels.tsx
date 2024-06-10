@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
-import { nanoid } from '~/lib/utils.ts';
-import { Button } from '~/modules/ui/button';
+import { cn, nanoid } from '~/lib/utils.ts';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import { type Label, useElectric } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
@@ -22,13 +22,14 @@ const badgeStyle = (color?: string | null) => {
 
 interface SetLabelsProps {
   mode: 'create' | 'edit';
+  organizationId: string;
   projectId: string;
   viewValue?: Label[];
   changeLabels?: (labels: Label[]) => void;
   labels: Label[];
 }
 
-const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabelsProps) => {
+const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, labels }: SetLabelsProps) => {
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('labels');
   const [openPopover, setOpenPopover] = useState(false);
@@ -60,6 +61,7 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
       id: nanoid(),
       name: value,
       color: '#fff',
+      organization_id: organizationId,
       project_id: projectId,
     };
     setSelectedLabels((prev) => [...prev, newLabel]);
@@ -133,11 +135,11 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
           ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Set labels"
           variant="ghost"
-          size={mode === 'create' ? 'sm' : 'micro'}
+          size={mode === 'create' ? 'sm' : 'xs'}
           className={`flex h-auto justify-start font-light ${
             mode === 'create'
-              ? 'w-full text-left py-1 min-h-9 border hover:bg-accent/20'
-              : 'py-[2px] group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
+              ? 'w-full text-left min-h-9 py-1 border hover:bg-accent/20'
+              : 'py-[2px] min-h-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
           } ${mode === 'edit' && selectedLabels.length && ''}`}
         >
           {!selectedLabels.length && <Tag size={16} className="opacity-50" />}
@@ -156,17 +158,20 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, labels }: SetLabe
                       {name}
                     </Badge>
                     {mode === 'create' && (
-                      <Button
-                        className="opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:!ring-offset-0"
-                        size="micro"
-                        variant="ghost"
+                      // biome-ignore lint/a11y/useValidAnchor: <explanation>
+                      <a
+                        href="#"
+                        className={cn(
+                          buttonVariants({ size: 'micro', variant: 'ghost' }),
+                          'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0',
+                        )}
                         onClick={(e) => {
                           e.preventDefault();
                           handleSelectClick(name);
                         }}
                       >
                         <X size={16} strokeWidth={3} />
-                      </Button>
+                      </a>
                     )}
                   </div>
                 );

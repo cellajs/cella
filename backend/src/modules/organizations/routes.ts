@@ -4,31 +4,18 @@ import {
   successResponseWithErrorsSchema,
   successResponseWithPaginationSchema,
 } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, organizationParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
-import {
-  apiOrganizationSchema,
-  apiOrganizationUserSchema,
-  createOrganizationJsonSchema,
-  getOrganizationsQuerySchema,
-  getRequestsQuerySchema,
-  getRequestsSchema,
-  getUsersByOrganizationQuerySchema,
-  updateOrganizationJsonSchema,
-} from './schema';
+import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
+import { apiOrganizationSchema, createOrganizationJsonSchema, getOrganizationsQuerySchema, updateOrganizationJsonSchema } from './schema';
 
 export const createOrganizationRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/organizations',
+  path: '/',
   guard: isAuthenticated,
   tags: ['organizations'],
-  summary: 'Create a new organization',
-  // TODO: all users can create, but somehow we need to restrict it to just one and with more needing manual activation by an admin?
-  // description: `
-  //   Permissions:
-  //     - Users with role 'ADMIN'
-  // `,
+  summary: 'Create new organization',
+  description: 'Create a new organization.',
   request: {
     body: {
       required: true,
@@ -52,19 +39,38 @@ export const createOrganizationRouteConfig = createRouteConfig({
   },
 });
 
+export const getOrganizationsRouteConfig = createRouteConfig({
+  method: 'get',
+  path: '/',
+  guard: [isAuthenticated, isSystemAdmin],
+  tags: ['organizations'],
+  summary: 'Get list of organizations',
+  description: 'Get list of organizations. Currently only available to system admins.',
+  request: {
+    query: getOrganizationsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Organizations',
+      content: {
+        'application/json': {
+          schema: successResponseWithPaginationSchema(apiOrganizationSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/organizations/{organization}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('update', 'organization')],
   tags: ['organizations'],
   summary: 'Update organization',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the organization and have role 'ADMIN' in the organization
-  `,
+  description: 'Update organization by id or slug.',
   request: {
-    params: organizationParamSchema,
+    params: entityParamSchema,
     body: {
       content: {
         'application/json': {
@@ -86,45 +92,15 @@ export const updateOrganizationRouteConfig = createRouteConfig({
   },
 });
 
-export const getOrganizationsRouteConfig = createRouteConfig({
+export const getOrganizationRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/organizations',
-  guard: [isAuthenticated, isSystemAdmin],
-  tags: ['organizations'],
-  summary: 'Get list of organizations',
-  description: `
-    System role 'ADMIN' receives all organizations.
-    System role 'USER' receives only organizations with membership.
-  `,
-  request: {
-    query: getOrganizationsQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Organizations',
-      content: {
-        'application/json': {
-          schema: successResponseWithPaginationSchema(apiOrganizationSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/organizations/{organization}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('read', 'organization')],
   tags: ['organizations'],
-  summary: 'Get organization by id or slug',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the organization
-  `,
+  summary: 'Get organization',
+  description: 'Get an organization by id or slug.',
   request: {
-    params: organizationParamSchema,
+    params: entityParamSchema,
   },
   responses: {
     200: {
@@ -139,67 +115,13 @@ export const getOrganizationByIdOrSlugRouteConfig = createRouteConfig({
   },
 });
 
-export const getUsersByOrganizationIdRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/organizations/{organization}/members',
-  guard: [isAuthenticated, isAllowedTo('read', 'organization')],
-  tags: ['organizations'],
-  summary: 'Get members of organization',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the organization
-  `,
-  request: {
-    params: organizationParamSchema,
-    query: getUsersByOrganizationQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Members of organization',
-      content: {
-        'application/json': {
-          schema: successResponseWithPaginationSchema(apiOrganizationUserSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const accessRequestsConfig = createRouteConfig({
-  method: 'get',
-  path: '/organizations/{organization}/requests',
-  guard: [isAuthenticated, isAllowedTo('update', 'organization')],
-  tags: ['organizations'],
-  summary: 'Get organizations requests',
-  request: {
-    params: organizationParamSchema,
-    query: getRequestsQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Requests to be a member of organization',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(getRequestsSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
 export const deleteOrganizationsRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/organizations',
-  guard: [isAuthenticated, isSystemAdmin],
+  path: '/',
+  guard: [isAuthenticated, splitByAllowance('delete', 'organization')],
   tags: ['organizations'],
   summary: 'Delete organizations',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
+  description: 'Delete organizations by ids.',
   request: {
     query: deleteByIdsQuerySchema,
   },

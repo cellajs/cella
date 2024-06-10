@@ -1,9 +1,11 @@
-import { authClient as client, handleResponse } from '.';
+import { authClient, handleResponse } from '.';
+
+const client = authClient.auth;
 
 // Oath endpoints
-export const githubSignInUrl = client['sign-in'].github.$url().href;
-export const googleSignInUrl = client['sign-in'].google.$url().href;
-export const microsoftSignInUrl = client['sign-in'].microsoft.$url().href;
+export const githubSignInUrl = client.github.$url().href;
+export const googleSignInUrl = client.google.$url().href;
+export const microsoftSignInUrl = client.microsoft.$url().href;
 
 // Sign up a user with the provided email and password
 export const signUp = async ({ email, password, token }: { email: string; password: string; token?: string }) => {
@@ -55,7 +57,7 @@ export const signIn = async ({
 
 // Send a verification email
 export const sendVerificationEmail = async (email: string) => {
-  const response = await client['send-verification-email'].$post({
+  const response = await client['verify-email'].$post({
     json: { email },
   });
 

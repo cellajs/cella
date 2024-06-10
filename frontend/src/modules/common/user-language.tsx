@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { toast } from 'sonner';
-import { updateSelf } from '~/api/users';
+import { updateSelf } from '~/api/me';
 import { i18n } from '~/lib/i18n';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';

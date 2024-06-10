@@ -1,7 +1,7 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
-import { type MouseEventHandler, useContext, useEffect, useRef, useState, useMemo } from 'react';
+import { type MouseEventHandler, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -21,10 +21,10 @@ import { toast } from 'sonner';
 import { TaskContext } from '../board/board-column.tsx';
 import { ProjectContext } from '../board/project-context.ts';
 import SetLabels from './task-selectors/select-labels.tsx';
-import { TaskEditor } from './task-selectors/task-editor.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import SelectParent from './task-selectors/select-parent.tsx';
 import SetSubTasks from './task-selectors/select-sub-tasks.tsx';
+import { TaskEditor } from './task-selectors/task-editor.tsx';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
@@ -37,8 +37,8 @@ interface TaskCardProps {
 export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { setSelectedTasks, selectedTasks, tasks } = useContext(WorkspaceContext);
-  const { labels } = useContext(ProjectContext);
+  const { setSelectedTasks, selectedTasks, tasks, projects } = useContext(WorkspaceContext);
+  const { labels, setFocusedProjectIndex } = useContext(ProjectContext);
 
   const { task, focusedTaskId, setFocusedTask, projectMembers } = useContext(TaskContext);
   const [isEditing, setIsEditing] = useState(false);
@@ -191,7 +191,9 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   return (
     <Card
       onMouseDown={() => {
+        if (isExpanded) return;
         setFocusedTask(task.id);
+        setFocusedProjectIndex(projects.findIndex((p) => p.id === task.project_id) || 0);
         taskRef.current?.focus();
       }}
       tabIndex={focusedTaskId === task.id ? 0 : -1}
@@ -208,21 +210,16 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
         className,
       )}
     >
-      <CardContent id={`${task.id}-content`} className="p-2 space-between gap-1 flex flex-col relative">
+      <CardContent id={`${task.id}-content`} className="p-1 space-between gap-1 flex flex-col relative">
         <div className="flex flex-col gap-1">
-          <div className="flex gap-2 w-full">
-            <div className="flex flex-col gap-2 relative mt-[2px]">
-              <SelectTaskType
-                className="z-20"
-                currentType={task.type as TaskType}
-                changeTaskType={(newType) => handleChange('type', newType)}
-              />
+          <div className="flex gap-1 w-full">
+            <div className="flex flex-col justify-between gap-[2px] relative">
               <Checkbox
                 className={cn(
-                  'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:scale-100 group-[.is-selected]/column:m-0',
-                  'transition-all duration-700 bg-background absolute',
-                  !isExpanded && 'opacity-0 mt-2 ml-[6px] scale-[.6] cursor-default z-0',
-                  isExpanded && 'opacity-100 mt-6',
+                  'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
+                  'transition-all bg-background absolute top-[6px] left-[6px]',
+                  !isExpanded && 'opacity-0 -z-[1] pointer-events-none',
+                  isExpanded && 'opacity-100',
                 )}
                 checked={selectedTasks.includes(task.id)}
                 onCheckedChange={(checked) => {
@@ -232,8 +229,22 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   });
                 }}
               />
+              <SelectTaskType
+                className={cn('group-[.is-selected]/column:mt-[34px] transition-spacing', isExpanded && 'mt-[34px]')}
+                currentType={task.type as TaskType}
+                changeTaskType={(newType) => handleChange('type', newType)}
+              />
+              <Button
+                ref={taskDragButtonRef}
+                variant={'ghost'}
+                size="xs"
+                className="max-sm:hidden text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none"
+              >
+                <span className="sr-only"> {t('common:move_task')}</span>
+                <GripVertical size={16} />
+              </Button>
             </div>
-            <div className="flex flex-col grow gap-2">
+            <div className="flex flex-col grow gap-2 mt-[6px] mr-1">
               {isEditing && (
                 <TaskEditor
                   mode={mode}
@@ -246,13 +257,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               )}
               {!isEditing && (
                 // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-                <div
-                  ref={contentRef}
-                  // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
-                  tabIndex={0}
-                  onClick={handleMarkdownClick}
-                  className="inline ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-sm focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
+                <div ref={contentRef} onClick={handleMarkdownClick} className="inline">
                   <MDEditor.Markdown
                     source={isExpanded ? task.markdown || '' : task.summary}
                     style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
@@ -263,32 +268,17 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
 
                   {!isExpanded && (
                     <div className="opacity-50 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 text-xs inline font-light gap-1">
-                      <Button
-                        variant="link"
-                        size="micro"
-                        onClick={() => setIsExpanded(true)}
-                        className="inline-flex py-0 h-5 ml-1"
-                      >
+                      <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
                         {t('common:more').toLowerCase()}
                       </Button>
                       {subTasks.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="micro"
-                          onClick={() => setIsExpanded(true)}
-                          className="inline-flex py-0 h-5 ml-1 gap-[1px]"
-                        >
+                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
                           <span className="text-success">{subTasks.filter((t) => t.status === 6).length}</span>
                           <span className="font-light">/</span>
                           <span className="font-light">{subTasks.length}</span>
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="micro"
-                        onClick={() => setIsExpanded(true)}
-                        className="inline-flex py-0 h-5 ml-1 gap-[1px]"
-                      >
+                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
                         <Paperclip size={10} className="transition-transform -rotate-45" />
                         <span>3</span>
                       </Button>
@@ -300,58 +290,46 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               {isExpanded && (
                 <div>
                   <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>
-                  <Button
-                    variant="link"
-                    size="micro"
-                    onClick={() => setIsExpanded(false)}
-                    className="py-0 h-5 -ml-1 opacity-70"
-                  >
+                  <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 h-5 -ml-1 opacity-70">
                     {t('common:less').toLowerCase()}
                   </Button>
                 </div>
               )}
+
+              <div className="flex items-start justify-between">
+                {task.type !== 'bug' && (
+                  <SelectImpact
+                    viewValue={task.impact as TaskImpact}
+                    mode="edit"
+                    changeTaskImpact={(newImpact) => handleChange('impact', newImpact)}
+                  />
+                )}
+
+                {
+                  // TODO: Bind the entire task object instead of individual IDs
+                }
+                <SetLabels
+                  labels={labels}
+                  organizationId={task.organization_id}
+                  projectId={task.project_id}
+                  changeLabels={(newLabels) => handleChange('labels', newLabels)}
+                  viewValue={task.labels}
+                  mode="edit"
+                />
+
+                <div className="flex gap-1 ml-auto mr-1">
+                  <AssignMembers
+                    mode="edit"
+                    users={projectMembers}
+                    viewValue={projectMembers.filter((member) => task.assigned_to?.includes(member.id))}
+                    changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers)}
+                  />
+                  <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="max-sm:-ml-1 flex items-center justify-between gap-1">
-            <Button
-              ref={taskDragButtonRef}
-              variant={'ghost'}
-              className="max-sm:hidden py-1 px-0 text-secondary-foreground h-auto cursor-grab opacity-15 transition-opacity group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35"
-            >
-              <span className="sr-only"> {t('common:move_task')}</span>
-              <GripVertical size={16} />
-            </Button>
-
-            {task.type !== 'bug' && (
-              <SelectImpact
-                viewValue={task.impact as TaskImpact}
-                mode="edit"
-                changeTaskImpact={(newImpact) => handleChange('impact', newImpact)}
-              />
-            )}
-
-            <SetLabels
-              labels={labels}
-              projectId={task.project_id}
-              changeLabels={(newLabels) => handleChange('labels', newLabels)}
-              viewValue={task.labels}
-              mode="edit"
-            />
-
-            <div className="flex gap-2 ml-auto">
-              <AssignMembers
-                mode="edit"
-                users={projectMembers}
-                viewValue={projectMembers.filter((member) => task.assigned_to?.includes(member.id))}
-                changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers)}
-              />
-              <SelectStatus
-                taskStatus={task.status as TaskStatus}
-                changeTaskStatus={(newStatus) => handleChange('status', newStatus)}
-              />
-            </div>
-          </div>
           <div className="flex flex-col gap-2">
             {parentTask && (
               <SelectParent

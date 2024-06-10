@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '../../db/schema/organizations';
 import {
-  idSchema,
   imageUrlSchema,
   nameSchema,
   paginationQuerySchema,
@@ -11,15 +10,7 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '../../lib/common-schemas';
-import { actionReqTableSchema } from '../general/schema';
 import { apiMembershipSchema } from '../memberships/schema';
-import { apiUserSchema } from '../users/schema';
-
-export const apiOrganizationUserSchema = z.object({
-  ...apiUserSchema.shape,
-  membershipId: idSchema,
-  organizationRole: apiMembershipSchema.shape.role,
-});
 
 export const apiOrganizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
@@ -70,7 +61,7 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
     languages: true,
     notificationEmail: true,
     emailDomains: true,
-    brandColor: true,
+    color: true,
     thumbnailUrl: true,
     logoUrl: true,
     bannerUrl: true,
@@ -81,39 +72,8 @@ export const updateOrganizationJsonSchema = createInsertSchema(organizationsTabl
   })
   .partial();
 
-export const getUsersByOrganizationQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'email', 'organizationRole', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-  role: z.enum(['admin', 'member']).default('member').optional(),
-});
-
 export const getOrganizationsQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
-  }),
-);
-
-export const getRequestsSchema = z.object({
-  requestsInfo: z.array(
-    z.object({
-      id: idSchema,
-      email: z.string(),
-      createdAt: z.string(),
-      type: actionReqTableSchema.shape.type,
-      message: z.string().nullable(),
-      userId: z.string().nullable(),
-      userName: z.string().nullable(),
-      userThumbnail: z.string().nullable(),
-      organizationId: z.string().nullable(),
-      organizationName: z.string().nullable(),
-      organizationThumbnail: z.string().nullable(),
-      organizationSlug: z.string().nullable(),
-    }),
-  ),
-  total: z.number(),
-});
-
-export const getRequestsQuerySchema = paginationQuerySchema.merge(
-  z.object({
-    sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
   }),
 );

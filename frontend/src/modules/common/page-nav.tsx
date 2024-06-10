@@ -72,7 +72,7 @@ export const PageNav = ({ title, avatar, tabs }: Props) => {
             resetScroll={false}
             className="relative p-2 lg:px-4"
             to={path}
-            params={''}
+            params={true}
             activeOptions={{ exact: true, includeSearch: false }}
             onClick={updateScrollPosition}
           >

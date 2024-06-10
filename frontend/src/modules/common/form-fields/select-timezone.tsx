@@ -4,7 +4,7 @@ import Combobox from '~/modules/ui/combobox';
 
 const SelectTimezone = ({ onChange }: { onChange: (value: string) => void }) => {
   const { t } = useTranslation();
-  const options = getTimezones(timezones)
+  const options = getTimezones(timezones);
 
   return (
     <Combobox

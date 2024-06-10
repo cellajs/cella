@@ -79,7 +79,6 @@
   "entered_focus.text": "Focus view activated",
   "error.bad_request_action": "Bad request: Server could not process the request",
   "error.contact_mistake": "If you believe this to be a mistake, please contact support.",
-  "error.self_system_role": "You can not change own system role.",
   "error.email_exists": "Email already exists",
   "error.error": "Error",
   "error.expired.token": "Token has expired. Please request a new one.",

@@ -2,12 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 
-// Change this in the future on current schema
 import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
-
-// import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { createProject } from '~/api/projects';
@@ -30,9 +27,7 @@ interface CreateProjectFormProps {
   dialog?: boolean;
 }
 
-const formSchema = createWorkspaceJsonSchema.extend({
-  workspace: z.string().min(1),
-});
+const formSchema = createWorkspaceJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -47,7 +42,8 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       defaultValues: {
         name: '',
         slug: '',
-        workspace: workspace.id,
+        workspaceId: workspace.id,
+        organizationId: workspace.organizationId,
       },
     }),
     [],
@@ -65,20 +61,17 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       return createProject({
         ...values,
         color: '#000000',
-        workspace: workspace.id,
+        workspaceId: workspace.id,
+        organizationId: workspace.organizationId,
       });
     },
     onSuccess: (project) => {
       form.reset();
       callback([project], 'create');
       if (isDialog) dialog.remove();
-      toast.success(t('success.create_resource', { resource: t('common:project') }));
+      toast.success(t('common:success.create_resource', { resource: t('common:project') }));
       setSubmenuItemsOrder(workspace.id, [...submenuItemsOrder[workspace.id], project.id]);
       setSheet(null);
-      // navigate({
-      //   to: '/workspace/$idOrSlug/board',
-      //   params: { idOrSlug: result.slug },
-      // });
     },
   });
 
@@ -116,7 +109,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
           type="WORKSPACE"
           control={form.control}
           label={t('common:workspace')}
-          name="workspace"
+          name="workspaceId"
           disabled
         />
         <div className="flex flex-col sm:flex-row gap-2">

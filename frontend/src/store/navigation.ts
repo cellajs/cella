@@ -1,4 +1,4 @@
-import type { PageResourceType } from 'backend/types/common';
+import type { EntityType } from 'backend/types/common';
 import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -31,10 +31,12 @@ interface NavigationState {
   archiveStateToggle: (itemId: string, active: boolean, workspaceId?: string) => void;
 }
 
-const initialMenuState: UserMenu = menuSections.reduce<UserMenu>((acc, section) => {
-  acc[section.id as keyof UserMenu] = { items: [], canCreate: false, type: null as unknown as PageResourceType };
-  return acc;
-}, {} as UserMenu);
+const initialMenuState: UserMenu = menuSections
+  .filter((el) => !el.isSubmenu)
+  .reduce<UserMenu>((acc, section) => {
+    acc[section.storageType as keyof UserMenu] = { items: [], canCreate: false, type: null as unknown as EntityType };
+    return acc;
+  }, {} as UserMenu);
 
 export const useNavigationStore = create<NavigationState>()(
   devtools(

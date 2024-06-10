@@ -1,13 +1,10 @@
-import { workspaceClient as client, handleResponse } from '.';
+import { workspacesClient as client, handleResponse } from '.';
 
-export type CreateWorkspaceParams = Parameters<(typeof client.organizations)[':organization']['workspaces']['$post']>['0']['json'] & {
-  organization: string;
-};
+export type CreateWorkspaceParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 
-// Create a new workspace
-export const createWorkspace = async ({ organization, ...rest }: CreateWorkspaceParams) => {
-  const response = await client.organizations[':organization'].workspaces.$post({
-    param: { organization },
+// Create new workspace
+export const createWorkspace = async ({ ...rest }: CreateWorkspaceParams) => {
+  const response = await client.index.$post({
     json: rest,
   });
 
@@ -15,22 +12,22 @@ export const createWorkspace = async ({ organization, ...rest }: CreateWorkspace
   return json.data;
 };
 
-// Get an workspace by its slug or ID
-export const getWorkspaceBySlugOrId = async (workspace: string) => {
-  const response = await client.workspaces[':workspace'].$get({
-    param: { workspace },
+// Get workspace by its slug or ID
+export const getWorkspace = async (idOrSlug: string) => {
+  const response = await client[':idOrSlug'].$get({
+    param: { idOrSlug },
   });
 
   const json = await handleResponse(response);
   return json.data;
 };
 
-export type UpdateWorkspaceParams = Parameters<(typeof client.workspaces)[':workspace']['$put']>['0']['json'];
+export type UpdateWorkspaceParams = Parameters<(typeof client)[':idOrSlug']['$put']>['0']['json'];
 
-// Update a workspace
-export const updateWorkspace = async (workspace: string, params: UpdateWorkspaceParams) => {
-  const response = await client.workspaces[':workspace'].$put({
-    param: { workspace },
+// Update workspace
+export const updateWorkspace = async (idOrSlug: string, params: UpdateWorkspaceParams) => {
+  const response = await client[':idOrSlug'].$put({
+    param: { idOrSlug },
     json: params,
   });
 
@@ -40,7 +37,7 @@ export const updateWorkspace = async (workspace: string, params: UpdateWorkspace
 
 // Delete workspaces
 export const deleteWorkspaces = async (ids: string[]) => {
-  const response = await client.workspaces.$delete({
+  const response = await client.index.$delete({
     query: { ids },
   });
 

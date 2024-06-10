@@ -1,7 +1,7 @@
 {
-  "id": "89b8281d-a7a2-4a87-93ad-756e6b8d9874",
-  "prevId": "977055c3-def5-4767-ad97-0e1871b452b1",
-  "version": "6",
+  "id": "a717807b-1c52-417b-b784-d4d71d23691a",
+  "prevId": "c3c19f09-67d1-4dfd-a8be-7bb75d625231",
+  "version": "7",
   "dialect": "postgresql",
   "tables": {
     "public.memberships": {
@@ -14,19 +14,11 @@
           "primaryKey": true,
           "notNull": true
         },
-        "entity": {
-          "name": "entity",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'membership'"
-        },
         "type": {
           "name": "type",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'ORGANIZATION'"
+          "notNull": true
         },
         "organization_id": {
           "name": "organization_id",
@@ -88,14 +80,14 @@
           "name": "inactive",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "muted": {
           "name": "muted",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         }
       },
@@ -187,13 +179,6 @@
       "name": "oauth_accounts",
       "schema": "",
       "columns": {
-        "entity": {
-          "name": "entity",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'oauthAccount'"
-        },
         "provider_id": {
           "name": "provider_id",
           "type": "varchar",
@@ -262,7 +247,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'organization'"
+          "default": "'ORGANIZATION'"
         },
         "name": {
           "name": "name",
@@ -320,8 +305,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "brand_color": {
-          "name": "brand_color",
+        "color": {
+          "name": "color",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -406,16 +391,32 @@
         "organizations_name_index": {
           "name": "organizations_name_index",
           "columns": [
-            "name"
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "organizations_created_at_index": {
           "name": "organizations_created_at_index",
           "columns": [
-            "created_at"
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -457,6 +458,86 @@
         }
       }
     },
+    "public.projects_to_workspaces": {
+      "name": "projects_to_workspaces",
+      "schema": "",
+      "columns": {
+        "project_id": {
+          "name": "project_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "workspace_id_index": {
+          "name": "workspace_id_index",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "projects_to_workspaces_project_id_projects_id_fk": {
+          "name": "projects_to_workspaces_project_id_projects_id_fk",
+          "tableFrom": "projects_to_workspaces",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "projects_to_workspaces_workspace_id_workspaces_id_fk": {
+          "name": "projects_to_workspaces_workspace_id_workspaces_id_fk",
+          "tableFrom": "projects_to_workspaces",
+          "tableTo": "workspaces",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "projects_to_workspaces_project_id_workspace_id_pk": {
+          "name": "projects_to_workspaces_project_id_workspace_id_pk",
+          "columns": [
+            "project_id",
+            "workspace_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
     "public.projects": {
       "name": "projects",
       "schema": "",
@@ -472,7 +553,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'project'"
+          "default": "'PROJECT'"
         },
         "slug": {
           "name": "slug",
@@ -494,12 +575,6 @@
         },
         "organization_id": {
           "name": "organization_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "workspace_id": {
-          "name": "workspace_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -538,19 +613,6 @@
           "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "projects_workspace_id_workspaces_id_fk": {
-          "name": "projects_workspace_id_workspaces_id_fk",
-          "tableFrom": "projects",
-          "tableTo": "workspaces",
-          "columnsFrom": [
-            "workspace_id"
           ],
           "columnsTo": [
             "id"
@@ -598,25 +660,6 @@
           "primaryKey": true,
           "notNull": true
         },
-        "entity": {
-          "name": "entity",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'request'"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "message": {
           "name": "message",
           "type": "varchar",
@@ -647,46 +690,35 @@
         "requests_emails": {
           "name": "requests_emails",
           "columns": [
-            "email"
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "requests_created_at": {
           "name": "requests_created_at",
           "columns": [
-            "created_at"
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
-      "foreignKeys": {
-        "requests_user_id_users_id_fk": {
-          "name": "requests_user_id_users_id_fk",
-          "tableFrom": "requests",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "requests_organization_id_organizations_id_fk": {
-          "name": "requests_organization_id_organizations_id_fk",
-          "tableFrom": "requests",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -699,13 +731,6 @@
           "type": "varchar",
           "primaryKey": true,
           "notNull": true
-        },
-        "entity": {
-          "name": "entity",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'session'"
         },
         "user_id": {
           "name": "user_id",
@@ -755,13 +780,6 @@
           "type": "varchar",
           "primaryKey": true,
           "notNull": true
-        },
-        "entity": {
-          "name": "entity",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'token'"
         },
         "type": {
           "name": "type",
@@ -854,7 +872,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'user'"
+          "default": "'USER'"
         },
         "hashed_password": {
           "name": "hashed_password",
@@ -980,23 +998,47 @@
         "users_name_index": {
           "name": "users_name_index",
           "columns": [
-            "name"
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "users_email_index": {
           "name": "users_email_index",
           "columns": [
-            "email"
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "users_created_at_index": {
           "name": "users_created_at_index",
           "columns": [
-            "created_at"
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1047,7 +1089,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'workspace'"
+          "default": "'WORKSPACE'"
         },
         "name": {
           "name": "name",
@@ -1109,16 +1151,32 @@
         "workspace_name_index": {
           "name": "workspace_name_index",
           "columns": [
-            "name"
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "workspace_created_at_index": {
           "name": "workspace_created_at_index",
           "columns": [
-            "created_at"
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {

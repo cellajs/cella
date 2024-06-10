@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
+import type { ProjectRow } from '.';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import type { ProjectRow } from '.';
 
 export const useColumns = () => {
   const { t } = useTranslation();

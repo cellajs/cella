@@ -8,16 +8,16 @@ import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state
 
 import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { requestAction as baserequestAction } from '~/api/general';
+import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { useMutation } from '~/hooks/use-mutations';
 import { i18n } from '~/lib/i18n';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../form-fields/input';
-import { useMutation } from '~/hooks/use-mutations';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
@@ -45,8 +45,8 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     isDialog && dialog.remove();
   };
 
-  const { mutate: requestAction } = useMutation({
-    mutationFn: baserequestAction,
+  const { mutate: createRequest } = useMutation({
+    mutationFn: baseCreateRequest,
     onSuccess: () => {
       toast.success(t('common:message_sent.text'));
       if (isDialog) dialog.remove();
@@ -59,7 +59,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     const { name, email, message } = data;
-    requestAction({ email, type: 'CONTACT_REQUEST', message: `${name} with the message: ${message}` });
+    createRequest({ email, type: 'CONTACT_REQUEST', message: `${name} with the message: ${message}` });
   };
 
   // Update dialog title with unsaved changes

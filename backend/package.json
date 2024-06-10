@@ -12,6 +12,7 @@
     "build:dev": "NODE_ENV=development tsup",
     "check:types": "tsc",
     "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.cjs\"",
+    "seed:pivotal": "tsx seed/pivotal.ts",
     "seed:user": "tsx seed/user.ts",
     "seed:organizations": "tsx seed/organizations.ts",
     "seed:data": "tsx seed/data/data.ts",
@@ -23,6 +24,7 @@
     "migrate:script": "tsx dist/src/db/migrate.cjs",
     "seeds:script": "tsx dist/seed/user.cjs && tsx dist/seed/data.cjs",
     "studio": "drizzle-kit studio --config drizzle.config.ts",
+    "studio:electric": "drizzle-kit studio --config drizzle.config.electric.ts",
     "proxy": "electric-sql proxy-tunnel --service https://cella-electric-sync-service.onrender.com --local-port 65432",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend ./dist && sentry-cli sourcemaps upload --org cella --project backend ./dist"
   },
@@ -71,8 +73,11 @@
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.11.6",
     "chalk": "^5.3.0",
+    "commander": "^12.1.0",
     "drizzle-kit": "^0.22.1",
     "hanji": "^0.0.5",
+    "jszip": "^3.10.1",
+    "papaparse": "^5.4.1",
     "tsup": "^8.1.0",
     "tsx": "^4.11.2"
   },

@@ -117,6 +117,12 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
+    const projectTasks = tasks.filter((task) => task.project_id === project.id);
+    const order = projectTasks.length > 0 ? projectTasks[0].sort_order / 1.1 : 1;
+
+    console.log(project);
+
+    console.log(project);
 
     Electric.db.tasks
       .create({
@@ -139,11 +145,12 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           labels: values.labels.map((label) => label.id),
           // assigned_to: values.assignedTo.map((user) => user.id),
           status: values.status,
+          organization_id: project.organizationId,
           project_id: project.id,
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: tasks.filter((t) => t.project_id === project.id && t.status === values.status).length,
+          sort_order: order,
         },
       })
       .then(() => {
@@ -251,6 +258,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           }}
         /> */}
 
+        {
+          // TODO: Bind the entire project object instead of individual IDs
+        }
         <FormField
           control={form.control}
           name="labels"
@@ -258,7 +268,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels labels={labels} projectId={project.id} mode="create" changeLabels={onChange} />
+                  <SetLabels labels={labels} projectId={project.id} organizationId={project.organizationId} mode="create" changeLabels={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

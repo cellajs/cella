@@ -1,5 +1,5 @@
-import { useElectric } from './electrify';
 import { Loader2 } from 'lucide-react';
+import { useElectric } from './electrify';
 
 const ElectricSuspense = ({ children }: { children: React.ReactNode }) => {
   const Electric = useElectric();

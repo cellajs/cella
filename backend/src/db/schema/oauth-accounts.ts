@@ -1,6 +1,6 @@
+import { config } from 'config';
 import { pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from './users';
-import { config } from 'config';
 
 export const oauthAccountsTable = pgTable(
   'oauth_accounts',

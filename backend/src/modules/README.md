@@ -2,10 +2,10 @@
 Write your app-specific code into new modules to easily merge updates of core modules.
 
 ### Core modules
-* auth
-* general
+* me
+* users
 * memberships
 * organizations
-* users
-
-
+* requests
+* general
+* auth

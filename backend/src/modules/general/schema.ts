@@ -1,12 +1,25 @@
 import { z } from 'zod';
 
+import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
-import { requestsTable } from '../../db/schema/requests';
 import { tokensTable } from '../../db/schema/tokens';
-import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, passwordSchema, slugSchema, validSlugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
-import { config } from 'config';
+import {
+  contextEntityTypeSchema,
+  idSchema,
+  imageUrlSchema,
+  nameSchema,
+  paginationQuerySchema,
+  passwordSchema,
+  slugSchema,
+  validSlugSchema,
+} from '../../lib/common-schemas';
+
+export const apiPublicCountsSchema = z.object({
+  organizations: z.number(),
+  users: z.number(),
+});
 
 export const tokensSchema = createSelectSchema(tokensTable);
 
@@ -31,58 +44,32 @@ export const acceptInviteJsonSchema = z.object({
   oauth: z.enum(config.oauthProviderOptions).optional(),
 });
 
-export const apiPublicCountsSchema = z.object({
-  organizations: z.number(),
-  users: z.number(),
-});
-
 const suggestionSchema = z.object({
   slug: slugSchema,
   id: idSchema,
   name: nameSchema,
+  organizationId: idSchema,
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
 });
 
-export const entitySuggestionSchema = suggestionSchema.extend({ type: z.enum(config.entityTypes) });
+export const entitySuggestionSchema = suggestionSchema.extend({ entity: z.enum(config.entityTypes) });
+export type Suggestion = z.infer<typeof entitySuggestionSchema>;
 
 export const suggestionsSchema = z.object({
   entities: z.array(entitySuggestionSchema),
   total: z.number(),
 });
 
-export const actionReqTableSchema = createSelectSchema(requestsTable);
-
-export const actionRequestSchema = z.object({
-  userId: idSchema.nullable(),
-  organizationId: idSchema.nullable(),
-  email: z.string().min(1).email(),
-  type: actionReqTableSchema.shape.type,
-  message: z.string().nullable(),
+export const apiMemberSchema = z.object({
+  ...apiUserSchema.shape,
+  membershipId: idSchema,
+  role: apiMembershipSchema.shape.role,
 });
 
-export const actionResponseSchema = z.object({
-  userId: idSchema.nullable(),
-  organizationId: idSchema.nullable(),
-  email: z.string().min(1).email(),
-  type: actionReqTableSchema.shape.type,
+export const getMembersQuerySchema = paginationQuerySchema.extend({
+  idOrSlug: idSchema.or(slugSchema),
+  entityType: contextEntityTypeSchema,
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
+  role: z.enum(config.rolesByType.allRoles).default('MEMBER').optional(),
 });
-
-export const getRequestsSchema = z.object({
-  requestsInfo: z.array(
-    z.object({
-      id: idSchema,
-      email: z.string(),
-      createdAt: z.string(),
-      type: actionReqTableSchema.shape.type,
-      message: z.string().nullable(),
-    }),
-  ),
-  total: z.number(),
-});
-
-export const getRequestsQuerySchema = paginationQuerySchema.merge(
-  z.object({
-    sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
-  }),
-);

@@ -12,6 +12,7 @@ import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import { renderSelect } from '../../common/data-table/select-column';
 import RowEdit from './row-edit';
+import { config } from 'config';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
@@ -59,10 +60,12 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => (row.userRole ? t(row.userRole.toLowerCase()) : '-'),
             width: 120,
-            renderEditCell: renderSelect('userRole', [
-              { label: t('common:admin'), value: 'ADMIN' },
-              { label: t('common:member'), value: 'MEMBER' },
-            ]),
+            renderEditCell: (props) =>
+              renderSelect({
+                props,
+                key: 'userRole',
+                options: config.rolesByType.entityRoles,
+              }),
           },
           {
             key: 'subscription',

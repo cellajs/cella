@@ -2,7 +2,7 @@ import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { createContext } from 'react';
 
-import { getUserBySlugOrId } from '~/api/users';
+import { getUser } from '~/api/users';
 import { UserProfileRoute } from '~/routes/users';
 import type { User } from '~/types';
 
@@ -19,7 +19,7 @@ interface UserContextValue {
 export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: ['users', idOrSlug],
-    queryFn: () => getUserBySlugOrId(idOrSlug),
+    queryFn: () => getUser(idOrSlug),
   });
 
 export const UserContext = createContext({} as UserContextValue);
@@ -37,6 +37,7 @@ export const UserProfile = () => {
   const handleSettingCLick = () => {
     navigate({ to: '/user/settings', replace: true });
   };
+
   return (
     <UserContext.Provider value={{ user }}>
       <PageHeader

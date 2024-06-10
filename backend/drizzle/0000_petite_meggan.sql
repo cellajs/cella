@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS "oauth_accounts" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "organizations" (
 	"id" varchar PRIMARY KEY NOT NULL,
+	"entity" varchar DEFAULT 'ORGANIZATION' NOT NULL,
 	"name" varchar NOT NULL,
 	"short_name" varchar,
 	"slug" varchar NOT NULL,
@@ -49,13 +50,20 @@ CREATE TABLE IF NOT EXISTS "organizations" (
 	CONSTRAINT "organizations_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "projects_to_workspaces" (
+	"project_id" varchar NOT NULL,
+	"workspace_id" varchar NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "projects_to_workspaces_project_id_workspace_id_pk" PRIMARY KEY("project_id","workspace_id")
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "projects" (
 	"id" varchar PRIMARY KEY NOT NULL,
+	"entity" varchar DEFAULT 'PROJECT' NOT NULL,
 	"slug" varchar NOT NULL,
 	"name" varchar NOT NULL,
 	"color" varchar NOT NULL,
 	"organization_id" varchar NOT NULL,
-	"workspace_id" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
 	"modified_at" timestamp,
@@ -66,7 +74,7 @@ CREATE TABLE IF NOT EXISTS "requests" (
 	"id" varchar PRIMARY KEY NOT NULL,
 	"user_id" varchar,
 	"organization_id" varchar,
-	"accompanying_message" varchar,
+	"message" varchar,
 	"email" varchar NOT NULL,
 	"type" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
@@ -92,6 +100,7 @@ CREATE TABLE IF NOT EXISTS "tokens" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
 	"id" varchar PRIMARY KEY NOT NULL,
+	"entity" varchar DEFAULT 'USER' NOT NULL,
 	"hashed_password" varchar,
 	"slug" varchar NOT NULL,
 	"name" varchar NOT NULL,
@@ -117,6 +126,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "workspaces" (
 	"id" varchar PRIMARY KEY NOT NULL,
+	"entity" varchar DEFAULT 'WORKSPACE' NOT NULL,
 	"name" varchar NOT NULL,
 	"slug" varchar NOT NULL,
 	"organization_id" varchar NOT NULL,
@@ -184,13 +194,19 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "projects" ADD CONSTRAINT "projects_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "projects_to_workspaces" ADD CONSTRAINT "projects_to_workspaces_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "projects" ADD CONSTRAINT "projects_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "projects_to_workspaces" ADD CONSTRAINT "projects_to_workspaces_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "projects" ADD CONSTRAINT "projects_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -261,12 +277,13 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "organizations_name_index" ON "organizations" ("name");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "organizations_created_at_index" ON "organizations" ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "requests_emails" ON "requests" ("email");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "requests_created_at" ON "requests" ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "users_name_index" ON "users" ("name");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "users_email_index" ON "users" ("email");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "users_created_at_index" ON "users" ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "workspace_name_index" ON "workspaces" ("name");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "workspace_created_at_index" ON "workspaces" ("created_at");
+CREATE INDEX IF NOT EXISTS "organizations_name_index" ON "organizations" USING btree (name DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "organizations_created_at_index" ON "organizations" USING btree (created_at DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "workspace_id_index" ON "projects_to_workspaces" USING btree (workspace_id DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "requests_emails" ON "requests" USING btree (email DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "requests_created_at" ON "requests" USING btree (created_at DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "users_name_index" ON "users" USING btree (name DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "users_email_index" ON "users" USING btree (email DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "users_created_at_index" ON "users" USING btree (created_at DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "workspace_name_index" ON "workspaces" USING btree (name DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "workspace_created_at_index" ON "workspaces" USING btree (created_at DESC NULLS LAST);

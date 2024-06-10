@@ -5,10 +5,9 @@ import { LIB_VERSION } from 'electric-sql/version';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
+import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { User } from '~/types';
 import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
-
 interface Props {
   children: React.ReactNode;
 }
@@ -26,12 +25,17 @@ function deleteDB(dbName: string) {
 }
 
 const ElectricProvider = ({ children }: Props) => {
-  const user = useUserStore((state) => state.user) as User | null;
+  const user = useUserStore((state) => state.user);
+  // TODO: Temporary fix to prevent loading all projects and labels. Only sync the projects and labels of organizations the user is a member of.
+  // TODO: Consider exposing organizationIds the user is part of on the user object, as the menu can be undefined.
+  const { menu } = useNavigationStore();
+
   const [electric, setElectric] = useState<Electric>();
 
   useEffect(() => {
     let isMounted = true;
 
+    const debug = config.mode !== 'production';
     const { tabId } = uniqueTabId();
     const scopedDbName = `basic-${LIB_VERSION}-${tabId}.db`;
 
@@ -39,33 +43,52 @@ const ElectricProvider = ({ children }: Props) => {
       try {
         const conn = await ElectricDatabase.init(scopedDbName);
         const electric = await electrify(conn, schema, {
-          debug: config.debug,
+          debug: debug,
           url: config.electricUrl,
         });
 
-        await electric.connect(user?.electricJWTToken || '0');
+        await electric.connect(user.electricJWTToken);
 
         if (!isMounted) {
           return;
         }
 
-        if (config.debug) {
+        if (debug) {
           const { addToolbar } = await import('@electric-sql/debug-toolbar');
           addToolbar(electric);
+
+          const toolbarContainer = document.getElementById('__electric_debug_toolbar_container');
+          if (toolbarContainer) toolbarContainer.style.display = 'none';
         }
 
         setElectric(electric);
 
         // Resolves when the shape subscription has been established.
-        const tasksShape = await electric.db.tasks.sync();
-        const labelsShape = await electric.db.labels.sync();
+        // TODO: Improve the following section by deriving organization IDs differently.
+        // TODO: Update organizationIds to sync whenever the user's menu changes.
+        const organizationIds = menu.organizations.items.map((item) => item.id);
+        const tasksShape = await electric.db.tasks.sync({
+          where: {
+            organization_id: {
+              in: organizationIds,
+            },
+          },
+        });
+
+        const labelsShape = await electric.db.labels.sync({
+          where: {
+            organization_id: {
+              in: organizationIds,
+            },
+          },
+        });
 
         // Resolves when the data has been synced into the local database.
         await tasksShape.synced;
         await labelsShape.synced;
 
         const timeToSync = performance.now();
-        if (config.debug) {
+        if (debug) {
           console.log(`Synced in ${timeToSync}ms from page load`);
         }
       } catch (error) {
@@ -87,7 +110,7 @@ const ElectricProvider = ({ children }: Props) => {
     <>
       <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>
       {electric === undefined && (
-        <div className="fixed z-[300] bottom-0 border-0 p-4 flex w-full justify-center">
+        <div className="fixed z-[300] max-xs:bottom-[64px]  bottom-0 border-0 p-4 flex w-full justify-center">
           <Alert variant="plain" className="border-0 w-auto">
             <AlertDescription className="pr-8 font-light flex items-center justify-center">
               <Loader2 className="h-4 w-4 animate-spin" />

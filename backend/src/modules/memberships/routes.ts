@@ -3,53 +3,17 @@ import { z } from '@hono/zod-openapi';
 import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import { apiMembershipSchema, deleteMembersQuerySchema, updateMembershipJsonSchema, updateMembershipParamSchema } from './schema';
 import { inviteJsonSchema, inviteQuerySchema } from '../general/schema';
-
-export const updateMembershipRouteConfig = createRouteConfig({
-  method: 'put',
-  path: '/memberships/{membership}',
-  guard: isAuthenticated,
-  tags: ['memberships'],
-  summary: 'Update role, muted, or archived status',
-  description: `
-    Permissions:
-      - Users role 'ADMIN'
-  `,
-  request: {
-    params: updateMembershipParamSchema,
-    body: {
-      content: {
-        'application/json': {
-          schema: updateMembershipJsonSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Role, muted, or archived status was updated',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(apiMembershipSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
+import { apiMembershipSchema, deleteMembersQuerySchema, updateMembershipJsonSchema } from './schema';
+import { idSchema } from '../../lib/common-schemas';
 
 export const inviteMembershipRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/membership',
+  path: '/',
   guard: isAuthenticated,
   tags: ['memberships'],
-  summary: 'Invite a new member(user) to organization',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the organization and have role 'ADMIN' in the organization
-  `,
+  summary: 'Invite members',
+  description: 'Invite members to an entity such as an organization.',
   request: {
     query: inviteQuerySchema,
     body: {
@@ -75,15 +39,11 @@ export const inviteMembershipRouteConfig = createRouteConfig({
 
 export const deleteMembershipsRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/memberships',
+  path: '/',
   guard: isAuthenticated,
   tags: ['memberships'],
   summary: 'Delete memberships',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the organization and have role 'ADMIN' in the organization
-  `,
+  description: 'Delete memberships by their ids. This will remove the membership but not delete any user(s).',
   request: {
     query: deleteMembersQuerySchema,
   },
@@ -93,6 +53,36 @@ export const deleteMembershipsRouteConfig = createRouteConfig({
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
+export const updateMembershipRouteConfig = createRouteConfig({
+  method: 'put',
+  path: '/{id}',
+  guard: isAuthenticated,
+  tags: ['memberships'],
+  summary: 'Update membership',
+  description: 'Update role, muted, or archived status in a membership.',
+  request: {
+    params: z.object({ id: idSchema }),
+    body: {
+      content: {
+        'application/json': {
+          schema: updateMembershipJsonSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Membership updated',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(apiMembershipSchema),
         },
       },
     },

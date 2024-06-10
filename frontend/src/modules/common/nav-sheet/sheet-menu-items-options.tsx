@@ -1,22 +1,22 @@
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import type { EntityType } from 'backend/types/common';
 import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff, GripVertical } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { updateMembership as baseUpdateMembership, type UpdateMenuOptionsProp } from '~/api/memberships';
+import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
+import { useMutation } from '~/hooks/use-mutations';
 import { arrayMove, getDraggableItemData, getReorderDestinationIndex, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { DraggableItemData, UserMenu } from '~/types';
 import { DropIndicator } from '../drop-indicator';
-import type { PageResourceType } from 'backend/types/common';
-import type { MenuItem } from './sheet-menu-section';
 import { MenuArchiveToggle } from './menu-archive-toggle';
-import { useMutation } from '~/hooks/use-mutations';
+import type { MenuItem } from './sheet-menu-section';
 
 interface MenuItemProps {
   sectionType: 'organizations' | 'workspaces';
@@ -104,7 +104,7 @@ const ItemOptions = ({
   isGlobalDragging,
   submenu,
   setGlobalDragging,
-}: MenuItemProps & { item: MenuItem; itemType: PageResourceType }) => {
+}: MenuItemProps & { item: MenuItem; itemType: EntityType }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
@@ -244,7 +244,7 @@ const ItemOptions = ({
       >
         <AvatarWrap
           className={`${submenu ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'}`}
-          type={sectionType.slice(0, -1).toUpperCase() as PageResourceType}
+          type={sectionType.slice(0, -1).toUpperCase() as EntityType}
           id={item.id}
           name={item.name}
           url={item.thumbnailUrl}

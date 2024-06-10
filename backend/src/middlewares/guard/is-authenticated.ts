@@ -8,44 +8,44 @@ import { i18n } from '../../lib/i18n';
 import { removeSessionCookie } from '../../modules/auth/helpers/cookies';
 
 const isAuthenticated: MiddlewareHandler = async (ctx, next) => {
-    const cookieHeader = ctx.req.raw.headers.get('Cookie');
-    const sessionId = luciaAuth.readSessionCookie(cookieHeader ?? '');
+  const cookieHeader = ctx.req.raw.headers.get('Cookie');
+  const sessionId = luciaAuth.readSessionCookie(cookieHeader ?? '');
 
-    if (!sessionId) {
-      removeSessionCookie(ctx);
-      // t('common:error.invalid_session.text')
-      return errorResponse(ctx, 401, 'no_session', 'warn');
-    }
+  if (!sessionId) {
+    removeSessionCookie(ctx);
+    // t('common:error.invalid_session.text')
+    return errorResponse(ctx, 401, 'no_session', 'warn');
+  }
 
-    const { session, user } = await luciaAuth.validateSession(sessionId);
+  const { session, user } = await luciaAuth.validateSession(sessionId);
 
-    if (!session) {
-      removeSessionCookie(ctx);
-      return errorResponse(ctx, 401, 'no_session', 'warn');
-    }
+  if (!session) {
+    removeSessionCookie(ctx);
+    return errorResponse(ctx, 401, 'no_session', 'warn');
+  }
 
-    if (session?.fresh) {
-      const sessionCookie = luciaAuth.createSessionCookie(session.id);
-      ctx.header('Set-Cookie', sessionCookie.serialize());
-    }
+  if (session?.fresh) {
+    const sessionCookie = luciaAuth.createSessionCookie(session.id);
+    ctx.header('Set-Cookie', sessionCookie.serialize());
+  }
 
-    const method = ctx.req.method.toLowerCase();
-    const path = ctx.req.path;
+  const method = ctx.req.method.toLowerCase();
+  const path = ctx.req.path;
 
-    await db
-      .update(usersTable)
-      .set({
-        lastSeenAt: new Date(),
-        lastVisitAt: method === 'get' && path === '/me' ? new Date() : undefined,
-      })
-      .where(eq(usersTable.id, user.id));
+  await db
+    .update(usersTable)
+    .set({
+      lastSeenAt: new Date(),
+      lastVisitAt: method === 'get' && path === '/me' ? new Date() : undefined,
+    })
+    .where(eq(usersTable.id, user.id));
 
-    ctx.set('user', user);
+  ctx.set('user', user);
 
-    // TODO: Perf impact test
-    await i18n.changeLanguage(user.language || 'en');
+  // TODO: Perf impact test
+  await i18n.changeLanguage(user.language || 'en');
 
-    await next();
-  };
+  await next();
+};
 
 export default isAuthenticated;

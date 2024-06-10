@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, ne, or } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, or, sql, inArray } from 'drizzle-orm';
 import { emailSender } from '../../../../email';
 import { InviteEmail } from '../../../../email/emails/invite';
 
@@ -15,14 +15,13 @@ import { db } from '../../db/db';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
-import { requestsTable } from '../../db/schema/requests';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
+import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
-import { sendSlackNotification } from '../../lib/notification';
 import { getOrderColumn } from '../../lib/order-column';
-import { sendSSEToUsers } from '../../lib/sse';
+import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { apiUserSchema } from '../users/schema';
@@ -30,17 +29,16 @@ import { checkRole } from './helpers/check-role';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
   acceptInviteRouteConfig,
-  actionRequestsConfig,
   checkSlugRouteConfig,
   checkTokenRouteConfig,
+  getMembersRouteConfig,
+  getPublicCountsRouteConfig,
   getUploadTokenRouteConfig,
   inviteRouteConfig,
   paddleWebhookRouteConfig,
-  requestActionConfig,
   suggestionsConfig,
 } from './routes';
-import { isAuthenticated } from '../../middlewares/guard';
-import { entityTables } from '../../lib/entity';
+import type { Suggestion } from './schema'
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -50,6 +48,37 @@ export const streams = new Map<string, SSEStreamingApi>();
 
 // * General endpoints
 const generalRoutes = app
+  /*
+   * Get public counts
+   */
+  .openapi(getPublicCountsRouteConfig, async (ctx) => {
+    const [organizationsResult, usersResult] = await Promise.all([
+      db
+        .select({
+          total: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(organizationsTable),
+      db
+        .select({
+          total: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(usersTable),
+    ]);
+
+    const organizations = organizationsResult[0].total;
+    const users = usersResult[0].total;
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          organizations,
+          users,
+        },
+      },
+      200,
+    );
+  })
   /*
    * Get upload token
    */
@@ -174,7 +203,7 @@ const generalRoutes = app
         InviteEmail({
           i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
           username: email.toLowerCase(),
-          inviteUrl: `${config.frontendUrl}/auth/accept-invite/${token}`,
+          inviteUrl: `${config.frontendUrl}/auth/invite/${token}`,
           invitedBy: user.name,
           type: 'system',
           replyTo: user.email,
@@ -187,23 +216,20 @@ const generalRoutes = app
       });
     }
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Accept invite token
    */
   .openapi(acceptInviteRouteConfig, async (ctx) => {
     const verificationToken = ctx.req.valid('param').token;
+
     const [token] = await db
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, verificationToken)));
+
+    // Delete token
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
     if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
@@ -213,11 +239,10 @@ const generalRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, token.email));
 
     if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', {
-        email: token.email,
-      });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { email: token.email });
     }
 
+    // If it is a system invitation, update user role
     if (token.type === 'SYSTEM_INVITATION') {
       if (token.role === 'ADMIN') {
         await db.update(usersTable).set({ role: 'ADMIN' }).where(eq(usersTable.id, user.id));
@@ -242,9 +267,7 @@ const generalRoutes = app
         .where(and(eq(organizationsTable.id, token.organizationId)));
 
       if (!organization) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', {
-          organizationId: token.organizationId,
-        });
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: token.organizationId });
       }
 
       const [existingMembership] = await db
@@ -260,33 +283,19 @@ const generalRoutes = app
             .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
         }
 
-        return ctx.json(
-          {
-            success: true,
-          },
-          200,
-        );
+        return ctx.json({ success: true }, 200);
       }
 
       await db.insert(membershipsTable).values({
         organizationId: organization.id,
+        type: 'ORGANIZATION',
         userId: user.id,
         role: token.role as MembershipModel['role'],
         createdBy: user.id,
       });
-      sendSSEToUsers([user.id], 'create_main_entity', {
-        ...organization,
-        storageType: 'organizations',
-        type: 'ORGANIZATIONS',
-      });
     }
 
-    return ctx.json(
-      {
-        success: true,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Paddle webhook
@@ -314,55 +323,86 @@ const generalRoutes = app
       logEvent('Error handling paddle webhook', { error: (error as Error).message }, 'error');
     }
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Get suggestions
    */
   .openapi(suggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
-    const entitiesResult = [];
-    if (type === undefined) {
-      for (const defaultEntity of config.entityTypes) {
-        const table = entityTables.get(defaultEntity);
-        if (!table) continue;
-        const entities = await db
-          .select({
-            id: table.id,
-            slug: table.slug,
-            name: table.name,
-            ...('email' in table && { email: table.email }),
-            ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
-          })
-          .from(table)
-          .where('email' in table ? or(ilike(table.name, `%${q}%`), ilike(table.email, `%${q}%`)) : ilike(table.name, `%${q}%`))
-          .limit(10);
-        entitiesResult.push(...entities.map((entity) => ({ ...entity, type: defaultEntity })));
-      }
-    } else {
-      const table = entityTables.get(type);
-      if (table) {
-        const entities = await db
-          .select({
-            id: table.id,
-            slug: table.slug,
-            name: table.name,
-            ...('email' in table && { email: table.email }),
-            ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
-          })
-          .from(table)
-          .where('email' in table ? or(ilike(table.name, `%${q}%`), ilike(table.email, `%${q}%`)) : ilike(table.name, `%${q}%`))
-          .limit(10);
+    const user = ctx.get('user');
 
-        entitiesResult.push(...entities.map((entity) => ({ ...entity, type })));
-      }
+    // Retrieve user memberships to filter suggestions by relevant organization,  ADMIN users see everything
+    const memberships = await db.select()
+      .from(membershipsTable)
+      .where(eq(membershipsTable.userId, user.id));
+
+    // Retrieve organizationIds for non-admin users and check if the user has at least one organization membership
+    let organizationIds: string[] = [];
+
+    if (user.role !== 'ADMIN') {
+      organizationIds = memberships.filter(el => el.type === 'ORGANIZATION').map(el => String(el.organizationId));
+      if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined ,{ user: user.id });
     }
+
+    // Provide suggestions for all entities or narrow them down to a specific type if specified
+    const entityTypes = type ? [type] : config.entityTypes;
+
+    // Array to hold queries for concurrent execution
+    const queries = [];
+
+    // Build queries
+    for (const entityType of entityTypes) {
+      const table = entityTables.get(entityType);
+      if (!table) continue;
+
+      // Build selection
+      const select = {
+        id: table.id,
+        slug: table.slug,
+        name: table.name,
+        entity: table.entity,
+        ...('email' in table && { email: table.email }),
+        ...('organizationId' in table && { organizationId: table.organizationId }),
+        ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
+      }
+
+      // Build search filters
+      const $or = [ilike(table.name, `%${q}%`)]
+      if ('email' in table) $or.push(ilike(table.email, `%${q}%`))
+
+      // Build organization filters
+      const $and = [];
+      
+      if (organizationIds.length) {
+        if ('organizationId' in table) {
+          $and.push(inArray(table.organizationId, organizationIds));
+        } else if (entityType === 'ORGANIZATION') {
+          $and.push(inArray(table.id, organizationIds));
+        } else if (entityType === 'USER') {
+          // Filter users based on their memberships in specified organizations
+          const userMemberships = await db.select({userId: membershipsTable.userId})
+            .from(membershipsTable)
+            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')));
+          
+          if (!userMemberships.length) continue; 
+          $and.push(inArray(table.id, userMemberships.map(el => String(el.userId))));
+        }
+      }
+      
+      $and.push($or.length > 1 ? or(...$or) : $or[0]);
+      const $where = $and.length > 1 ? and(...$and) : $and[0]
+
+      // Build query
+      queries.push(db.select(select).from(table).where($where).limit(10));
+    }
+
+    const results = await Promise.all(queries);
+    const entitiesResult = [];
+    
+    // @TODO: Tmp Typescript type solution
+    for (const entities of results as unknown as Array<Suggestion[]>) entitiesResult.push(...entities.map(e => e))
+
     return ctx.json(
       {
         success: true,
@@ -375,131 +415,88 @@ const generalRoutes = app
     );
   })
   /*
-   *  Create request
+   * Get members by entity id and type
    */
-  .openapi(requestActionConfig, async (ctx) => {
-    const { email, userId, organizationId, type, message } = ctx.req.valid('json');
+  .openapi(getMembersRouteConfig, async (ctx) => {
+    const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const entity = await resolveEntity(entityType, idOrSlug);
 
-    const [createdAccessRequest] = await db
-      .insert(requestsTable)
-      .values({
-        email,
-        type,
-        user_id: userId,
-        organization_id: organizationId,
-        message: message,
+    const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
+
+    const usersQuery = db.select().from(usersTable).where(filter).as('users');
+
+    const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];
+
+    if (role) {
+      membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
+    }
+
+    const roles = db
+      .select({
+        userId: membershipsTable.userId,
+        id: membershipsTable.id,
+        role: membershipsTable.role,
       })
-      .returning();
+      .from(membershipsTable)
+      .where(and(...membersFilters))
+      .as('roles');
 
-    // slack notifications
-    if (type === 'WAITLIST_REQUEST') await sendSlackNotification('to join the waitlist.', email);
-    if (type === 'ORGANIZATION_REQUEST') await sendSlackNotification('to join an organization.', email);
-    if (type === 'NEWSLETTER_REQUEST') await sendSlackNotification('to become a donate or build member.', email);
-    if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${message}.`, email);
-
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          email: createdAccessRequest.email,
-          type: createdAccessRequest.type,
-          userId: createdAccessRequest.user_id,
-          organizationId: createdAccessRequest.organization_id,
-        },
-      },
-      200,
-    );
-  })
-  /*
-   *  Get requests
-   */
-  .openapi(actionRequestsConfig, async (ctx) => {
-    const { q, sort, order, offset, limit } = ctx.req.valid('query');
-
-    const filter: SQL | undefined = q
-      ? and(ilike(requestsTable.email, `%${q}%`), ne(requestsTable.type, 'ORGANIZATION_REQUEST'))
-      : ne(requestsTable.type, 'ORGANIZATION_REQUEST');
-
-    // if (mode === 'organization') {
-    //   filter = q
-    //     ? and(ilike(requestsTable.email, `%${q}%`), eq(requestsTable.type, 'ORGANIZATION_REQUEST'))
-    //     : eq(requestsTable.type, 'ORGANIZATION_REQUEST');
-    // }
-
-    const requestsQuery = db.select().from(requestsTable).where(filter);
-
-    const [{ total }] = await db.select({ total: count() }).from(requestsQuery.as('requests'));
+    const membershipCount = db
+      .select({
+        userId: membershipsTable.userId,
+        memberships: count().as('memberships'),
+      })
+      .from(membershipsTable)
+      .groupBy(membershipsTable.userId)
+      .as('membership_count');
 
     const orderColumn = getOrderColumn(
       {
-        id: requestsTable.id,
-        email: requestsTable.email,
-        createdAt: requestsTable.createdAt,
-        type: requestsTable.type,
+        id: usersTable.id,
+        name: usersTable.name,
+        email: usersTable.email,
+        createdAt: usersTable.createdAt,
+        lastSeenAt: usersTable.lastSeenAt,
+        role: roles.role,
+        membershipId: roles.id,
       },
       sort,
-      requestsTable.id,
+      usersTable.id,
       order,
     );
 
-    // const organizationJoinFilter = organizationId
-    //   ? and(eq(organizationsTable.id, requestsTable.organization_id), eq(organizationsTable.id, organizationId))
-    //   : eq(organizationsTable.id, requestsTable.organization_id);
-    // const requests = await db
-    //   .select({
-    //     requests: requestsTable,
-    //     user: usersTable,
-    //     organization: organizationsTable,
-    //   })
-    //   .from(requestsQuery.as('requests'))
-    //   .leftJoin(organizationsTable, organizationJoinFilter)
-    //   .leftJoin(usersTable, eq(usersTable.id, requestsTable.user_id))
-    //   .orderBy(orderColumn)
-    //   .limit(Number(limit))
-    //   .offset(Number(offset));
-
-    const requests = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
-
-    // return ctx.json(
-    //   {
-    //     success: true,
-    //     data: {
-    //       requestsInfo: requests.map(({ requests }) => ({
-    //         id: requests.id,
-    //         email: requests.email,
-    //         createdAt: requests.createdAt,
-    //         type: requests.type,
-    //         message: requests.message,
-    //         userId: user?.id || null,
-    //         userName: user?.name || null,
-    //         userThumbnail: user?.thumbnailUrl || null,
-    //         organizationId: organization?.id || null,
-    //         organizationSlug: organization?.slug || null,
-    //         organizationName: organization?.name || null,
-    //         organizationThumbnail: organization?.thumbnailUrl || null,
-    //       })),
-    //       total,
-    //     },
-    //   },
-    //   200,
-    // );
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          requestsInfo: requests.map((el) => ({
-            id: el.id,
-            email: el.email,
-            createdAt: el.createdAt,
-            type: el.type,
-            message: el.message,
-          })),
-          total,
+    const membersQuery = db
+      .select({
+        user: usersTable,
+        role: roles.role,
+        membershipId: roles.id,
+        counts: {
+          memberships: membershipCount.memberships,
         },
-      },
-      200,
+      })
+      .from(usersQuery)
+      .innerJoin(roles, eq(usersTable.id, roles.userId))
+      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
+      .orderBy(orderColumn);
+
+    const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
+
+    const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
+
+    const members = await Promise.all(
+      result.map(async ({ user, role, membershipId, counts }) => ({
+        ...user,
+        role,
+        membershipId,
+        counts,
+      })),
     );
+
+    return ctx.json({ success: true, data: { items: members, total } }, 200);
   })
+  /*
+   *  Get SSE stream
+   */
   .get('/sse', isAuthenticated, async (ctx) => {
     const user = ctx.get('user');
     return streamSSE(ctx, async (stream) => {

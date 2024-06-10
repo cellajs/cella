@@ -25,9 +25,7 @@ export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount, isArchive
         <Archive size={16} className="mr-1 items-center opacity-75" />
       </div>
       <div className="truncate grow text-left p-2 pl-1 opacity-75">
-        <span className={`${isSubmenu ? 'text-xs' : 'text-sm'}`}>
-          {t('common:archived')}
-        </span>
+        <span className={`${isSubmenu ? 'text-xs' : 'text-sm'}`}>{t('common:archived')}</span>
         {!isArchivedVisible && <span className="inline-block px-2 py-1 font-light text-xs text-muted-foreground">{inactiveCount}</span>}
       </div>
       <div className="px-3">

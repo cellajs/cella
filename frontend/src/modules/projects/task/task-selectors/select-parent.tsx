@@ -5,11 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { Button } from '~/modules/ui/button';
+import type { PreparedTask, Task } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
 import { TaskContext } from '../../board/board-column.tsx';
-import type { PreparedTask, Task } from '../../../common/electric/electrify.ts';
 
 interface Props {
   mode: 'create' | 'edit';
@@ -75,7 +75,7 @@ const SelectParent = ({ tasks, mode, parent, onChange }: Props) => {
           ref={ref as React.LegacyRef<HTMLButtonElement>}
           aria-label="Set parent task"
           variant="ghost"
-          size={mode === 'create' ? 'sm' : 'micro'}
+          size={mode === 'create' ? 'sm' : 'xs'}
           className={`flex justify-start font-light ${
             mode === 'create' ? 'w-full text-left border' : 'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'
           } ${mode === 'edit' && selectedTask && 'px-0 hover:bg-transparent'}`}

@@ -5,22 +5,23 @@ import { Bird, Redo } from 'lucide-react';
 import { type Dispatch, type SetStateAction, createContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getProjects } from '~/api/projects';
-import { getWorkspaceBySlugOrId } from '~/api/workspaces';
+import { getWorkspace } from '~/api/workspaces';
 import BoardHeader from '~/modules/projects/board/header/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
+import { useWorkspaceStore } from '~/store/workspace';
 import type { ProjectList, Workspace } from '~/types';
 import ContentPlaceholder from '../common/content-placeholder';
 import { type Label, type PreparedTask, type Task, useElectric } from '../common/electric/electrify';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
-import { useWorkspaceStore } from '~/store/workspace';
 import { taskStatuses } from '../projects/task/task-selectors/select-status';
 
 interface WorkspaceContextValue {
   workspace: Workspace;
   projects: ProjectList;
   tasks: PreparedTask[];
+  tasksLoading: boolean;
   labels: Label[];
   tasksCount: number;
   selectedTasks: string[];
@@ -34,15 +35,16 @@ export const WorkspaceContext = createContext({} as WorkspaceContextValue);
 export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: ['workspaces', idOrSlug],
-    queryFn: () => getWorkspaceBySlugOrId(idOrSlug),
+    queryFn: () => getWorkspace(idOrSlug),
   });
 
-export const workspaceProjectsQueryOptions = (workspace: string) =>
+export const workspaceProjectsQueryOptions = (workspaceId: string, organizationId: string) =>
   queryOptions({
-    queryKey: ['workspaces', workspace, 'projects'],
+    queryKey: ['projects', workspaceId],
     queryFn: () =>
       getProjects({
-        workspace,
+        workspaceId,
+        organizationId,
       }),
   });
 
@@ -63,10 +65,10 @@ const WorkspacePage = () => {
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
-  const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id));
+  const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id, workspace.organizationId));
   const projects = projectsQuery.data.items;
 
-  const { results: tasks = [] } = useLiveQuery(
+  const { results: tasks } = useLiveQuery(
     Electric.db.tasks.liveMany({
       // Cause Cannot read properties of undefined (reading 'relationName')
       // include: {
@@ -77,6 +79,9 @@ const WorkspacePage = () => {
         project_id: {
           in: projects.map((project) => project.id),
         },
+      },
+      orderBy: {
+        sort_order: 'asc',
       },
     }),
   ) as {
@@ -103,6 +108,7 @@ const WorkspacePage = () => {
   };
 
   const filteredTasks = useMemo(() => {
+    if (!tasks) return [];
     if (!searchQuery) return tasks;
     return tasks.filter(
       (task) =>
@@ -134,6 +140,7 @@ const WorkspacePage = () => {
       value={{
         workspace,
         projects,
+        tasksLoading: !tasks,
         tasks: filteredByViewOptionsTasks.map((task) => ({
           ...task,
           // TODO: TS complains about a prisma issue with the type of labels

@@ -11,9 +11,10 @@ interface TaskEditorProps {
   setMarkdown: (newValue: string) => void;
   setSummary: (newValue: string) => void;
   toggleEditorState: () => void;
+  className?: string;
 }
 
-export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, toggleEditorState }: TaskEditorProps) => {
+export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, toggleEditorState, className }: TaskEditorProps) => {
   const { t } = useTranslation();
   const [markdownValue, setMarkdownValue] = useState(markdown);
 
@@ -53,7 +54,7 @@ export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, toggle
   }, [id]);
 
   return (
-    <>
+    <div className={className || ''}>
       <MDEditor
         onBlur={handleUpdateMarkdown}
         onKeyDown={handleMDEscKeyPress}
@@ -70,6 +71,6 @@ export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, toggle
         minHeight={20}
         style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', boxShadow: 'none', padding: '0' }}
       />
-    </>
+    </div>
   );
 };

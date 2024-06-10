@@ -3,13 +3,13 @@ import { faker } from '@faker-js/faker';
 import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
 
-import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
-import { organizationsTable } from '../../src/db/schema/organizations';
+import { UniqueEnforcer } from 'enforce-unique';
 import { type InsertLabelModel, labelsTable } from '../../src/db/schema-electric/labels';
 import { type InsertTaskModel, tasksTable } from '../../src/db/schema-electric/tasks';
-import { workspacesTable, type InsertWorkspaceModel } from '../../src/db/schema/workspaces';
+import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
+import { organizationsTable } from '../../src/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '../../src/db/schema/projects';
-import { UniqueEnforcer } from 'enforce-unique';
+import { type InsertWorkspaceModel, workspacesTable } from '../../src/db/schema/workspaces';
 import type { Stage, Status } from './data';
 
 export const dataSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
@@ -86,7 +86,6 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
         return {
           id: nanoid(),
           organizationId: organization.id,
-          workspaceId: workspace.id,
           name,
           color: faker.internet.color(),
           slug: faker.helpers.slugify(name).toLowerCase(),
@@ -111,7 +110,6 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
             userId: user.id,
             type: 'PROJECT',
             organizationId: organization.id,
-            workspaceId: workspace.id,
             projectId: project.id,
             role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
             createdAt: faker.date.past(),
@@ -125,14 +123,17 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
 
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
 
-        const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).map(() => {
+        const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).map((_, index) => {
           const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
           return {
             id: nanoid(),
+            organizationId: organization.id,
             projectId: project.id,
             summary: name,
             slug: faker.helpers.slugify(name).toLowerCase(),
+            // TODO: fix this
+            order: index,
             // random integer between 0 and 6
             status: Math.floor(Math.random() * 7),
             type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
@@ -160,6 +161,7 @@ export const dataSeed = async (progressCallback?: (stage: Stage, count: number, 
 
           return {
             id: nanoid(),
+            organizationId: organization.id,
             projectId: project.id,
             name,
             color: faker.internet.color(),

@@ -1,19 +1,19 @@
 {
-  "version": "6",
+  "version": "1",
   "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1716986284638,
-      "tag": "0000_quiet_doctor_octopus",
+      "version": "1",
+      "when": 1717592617587,
+      "tag": "0000_parallel_blonde_phantom",
       "breakpoints": true
     },
     {
       "idx": 1,
-      "version": "6",
-      "when": 1716986326125,
-      "tag": "0001_foamy_miek",
+      "version": "1",
+      "when": 1717573404754,
+      "tag": "0001_quiet_doctor_octopus",
       "breakpoints": true
     }
   ]

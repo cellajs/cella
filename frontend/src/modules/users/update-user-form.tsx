@@ -4,10 +4,11 @@ import { updateUserJsonSchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import type { User } from '~/types';
+import type { MeUser, User } from '~/types';
 import AvatarFormField from '../common/form-fields/avatar';
 
-import { type UpdateUserParams, updateSelf, updateUser } from '~/api/users';
+import { type UpdateUserParams, updateUser } from '~/api/users';
+import { updateSelf } from '~/api/me';
 
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -43,6 +44,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const useUpdateUserMutation = (idOrSlug: string) => {
   const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === idOrSlug;
+
   return useMutation<User, DefaultError, UpdateUserParams>({
     mutationKey: ['me', 'update', idOrSlug],
     mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
@@ -55,9 +57,10 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
 
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
+  const { nextStep } = useStepper();
+  
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
-  const { nextStep } = useStepper();
 
   // Hide fields if requested
   if (hiddenFields) {
@@ -95,7 +98,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     mutate(values, {
       onSuccess: (data) => {
         if (isSelf) {
-          setUser(data);
+          setUser(data as MeUser);
           toast.success(t('common:success.you_updated'));
         } else {
           toast.success(t('common:success.updated_user'));
@@ -142,8 +145,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           setUrl={setImageUrl}
         />
         <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
-          <InputFormField control={form.control} name="firstName" label={t('common:first_name')} required />
-          <InputFormField control={form.control} name="lastName" label={t('common:last_name')} required />
+          <InputFormField inputClassName="border" control={form.control} name="firstName" label={t('common:first_name')} required />
+          <InputFormField inputClassName="border" control={form.control} name="lastName" label={t('common:last_name')} required />
         </div>
         <SlugFormField
           control={form.control}
@@ -152,8 +155,17 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           description={t('common:user_handle.text')}
           previousSlug={user.slug}
         />
-        <InputFormField control={form.control} value={user.email} name="email" label={t('common:email')} type="email" disabled required />
-        <InputFormField control={form.control} name="bio" label={t('common:bio')} type="textarea" />
+        <InputFormField
+          inputClassName="border"
+          control={form.control}
+          value={user.email}
+          name="email"
+          label={t('common:email')}
+          type="email"
+          disabled
+          required
+        />
+        <InputFormField inputClassName="border" control={form.control} name="bio" label={t('common:bio')} type="textarea" />
         <LanguageFormField
           control={form.control}
           name="language"

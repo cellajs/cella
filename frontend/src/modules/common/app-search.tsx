@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { entitySuggestionSchema } from 'backend/modules/general/schema';
-import type { PageResourceType } from 'backend/types/common';
+import type { EntityType } from 'backend/types/common';
 import { config } from 'config';
 import { History, Loader2, Search, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
@@ -21,7 +21,7 @@ type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 interface SuggestionSection {
   id: 'users' | 'organizations' | 'workspaces' | 'projects';
   label: string;
-  type: PageResourceType;
+  type: EntityType;
 }
 
 const suggestionSections: SuggestionSection[] = [
@@ -81,7 +81,7 @@ export const AppSearch = () => {
     updateRecentSearches(searchValue);
 
     navigate({
-      to: suggestion.type === 'ORGANIZATION' ? '/$idOrSlug' : `/${suggestion.type.toLowerCase()}/$idOrSlug`,
+      to: suggestion.entity === 'ORGANIZATION' ? '/$idOrSlug' : `/${suggestion.entity.toLowerCase()}/$idOrSlug`,
       resetScroll: false,
       params: {
         idOrSlug: suggestion.slug,
@@ -167,7 +167,7 @@ export const AppSearch = () => {
                       <CommandGroup className="">
                         <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
                         {suggestions.entities
-                          .filter((el) => el.type === section.type)
+                          .filter((el) => el.entity === section.type)
                           .map((suggestion: SuggestionType) => (
                             <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
                               <div className="flex space-x-2 items-center outline-0 ring-0 group">

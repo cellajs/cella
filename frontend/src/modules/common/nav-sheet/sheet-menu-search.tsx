@@ -25,13 +25,17 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResul
       if (!searchTerm.trim()) return initialSearchResults;
 
       const lowerCaseTerm = searchTerm.toLowerCase();
-      return menuSections.reduce(
-        (acc, section) => {
-          acc[section.id] = menu[section.id as keyof UserMenu].items.filter((page) => page.name.toLowerCase().includes(lowerCaseTerm));
-          return acc;
-        },
-        {} as Record<string, MenuList>,
-      );
+      return menuSections
+        .filter((el) => !el.isSubmenu)
+        .reduce(
+          (acc, section) => {
+            acc[section.storageType] = menu[section.storageType as keyof UserMenu].items.filter((page) =>
+              page.name.toLowerCase().includes(lowerCaseTerm),
+            );
+            return acc;
+          },
+          {} as Record<string, MenuList>,
+        );
     };
 
     onSearchResultsChange(filterResults());

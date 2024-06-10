@@ -1,18 +1,18 @@
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { arrayMove, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
+import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
-import type { Label, PreparedTask } from '../../common/electric/electrify';
+import { type Label, type PreparedTask, useElectric } from '../../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { WorkspaceContext } from '../../workspaces';
-import { BoardColumn, isProjectData } from './board-column';
-import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { isTaskData } from '../task/draggable-task-card';
-import { useNavigationStore } from '~/store/navigation';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { BoardColumn, isProjectData } from './board-column';
 import { ProjectContext } from './project-context';
 
 const PANEL_MIN_WIDTH = 300;
@@ -110,18 +110,21 @@ export default function Board() {
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
+  const electric = useElectric();
+
   const handleTaskClick = (taskId: string) => {
     setFocusedTaskId(taskId);
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
+    const { workspace } = useContext(WorkspaceContext);
     if (!tasks.length || !mappedProjects.length) return;
     const currentIndex = focusedProjectIndex !== null ? focusedProjectIndex : -1;
     let nextIndex = currentIndex;
     if (event.key === 'ArrowRight') nextIndex = currentIndex === mappedProjects.length - 1 ? 0 : currentIndex + 1;
     if (event.key === 'ArrowLeft') nextIndex = currentIndex <= 0 ? mappedProjects.length - 1 : currentIndex - 1;
     const indexedProject = mappedProjects[nextIndex];
-    const currentProjectSettings = workspaces[indexedProject.workspaceId]?.columns.find((el) => el.columnId === indexedProject.id);
+    const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === indexedProject.id);
     const sortedProjectTasks = tasks.filter((t) => t.project_id === indexedProject.id).sort((a, b) => sortTaskOrder(a, b));
     const lengthWithoutAccepted = sortedProjectTasks.filter((t) => t.status !== 6).length;
 
@@ -179,13 +182,40 @@ export default function Board() {
             }
             // Drag a task in same column
             if (sourceData.item.project_id === target.data.item.project_id) {
-              console.log('ChangeIndex');
+              let newOrder = 0;
+              if (target.data.index > 0 && target.data.index < tasks.length - 1) {
+                console.log('1');
+                const itemBefore = tasks[target.data.index - 1];
+                const itemAfter = tasks[target.data.index];
+
+                newOrder = (itemBefore.sort_order + itemAfter.sort_order) / 2;
+              } else if (target.data.index === 0 && tasks.length > 0) {
+                console.log('2');
+                const itemAfter = tasks[target.data.index];
+                newOrder = itemAfter.sort_order / 1.1;
+              } else if (target.data.index === tasks.length - 1 && tasks.length > 0) {
+                console.log('3');
+                const itemBefore = tasks[target.data.index - 1];
+                newOrder = itemBefore.sort_order * 1.1;
+              }
+
+              console.log('NewOrder', newOrder, tasks);
+
+              // Update order of dragged task
+              electric?.db.tasks.update({
+                data: {
+                  sort_order: newOrder,
+                },
+                where: {
+                  id: sourceData.item.id,
+                },
+              });
             }
           }
         },
       }),
     );
-  }, [submenuItemsOrder[workspace.id]]);
+  }, [submenuItemsOrder[workspace.id], tasks]);
 
   if (!isDesktopLayout) {
     return (

@@ -3,28 +3,29 @@ import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/prag
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { DraggableItemData, Project, User } from '~/types/index.ts';
+import type { DraggableItemData, Member, Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
 import { DropIndicator } from '../../common/drop-indicator';
 import type { PreparedTask } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
 import { WorkspaceContext } from '../../workspaces';
-import { ProjectContext } from './project-context';
-import { BoardColumnHeader } from './board-column-header';
+import { ProjectSettings } from '../project-settings';
 import CreateTaskForm from '../task/create-task-form';
 import { DraggableTaskCard } from '../task/draggable-task-card';
-import { ProjectSettings } from '../project-settings';
-import { useQuery } from '@tanstack/react-query';
-import { getProjectMembers } from '~/api/projects';
-import { useNavigationStore } from '~/store/navigation';
+import { BoardColumnHeader } from './board-column-header';
+import { ColumnSkeleton } from './board-column-skeleton';
+import { ProjectContext } from './project-context';
 
 interface BoardColumnProps {
   tasks: PreparedTask[];
@@ -34,7 +35,7 @@ interface BoardColumnProps {
 
 interface TaskContextValue {
   task: PreparedTask;
-  projectMembers: User[];
+  projectMembers: Member[];
   focusedTaskId: string | null;
   setFocusedTask: (taskId: string) => void;
 }
@@ -61,13 +62,14 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
   const { project, focusedProject, setFocusedProjectIndex } = useContext(ProjectContext);
   const { submenuItemsOrder } = useNavigationStore();
-  const { searchQuery, projects, selectedTasks } = useContext(WorkspaceContext);
+  const { searchQuery, projects, selectedTasks, tasksLoading } = useContext(WorkspaceContext);
   const { workspaces, changeColumn } = useWorkspaceStore();
-  const currentProjectSettings = workspaces[project.workspaceId]?.columns.find((el) => el.columnId === project.id);
+  const { workspace } = useContext(WorkspaceContext);
+  const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
 
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
-    queryFn: () => getProjectMembers(project.id).then((data) => data.items),
+    queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'PROJECT' }).then((data) => data.items),
     initialData: [],
   });
 
@@ -81,13 +83,13 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
-    changeColumn(project.workspaceId, project.id, {
+    changeColumn(workspace.id, project.id, {
       expandIced: !showIced,
     });
   };
   const handleAcceptedClick = () => {
     setShowAccepted(!showAccepted);
-    changeColumn(project.workspaceId, project.id, {
+    changeColumn(workspace.id, project.id, {
       expandAccepted: !showAccepted,
     });
   };
@@ -148,9 +150,16 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
     }
   };
 
+  const handlePlusKeyDown = () => {
+    if (focusedProject === null) setFocusedProjectIndex(0);
+    if (projects[focusedProject || 0].id !== project.id) return;
+    setCreateForm(!createForm);
+  };
+
   useHotkeys([
     ['ArrowDown', handleArrowKeyDown],
     ['ArrowUp', handleArrowKeyDown],
+    ['+', handlePlusKeyDown],
   ]);
 
   // create draggable & dropTarget elements and auto scroll
@@ -162,7 +171,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
     const data = getDraggableItemData<Project>(
       project,
-      submenuItemsOrder[project.workspaceId].findIndex((el) => el === project.id),
+      submenuItemsOrder[workspace.id].findIndex((el) => el === project.id),
       'column',
     );
     if (!column || !headerDragButton || !cardList) return;
@@ -215,102 +224,111 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
           })
         : () => {},
     );
-  }, [project, projects, submenuItemsOrder[project.workspaceId], sortedTasks]);
+  }, [project, projects, submenuItemsOrder[workspace.id], sortedTasks]);
 
   // Hides underscroll elements
   // 64px refers to the header height
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-[64px] z-30 -mt-4" />;
 
   return (
-    <div
-      ref={columnRef}
-      className={cn(
-        `h-full relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b
-      opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
-        selectedTasks.length && 'is-selected',
-      )}
-    >
-      {stickyBackground}
-
+    <div ref={columnRef} className="h-full">
       <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
+      <div
+        className={cn(
+          `h-full relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b
+          opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
+          selectedTasks.length && 'is-selected',
+        )}
+      >
+        {stickyBackground}
 
-      <div className="h-full border-l border-r">
-        {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
+        <div className="h-full border-l border-r">
+          {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
 
-        <div ref={containerRef} />
+          <div ref={containerRef} />
 
-        <div className="h-full" ref={cardListRef}>
-          {!!tasks.length && (
-            <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-1px]">
-              <ScrollBar size="indicatorVertical" />
-              <div className="flex flex-col px-0">
-                <Button
-                  onClick={handleAcceptedClick}
-                  variant="ghost"
-                  disabled={!acceptedCount}
-                  size="sm"
-                  className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[1px]"
-                >
-                  <span className="text-xs">
-                    {acceptedCount} {t('common:accepted').toLowerCase()}
-                  </span>
-                  {!!acceptedCount && (
-                    <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
-                  )}
-                </Button>
-                {sortedTasks
-                  .filter((t) => {
-                    if (showAccepted && t.status === 6) return true;
-                    if (showIced && t.status === 0) return true;
-                    return t.status !== 0 && t.status !== 6;
-                  })
-                  .map((task) => (
-                    <TaskContext.Provider key={task.id} value={{ task, projectMembers: members, focusedTaskId: focusedTask, setFocusedTask }}>
-                      <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
-                    </TaskContext.Provider>
-                  ))}
-                <Button
-                  onClick={handleIcedClick}
-                  variant="ghost"
-                  disabled={!icedCount}
-                  size="sm"
-                  className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[1px]"
-                >
-                  <span className="text-xs">
-                    {icedCount} {t('common:iced').toLowerCase()}
-                  </span>
-                  {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
-                </Button>
+          {tasksLoading ? (
+            <ColumnSkeleton />
+          ) : (
+            <>
+              <div className="h-full" ref={cardListRef}>
+                {!!tasks.length && (
+                  <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-1px]">
+                    <ScrollBar size="indicatorVertical" />
+                    <div className="flex flex-col px-0">
+                      <Button
+                        onClick={handleAcceptedClick}
+                        variant="ghost"
+                        disabled={!acceptedCount}
+                        size="sm"
+                        className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[1px]"
+                      >
+                        <span className="text-xs">
+                          {acceptedCount} {t('common:accepted').toLowerCase()}
+                        </span>
+                        {!!acceptedCount && (
+                          <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+                        )}
+                      </Button>
+                      {sortedTasks
+                        .filter((t) => {
+                          if (showAccepted && t.status === 6) return true;
+                          if (showIced && t.status === 0) return true;
+                          return t.status !== 0 && t.status !== 6;
+                        })
+                        .map((task) => (
+                          <TaskContext.Provider key={task.id} value={{ task, projectMembers: members, focusedTaskId: focusedTask, setFocusedTask }}>
+                            <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
+                          </TaskContext.Provider>
+                        ))}
+                      <Button
+                        onClick={handleIcedClick}
+                        variant="ghost"
+                        disabled={!icedCount}
+                        size="sm"
+                        className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[1px]"
+                      >
+                        <span className="text-xs">
+                          {icedCount} {t('common:iced').toLowerCase()}
+                        </span>
+                        {!!icedCount && (
+                          <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />
+                        )}
+                      </Button>
+                    </div>
+                  </ScrollArea>
+                )}
+
+                {!tasks.length && !searchQuery && (
+                  <ContentPlaceholder
+                    Icon={Palmtree}
+                    title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
+                    text={
+                      !createForm && (
+                        <>
+                          <Undo
+                            size={200}
+                            strokeWidth={0.2}
+                            className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
+                          />
+                          <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
+                            <span>{t('common:click')}</span>
+                            <span className="text-primary">{`+${t('common:task')}`}</span>
+                            <span>{t('common:no_tasks.text')}</span>
+                          </p>
+                        </>
+                      )
+                    }
+                  />
+                )}
+                {!tasks.length && searchQuery && (
+                  <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
+                )}
               </div>
-            </ScrollArea>
-          )}
-          {!tasks.length && !searchQuery && (
-            <ContentPlaceholder
-              Icon={Palmtree}
-              title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
-              text={
-                !createForm && (
-                  <>
-                    <Undo
-                      size={200}
-                      strokeWidth={0.2}
-                      className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
-                    />
-                    <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
-                      <span>{t('common:click')}</span>
-                      <span className="text-primary">{`+${t('common:task')}`}</span>
-                      <span>{t('common:no_tasks.text')}</span>
-                    </p>
-                  </>
-                )
-              }
-            />
-          )}
-          {!tasks.length && searchQuery && (
-            <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
+            </>
           )}
         </div>
-        {closestEdge && <DropIndicator className="w-[2px]" edge={closestEdge} />}
+        {closestEdge && <DropIndicator className="w-[2px] mp-[58px]" edge={closestEdge} />}
       </div>
     </div>
   );

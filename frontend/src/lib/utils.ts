@@ -1,6 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
-import type { PageResourceType } from 'backend/types/common';
+import type { EntityType } from 'backend/types/common';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
@@ -122,7 +122,7 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
 export const sortTaskOrder = (task1: Pick<Task, 'status' | 'sort_order'>, task2: Pick<Task, 'status' | 'sort_order'>) => {
   if (task1.status !== task2.status) return task2.status - task1.status;
   // same status, sort by sort_order
-  if (task1.sort_order !== null && task2.sort_order !== null) return task2.sort_order - task1.sort_order;
+  if (task1.sort_order !== null && task2.sort_order !== null) return task1.sort_order - task2.sort_order;
   // sort_order is null
   return 0;
 };
@@ -138,9 +138,9 @@ export const getDraggableItemData = <T>(
   item: T,
   itemIndex: number,
   type: 'task' | 'column' | 'menuItem',
-  itemType?: PageResourceType,
+  itemType?: EntityType,
 ): DraggableItemData<T> => {
-  return { dragItem: true, item, index: itemIndex, type, itemType: itemType ? itemType : 'ORGANIZATION' };
+  return { dragItem: true, item, index: itemIndex, type, itemType: itemType || 'ORGANIZATION' };
 };
 
 // To get target index for drop on DnD

@@ -14,13 +14,8 @@ export const successResponseWithPaginationSchema = <T extends z.ZodTypeAny>(sche
   z.object({
     success: z.boolean(),
     data: z.object({
-      items: schema.array().openapi({
-        description: 'The items',
-      }),
-      total: z.number().openapi({
-        description: 'The total number of items',
-        example: 1,
-      }),
+      items: schema.array(),
+      total: z.number(),
     }),
   });
 

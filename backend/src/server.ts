@@ -4,10 +4,11 @@ import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import authRoutes from './modules/auth';
 import generalRoutes from './modules/general';
-import membershipRoutes from './modules/memberships';
+import meRoutes from './modules/me';
+import MembershipsRoutes from './modules/memberships';
 import organizationsRoutes from './modules/organizations';
 import projectsRoutes from './modules/projects';
-import publicRoutes from './modules/public';
+import requestsRoutes from './modules/requests';
 import usersRoutes from './modules/users';
 import workspacesRoutes from './modules/workspaces';
 
@@ -38,13 +39,14 @@ app.onError((err, ctx) => {
 
 // Add routes for each module
 app
+  .route('/me', meRoutes)
+  .route('/users', usersRoutes)
+  .route('/memberships', MembershipsRoutes)
+  .route('/organizations', organizationsRoutes)
+  .route('/requests', requestsRoutes)
   .route('/', authRoutes)
-  .route('/', usersRoutes)
-  .route('/', organizationsRoutes)
   .route('/', generalRoutes)
-  .route('/', publicRoutes)
-  .route('/', membershipRoutes)
 
   // App-specific routes go here
-  .route('/', workspacesRoutes)
-  .route('/', projectsRoutes);
+  .route('/workspaces', workspacesRoutes)
+  .route('/projects', projectsRoutes);
