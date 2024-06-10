@@ -65,7 +65,6 @@ const SSE = () => {
 
         // If entity already exists in the list, do nothing
         if (exist) return state;
-        if (section.hasSubmenu) state.submenuItemsOrder[entityData.id] = [];
 
         state.menu[section.storageType].items = [entityData, ...state.menu[section.storageType].items];
         return state;

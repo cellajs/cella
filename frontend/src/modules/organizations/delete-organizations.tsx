@@ -23,10 +23,7 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
       }
 
       callback?.(organizations);
-
-      if (isDialog) {
-        dialog.remove();
-      }
+      if (isDialog) dialog.remove();
     },
   });
 

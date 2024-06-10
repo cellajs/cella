@@ -30,22 +30,30 @@ export const getAndSetMe = async () => {
 export const getAndSetMenu = async () => {
   const menu = await getUserMenu();
   useNavigationStore.setState({ menu });
-  const { activeItemsOrder, setActiveItemsOrder, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore.getState();
-  if (activeItemsOrder.organizations.length === 0) {
-    activeItemsOrder.organizations;
-    const menuOrganizationsIds = menu.organizations.items.filter((i) => !i.archived).map((i) => i.id);
-    setActiveItemsOrder('organizations', menuOrganizationsIds);
+  const { setMainMenuOrder, menuOrder } = useNavigationStore.getState();
+
+  if (!menuOrder.organizations || menuOrder.organizations.length === 0) {
+    const menuOrganizations = menu.organizations.items.filter((i) => !i.archived);
+    setMainMenuOrder(
+      'organizations',
+      menuOrganizations.map((item) => {
+        return {
+          [item.id]: item.submenu ? item.submenu.items.filter((el) => !el.archived).map((i) => i.id) : [],
+        };
+      }),
+    );
   }
-  if (activeItemsOrder.workspaces.length === 0) {
-    const menuWorkspaceIds = menu.workspaces.items.filter((i) => !i.archived).map((i) => i.id);
-    setActiveItemsOrder('workspaces', menuWorkspaceIds);
+  if (!menuOrder.workspaces || menuOrder.workspaces.length === 0) {
+    const menuWorkspaces = menu.workspaces.items.filter((i) => !i.archived);
+    setMainMenuOrder(
+      'workspaces',
+      menuWorkspaces.map((item) => {
+        return {
+          [item.id]: item.submenu ? item.submenu.items.filter((el) => !el.archived).map((i) => i.id) : [],
+        };
+      }),
+    );
   }
-  menu.workspaces.items.map((workspace) => {
-    if (workspace.submenu && !!workspace.submenu.items.length && submenuItemsOrder[workspace.id] === undefined) {
-      const projectIds = workspace.submenu.items.filter((p) => !p.archived).map((p) => p.id);
-      setSubmenuItemsOrder(workspace.id, projectIds);
-    }
-  });
   return menu;
 };
 

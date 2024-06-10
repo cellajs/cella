@@ -45,7 +45,6 @@ export const OnboardingCompleted = () => {
       state.finishOnboarding ? 500 : 4000,
     );
   }, []);
-  console.log('state.finishOnboarding:', state.finishOnboarding);
 
   return (
     <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-[1] max-w-[700px]">

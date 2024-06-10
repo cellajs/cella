@@ -37,7 +37,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callback, dialog: isDialog, labelDirection = 'top', children }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setSheet, setActiveItemsOrder, activeItemsOrder } = useNavigationStore();
+  const { setSheet, addNewMainMenuItem } = useNavigationStore();
   const { nextStep } = useStepper();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -62,7 +62,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       form.reset();
       callback?.(result);
       toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
-      setActiveItemsOrder('organizations', [...activeItemsOrder.organizations, result.id]);
+      addNewMainMenuItem('organizations', result.id);
       // If in stepper
       nextStep?.();
 
