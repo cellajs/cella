@@ -4,7 +4,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { arrayMove, findSubArrayByMainId, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
+import { arrayMove, getReorderDestinationIndex, sortById, sortTaskOrder } from '~/lib/utils';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
@@ -106,7 +106,7 @@ export default function Board() {
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const { menuOrder, setSubMenuOrder, menu } = useNavigationStore();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, findSubArrayByMainId(menuOrder.workspaces, workspace.id))),
+    projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])),
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
@@ -151,9 +151,9 @@ export default function Board() {
     if (currentWorkspace) {
       const currentActiveProjects = currentWorkspace.submenu?.items.filter((p) => !p.archived) as unknown as Project[];
       if (!currentActiveProjects) return setMappedProjects(projects);
-      setMappedProjects(currentActiveProjects.sort((a, b) => sortById(a.id, b.id, findSubArrayByMainId(menuOrder.workspaces, workspace.id))));
+      setMappedProjects(currentActiveProjects.sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])));
     }
-  }, [currentWorkspace, menuOrder, workspace.id]);
+  }, [currentWorkspace, menuOrder.PROJECT, workspace.id]);
 
   useEffect(() => {
     return combine(
@@ -170,8 +170,8 @@ export default function Board() {
           if (isProjectData(sourceData) && isProjectData(target.data)) {
             const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
             const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'horizontal');
-            const newItemOrder = arrayMove(findSubArrayByMainId(menuOrder.workspaces, workspace.id), sourceData.index, destination);
-            setSubMenuOrder('workspaces', workspace.id, newItemOrder as string[]);
+            const newItemOrder = arrayMove(menuOrder.PROJECT.subList[workspace.id], sourceData.index, destination);
+            setSubMenuOrder('PROJECT', workspace.id, newItemOrder);
           }
 
           // Drag a task
@@ -199,8 +199,6 @@ export default function Board() {
                 newOrder = itemBefore.sort_order * 1.1;
               }
 
-              console.log('NewOrder', newOrder, tasks);
-
               // Update order of dragged task
               electric?.db.tasks.update({
                 data: {
@@ -215,7 +213,7 @@ export default function Board() {
         },
       }),
     );
-  }, [menuOrder, tasks]);
+  }, [menuOrder.PROJECT, tasks]);
 
   if (!isDesktopLayout) {
     return (

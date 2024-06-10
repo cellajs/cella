@@ -9,7 +9,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { cn, findSubArrayByMainId, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
+import { cn, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useNavigationStore } from '~/store/navigation';
@@ -171,7 +171,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
 
     const data = getDraggableItemData<Project>(
       project,
-      findSubArrayByMainId(menuOrder.workspaces, workspace.id).findIndex((el) => el === project.id),
+      menuOrder.PROJECT.subList[workspace.id].findIndex((el) => el === project.id),
       'column',
     );
     if (!column || !headerDragButton || !cardList) return;
@@ -224,7 +224,7 @@ export function BoardColumn({ tasks, setFocusedTask, focusedTask }: BoardColumnP
           })
         : () => {},
     );
-  }, [project, projects, menuOrder.workspaces, sortedTasks]);
+  }, [project, projects, menuOrder, sortedTasks]);
 
   // Hides underscroll elements
   // 64px refers to the header height

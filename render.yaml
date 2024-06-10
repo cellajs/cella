@@ -11,14 +11,12 @@ services:
     region: frankfurt
     rootDir: backend
     buildCommand: pnpm install && pnpm build
-    startCommand: pnpm start
+    startCommand: pnpm run proxy & pnpm start
     numInstances: 1
     healthCheckPath: /ping
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: cella-db
-          property: connectionString
+        sync: false
       - key: TUS_UPLOAD_API_SECRET
         sync: false
       - key: AWS_CLOUDFRONT_KEY_ID
@@ -102,7 +100,7 @@ services:
     name: cella-electric-sync
     runtime: image
     image:
-      url: docker.io/electricsql/electric:0.12.0
+      url: docker.io/electricsql/electric:latest
     plan: standard
     envVars:
     - key: PG_PROXY_PORT
@@ -115,6 +113,9 @@ services:
       sync: true
     - key: ELECTRIC_WRITE_TO_PG_MODE
       value: direct_writes
+      sync: true
+    - key: ELECTRIC_RESUMABLE_WAL_WINDOW
+      value: 800M
       sync: true
     - key: DATABASE_USE_IPV6
       value: false
@@ -138,10 +139,10 @@ services:
     region: frankfurt
 
 # Postgres database
-databases:
-  - name: cella-db
-    databaseName: cella
-    region: frankfurt
-    plan: starter
-    previewPlan: starter
-    postgresMajorVersion: 15
+# databases:
+#   - name: cella-db
+#     databaseName: cella
+#     region: frankfurt
+#     plan: starter
+#     previewPlan: starter
+#     postgresMajorVersion: 15

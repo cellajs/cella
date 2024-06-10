@@ -3,11 +3,11 @@ import type { EntityType } from 'backend/types/common';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { cn, findMainArrayKeyBySubitemId, findSubArrayByMainId, sortById } from '~/lib/utils';
+import { cn, isDataSubMenu, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenu } from '~/types';
+import type { UserMenu, UserSubMenu } from '~/types';
 import type { MenuItem } from './sheet-menu-section';
 
 interface SheetMenuItemProps {
@@ -39,7 +39,7 @@ export const SheetMenuItem = ({ item, type, className, submenu, searchResults }:
       onClick={handleClick}
       aria-label={item.name}
       to={type === 'ORGANIZATION' ? '/$idOrSlug' : '/workspace/$idOrSlug'}
-      params={{ idOrSlug: item.workspaceId ? item.workspaceId : item.slug }}
+      params={{ idOrSlug: isDataSubMenu(item) ? item.submenuTo : item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
       <AvatarWrap
@@ -66,30 +66,22 @@ export const SheetMenuItem = ({ item, type, className, submenu, searchResults }:
 };
 
 interface SheetMenuItemsProps {
-  data: UserMenu[keyof UserMenu];
+  data: UserSubMenu | UserMenu[keyof UserMenu];
   shownOption: 'archived' | 'unarchive';
-  sectionType: 'organizations' | 'workspaces';
-  submenu?: boolean;
   createDialog?: () => void;
   className?: string;
   searchResults?: boolean;
 }
 
-export const SheetMenuItems = ({ data, shownOption, sectionType, createDialog, className, submenu, searchResults }: SheetMenuItemsProps) => {
+export const SheetMenuItems = ({ data, shownOption, createDialog, className, searchResults }: SheetMenuItemsProps) => {
   const { t } = useTranslation();
   const { hideSubmenu, menuOrder } = useNavigationStore();
 
   const filteredItems = data.items
     .filter((item) => (shownOption === 'archived' ? item.archived : !item.archived))
     .sort((a, b) =>
-      sortById(
-        a.id,
-        b.id,
-        findMainArrayKeyBySubitemId(menuOrder[sectionType], a.id)
-          ? findSubArrayByMainId(menuOrder[sectionType], findMainArrayKeyBySubitemId(menuOrder[sectionType], a.id))
-          : menuOrder[sectionType].flatMap((el) => Object.keys(el)),
-      ),
-    );
+      sortById(a.id, b.id, isDataSubMenu(data) ? menuOrder[data.type].subList[data.submenuTo] : menuOrder[data.type].mainList),
+    ) as MenuItem[];
 
   const renderNoItems = () =>
     data.canCreate && createDialog ? (
@@ -108,14 +100,16 @@ export const SheetMenuItems = ({ data, shownOption, sectionType, createDialog, c
     );
 
   const renderItems = () =>
-    filteredItems.map((item) => (
-      <div key={item.id}>
-        <SheetMenuItem item={item} type={data.type} submenu={submenu} className={className} searchResults={searchResults} />
-        {!item.archived && item.submenu && !!item.submenu.items.length && !hideSubmenu && (
-          <SheetMenuItems data={item.submenu} sectionType="workspaces" shownOption="unarchive" submenu />
-        )}
-      </div>
-    ));
+    filteredItems.map((item) => {
+      return (
+        <div key={item.id}>
+          <SheetMenuItem item={item} type={data.type} submenu={isDataSubMenu(data)} className={className} searchResults={searchResults} />
+          {!item.archived && item.submenu && !!item.submenu.items.length && !hideSubmenu && (
+            <SheetMenuItems data={item.submenu} shownOption="unarchive" />
+          )}
+        </div>
+      );
+    });
 
   return data.items.length === 0 ? renderNoItems() : renderItems();
 };

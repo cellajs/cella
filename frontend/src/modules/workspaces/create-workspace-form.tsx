@@ -38,7 +38,8 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setSheet, menu, addNewMainMenuItem } = useNavigationStore();
+  const { setSheet, menu, setMainMenuOrder, menuOrder } = useNavigationStore();
+  const type = 'WORKSPACE';
 
   const organizations = menu.organizations.items;
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -64,8 +65,8 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     onSuccess: (result) => {
       form.reset();
       callback?.(result);
-      toast.success(t('common:success.create_resource', { resource: t('common:workspace') }));
-      addNewMainMenuItem('workspaces', result.id);
+      toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
+      setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
       setSheet(null);
       if (isDialog) dialog.remove();
       navigate({

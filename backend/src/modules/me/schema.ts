@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-import { entityTypeSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/common-schemas';
+import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
 
 export const meUserSchema = apiUserSchema.extend({
   electricJWTToken: z.string(),
-  sessions: z.array(z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string() }))
+  sessions: z.array(z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string() })),
 });
 
 const menuItemSchema = z.object({
@@ -20,18 +20,16 @@ const menuItemSchema = z.object({
   muted: z.boolean(),
   role: apiMembershipSchema.shape.role,
   membershipId: idSchema,
-  workspaceId: idSchema.optional(),
 });
-
 
 const menuSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
-    submenu: z.object({ items: z.array(menuItemSchema), canCreate: z.boolean(), type: entityTypeSchema }).optional(),
+    submenu: z.object({ items: z.array(menuItemSchema), canCreate: z.boolean(), submenuTo: z.string(), type: contextEntityTypeSchema }).optional(),
   }),
 );
 
-const menuSectionSchema = z.object({ items: menuSchema, canCreate: z.boolean(), type: entityTypeSchema });
+const menuSectionSchema = z.object({ items: menuSchema, canCreate: z.boolean(), type: contextEntityTypeSchema });
 
 export const userMenuSchema = z.object({
   organizations: menuSectionSchema,
