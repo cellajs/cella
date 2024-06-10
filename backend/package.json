@@ -25,7 +25,7 @@
     "seeds:script": "tsx dist/seed/user.cjs && tsx dist/seed/data.cjs",
     "studio": "drizzle-kit studio --config drizzle.config.ts",
     "studio:electric": "drizzle-kit studio --config drizzle.config.electric.ts",
-    "proxy": "electric-sql proxy-tunnel --service https://cella-electric-sync-service.onrender.com --local-port 65432",
+    "proxy": "electric-sql proxy-tunnel --service https://cella-electric-sync.onrender.com --local-port 65432",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend ./dist && sentry-cli sourcemaps upload --org cella --project backend ./dist"
   },
   "dependencies": {

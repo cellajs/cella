@@ -7,5 +7,5 @@ export default {
   backendUrl: 'https://cellajs.com/api/v1',
   tusUrl: 'https://cellajs.com/upload',
   // electricUrl: 'https://cellajs.com/electric',
-  electricUrl: 'https://cella-electric-sync-service.onrender.com',
+  electricUrl: 'https://cella-electric-sync.onrender.com',
 } satisfies Config;
