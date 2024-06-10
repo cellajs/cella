@@ -30,29 +30,24 @@ export const getAndSetMe = async () => {
 export const getAndSetMenu = async () => {
   const menu = await getUserMenu();
   useNavigationStore.setState({ menu });
-  const { setMainMenuOrder, menuOrder } = useNavigationStore.getState();
+  const { menuOrder, setMainMenuOrder, setSubMenuOrder } = useNavigationStore.getState();
 
-  if (!menuOrder.organizations || menuOrder.organizations.length === 0) {
-    const menuOrganizations = menu.organizations.items.filter((i) => !i.archived);
-    setMainMenuOrder(
-      'organizations',
-      menuOrganizations.map((item) => {
-        return {
-          [item.id]: item.submenu ? item.submenu.items.filter((el) => !el.archived).map((i) => i.id) : [],
-        };
-      }),
-    );
-  }
-  if (!menuOrder.workspaces || menuOrder.workspaces.length === 0) {
-    const menuWorkspaces = menu.workspaces.items.filter((i) => !i.archived);
-    setMainMenuOrder(
-      'workspaces',
-      menuWorkspaces.map((item) => {
-        return {
-          [item.id]: item.submenu ? item.submenu.items.filter((el) => !el.archived).map((i) => i.id) : [],
-        };
-      }),
-    );
+  for (const menuItem of Object.values(menu)) {
+    const { type: entityType, items } = menuItem;
+
+    if (menuOrder[entityType] !== undefined || items.length === 0) continue;
+
+    const entityMainIds = items
+      .filter((i) => !i.archived)
+      .map((item) => {
+        if (!item.submenu) return item.id;
+        const subtype = item.submenu.type;
+        const subItemIds = item.submenu.items.filter((i) => !i.archived).map((subItem) => subItem.id);
+        setSubMenuOrder(subtype, item.id, subItemIds);
+        return item.id;
+      });
+
+    setMainMenuOrder(entityType, entityMainIds);
   }
   return menu;
 };

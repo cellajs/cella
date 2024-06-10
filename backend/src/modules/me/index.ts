@@ -9,7 +9,7 @@ import { usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono, type EntityType } from '../../types/common';
+import { CustomHono, type EntityContextType } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
@@ -158,7 +158,12 @@ const meRoutes = app
         muted: membership.muted,
         membershipId: membership.id,
         role: membership.role,
-        submenu: { items: projects.filter(({ id }) => projectsids.includes(id)), type: 'PROJECT' as EntityType, canCreate: false },
+        submenu: {
+          items: projects.filter(({ id }) => projectsids.includes(id)),
+          type: 'PROJECT' as EntityContextType,
+          canCreate: false,
+          submenuTo: workspace.id,
+        },
       };
     });
 
@@ -166,8 +171,8 @@ const meRoutes = app
       {
         success: true,
         data: {
-          organizations: { items: organizations, type: 'ORGANIZATION' as EntityType, canCreate: true },
-          workspaces: { items: workspaces, type: 'WORKSPACE' as EntityType, canCreate: true },
+          organizations: { items: organizations, type: 'ORGANIZATION' as EntityContextType, canCreate: true },
+          workspaces: { items: workspaces, type: 'WORKSPACE' as EntityContextType, canCreate: true },
         },
       },
       200,

@@ -89,15 +89,9 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
       >
         <ul className="overflow-hidden">
           {optionsView ? (
-            <SheetMenuItemsOptions
-              isGlobalDragging={globalDragging}
-              setGlobalDragging={setGlobalDragging}
-              data={data}
-              shownOption="unarchive"
-              sectionType={sectionType}
-            />
+            <SheetMenuItemsOptions isGlobalDragging={globalDragging} setGlobalDragging={setGlobalDragging} data={data} shownOption="unarchive" />
           ) : (
-            <SheetMenuItems data={data} sectionType={sectionType} shownOption="unarchive" createDialog={createDialog} />
+            <SheetMenuItems data={data} shownOption="unarchive" createDialog={createDialog} />
           )}
           {!!data.items.length && (
             <>
@@ -120,10 +114,9 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
                       setGlobalDragging={setGlobalDragging}
                       data={data}
                       shownOption="archived"
-                      sectionType={sectionType}
                     />
                   ) : (
-                    <SheetMenuItems data={data} sectionType={sectionType} createDialog={createDialog} shownOption="archived" />
+                    <SheetMenuItems data={data} createDialog={createDialog} shownOption="archived" />
                   )}
                 </ul>
               </div>

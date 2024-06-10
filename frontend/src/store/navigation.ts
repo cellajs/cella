@@ -1,4 +1,4 @@
-import type { EntityType } from 'backend/types/common';
+import type { EntityContextType } from 'backend/types/common';
 import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -7,8 +7,12 @@ import type { NavItem } from '~/modules/common/app-nav';
 import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
 import type { UserMenu } from '~/types';
 
+type EntitySubList = Record<string, string[]>;
+type EntityConfig = Record<EntityContextType, { mainList: string[]; subList: EntitySubList }>;
+
 interface NavigationState {
   recentSearches: string[];
+  menuOrder: EntityConfig;
   setRecentSearches: (searchValue: string[]) => void;
   activeSheet: NavItem | null;
   setSheet: (activeSheet: NavItem | null) => void;
@@ -24,17 +28,15 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   setFocusView: (status: boolean) => void;
-  archiveStateToggle: (itemId: string, active: boolean, workspaceId?: string) => void;
-  menuOrder: Record<keyof UserMenu, Record<string, string[]>[]>;
-  setMainMenuOrder: (entity: keyof UserMenu, itemIds: Record<string, string[]>[]) => void;
-  setSubMenuOrder: (entity: keyof UserMenu, entityId: string, subItemIds: string[]) => void;
-  addNewMainMenuItem: (entity: keyof UserMenu, itemId: string) => void;
+  archiveStateToggle: (itemId: string, active: boolean, mainId?: string | null) => void;
+  setMainMenuOrder: (entityType: EntityContextType, mainListOrder: string[]) => void;
+  setSubMenuOrder: (entityType: EntityContextType, mainId: string, subItemIds: string[]) => void;
 }
 
 const initialMenuState: UserMenu = menuSections
   .filter((el) => !el.isSubmenu)
   .reduce<UserMenu>((acc, section) => {
-    acc[section.storageType as keyof UserMenu] = { items: [], canCreate: false, type: null as unknown as EntityType };
+    acc[section.storageType as keyof UserMenu] = { items: [], canCreate: false, type: null as unknown as EntityContextType };
     return acc;
   }, {} as UserMenu);
 
@@ -43,7 +45,7 @@ export const useNavigationStore = create<NavigationState>()(
     immer(
       persist(
         (set) => ({
-          menuOrder: {} as Record<string, Record<string, string[]>[]>,
+          menuOrder: {} as EntityConfig,
           recentSearches: [] as string[],
           activeSheet: null as NavItem | null,
           keepMenuOpen: false as boolean,
@@ -93,9 +95,9 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = sectionState;
             });
           },
-          archiveStateToggle: (itemId: string, active: boolean, workspaceId?: string) => {
+          archiveStateToggle: (itemId: string, active: boolean, mainId?: string | null) => {
             set((state) => {
-              if (!workspaceId) {
+              if (!mainId) {
                 for (const sectionKey of Object.keys(state.menu)) {
                   const section = state.menu[sectionKey as keyof UserMenu];
                   const itemIndex = section.items.findIndex((item) => item.id === itemId);
@@ -103,30 +105,38 @@ export const useNavigationStore = create<NavigationState>()(
                 }
               } else {
                 const section = state.menu.workspaces;
-                const workspace = section.items.find((item) => item.id === workspaceId);
+                const workspace = section.items.find((item) => item.id === mainId);
                 if (!workspace || !workspace.submenu) return;
                 const itemIndex = workspace.submenu.items.findIndex((item) => item.id === itemId);
                 if (itemIndex && itemIndex !== -1) workspace.submenu.items[itemIndex].archived = active;
               }
             });
           },
-          setMainMenuOrder: (entity: keyof UserMenu, itemIds: Record<string, string[]>[]) => {
+          setMainMenuOrder: (entityType: EntityContextType, mainListOrder: string[]) => {
             set((state) => {
-              state.menuOrder[entity] = itemIds;
+              return {
+                ...state,
+                menuOrder: {
+                  ...state.menuOrder,
+                  [entityType]: { ...state.menuOrder[entityType], mainList: mainListOrder },
+                },
+              };
             });
           },
-          addNewMainMenuItem: (entity: keyof UserMenu, itemId: string) => {
+          setSubMenuOrder: (entityType: EntityContextType, mainId: string, subItemIds: string[]) => {
             set((state) => {
-              state.menuOrder[entity].push({ [itemId]: [] });
-            });
-          },
-
-          setSubMenuOrder: (entity: keyof UserMenu, entityId: string, subItemIds: string[]) => {
-            set((state) => {
-              state.menuOrder[entity] = state.menuOrder[entity].map((item) => {
-                if (Object.prototype.hasOwnProperty.call(item, entityId)) return { ...item, [entityId]: subItemIds };
-                return item;
-              });
+              return {
+                menuOrder: {
+                  ...state.menuOrder,
+                  [entityType]: {
+                    ...state.menuOrder[entityType],
+                    subList: {
+                      ...state.menuOrder[entityType]?.subList,
+                      [mainId]: subItemIds,
+                    },
+                  },
+                },
+              };
             });
           },
         }),

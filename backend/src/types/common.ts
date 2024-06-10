@@ -12,6 +12,8 @@ import type { errorResponseSchema } from '../lib/common-schemas';
 
 export type EntityType = (typeof config.entityTypes)[number];
 
+export type EntityContextType = (typeof config.contextEntityTypes)[number];
+
 export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
 
 export type NonEmptyArray<T> = readonly [T, ...T[]];

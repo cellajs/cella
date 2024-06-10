@@ -1,7 +1,16 @@
 import type { EntityType } from 'backend/types/common';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
-import type { generalClient, meClient, membershipsClient, organizationsClient, projectsClient, requestsClient, usersClient, workspacesClient } from '~/api';
+import type {
+  generalClient,
+  meClient,
+  membershipsClient,
+  organizationsClient,
+  projectsClient,
+  requestsClient,
+  usersClient,
+  workspacesClient,
+} from '~/api';
 import type { Session } from '~/modules/users/user-settings';
 
 export enum UploadType {
@@ -46,3 +55,7 @@ export type Member = Extract<InferResponseType<(typeof generalClient.members)['$
 export type Membership = Extract<InferResponseType<(typeof membershipsClient)[':id']['$put']>, { data: unknown }>['data'];
 
 export type UserMenu = Extract<InferResponseType<(typeof meClient.menu)['$get']>, { data: unknown }>['data'];
+
+export type UserSubMenu = NonNullable<
+  Extract<InferResponseType<(typeof meClient.menu)['$get']>, { data: unknown }>['data']['organizations']['items'][number]['submenu']
+>;

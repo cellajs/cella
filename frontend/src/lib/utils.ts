@@ -11,7 +11,7 @@ import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import type { Task } from '~/modules/common/electric/electrify';
-import type { DraggableItemData } from '~/types';
+import type { DraggableItemData, UserSubMenu } from '~/types';
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
@@ -127,7 +127,7 @@ export const sortTaskOrder = (task1: Pick<Task, 'status' | 'sort_order'>, task2:
   return 0;
 };
 
-export const arrayMove = (array: string[] | Record<string, string[]>[], startIndex: number, endIndex: number) => {
+export const arrayMove = (array: string[], startIndex: number, endIndex: number) => {
   const newArray = [...array];
   const [removedElement] = newArray.splice(startIndex, 1);
   newArray.splice(endIndex, 0, removedElement);
@@ -192,15 +192,6 @@ export const sortById = (a: string, b: string, order: string[]) => {
   return indexA - indexB;
 };
 
-export const findMainArrayKeyBySubitemId = (array: Record<string, string[]>[], id: string): string | null => {
-  const foundObject = array.find((obj) => Object.values(obj).some((arr) => arr.includes(id)));
-  if (foundObject) return Object.keys(foundObject)[0];
-  return null;
-};
-
-export const findSubArrayByMainId = (array: Record<string, string[]>[], id: string | null) => {
-  if (!id) return [];
-  const foundObject = array.find((obj) => Object.keys(obj).includes(id));
-  if (foundObject) return Object.values(foundObject)[0];
-  return [];
+export const isDataSubMenu = (obj: Record<string, unknown>): obj is UserSubMenu => {
+  return 'submenuTo' in obj;
 };

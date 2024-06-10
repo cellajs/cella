@@ -20,7 +20,6 @@ import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import { Form } from '../ui/form';
-import { findSubArrayByMainId } from '~/lib/utils';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -36,7 +35,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   const { t } = useTranslation();
   // const navigate = useNavigate();
   const { setSheet, setSubMenuOrder, menuOrder } = useNavigationStore();
-
+  const type = 'PROJECT';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -70,8 +69,8 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       form.reset();
       callback([project], 'create');
       if (isDialog) dialog.remove();
-      toast.success(t('common:success.create_resource', { resource: t('common:project') }));
-      setSubMenuOrder('workspaces', workspace.id, [...findSubArrayByMainId(menuOrder.workspaces, workspace.id), project.id]);
+      toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
+      setSubMenuOrder(type, workspace.id, [...menuOrder[type].subList[workspace.id], project.id]);
       setSheet(null);
     },
   });
@@ -105,14 +104,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
           description={t('common:project_handle.text')}
           nameValue={name}
         />
-        <SelectParentFormField
-          collection="workspaces"
-          type="WORKSPACE"
-          control={form.control}
-          label={t('common:workspace')}
-          name="workspaceId"
-          disabled
-        />
+        <SelectParentFormField collection="workspaces" type={type} control={form.control} label={t('common:workspace')} name="workspaceId" disabled />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}
