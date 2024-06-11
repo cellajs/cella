@@ -51,7 +51,7 @@ export const useColumns = () => {
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (row.role ? t(row.role.toLowerCase()) : '-'),
+            renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role.toLowerCase()) : '-'),
             width: 120,
             renderEditCell: (props) =>
               renderSelect({

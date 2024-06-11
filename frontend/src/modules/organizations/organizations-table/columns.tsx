@@ -58,7 +58,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (row.userRole ? t(row.userRole.toLowerCase()) : '-'),
+            renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role.toLowerCase()) : '-'),
             width: 120,
             renderEditCell: (props) =>
               renderSelect({

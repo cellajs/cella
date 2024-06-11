@@ -19,8 +19,10 @@ const AppNavLoader = () => {
   useEffect(() => {
     // TODO: move this to a more general location?
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
-      if (fromLocation.pathname === '/system/users') sheet.remove('user-preview');
-      if (toLocation.pathname !== fromLocation.pathname) setFocusView(false);
+      if (toLocation.pathname !== fromLocation.pathname) {
+        setFocusView(false);
+        sheet.remove();
+      }
       pathChanged && setLoading(true);
     });
     router.subscribe('onLoad', () => {
