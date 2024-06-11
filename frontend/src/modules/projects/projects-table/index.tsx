@@ -15,9 +15,9 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 
 export type ProjectsSearch = z.infer<typeof getProjectsQuerySchema>;
 
-export default function ProjectsTable({ projects = [] }: { projects?: ProjectRow[] }) {
+export default function ProjectsTable({ userId }: { userId?: string }) {
   const { t } = useTranslation();
-  const [rows, setRows] = useState<ProjectRow[]>(projects || []);
+  const [rows, setRows] = useState<ProjectRow[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [columns, setColumns] = useColumns();
   const [query, setQuery] = useState<GetProjectsParams['q']>('');
@@ -45,6 +45,7 @@ export default function ProjectsTable({ projects = [] }: { projects?: ProjectRow
           sort: sortColumns[0]?.columnKey as GetProjectsParams['sort'],
           order: sortColumns[0]?.direction.toLowerCase() as GetProjectsParams['order'],
           limit: 10,
+          requestedUserId: userId,
         },
         signal,
       );
@@ -55,7 +56,6 @@ export default function ProjectsTable({ projects = [] }: { projects?: ProjectRow
   });
   const isFiltered = !!debounceQuery;
 
-  console.log('queryResult:', queryResult);
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
 

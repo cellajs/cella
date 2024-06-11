@@ -9,8 +9,6 @@ import { PageHeader } from '~/modules/common/page-header';
 import { useUserStore } from '~/store/user';
 import { Button } from '../ui/button';
 import ProjectsTable from '../projects/projects-table';
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { getProjects } from '~/api/projects';
 
 interface UserContextValue {
   user: User;
@@ -22,14 +20,6 @@ export const UserProfile = ({ user }: { user: User }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user: currentUser } = useUserStore();
-
-  const projectsQuery = useSuspenseQuery(
-    queryOptions({
-      queryKey: ['projects'],
-      queryFn: () => getProjects({ requestedUserId: user.id }),
-    }),
-  );
-  const projects = projectsQuery.data.items;
 
   const isSelf = currentUser.id === user.id;
 
@@ -61,7 +51,7 @@ export const UserProfile = ({ user }: { user: User }) => {
         />
         <div className="container mt-4">
           <code>{JSON.stringify(user, null, 2)}</code>
-          <ProjectsTable projects={projects} />
+          <ProjectsTable userId={user.id} />
         </div>
       </UserContext.Provider>
     </>
