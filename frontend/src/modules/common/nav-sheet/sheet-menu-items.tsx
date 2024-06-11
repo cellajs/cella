@@ -84,7 +84,7 @@ export const SheetMenuItems = ({ data, shownOption, createDialog, className, sea
     ) as MenuItem[];
 
   const renderNoItems = () =>
-    data.canCreate && createDialog ? (
+    createDialog ? (
       <div className="flex items-center">
         <Button className="w-full" variant="ghost" onClick={createDialog}>
           <Plus size={14} />

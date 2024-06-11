@@ -16,6 +16,7 @@ export const apiProjectSchema = z.object({
 export const apiProjectListSchema = z.object({
   ...apiProjectSchema.shape,
   archived: z.boolean().nullable(),
+  counts: z.object({ admins: z.number(), members: z.number() }),
 });
 
 export const createProjectJsonSchema = z.object({
@@ -39,6 +40,7 @@ export const getProjectsQuerySchema = paginationQuerySchema.merge(
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
     organizationId: idSchema.optional(),
     workspaceId: idSchema.optional(),
+    requestedUserId: idSchema.optional(),
   }),
 );
 

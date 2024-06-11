@@ -36,7 +36,7 @@ interface NavigationState {
 const initialMenuState: UserMenu = menuSections
   .filter((el) => !el.isSubmenu)
   .reduce<UserMenu>((acc, section) => {
-    acc[section.storageType as keyof UserMenu] = { items: [], canCreate: false, type: null as unknown as EntityContextType };
+    acc[section.storageType as keyof UserMenu] = { items: [], type: null as unknown as EntityContextType };
     return acc;
   }, {} as UserMenu);
 

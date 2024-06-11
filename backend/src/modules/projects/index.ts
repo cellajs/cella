@@ -102,10 +102,10 @@ const projectsRoutes = app
    */
   .openapi(getProjectsRouteConfig, async (ctx) => {
     // also be able to filter on organizationId
-    const { q, sort, order, offset, limit, workspaceId } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, workspaceId, requestedUserId } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    const membershipsFilters = [eq(membershipsTable.userId, user.id)];
+    const membershipsFilters = [eq(membershipsTable.userId, requestedUserId ? requestedUserId : user.id)];
 
     const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
     const projectsFilters = [filter];
@@ -163,7 +163,7 @@ const projectsRoutes = app
           members: counts.members,
         })
         .from(projectsQuery.as('projects'))
-        .leftJoin(membership, eq(membership.projectId, projectsTable.id))
+        .innerJoin(membership, eq(membership.projectId, projectsTable.id))
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
         .orderBy(orderColumn)
         .limit(Number(limit))
@@ -190,7 +190,7 @@ const projectsRoutes = app
         .from(projectsToWorkspacesTable)
         .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), ...projectsFilters))
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
-        .leftJoin(membership, eq(membership.projectId, projectsTable.id))
+        .leftJoin(membership, and(eq(membership.projectId, projectsTable.id), ...membershipsFilters))
         .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId))
         .orderBy(orderColumn)
         .limit(Number(limit))

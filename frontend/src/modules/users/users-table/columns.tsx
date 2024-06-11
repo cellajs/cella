@@ -1,5 +1,3 @@
-import { Link } from '@tanstack/react-router';
-
 import { useTranslation } from 'react-i18next';
 import type { Member, User } from '~/types';
 
@@ -14,6 +12,8 @@ import HeaderCell from '../../common/data-table/header-cell';
 import RowEdit from './row-edit';
 import { isMember } from '.';
 import { config } from 'config';
+import { sheet } from '~/modules/common/sheeter/state';
+import { UserProfile } from '../user-profile';
 
 export const useColumns = <T extends User | Member>(
   callback: (users: User[], action: 'create' | 'update' | 'delete') => void,
@@ -22,6 +22,13 @@ export const useColumns = <T extends User | Member>(
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
+  const openUserPreviewSheet = (user: User) => {
+    sheet(<UserProfile user={user} />, {
+      className: 'sm:max-w-full max-w-full w-[50vw]',
+      title: t('common:user_preview'),
+      id: 'user-preview',
+    });
+  };
   const mobileColumns: ColumnOrColumnGroup<T>[] = [
     CheckboxColumn,
     {
@@ -31,11 +38,11 @@ export const useColumns = <T extends User | Member>(
       minWidth: 180,
       sortable: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => (
-        <Link tabIndex={tabIndex} to="/user/$idOrSlug" params={{ idOrSlug: row.slug }} className="flex space-x-2 items-center outline-0 ring-0 group">
+      renderCell: ({ row }) => (
+        <button className="flex space-x-2 items-center outline-0 ring-0 group" type="button" onClick={() => openUserPreviewSheet(row as User)}>
           <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
-        </Link>
+        </button>
       ),
     },
     {

@@ -1,9 +1,7 @@
 import type { EntityType } from 'backend/types/common';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
-import type {
-  apiClient,
-} from '~/api';
+import type { apiClient } from '~/api';
 import type { Session } from '~/modules/users/user-settings';
 
 export enum UploadType {
@@ -41,7 +39,7 @@ export type Workspace = Extract<InferResponseType<(typeof apiClient.workspaces)[
 
 export type Project = Extract<InferResponseType<(typeof apiClient.projects)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 
-export type ProjectList = Extract<InferResponseType<(typeof apiClient.projects)['$get']>, { data: unknown }>['data']['items'];
+export type ProjectRow = Extract<InferResponseType<(typeof apiClient.projects)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Member = Extract<InferResponseType<(typeof apiClient.members)['$get']>, { data: unknown }>['data']['items'][number];
 
