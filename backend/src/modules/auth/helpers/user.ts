@@ -1,13 +1,13 @@
 import { config } from 'config';
 import type { Context } from 'hono';
 import { db } from '../../../db/db';
-import { type InsertUserModel, usersTable } from '../../../db/schema/users';
+import { usersTable, type InsertUserModel } from '../../../db/schema/users';
 import { errorResponse } from '../../../lib/errors';
 import { logEvent } from '../../../middlewares/logger/log-event';
 import type { OauthProviderOptions } from '../../../types/common';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
-import { insertOauthAccount } from '../oauth-helpers';
 import { setSessionCookie } from './cookies';
+import { insertOauthAccount } from './oauth';
 import { sendVerificationEmail } from './verify-email';
 
 // * Handle creating a user

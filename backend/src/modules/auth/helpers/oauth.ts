@@ -1,17 +1,17 @@
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
-import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
-import { type InsertUserModel, usersTable } from '../../db/schema/users';
-import { setCookie, setSessionCookie } from './helpers/cookies';
+import { oauthAccountsTable } from '../../../db/schema/oauth-accounts';
+import { usersTable, type InsertUserModel } from '../../../db/schema/users';
+import { setCookie, setSessionCookie } from './cookies';
 
 import { config } from 'config';
 import type { User } from 'lucia';
 import slugify from 'slugify';
-import { db } from '../../db/db';
-import { logEvent } from '../../middlewares/logger/log-event';
-import type { OauthProviderOptions } from '../../types/common';
-import { sendVerificationEmail } from './helpers/verify-email';
+import { db } from '../../../db/db';
+import { logEvent } from '../../../middlewares/logger/log-event';
+import type { OauthProviderOptions } from '../../../types/common';
+import { sendVerificationEmail } from './verify-email';
 
 // * Create a session before redirecting to the oauth provider
 export const createSession = (ctx: Context, provider: string, state: string, codeVerifier?: string, redirect?: string) => {
