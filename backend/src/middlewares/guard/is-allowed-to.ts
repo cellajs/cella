@@ -67,7 +67,7 @@ async function getEntityContext(ctx: any, entityType: string) {
     return;
   }
 
-  const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(entityType)?.toLowerCase();
+  const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query('idOrSlug') || ctx.req.query(entityType)?.toLowerCase();
   
   if (idOrSlug) {
     // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
