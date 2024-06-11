@@ -1,6 +1,7 @@
 import type { ContextEntity, Member } from '~/types';
-import { membershipsClient as client, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
 
+const client = apiClient.memberships;
 export interface InviteMemberProps {
   emails: string[];
   role?: Member['role'];
@@ -9,7 +10,7 @@ export interface InviteMemberProps {
 
 // Invite users
 export const inviteMember = async ({ idOrSlug, ...rest }: InviteMemberProps) => {
-  const response = await client.index.$post({
+  const response = await client.$post({
     query: { idOrSlug },
     json: rest,
   });
@@ -18,7 +19,7 @@ export const inviteMember = async ({ idOrSlug, ...rest }: InviteMemberProps) => 
 };
 
 export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: string; ids: string[]; entityType: ContextEntity }) => {
-  const response = await client.index.$delete({
+  const response = await client.$delete({
     query: { idOrSlug, entityType, ids },
   });
 

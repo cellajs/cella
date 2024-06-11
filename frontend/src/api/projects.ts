@@ -1,12 +1,14 @@
-import { projectsClient as client, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
 
-export type CreateProjectParams = Parameters<(typeof client.index)['$post']>['0']['json'] & {
+const client = apiClient.projects;
+
+export type CreateProjectParams = Parameters<(typeof client)['$post']>['0']['json'] & {
   organizationId: string;
 };
 
 // Create a new project
 export const createProject = async ({ ...rest }: CreateProjectParams) => {
-  const response = await client.index.$post({
+  const response = await client.$post({
     json: rest,
   });
 
@@ -25,7 +27,7 @@ export const getProject = async (idOrSlug: string) => {
 };
 
 export type GetProjectsParams = Partial<
-  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
     page: number;
   }
@@ -36,7 +38,7 @@ export const getProjects = async (
   { q, sort = 'id', order = 'asc', page = 0, limit = 50, workspaceId, organizationId }: GetProjectsParams = {},
   signal?: AbortSignal,
 ) => {
-  const response = await client.index.$get(
+  const response = await client.$get(
     {
       query: {
         q,
@@ -78,7 +80,7 @@ export const updateProject = async (idOrSlug: string, params: UpdateProjectParam
 
 // Delete projects
 export const deleteProjects = async (ids: string[]) => {
-  const response = await client.index.$delete({
+  const response = await client.$delete({
     query: { ids },
   });
 

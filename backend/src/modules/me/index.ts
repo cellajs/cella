@@ -282,5 +282,3 @@ const meRoutes = app
   });
 
 export default meRoutes;
-
-export type MeRoutes = typeof meRoutes;

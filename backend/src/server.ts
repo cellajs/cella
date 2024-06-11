@@ -15,7 +15,7 @@ import workspacesRoutes from './modules/workspaces';
 import { CustomHono } from './types/common';
 
 // Set default hook to catch validation errors
-export const app = new CustomHono({
+const app = new CustomHono({
   defaultHook,
 });
 
@@ -38,15 +38,19 @@ app.onError((err, ctx) => {
 });
 
 // Add routes for each module
-app
+const routes = app
   .route('/me', meRoutes)
   .route('/users', usersRoutes)
   .route('/memberships', MembershipsRoutes)
   .route('/organizations', organizationsRoutes)
   .route('/requests', requestsRoutes)
-  .route('/auth', authRoutes)
+  .route('/', authRoutes)
   .route('/', generalRoutes)
 
   // App-specific routes go here
   .route('/workspaces', workspacesRoutes)
   .route('/projects', projectsRoutes);
+
+  export default app
+
+  export type AppType = typeof routes

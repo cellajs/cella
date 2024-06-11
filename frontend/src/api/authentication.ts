@@ -1,13 +1,14 @@
-import { authClient as client, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
+
 
 // Oath endpoints
-export const githubSignInUrl = client.github.$url().href;
-export const googleSignInUrl = client.google.$url().href;
-export const microsoftSignInUrl = client.microsoft.$url().href;
+export const githubSignInUrl = apiClient.auth.github.$url().href;
+export const googleSignInUrl = apiClient.auth.google.$url().href;
+export const microsoftSignInUrl = apiClient.auth.microsoft.$url().href;
 
 // Sign up a user with the provided email and password
 export const signUp = async ({ email, password, token }: { email: string; password: string; token?: string }) => {
-  const response = await client['sign-up'].$post({
+  const response = await apiClient.auth['sign-up'].$post({
     json: { email, password, token },
   });
 
@@ -17,7 +18,7 @@ export const signUp = async ({ email, password, token }: { email: string; passwo
 
 // Check if email exists
 export const checkEmail = async (email: string) => {
-  const response = await client['check-email'].$post({
+  const response = await apiClient.auth['check-email'].$post({
     json: { email },
   });
 
@@ -27,7 +28,7 @@ export const checkEmail = async (email: string) => {
 
 // Verify the user's email with token sent by email
 export const verifyEmail = async ({ token, resend }: { token: string; resend?: boolean }) => {
-  const response = await client['verify-email'][':token'].$get({
+  const response = await apiClient.auth['verify-email'][':token'].$get({
     param: { token },
     query: { resend: String(resend) },
   });
@@ -45,7 +46,7 @@ export const signIn = async ({
   password: string;
   token?: string;
 }) => {
-  const response = await client['sign-in'].$post({
+  const response = await apiClient.auth['sign-in'].$post({
     json: { email, password, token },
   });
 
@@ -55,7 +56,7 @@ export const signIn = async ({
 
 // Send a verification email
 export const sendVerificationEmail = async (email: string) => {
-  const response = await client['verify-email'].$post({
+  const response = await apiClient.auth['verify-email'].$post({
     json: { email },
   });
 
@@ -64,7 +65,7 @@ export const sendVerificationEmail = async (email: string) => {
 
 // Send a reset password email
 export const sendResetPasswordEmail = async (email: string) => {
-  const response = await client['reset-password'].$post({
+  const response = await apiClient.auth['reset-password'].$post({
     json: { email },
   });
 
@@ -79,7 +80,7 @@ export const resetPassword = async ({
   token: string;
   password: string;
 }) => {
-  const response = await client['reset-password'][':token'].$post({
+  const response = await apiClient.auth['reset-password'][':token'].$post({
     param: { token },
     json: { password },
   });
@@ -87,4 +88,4 @@ export const resetPassword = async ({
   await handleResponse(response);
 };
 
-export const signOut = () => client['sign-out'].$get();
+export const signOut = () => apiClient.auth['sign-out'].$get();

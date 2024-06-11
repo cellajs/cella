@@ -1,10 +1,12 @@
-import { organizationsClient as client, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
 
-export type CreateOrganizationParams = Parameters<(typeof client.index)['$post']>['0']['json'];
+const client = apiClient.organizations;
+
+export type CreateOrganizationParams = Parameters<(typeof client)['$post']>['0']['json'];
 
 // Create a new organization
 export const createOrganization = async (params: CreateOrganizationParams) => {
-  const response = await client.index.$post({
+  const response = await client.$post({
     json: params,
   });
 
@@ -23,7 +25,7 @@ export const getOrganization = async (idOrSlug: string) => {
 };
 
 export type GetOrganizationsParams = Partial<
-  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
     page: number;
   }
@@ -34,7 +36,7 @@ export const getOrganizations = async (
   { q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetOrganizationsParams = {},
   signal?: AbortSignal,
 ) => {
-  const response = await client.index.$get(
+  const response = await client.$get(
     {
       query: {
         q,
@@ -74,7 +76,7 @@ export const updateOrganization = async (idOrSlug: string, params: UpdateOrganiz
 
 // Delete organizations
 export const deleteOrganizations = async (ids: string[]) => {
-  const response = await client.index.$delete({
+  const response = await client.$delete({
     query: { ids },
   });
 

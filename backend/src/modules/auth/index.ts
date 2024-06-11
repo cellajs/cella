@@ -37,7 +37,7 @@ import {
   verifyEmailRouteConfig,
 } from './routes';
 
-const app = new CustomHono();
+const app = new CustomHono().basePath('/auth');
 
 type CheckTokenResponse = z.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']> | undefined;
 type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
@@ -366,5 +366,3 @@ const authRoutes = app
 const allAuthRoutes = authRoutes.route('/', oauthRoutes);
 
 export default allAuthRoutes;
-
-export type AuthRoutes = typeof allAuthRoutes;

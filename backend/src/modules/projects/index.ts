@@ -310,5 +310,3 @@ const projectsRoutes = app
   });
 
 export default projectsRoutes;
-
-export type ProjectsRoutes = typeof projectsRoutes;

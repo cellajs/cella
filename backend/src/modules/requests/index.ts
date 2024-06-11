@@ -76,5 +76,3 @@ const requestsRoutes = app
 
 
 export default requestsRoutes;
-
-export type RequestsRoutes = typeof requestsRoutes;
