@@ -13,7 +13,7 @@ import type { MenuItem } from './sheet-menu-section';
 interface SheetMenuItemProps {
   item: MenuItem;
   type: EntityType;
-  submenu?: boolean;
+  submenu?: string;
   className?: string;
   searchResults?: boolean;
 }
@@ -39,7 +39,7 @@ export const SheetMenuItem = ({ item, type, className, submenu, searchResults }:
       onClick={handleClick}
       aria-label={item.name}
       to={type === 'ORGANIZATION' ? '/$idOrSlug' : '/workspace/$idOrSlug'}
-      params={{ idOrSlug: isDataSubMenu(item) ? item.submenuTo : item.slug }}
+      params={{ idOrSlug: submenu ? submenu : item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
       <AvatarWrap
@@ -103,7 +103,7 @@ export const SheetMenuItems = ({ data, shownOption, createDialog, className, sea
     filteredItems.map((item) => {
       return (
         <div key={item.id}>
-          <SheetMenuItem item={item} type={data.type} submenu={isDataSubMenu(data)} className={className} searchResults={searchResults} />
+          <SheetMenuItem item={item} type={data.type} submenu={(data as UserSubMenu).submenuTo} className={className} searchResults={searchResults} />
           {!item.archived && item.submenu && !!item.submenu.items.length && !hideSubmenu && (
             <SheetMenuItems data={item.submenu} shownOption="unarchive" />
           )}

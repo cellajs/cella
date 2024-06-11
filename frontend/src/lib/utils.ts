@@ -186,6 +186,7 @@ export const getReorderDestinationIndex = (
 };
 
 export const sortById = (a: string, b: string, order: string[]) => {
+  if (!order) return 0;
   const indexA = order.indexOf(a);
   const indexB = order.indexOf(b);
   if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;

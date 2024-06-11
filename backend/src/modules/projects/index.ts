@@ -107,8 +107,6 @@ const projectsRoutes = app
     const { q, sort, order, offset, limit, workspaceId, requestedUserId } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    const membershipsFilters = [eq(membershipsTable.userId, requestedUserId ? requestedUserId : user.id)];
-
     const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
     const projectsFilters = [filter];
 
@@ -133,7 +131,7 @@ const projectsRoutes = app
         role: membershipsTable.role,
       })
       .from(membershipsTable)
-      .where(and(...membershipsFilters))
+      .where(eq(membershipsTable.userId, requestedUserId ? requestedUserId : user.id))
       .as('membership_roles');
 
     const orderColumn = getOrderColumn(
@@ -150,46 +148,39 @@ const projectsRoutes = app
 
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     let projects: Array<any>;
-    let total = 0;
 
     if (!workspaceId) {
-      const [{ total: matches }] = await db.select({ total: count() }).from(projectsQuery.as('projects'));
-      total = matches;
       projects = await db
         .select({
           project: projectsTable,
           role: membership.role,
+          workspaceId: projectsToWorkspacesTable.workspaceId,
           admins: counts.admins,
           members: counts.members,
         })
         .from(projectsQuery.as('projects'))
         .innerJoin(membership, eq(membership.projectId, projectsTable.id))
+        .leftJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id))
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
         .orderBy(orderColumn)
         .limit(Number(limit))
         .offset(Number(offset));
     } else {
-      projectsFilters.push(eq(projectsToWorkspacesTable.workspaceId, workspaceId));
-
-      const [{ total: matches }] = await db
-        .select({ total: count() })
-        .from(projectsToWorkspacesTable)
-        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), ...projectsFilters))
-        .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId));
-
-      total = matches;
-
       projects = await db
         .select({
           project: projectsTable,
           role: membership.role,
+          workspaceId: projectsToWorkspacesTable.workspaceId,
           admins: counts.admins,
           members: counts.members,
         })
         .from(projectsToWorkspacesTable)
-        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), ...projectsFilters))
+        .leftJoin(
+          projectsTable,
+          and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), eq(projectsToWorkspacesTable.workspaceId, workspaceId), ...projectsFilters),
+        )
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
-        .leftJoin(membership, and(eq(membership.projectId, projectsTable.id), ...membershipsFilters))
+        .leftJoin(membership, and(eq(membership.projectId, projectsTable.id)))
         .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId))
         .orderBy(orderColumn)
         .limit(Number(limit))
@@ -200,12 +191,13 @@ const projectsRoutes = app
       {
         success: true,
         data: {
-          items: projects.map(({ project, role, admins, members }) => ({
+          items: projects.map(({ project, role, workspaceId, admins, members }) => ({
             ...project,
             role,
+            workspaceId,
             counts: { admins, members },
           })),
-          total,
+          total: projects.length,
         },
       },
       200,

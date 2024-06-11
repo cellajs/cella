@@ -25,7 +25,12 @@ export const useColumns = () => {
       sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
-        <Link to="/" tabIndex={tabIndex} params={{ idOrSlug: row.organizationId }} className="flex space-x-2 items-center outline-0 ring-0 group">
+        <Link
+          to="/workspace/$idOrSlug"
+          tabIndex={tabIndex}
+          params={{ idOrSlug: row.workspaceId }}
+          className="flex space-x-2 items-center outline-0 ring-0 group"
+        >
           <AvatarWrap type="ORGANIZATION" className="h-8 w-8" id={row.id} name={row.name} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
         </Link>

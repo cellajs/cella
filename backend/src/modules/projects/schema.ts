@@ -20,6 +20,7 @@ export const apiProjectSchema = z.object({
 export const apiProjectListSchema = z.object({
   ...apiProjectSchema.shape,
   archived: z.boolean().nullable(),
+  workspaceId: z.string(),
   counts: z.object({ admins: z.number(), members: z.number() }),
 });
 
