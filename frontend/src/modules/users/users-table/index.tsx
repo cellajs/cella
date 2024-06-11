@@ -48,6 +48,7 @@ export type queryOptions<T> = {
 // Users table renders members when entityType is provided, defaults to users in the system
 interface Props<T, U> {
   entityType?: ContextEntity;
+  canInvite?: boolean;
   queryOptions: (
     values: U,
   ) => UseInfiniteQueryOptions<queryOptions<T>, Error, InfiniteData<queryOptions<T>, unknown>, queryOptions<T>, (string | undefined)[], number>;
@@ -66,6 +67,7 @@ const UsersTable = <
   K extends z.infer<typeof getMembersQuerySchema> | z.infer<typeof getUsersQuerySchema>,
 >({
   entityType,
+  canInvite,
   queryOptions,
   routeFrom,
   customColumns,
@@ -82,6 +84,7 @@ const UsersTable = <
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<K['q']>(search.q);
   const [role, setRole] = useState<K['role']>(search.role);
+
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order
       ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
@@ -228,6 +231,7 @@ const UsersTable = <
       <Toolbar<T>
         entityType={entityType}
         isFiltered={isFiltered}
+        canInvite={canInvite}
         total={queryResult.data?.pages[0].total}
         query={query}
         setQuery={setQuery}

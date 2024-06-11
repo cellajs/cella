@@ -82,6 +82,7 @@ export const OrganizationMembersRoute = createRoute({
     <Suspense>
       <UsersTable<Member, GetMembersParams & { idOrSlug: string; entityType: ContextEntity }, z.infer<typeof getMembersQuerySchema>>
         entityType="ORGANIZATION"
+        canInvite={true}
         queryOptions={membersQueryOptions}
         routeFrom={OrganizationMembersRoute.id}
         fetchForExport={getMembers}

@@ -23,7 +23,7 @@ export const AppAlert = ({ id, Icon, children, className = '', title = '', varia
   const showAlert = !alertsSeen.includes(id);
   const closeAlert = () => setAlertSeen(id);
 
-  if (downAlert || !showAlert) return;
+  if ( downAlert || !showAlert) return;
 
   return (
     <Alert variant={variant} className={cn('relative', className)}>

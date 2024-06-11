@@ -92,7 +92,7 @@ async function createEntityContext(entityType: string, ctx: any) {
   if (!entity) return;
 
   // Extract payload from request body
-  const payload = ctx.req.valid('json');
+  const payload = await ctx.req.json();
 
   // Initialize context to store the custom created entity context based on the lowest possible ancestor
   const context: Record<string, string> = { entity: entityType.toUpperCase() };
@@ -110,7 +110,7 @@ async function createEntityContext(entityType: string, ctx: any) {
 
       // If not found in params or query, check if it's provided in the request body
       if (!lowestAncestorIdOrSlug && payload) {
-        lowestAncestorIdOrSlug = payload[ancestor.name];
+        lowestAncestorIdOrSlug = payload[`${ancestor.name}Id`];
       }
 
       // If identifier is found, resolve the lowest ancestor
