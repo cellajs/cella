@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef } from 'react';
 import { createStore } from 'zustand';
-import type { Project, User } from '~/types';
+import type { Member, Project } from '~/types';
 import { useStoreWithEqualityFn } from 'zustand/traditional';
 import type { Label, Task } from '~/modules/common/electric/electrify';
 
@@ -10,7 +10,7 @@ interface ProjectProps {
   labels: Label[];
   focusedProjectIndex: number | null;
   setFocusedProjectIndex: (index: number) => void;
-  members: User[];
+  members: Member[];
 }
 
 interface ProjectState extends ProjectProps {}

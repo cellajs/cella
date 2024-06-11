@@ -1,11 +1,11 @@
 import { GripVertical, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useProjectContext } from './project-context';
 import ToolTipButtons from './tooltip-buttons';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 interface BoardColumnHeaderProps {

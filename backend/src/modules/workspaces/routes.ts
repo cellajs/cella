@@ -1,5 +1,5 @@
 import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, organizationParamSchema, workspaceParamSchema } from '../../lib/common-schemas';
+import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
@@ -7,16 +7,12 @@ import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSche
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/organizations/{organization}/workspaces',
+  path: '/',
   guard: [isAuthenticated, isAllowedTo('create', 'workspace')],
   tags: ['workspaces'],
-  summary: 'Create a new workspace',
-  description: `
-    Permissions:
-      - Users with system or organization role 'ADMIN'
-  `,
+  summary: 'Create new workspace',
+  description: 'Create personal workspace to organize projects and tasks.',
   request: {
-    params: organizationParamSchema,
     body: {
       required: true,
       content: {
@@ -39,23 +35,19 @@ export const createWorkspaceRouteConfig = createRouteConfig({
   },
 });
 
-export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
+export const getWorkspaceRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/workspaces/{workspace}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('read', 'workspace')],
   tags: ['workspaces'],
-  summary: 'Get workspace by id or slug',
-  description: `
-    Permissions:
-      - Users with system or organization role 'ADMIN'
-      - Users who are part of the workspace
-  `,
+  summary: 'Get workspace',
+  description: 'Get workspace by id or slug.',
   request: {
-    params: workspaceParamSchema,
+    params: entityParamSchema,
   },
   responses: {
     200: {
-      description: 'workspace',
+      description: 'Workspace',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(apiWorkspacesSchema),
@@ -68,17 +60,13 @@ export const getWorkspaceByIdOrSlugRouteConfig = createRouteConfig({
 
 export const updateWorkspaceRouteConfig = createRouteConfig({
   method: 'put',
-  path: '/workspaces/{workspace}',
+  path: '/{idOrSlug}',
   guard: [isAuthenticated, isAllowedTo('update', 'workspace')],
   tags: ['workspaces'],
   summary: 'Update workspace',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-      - Users, who are members of the workspaces and have role 'ADMIN' in the workspace
-  `,
+  description: 'Update workspace by id or slug.',
   request: {
-    params: workspaceParamSchema,
+    params: entityParamSchema,
     body: {
       content: {
         'application/json': {
@@ -89,7 +77,7 @@ export const updateWorkspaceRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'Workspace was updated',
+      description: 'Workspace updated',
       content: {
         'application/json': {
           schema: successResponseWithDataSchema(apiWorkspacesSchema),
@@ -102,14 +90,11 @@ export const updateWorkspaceRouteConfig = createRouteConfig({
 
 export const deleteWorkspacesRouteConfig = createRouteConfig({
   method: 'delete',
-  path: '/workspaces',
+  path: '/',
   guard: [isAuthenticated, splitByAllowance('delete', 'workspace')],
   tags: ['workspaces'],
   summary: 'Delete workspaces',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
+  description: 'Delete workspaces by ids.',
   request: {
     query: deleteByIdsQuerySchema,
   },

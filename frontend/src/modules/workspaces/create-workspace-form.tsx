@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 // Change this in the future on current schema
 import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
@@ -31,16 +31,15 @@ interface CreateWorkspaceFormProps {
   dialog?: boolean;
 }
 
-const formSchema = createWorkspaceJsonSchema.extend({
-  organization: z.string().min(1),
-});
+const formSchema = createWorkspaceJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
 const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setSheet, menu, activeItemsOrder, setActiveItemsOrder } = useNavigationStore();
+  const { setSheet, menu, setMainMenuOrder, menuOrder } = useNavigationStore();
+  const type = 'WORKSPACE';
 
   const organizations = menu.organizations.items;
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -49,7 +48,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       defaultValues: {
         name: '',
         slug: '',
-        organization: organizations.length === 1 ? organizations[0].id : '',
+        organizationId: organizations.length === 1 ? organizations[0].id : '',
       },
     }),
     [],
@@ -66,8 +65,8 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     onSuccess: (result) => {
       form.reset();
       callback?.(result);
-      toast.success(t('success.create_resource', { resource: t('common:workspace') }));
-      setActiveItemsOrder('workspaces', [...activeItemsOrder.workspaces, result.id]);
+      toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
+      setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
       setSheet(null);
       if (isDialog) dialog.remove();
       navigate({
@@ -82,7 +81,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   };
 
   const organizationCreated = (organization: Organization) => {
-    form.setValue('organization', organization.id);
+    form.setValue('organizationId', organization.id);
   };
 
   // Update dialog title with unsaved changes
@@ -99,7 +98,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     dialog.reset('create-workspace');
   }, [form.unsavedChanges]);
 
-  if (!form.getValues('organization') && !menu.organizations.items.length)
+  if (!form.getValues('organizationId') && !menu.organizations.items.length)
     return (
       <Alert variant="plain" className="border-0 w-auto">
         <AlertTitle>{t('common:organization_required')}</AlertTitle>
@@ -137,7 +136,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
           type="ORGANIZATION"
           control={form.control}
           label={t('common:organization')}
-          name="organization"
+          name="organizationId"
           required
         />
 

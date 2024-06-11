@@ -1,11 +1,9 @@
 import { type SQL, and, count, eq, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '../../db/db';
-import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
-import { usersTable } from '../../db/schema/users';
 
 import { config } from 'config';
-import { requestsTable } from '../../db/schema/requests';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSEToUsers } from '../../lib/sse';
@@ -13,12 +11,10 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import {
-  accessRequestsConfig,
   createOrganizationRouteConfig,
   deleteOrganizationsRouteConfig,
-  getOrganizationByIdOrSlugRouteConfig,
+  getOrganizationRouteConfig,
   getOrganizationsRouteConfig,
-  getUsersByOrganizationIdRouteConfig,
   updateOrganizationRouteConfig,
 } from './routes';
 
@@ -54,17 +50,15 @@ const organizationsRoutes = app
     logEvent('Organization created', { organization: createdOrganization.id });
 
     await db.insert(membershipsTable).values({
+      type: 'ORGANIZATION',
       userId: user.id,
       organizationId: createdOrganization.id,
       role: 'ADMIN',
     });
 
-    logEvent('User added to organization', {
-      user: user.id,
-      organization: createdOrganization.id,
-    });
+    logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
 
-    sendSSEToUsers([user.id], 'create_entity', createdOrganization);
+    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...createdOrganization });
 
     return ctx.json(
       {
@@ -82,7 +76,7 @@ const organizationsRoutes = app
     );
   })
   /*
-   * Get an organizations
+   * Get list of organizations
    */
   .openapi(getOrganizationsRouteConfig, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
@@ -94,6 +88,7 @@ const organizationsRoutes = app
 
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
+    // TODO: Try to optimize this count query and move to a helper
     const counts = db
       .select({
         organizationId: membershipsTable.organizationId,
@@ -155,7 +150,7 @@ const organizationsRoutes = app
     );
   })
   /*
-   * Update an organization
+   * Update an organization by id or slug
    */
   .openapi(updateOrganizationRouteConfig, async (ctx) => {
     const user = ctx.get('user');
@@ -171,7 +166,7 @@ const organizationsRoutes = app
       languages,
       notificationEmail,
       emailDomains,
-      brandColor,
+      color,
       thumbnailUrl,
       logoUrl,
       bannerUrl,
@@ -201,7 +196,7 @@ const organizationsRoutes = app
         languages,
         notificationEmail,
         emailDomains,
-        brandColor,
+        color,
         thumbnailUrl,
         logoUrl,
         bannerUrl,
@@ -225,7 +220,8 @@ const organizationsRoutes = app
       sendSSEToUsers(membersId, 'update_entity', updatedOrganization);
     }
 
-    const [{ admins }] = await db
+     // TODO: Try to optimize this count query and move to a helper
+     const [{ admins }] = await db
       .select({
         admins: count(),
       })
@@ -258,7 +254,7 @@ const organizationsRoutes = app
   /*
    * Get organization by id or slug
    */
-  .openapi(getOrganizationByIdOrSlugRouteConfig, async (ctx) => {
+  .openapi(getOrganizationRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -296,182 +292,23 @@ const organizationsRoutes = app
       200,
     );
   })
+
   /*
-   * Get members by organization id
-   */
-  .openapi(getUsersByOrganizationIdRouteConfig, async (ctx) => {
-    const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
-    const organization = ctx.get('organization');
-
-    const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
-
-    const usersQuery = db.select().from(usersTable).where(filter).as('users');
-
-    const membersFilters = [eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'ORGANIZATION')];
-
-    if (role) {
-      membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
-    }
-
-    const roles = db
-      .select({
-        userId: membershipsTable.userId,
-        id: membershipsTable.id,
-        role: membershipsTable.role,
-      })
-      .from(membershipsTable)
-      .where(and(...membersFilters))
-      .as('roles');
-
-    const membershipCount = db
-      .select({
-        userId: membershipsTable.userId,
-        memberships: count().as('memberships'),
-      })
-      .from(membershipsTable)
-      .groupBy(membershipsTable.userId)
-      .as('membership_count');
-
-    const orderColumn = getOrderColumn(
-      {
-        id: usersTable.id,
-        name: usersTable.name,
-        email: usersTable.email,
-        createdAt: usersTable.createdAt,
-        lastSeenAt: usersTable.lastSeenAt,
-        organizationRole: roles.role,
-        membershipId: roles.id,
-      },
-      sort,
-      usersTable.id,
-      order,
-    );
-
-    const membersQuery = db
-      .select({
-        user: usersTable,
-        organizationRole: roles.role,
-        membershipId: roles.id,
-        counts: {
-          memberships: membershipCount.memberships,
-        },
-      })
-      .from(usersQuery)
-      .innerJoin(roles, eq(usersTable.id, roles.userId))
-      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
-      .orderBy(orderColumn);
-
-    const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
-
-    const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
-
-    const members = await Promise.all(
-      result.map(async ({ user, organizationRole, membershipId, counts }) => ({
-        ...user,
-        electricJWTToken: null,
-        sessions: [],
-        organizationRole,
-        membershipId,
-        counts,
-      })),
-    );
-
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          items: members,
-          total,
-        },
-      },
-      200,
-    );
-  })
-  /*
-   *  Get access requests
-   */
-  .openapi(accessRequestsConfig, async (ctx) => {
-    const { q, sort, order, offset, limit } = ctx.req.valid('query');
-    const organization = ctx.get('organization');
-
-    const filter: SQL | undefined = q
-      ? and(ilike(requestsTable.email, `%${q}%`), eq(requestsTable.type, 'ORGANIZATION_REQUEST'))
-      : eq(requestsTable.type, 'ORGANIZATION_REQUEST');
-
-    const requestsQuery = db.select().from(requestsTable).where(filter);
-
-    const [{ total }] = await db.select({ total: count() }).from(requestsQuery.as('requests'));
-
-    const orderColumn = getOrderColumn(
-      {
-        id: requestsTable.id,
-        email: requestsTable.email,
-        createdAt: requestsTable.createdAt,
-        type: requestsTable.type,
-      },
-      sort,
-      requestsTable.id,
-      order,
-    );
-
-    const requests = await db
-      .select({
-        requests: requestsTable,
-        user: usersTable,
-        organization: organizationsTable,
-      })
-      .from(requestsQuery.as('requests'))
-      .leftJoin(organizationsTable, and(eq(organizationsTable.id, requestsTable.organization_id), eq(organizationsTable.id, organization.id)))
-      .leftJoin(usersTable, eq(usersTable.id, requestsTable.user_id))
-      .orderBy(orderColumn)
-      .limit(Number(limit))
-      .offset(Number(offset));
-
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          requestsInfo: requests.map(({ requests, organization, user }) => ({
-            id: requests.id,
-            email: requests.email,
-            createdAt: requests.createdAt,
-            type: requests.type,
-            message: requests.message,
-            userId: user?.id || null,
-            userName: user?.name || null,
-            userThumbnail: user?.thumbnailUrl || null,
-            organizationId: organization?.id || null,
-            organizationSlug: organization?.slug || null,
-            organizationName: organization?.name || null,
-            organizationThumbnail: organization?.thumbnailUrl || null,
-          })),
-          total,
-        },
-      },
-      200,
-    );
-  })
-  /*
-   * Delete organizations
+   * Delete organizations by ids
    */
   .openapi(deleteOrganizationsRouteConfig, async (ctx) => {
     // * Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
-    const disallowedIds = ctx.get('disallowedIds')
+    const disallowedIds = ctx.get('disallowedIds');
 
-    // * Map errors of workspaces user is not allowed to delete 
-    const errors: ErrorType[] = disallowedIds.map(id => createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: id }));
-    
+    // * Map errors of workspaces user is not allowed to delete
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: id }));
+
     // * Get members
     const organizationsMembers = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.type, 'ORGANIZATION'),
-          inArray(membershipsTable.organizationId, allowedIds),
-        ),
-      );
+      .where(and(eq(membershipsTable.type, 'ORGANIZATION'), inArray(membershipsTable.organizationId, allowedIds)));
 
     // * Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
@@ -487,15 +324,7 @@ const organizationsRoutes = app
       logEvent('Organization deleted', { organization: id });
     }
 
-    return ctx.json(
-      {
-        success: true,
-        errors: errors,
-      },
-      200,
-    );
+    return ctx.json({ success: true, errors: errors }, 200);
   });
 
 export default organizationsRoutes;
-
-export type OrganizationsRoutes = typeof organizationsRoutes;

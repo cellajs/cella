@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
 import { logEvent, logtail } from '../middlewares/logger/log-event';
-import type { PageResourceType } from '../types/common';
+import type { EntityType } from '../types/common';
 import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
 
@@ -25,7 +25,7 @@ export const createError = (
   status: HttpErrorStatus,
   type: string,
   severity: Severity = 'info',
-  resourceType?: PageResourceType,
+  entityType?: EntityType,
   eventData?: EventData,
   err?: Error,
 ) => {
@@ -43,7 +43,7 @@ export const createError = (
     logId: ctx.get('logId'),
     path: ctx.req.path,
     method: ctx.req.method,
-    resourceType,
+    entityType,
     usr: user?.id,
     org: organization?.id,
   };
@@ -66,11 +66,11 @@ export const errorResponse = (
   status: HttpErrorStatus,
   type: string,
   severity: Severity = 'info',
-  resourceType?: PageResourceType,
+  entityType?: EntityType,
   eventData?: EventData,
   err?: Error,
 ) => {
-  const error: ErrorType = createError(ctx, status, type, severity, resourceType, eventData, err);
+  const error: ErrorType = createError(ctx, status, type, severity, entityType, eventData, err);
 
   // TODO: Review this assignment (as 400)
   return ctx.json({ success: false, error }, status as 400);

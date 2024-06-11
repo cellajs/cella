@@ -1,21 +1,20 @@
+import { infiniteQueryOptions } from '@tanstack/react-query';
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
-import { getRequestsQuerySchema } from 'backend/modules/general/schema';
+import { getRequestsQuerySchema } from 'backend/modules/requests/schema';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getUsersQuerySchema } from 'backend/modules/users/schema';
+import { UserRoundCheck } from 'lucide-react';
 import { Suspense, lazy } from 'react';
+import type { z } from 'zod';
+import { type GetUsersParams, getUsers } from '~/api/users';
 import { noDirectAccess } from '~/lib/utils';
+import HeaderCell from '~/modules/common/data-table/header-cell';
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPanel from '~/modules/system/system-panel';
-import { IndexRoute } from './routeTree';
-import { getUsers, type GetUsersParams } from '~/api/users';
-import { infiniteQueryOptions } from '@tanstack/react-query';
 import UsersTable from '~/modules/users/users-table';
 import type { User } from '~/types';
-import type { z } from 'zod';
-import { UserRoundCheck } from 'lucide-react';
-import HeaderCell from '~/modules/common/data-table/header-cell';
-import { config } from 'config';
+import { IndexRoute } from './routeTree';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
@@ -70,8 +69,7 @@ export const UsersTableRoute = createRoute({
       <UsersTable<User, GetUsersParams, z.infer<typeof getUsersQuerySchema>>
         queryOptions={usersQueryOptions}
         routeFrom={UsersTableRoute.id}
-        selectRoleOptions={config.rolesByType.system as unknown as { key: string; value: string }[]}
-        passedColumns={[
+        customColumns={[
           {
             key: 'membershipCount',
             name: 'Memberships',
@@ -111,7 +109,7 @@ export const RequestsTableRoute = createRoute({
   getParentRoute: () => SystemPanelRoute,
   component: () => (
     <Suspense>
-      <RequestsTable mode="system" />
+      <RequestsTable />
     </Suspense>
   ),
   validateSearch: requestSearchSchema,

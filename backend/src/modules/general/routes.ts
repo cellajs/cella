@@ -1,19 +1,42 @@
 import { z } from '@hono/zod-openapi';
-import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
-import { resourceTypeSchema } from '../../lib/common-schemas';
+import {
+  errorResponses,
+  successResponseWithDataSchema,
+  successResponseWithPaginationSchema,
+  successResponseWithoutDataSchema,
+} from '../../lib/common-responses';
+import { entityTypeSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteJsonSchema,
-  actionRequestSchema,
-  actionResponseSchema,
+  apiMemberSchema,
+  apiPublicCountsSchema,
   checkTokenSchema,
-  getRequestsQuerySchema,
-  getRequestsSchema,
+  getMembersQuerySchema,
   inviteJsonSchema,
   suggestionsSchema,
 } from './schema';
+
+export const getPublicCountsRouteConfig = createRouteConfig({
+  method: 'get',
+  path: '/public/counts',
+  guard: isPublicAccess,
+  tags: ['general'],
+  summary: 'Get public counts',
+  responses: {
+    200: {
+      description: 'Public counts',
+      content: {
+        'application/json': {
+          schema: successResponseWithDataSchema(apiPublicCountsSchema),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
 
 export const getUploadTokenRouteConfig = createRouteConfig({
   method: 'get',
@@ -38,11 +61,7 @@ export const getUploadTokenRouteConfig = createRouteConfig({
       description: 'Upload token with a scope for a user or organization',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(
-            z.string().openapi({
-              description: 'The upload token (JWT)',
-            }),
-          ),
+          schema: successResponseWithDataSchema(z.string()),
         },
       },
     },
@@ -52,14 +71,13 @@ export const getUploadTokenRouteConfig = createRouteConfig({
 
 export const checkSlugRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/check-slug/{type}/{slug}',
+  path: '/check-slug/{slug}',
   guard: isAuthenticated,
   tags: ['general'],
-  summary: 'Check if a slug is available',
-  description: 'This endpoint is used to check if a slug is available. It is used for organizations and users.',
+  summary: 'Check if slug is available',
+  description: 'This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.',
   request: {
     params: z.object({
-      type: z.string().toUpperCase().pipe(resourceTypeSchema),
       slug: z.string(),
     }),
   },
@@ -79,10 +97,12 @@ export const checkSlugRouteConfig = createRouteConfig({
 export const checkTokenRouteConfig = createRouteConfig({
   method: 'get',
   path: '/check-token/{token}',
+  middleware: [authRateLimiter],
   guard: isPublicAccess,
   tags: ['general'],
   summary: 'Token validation check',
-  description: 'This endpoint is used to check if a token is still valid. It is used for reset password and invitation tokens.',
+  description:
+    'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
   request: {
     params: z.object({
       token: z.string(),
@@ -107,11 +127,8 @@ export const inviteRouteConfig = createRouteConfig({
   guard: [isAuthenticated, isSystemAdmin],
   middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
-  summary: 'Invite a new member(user) to system',
-  description: `
-    Permissions:
-      - Users with role 'ADMIN'
-  `,
+  summary: 'Invite to system',
+  description: 'Invite one or more users to system by email address.',
   request: {
     body: {
       content: {
@@ -123,7 +140,7 @@ export const inviteRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'Invitation was sent',
+      description: 'Invitations are sent',
       content: {
         'application/json': {
           schema: successResponseWithoutDataSchema,
@@ -136,11 +153,12 @@ export const inviteRouteConfig = createRouteConfig({
 
 export const acceptInviteRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/accept-invite/{token}',
+  path: '/invite/{token}',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
-  tags: ['auth'],
+  tags: ['general'],
   summary: 'Accept invitation',
+  description: 'Accept invitation token',
   request: {
     params: z.object({
       token: z.string(),
@@ -207,10 +225,11 @@ export const suggestionsConfig = createRouteConfig({
   guard: isAuthenticated,
   tags: ['general'],
   summary: 'Get search suggestions',
+  description: 'Get search suggestions for all entities, such as users and organizations.',
   request: {
     query: z.object({
-      q: z.string().optional().openapi({ description: 'Search by name through all page resources' }),
-      type: resourceTypeSchema.optional().openapi({ description: 'Type of page resource' }),
+      q: z.string().optional(),
+      type: entityTypeSchema.optional(),
     }),
   },
   responses: {
@@ -226,50 +245,22 @@ export const suggestionsConfig = createRouteConfig({
   },
 });
 
-export const requestActionConfig = createRouteConfig({
-  method: 'post',
-  path: '/action-request',
-  guard: isPublicAccess,
-  middleware: [authRateLimiter],
-  tags: ['general'],
-  summary: 'Create access-request',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: actionRequestSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Access requests',
-      content: {
-        'application/json': {
-          schema: successResponseWithDataSchema(actionResponseSchema),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export const actionRequestsConfig = createRouteConfig({
+export const getMembersRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/requests',
-  guard: [isAuthenticated, isSystemAdmin],
+  path: '/members',
+  guard: [isAuthenticated, isAllowedTo('read', 'organization')],
   tags: ['general'],
-  summary: 'Get requests',
+  summary: 'Get list of members',
+  description: 'Get members of an entity by id or slug. It returns members (users) with their role.',
   request: {
-    query: getRequestsQuerySchema,
+    query: getMembersQuerySchema,
   },
   responses: {
     200: {
-      description: 'System access requests',
+      description: 'Members',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(getRequestsSchema),
+          schema: successResponseWithPaginationSchema(apiMemberSchema),
         },
       },
     },

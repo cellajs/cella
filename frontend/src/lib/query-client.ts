@@ -4,7 +4,7 @@ import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
 import { useAlertStore } from '~/store/alert';
 import { useUserStore } from '~/store/user';
-import type { User } from '~/types';
+import type { MeUser } from '~/types';
 import router from './router';
 
 // Fallback messages for common errors
@@ -18,6 +18,7 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 
 const onError = (error: Error) => {
   if (error instanceof ApiError) {
+    const statusCode = Number(error.status);
     // Abort if /me or /menu, it should fail silently
     if (error.path && ['/me', '/menu'].includes(error.path)) return;
 
@@ -25,8 +26,8 @@ const onError = (error: Error) => {
 
     // Translate, try most specific first
     const errorMessage =
-      error.resourceType && i18next.exists(`common:error.resource_${error.type}`)
-        ? i18n.t(`error.resource_${error.type}`, { resource: i18n.t(error.resourceType.toLowerCase()) })
+      error.entityType && i18next.exists(`common:error.resource_${error.type}`)
+        ? i18n.t(`error.resource_${error.type}`, { resource: i18n.t(error.entityType.toLowerCase()) })
         : error.type && i18next.exists(`common:error.${error.type}`)
           ? i18n.t(`common:error.${error.type}`)
           : fallback[error.status as keyof typeof fallback];
@@ -35,10 +36,10 @@ const onError = (error: Error) => {
     toast.error(errorMessage || error.message);
 
     // Set down alerts
-    if (error.status === 503) useAlertStore.getState().setDownAlert('maintenance');
-    else if (error.status === 504) useAlertStore.getState().setDownAlert('offline');
+    if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');
+    else if (statusCode === 504) useAlertStore.getState().setDownAlert('offline');
 
-    if (error.status === 401) {
+    if (statusCode === 401) {
       // Redirect to sign-in page if the user is not authenticated (except for /me)
       const redirectOptions: { to: string; replace: boolean; search?: { redirect: string } } = { to: '/auth/sign-in', replace: true };
 
@@ -47,7 +48,7 @@ const onError = (error: Error) => {
         redirectOptions.search = { redirect: location.pathname };
       }
 
-      useUserStore.setState({ user: null as unknown as User });
+      useUserStore.setState({ user: null as unknown as MeUser });
       router.navigate(redirectOptions);
     }
   }

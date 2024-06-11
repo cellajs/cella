@@ -6,7 +6,7 @@ import { Pencil } from 'lucide-react';
 // import { dialog } from '../../common/dialoger/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
-import { Card, CardTitle, CardContent, CardHeader } from '~/modules/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 interface Props {
   organization: Organization;

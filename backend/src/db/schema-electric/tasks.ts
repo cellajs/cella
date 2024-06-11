@@ -1,4 +1,4 @@
-import { type AnyPgColumn, integer, jsonb, pgTable, timestamp, varchar, doublePrecision } from 'drizzle-orm/pg-core';
+import { type AnyPgColumn, doublePrecision, integer, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 
 export const tasksTable = pgTable('tasks', {

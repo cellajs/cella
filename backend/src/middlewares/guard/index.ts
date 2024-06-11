@@ -1,8 +1,8 @@
 import type { Context, MiddlewareHandler } from 'hono';
-import isAuthenticated from './is-authenticated';
-import isAllowedTo from './is-allowed-to';
-import splitByAllowance from './split-by-allowance';
 import { errorResponse } from '../../lib/errors';
+import isAllowedTo from './is-allowed-to';
+import isAuthenticated from './is-authenticated';
+import splitByAllowance from './split-by-allowance';
 
 export { isAuthenticated };
 export { isAllowedTo };

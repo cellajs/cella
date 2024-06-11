@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
+import { useTranslation } from 'react-i18next';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
 import { type TaskRow, useColumns } from './columns';
 import { Bird } from 'lucide-react';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { useTranslation } from 'react-i18next';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useProjectContext } from '../board/project-context';
 

@@ -1,21 +1,17 @@
 import { z } from 'zod';
 
+import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { idSchema, slugSchema } from '../../lib/common-schemas';
-import { config } from 'config';
 
 export const membershipSchema = createSelectSchema(membershipsTable);
 
 export const apiMembershipSchema = membershipSchema.extend({
-  inactive: z.boolean().nullable(),
-  muted: z.boolean().nullable(),
+  inactive: z.boolean(),
+  muted: z.boolean(),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-});
-
-export const updateMembershipParamSchema = z.object({
-  membership: idSchema,
 });
 
 export const updateMembershipJsonSchema = z.object({

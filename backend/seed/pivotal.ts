@@ -1,16 +1,13 @@
+import fs from 'node:fs';
 import { Command } from 'commander';
 import JSZip from 'jszip';
-import fs from 'node:fs';
 import papaparse from 'papaparse';
 import { db } from '../src/db/db.electric';
 import { tasksTable } from '../src/db/schema-electric/tasks';
 import { projectsTable } from '../src/db/schema/projects';
 import { eq } from 'drizzle-orm';
 
-const program = new Command()
-  .option('--file <file>', 'Zip file to upload')
-  .option('--project <project>', 'Project to upload tasks to')
-  .parse();
+const program = new Command().option('--file <file>', 'Zip file to upload').option('--project <project>', 'Project to upload tasks to').parse();
 
 const options = program.opts();
 const zipFile = options.file;
@@ -80,16 +77,16 @@ zip.loadAsync(data).then(async (zip) => {
             task['Current State'] === 'accepted'
               ? 6
               : task['Current State'] === 'reviewed'
-              ? 5
-              : task['Current State'] === 'delivered'
-              ? 4
-              : task['Current State'] === 'finished'
-              ? 3
-              : task['Current State'] === 'started'
-              ? 2
-              : task['Current State'] === 'unstarted'
-              ? 1
-              : 0,
+                ? 5
+                : task['Current State'] === 'delivered'
+                  ? 4
+                  : task['Current State'] === 'finished'
+                    ? 3
+                    : task['Current State'] === 'started'
+                      ? 2
+                      : task['Current State'] === 'unstarted'
+                        ? 1
+                        : 0,
           order: index,
           createdAt: new Date(),
         };

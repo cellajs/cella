@@ -1,25 +1,24 @@
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import type { EntityContextType } from 'backend/types/common';
 import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff, GripVertical } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { updateMembership as baseUpdateMembership, type UpdateMenuOptionsProp } from '~/api/memberships';
-import { arrayMove, getDraggableItemData, getReorderDestinationIndex, sortById } from '~/lib/utils';
+import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
+import { useMutation } from '~/hooks/use-mutations';
+import { arrayMove, getDraggableItemData, getReorderDestinationIndex, isDataSubMenu, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { DraggableItemData, UserMenu } from '~/types';
 import { DropIndicator } from '../drop-indicator';
-import type { PageResourceType } from 'backend/types/common';
-import type { MenuItem } from './sheet-menu-section';
 import { MenuArchiveToggle } from './menu-archive-toggle';
-import { useMutation } from '~/hooks/use-mutations';
+import type { MenuItem } from './sheet-menu-section';
 
 interface MenuItemProps {
-  sectionType: 'organizations' | 'workspaces';
   isGlobalDragging?: boolean;
   setGlobalDragging?: (dragging: boolean) => void;
   submenu?: boolean;
@@ -34,24 +33,23 @@ const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggab
 export const SheetMenuItemsOptions = ({
   data,
   shownOption,
-  sectionType,
   isGlobalDragging,
   submenu,
   setGlobalDragging,
 }: MenuItemProps & { data: UserMenu[keyof UserMenu]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
-  const { activeItemsOrder, hideSubmenu, submenuItemsOrder } = useNavigationStore();
+  const { hideSubmenu, menuOrder } = useNavigationStore();
   if (data.items.length === 0) {
     return (
       <li className="py-2 text-muted-foreground text-sm text-light text-center">
-        {t('common:no_resource_yet', { resource: t(sectionType.toLowerCase()).toLowerCase() })}
+        {t('common:no_resource_yet', { resource: t(data.type.toLowerCase()).toLowerCase() })}
       </li>
     );
   }
   const items = data.items
     .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
-    .sort((a, b) => sortById(a.id, b.id, submenu && a.workspaceId ? submenuItemsOrder[a.workspaceId] : activeItemsOrder[sectionType]));
+    .sort((a, b) => sortById(a.id, b.id, isDataSubMenu(data) ? menuOrder[data.type].subList[data.submenuTo] : menuOrder[data.type].mainList));
 
   const toggleSubmenuVisibility = (itemId: string) => {
     setSubmenuVisibility((prevState) => ({
@@ -65,20 +63,12 @@ export const SheetMenuItemsOptions = ({
 
     return (
       <div key={item.id}>
-        <ItemOptions
-          item={item}
-          itemType={data.type}
-          submenu={submenu}
-          sectionType={sectionType}
-          isGlobalDragging={isGlobalDragging}
-          setGlobalDragging={setGlobalDragging}
-        />
+        <ItemOptions item={item} itemType={data.type} isGlobalDragging={isGlobalDragging} setGlobalDragging={setGlobalDragging} submenu={submenu} />
         {!item.archived && item.submenu && !!item.submenu.items.length && !hideSubmenu && (
           <>
             <SheetMenuItemsOptions
               data={item.submenu}
               shownOption={shownOption}
-              sectionType="workspaces"
               submenu
               isGlobalDragging={isGlobalDragging}
               setGlobalDragging={setGlobalDragging}
@@ -89,7 +79,7 @@ export const SheetMenuItemsOptions = ({
               isArchivedVisible={isSubmenuArchivedVisible}
               isSubmenu
             />
-            {isSubmenuArchivedVisible && <SheetMenuItemsOptions data={item.submenu} shownOption="archived" sectionType="workspaces" submenu />}
+            {isSubmenuArchivedVisible && <SheetMenuItemsOptions data={item.submenu} shownOption="archived" submenu />}
           </>
         )}
       </div>
@@ -100,11 +90,10 @@ export const SheetMenuItemsOptions = ({
 const ItemOptions = ({
   item,
   itemType,
-  sectionType,
   isGlobalDragging,
   submenu,
   setGlobalDragging,
-}: MenuItemProps & { item: MenuItem; itemType: PageResourceType }) => {
+}: MenuItemProps & { item: MenuItem; itemType: EntityContextType }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
@@ -113,7 +102,7 @@ const ItemOptions = ({
   const [isItemArchived, setItemArchived] = useState(item.archived);
   const [isItemMuted, setItemMuted] = useState(item.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
-  const { activeItemsOrder, setActiveItemsOrder, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
+  const { menuOrder, setSubMenuOrder, setMainMenuOrder } = useNavigationStore();
 
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
@@ -122,11 +111,11 @@ const ItemOptions = ({
     onSuccess: (data) => {
       if (data.inactive !== isItemArchived) {
         const archived = data.inactive || !isItemArchived;
-        archiveStateToggle(item.id, archived, item.workspaceId);
+        archiveStateToggle(item.id, archived, isDataSubMenu(item) ? item.submenuTo : null);
         toast.success(
           data.inactive
-            ? t('common:success.archived_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) })
-            : t('common:success.restore_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) }),
+            ? t('common:success.archived_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
+            : t('common:success.restore_resource', { resource: t(`common:${itemType.toLowerCase()}`) }),
         );
         setItemArchived(archived);
       }
@@ -134,8 +123,8 @@ const ItemOptions = ({
         const muted = data.muted || !isItemMuted;
         toast.success(
           muted
-            ? t('common:success.mute_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) })
-            : t('common:success.unmute_resource', { resource: t(`common:${submenu ? 'project' : sectionType.slice(0, -1)}`) }),
+            ? t('common:success.mute_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
+            : t('common:success.unmute_resource', { resource: t(`common:${itemType.toLowerCase()}`) }),
         );
         setItemMuted(muted);
       }
@@ -155,11 +144,17 @@ const ItemOptions = ({
   const onDragOver = () => {
     setClosestEdge(null);
   };
-
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const submenuItemIndex = item.workspaceId ? submenuItemsOrder[item.workspaceId].findIndex((el) => el === item.id) : 0;
-    const itemIndex = activeItemsOrder[sectionType].findIndex((el) => el === item.id);
+    const subList = menuOrder[itemType].subList;
+    let mainMenuId: string | undefined;
+    if (subList) {
+      mainMenuId = Object.keys(subList).find((key) => {
+        return subList[key].includes(item.id);
+      });
+    }
+    const submenuItemIndex = mainMenuId ? menuOrder[itemType].subList[mainMenuId].findIndex((el) => el === item.id) : 0;
+    const itemIndex = menuOrder[itemType].mainList ? menuOrder[itemType].mainList.findIndex((el) => el === item.id) : 0;
     const element = dragRef.current;
     const dragButton = dragButtonRef.current;
     const data = getDraggableItemData(item, submenu ? submenuItemIndex : itemIndex, 'menuItem', itemType);
@@ -205,7 +200,7 @@ const ItemOptions = ({
         onDragLeave: () => onDragOver(),
       }),
     );
-  }, [item, activeItemsOrder[sectionType]]);
+  }, [item, menuOrder[itemType]]);
 
   // monitoring drop event
   useEffect(() => {
@@ -220,17 +215,22 @@ const ItemOptions = ({
 
         const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
         const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'vertical');
+        const subList = menuOrder[itemType].subList;
 
-        if (submenu && item.workspaceId) {
-          const newItemOrder = arrayMove(submenuItemsOrder[item.workspaceId], sourceData.index, destination);
-          setSubmenuItemsOrder(item.workspaceId, newItemOrder);
+        if (subList) {
+          const mainMenuId = Object.keys(subList).find((key) => {
+            return subList[key].includes(item.id);
+          });
+          if (!mainMenuId) return;
+          const newItemOrder = arrayMove(menuOrder[itemType].subList[mainMenuId], sourceData.index, destination);
+          setSubMenuOrder(itemType, mainMenuId, newItemOrder);
         } else {
-          const newItemOrder = arrayMove(activeItemsOrder[sectionType], sourceData.index, destination);
-          setActiveItemsOrder(sectionType, newItemOrder);
+          const newItemOrder = arrayMove(menuOrder[itemType].mainList, sourceData.index, destination);
+          setMainMenuOrder(itemType, newItemOrder);
         }
       },
     });
-  }, [item, activeItemsOrder[sectionType]]);
+  }, [item, menuOrder[itemType]]);
 
   return (
     <div key={item.id} className="relative my-1" ref={dragRef}>
@@ -244,7 +244,7 @@ const ItemOptions = ({
       >
         <AvatarWrap
           className={`${submenu ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'}`}
-          type={sectionType.slice(0, -1).toUpperCase() as PageResourceType}
+          type={itemType}
           id={item.id}
           name={item.name}
           url={item.thumbnailUrl}

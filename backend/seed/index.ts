@@ -7,9 +7,9 @@ import { db } from '../src/db/db';
 import { nanoid } from '../src/lib/nanoid';
 import type { Stage, Status } from './organizations';
 
-import { membershipsTable, type InsertMembershipModel } from '../src/db/schema/memberships';
-import { organizationsTable, type InsertOrganizationModel } from '../src/db/schema/organizations';
-import { usersTable, type InsertUserModel } from '../src/db/schema/users';
+import { type InsertMembershipModel, membershipsTable } from '../src/db/schema/memberships';
+import { type InsertOrganizationModel, organizationsTable } from '../src/db/schema/organizations';
+import { type InsertUserModel, usersTable } from '../src/db/schema/users';
 
 // Seed an admin user to access app first time
 export const userSeed = async () => {
@@ -64,7 +64,7 @@ export const organizationsSeed = async (progressCallback?: (stage: Stage, count:
       name,
       slug: faker.helpers.slugify(name).toLowerCase(),
       bannerUrl: faker.image.url(),
-      brandColor: faker.internet.color(),
+      color: faker.internet.color(),
       chatSupport: faker.datatype.boolean(),
       country: faker.location.country(),
       createdAt: faker.date.past(),
@@ -129,6 +129,7 @@ export const organizationsSeed = async (progressCallback?: (stage: Stage, count:
         id: nanoid(),
         userId: user.id,
         organizationId: organization.id,
+        type: 'ORGANIZATION',
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
         createdAt: faker.date.past(),
       };
@@ -140,6 +141,7 @@ export const organizationsSeed = async (progressCallback?: (stage: Stage, count:
         id: nanoid(),
         userId: 'admin12345678',
         organizationId: organization.id,
+        type: 'ORGANIZATION',
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
         createdAt: faker.date.past(),
       });

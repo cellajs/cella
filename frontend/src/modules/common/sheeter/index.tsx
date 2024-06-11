@@ -1,9 +1,9 @@
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import StickyBox from 'react-sticky-box';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
 import { SheetState, type SheetT, type SheetToRemove, type SheetToReset } from './state';
-import StickyBox from 'react-sticky-box';
 
 export function Sheeter() {
   const { t } = useTranslation();

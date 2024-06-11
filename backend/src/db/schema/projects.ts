@@ -1,10 +1,10 @@
+import { relations } from 'drizzle-orm';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
-import { relations } from 'drizzle-orm';
-import { organizationsTable } from './organizations';
-import { usersTable } from './users';
 import { membershipsTable } from './memberships';
+import { organizationsTable } from './organizations';
 import { projectsToWorkspacesTable } from './projects-to-workspaces';
+import { usersTable } from './users';
 
 export const projectsTable = pgTable('projects', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
@@ -29,7 +29,7 @@ export const projectsTable = pgTable('projects', {
 
 export const projectsTableRelations = relations(projectsTable, ({ many }) => ({
   users: many(membershipsTable),
-  workspaces: many(projectsToWorkspacesTable)
+  workspaces: many(projectsToWorkspacesTable),
 }));
 
 export type ProjectModel = typeof projectsTable.$inferSelect;

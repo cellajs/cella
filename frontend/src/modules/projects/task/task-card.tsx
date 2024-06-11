@@ -18,13 +18,13 @@ import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
 import { useProjectContext } from '../board/project-context.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
-import { TaskEditor } from './task-selectors/task-editor.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import SelectParent from './task-selectors/select-parent.tsx';
 import SetSubTasks from './task-selectors/select-sub-tasks.tsx';
-import { useLiveQuery } from 'electric-sql/react';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
+import { TaskEditor } from './task-selectors/task-editor.tsx';
 import { useTaskContext } from './task-context.tsx';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
+import { useLiveQuery } from 'electric-sql/react';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;

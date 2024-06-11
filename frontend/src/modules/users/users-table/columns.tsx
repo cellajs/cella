@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 
 import { useTranslation } from 'react-i18next';
-import type { User, Member } from '~/types';
+import type { Member, User } from '~/types';
 
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -12,15 +12,12 @@ import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import RowEdit from './row-edit';
-import { Pencil } from 'lucide-react';
-
-function isMember(row: User | Member): row is Member {
-  return row && 'organizationRole' in row && 'membershipId' in row;
-}
+import { isMember } from '.';
+import { config } from 'config';
 
 export const useColumns = <T extends User | Member>(
   callback: (users: User[], action: 'create' | 'update' | 'delete') => void,
-  passedColumns?: ColumnOrColumnGroup<T>[],
+  customColumns?: ColumnOrColumnGroup<T>[],
 ) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
@@ -46,10 +43,10 @@ export const useColumns = <T extends User | Member>(
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => (isMember(row) ? <Pencil size={16} /> : <RowEdit user={row} tabIndex={tabIndex} callback={callback} />),
+      renderCell: ({ row, tabIndex }) => <RowEdit user={row as User} tabIndex={tabIndex} callback={callback} />,
     },
   ];
-  const otherColumns: ColumnOrColumnGroup<T>[] = [
+  const columns: ColumnOrColumnGroup<T>[] = [
     {
       key: 'email',
       name: t('common:email'),
@@ -71,16 +68,13 @@ export const useColumns = <T extends User | Member>(
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (isMember(row) ? t(row.organizationRole.toLowerCase()) : t(row.role.toLowerCase())),
+      renderCell: ({ row }) => t(row.role.toLowerCase()),
       width: 100,
       renderEditCell: (props) =>
         renderSelect({
           props,
-          options: [
-            { label: t('common:admin'), value: 'ADMIN' },
-            isMember(props.row) ? { label: t('common:member'), value: 'MEMBER' } : { label: t('common:user'), value: 'USER' },
-          ],
-          key: isMember(props.row) ? 'organizationRole' : 'role',
+          options: isMember(props.row) ? config.rolesByType.entityRoles : config.rolesByType.systemRoles,
+          key: 'role',
         }),
     },
     {
@@ -104,6 +98,6 @@ export const useColumns = <T extends User | Member>(
   ];
 
   return useState<ColumnOrColumnGroup<T>[]>(
-    isMobile ? mobileColumns : passedColumns ? [...mobileColumns, ...otherColumns, ...passedColumns] : [...mobileColumns, ...otherColumns],
+    isMobile ? mobileColumns : customColumns ? [...mobileColumns, ...columns, ...customColumns] : [...mobileColumns, ...columns],
   );
 };

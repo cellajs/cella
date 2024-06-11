@@ -1,40 +1,44 @@
+import { infiniteQueryOptions } from '@tanstack/react-query';
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
-import { getRequestsQuerySchema } from 'backend/modules/general/schema';
-import { getUsersByOrganizationQuerySchema } from 'backend/modules/organizations/schema';
-import { Suspense, lazy } from 'react';
+import { getMembersQuerySchema } from 'backend/modules/general/schema';
+import { Suspense } from 'react';
+import type { z } from 'zod';
+import { type GetMembersParams, getMembers } from '~/api/general';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
-import { IndexRoute } from './routeTree';
-import { getOrganizationMembers, type GetMembersParams } from '~/api/organizations';
-import { infiniteQueryOptions } from '@tanstack/react-query';
-import type { Member } from '~/types';
 import UsersTable from '~/modules/users/users-table';
-import type { z } from 'zod';
-import { config } from 'config';
+import type { ContextEntity, Member } from '~/types';
+import { IndexRoute } from './routeTree';
 
 // Lazy-loaded components
-
-const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
 // const UsersTable = lazy(() => import('~/modules/users/users-table'));
 
-const membersSearchSchema = getUsersByOrganizationQuerySchema.pick({ q: true, sort: true, order: true, role: true });
-const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
+const membersSearchSchema = getMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
-const membersQueryOptions = ({ idOrSlug, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams & { idOrSlug: string }) => {
+const membersQueryOptions = ({
+  idOrSlug,
+  entityType,
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  role,
+  limit,
+}: GetMembersParams & { idOrSlug: string; entityType: ContextEntity }) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['members', idOrSlug, q, sort, order, role],
+    queryKey: ['members', idOrSlug, entityType, q, sort, order, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getOrganizationMembers(
-        idOrSlug,
+      const fetchedData = await getMembers(
         {
+          idOrSlug,
+          entityType: 'ORGANIZATION',
           page: pageParam,
           q,
           sort,
@@ -75,7 +79,8 @@ export const OrganizationMembersRoute = createRoute({
   validateSearch: membersSearchSchema,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
-    const membersInfiniteQueryOptions = membersQueryOptions({ idOrSlug, q, sort, order, role });
+    const entityType = 'ORGANIZATION';
+    const membersInfiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role });
     const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
     if (!cachedMembers) {
       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
@@ -83,10 +88,11 @@ export const OrganizationMembersRoute = createRoute({
   },
   component: () => (
     <Suspense>
-      <UsersTable<Member, GetMembersParams & { idOrSlug: string }, z.infer<typeof getUsersByOrganizationQuerySchema>>
+      <UsersTable<Member, GetMembersParams & { idOrSlug: string; entityType: ContextEntity }, z.infer<typeof getMembersQuerySchema>>
+        entityType="ORGANIZATION"
         queryOptions={membersQueryOptions}
         routeFrom={OrganizationMembersRoute.id}
-        selectRoleOptions={config.rolesByType.organization as unknown as { key: string; value: string }[]}
+        fetchForExport={getMembers}
       />
     </Suspense>
   ),
@@ -97,16 +103,4 @@ export const OrganizationSettingsRoute = createRoute({
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,
   component: () => <OrganizationSettings />,
-});
-
-export const OrganizationRequestsRoute = createRoute({
-  path: '/requests',
-  staticData: { pageTitle: 'Requests' },
-  getParentRoute: () => OrganizationRoute,
-  component: () => (
-    <Suspense>
-      <RequestsTable mode="organization" />
-    </Suspense>
-  ),
-  validateSearch: requestSearchSchema,
 });

@@ -3,8 +3,8 @@ import { index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 import { membershipsTable } from './memberships';
 import { organizationsTable } from './organizations';
-import { usersTable } from './users';
 import { projectsToWorkspacesTable } from './projects-to-workspaces';
+import { usersTable } from './users';
 
 export const workspacesTable = pgTable(
   'workspaces',

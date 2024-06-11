@@ -4,17 +4,18 @@ import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import authRoutes from './modules/auth';
 import generalRoutes from './modules/general';
-import membershipRoutes from './modules/memberships';
+import meRoutes from './modules/me';
+import MembershipsRoutes from './modules/memberships';
 import organizationsRoutes from './modules/organizations';
 import projectsRoutes from './modules/projects';
-import publicRoutes from './modules/public';
+import requestsRoutes from './modules/requests';
 import usersRoutes from './modules/users';
 import workspacesRoutes from './modules/workspaces';
 
 import { CustomHono } from './types/common';
 
 // Set default hook to catch validation errors
-export const app = new CustomHono({
+const app = new CustomHono({
   defaultHook,
 });
 
@@ -37,14 +38,19 @@ app.onError((err, ctx) => {
 });
 
 // Add routes for each module
-app
+const routes = app
+  .route('/me', meRoutes)
+  .route('/users', usersRoutes)
+  .route('/memberships', MembershipsRoutes)
+  .route('/organizations', organizationsRoutes)
+  .route('/requests', requestsRoutes)
   .route('/', authRoutes)
-  .route('/', usersRoutes)
-  .route('/', organizationsRoutes)
   .route('/', generalRoutes)
-  .route('/', publicRoutes)
-  .route('/', membershipRoutes)
 
   // App-specific routes go here
-  .route('/', workspacesRoutes)
-  .route('/', projectsRoutes);
+  .route('/workspaces', workspacesRoutes)
+  .route('/projects', projectsRoutes);
+
+  export default app
+
+  export type AppType = typeof routes

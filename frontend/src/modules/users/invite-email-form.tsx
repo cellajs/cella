@@ -2,9 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { inviteMember, type InviteMemberProps } from '~/api/memberships';
-import { invite as inviteSystem, type InviteSystemProps } from '~/api/general';
+import { type InviteSystemProps, invite as inviteSystem } from '~/api/general';
+import { type InviteMemberProps, inviteMember } from '~/api/memberships';
 
+import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
@@ -18,11 +19,11 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { idSchema, slugSchema } from 'backend/lib/common-schemas';
+import type { ContextEntity } from '~/types';
 
 interface Props {
-  organizationIdOrSlug?: string | null;
-  type?: 'system' | 'organization';
+  entityId?: string;
+  entityType?: ContextEntity;
   callback?: () => void;
   dialog?: boolean;
   children?: React.ReactNode;
@@ -30,13 +31,16 @@ interface Props {
 
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
-  role: z.enum(['USER', 'MEMBER', 'ADMIN']).optional(),
+  role: z.enum(config.rolesByType.allRoles),
   idOrSlug: idSchema.or(slugSchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteEmailForm = ({ organizationIdOrSlug, type = 'system', callback, dialog: isDialog, children }: Props) => {
+// When no entity type, it's a system invite
+const InviteEmailForm = ({ entityId, entityType, callback, dialog: isDialog, children }: Props) => {
+  if (entityType && !entityId) console.error('entityId is required when entityType is provided');
+
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
@@ -45,7 +49,7 @@ const InviteEmailForm = ({ organizationIdOrSlug, type = 'system', callback, dial
       resolver: zodResolver(formSchema),
       defaultValues: {
         emails: [],
-        role: config.rolesByType[type][0].key,
+        role: entityType ? 'MEMBER' : 'USER',
       },
     }),
     [],
@@ -53,9 +57,10 @@ const InviteEmailForm = ({ organizationIdOrSlug, type = 'system', callback, dial
 
   const form = useFormWithDraft<FormValues>('invite-users', formOptions);
 
+  // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      if (type === 'system') return inviteSystem(values as InviteSystemProps);
+      if (!entityType) return inviteSystem(values as InviteSystemProps);
       return inviteMember(values as InviteMemberProps);
     },
     onSuccess: () => {
@@ -67,13 +72,10 @@ const InviteEmailForm = ({ organizationIdOrSlug, type = 'system', callback, dial
     },
   });
 
-  // TODO, make dynamic and type safe, for now it's hardcoded
-  const roles = config.rolesByType[type];
-
   const onSubmit = (values: FormValues) => {
     invite({
       ...values,
-      ...(organizationIdOrSlug && { idOrSlug: organizationIdOrSlug }),
+      idOrSlug: entityId,
     });
   };
 
@@ -99,7 +101,7 @@ const InviteEmailForm = ({ organizationIdOrSlug, type = 'system', callback, dial
             <FormItem className="flex-row ml-3 gap-4 items-center">
               <FormLabel>{t('common:role')}</FormLabel>
               <FormControl>
-                <SelectRole roles={roles} value={value} onChange={onChange} />
+                <SelectRole value={value} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

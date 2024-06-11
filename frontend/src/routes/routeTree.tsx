@@ -5,7 +5,7 @@ import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
-import { getMe, getUserMenu } from '~/api/users';
+import { getMe, getUserMenu } from '~/api/me';
 
 import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
@@ -16,7 +16,7 @@ import AcceptInvite from '~/modules/common/accept-invite';
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
-import { OrganizationMembersRoute, OrganizationRequestsRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
+import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
 import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
@@ -30,22 +30,25 @@ export const getAndSetMe = async () => {
 export const getAndSetMenu = async () => {
   const menu = await getUserMenu();
   useNavigationStore.setState({ menu });
-  const { activeItemsOrder, setActiveItemsOrder, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore.getState();
-  if (activeItemsOrder.organizations.length === 0) {
-    activeItemsOrder.organizations;
-    const menuOrganizationsIds = menu.organizations.items.filter((i) => !i.archived).map((i) => i.id);
-    setActiveItemsOrder('organizations', menuOrganizationsIds);
+  const { menuOrder, setMainMenuOrder, setSubMenuOrder } = useNavigationStore.getState();
+
+  for (const menuItem of Object.values(menu)) {
+    const { type: entityType, items } = menuItem;
+
+    if (menuOrder[entityType] !== undefined || items.length === 0) continue;
+
+    const entityMainIds = items
+      .filter((i) => !i.archived)
+      .map((item) => {
+        if (!item.submenu) return item.id;
+        const subtype = item.submenu.type;
+        const subItemIds = item.submenu.items.filter((i) => !i.archived).map((subItem) => subItem.id);
+        setSubMenuOrder(subtype, item.id, subItemIds);
+        return item.id;
+      });
+
+    setMainMenuOrder(entityType, entityMainIds);
   }
-  if (activeItemsOrder.workspaces.length === 0) {
-    const menuWorkspaceIds = menu.workspaces.items.filter((i) => !i.archived).map((i) => i.id);
-    setActiveItemsOrder('workspaces', menuWorkspaceIds);
-  }
-  menu.workspaces.items.map((workspace) => {
-    if (workspace.submenu && !!workspace.submenu.items.length && submenuItemsOrder[workspace.id] === undefined) {
-      const projectIds = workspace.submenu.items.filter((p) => !p.archived).map((p) => p.id);
-      setSubmenuItemsOrder(workspace.id, projectIds);
-    }
-  });
   return menu;
 };
 
@@ -93,7 +96,7 @@ export const IndexRoute = createRoute({
 });
 
 export const acceptInviteRoute = createRoute({
-  path: '/auth/accept-invite/$token',
+  path: '/auth/invite/$token',
   staticData: { pageTitle: 'Accept Invite' },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ params }) => {
@@ -127,7 +130,7 @@ export const routeTree = rootRoute.addChildren([
     UserProfileRoute,
     UserSettingsRoute,
     WorkspaceRoute.addChildren([WorkspaceBoardRoute, WorkspaceTableRoute, WorkspaceOverviewRoute]),
-    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute, OrganizationRequestsRoute]),
+    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),
   ]),
 ]);
 

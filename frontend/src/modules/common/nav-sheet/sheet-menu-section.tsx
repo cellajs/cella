@@ -7,8 +7,8 @@ import type { UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import { MenuSectionSticky } from './menu-section-sticky';
-import { SheetMenuItemsOptions } from './sheet-menu-items-options';
 import { SheetMenuItems } from './sheet-menu-items';
+import { SheetMenuItemsOptions } from './sheet-menu-items-options';
 
 interface MenuSectionProps {
   data: UserMenu[keyof UserMenu];
@@ -89,15 +89,9 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
       >
         <ul className="overflow-hidden">
           {optionsView ? (
-            <SheetMenuItemsOptions
-              isGlobalDragging={globalDragging}
-              setGlobalDragging={setGlobalDragging}
-              data={data}
-              shownOption="unarchive"
-              sectionType={sectionType}
-            />
+            <SheetMenuItemsOptions isGlobalDragging={globalDragging} setGlobalDragging={setGlobalDragging} data={data} shownOption="unarchive" />
           ) : (
-            <SheetMenuItems data={data} sectionType={sectionType} shownOption="unarchive" createDialog={createDialog} />
+            <SheetMenuItems data={data} shownOption="unarchive" createDialog={createDialog} />
           )}
           {!!data.items.length && (
             <>
@@ -120,10 +114,9 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
                       setGlobalDragging={setGlobalDragging}
                       data={data}
                       shownOption="archived"
-                      sectionType={sectionType}
                     />
                   ) : (
-                    <SheetMenuItems data={data} sectionType={sectionType} createDialog={createDialog} shownOption="archived" />
+                    <SheetMenuItems data={data} createDialog={createDialog} shownOption="archived" />
                   )}
                 </ul>
               </div>

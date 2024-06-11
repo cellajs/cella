@@ -21,15 +21,15 @@ export const OnboardingCompleted = () => {
       createWorkspace({
         name: 'Demo workspace',
         slug: `${lastCreatedOrganization.slug.replace(/---/g, '-')}-workspace`,
-        organization: lastCreatedOrganization.id,
+        organizationId: lastCreatedOrganization.id,
       }).then((workspace) => {
         for (let i = 3; i !== 0; i--) {
           const namingArr = ['one', 'two', 'three'];
           createProject({
             name: `Demo project ${namingArr[i - 1]}`,
             slug: `${lastCreatedOrganization.slug.replace(/---/g, '-')}-project-${i}`,
-            organization: lastCreatedOrganization.id,
-            workspace: workspace.id,
+            organizationId: lastCreatedOrganization.id,
+            workspaceId: workspace.id,
             color: '#000000',
           });
         }
@@ -45,7 +45,6 @@ export const OnboardingCompleted = () => {
       state.finishOnboarding ? 500 : 4000,
     );
   }, []);
-  console.log('state.finishOnboarding:', state.finishOnboarding);
 
   return (
     <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-[1] max-w-[700px]">

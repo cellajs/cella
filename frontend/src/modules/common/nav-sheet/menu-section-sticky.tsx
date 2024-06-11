@@ -1,11 +1,11 @@
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
+import { ChevronDown, Plus, Settings2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import StickyBox from 'react-sticky-box';
 import { Button } from '~/modules/ui/button';
-import { useTranslation } from 'react-i18next';
-import { TooltipButton } from '../tooltip-button';
-import { ChevronDown, Plus, Settings2 } from 'lucide-react';
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { useNavigationStore } from '~/store/navigation';
 import type { UserMenu } from '~/types';
+import { TooltipButton } from '../tooltip-button';
 
 interface MenuSectionStickyProp {
   sectionType: 'workspaces' | 'organizations';

@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { inviteMember, type InviteMemberProps } from '~/api/memberships';
-import { invite as inviteSystem, type InviteSystemProps } from '~/api/general';
+import { type InviteMemberProps, inviteMember } from '~/api/memberships';
 
+import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
@@ -18,24 +18,25 @@ import MultipleSelector from '~/modules/common/multi-select';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { idSchema, slugSchema } from 'backend/lib/common-schemas';
+import type { ContextEntity } from '~/types';
 
 interface Props {
-  organizationIdOrSlug?: string | null;
-  type?: 'system' | 'organization';
+  entityId?: string;
+  entityType?: ContextEntity;
   callback?: () => void;
   dialog?: boolean;
 }
 
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
-  role: z.enum(['USER', 'MEMBER', 'ADMIN']).optional(),
+  role: z.enum(config.rolesByType.entityRoles).optional(),
   idOrSlug: idSchema.or(slugSchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const InviteSearchForm = ({ organizationIdOrSlug, type = 'system', callback, dialog: isDialog }: Props) => {
+// Invite members by seaching for users which are already in the system
+const InviteSearchForm = ({ entityId, entityType, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -43,7 +44,7 @@ const InviteSearchForm = ({ organizationIdOrSlug, type = 'system', callback, dia
       resolver: zodResolver(formSchema),
       defaultValues: {
         emails: [],
-        role: config.rolesByType[type][0].key,
+        role: 'MEMBER',
       },
     }),
     [],
@@ -53,7 +54,6 @@ const InviteSearchForm = ({ organizationIdOrSlug, type = 'system', callback, dia
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      if (type === 'system') return inviteSystem(values as InviteSystemProps);
       return inviteMember(values as InviteMemberProps);
     },
     onSuccess: () => {
@@ -64,13 +64,10 @@ const InviteSearchForm = ({ organizationIdOrSlug, type = 'system', callback, dia
     },
   });
 
-  // TODO, make dynamic and type safe, for now it's hardcoded
-  const roles = config.rolesByType[type];
-
   const onSubmit = (values: FormValues) => {
     invite({
       ...values,
-      ...(organizationIdOrSlug && { idOrSlug: organizationIdOrSlug }),
+      idOrSlug: entityId,
     });
   };
 
@@ -115,7 +112,7 @@ const InviteSearchForm = ({ organizationIdOrSlug, type = 'system', callback, dia
             <FormItem className="flex-row gap-4 items-center">
               <FormLabel>{t('common:role')}:</FormLabel>
               <FormControl>
-                <SelectRole roles={roles} value={value} onChange={onChange} />
+                <SelectRole entityType={entityType} value={value} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

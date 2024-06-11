@@ -37,13 +37,31 @@ import {
   verifyEmailRouteConfig,
 } from './routes';
 
-const app = new CustomHono();
+const app = new CustomHono().basePath('/auth');
 
 type CheckTokenResponse = z.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']> | undefined;
 type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
 // * Authentication endpoints
 const authRoutes = app
+  /*
+   * Check if email exists
+   */
+  .openapi(checkEmailRouteConfig, async (ctx) => {
+    const { email } = ctx.req.valid('json');
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          exists: !!user,
+        },
+      },
+      200,
+    );
+  })
   /*
    * Sign up with email and password
    */
@@ -88,6 +106,47 @@ const authRoutes = app
       },
       200,
     );
+  })
+  /*
+   * Send verification email
+   */
+  .openapi(sendVerificationEmailRouteConfig, async (ctx) => {
+    const { email } = ctx.req.valid('json');
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
+
+    if (!user) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
+    }
+
+    // * creating email verification token
+    await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
+    const token = generateId(40);
+    await db.insert(tokensTable).values({
+      id: token,
+      type: 'EMAIL_VERIFICATION',
+      userId: user.id,
+      email,
+      expiresAt: createDate(new TimeSpan(2, 'h')),
+    });
+
+    const emailLanguage = user?.language || config.defaultLanguage;
+
+    // * generating email html
+    const emailHtml = render(
+      VerificationEmail({
+        i18n: i18n.cloneInstance({
+          lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
+        }),
+        verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
+      }),
+    );
+
+    emailSender.send(email, 'Verify email for Cella', emailHtml);
+
+    logEvent('Verification email sent', { user: user.id });
+
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Verify email
@@ -149,78 +208,10 @@ const authRoutes = app
       })
       .where(eq(usersTable.id, user.id));
 
+    // Sign in user
     await setSessionCookie(ctx, user.id, 'email_verification');
 
-    return ctx.json(
-      {
-        success: true,
-      },
-      200,
-    );
-  })
-  /*
-   * Send verification email
-   */
-  .openapi(sendVerificationEmailRouteConfig, async (ctx) => {
-    const { email } = ctx.req.valid('json');
-
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
-
-    if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
-    }
-
-    // * creating email verification token
-    await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
-    const token = generateId(40);
-    await db.insert(tokensTable).values({
-      id: token,
-      type: 'EMAIL_VERIFICATION',
-      userId: user.id,
-      email,
-      expiresAt: createDate(new TimeSpan(2, 'h')),
-    });
-
-    const emailLanguage = user?.language || config.defaultLanguage;
-
-    // * generating email html
-    const emailHtml = render(
-      VerificationEmail({
-        i18n: i18n.cloneInstance({
-          lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
-        }),
-        verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
-      }),
-    );
-
-    emailSender.send(email, 'Verify email for Cella', emailHtml);
-
-    logEvent('Verification email sent', { user: user.id });
-
-    return ctx.json(
-      {
-        success: true,
-      },
-      200,
-    );
-  })
-  /*
-   * Check if email exists
-   */
-  .openapi(checkEmailRouteConfig, async (ctx) => {
-    const { email } = ctx.req.valid('json');
-
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
-
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          exists: !!user,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Request reset password email with token
@@ -262,13 +253,7 @@ const authRoutes = app
 
     logEvent('Reset password link sent', { user: user.id });
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Reset password with token
@@ -300,15 +285,10 @@ const authRoutes = app
     // * update user password
     await db.update(usersTable).set({ hashedPassword }).where(eq(usersTable.id, user.id));
 
+    // Sign in user
     await setSessionCookie(ctx, user.id, 'password_reset');
 
-    return ctx.json(
-      {
-        success: true,
-        data: undefined,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Sign in with email and password
@@ -380,11 +360,9 @@ const authRoutes = app
     removeSessionCookie(ctx);
     logEvent('User signed out', { user: session?.userId || 'na' });
 
-    return ctx.json({ success: true, data: undefined }, 200);
+    return ctx.json({ success: true }, 200);
   });
 
-const allRoutes = authRoutes.route('/', oauthRoutes);
+const allAuthRoutes = authRoutes.route('/', oauthRoutes);
 
-export default allRoutes;
-
-export type AuthRoutes = typeof allRoutes;
+export default allAuthRoutes;

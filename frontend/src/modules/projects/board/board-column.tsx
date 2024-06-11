@@ -6,10 +6,12 @@ import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { DraggableItemData, Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
@@ -21,8 +23,6 @@ import CreateTaskForm from '../task/create-task-form';
 import { DraggableTaskCard, isTaskData } from '../task/draggable-task-card';
 import { ProjectSettings } from '../project-settings';
 import { useQuery } from '@tanstack/react-query';
-import { getProjectMembers } from '~/api/projects';
-import { useNavigationStore } from '~/store/navigation';
 import { ColumnSkeleton } from './board-column-skeleton';
 import { useLiveQuery } from 'electric-sql/react';
 import { taskStatuses } from '../task/task-selectors/select-status';
@@ -55,7 +55,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const { submenuItemsOrder } = useNavigationStore();
+  const { menuOrder } = useNavigationStore();
   const { workspace, searchQuery, selectedTasks, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId } =
     useWorkspaceContext(
       ({ workspace, searchQuery, selectedTasks, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId }) => ({
@@ -79,7 +79,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
 
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
-    queryFn: () => getProjectMembers(project.id).then((data) => data.items),
+    queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'PROJECT' }).then((data) => data.items),
     initialData: [],
   });
 
@@ -257,7 +257,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
 
     const data = getDraggableItemData<Project>(
       project,
-      submenuItemsOrder[workspace.id].findIndex((el) => el === project.id),
+      menuOrder.PROJECT.subList[workspace.id].findIndex((el) => el === project.id),
       'column',
     );
     if (!column || !headerDragButton || !cardList) return;
@@ -310,7 +310,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
           })
         : () => {},
     );
-  }, [project, projects, submenuItemsOrder[workspace.id], sortedTasks]);
+  }, [project, projects, menuOrder, sortedTasks]);
 
   useEffect(() => {
     return combine(
@@ -358,7 +358,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
         },
       }),
     );
-  }, [submenuItemsOrder[workspace.id], filteredByViewOptionsTasks]);
+  }, [menuOrder.PROJECT.subList[workspace.id], filteredByViewOptionsTasks]);
 
   // Hides underscroll elements
   // 64px refers to the header height
@@ -396,7 +396,12 @@ export function BoardColumn({ project }: BoardColumnProps) {
               <>
                 <div className="flex flex-col grow" ref={cardListRef}>
                   {!!filteredByViewOptionsTasks.length && (
-                    <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="grow mx-[-1px] relative [&>div>div]:!flex [&>div>div]:h-full">
+                    <ScrollArea
+                      ref={scrollableRef}
+                      id={project.id}
+                      size="indicatorVertical"
+                      className="grow mx-[-1px] relative [&>div>div]:!flex [&>div>div]:h-full"
+                    >
                       <ScrollBar size="indicatorVertical" />
                       <div className="flex flex-col px-0 grow">
                         <Button
@@ -413,8 +418,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
                             <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
                           )}
                         </Button>
-                        {showingTasks
-                        .map((task) => (
+                        {showingTasks.map((task) => (
                           <TaskProvider key={task.id} task={task}>
                             <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
                           </TaskProvider>

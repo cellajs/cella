@@ -2,12 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 
-// Change this in the future on current schema
 import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
-
-// import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { createProject } from '~/api/projects';
@@ -30,24 +27,23 @@ interface CreateProjectFormProps {
   dialog?: boolean;
 }
 
-const formSchema = createWorkspaceJsonSchema.extend({
-  workspace: z.string().min(1),
-});
+const formSchema = createWorkspaceJsonSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
   // const navigate = useNavigate();
-  const { setSheet, submenuItemsOrder, setSubmenuItemsOrder } = useNavigationStore();
-
+  const { setSheet, setSubMenuOrder, menuOrder } = useNavigationStore();
+  const type = 'PROJECT';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         name: '',
         slug: '',
-        workspace: workspace.id,
+        workspaceId: workspace.id,
+        organizationId: workspace.organizationId,
       },
     }),
     [],
@@ -65,21 +61,17 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       return createProject({
         ...values,
         color: '#000000',
-        workspace: workspace.id,
-        organization: workspace.organizationId,
+        workspaceId: workspace.id,
+        organizationId: workspace.organizationId,
       });
     },
     onSuccess: (project) => {
       form.reset();
       callback([project], 'create');
       if (isDialog) dialog.remove();
-      toast.success(t('success.create_resource', { resource: t('common:project') }));
-      setSubmenuItemsOrder(workspace.id, [...submenuItemsOrder[workspace.id], project.id]);
+      toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
+      setSubMenuOrder(type, workspace.id, [...menuOrder[type].subList[workspace.id], project.id]);
       setSheet(null);
-      // navigate({
-      //   to: '/workspace/$idOrSlug/board',
-      //   params: { idOrSlug: result.slug },
-      // });
     },
   });
 
@@ -112,14 +104,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
           description={t('common:project_handle.text')}
           nameValue={name}
         />
-        <SelectParentFormField
-          collection="workspaces"
-          type="WORKSPACE"
-          control={form.control}
-          label={t('common:workspace')}
-          name="workspace"
-          disabled
-        />
+        <SelectParentFormField collection="workspaces" type={type} control={form.control} label={t('common:workspace')} name="workspaceId" disabled />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}

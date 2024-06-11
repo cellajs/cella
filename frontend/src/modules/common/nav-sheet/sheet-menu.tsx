@@ -4,23 +4,23 @@ import type { UserMenu } from '~/types';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
 
-import type { PageResourceType } from 'backend/types/common';
+import type { EntityType } from 'backend/types/common';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
 import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import ContentPlaceholder from '../content-placeholder';
+import { SheetMenuItem } from './sheet-menu-items';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { type MenuItem, type MenuList, MenuSection } from './sheet-menu-section';
-import { SheetMenuItem } from './sheet-menu-items';
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
-  type: PageResourceType;
+  type: EntityType;
   label: string;
   createForm?: React.ReactNode;
   isSubmenu?: boolean;
-  hasSubmenu?: boolean;
+  toPrefix?: boolean;
   icon?: React.ElementType<LucideProps>;
 };
 
@@ -30,14 +30,12 @@ export const menuSections: SectionItem[] = [
     storageType: 'organizations',
     type: 'ORGANIZATION',
     label: 'common:organizations',
-    hasSubmenu: false,
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
   },
   {
     storageType: 'workspaces',
     isSubmenu: false,
-    hasSubmenu: true,
     type: 'WORKSPACE',
     label: 'common:workspaces',
     createForm: <CreateWorkspaceForm dialog />,
@@ -45,7 +43,6 @@ export const menuSections: SectionItem[] = [
   {
     storageType: 'workspaces',
     isSubmenu: true,
-    hasSubmenu: false,
     type: 'PROJECT',
     label: 'common:projects',
   },
@@ -76,7 +73,7 @@ export const SheetMenu = memo(() => {
     return Object.entries(searchResults).flatMap(([type, items]) => {
       return items.length > 0
         ? items.map((item: MenuItem) => (
-            <SheetMenuItem key={item.id} searchResults item={item} type={type.slice(0, -1).toUpperCase() as PageResourceType} />
+            <SheetMenuItem key={item.id} searchResults item={item} type={type.slice(0, -1).toUpperCase() as EntityType} />
           ))
         : [];
     });

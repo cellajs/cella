@@ -1,7 +1,15 @@
-import type { PageResourceType } from 'backend/types/common';
-import { type UploadParams, UploadType, type User } from '~/types';
-import { generalClient as client, handleResponse } from '.';
+import type { EntityType } from 'backend/types/common';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
+import { type UploadParams, UploadType, type User, type ContextEntity } from '~/types';
+import { apiClient, handleResponse } from '.';
+
+// Get public counts for about page
+export const getPublicCounts = async () => {
+  const response = await apiClient.public.counts.$get();
+
+  const json = await handleResponse(response);
+  return json.data;
+};
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
@@ -20,7 +28,7 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
     organizationId: id,
   };
 
-  const response = await client['upload-token'].$get({ query: preparedQuery });
+  const response = await apiClient['upload-token'].$get({ query: preparedQuery });
 
   const json = await handleResponse(response);
   return json.data;
@@ -33,7 +41,7 @@ export interface InviteSystemProps {
 
 // Invite users
 export const invite = async (values: InviteSystemProps) => {
-  const response = await client.invite.$post({
+  const response = await apiClient.invite.$post({
     json: values,
   });
 
@@ -41,11 +49,8 @@ export const invite = async (values: InviteSystemProps) => {
 };
 
 // Check if slug is available
-export const checkSlugAvailable = async (params: {
-  slug: string;
-  type: PageResourceType;
-}) => {
-  const response = await client['check-slug'][':type'][':slug'].$get({
+export const checkSlugAvailable = async (params: { slug: string }) => {
+  const response = await apiClient['check-slug'][':slug'].$get({
     param: params,
   });
 
@@ -55,7 +60,7 @@ export const checkSlugAvailable = async (params: {
 
 // Check token validation
 export const checkToken = async (token: string) => {
-  const response = await client['check-token'][':token'].$get({
+  const response = await apiClient['check-token'][':token'].$get({
     param: { token },
   });
 
@@ -64,8 +69,8 @@ export const checkToken = async (token: string) => {
 };
 
 // Get suggestions
-export const getSuggestions = async (query: string, type?: PageResourceType | undefined) => {
-  const response = await client.suggestions.$get({
+export const getSuggestions = async (query: string, type?: EntityType | undefined) => {
+  const response = await apiClient.suggestions.$get({
     query: { q: query, type },
   });
 
@@ -83,7 +88,7 @@ export const acceptInvite = async ({
   password?: string;
   oauth?: OauthProviderOptions | undefined;
 }) => {
-  const response = await client['accept-invite'][':token'].$post({
+  const response = await apiClient.invite[':token'].$post({
     param: { token },
     json: { password, oauth },
   });
@@ -92,46 +97,35 @@ export const acceptInvite = async ({
   return json.success;
 };
 
-interface ActionRequestProp {
-  email: string;
-  type: 'ORGANIZATION_REQUEST' | 'WAITLIST_REQUEST' | 'NEWSLETTER_REQUEST' | 'CONTACT_REQUEST';
-  userId?: string;
-  organizationId?: string;
-  message?: string;
-}
-// Action request
-export const requestAction = async (requestInfo: ActionRequestProp) => {
-  const response = await client['action-request'].$post({
-    json: {
-      type: requestInfo.type,
-      email: requestInfo.email,
-      userId: requestInfo.userId || null,
-      organizationId: requestInfo.organizationId || null,
-      message: requestInfo.message || null,
-    },
-  });
-
-  await handleResponse(response);
+type RequiredGetMembersParams = {
+  idOrSlug: string;
+  entityType: ContextEntity;
 };
 
-export type GetRequestsParams = Partial<
-  Omit<Parameters<(typeof client.requests)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit: number;
-    page: number;
-  }
->;
+type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
+  limit?: number;
+  page?: number;
+};
 
-// TODO: fix this
-// Get system action requests
-export const actionRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {}, signal?: AbortSignal) => {
-  const response = await client.requests.$get(
+// Combined type
+export type GetMembersParams = RequiredGetMembersParams & OptionalGetMembersParams;
+
+// Get a list of members in an entity
+export const getMembers = async (
+  { idOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50 }: GetMembersParams,
+  signal?: AbortSignal,
+) => {
+  const response = await apiClient.members.$get(
     {
       query: {
+        idOrSlug,
+        entityType,
         q,
         sort,
         order,
         offset: String(page * limit),
         limit: String(limit),
+        role,
       },
     },
     {

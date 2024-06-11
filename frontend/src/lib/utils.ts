@@ -1,6 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
-import type { PageResourceType } from 'backend/types/common';
+import type { EntityType } from 'backend/types/common';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
@@ -11,7 +11,7 @@ import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import type { Task } from '~/modules/common/electric/electrify';
-import type { DraggableItemData } from '~/types';
+import type { DraggableItemData, UserSubMenu } from '~/types';
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
@@ -138,9 +138,9 @@ export const getDraggableItemData = <T>(
   item: T,
   itemIndex: number,
   type: 'task' | 'column' | 'menuItem',
-  itemType?: PageResourceType,
+  itemType?: EntityType,
 ): DraggableItemData<T> => {
-  return { dragItem: true, item, index: itemIndex, type, itemType: itemType ? itemType : 'ORGANIZATION' };
+  return { dragItem: true, item, index: itemIndex, type, itemType: itemType || 'ORGANIZATION' };
 };
 
 // To get target index for drop on DnD
@@ -190,4 +190,8 @@ export const sortById = (a: string, b: string, order: string[]) => {
   const indexB = order.indexOf(b);
   if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
   return indexA - indexB;
+};
+
+export const isDataSubMenu = (obj: Record<string, unknown>): obj is UserSubMenu => {
+  return 'submenuTo' in obj;
 };

@@ -72,7 +72,7 @@ export const config = {
 
   // Optional settings
   has: {
-    pwa: false, // Progressive Web App support for preloading static assets and offline support
+    pwa: true, // Progressive Web App support for preloading static assets and offline support
     signUp: true, // Allow users to sign up. If disabled, the app is by invitation only
     waitList: false, // Suggest a waitlist for unknown emails when sign up is disabled
     onboarding: true, // TODO: Show onboarding steps for new users
@@ -81,25 +81,18 @@ export const config = {
   },
 
   // Languages
+  defaultLanguage: 'en' as const,
+
   languages: [
     { value: 'en', label: 'English' },
     { value: 'nl', label: 'Nederlands' },
   ],
 
-  defaultLanguage: 'en' as const,
+  // App specific entity types
+  entityTypes: ['USER', 'ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const,
+  contextEntityTypes: ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const,
 
-  // Roles
-  // TODO, make dynamic and type safe, for now it's hardcoded
-  rolesByType: {
-    system: [
-      { key: 'USER', value: 'common:user' },
-      { key: 'ADMIN', value: 'common:admin' },
-    ],
-    organization: [
-      { key: 'MEMBER', value: 'common:member' },
-      { key: 'ADMIN', value: 'common:admin' },
-    ],
-  } as const,
+  rolesByType: { systemRoles: ['USER', 'ADMIN'] as const, entityRoles: ['MEMBER', 'ADMIN'] as const, allRoles: ['USER', 'MEMBER', 'ADMIN'] as const },
 
   // Company details
   company: {
@@ -125,13 +118,9 @@ export const config = {
 
   // Common countries
   common: {
-    countries: ['FR','DE','NL','UA', 'US', 'GB'],
+    countries: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
     timezones: [],
   },
-
-  // App specific entity types
-  entityTypes: ['USER', 'ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const,
-  contextEntityTypes: ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const,
 };
 
 export default config;

@@ -1,3 +1,4 @@
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
@@ -5,7 +6,6 @@ import { arrayMove, getReorderDestinationIndex, sortById } from '~/lib/utils';
 import type { Project } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn, isProjectData } from './board-column';
-import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { useNavigationStore } from '~/store/navigation';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
@@ -71,9 +71,9 @@ export default function Board() {
     workspace,
     projects,
   }));
-  const { submenuItemsOrder, setSubmenuItemsOrder, menu } = useNavigationStore();
+  const { menuOrder, setSubMenuOrder, menu } = useNavigationStore();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, submenuItemsOrder[workspace.id])),
+    projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])),
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
@@ -86,9 +86,9 @@ export default function Board() {
     if (currentWorkspace) {
       const currentActiveProjects = currentWorkspace.submenu?.items.filter((p) => !p.archived) as unknown as Project[];
       if (!currentActiveProjects) return setMappedProjects(projects);
-      setMappedProjects(currentActiveProjects.sort((a, b) => sortById(a.id, b.id, submenuItemsOrder[workspace.id])));
+      setMappedProjects(currentActiveProjects.sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])));
     }
-  }, [currentWorkspace, submenuItemsOrder, workspace.id]);
+  }, [currentWorkspace, menuOrder.PROJECT, workspace.id]);
 
   useEffect(() => {
     return combine(
@@ -105,13 +105,13 @@ export default function Board() {
           if (isProjectData(sourceData) && isProjectData(target.data)) {
             const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
             const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'horizontal');
-            const newItemOrder = arrayMove(submenuItemsOrder[workspace.id], sourceData.index, destination);
-            setSubmenuItemsOrder(workspace.id, newItemOrder);
+            const newItemOrder = arrayMove(menuOrder.PROJECT.subList[workspace.id], sourceData.index, destination);
+            setSubMenuOrder('PROJECT',workspace.id, newItemOrder);
           }
         },
       }),
     );
-  }, [submenuItemsOrder[workspace.id]]);
+  }, [menuOrder.PROJECT.subList[workspace.id]]);
 
   if (!isDesktopLayout) {
     return (

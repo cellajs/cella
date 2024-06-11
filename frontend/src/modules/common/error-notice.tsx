@@ -43,16 +43,16 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
         <Card className="max-w-[36rem] m-4">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl mb-2">
-              {error?.resourceType
-                ? t(`common:error.resource_${error.type}`, { resource: t(error.resourceType.toLowerCase()) })
+              {error?.entityType
+                ? t(`common:error.resource_${error.type}`, { resource: t(error.entityType.toLowerCase()) })
                 : error?.type
                   ? t(`common:error.${error.type}`)
                   : error?.message || t('common:error.error')}
             </CardTitle>
             <CardDescription>
               <span>
-                {error?.resourceType
-                  ? t(`common:error.resource_${error.type}.text`, { resource: t(error.resourceType.toLowerCase()).toLowerCase() })
+                {error?.entityType
+                  ? t(`common:error.resource_${error.type}.text`, { resource: t(error.entityType.toLowerCase()).toLowerCase() })
                   : error?.type
                     ? t(`common:error.${error.type}.text`)
                     : error?.message || t('common:error.reported_try_or_contact')}
@@ -80,7 +80,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
                   <div className="font-medium pr-4 place-self-end">Type</div>
                   <div>{error.type || 'na'}</div>
                   <div className="font-medium pr-4 place-self-end">Resource type</div>
-                  <div>{error.resourceType || 'na'}</div>
+                  <div>{error.entityType || 'na'}</div>
                   <div className="font-medium pr-4 place-self-end">HTTP status</div>
                   <div>{error.status || 'na'}</div>
                   <div className="font-medium pr-4 place-self-end">Severity</div>
