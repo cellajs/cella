@@ -7,7 +7,7 @@ import { resetDb } from './cron/reset-db';
 import { db } from './db/db';
 // import { db as dbElectric } from './db/db.electric';
 import ascii from './lib/ascii';
-import { app } from './server';
+import app from './server';
 
 // * Set i18n instance before starting server
 import './lib/i18n';

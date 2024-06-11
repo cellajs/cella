@@ -1,9 +1,11 @@
-import { meClient as client, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
 import type { UpdateUserParams } from './users';
+
+const client = apiClient.me;
 
 // Get the current user
 export const getMe = async () => {
-  const response = await client.index.$get();
+  const response = await client.$get();
 
   const json = await handleResponse(response);
   return json.data;
@@ -19,7 +21,7 @@ export const getUserMenu = async () => {
 
 // Update self
 export const updateSelf = async (params: Omit<UpdateUserParams, 'role'>) => {
-  const response = await client.index.$put({
+  const response = await client.$put({
     json: params,
   });
 

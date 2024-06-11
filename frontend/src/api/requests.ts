@@ -1,6 +1,7 @@
 import type { RequestType } from 'backend/db/schema/requests';
-import { requestsClient as client, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
 
+const client = apiClient.requests;
 
 //TODO: infer from backend?
 interface CreateRequestProp {
@@ -11,7 +12,7 @@ interface CreateRequestProp {
 
 // Request access or request info
 export const createRequest = async (requestInfo: CreateRequestProp) => {
-  const response = await client.index.$post({
+  const response = await client.$post({
     json: {
       type: requestInfo.type,
       email: requestInfo.email,
@@ -23,14 +24,14 @@ export const createRequest = async (requestInfo: CreateRequestProp) => {
 };
 
 export type GetRequestsParams = Partial<
-  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit: number;
     page: number;
   }
 >;
 
 export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {}, signal?: AbortSignal) => {
-  const response = await client.index.$get(
+  const response = await client.$get(
     {
       query: {
         q,

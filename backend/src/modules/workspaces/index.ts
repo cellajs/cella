@@ -177,5 +177,3 @@ const workspacesRoutes = app
   });
 
 export default workspacesRoutes;
-
-export type WorkspacesRoutes = typeof workspacesRoutes;

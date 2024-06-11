@@ -289,5 +289,3 @@ const MembershipsRoutes = app
   });
 
 export default MembershipsRoutes;
-
-export type MembershipsRoutes = typeof MembershipsRoutes;

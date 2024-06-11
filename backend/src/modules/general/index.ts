@@ -526,5 +526,3 @@ const generalRoutes = app
   });
 
 export default generalRoutes;
-
-export type GeneralRoutes = typeof generalRoutes;

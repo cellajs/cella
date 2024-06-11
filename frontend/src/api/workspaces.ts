@@ -1,10 +1,12 @@
-import { workspacesClient as client, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
 
-export type CreateWorkspaceParams = Parameters<(typeof client.index)['$post']>['0']['json'];
+const client = apiClient.workspaces;
+
+export type CreateWorkspaceParams = Parameters<(typeof client)['$post']>['0']['json'];
 
 // Create new workspace
 export const createWorkspace = async ({ ...rest }: CreateWorkspaceParams) => {
-  const response = await client.index.$post({
+  const response = await client.$post({
     json: rest,
   });
 
@@ -37,7 +39,7 @@ export const updateWorkspace = async (idOrSlug: string, params: UpdateWorkspaceP
 
 // Delete workspaces
 export const deleteWorkspaces = async (ids: string[]) => {
-  const response = await client.index.$delete({
+  const response = await client.$delete({
     query: { ids },
   });
 
