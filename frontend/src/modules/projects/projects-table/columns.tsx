@@ -61,14 +61,6 @@ export const useColumns = () => {
               }),
           },
           {
-            key: 'subscription',
-            name: t('common:subscription'),
-            sortable: false,
-            visible: true,
-            renderHeaderCell: HeaderCell,
-            renderCell: () => '-',
-          },
-          {
             key: 'createdAt',
             name: t('common:created_at'),
             sortable: true,

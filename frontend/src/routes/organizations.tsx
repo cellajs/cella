@@ -29,18 +29,17 @@ const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order
     queryFn: async ({ pageParam, signal }) => {
       const fetchedData = await getMembers(
         {
-          idOrSlug,
-          entityType: 'ORGANIZATION',
           page: pageParam,
           q,
           sort,
           order,
           role,
           limit,
+          idOrSlug,
+          entityType: 'ORGANIZATION',
         },
         signal,
       );
-
       return fetchedData;
     },
     getNextPageParam: (_lastPage, allPages) => allPages.length,
