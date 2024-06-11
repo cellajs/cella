@@ -50,7 +50,6 @@ export const UserProfile = ({ user }: { user: User }) => {
           }
         />
         <div className="container mt-4">
-          <code>{JSON.stringify(user, null, 2)}</code>
           <ProjectsTable userId={user.id} />
         </div>
       </UserContext.Provider>
