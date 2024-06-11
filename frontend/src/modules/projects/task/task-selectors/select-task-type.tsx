@@ -1,13 +1,14 @@
 import { Bolt, Bug, Check, Star } from 'lucide-react';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Button } from '../../../ui/button';
-import { TaskContext } from '../../board/board-column';
 import type { TaskType } from '../create-task-form';
+import { useTaskContext } from '../task-context';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 type Type = {
   value: (typeof types)[number]['value'];
@@ -31,9 +32,10 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
   const { t } = useTranslation();
 
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedType, setSelectedType] = useState<Type>(types[types.findIndex((type) => type.value === currentType)]);
+  const [selectedType, setSelectedType] = useState<Type | undefined>(types[types.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
-  const { task, focusedTaskId } = useContext(TaskContext);
+  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
+  const { task } = useTaskContext(({ task }) => ({ task }));
   const isSearching = searchValue.length > 0;
   // Open on key press
   useHotkeys([
@@ -58,7 +60,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
           size="xs"
           className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
         >
-          {selectedType.icon()}
+          {selectedType?.icon()}
         </Button>
       </PopoverTrigger>
 

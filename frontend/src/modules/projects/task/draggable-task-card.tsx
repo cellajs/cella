@@ -3,24 +3,27 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getDraggableItemData } from '~/lib/utils';
 import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '../../common/drop-indicator';
-import type { PreparedTask } from '../../common/electric/electrify';
-import { TaskContext } from '../board/board-column';
+import type { Task } from '../../common/electric/electrify';
 import { TaskCard } from './task-card';
+import { useTaskContext } from './task-context';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
-type TaskDraggableItemData = DraggableItemData<PreparedTask> & { type: 'task' };
+type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
   return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
 };
 
 export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
+  const { task } = useTaskContext(({ task }) => ({ task }));
+  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
+
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
-  const { task, focusedTaskId } = useContext(TaskContext);
   const [dragging, setDragging] = useState(false);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -40,7 +43,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   useEffect(() => {
     const element = taskDragRef.current;
     const dragButton = taskDragButtonRef.current;
-    const data = getDraggableItemData<PreparedTask>(task, taskIndex, 'task');
+    const data = getDraggableItemData<Task>(task, taskIndex, 'task');
     if (!element || !dragButton) return;
 
     return combine(

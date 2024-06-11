@@ -1,16 +1,22 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { DataTable } from '~/modules/common/data-table';
 import { toggleExpand } from '~/modules/common/data-table/toggle-expand';
-import { WorkspaceContext } from '../../workspaces';
 import { type TaskRow, useColumns } from './columns';
 import { Bird } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useTranslation } from 'react-i18next';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
+import { useProjectContext } from '../board/project-context';
 
 export default function TasksTable() {
   const { t } = useTranslation();
-  const { tasks, searchQuery, selectedTasks, setSelectedTasks } = useContext(WorkspaceContext);
+  const { tasks } = useProjectContext(({ tasks }) => ({ tasks }));
+  const { searchQuery, selectedTasks, setSelectedTasks } = useWorkspaceContext(({ searchQuery, selectedTasks, setSelectedTasks }) => ({
+    searchQuery,
+    selectedTasks,
+    setSelectedTasks,
+  }));
   const [rows, setRows] = useState<TaskRow[]>([]);
 
   const filteredTasks = useMemo(() => {

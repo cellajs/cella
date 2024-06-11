@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -8,13 +8,14 @@ import { Button } from '~/modules/ui/button';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
-import { TaskContext } from '../../board/board-column.tsx';
-import type { PreparedTask, Task } from '../../../common/electric/electrify.ts';
+import type { Task } from '../../../common/electric/electrify.ts';
+import { useTaskContext } from '../task-context.tsx';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 
 interface Props {
   mode: 'create' | 'edit';
-  tasks: PreparedTask[];
-  parent: PreparedTask | null;
+  tasks: Task[];
+  parent: Task | null;
   onChange: (parent: Pick<Task, 'id'> | null) => void;
 }
 
@@ -22,11 +23,12 @@ const SelectParent = ({ tasks, mode, parent, onChange }: Props) => {
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('parentId');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<PreparedTask | Task | null>(parent ? parent : tasks.find((task) => task.id === formValue) || null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(parent ? parent : tasks.find((task) => task.id === formValue) || null);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
-  const { task, focusedTaskId } = useContext(TaskContext);
+  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
+  const { task } = useTaskContext(({ task }) => ({ task }));
   const handleSelectClick = (id: string) => {
     if (!id) return;
     const existingTask = selectedTask?.id === id;

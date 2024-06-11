@@ -1,32 +1,34 @@
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History } from 'lucide-react';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { Button } from '~/modules/ui/button';
-import type { PreparedTask, Task } from '../../../common/electric/electrify.ts';
+import type { Task } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
-import { TaskContext } from '../../board/board-column.tsx';
 import { ScrollArea } from '~/modules/ui/scroll-area.tsx';
+import { useTaskContext } from '../task-context.tsx';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 
 interface Props {
   mode: 'create' | 'edit';
-  viewValue?: PreparedTask[];
+  viewValue?: Task[];
   onChange?: (tasks: Pick<Task, 'id'>[]) => void;
-  tasks: PreparedTask[];
+  tasks: Task[];
 }
 
 const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('subTasks');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedTasks, setSelectedTasks] = useState<PreparedTask[]>(viewValue ? viewValue : formValue || []);
+  const [selectedTasks, setSelectedTasks] = useState<Task[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
-  const { task, focusedTaskId } = useContext(TaskContext);
+  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
+  const { task } = useTaskContext(({ task }) => ({ task }));
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
 
@@ -44,7 +46,7 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
     }
   };
 
-  const renderTasks = (tasks: PreparedTask[]) => {
+  const renderTasks = (tasks: Task[]) => {
     return (
       <>
         {tasks.map((task) => (

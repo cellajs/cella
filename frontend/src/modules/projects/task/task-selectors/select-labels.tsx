@@ -1,6 +1,6 @@
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History, Tag, X } from 'lucide-react';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -13,7 +13,8 @@ import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
-import { TaskContext } from '../../board/board-column.tsx';
+import { useTaskContext } from '../task-context.tsx';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -35,7 +36,8 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, l
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
-  const { task, focusedTaskId } = useContext(TaskContext);
+  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
+  const { task } = useTaskContext(({ task }) => ({ task }));
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
   const Electric = useElectric();
@@ -161,7 +163,10 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, l
                       // biome-ignore lint/a11y/useValidAnchor: <explanation>
                       <a
                         href="#"
-                        className={cn(buttonVariants({ size: 'micro', variant: 'ghost' }), 'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0')}
+                        className={cn(
+                          buttonVariants({ size: 'micro', variant: 'ghost' }),
+                          'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0',
+                        )}
                         onClick={(e) => {
                           e.preventDefault();
                           handleSelectClick(name);

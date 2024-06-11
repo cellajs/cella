@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, CircleDotDashed, Dot, type LucideIcon, Snowflake } from 'lucide-react';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -9,7 +9,8 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Kbd } from '../../../common/kbd';
 import { Button } from '../../../ui/button';
-import { TaskContext } from '../../board/board-column';
+import { useTaskContext } from '../task-context';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];
@@ -56,7 +57,8 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
-  const { task, focusedTaskId } = useContext(TaskContext);
+  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
+  const { task } = useTaskContext(({ task }) => ({ task }));
 
   const isSearching = searchValue.length > 0;
   // Open on key press
@@ -98,7 +100,10 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
           <Button
             variant="outlineGhost"
             size="xs"
-            className={cn('border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0', variants({ status: selectedStatus.value }))}
+            className={cn(
+              'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0',
+              variants({ status: selectedStatus.value }),
+            )}
             onClick={nextStatusClick}
             disabled={selectedStatus.value === 6}
           >
@@ -109,7 +114,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
           <Button
             aria-label="Set status"
             variant={mode === 'edit' ? 'outlineGhost' : 'default'}
-            size='xs'
+            size="xs"
             className={cn(
               mode === 'edit' && variants({ status: selectedStatus.value }),
               mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25',

@@ -6,7 +6,7 @@ import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
-import type { PreparedTask } from '~/modules/common/electric/electrify';
+import type { Task } from '~/modules/common/electric/electrify';
 import { Button } from '~/modules/ui/button';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
@@ -14,7 +14,7 @@ import HeaderCell from '../../common/data-table/header-cell';
 import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
 import Expand from './expand';
 
-export type TaskRow = PreparedTask & { _type: 'MASTER' | 'DETAIL'; _expanded?: boolean; _parent?: PreparedTask };
+export type TaskRow = Task & { _type: 'MASTER' | 'DETAIL'; _expanded?: boolean; _parent?: Task };
 
 export const useColumns = () => {
   const { t } = useTranslation();

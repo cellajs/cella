@@ -1,5 +1,4 @@
 import { FilterX, PanelTopClose, Plus, Settings, Tag, Trash, XSquare } from 'lucide-react';
-import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -12,12 +11,13 @@ import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { AvatarWrap } from '../../../common/avatar-wrap';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '../../../common/data-table/table-filter-bar';
-import { useElectric } from '../../../common/electric/electrify';
+import { type Label, useElectric } from '../../../common/electric/electrify';
 import { TooltipButton } from '../../../common/tooltip-button';
 import { Badge } from '../../../ui/badge';
-import { WorkspaceContext } from '../../../workspaces';
 import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
+import { useLiveQuery } from 'electric-sql/react';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;
@@ -26,10 +26,38 @@ interface BoardHeaderProps {
 
 const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps) => {
   const { t } = useTranslation();
+  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery } = useWorkspaceContext(
+    ({ workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery }) => ({
+      workspace,
+      selectedTasks,
+      setSelectedTasks,
+      searchQuery,
+      setSearchQuery,
+    }),
+  );
 
-  const { tasksCount, workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, labels } = useContext(WorkspaceContext);
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const electric = useElectric()!;
 
-  const Electric = useElectric();
+  const { results: labels = [] } = useLiveQuery(
+    electric.db.labels.liveMany({
+      where: {
+        organization_id: workspace.organizationId,
+      },
+    }),
+  ) as {
+    results: Label[];
+  };
+
+  const { results } = useLiveQuery(
+    electric.db.tasks.liveMany({
+      select: {
+        _count: true,
+      },
+    }),
+  );
+
+  console.log('results', results);
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet workspace={workspace} />, {
@@ -50,9 +78,9 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
   };
 
   const onRemove = () => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    if (!electric) return toast.error(t('common:local_db_inoperable'));
 
-    Electric.db.tasks
+    electric.db.tasks
       .deleteMany({
         where: {
           id: {
@@ -125,7 +153,8 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
                 <span className="ml-1">{t('common:clear')}</span>
               </Button>
             </TooltipButton>
-            <div className="w-max mx-2">{`${tasksCount} ${tasksCount > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}</div>
+            {/* TODO: Add this after creating new store */}
+            {/* <div className="w-max mx-2">{`${tasksCount} ${tasksCount > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}</div> */}
           </div>
         )}
         {!!selectedTasks.length && (
