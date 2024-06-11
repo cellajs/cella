@@ -23,7 +23,7 @@ export const config = {
   senderIsReceiver: false,
 
   debug: false,
-  maintenance: false,
+  maintenance: true,
   // Payment with Paddle
   // paddleToken: 'live_ba8bb57b62089459e4f4fd1da8c',
   // paddlePriceIds: {
