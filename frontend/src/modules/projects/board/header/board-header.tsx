@@ -49,16 +49,6 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
     results: Label[];
   };
 
-  const { results } = useLiveQuery(
-    electric.db.tasks.liveMany({
-      select: {
-        _count: true,
-      },
-    }),
-  );
-
-  console.log('results', results);
-
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet workspace={workspace} />, {
       className: 'sm:max-w-[52rem]',
