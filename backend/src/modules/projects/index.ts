@@ -68,7 +68,7 @@ const projectsRoutes = app
       logEvent('Project added to workspace', { project: project.id, workspace: workspaceId });
     }
 
-    const createdProject = { ...project, role: 'ADMIN' as const };
+    const createdProject = { ...project, counts: { admins: 1, members: 0 }, role: 'ADMIN' as const };
 
     sendSSE(user.id, 'create_entity', createdProject);
 
@@ -86,12 +86,14 @@ const projectsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.projectId, project.id)));
 
+    // TODO fix counts using a helper
     return ctx.json(
       {
         success: true,
         data: {
           ...project,
           role: membership?.role || null,
+          counts: { admins: 0, members: 0 },
         },
       },
       200,
@@ -129,7 +131,6 @@ const projectsRoutes = app
       .select({
         projectId: membershipsTable.projectId,
         role: membershipsTable.role,
-        archived: membershipsTable.inactive,
       })
       .from(membershipsTable)
       .where(and(...membershipsFilters))
@@ -158,7 +159,6 @@ const projectsRoutes = app
         .select({
           project: projectsTable,
           role: membership.role,
-          archived: membership.archived,
           admins: counts.admins,
           members: counts.members,
         })
@@ -183,7 +183,6 @@ const projectsRoutes = app
         .select({
           project: projectsTable,
           role: membership.role,
-          archived: membership.archived,
           admins: counts.admins,
           members: counts.members,
         })
@@ -201,10 +200,9 @@ const projectsRoutes = app
       {
         success: true,
         data: {
-          items: projects.map(({ project, role, admins, members, archived }) => ({
+          items: projects.map(({ project, role, admins, members }) => ({
             ...project,
             role,
-            archived: archived,
             counts: { admins, members },
           })),
           total,
@@ -254,12 +252,14 @@ const projectsRoutes = app
 
     logEvent('Project updated', { project: updatedProject.id });
 
+    // TODO fix counts using a helper
     return ctx.json(
       {
         success: true,
         data: {
           ...updatedProject,
           role: memberships.find((member) => member.id === user.id)?.role || null,
+          counts: { admins: 0, members: 0 },
         },
       },
       200,

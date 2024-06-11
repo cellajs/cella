@@ -108,6 +108,7 @@
   "error.no_email_found": "No email found",
   "error.no_email_found.text": "No email address could be found on the resource.",
   "error.not_found": "Not found",
+  "error.no_session": "User has no session",
   "error.not_found.text": "This resource does not exist or has been deleted.",
   "error.not_found.token": "Token is invalid. Please request a new one.",
   "error.reported_try_later": "An error has been reported. Please try again later.",

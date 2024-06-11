@@ -39,7 +39,7 @@ function ReloadPrompt() {
   return (
     <>
       {needRefresh && (
-        <div className="fixed right-0 bottom-0 m-[16px] p-[12px] border rounded-[4px] z-[200] text-left bg-background">
+        <div className="fixed right-0 bottom-0 m-[16px] p-[12px] border rounded-[4px] z-[20000] text-left bg-background">
           <div className="mb-[8px]">
             <span>{t('common:refresh_pwa_app.text')}</span>
           </div>

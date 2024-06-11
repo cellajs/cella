@@ -15,4 +15,4 @@ for (const file of files) {
   }
 }
 
-console.log('Files prepared');
+console.info('Files prepared');

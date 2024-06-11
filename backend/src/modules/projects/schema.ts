@@ -11,6 +11,10 @@ export const apiProjectSchema = z.object({
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
   role: apiMembershipSchema.shape.role.nullable(),
+  counts: z.object({
+    admins: z.number(),
+    members: z.number(),
+  }),
 });
 
 export const apiProjectListSchema = z.object({
