@@ -22,8 +22,11 @@ const TanStackRouterDevtools =
     : () => null;
 
 function Root() {
+
   // Lazy load gleap chat support
   const GleapSupport = config.gleapToken ? useLazyComponent(() => import('~/modules/common/gleap'), 5000) : () => null; // 5 seconds delay
+
+
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>

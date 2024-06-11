@@ -24,8 +24,6 @@ import { getOrderColumn } from '../../lib/order-column';
 import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { apiUserSchema } from '../users/schema';
-import { checkRole } from './helpers/check-role';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
   acceptInviteRouteConfig,
@@ -154,10 +152,6 @@ const generalRoutes = app
   .openapi(inviteRouteConfig, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
-
-    if (user.role !== 'ADMIN') return errorResponse(ctx, 403, 'forbidden', 'warn');
-
-    if (!checkRole(apiUserSchema, role)) return errorResponse(ctx, 400, 'invalid_role', 'warn');
 
     for (const email of emails) {
       const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];

@@ -7,7 +7,6 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
 import type { ContextEntity, Member, Role, User } from '~/types';
 import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import TableCount from '../../common/data-table/table-count';
@@ -23,6 +22,7 @@ interface Props<T> {
   isFiltered?: boolean;
   role?: Role;
   entityType?: ContextEntity;
+  canInvite?: boolean;
   setRole: React.Dispatch<React.SetStateAction<Role | undefined>>;
   selectedUsers: T[];
   onResetFilters: () => void;
@@ -32,6 +32,7 @@ interface Props<T> {
   fetchForExport: ((limit: number) => Promise<queryOptions<T>>) | null;
   inviteDialog: () => void;
   removeDialog: () => void;
+  idOrSlug?: string;
 }
 
 function Toolbar<T extends User | Member>({
@@ -41,6 +42,7 @@ function Toolbar<T extends User | Member>({
   total,
   role,
   setRole,
+  canInvite,
   onResetFilters,
   onResetSelectedRows,
   query,
@@ -50,9 +52,9 @@ function Toolbar<T extends User | Member>({
   inviteDialog,
   removeDialog,
   fetchForExport,
+  idOrSlug,
 }: Props<T>) {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
 
   const onRoleChange = (role?: string) => {
     setRole(role === 'all' ? undefined : (role as Role | undefined));
@@ -74,7 +76,7 @@ function Toolbar<T extends User | Member>({
                       <Trash size={16} />
                     </motion.span>
 
-                    <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+                    <span className="ml-1 max-xs:hidden">{idOrSlug ? t('common:remove') : t('common:delete')}</span>
                   </motion.button>
                 </Button>
 
@@ -95,7 +97,7 @@ function Toolbar<T extends User | Member>({
               </>
             ) : (
               !isFiltered &&
-              user.role === 'ADMIN' && (
+              canInvite && (
                 <Button asChild onClick={inviteDialog}>
                   <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <motion.span layoutId="members-filter-bar-icon">
