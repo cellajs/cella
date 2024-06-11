@@ -39,18 +39,18 @@ app.onError((err, ctx) => {
 
 // Add routes for each module
 const routes = app
+  .route('/auth', authRoutes)
   .route('/me', meRoutes)
   .route('/users', usersRoutes)
   .route('/memberships', MembershipsRoutes)
   .route('/organizations', organizationsRoutes)
   .route('/requests', requestsRoutes)
-  .route('/', authRoutes)
   .route('/', generalRoutes)
 
   // App-specific routes go here
   .route('/workspaces', workspacesRoutes)
   .route('/projects', projectsRoutes);
 
-  export default app
+export default app;
 
-  export type AppType = typeof routes
+export type AppType = typeof routes;
