@@ -19,7 +19,7 @@ export const useAlertStore = create<AlertState>()(
     immer(
       persist(
         (set) => ({
-          downAlert: null,
+          downAlert: config.maintenance ? 'maintenance' : null,
           alertsSeen: ['skip_org_creation'],
           setAlertSeen: (alertSeen) => {
             set((state) => {
