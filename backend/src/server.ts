@@ -5,7 +5,7 @@ import middlewares from './middlewares';
 import authRoutes from './modules/auth';
 import generalRoutes from './modules/general';
 import meRoutes from './modules/me';
-import MembershipsRoutes from './modules/memberships';
+import membershipsRoutes from './modules/memberships';
 import organizationsRoutes from './modules/organizations';
 import projectsRoutes from './modules/projects';
 import requestsRoutes from './modules/requests';
@@ -42,10 +42,10 @@ const routes = app
   .route('/', authRoutes)
   .route('/me', meRoutes)
   .route('/users', usersRoutes)
-  .route('/memberships', MembershipsRoutes)
   .route('/organizations', organizationsRoutes)
-  .route('/requests', requestsRoutes)
   .route('/', generalRoutes)
+  .route('/requests', requestsRoutes)
+  .route('/memberships', membershipsRoutes)
 
   // App-specific routes go here
   .route('/workspaces', workspacesRoutes)

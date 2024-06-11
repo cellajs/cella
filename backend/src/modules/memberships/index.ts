@@ -25,7 +25,7 @@ import { apiMembershipSchema } from './schema';
 const app = new CustomHono();
 
 // * Membership endpoints
-const MembershipsRoutes = app
+const membershipsRoutes = app
   /*
    * Invite members to an organization
    */
@@ -288,4 +288,4 @@ const MembershipsRoutes = app
     return ctx.json({ success: true, data: updatedMembership }, 200);
   });
 
-export default MembershipsRoutes;
+export default membershipsRoutes;
