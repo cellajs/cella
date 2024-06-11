@@ -17,6 +17,7 @@ import {
   getOrganizationsRouteConfig,
   updateOrganizationRouteConfig,
 } from './routes';
+import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 
 const app = new CustomHono();
 
@@ -49,12 +50,15 @@ const organizationsRoutes = app
 
     logEvent('Organization created', { organization: createdOrganization.id });
 
-    await db.insert(membershipsTable).values({
+    const [createdMembership] = await db
+    .insert(membershipsTable)
+    .values({
       type: 'ORGANIZATION',
       userId: user.id,
       organizationId: createdOrganization.id,
       role: 'ADMIN',
-    });
+    })
+    .returning();
 
     logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
 
@@ -65,7 +69,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...createdOrganization,
-          userRole: 'ADMIN' as const,
+          membership: toMembershipInfo(createdMembership),
           counts: {
             admins: 1,
             members: 1,
@@ -99,11 +103,8 @@ const organizationsRoutes = app
       .groupBy(membershipsTable.organizationId)
       .as('counts');
 
-    const membershipRoles = db
-      .select({
-        organizationId: membershipsTable.organizationId,
-        role: membershipsTable.role,
-      })
+    const membership = db
+      .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'ORGANIZATION')))
       .as('membership_roles');
@@ -113,7 +114,7 @@ const organizationsRoutes = app
         id: organizationsTable.id,
         name: organizationsTable.name,
         createdAt: organizationsTable.createdAt,
-        userRole: membershipRoles.role,
+        userRole: membership.role,
       },
       sort,
       organizationsTable.id,
@@ -123,12 +124,12 @@ const organizationsRoutes = app
     const organizations = await db
       .select({
         organization: organizationsTable,
-        userRole: membershipRoles.role,
+        membership: membershipsTable,
         admins: counts.admins,
         members: counts.members,
       })
       .from(organizationsQuery.as('organizations'))
-      .leftJoin(membershipRoles, eq(organizationsTable.id, membershipRoles.organizationId))
+      .leftJoin(membership, eq(organizationsTable.id, membership.organizationId))
       .leftJoin(counts, eq(organizationsTable.id, counts.organizationId))
       .orderBy(orderColumn)
       .limit(Number(limit))
@@ -138,9 +139,9 @@ const organizationsRoutes = app
       {
         success: true,
         data: {
-          items: organizations.map(({ organization, userRole, admins, members }) => ({
+          items: organizations.map(({ organization, membership, admins, members }) => ({
             ...organization,
-            userRole,
+            membership: toMembershipInfo(membership),
             counts: { admins, members },
           })),
           total,
@@ -241,7 +242,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...updatedOrganization,
-          userRole: memberships.find((member) => member.id === user.id)?.role || null,
+          membership: toMembershipInfo(memberships.find((member) => member.id === user.id)),
           counts: {
             admins,
             members,
@@ -282,7 +283,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...organization,
-          userRole: membership?.role || null,
+          membership: toMembershipInfo(membership),
           counts: {
             admins,
             members,

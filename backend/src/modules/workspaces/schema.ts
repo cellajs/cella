@@ -3,14 +3,13 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { idSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
-
-import { apiMembershipSchema } from '../memberships/schema';
+import { membershipInfoSchema } from '../memberships/schema';
 
 export const apiWorkspaceSchema = z.object({
   ...createSelectSchema(workspacesTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  role: apiMembershipSchema.shape.role.nullable(),
+  membership: membershipInfoSchema,
 });
 
 export const createWorkspaceJsonSchema = z.object({

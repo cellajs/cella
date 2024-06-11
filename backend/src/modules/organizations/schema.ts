@@ -10,7 +10,7 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '../../lib/common-schemas';
-import { apiMembershipSchema } from '../memberships/schema';
+import { membershipInfoSchema } from '../memberships/schema';
 
 export const apiOrganizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
@@ -19,7 +19,7 @@ export const apiOrganizationSchema = z.object({
   languages: z.array(z.string()),
   emailDomains: z.array(z.string()).nullable(),
   authStrategies: z.array(z.string()).nullable(),
-  userRole: apiMembershipSchema.shape.role.nullable(),
+  membership: membershipInfoSchema,
   counts: z.object({
     admins: z.number(),
     members: z.number(),
