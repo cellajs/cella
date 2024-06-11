@@ -52,10 +52,10 @@ importers:
         version: 1.11.2
       '@hono/sentry':
         specifier: ^1.1.0
-        version: 1.1.0(hono@4.4.2)
+        version: 1.1.0(hono@4.4.5)
       '@hono/zod-openapi':
         specifier: ^0.14.1
-        version: 0.14.2(hono@4.4.2)(zod@3.23.8)
+        version: 0.14.2(hono@4.4.5)(zod@3.23.8)
       '@logtail/node':
         specifier: ^0.4.21
         version: 0.4.21
@@ -76,7 +76,7 @@ importers:
         version: 0.0.1
       '@scalar/hono-api-reference':
         specifier: ^0.5.61
-        version: 0.5.62(hono@4.4.2)(nanoid@5.0.7)(postcss@8.4.38)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27)(yjs@13.6.15)
+        version: 0.5.62(hono@4.4.5)(nanoid@5.0.7)(postcss@8.4.38)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27)(yjs@13.6.15)
       '@sentry/cli':
         specifier: ^2.31.2
         version: 2.32.1
@@ -108,8 +108,8 @@ importers:
         specifier: workspace:*
         version: link:../env
       hono:
-        specifier: ^4.4.2
-        version: 4.4.2
+        specifier: ^4.4.5
+        version: 4.4.5
       i18next:
         specifier: ^23.11.3
         version: 23.11.5
@@ -402,8 +402,8 @@ importers:
         specifier: ^13.7.3
         version: 13.7.3
       hono:
-        specifier: 4.4.2
-        version: 4.4.2
+        specifier: 4.4.5
+        version: 4.4.5
       i18next:
         specifier: ^23.11.5
         version: 23.11.5
@@ -4814,16 +4814,16 @@ packages:
     engines: {node: '>=18.14.1'}
     dev: false
 
-  /@hono/sentry@1.1.0(hono@4.4.2):
+  /@hono/sentry@1.1.0(hono@4.4.5):
     resolution: {integrity: sha512-sg0hyn3VhQi2IQtHQgHxdyUWgvy+LMdjne0iVkFf0gW2KM3/uZyvMxdTZBlzOPeMq50q6CIEZrxtZJ8TZt8Vcw==}
     peerDependencies:
       hono: '>=3.*'
     dependencies:
-      hono: 4.4.2
+      hono: 4.4.5
       toucan-js: 3.4.0
     dev: false
 
-  /@hono/zod-openapi@0.14.2(hono@4.4.2)(zod@3.23.8):
+  /@hono/zod-openapi@0.14.2(hono@4.4.5)(zod@3.23.8):
     resolution: {integrity: sha512-nt4TCMwGebajiJ5QEZ2QOVRp3N7GMLs1P7csNQJSu6Aean4D+8TWgZTaAJSytLvVZWy90qnBbpRlVSS6C6M+0g==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
@@ -4831,18 +4831,18 @@ packages:
       zod: 3.*
     dependencies:
       '@asteasolutions/zod-to-openapi': 7.0.0(zod@3.23.8)
-      '@hono/zod-validator': 0.2.2(hono@4.4.2)(zod@3.23.8)
-      hono: 4.4.2
+      '@hono/zod-validator': 0.2.2(hono@4.4.5)(zod@3.23.8)
+      hono: 4.4.5
       zod: 3.23.8
     dev: false
 
-  /@hono/zod-validator@0.2.2(hono@4.4.2)(zod@3.23.8):
+  /@hono/zod-validator@0.2.2(hono@4.4.5)(zod@3.23.8):
     resolution: {integrity: sha512-dSDxaPV70Py8wuIU2QNpoVEIOSzSXZ/6/B/h4xA7eOMz7+AarKTSGV8E6QwrdcCbBLkpqfJ4Q2TmBO0eP1tCBQ==}
     peerDependencies:
       hono: '>=3.9.0'
       zod: ^3.19.1
     dependencies:
-      hono: 4.4.2
+      hono: 4.4.5
       zod: 3.23.8
     dev: false
 
@@ -7627,14 +7627,14 @@ packages:
       - vitest
     dev: false
 
-  /@scalar/hono-api-reference@0.5.62(hono@4.4.2)(nanoid@5.0.7)(postcss@8.4.38)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27)(yjs@13.6.15):
+  /@scalar/hono-api-reference@0.5.62(hono@4.4.5)(nanoid@5.0.7)(postcss@8.4.38)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27)(yjs@13.6.15):
     resolution: {integrity: sha512-kjWXQqMewF+cGvioOSz+mzcdmF53XAd9FmaPb1vbKi2f43YMFktSaFKTA901K1wIJ2bngLoW1suX41ckPCRYDg==}
     engines: {node: '>=18'}
     peerDependencies:
       hono: ^3.0.0 || ^4.0.0
     dependencies:
       '@scalar/api-reference': 1.23.5(nanoid@5.0.7)(postcss@8.4.38)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27)(yjs@13.6.15)
-      hono: 4.4.2
+      hono: 4.4.5
     transitivePeerDependencies:
       - '@jest/globals'
       - '@types/bun'
@@ -12972,8 +12972,8 @@ packages:
       react-is: 16.13.1
     dev: false
 
-  /hono@4.4.2:
-    resolution: {integrity: sha512-bRhZ+BM9r04lRN2i9wiZ18yQNbZxHsmmRIItoAb43nRkHnIDsFhFh4mJ0seEs06FvenibpAgSVNHQ8ZzcDQx2A==}
+  /hono@4.4.5:
+    resolution: {integrity: sha512-hyf+1c+gTEo0+xjdYT2e8y4M3HcEy0ARuRZHPRgeRhq/mupkI4j9/qEWVKsyj0se4KhfRnYrld4Tk6z/9veq/Q==}
     engines: {node: '>=16.0.0'}
     dev: false
 
