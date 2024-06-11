@@ -16,7 +16,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { UserProfile } from '../user-profile';
 
 export const useColumns = <T extends User | Member>(
-  callback: (users: User[], action: 'create' | 'update' | 'delete') => void,
+  callback: (users: T[], action: 'create' | 'update' | 'delete') => void,
   customColumns?: ColumnOrColumnGroup<T>[],
 ) => {
   const { t } = useTranslation();
@@ -50,7 +50,9 @@ export const useColumns = <T extends User | Member>(
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => <RowEdit user={row as User} tabIndex={tabIndex} callback={callback} />,
+      renderCell: ({ row, tabIndex }) => (
+        <RowEdit user={row as User} tabIndex={tabIndex} callback={callback as (users: User[], action: 'delete' | 'update' | 'create') => void} />
+      ),
     },
   ];
   const columns: ColumnOrColumnGroup<T>[] = [

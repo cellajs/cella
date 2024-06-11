@@ -8,7 +8,7 @@ import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
 import type { UserMenu } from '~/types';
 
 type EntitySubList = Record<string, string[]>;
-type EntityConfig = Record<EntityContextType, { mainList: string[]; subList: EntitySubList }>;
+export type EntityConfig = Record<EntityContextType, { mainList: string[]; subList: EntitySubList }>;
 
 interface NavigationState {
   recentSearches: string[];

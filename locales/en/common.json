@@ -41,7 +41,7 @@
   "contact_request": "Contact",
   "configure_menu.text": "Configure your menu items. Changes will be saved automatically.",
   "confirm.delete_account": "Are you sure you want to delete your account with {{email}} email?",
-  "confirm.delete_resource": "Are you sure you want to delete {{name}} {{resource}}?",
+  "confirm.delete_resource": "Are you sure you want to delete {{resource}} {{name}} ?",
   "confirm.delete_resources": "Are you sure you want to delete these {{resources}}?",
   "confirm.remove_members": "Are you sure you want to remove {{emails}} from the organization?",
   "connect": "Connect",

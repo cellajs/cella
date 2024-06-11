@@ -24,9 +24,7 @@ const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
 
       callback?.(users);
 
-      if (isDialog) {
-        dialog.remove();
-      }
+      if (isDialog) dialog.remove();
     },
   });
 

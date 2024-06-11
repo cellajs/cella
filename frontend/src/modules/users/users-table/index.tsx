@@ -28,6 +28,19 @@ import { updateMembership } from '~/api/memberships';
 
 export const LIMIT = 40;
 
+const mutateUserTableData = (
+  query: string | undefined,
+  sort: string,
+  order: string,
+  role: string | undefined,
+  idOrSlug: string | undefined,
+  entityType: ContextEntity | undefined,
+) => {
+  if (idOrSlug && entityType) return useMutateInfiniteQueryData(['members', idOrSlug, entityType, query, sort, order, role]);
+
+  return useMutateInfiniteQueryData(['users', query, sort, order, role]);
+};
+
 export type queryOptions<T> = {
   items: T[];
   total: number;
@@ -105,7 +118,7 @@ const UsersTable = <
   });
 
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-  const callback = useMutateInfiniteQueryData(['users', debounceQuery, sortColumns, role]);
+  const callback = mutateUserTableData(debounceQuery, sortColumns[0]?.columnKey, sortColumns[0]?.direction.toLowerCase(), role, idOrSlug, entityType);
 
   const openInviteDialog = () => {
     dialog(<InviteUsers entityId={idOrSlug} entityType={entityType} mode={idOrSlug ? null : 'email'} dialog />, {
@@ -144,10 +157,8 @@ const UsersTable = <
       {
         drawerOnMobile: false,
         className: 'max-w-xl',
-        title: idOrSlug ? t('common:delete') : t('common:remove_member'),
+        title: idOrSlug ? t('common:remove_member') : t('common:delete'),
         text: idOrSlug ? (
-          t('common:confirm.delete_resource', { resource: t('common:users').toLowerCase() })
-        ) : (
           <Trans
             i18nKey="common:confirm.remove_members"
             values={{
@@ -157,6 +168,14 @@ const UsersTable = <
                 .join(', '),
             }}
           />
+        ) : (
+          t('common:confirm.delete_resource', {
+            name: rows
+              .filter((row) => selectedRows.has(row.id))
+              .map((el) => el.email)
+              .join(', '),
+            resource: rows.filter((row) => selectedRows.has(row.id)).length > 1 ? t('common:users').toLowerCase() : t('common:user').toLowerCase(),
+          })
         ),
       },
     );
@@ -187,6 +206,7 @@ const UsersTable = <
     for (const index of indexes) {
       if (column.key === 'role') {
         const user = changedRows[index];
+        callback([user], 'update');
         if (isMember(user)) return updateEntityRole({ membershipId: user.membershipId, role: user.role });
         return updateSystemRole({ userId: user.id, params: { role: user.role } });
       }
@@ -220,6 +240,7 @@ const UsersTable = <
         setColumns={setColumns}
         inviteDialog={openInviteDialog}
         removeDialog={openDeleteDialog}
+        idOrSlug={idOrSlug}
         fetchForExport={
           fetchForExport
             ? (limit) => {

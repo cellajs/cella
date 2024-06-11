@@ -32,6 +32,7 @@ interface Props<T> {
   fetchForExport: ((limit: number) => Promise<queryOptions<T>>) | null;
   inviteDialog: () => void;
   removeDialog: () => void;
+  idOrSlug?: string;
 }
 
 function Toolbar<T extends User | Member>({
@@ -50,6 +51,7 @@ function Toolbar<T extends User | Member>({
   inviteDialog,
   removeDialog,
   fetchForExport,
+  idOrSlug,
 }: Props<T>) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
@@ -74,7 +76,7 @@ function Toolbar<T extends User | Member>({
                       <Trash size={16} />
                     </motion.span>
 
-                    <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+                    <span className="ml-1 max-xs:hidden">{idOrSlug ? t('common:remove') : t('common:delete')}</span>
                   </motion.button>
                 </Button>
 

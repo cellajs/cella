@@ -19,15 +19,7 @@ import { IndexRoute } from './routeTree';
 
 const membersSearchSchema = getMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
-const membersQueryOptions = ({
-  idOrSlug,
-  entityType,
-  q,
-  sort: initialSort,
-  order: initialOrder,
-  role,
-  limit,
-}: GetMembersParams & { idOrSlug: string; entityType: ContextEntity }) => {
+const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
