@@ -18,9 +18,7 @@ import permissionManager from '../../lib/permission-manager';
 import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkRole } from '../general/helpers/check-role';
 import { createMembershipRouteConfig, deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
-import { apiMembershipSchema } from './schema';
 
 const app = new CustomHono();
 
@@ -29,7 +27,7 @@ const membershipsRoutes = app
   /*
    * Invite members to an entity such as an organization
    */
-  // TODO: make this work for Projects too
+  // TODO: make this work for Projects too and check how this endpoint is protected from unauthorized access
   .openapi(createMembershipRouteConfig, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('query');
     const { emails, role } = ctx.req.valid('json');
@@ -39,11 +37,6 @@ const membershipsRoutes = app
     const organization = idOrSlug ? ((await resolveEntity('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
 
     if (!organization) return errorResponse(ctx, 403, 'forbidden', 'warn');
-
-    // Check to invite on organization level
-    if (organization && !checkRole(apiMembershipSchema, role)) {
-      return errorResponse(ctx, 400, 'invalid_role', 'warn');
-    }
 
     for (const email of emails) {
       const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
