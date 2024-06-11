@@ -83,10 +83,10 @@ export const checkSlugRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'User',
+      description: 'Slug is available',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(z.boolean()),
+          schema: successResponseWithoutDataSchema,
         },
       },
     },

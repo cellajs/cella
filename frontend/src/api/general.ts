@@ -55,7 +55,7 @@ export const checkSlugAvailable = async (params: { slug: string }) => {
   });
 
   const json = await handleResponse(response);
-  return json.data;
+  return json.success;
 };
 
 // Check token validation

@@ -25,14 +25,6 @@ export const apiOrganizationSchema = z.object({
     members: z.number(),
   }),
 });
-// .extend({
-//   createdAt: z.string(),
-//   modifiedAt: z.string().nullable(),
-//   languages: z.array(z.string()).nullable(),
-//   emailDomains: z.array(z.string()).nullable(),
-//   authStrategies: z.array(z.string()).nullable(),
-//   userRole: membershipSchema.shape.role,
-// });
 
 export const createOrganizationJsonSchema = z.object({
   name: nameSchema,
