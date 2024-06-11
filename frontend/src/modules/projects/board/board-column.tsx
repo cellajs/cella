@@ -365,15 +365,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-[64px] z-30 -mt-4" />;
 
   return (
-    <ProjectProvider
-      key={project.id}
-      project={project}
-      tasks={sortedTasks}
-      labels={labels}
-      members={members}
-      focusedProjectIndex={focusedProjectIndex}
-      setFocusedProjectIndex={setFocusedProjectIndex}
-    >
+    <ProjectProvider key={project.id} project={project} tasks={sortedTasks} labels={labels} members={members}>
       <div ref={columnRef} className="h-full">
         <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
         <div
@@ -413,12 +405,11 @@ export function BoardColumn({ project }: BoardColumnProps) {
                             <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
                           )}
                         </Button>
-                        {showingTasks
-                          .map((task) => (
-                            <TaskProvider key={task.id} task={task}>
-                              <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
-                            </TaskProvider>
-                          ))}
+                        {showingTasks.map((task) => (
+                          <TaskProvider key={task.id} task={task}>
+                            <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
+                          </TaskProvider>
+                        ))}
                         <Button
                           onClick={handleIcedClick}
                           variant="ghost"

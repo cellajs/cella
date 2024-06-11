@@ -8,8 +8,6 @@ interface ProjectProps {
   project: Project;
   tasks: Task[];
   labels: Label[];
-  focusedProjectIndex: number | null;
-  setFocusedProjectIndex: (index: number) => void;
   members: Member[];
 }
 
@@ -23,8 +21,6 @@ const createProjectStore = (initProps?: Partial<ProjectProps>) => {
     tasks: [],
     labels: [],
     members: [],
-    focusedProjectIndex: null,
-    setFocusedProjectIndex: () => {},
   };
   return createStore<ProjectState>()(() => ({
     ...DEFAULT_PROPS,

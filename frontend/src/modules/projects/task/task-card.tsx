@@ -40,18 +40,18 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   const { task } = useTaskContext(({ task }) => ({
     task,
   }));
-  const { setFocusedProjectIndex, tasks, members } = useProjectContext(({ setFocusedProjectIndex, tasks, members }) => ({
-    setFocusedProjectIndex,
+  const { tasks, members } = useProjectContext(({ tasks, members }) => ({
     tasks,
     members,
   }));
-  const { setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceContext(
-    ({ setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId }) => ({
+  const { setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex } = useWorkspaceContext(
+    ({ setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex }) => ({
       setSelectedTasks,
       selectedTasks,
       projects,
       focusedTaskId,
       setFocusedTaskId,
+      setFocusedProjectIndex,
     }),
   );
 
