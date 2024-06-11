@@ -39,7 +39,7 @@ app.onError((err, ctx) => {
 
 // Add routes for each module
 const routes = app
-  .route('/auth', authRoutes)
+  .route('/authenticate', authRoutes)
   .route('/me', meRoutes)
   .route('/users', usersRoutes)
   .route('/memberships', MembershipsRoutes)
