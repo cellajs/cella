@@ -103,18 +103,18 @@ const organizationsRoutes = app
       .groupBy(membershipsTable.organizationId)
       .as('counts');
 
-    const membership = db
+    const memberships = db
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'ORGANIZATION')))
-      .as('membership_roles');
+      .as('memberships');
 
     const orderColumn = getOrderColumn(
       {
         id: organizationsTable.id,
         name: organizationsTable.name,
         createdAt: organizationsTable.createdAt,
-        userRole: membership.role,
+        userRole: memberships.role,
       },
       sort,
       organizationsTable.id,
@@ -129,7 +129,7 @@ const organizationsRoutes = app
         members: counts.members,
       })
       .from(organizationsQuery.as('organizations'))
-      .leftJoin(membership, eq(organizationsTable.id, membership.organizationId))
+      .leftJoin(memberships, eq(organizationsTable.id, memberships.organizationId))
       .leftJoin(counts, eq(organizationsTable.id, counts.organizationId))
       .orderBy(orderColumn)
       .limit(Number(limit))

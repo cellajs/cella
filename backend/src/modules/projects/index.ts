@@ -125,18 +125,18 @@ const projectsRoutes = app
       .as('counts');
 
     // @TODO: Permission check which projects a user is allowed to see? (this will skip when requestedUserId is used in query!)
-    const membership = db
+    const memberships = db
       .select()
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, requestedUserId ? requestedUserId : user.id))
-      .as('membership_roles');
+      .as('memberships');
 
     const orderColumn = getOrderColumn(
       {
         id: projectsTable.id,
         name: projectsTable.name,
         createdAt: projectsTable.createdAt,
-        userRole: membership.role,
+        userRole: memberships.role,
       },
       sort,
       projectsTable.id,
@@ -156,7 +156,7 @@ const projectsRoutes = app
           members: counts.members,
         })
         .from(projectsQuery.as('projects'))
-        .innerJoin(membership, eq(membership.projectId, projectsTable.id))
+        .innerJoin(memberships, eq(memberships.projectId, projectsTable.id))
         .leftJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id))
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
         .orderBy(orderColumn)
@@ -177,7 +177,7 @@ const projectsRoutes = app
           and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), eq(projectsToWorkspacesTable.workspaceId, workspaceId), ...projectsFilters),
         )
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
-        .leftJoin(membership, and(eq(membership.projectId, projectsTable.id)))
+        .leftJoin(memberships, and(eq(memberships.projectId, projectsTable.id)))
         .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId))
         .orderBy(orderColumn)
         .limit(Number(limit))
