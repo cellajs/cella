@@ -3,7 +3,7 @@ import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-sche
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchema } from './schema';
+import { apiWorkspaceSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchema } from './schema';
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
@@ -27,7 +27,7 @@ export const createWorkspaceRouteConfig = createRouteConfig({
       description: 'workspace was created',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiWorkspacesSchema),
+          schema: successResponseWithDataSchema(apiWorkspaceSchema),
         },
       },
     },
@@ -50,7 +50,7 @@ export const getWorkspaceRouteConfig = createRouteConfig({
       description: 'Workspace',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiWorkspacesSchema),
+          schema: successResponseWithDataSchema(apiWorkspaceSchema),
         },
       },
     },
@@ -80,7 +80,7 @@ export const updateWorkspaceRouteConfig = createRouteConfig({
       description: 'Workspace updated',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiWorkspacesSchema),
+          schema: successResponseWithDataSchema(apiWorkspaceSchema),
         },
       },
     },

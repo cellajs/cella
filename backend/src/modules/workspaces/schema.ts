@@ -6,7 +6,7 @@ import { idSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas'
 
 import { apiMembershipSchema } from '../memberships/schema';
 
-export const apiWorkspacesSchema = z.object({
+export const apiWorkspaceSchema = z.object({
   ...createSelectSchema(workspacesTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),

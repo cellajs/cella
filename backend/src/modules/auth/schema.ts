@@ -17,7 +17,3 @@ export const signUpJsonSchema = z.object({
 export const checkEmailJsonSchema = z.object({
   email: apiUserSchema.shape.email,
 });
-
-export const emailExistsJsonSchema = z.object({
-  exists: z.boolean(),
-});

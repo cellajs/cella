@@ -19,7 +19,7 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkRole } from '../general/helpers/check-role';
-import { deleteMembershipsRouteConfig, inviteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
+import { createMembershipRouteConfig, deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
 import { apiMembershipSchema } from './schema';
 
 const app = new CustomHono();
@@ -27,9 +27,10 @@ const app = new CustomHono();
 // * Membership endpoints
 const membershipsRoutes = app
   /*
-   * Invite members to an organization
+   * Invite members to an entity such as an organization
    */
-  .openapi(inviteMembershipRouteConfig, async (ctx) => {
+  // TODO: make this work for Projects too
+  .openapi(createMembershipRouteConfig, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('query');
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
@@ -141,7 +142,7 @@ const membershipsRoutes = app
     const { idOrSlug, entityType, ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    if (config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
+    if (!config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
     // * Convert the member ids to an array
     const memberToDeleteIds = Array.isArray(ids) ? ids : [ids];
 
@@ -222,7 +223,7 @@ const membershipsRoutes = app
       logEvent('Member deleted', { membership: membership.id });
     }
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json({ success: true, errors }, 200);
   })
   /*
    * Update user membership

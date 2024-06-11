@@ -1,13 +1,13 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
+import { idSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
 import { inviteJsonSchema, inviteQuerySchema } from '../general/schema';
 import { apiMembershipSchema, deleteMembersQuerySchema, updateMembershipJsonSchema } from './schema';
-import { idSchema } from '../../lib/common-schemas';
 
-export const inviteMembershipRouteConfig = createRouteConfig({
+export const createMembershipRouteConfig = createRouteConfig({
   method: 'post',
   path: '/',
   guard: isAuthenticated,
@@ -52,7 +52,7 @@ export const deleteMembershipsRouteConfig = createRouteConfig({
       description: 'Success',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(z.object({ error: z.string().optional() }).optional()),
+          schema: successResponseWithErrorsSchema(),
         },
       },
     },

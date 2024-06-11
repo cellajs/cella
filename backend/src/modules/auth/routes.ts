@@ -7,7 +7,7 @@ import { isPublicAccess } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { apiUserSchema } from '../users/schema';
-import { checkEmailJsonSchema, emailExistsJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
+import { checkEmailJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
 
 export const checkEmailRouteConfig = createRouteConfig({
   method: 'post',
@@ -29,10 +29,10 @@ export const checkEmailRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'User email address exists or not',
+      description: 'Email exists',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(emailExistsJsonSchema),
+          schema: successResponseWithoutDataSchema,
         },
       },
     },

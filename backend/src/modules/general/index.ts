@@ -38,7 +38,7 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import type { Suggestion } from './schema'
+import type { Suggestion } from './schema';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -65,19 +65,12 @@ const generalRoutes = app
         .from(usersTable),
     ]);
 
-    const organizations = organizationsResult[0].total;
-    const users = usersResult[0].total;
+    const data = {
+      organizations: organizationsResult[0].total,
+      users: usersResult[0].total,
+    };
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          organizations,
-          users,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Get upload token
@@ -99,13 +92,7 @@ const generalRoutes = app
       env.TUS_UPLOAD_API_SECRET,
     );
 
-    return ctx.json(
-      {
-        success: true,
-        data: token,
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: token }, 200);
   })
   /*
    * Check if slug is available
@@ -115,13 +102,7 @@ const generalRoutes = app
 
     const slugAvailable = await checkSlugAvailable(slug);
 
-    return ctx.json(
-      {
-        success: true,
-        data: slugAvailable,
-      },
-      200,
-    );
+    return ctx.json({ success: slugAvailable }, 200);
   })
   /*
    * Check token (token validation)
@@ -165,13 +146,7 @@ const generalRoutes = app
       data.organizationSlug = organization.slug;
     }
 
-    return ctx.json(
-      {
-        success: true,
-        data,
-      },
-      200,
-    );
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Invite users to the system
@@ -248,12 +223,7 @@ const generalRoutes = app
         await db.update(usersTable).set({ role: 'ADMIN' }).where(eq(usersTable.id, user.id));
       }
 
-      return ctx.json(
-        {
-          success: true,
-        },
-        200,
-      );
+      return ctx.json({ success: true }, 200);
     }
 
     if (token.type === 'ORGANIZATION_INVITATION') {
@@ -333,16 +303,14 @@ const generalRoutes = app
     const user = ctx.get('user');
 
     // Retrieve user memberships to filter suggestions by relevant organization,  ADMIN users see everything
-    const memberships = await db.select()
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, user.id));
+    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     // Retrieve organizationIds for non-admin users and check if the user has at least one organization membership
     let organizationIds: string[] = [];
 
     if (user.role !== 'ADMIN') {
-      organizationIds = memberships.filter(el => el.type === 'ORGANIZATION').map(el => String(el.organizationId));
-      if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined ,{ user: user.id });
+      organizationIds = memberships.filter((el) => el.type === 'ORGANIZATION').map((el) => String(el.organizationId));
+      if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
     }
 
     // Provide suggestions for all entities or narrow them down to a specific type if specified
@@ -365,15 +333,15 @@ const generalRoutes = app
         ...('email' in table && { email: table.email }),
         ...('organizationId' in table && { organizationId: table.organizationId }),
         ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
-      }
+      };
 
       // Build search filters
-      const $or = [ilike(table.name, `%${q}%`)]
-      if ('email' in table) $or.push(ilike(table.email, `%${q}%`))
+      const $or = [ilike(table.name, `%${q}%`)];
+      if ('email' in table) $or.push(ilike(table.email, `%${q}%`));
 
       // Build organization filters
       const $and = [];
-      
+
       if (organizationIds.length) {
         if ('organizationId' in table) {
           $and.push(inArray(table.organizationId, organizationIds));
@@ -381,17 +349,23 @@ const generalRoutes = app
           $and.push(inArray(table.id, organizationIds));
         } else if (entityType === 'USER') {
           // Filter users based on their memberships in specified organizations
-          const userMemberships = await db.select({userId: membershipsTable.userId})
+          const userMemberships = await db
+            .select({ userId: membershipsTable.userId })
             .from(membershipsTable)
             .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')));
-          
-          if (!userMemberships.length) continue; 
-          $and.push(inArray(table.id, userMemberships.map(el => String(el.userId))));
+
+          if (!userMemberships.length) continue;
+          $and.push(
+            inArray(
+              table.id,
+              userMemberships.map((el) => String(el.userId)),
+            ),
+          );
         }
       }
-      
+
       $and.push($or.length > 1 ? or(...$or) : $or[0]);
-      const $where = $and.length > 1 ? and(...$and) : $and[0]
+      const $where = $and.length > 1 ? and(...$and) : $and[0];
 
       // Build query
       queries.push(db.select(select).from(table).where($where).limit(10));
@@ -399,9 +373,9 @@ const generalRoutes = app
 
     const results = await Promise.all(queries);
     const entitiesResult = [];
-    
+
     // @TODO: Tmp Typescript type solution
-    for (const entities of results as unknown as Array<Suggestion[]>) entitiesResult.push(...entities.map(e => e))
+    for (const entities of results as unknown as Array<Suggestion[]>) entitiesResult.push(...entities.map((e) => e));
 
     return ctx.json(
       {

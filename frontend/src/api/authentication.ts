@@ -23,7 +23,7 @@ export const checkEmail = async (email: string) => {
   });
 
   const json = await handleResponse(response);
-  return json.data;
+  return json.success;
 };
 
 // Verify the user's email with token sent by email
