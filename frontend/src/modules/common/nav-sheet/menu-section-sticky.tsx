@@ -13,7 +13,7 @@ interface MenuSectionStickyProp {
   data: UserMenu[keyof UserMenu];
   globalDragging: boolean;
   toggleOptionsView: () => void;
-  createDialog: () => void;
+  createDialog?: () => void;
 }
 
 export const MenuSectionSticky = ({
@@ -72,7 +72,7 @@ export const MenuSectionSticky = ({
             )}
           </AnimatePresence>
           <AnimatePresence mode="popLayout">
-            {isSectionVisible && data.canCreate && (
+            {isSectionVisible && createDialog && (
               <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
                 <Button className="w-12 px-3" variant="secondary" size="icon" onClick={createDialog} asChild>
                   <motion.button

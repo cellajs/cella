@@ -70,7 +70,7 @@ export const getProjectsRouteConfig = createRouteConfig({
   guard: [isAuthenticated],
   tags: ['projects'],
   summary: 'Get list of projects',
-  description: 'Get list of projects in which you have a membership.',
+  description: 'Get list of projects in which you have a membership or by requestedId.',
   request: {
     query: getProjectsQuerySchema,
   },
