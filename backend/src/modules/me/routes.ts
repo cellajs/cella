@@ -56,13 +56,34 @@ export const updateSelfConfig = createRouteConfig({
   },
 });
 
+export const deleteSelfConfig = createRouteConfig({
+  method: 'delete',
+  path: '/me',
+  guard: isAuthenticated,
+  tags: ['me'],
+  summary: 'Delete self',
+  description: 'Delete the current user (self).',
+  responses: {
+    200: {
+      description: 'User',
+      content: {
+        'application/json': {
+          schema: successResponseWithErrorsSchema(),
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
 export const getUserMenuConfig = createRouteConfig({
   method: 'get',
   path: '/menu',
   guard: isAuthenticated,
   tags: ['me'],
   summary: 'Get menu of self',
-  description: 'Receive menu data with all contextual entities of which the current user is a member. It is in essence a restructured list of `memberships` per entity type, with some entity data in it.',
+  description:
+    'Receive menu data with all contextual entities of which the current user is a member. It is in essence a restructured list of `memberships` per entity type, with some entity data in it.',
   responses: {
     200: {
       description: 'Menu of user',
