@@ -7,7 +7,7 @@ import {
 } from '../../lib/common-responses';
 import { entityTypeSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
+import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteJsonSchema,
@@ -224,7 +224,7 @@ export const suggestionsConfig = createRouteConfig({
   path: '/suggestions',
   guard: isAuthenticated,
   tags: ['general'],
-  summary: 'Get search suggestions',
+  summary: 'Get list of suggestions',
   description: 'Get search suggestions for all entities, such as users and organizations.',
   request: {
     query: z.object({
@@ -248,7 +248,7 @@ export const suggestionsConfig = createRouteConfig({
 export const getMembersRouteConfig = createRouteConfig({
   method: 'get',
   path: '/members',
-  guard: [isAuthenticated, isAllowedTo('read', 'organization')],
+  guard: [isAuthenticated],
   tags: ['general'],
   summary: 'Get list of members',
   description: 'Get members of an entity by id or slug. It returns members (users) with their role.',

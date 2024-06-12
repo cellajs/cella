@@ -5,8 +5,10 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
-import type { EntityType, Env } from '../../types/common';
+import type { Env, ContextEntity } from '../../types/common';
 import { logEvent } from '../logger/log-event';
+
+export type PermissionAction = 'create' | 'update' | 'read' | 'write';
 
 /**
  * Middleware to protect routes by checking user permissions.
@@ -16,19 +18,19 @@ import { logEvent } from '../logger/log-event';
  */
 const isAllowedTo =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    (action: string, entityType: string): MiddlewareHandler<Env, any> =>
+    (action: PermissionAction, entityType: ContextEntity): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
       const user = ctx.get('user');
 
       // Retrieve the context of the entity to be authorized (e.g., 'organization', 'workspace')
-      const context = await getEntityContext(ctx, entityType);
+      const contextEntity = await getEntityContext(ctx, entityType);
 
       // Check if user or context is missing
-      if (!context || !user) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', entityType.toUpperCase() as EntityType, {
+      if (!contextEntity || !user) {
+        return errorResponse(ctx, 404, 'not_found', 'warn', entityType, {
           user: user?.id,
-          id: context?.id || '',
+          id: contextEntity?.id || '',
         });
       }
 
@@ -36,19 +38,19 @@ const isAllowedTo =
       const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
       // Check if the user is allowed to perform the action in the given context
-      const isAllowed = permissionManager.isPermissionAllowed(memberships, action, context);
+      const isAllowed = permissionManager.isPermissionAllowed(memberships, action, contextEntity);
 
-      // If user is not allowed and not an admin, return a forbidden error
+      // If not allowed and not admin, return forbidden
       if (!isAllowed && user.role !== 'ADMIN') {
-        return errorResponse(ctx, 403, 'forbidden', 'warn', entityType.toUpperCase() as EntityType, { user: user.id, id: context.id });
+        return errorResponse(ctx, 403, 'forbidden', 'warn', entityType, { user: user.id, id: contextEntity.id });
       }
 
-      // Store the user memberships and authorized entity context in the context
-      ctx.set('memberships', memberships);
-      ctx.set(entityType, context);
+      // Store user memberships and authorized context entity in hono ctx
+      ctx.set('userMemberships', memberships);
+      ctx.set('contextEntity', contextEntity);
 
       // Log user allowance in the context
-      logEvent(`User is allowed to ${action} ${context.entity}`, { user: user.id, id: context.id });
+      logEvent(`User is allowed to ${action} ${contextEntity.entity}`, { user: user.id, id: contextEntity.id });
 
       await next();
     };
@@ -57,7 +59,7 @@ const isAllowedTo =
  * Get the context based on the entity type.
  * Handles resolve for both direct entity operations (retrieval, update, deletion) and contextual operations (fetching child entities).
  * @param ctx - The context object containing request and response details.
- * @param entityType - The type of the entity (e.g., 'organization', 'workspace').
+ * @param entityType - The type of the entity (e.g., 'ORGANIZATION', 'WORKSPACE').
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors

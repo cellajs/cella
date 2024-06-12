@@ -47,7 +47,7 @@ export const useColumns = () => {
           ...mobileColumns,
           {
             key: 'userRole',
-            name: t('common:your_role'),
+            name: t('common:role'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
