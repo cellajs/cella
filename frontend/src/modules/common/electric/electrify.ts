@@ -10,10 +10,4 @@ export type Task = Omit<BaseTask, 'labels' | 'assigned_to'> & {
   assigned_to: string[] | null;
 };
 
-export type PreparedTask = Omit<Task, 'labels'> & {
-  labels: Label[];
-  other_tasks: Task[];
-  tasks: Task | null;
-};
-
 export const { ElectricProvider, useElectric } = makeElectricContext<Electric>();

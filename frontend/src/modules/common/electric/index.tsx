@@ -66,7 +66,7 @@ const ElectricProvider = ({ children }: Props) => {
         // Resolves when the shape subscription has been established.
         // TODO: Improve the following section by deriving organization IDs differently.
         // TODO: Update organizationIds to sync whenever the user's menu changes.
-        const organizationIds = menu.organizations.items.map((item) => item.id);
+        const organizationIds = menu.organizations.map((item) => item.id);
         const tasksShape = await electric.db.tasks.sync({
           where: {
             organization_id: {

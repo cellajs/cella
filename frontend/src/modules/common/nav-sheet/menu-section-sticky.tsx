@@ -4,13 +4,13 @@ import { useTranslation } from 'react-i18next';
 import StickyBox from 'react-sticky-box';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenu } from '~/types';
+import type { UserMenuItem } from '~/types';
 import { TooltipButton } from '../tooltip-button';
 
 interface MenuSectionStickyProp {
   sectionType: 'workspaces' | 'organizations';
   isSectionVisible: boolean;
-  data: UserMenu[keyof UserMenu];
+  data: UserMenuItem[];
   globalDragging: boolean;
   toggleOptionsView: () => void;
   createDialog?: () => void;
@@ -38,9 +38,7 @@ export const MenuSectionSticky = ({
                   {t(`common:${sectionType}`)}
                 </motion.span>
                 {!isSectionVisible && (
-                  <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">
-                    {data.items.filter((i) => !i.archived).length}
-                  </span>
+                  <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.filter((i) => !i.archived).length}</span>
                 )}
               </div>
 
@@ -51,7 +49,7 @@ export const MenuSectionSticky = ({
             {isSectionVisible && (
               <TooltipButton toolTipContent={t('common:options')} side="bottom" sideOffset={10}>
                 <Button
-                  disabled={!data.items.length}
+                  disabled={!data.length}
                   className="w-12 px-3"
                   variant={`${globalDragging ? 'plain' : 'secondary'}`}
                   size="icon"

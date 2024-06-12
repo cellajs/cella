@@ -33,16 +33,15 @@ export const getAndSetMenu = async () => {
   const { menuOrder, setMainMenuOrder, setSubMenuOrder } = useNavigationStore.getState();
 
   for (const menuItem of Object.values(menu)) {
-    const { type: entityType, items } = menuItem;
-
-    if (menuOrder[entityType] !== undefined || items.length === 0) continue;
-
-    const entityMainIds = items
+    if (!menuItem.length) continue;
+    const entityType = menuItem[0].type;
+    if (menuOrder[entityType] !== undefined) continue;
+    const entityMainIds = menuItem
       .filter((i) => !i.archived)
       .map((item) => {
         if (!item.submenu) return item.id;
-        const subtype = item.submenu.type;
-        const subItemIds = item.submenu.items.filter((i) => !i.archived).map((subItem) => subItem.id);
+        const subtype = item.submenu[0].type;
+        const subItemIds = item.submenu.filter((i) => !i.archived).map((subItem) => subItem.id);
         setSubMenuOrder(subtype, item.id, subItemIds);
         return item.id;
       });
@@ -133,4 +132,3 @@ export const routeTree = rootRoute.addChildren([
     OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),
   ]),
 ]);
-

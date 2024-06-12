@@ -10,7 +10,9 @@ export const workspacesTable = pgTable(
   'workspaces',
   {
     id: varchar('id').primaryKey().$defaultFn(nanoid),
-    entity: varchar('entity').notNull().default('WORKSPACE'),
+    entity: varchar('entity', { enum: ['WORKSPACE'] })
+      .notNull()
+      .default('WORKSPACE'),
     name: varchar('name').notNull(),
     slug: varchar('slug').unique().notNull(),
     organizationId: varchar('organization_id')

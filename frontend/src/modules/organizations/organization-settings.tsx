@@ -5,15 +5,15 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { useContext } from 'react';
 import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
 import { AsideNav } from '~/modules/common/aside-nav';
-import { OrganizationContext } from '~/modules/organizations/organization';
 import { AsideAnchor } from '../common/aside-anchor';
 import { dialog } from '../common/dialoger/state';
 import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
+import { useContext } from 'react';
+import { EntityContext } from '../common/entity-context';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -21,9 +21,11 @@ const tabs = [
 ];
 
 const OrganizationSettings = () => {
+  const { organization } = useContext(EntityContext);
+  if (!organization) return null;
+
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { organization } = useContext(OrganizationContext);
   const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
 
   const openDeleteDialog = () => {
@@ -32,7 +34,7 @@ const OrganizationSettings = () => {
         dialog
         organizations={[organization]}
         callback={() => {
-          toast.success(t('success.delete_resource', { resource: t('common:organization') }));
+          toast.success(t('common:success.delete_resource', { resource: t('common:organization') }));
           navigate({ to: '/', replace: true });
         }}
       />,

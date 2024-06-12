@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/car
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { Organization } from '~/types';
+import type { EntityPage, Organization } from '~/types';
 import InviteUsers from '../../users/invite-users';
 import StepperFooter from './footer';
 import { OnboardingStart } from './start';
@@ -42,7 +42,7 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
   };
 
   useEffect(() => {
-    if (menu.organizations.items.length > 0) setSteps([onDefaultBoardingSteps[0]]);
+    if (menu.organizations.length > 0) setSteps([onDefaultBoardingSteps[0]]);
   }, []);
 
   return (
@@ -75,7 +75,8 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
                         </CreateOrganizationForm>
                       )}
                       {id === 'invitation' && (
-                        <InviteUsers entityId={organization?.id} entityType="ORGANIZATION" mode="email">
+                        // TODO: Fix this
+                        <InviteUsers entity={organization as unknown as EntityPage} mode="email">
                           <StepperFooter organization={organization} setOnboarding={setOnboarding} />
                         </InviteUsers>
                       )}

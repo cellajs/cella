@@ -20,7 +20,7 @@ interface Props {
 const SelectParentFormField = ({ collection, control, name, label, type, placeholder, required, disabled }: Props) => {
   const { menu } = useNavigationStore();
   const { t } = useTranslation();
-  const options = menu[collection].items.map((item) => ({ value: item.id, label: item.name, url: item.thumbnailUrl }));
+  const options = menu[collection].map((item) => ({ value: item.id, label: item.name, url: item.thumbnailUrl }));
   return (
     <FormField
       control={control}

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, count, desc, eq } from 'drizzle-orm';
 
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
@@ -13,7 +13,7 @@ import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
-import { getUserMenuConfig, meRouteConfig, terminateSessionsConfig, updateSelfConfig } from './routes';
+import { deleteSelfConfig, getUserMenuConfig, meRouteConfig, terminateSessionsConfig, updateSelfConfig } from './routes';
 
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { generateElectricJWTToken } from '../../lib/utils';
@@ -92,24 +92,13 @@ const meRoutes = app
       .select({
         project: projectsTable,
         membership: membershipsTable,
+        workspace: projectsToWorkspacesTable,
       })
       .from(projectsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'PROJECT')))
       .orderBy(desc(projectsTable.createdAt))
-      .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id));
-
-    // TODO: Integrate querying projects-to-workspace relations into the workspace/project query
-    const projectsToWorkspaces = workspacesWithMemberships?.length
-      ? await db
-          .select()
-          .from(projectsToWorkspacesTable)
-          .where(
-            inArray(
-              projectsToWorkspacesTable.workspaceId,
-              workspacesWithMemberships.map(({ workspace }) => workspace.id),
-            ),
-          )
-      : [];
+      .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id))
+      .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id));
 
     const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
       return {
@@ -122,11 +111,12 @@ const meRoutes = app
         archived: membership.inactive,
         muted: membership.muted,
         membershipId: membership.id,
+        type: membership.type,
         role: membership.role,
       };
     });
 
-    const projects = projectsWithMemberships.map(({ project, membership }) => {
+    const projects = projectsWithMemberships.map(({ project, membership, workspace }) => {
       return {
         slug: project.slug,
         id: project.id,
@@ -137,15 +127,15 @@ const meRoutes = app
         organizationId: project.organizationId,
         archived: membership.inactive,
         muted: membership.muted,
+        type: membership.type,
         membershipId: membership.id,
         role: membership.role,
+        mainId: workspace.workspaceId,
       };
     });
+    console.log('projects:', projects);
 
     const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
-      // TODO: Enhance project filtering by integrating the query of workspace-project relations
-      const projectsids = projectsToWorkspaces.filter((p) => p.workspaceId === workspace.id).map(({ projectId }) => projectId);
-
       return {
         slug: workspace.slug,
         id: workspace.id,
@@ -154,15 +144,12 @@ const meRoutes = app
         name: workspace.name,
         thumbnailUrl: workspace.thumbnailUrl,
         organizationId: workspace.organizationId,
+        type: membership.type,
         archived: membership.inactive,
         muted: membership.muted,
         membershipId: membership.id,
         role: membership.role,
-        submenu: {
-          items: projects.filter(({ id }) => projectsids.includes(id)),
-          type: 'PROJECT' as const,
-          submenuTo: workspace.id,
-        },
+        submenu: projects.filter((p) => p.mainId === workspace.id),
       };
     });
 
@@ -170,8 +157,8 @@ const meRoutes = app
       {
         success: true,
         data: {
-          organizations: { items: organizations, type: 'ORGANIZATION' as const },
-          workspaces: { items: workspaces, type: 'WORKSPACE' as const },
+          organizations: organizations,
+          workspaces: workspaces,
         },
       },
       200,
@@ -210,17 +197,13 @@ const meRoutes = app
    */
   .openapi(updateSelfConfig, async (ctx) => {
     const user = ctx.get('user');
-    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
 
-    if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: user.id });
-    }
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
-    if (slug && slug !== targetUser.slug) {
+    if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-
       if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
     }
 
@@ -278,6 +261,25 @@ const meRoutes = app
       },
       200,
     );
+  })
+  /*
+   * Delete current user (self)
+   */
+  .openapi(deleteSelfConfig, async (ctx) => {
+    const user = ctx.get('user');
+    const errors: ErrorType[] = [];
+    // * Check if the user exist
+    if (!user) errors.push(createError(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' }));
+
+    // * Delete the self
+    await db.delete(usersTable).where(eq(usersTable.id, user.id));
+
+    // * Invalidate the user's sessions when deleting self
+    await auth.invalidateUserSessions(user.id);
+    removeSessionCookie(ctx);
+    logEvent('User deleted', { user: user.id });
+
+    return ctx.json({ success: true, errors: errors }, 200);
   });
 
 export default meRoutes;

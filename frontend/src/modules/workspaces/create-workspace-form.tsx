@@ -41,7 +41,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   const { setSheet, menu, setMainMenuOrder, menuOrder } = useNavigationStore();
   const type = 'WORKSPACE';
 
-  const organizations = menu.organizations.items;
+  const organizations = menu.organizations;
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -98,7 +98,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     dialog.reset('create-workspace');
   }, [form.unsavedChanges]);
 
-  if (!form.getValues('organizationId') && !menu.organizations.items.length)
+  if (!form.getValues('organizationId') && !menu.organizations.length)
     return (
       <Alert variant="plain" className="border-0 w-auto">
         <AlertTitle>{t('common:organization_required')}</AlertTitle>

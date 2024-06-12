@@ -15,7 +15,7 @@ export const OnboardingCompleted = () => {
   const state = useUserStore();
 
   useEffect(() => {
-    const sortedOrganizations = [...menu.organizations.items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const sortedOrganizations = [...menu.organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const lastCreatedOrganization = sortedOrganizations[0];
     if (!state.finishOnboarding) {
       createWorkspace({

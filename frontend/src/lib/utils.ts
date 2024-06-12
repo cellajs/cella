@@ -11,7 +11,7 @@ import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import type { Task } from '~/modules/common/electric/electrify';
-import type { DraggableItemData, UserSubMenu } from '~/types';
+import type { DraggableItemData } from '~/types';
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
@@ -191,8 +191,4 @@ export const sortById = (a: string, b: string, order: string[]) => {
   const indexB = order.indexOf(b);
   if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
   return indexA - indexB;
-};
-
-export const isDataSubMenu = (obj: Record<string, unknown>): obj is UserSubMenu => {
-  return 'submenuTo' in obj;
 };

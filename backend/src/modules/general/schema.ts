@@ -13,7 +13,6 @@ import {
   paginationQuerySchema,
   passwordSchema,
   slugSchema,
-  validSlugSchema,
 } from '../../lib/common-schemas';
 
 export const apiPublicCountsSchema = z.object({
@@ -33,10 +32,6 @@ export const checkTokenSchema = z.object({
 export const inviteJsonSchema = z.object({
   emails: apiUserSchema.shape.email.array().min(1),
   role: z.union([apiUserSchema.shape.role, apiMembershipSchema.shape.role]).optional(),
-});
-
-export const inviteQuerySchema = z.object({
-  idOrSlug: idSchema.or(validSlugSchema).optional(),
 });
 
 export const acceptInviteJsonSchema = z.object({

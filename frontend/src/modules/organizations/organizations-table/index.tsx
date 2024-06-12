@@ -82,7 +82,13 @@ const OrganizationsTable = () => {
     for (const index of indexes) {
       const organization = records[index];
       if (column.key === 'userRole' && organization.membership?.role) {
-        inviteMember({ idOrSlug: organization.id, emails: [user.email], role: organization.membership?.role })
+        inviteMember({
+          idOrSlug: organization.id,
+          emails: [user.email],
+          role: organization.membership?.role,
+          entityType: 'ORGANIZATION',
+          organizationId: organization.id,
+        })
           .then(() => {
             toast.success(t('common:success.your_role_updated'));
           })

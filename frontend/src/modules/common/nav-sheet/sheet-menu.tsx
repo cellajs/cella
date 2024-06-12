@@ -16,7 +16,6 @@ import { type MenuItem, type MenuList, MenuSection } from './sheet-menu-section'
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
-  type: EntityType;
   label: string;
   createForm?: React.ReactNode;
   isSubmenu?: boolean;
@@ -28,7 +27,6 @@ export type SectionItem = {
 export const menuSections: SectionItem[] = [
   {
     storageType: 'organizations',
-    type: 'ORGANIZATION',
     label: 'common:organizations',
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
@@ -36,15 +34,8 @@ export const menuSections: SectionItem[] = [
   {
     storageType: 'workspaces',
     isSubmenu: false,
-    type: 'WORKSPACE',
     label: 'common:workspaces',
     createForm: <CreateWorkspaceForm dialog />,
-  },
-  {
-    storageType: 'workspaces',
-    isSubmenu: true,
-    type: 'PROJECT',
-    label: 'common:projects',
   },
 ];
 
@@ -80,20 +71,10 @@ export const SheetMenu = memo(() => {
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return menuSections
-      .filter((el) => !el.isSubmenu)
-      .map((section) => {
-        const menuSection = menu[section.storageType as keyof UserMenu];
-        return (
-          <MenuSection
-            key={section.type}
-            sectionType={section.storageType}
-            isSubmenu={section.isSubmenu}
-            data={menuSection}
-            createForm={section.createForm}
-          />
-        );
-      });
+    return menuSections.map((section) => {
+      const menuSection = menu[section.storageType as keyof UserMenu];
+      return <MenuSection key={section.label} sectionType={section.storageType} data={menuSection} createForm={section.createForm} />;
+    });
   }, [menu]);
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {

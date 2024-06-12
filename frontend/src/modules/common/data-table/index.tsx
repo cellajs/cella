@@ -1,8 +1,8 @@
 import 'react-data-grid/lib/styles.css';
 
 import { Loader2, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import DataGrid, { type CellClickArgs, type CellMouseEvent, type RowsChangeData, type SortColumn } from 'react-data-grid';
+import { type Key, type ReactNode, useEffect, useState } from 'react';
+import DataGrid, { type RenderRowProps, type CellClickArgs, type CellMouseEvent, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 
 import { useRef } from 'react';
@@ -23,6 +23,7 @@ interface DataTableProps<TData> {
   isFetching?: boolean;
   limit: number;
   isFiltered?: boolean;
+  renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
   onCellClick?: (args: CellClickArgs<TData, unknown>, event: CellMouseEvent) => void;
@@ -88,6 +89,7 @@ export const DataTable = <TData,>({
   enableVirtualization,
   onRowsChange,
   fetchMore,
+  renderRow,
   onCellClick,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
@@ -140,6 +142,7 @@ export const DataTable = <TData,>({
                 sortColumns={sortColumns}
                 onSortColumnsChange={onSortColumnsChange}
                 renderers={{
+                  renderRow,
                   renderCheckbox: ({ onChange, ...props }) => {
                     const withShift = useRef(false);
 

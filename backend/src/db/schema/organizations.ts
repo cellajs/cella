@@ -9,7 +9,9 @@ export const organizationsTable = pgTable(
   'organizations',
   {
     id: varchar('id').primaryKey().$defaultFn(nanoid),
-    entity: varchar('entity').notNull().default('ORGANIZATION'),
+    entity: varchar('entity', { enum: ['ORGANIZATION'] })
+      .notNull()
+      .default('ORGANIZATION'),
     name: varchar('name').notNull(),
     shortName: varchar('short_name'),
     slug: varchar('slug').unique().notNull(),
@@ -25,8 +27,8 @@ export const organizationsTable = pgTable(
     emailDomains: json('email_domains').$type<string[]>(),
     color: varchar('color'),
     thumbnailUrl: varchar('thumbnail_url'),
-    logoUrl: varchar('logo_url'),
     bannerUrl: varchar('banner_url'),
+    logoUrl: varchar('logo_url'),
     websiteUrl: varchar('website_url'),
     welcomeText: varchar('welcome_text'),
     isProduction: boolean('is_production').notNull().default(false),

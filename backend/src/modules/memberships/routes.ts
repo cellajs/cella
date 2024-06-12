@@ -1,11 +1,16 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
+import {
+  errorResponses,
+  successResponseWithDataSchema,
+  successResponseWithErrorsSchema,
+  successResponseWithoutDataSchema,
+} from '../../lib/common-responses';
 import { idSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import { inviteJsonSchema, inviteQuerySchema } from '../general/schema';
-import { apiMembershipSchema, deleteMembersQuerySchema, updateMembershipJsonSchema } from './schema';
+import { inviteJsonSchema } from '../general/schema';
+import { apiMembershipSchema, createMembershipQuerySchema, deleteMembersQuerySchema, updateMembershipJsonSchema } from './schema';
 
 export const createMembershipRouteConfig = createRouteConfig({
   method: 'post',
@@ -15,7 +20,7 @@ export const createMembershipRouteConfig = createRouteConfig({
   summary: 'Invite members',
   description: 'Invite members to an entity such as an organization.',
   request: {
-    query: inviteQuerySchema,
+    query: createMembershipQuerySchema,
     body: {
       content: {
         'application/json': {
