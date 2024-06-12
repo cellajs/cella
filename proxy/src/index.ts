@@ -21,10 +21,10 @@ const handler: ExportedHandler<Env> = {
     let apiServerUrl: string | null = null;
     let additionalHeaders: HeadersInit | null = null;
 
-    if (url.pathname.startsWith('/upload')) {
-      apiServerUrl = env.TUS_RENDER_URL + url.pathname.replace('/upload', '') + url.search;
-    } else if (url.pathname.startsWith('/electric')) {
-      apiServerUrl = env.ELECTRIC_RENDER_URL + url.pathname.replace('/electric', '') + url.search;
+    if (url.pathname.startsWith('/upload/v1')) {
+      apiServerUrl = env.TUS_RENDER_URL + url.pathname.replace('/upload/v1', '') + url.search;
+    } else if (url.pathname.startsWith('/electric/v1')) {
+      apiServerUrl = env.ELECTRIC_RENDER_URL + url.pathname.replace('/electri/v1', '') + url.search;
     } else if (url.pathname.startsWith('/api/v1')) {
       apiServerUrl = env.BACKEND_RENDER_URL + url.pathname.replace('/api/v1', '') + url.search;
       additionalHeaders = {
