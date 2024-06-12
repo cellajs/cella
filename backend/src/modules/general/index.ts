@@ -96,7 +96,7 @@ const generalRoutes = app
    * Check if slug is available
    */
   .openapi(checkSlugRouteConfig, async (ctx) => {
-    const { slug } = ctx.req.valid('param');
+    const { slug } = ctx.req.valid('json');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -106,7 +106,7 @@ const generalRoutes = app
    * Check token (token validation)
    */
   .openapi(checkTokenRouteConfig, async (ctx) => {
-    const token = ctx.req.valid('param').token;
+    const { token } = ctx.req.valid('json');
 
     // Check if token exists
     const [tokenRecord] = await db
@@ -139,7 +139,10 @@ const generalRoutes = app
     };
 
     if (tokenRecord.type === 'ORGANIZATION_INVITATION' && tokenRecord.organizationId) {
-      const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
+      const [organization] = await db
+        .select()
+        .from(organizationsTable)
+        .where(eq(organizationsTable.id, tokenRecord.organizationId));
       data.organizationName = organization.name;
       data.organizationSlug = organization.slug;
     }
@@ -154,7 +157,10 @@ const generalRoutes = app
     const user = ctx.get('user');
 
     for (const email of emails) {
-      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
+      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (
+        | User
+        | undefined
+      )[];
 
       const token = generateId(40);
       await db.insert(tokensTable).values({
@@ -170,7 +176,9 @@ const generalRoutes = app
 
       const emailHtml = render(
         InviteEmail({
-          i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
+          i18n: i18n.cloneInstance({
+            lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
+          }),
           username: email.toLowerCase(),
           inviteUrl: `${config.frontendUrl}/auth/invite/${token}`,
           invitedBy: user.name,
@@ -180,9 +188,11 @@ const generalRoutes = app
       );
       logEvent('User invited on system level');
 
-      emailSender.send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email).catch((error) => {
-        logEvent('Error sending email', { error: (error as Error).message }, 'error');
-      });
+      emailSender
+        .send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email)
+        .catch((error) => {
+          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+        });
     }
 
     return ctx.json({ success: true }, 200);
@@ -346,7 +356,9 @@ const generalRoutes = app
           const userMemberships = await db
             .select({ userId: membershipsTable.userId })
             .from(membershipsTable)
-            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')));
+            .where(
+              and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')),
+            );
 
           if (!userMemberships.length) continue;
           $and.push(

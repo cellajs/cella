@@ -14,7 +14,15 @@ import { deleteCookie, getCookie } from 'hono/cookie';
 import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 
-import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
+import {
+  createSession,
+  findOauthAccount,
+  findUserByEmail,
+  getRedirectUrl,
+  handleExistingUser,
+  slugFromEmail,
+  splitFullName,
+} from './helpers/oauth';
 
 import { config } from 'config';
 import type { z } from 'zod';
@@ -56,7 +64,9 @@ const microsoftScopes = { scopes: ['profile', 'email'] };
 
 const app = new CustomHono();
 
-type CheckTokenResponse = z.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']> | undefined;
+type CheckTokenResponse =
+  | z.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']>
+  | undefined;
 type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
 // * Authentication endpoints
@@ -162,7 +172,7 @@ const authRoutes = app
    */
   .openapi(verifyEmailRouteConfig, async (ctx) => {
     const { resend } = ctx.req.valid('query');
-    const verificationToken = ctx.req.valid('param').token;
+    const { token: verificationToken } = ctx.req.valid('json');
 
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
 
@@ -513,7 +523,10 @@ const authRoutes = app
 
         // * If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-          return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, { strategy: 'github', type: 'invitation' });
+          return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
+            strategy: 'github',
+            type: 'invitation',
+          });
         }
 
         userEmail = token.email;
