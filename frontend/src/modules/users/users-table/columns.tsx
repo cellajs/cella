@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Member, User } from '~/types';
 
-import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { renderSelect } from '~/modules/common/data-table/select-column';
@@ -14,6 +13,7 @@ import { isMember } from '.';
 import { config } from 'config';
 import { sheet } from '~/modules/common/sheeter/state';
 import { UserProfile } from '../user-profile';
+import { useState } from 'react';
 
 export const useColumns = <T extends User | Member>(
   callback: (users: T[], action: 'create' | 'update' | 'delete') => void,
@@ -106,7 +106,7 @@ export const useColumns = <T extends User | Member>(
     },
   ];
 
-  return useState<ColumnOrColumnGroup<T>[]>(
-    isMobile ? mobileColumns : customColumns ? [...mobileColumns, ...columns, ...customColumns] : [...mobileColumns, ...columns],
-  );
+  if (customColumns) columns.push(...customColumns);
+
+  return useState<ColumnOrColumnGroup<T>[]>(isMobile ? mobileColumns : [...mobileColumns, ...columns]);
 };

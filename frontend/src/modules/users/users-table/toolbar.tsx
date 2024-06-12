@@ -22,7 +22,7 @@ interface Props<T> {
   isFiltered?: boolean;
   role?: Role;
   entityType?: ContextEntity;
-  canInvite?: boolean;
+  isAdmin?: boolean;
   setRole: React.Dispatch<React.SetStateAction<Role | undefined>>;
   selectedUsers: T[];
   onResetFilters: () => void;
@@ -42,7 +42,7 @@ function Toolbar<T extends User | Member>({
   total,
   role,
   setRole,
-  canInvite,
+  isAdmin,
   onResetFilters,
   onResetSelectedRows,
   query,
@@ -97,7 +97,7 @@ function Toolbar<T extends User | Member>({
               </>
             ) : (
               !isFiltered &&
-              canInvite && (
+              isAdmin && (
                 <Button asChild onClick={inviteDialog}>
                   <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <motion.span layoutId="members-filter-bar-icon">
