@@ -65,18 +65,6 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
     }
   }, [queryResult.data]);
 
-  // // Save filters in search params
-  // const filters = useMemo(
-  //   () => ({
-  //     q: debounceQuery,
-  //     sort: sortColumns[0]?.columnKey,
-  //     order: sortColumns[0]?.direction.toLowerCase(),
-  //   }),
-  //   [debounceQuery, sortColumns],
-  // );
-
-  // useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-
   return (
     <div className="space-y-4 h-full">
       <Toolbar

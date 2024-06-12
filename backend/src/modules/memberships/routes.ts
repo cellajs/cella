@@ -1,6 +1,11 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
+import {
+  errorResponses,
+  successResponseWithDataSchema,
+  successResponseWithErrorsSchema,
+  successResponseWithoutDataSchema,
+} from '../../lib/common-responses';
 import { idSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';

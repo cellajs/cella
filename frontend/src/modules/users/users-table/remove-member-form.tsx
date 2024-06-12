@@ -19,6 +19,11 @@ const RemoveMembersForm = ({ members, entityId, entityType = 'ORGANIZATION', cal
   const { mutate: removeMembers, isPending } = useMutation({
     mutationFn: baseRemoveMembers,
     onSuccess: () => {
+      // for (const member of members) {
+      //   queryClient.invalidateQueries({
+      //     queryKey: ['members', member.id],
+      //   });
+      // }
       callback?.(members);
       if (isDialog) dialog.remove();
     },
