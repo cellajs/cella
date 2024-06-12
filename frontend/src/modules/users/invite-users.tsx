@@ -4,15 +4,14 @@ import { useTranslation } from 'react-i18next';
 import useFocusById from '~/hooks/use-focus-by-id';
 import { AppAlert } from '~/modules/common/app-alert';
 import { dialog } from '~/modules/common/dialoger/state';
-import type { ContextEntity } from '~/types';
+import type { EntityPage } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 
 interface InviteUsersProps {
-  entityId?: string;
-  entityType?: ContextEntity;
+  entity?: EntityPage;
   callback?: () => void;
   dialog?: boolean;
   mode?: string | null;
@@ -20,7 +19,7 @@ interface InviteUsersProps {
 }
 
 // When no entity type, it's a system invite
-const InviteUsers = ({ entityId, entityType, callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
+const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
@@ -93,11 +92,11 @@ const InviteUsers = ({ entityId, entityType, callback, dialog: isDialog, mode, c
               {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
             </AppAlert>
             {inviteMode === 'email' ? (
-              <InviteEmailForm entityId={entityId} entityType={entityType} callback={callback} dialog={isDialog}>
+              <InviteEmailForm entity={entity} callback={callback} dialog={isDialog}>
                 {children}
               </InviteEmailForm>
             ) : (
-              <InviteSearchForm entityId={entityId} entityType={entityType} callback={callback} dialog={isDialog} />
+              <InviteSearchForm entity={entity} callback={callback} dialog={isDialog} />
             )}
           </motion.div>
         )}

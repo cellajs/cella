@@ -14,7 +14,6 @@ const organizationTabs: PageNavTab[] = [
   { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
 ];
 
-
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: ['organizations', idOrSlug],

@@ -3,7 +3,7 @@ import { Check, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { inviteMember as baseInvite, type InviteMemberProps, removeMembers } from '~/api/memberships';
+import { inviteMember as baseInvite, removeMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Workspace } from '~/types';
@@ -43,8 +43,10 @@ const WorkspaceJoinLeaveButton = ({ workspace }: Props) => {
     inviteMember({
       emails: [user.email],
       role: 'MEMBER',
+      entityType: 'WORKSPACE',
       idOrSlug: workspace.slug,
-    } as InviteMemberProps);
+      organizationId: workspace.organizationId,
+    });
   };
 
   const onLeave = () => {
