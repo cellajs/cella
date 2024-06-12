@@ -24,6 +24,7 @@ export type DraggableItemData<T> = {
 
 export type Role = (typeof config.rolesByType.systemRoles)[number] | (typeof config.rolesByType.entityRoles)[number];
 
+// TODO change to EntityType and ContextEntityType
 export type Entity = (typeof config.entityTypes)[number];
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
 
@@ -37,7 +38,13 @@ export type Request = Extract<InferResponseType<(typeof apiClient.requests)['$ge
 
 export type Workspace = Extract<InferResponseType<(typeof apiClient.workspaces)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 
+// TODO what is difference with ProjectRow?
 export type Project = Extract<InferResponseType<(typeof apiClient.projects)[':idOrSlug']['$get']>, { data: unknown }>['data'];
+
+type EntityPageProps = 'id' | 'slug' | 'entity' | 'name' | 'createdAt' | 'thumbnailUrl' | 'bannerUrl' | 'organizationId';
+type BaseEntityPage = Pick<Project, EntityPageProps>;
+
+export type EntityPage = Omit<BaseEntityPage, 'organizationId'> & { organizationId: Project['organizationId'] | null | undefined };
 
 export type ProjectRow = Extract<InferResponseType<(typeof apiClient.projects)['$get']>, { data: unknown }>['data']['items'][number];
 

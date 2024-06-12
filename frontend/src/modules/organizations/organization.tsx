@@ -1,24 +1,19 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
-import { createContext } from 'react';
 import { getOrganization } from '~/api/organizations';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
-import type { Organization } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
 import JoinLeaveButton from './join-leave-button';
-
-interface OrganizationContextValue {
-  organization: Organization;
-}
+import { EntityContext } from '~/modules/common/entity-context';
+import type { EntityPage } from '~/types';
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
   { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
 ];
 
-export const OrganizationContext = createContext({} as OrganizationContextValue);
 
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -34,7 +29,8 @@ const OrganizationPage = () => {
   const tabs = organization.membership?.role === 'ADMIN' ? organizationTabs : [organizationTabs[0]];
 
   return (
-    <OrganizationContext.Provider value={{ organization }}>
+    // TODO clean this line
+    <EntityContext.Provider value={{ entity: organization as unknown as EntityPage, organization: organization }}>
       <PageHeader
         id={organization.id}
         title={organization.name}
@@ -51,7 +47,7 @@ const OrganizationPage = () => {
       <FocusViewContainer className="container min-h-screen mt-4">
         <Outlet />
       </FocusViewContainer>
-    </OrganizationContext.Provider>
+    </EntityContext.Provider>
   );
 };
 

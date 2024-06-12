@@ -1,5 +1,5 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
-import { createRoute } from '@tanstack/react-router';
+import { createRoute, useParams } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { getMembersQuerySchema } from 'backend/modules/general/schema';
 import { Suspense } from 'react';
@@ -13,6 +13,7 @@ import OrganizationSettings from '~/modules/organizations/organization-settings'
 import UsersTable from '~/modules/users/users-table';
 import { IndexRoute } from './routeTree';
 import type { Member } from '~/types';
+import { useNavigationStore } from '~/store/navigation';
 
 // Lazy-loaded components
 // const UsersTable = lazy(() => import('~/modules/users/users-table'));
@@ -53,7 +54,8 @@ export const OrganizationRoute = createRoute({
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
   getParentRoute: () => IndexRoute,
   loader: async ({ params: { idOrSlug } }) => {
-    queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
+    const organization = await queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
+    return { organization };
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
@@ -77,21 +79,37 @@ export const OrganizationMembersRoute = createRoute({
       queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
     }
   },
-  component: () => (
-    <Suspense>
-      <UsersTable<Member, GetMembersParams, z.infer<typeof getMembersQuerySchema>>
-        entityType="ORGANIZATION"
-        queryOptions={membersQueryOptions}
-        routeFrom={OrganizationMembersRoute.id}
-        fetchForExport={getMembers}
-      />
-    </Suspense>
-  ),
+  component: () => {
+    const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
+    const { menu } = useNavigationStore();
+    const [userRole] = Object.values(menu)
+      .map((el) => {
+        if (el.type === 'ORGANIZATION') {
+          const targetEntity = el.items.find((el) => el.id === idOrSlug || el.slug === idOrSlug);
+          if (targetEntity) return targetEntity.role;
+        }
+      })
+      .filter((el) => el !== undefined);
+    return (
+      <Suspense>
+        <UsersTable<Member, GetMembersParams, z.infer<typeof getMembersQuerySchema>>
+          entityType="ORGANIZATION"
+          queryOptions={membersQueryOptions}
+          routeFrom={OrganizationMembersRoute.id}
+          fetchForExport={getMembers}
+          isAdmin={userRole === 'ADMIN'}
+        />
+      </Suspense>
+    );
+  },
 });
 
 export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,
+  beforeLoad: ({ context }) => {
+    console.log('context', context);
+  },
   component: () => <OrganizationSettings />,
 });

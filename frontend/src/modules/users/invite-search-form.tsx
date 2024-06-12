@@ -6,7 +6,7 @@ import { type InviteMemberProps, inviteMember } from '~/api/memberships';
 import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useContext } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { getSuggestions } from '~/api/general';
@@ -19,6 +19,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { ContextEntity } from '~/types';
+import { EntityContext } from '../common/entity-context';
 
 interface Props {
   entityId?: string;
@@ -38,6 +39,7 @@ type FormValues = z.infer<typeof formSchema>;
 // Invite members by seaching for users which are already in the system
 const InviteSearchForm = ({ entityId, entityType, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
+  const { entity } = useContext(EntityContext);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -68,6 +70,7 @@ const InviteSearchForm = ({ entityId, entityType, callback, dialog: isDialog }: 
     invite({
       ...values,
       idOrSlug: entityId,
+      organizationId: entity?.organizationId || entityId,
     });
   };
 
