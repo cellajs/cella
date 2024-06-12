@@ -13,7 +13,6 @@ import {
   paginationQuerySchema,
   passwordSchema,
   slugSchema,
-  validSlugSchema,
 } from '../../lib/common-schemas';
 
 export const apiPublicCountsSchema = z.object({

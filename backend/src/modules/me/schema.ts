@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/common-schemas';
 import { apiMembershipSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
 
@@ -20,18 +20,18 @@ const menuItemSchema = z.object({
   muted: z.boolean(),
   role: apiMembershipSchema.shape.role,
   membershipId: idSchema,
+  type: apiMembershipSchema.shape.type,
+  mainId: z.string().optional(),
 });
 
 const menuSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
-    submenu: z.object({ items: z.array(menuItemSchema), submenuTo: z.string(), type: contextEntityTypeSchema }).optional(),
+    submenu: z.array(menuItemSchema).optional(),
   }),
 );
 
-const menuSectionSchema = z.object({ items: menuSchema, type: contextEntityTypeSchema });
-
 export const userMenuSchema = z.object({
-  organizations: menuSectionSchema,
-  workspaces: menuSectionSchema,
+  organizations: menuSchema,
+  workspaces: menuSchema,
 });

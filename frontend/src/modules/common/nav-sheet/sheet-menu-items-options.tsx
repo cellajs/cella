@@ -9,11 +9,11 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
-import { arrayMove, getDraggableItemData, getReorderDestinationIndex, isDataSubMenu, sortById } from '~/lib/utils';
+import { arrayMove, getDraggableItemData, getReorderDestinationIndex, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { DraggableItemData, UserMenu } from '~/types';
+import type { DraggableItemData, UserMenuItem } from '~/types';
 import { DropIndicator } from '../drop-indicator';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import type { MenuItem } from './sheet-menu-section';
@@ -21,7 +21,6 @@ import type { MenuItem } from './sheet-menu-section';
 interface MenuItemProps {
   isGlobalDragging?: boolean;
   setGlobalDragging?: (dragging: boolean) => void;
-  submenu?: boolean;
 }
 
 type PageDraggableItemData = DraggableItemData<MenuItem>;
@@ -34,22 +33,23 @@ export const SheetMenuItemsOptions = ({
   data,
   shownOption,
   isGlobalDragging,
-  submenu,
   setGlobalDragging,
-}: MenuItemProps & { data: UserMenu[keyof UserMenu]; shownOption: 'archived' | 'unarchive' }) => {
+}: MenuItemProps & { data: UserMenuItem[]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
   const { hideSubmenu, menuOrder } = useNavigationStore();
-  if (data.items.length === 0) {
+  const entityType = data[0].type;
+  const mainItemId = data[0].mainId;
+  if (data.length === 0) {
     return (
       <li className="py-2 text-muted-foreground text-sm text-light text-center">
-        {t('common:no_resource_yet', { resource: t(data.type.toLowerCase()).toLowerCase() })}
+        {t('common:no_resource_yet', { resource: t(entityType.toLowerCase()).toLowerCase() })}
       </li>
     );
   }
-  const items = data.items
+  const items = data
     .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
-    .sort((a, b) => sortById(a.id, b.id, isDataSubMenu(data) ? menuOrder[data.type].subList[data.submenuTo] : menuOrder[data.type].mainList));
+    .sort((a, b) => sortById(a.id, b.id, mainItemId ? menuOrder[entityType].subList[mainItemId] : menuOrder[entityType].mainList));
 
   const toggleSubmenuVisibility = (itemId: string) => {
     setSubmenuVisibility((prevState) => ({
@@ -63,23 +63,28 @@ export const SheetMenuItemsOptions = ({
 
     return (
       <div key={item.id}>
-        <ItemOptions item={item} itemType={data.type} isGlobalDragging={isGlobalDragging} setGlobalDragging={setGlobalDragging} submenu={submenu} />
-        {!item.archived && item.submenu && !!item.submenu.items.length && !hideSubmenu && (
+        <ItemOptions
+          item={item}
+          itemType={entityType}
+          isGlobalDragging={isGlobalDragging}
+          setGlobalDragging={setGlobalDragging}
+          mainItemId={mainItemId}
+        />
+        {!item.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
           <>
             <SheetMenuItemsOptions
               data={item.submenu}
               shownOption={shownOption}
-              submenu
               isGlobalDragging={isGlobalDragging}
               setGlobalDragging={setGlobalDragging}
             />
             <MenuArchiveToggle
               archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
-              inactiveCount={item.submenu.items.filter((i) => i.archived).length}
+              inactiveCount={item.submenu.filter((i) => i.archived).length}
               isArchivedVisible={isSubmenuArchivedVisible}
               isSubmenu
             />
-            {isSubmenuArchivedVisible && <SheetMenuItemsOptions data={item.submenu} shownOption="archived" submenu />}
+            {isSubmenuArchivedVisible && <SheetMenuItemsOptions data={item.submenu} shownOption="archived" />}
           </>
         )}
       </div>
@@ -91,9 +96,9 @@ const ItemOptions = ({
   item,
   itemType,
   isGlobalDragging,
-  submenu,
+  mainItemId,
   setGlobalDragging,
-}: MenuItemProps & { item: MenuItem; itemType: ContextEntity }) => {
+}: MenuItemProps & { mainItemId?: string; item: MenuItem; itemType: ContextEntity }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
@@ -111,7 +116,7 @@ const ItemOptions = ({
     onSuccess: (data) => {
       if (data.inactive !== isItemArchived) {
         const archived = data.inactive || !isItemArchived;
-        archiveStateToggle(item.id, archived, isDataSubMenu(item) ? item.submenuTo : null);
+        archiveStateToggle(item.id, archived, mainItemId ? mainItemId : null);
         toast.success(
           data.inactive
             ? t('common:success.archived_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
@@ -146,18 +151,11 @@ const ItemOptions = ({
   };
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const subList = menuOrder[itemType].subList;
-    let mainMenuId: string | undefined;
-    if (subList) {
-      mainMenuId = Object.keys(subList).find((key) => {
-        return subList[key].includes(item.id);
-      });
-    }
-    const submenuItemIndex = mainMenuId ? menuOrder[itemType].subList[mainMenuId].findIndex((el) => el === item.id) : 0;
+    const submenuItemIndex = mainItemId ? menuOrder[itemType].subList[mainItemId].findIndex((el) => el === item.id) : 0;
     const itemIndex = menuOrder[itemType].mainList ? menuOrder[itemType].mainList.findIndex((el) => el === item.id) : 0;
     const element = dragRef.current;
     const dragButton = dragButtonRef.current;
-    const data = getDraggableItemData(item, submenu ? submenuItemIndex : itemIndex, 'menuItem', itemType);
+    const data = getDraggableItemData(item, mainItemId ? submenuItemIndex : itemIndex, 'menuItem', itemType);
 
     if (!element || !dragButton) return;
 
@@ -200,7 +198,7 @@ const ItemOptions = ({
         onDragLeave: () => onDragOver(),
       }),
     );
-  }, [item, menuOrder[itemType]]);
+  }, [item, menuOrder[itemType], mainItemId]);
 
   // monitoring drop event
   useEffect(() => {
@@ -238,19 +236,19 @@ const ItemOptions = ({
         layoutId={`sheet-menu-item-${item.id}`}
         ref={dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
-        className={`group flex relative items-center sm:max-w-[18rem] ${submenu ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0  cursor-pointer justify-start rounded  focus:outline-none
+        className={`group flex relative items-center sm:max-w-[18rem] ${mainItemId ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0  cursor-pointer justify-start rounded  focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground space-x-1
       ${!isItemArchived && 'ring-1'} `}
       >
         <AvatarWrap
-          className={`${submenu ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'}`}
+          className={`${mainItemId ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'}`}
           type={itemType}
           id={item.id}
           name={item.name}
           url={item.thumbnailUrl}
         />
         <div className="truncate grow py-2 text-left">
-          <div className={`truncate text-foreground/80 ${submenu ? 'text-sm' : 'text-base mb-1'} leading-5`}>{item.name}</div>
+          <div className={`truncate text-foreground/80 ${mainItemId ? 'text-sm' : 'text-base mb-1'} leading-5`}>{item.name}</div>
           <div className={`flex items-center gap-4 transition-opacity ${isGlobalDragging ? 'opacity-40 delay-0' : 'delay-500'}`}>
             <Button
               variant="link"
@@ -261,11 +259,11 @@ const ItemOptions = ({
             >
               {isItemArchived ? (
                 <>
-                  <ArchiveRestore size={submenu ? 12 : 14} className="mr-1" /> {t('common:restore')}
+                  <ArchiveRestore size={mainItemId ? 12 : 14} className="mr-1" /> {t('common:restore')}
                 </>
               ) : (
                 <>
-                  <Archive size={submenu ? 12 : 14} className="mr-1" />
+                  <Archive size={mainItemId ? 12 : 14} className="mr-1" />
                   {t('common:archive')}
                 </>
               )}
@@ -279,12 +277,12 @@ const ItemOptions = ({
             >
               {isItemMuted ? (
                 <>
-                  <Bell size={submenu ? 12 : 14} className="mr-1" />
+                  <Bell size={mainItemId ? 12 : 14} className="mr-1" />
                   {t('common:unmute')}
                 </>
               ) : (
                 <>
-                  <BellOff size={submenu ? 12 : 14} className="mr-1" />
+                  <BellOff size={mainItemId ? 12 : 14} className="mr-1" />
                   {t('common:mute')}
                 </>
               )}

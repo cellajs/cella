@@ -71,7 +71,7 @@ const InviteSearchForm = ({ entityId, entityType, callback, dialog: isDialog }: 
       ...values,
       idOrSlug: entityId,
       organizationId: entity?.organizationId || entityId,
-    });
+    } as InviteMemberProps);
   };
 
   return (

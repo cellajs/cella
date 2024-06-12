@@ -14,19 +14,20 @@ interface MenuSectionProps {
   data: UserMenu[keyof UserMenu];
   sectionType: 'workspaces' | 'organizations';
   createForm: ReactNode;
-  isSubmenu?: boolean;
 }
 
-export type MenuList = UserMenu[keyof UserMenu]['items'];
-export type MenuItem = MenuList[0];
+export type MenuList = UserMenu[keyof UserMenu];
+export type MenuItem = MenuList[number];
 
-export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSectionProps) => {
+export const MenuSection = ({ data, sectionType, createForm }: MenuSectionProps) => {
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
   const [globalDragging, setGlobalDragging] = useState(false);
   const { activeSections } = useNavigationStore();
   const isSectionVisible = activeSections[sectionType];
+  const entityType = data[0].type;
+  const mainItemId = data[0].mainId;
 
   const sectionRef = useRef<HTMLDivElement>(null);
   const archivedRef = useRef<HTMLDivElement>(null);
@@ -34,8 +35,8 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
   const createDialog = () => {
     dialog(createForm, {
       className: 'md:max-w-2xl',
-      id: `create-${data.type.toLowerCase()}`,
-      title: t('common:create_resource', { resource: t(`common:${data.type.toLowerCase()}`).toLowerCase() }),
+      id: `create-${entityType.toLowerCase()}`,
+      title: t('common:create_resource', { resource: t(`common:${entityType.toLowerCase()}`).toLowerCase() }),
     });
   };
 
@@ -73,7 +74,7 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
 
   return (
     <>
-      {!isSubmenu && (
+      {!mainItemId && (
         <MenuSectionSticky
           data={data}
           sectionType={sectionType}
@@ -93,12 +94,12 @@ export const MenuSection = ({ data, sectionType, createForm, isSubmenu }: MenuSe
           ) : (
             <SheetMenuItems data={data} shownOption="unarchive" createDialog={createDialog} />
           )}
-          {!!data.items.length && (
+          {!!data.length && (
             <>
               <MenuArchiveToggle
-                isSubmenu={isSubmenu}
+                isSubmenu={typeof mainItemId === 'string'}
                 archiveToggleClick={archiveToggleClick}
-                inactiveCount={data.items.filter((i) => i.archived).length}
+                inactiveCount={data.filter((i) => i.archived).length}
                 isArchivedVisible={isArchivedVisible}
               />
               <div

@@ -65,10 +65,10 @@ const InviteEmailForm = ({ entityId, entityType, callback, dialog: isDialog, chi
     mutationFn: (values: FormValues) => {
       if (!entityType) return inviteSystem(values as InviteSystemProps);
       return inviteMember({
-        ...values, 
-        idOrSlug: entityId, 
-        organizationId: entity?.organizationId || entity.id
-      }, as InviteMemberProps);
+        ...values,
+        idOrSlug: entityId,
+        organizationId: entity?.organizationId || entity.id,
+      } as InviteMemberProps);
     },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });

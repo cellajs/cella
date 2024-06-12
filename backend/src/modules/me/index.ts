@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, count, desc, eq } from 'drizzle-orm';
 
 import { db } from '../../db/db';
 import { auth } from '../../db/lucia';
@@ -92,24 +92,13 @@ const meRoutes = app
       .select({
         project: projectsTable,
         membership: membershipsTable,
+        workspace: projectsToWorkspacesTable,
       })
       .from(projectsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'PROJECT')))
       .orderBy(desc(projectsTable.createdAt))
-      .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id));
-
-    // TODO: Integrate querying projects-to-workspace relations into the workspace/project query
-    const projectsToWorkspaces = workspacesWithMemberships?.length
-      ? await db
-          .select()
-          .from(projectsToWorkspacesTable)
-          .where(
-            inArray(
-              projectsToWorkspacesTable.workspaceId,
-              workspacesWithMemberships.map(({ workspace }) => workspace.id),
-            ),
-          )
-      : [];
+      .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id))
+      .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id));
 
     const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
       return {
@@ -122,11 +111,12 @@ const meRoutes = app
         archived: membership.inactive,
         muted: membership.muted,
         membershipId: membership.id,
+        type: membership.type,
         role: membership.role,
       };
     });
 
-    const projects = projectsWithMemberships.map(({ project, membership }) => {
+    const projects = projectsWithMemberships.map(({ project, membership, workspace }) => {
       return {
         slug: project.slug,
         id: project.id,
@@ -137,15 +127,15 @@ const meRoutes = app
         organizationId: project.organizationId,
         archived: membership.inactive,
         muted: membership.muted,
+        type: membership.type,
         membershipId: membership.id,
         role: membership.role,
+        mainId: workspace.workspaceId,
       };
     });
+    console.log('projects:', projects);
 
     const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
-      // TODO: Enhance project filtering by integrating the query of workspace-project relations
-      const projectsids = projectsToWorkspaces.filter((p) => p.workspaceId === workspace.id).map(({ projectId }) => projectId);
-
       return {
         slug: workspace.slug,
         id: workspace.id,
@@ -154,15 +144,12 @@ const meRoutes = app
         name: workspace.name,
         thumbnailUrl: workspace.thumbnailUrl,
         organizationId: workspace.organizationId,
+        type: membership.type,
         archived: membership.inactive,
         muted: membership.muted,
         membershipId: membership.id,
         role: membership.role,
-        submenu: {
-          items: projects.filter(({ id }) => projectsids.includes(id)),
-          type: 'PROJECT' as const,
-          submenuTo: workspace.id,
-        },
+        submenu: projects.filter((p) => p.mainId === workspace.id),
       };
     });
 
@@ -170,8 +157,8 @@ const meRoutes = app
       {
         success: true,
         data: {
-          organizations: { items: organizations, type: 'ORGANIZATION' as const },
-          workspaces: { items: workspaces, type: 'WORKSPACE' as const },
+          organizations: organizations,
+          workspaces: workspaces,
         },
       },
       200,

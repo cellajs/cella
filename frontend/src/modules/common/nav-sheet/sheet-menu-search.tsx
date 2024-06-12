@@ -29,9 +29,7 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResul
         .filter((el) => !el.isSubmenu)
         .reduce(
           (acc, section) => {
-            acc[section.storageType] = menu[section.storageType as keyof UserMenu].items.filter((page) =>
-              page.name.toLowerCase().includes(lowerCaseTerm),
-            );
+            acc[section.storageType] = menu[section.storageType as keyof UserMenu].filter((page) => page.name.toLowerCase().includes(lowerCaseTerm));
             return acc;
           },
           {} as Record<string, MenuList>,

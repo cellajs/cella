@@ -78,13 +78,13 @@ export default function Board() {
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
   const currentWorkspace = useMemo(() => {
-    return menu.workspaces.items.find((w) => w.id === workspace.id);
-  }, [menu.workspaces.items, workspace.id]);
+    return menu.workspaces.find((w) => w.id === workspace.id);
+  }, [menu.workspaces, workspace.id]);
 
   useEffect(() => {
     //Fix types
     if (currentWorkspace) {
-      const currentActiveProjects = currentWorkspace.submenu?.items.filter((p) => !p.archived) as unknown as Project[];
+      const currentActiveProjects = currentWorkspace.submenu?.filter((p) => !p.archived) as unknown as Project[];
       if (!currentActiveProjects) return setMappedProjects(projects);
       setMappedProjects(currentActiveProjects.sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])));
     }
@@ -106,7 +106,7 @@ export default function Board() {
             const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
             const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'horizontal');
             const newItemOrder = arrayMove(menuOrder.PROJECT.subList[workspace.id], sourceData.index, destination);
-            setSubMenuOrder('PROJECT',workspace.id, newItemOrder);
+            setSubMenuOrder('PROJECT', workspace.id, newItemOrder);
           }
         },
       }),

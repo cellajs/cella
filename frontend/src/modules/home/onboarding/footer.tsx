@@ -19,7 +19,7 @@ const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
   const { nextStep, prevStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
-  const haveOrganizations = menu.organizations.items.length > 0;
+  const haveOrganizations = menu.organizations.length > 0;
 
   // prevent accidental submit
   const skipStep = (e: { preventDefault: () => void }) => {

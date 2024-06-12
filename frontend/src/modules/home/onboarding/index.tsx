@@ -42,7 +42,7 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
   };
 
   useEffect(() => {
-    if (menu.organizations.items.length > 0) setSteps([onDefaultBoardingSteps[0]]);
+    if (menu.organizations.length > 0) setSteps([onDefaultBoardingSteps[0]]);
   }, []);
 
   return (

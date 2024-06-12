@@ -36,7 +36,7 @@ interface NavigationState {
 const initialMenuState: UserMenu = menuSections
   .filter((el) => !el.isSubmenu)
   .reduce<UserMenu>((acc, section) => {
-    acc[section.storageType as keyof UserMenu] = { items: [], type: null as unknown as ContextEntity };
+    acc[section.storageType as keyof UserMenu] = [];
     return acc;
   }, {} as UserMenu);
 
@@ -100,15 +100,15 @@ export const useNavigationStore = create<NavigationState>()(
               if (!mainId) {
                 for (const sectionKey of Object.keys(state.menu)) {
                   const section = state.menu[sectionKey as keyof UserMenu];
-                  const itemIndex = section.items.findIndex((item) => item.id === itemId);
-                  if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu].items[itemIndex].archived = active;
+                  const itemIndex = section.findIndex((item) => item.id === itemId);
+                  if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu][itemIndex].archived = active;
                 }
               } else {
                 const section = state.menu.workspaces;
-                const workspace = section.items.find((item) => item.id === mainId);
+                const workspace = section.find((item) => item.id === mainId);
                 if (!workspace || !workspace.submenu) return;
-                const itemIndex = workspace.submenu.items.findIndex((item) => item.id === itemId);
-                if (itemIndex && itemIndex !== -1) workspace.submenu.items[itemIndex].archived = active;
+                const itemIndex = workspace.submenu.findIndex((item) => item.id === itemId);
+                if (itemIndex && itemIndex !== -1) workspace.submenu[itemIndex].archived = active;
               }
             });
           },

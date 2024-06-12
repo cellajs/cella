@@ -84,10 +84,8 @@ export const OrganizationMembersRoute = createRoute({
     const { menu } = useNavigationStore();
     const [userRole] = Object.values(menu)
       .map((el) => {
-        if (el.type === 'ORGANIZATION') {
-          const targetEntity = el.items.find((el) => el.id === idOrSlug || el.slug === idOrSlug);
-          if (targetEntity) return targetEntity.role;
-        }
+        const targetEntity = el.find((el) => el.id === idOrSlug || el.slug === idOrSlug);
+        if (targetEntity) return targetEntity.role;
       })
       .filter((el) => el !== undefined);
     return (
