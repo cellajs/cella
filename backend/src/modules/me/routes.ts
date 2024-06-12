@@ -1,4 +1,4 @@
-import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema } from '../../lib/common-responses';
+import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
 import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
@@ -58,17 +58,17 @@ export const updateSelfConfig = createRouteConfig({
 
 export const deleteSelfConfig = createRouteConfig({
   method: 'delete',
-  path: '/me',
+  path: '/',
   guard: isAuthenticated,
   tags: ['me'],
   summary: 'Delete self',
   description: 'Delete the current user (self).',
   responses: {
     200: {
-      description: 'User',
+      description: 'User deleted',
       content: {
         'application/json': {
-          schema: successResponseWithErrorsSchema(),
+          schema: successResponseWithoutDataSchema,
         },
       },
     },

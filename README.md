@@ -91,11 +91,10 @@ pnpm run dev
 
 ### Step 3
 
-The user [seed](/backend/seed/index.ts) is required to add an ADMIN user. Check `/backend/seed` to add more data with [faker.js](https://github.com/faker-js/faker).
+The user [seed](/backend/seed/index.ts) is required to add an ADMIN user. Check `/backend/seed` for more info
 
 ```bash
-pnpm run seed:user
-pnpm run seed:organizations
+pnpm run seed
 ```
 
 Use [Drizzle Studio](https://orm.drizzle.team/drizzle-studio/overview) to manage your local db on [local.drizzle.studio](http:local.drizzle.studio)

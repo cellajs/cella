@@ -47,7 +47,7 @@
     "config": "workspace:*",
     "drizzle-orm": "^0.31.0",
     "drizzle-zod": "^0.5.1",
-    "electric-sql": "^0.11.3",
+    "electric-sql": "^0.12.0",
     "email": "workspace:*",
     "enforce-unique": "^1.3.0",
     "env": "workspace:*",

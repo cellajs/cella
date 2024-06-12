@@ -96,8 +96,8 @@ importers:
         specifier: ^0.5.1
         version: 0.5.1(drizzle-orm@0.31.1)(zod@3.23.8)
       electric-sql:
-        specifier: ^0.11.3
-        version: 0.11.3(pg@8.12.0)(react@18.3.1)(vue@3.4.27)(zod@3.23.8)
+        specifier: ^0.12.0
+        version: 0.12.0(pg@8.12.0)(react@18.3.1)(vue@3.4.27)(zod@3.23.8)
       email:
         specifier: workspace:*
         version: link:../email
@@ -321,11 +321,11 @@ importers:
         specifier: ^5.40.0
         version: 5.40.1(react@18.3.1)
       '@tanstack/react-router':
-        specifier: ^1.35.5
-        version: 1.35.6(react-dom@18.3.1)(react@18.3.1)
+        specifier: ^1.36.1
+        version: 1.36.1(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/router-devtools':
         specifier: ^1.34.9
-        version: 1.35.1(@tanstack/react-router@1.35.6)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1)
+        version: 1.35.1(@tanstack/react-router@1.36.1)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1)
       '@uiw/react-md-editor':
         specifier: ^4.0.4
         version: 4.0.4(@types/react@18.3.3)(react-dom@18.3.1)(react@18.3.1)
@@ -8823,8 +8823,8 @@ packages:
       react: 18.3.1
     dev: false
 
-  /@tanstack/react-router@1.35.6(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-CkM2uZBq+vRISfSxtVxc2Fn6lCXrfvQuptu8GN73lznYZvqIMzYMK6tCIl25jS8Fa3LOeltdNoqpHGq+nFHV8w==}
+  /@tanstack/react-router@1.36.1(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-gUfTBmi+GPHDBWOiP9eHTKqk8gfWtuEEk2CL2fcMc5Dng16rY3abZWZSy3eUBsBKDXQ45XUTzTWzMbCSDNbX+g==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8'
@@ -8850,7 +8850,7 @@ packages:
       use-sync-external-store: 1.2.2(react@18.3.1)
     dev: false
 
-  /@tanstack/router-devtools@1.35.1(@tanstack/react-router@1.35.6)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1):
+  /@tanstack/router-devtools@1.35.1(@tanstack/react-router@1.36.1)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-lwsZAwrFpWHYYMkJI37uqy99aCIMCgQmZ5AHmGbYTTo+Z23GUdgnb2AE+OO2Pd0zurIzEYjRIX8OOGMzaPy1Kw==}
     engines: {node: '>=12'}
     peerDependencies:
@@ -8858,7 +8858,7 @@ packages:
       react: '>=16.8'
       react-dom: '>=16.8'
     dependencies:
-      '@tanstack/react-router': 1.35.6(react-dom@18.3.1)(react@18.3.1)
+      '@tanstack/react-router': 1.36.1(react-dom@18.3.1)(react@18.3.1)
       clsx: 2.1.1
       date-fns: 2.30.0
       goober: 2.1.14(csstype@3.1.3)
@@ -11444,8 +11444,8 @@ packages:
       jake: 10.9.1
     dev: true
 
-  /electric-sql@0.11.3(pg@8.12.0)(react@18.3.1)(vue@3.4.27)(zod@3.23.8):
-    resolution: {integrity: sha512-5D9+n69ht4kgErTdTC9EUE+BhdjaaxeW12tYbzCehvSELRW7MdXrDU7Gqm0SLWYVJ+CAJWS+qfoaGt+wqXDOHA==}
+  /electric-sql@0.12.0(pg@8.12.0)(react@18.3.1)(vue@3.4.27)(zod@3.23.8):
+    resolution: {integrity: sha512-nM2aHRnsgUgIX885CY6uEUajw1eawxwILLV6taEeWe14ddfkZ6zSaj21KEietp6aSvDXWIpXdyMEP71wg/aDHA==}
     hasBin: true
     peerDependencies:
       '@capacitor-community/sqlite': '>= 5.6.2'

@@ -267,19 +267,18 @@ const meRoutes = app
    */
   .openapi(deleteSelfConfig, async (ctx) => {
     const user = ctx.get('user');
-    const errors: ErrorType[] = [];
-    // * Check if the user exist
-    if (!user) errors.push(createError(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' }));
+    // * Check if user exists
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });
 
-    // * Delete the self
+    // * Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
 
-    // * Invalidate the user's sessions when deleting self
+    // * Invalidate sessions
     await auth.invalidateUserSessions(user.id);
     removeSessionCookie(ctx);
     logEvent('User deleted', { user: user.id });
 
-    return ctx.json({ success: true, errors: errors }, 200);
+    return ctx.json({ success: true }, 200);
   });
 
 export default meRoutes;
