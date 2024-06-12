@@ -102,7 +102,7 @@ const projectsRoutes = app
    * Get list of projects
    */
   .openapi(getProjectsRouteConfig, async (ctx) => {
-    // also be able to filter on organizationId
+    // TODO: also be able to filter on organizationId
     const { q, sort, order, offset, limit, workspaceId, requestedUserId } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -125,6 +125,7 @@ const projectsRoutes = app
       .as('counts');
 
     // @TODO: Permission check which projects a user is allowed to see? (this will skip when requestedUserId is used in query!)
+    // It should check organization permissions, project permissions and system admin permission
     const memberships = db
       .select()
       .from(membershipsTable)
