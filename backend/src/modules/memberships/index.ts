@@ -9,7 +9,7 @@ import { generateId, type User } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
 import { InviteEmail } from '../../../../email/emails/invite';
 import { tokensTable, type TokenModel } from '../../db/schema/tokens';
-import { usersTable } from '../../db/schema/users';
+import { type UserModel, usersTable } from '../../db/schema/users';
 import { resolveEntity } from '../../lib/entity';
 import { createError, errorResponse, type ErrorType } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
@@ -19,7 +19,7 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { createMembershipRouteConfig, deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
 import type { OrganizationModel } from '../../db/schema/organizations';
-import type { ProjectModel } from '../../db/schema/projects';
+import { type supportedModelTypes, supportedEntityTypes, membershipsTableId } from './helpers/create-membership-config'
 
 const app = new CustomHono();
 
@@ -31,7 +31,6 @@ const membershipsRoutes = app
   .openapi(createMembershipRouteConfig, async (ctx) => {
     const { idOrSlug, entityType, organizationId } = ctx.req.valid('query');
     const { emails, role } = ctx.req.valid('json');
-
     const user = ctx.get('user');
 
     // Resolve organization
@@ -46,47 +45,68 @@ const membershipsRoutes = app
     // Check if the user is allowed to perform an update action in the organization
     const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', organization);
 
-    if (!organizationId || !organization || !idOrSlug || (!isAllowed && user.role !== 'ADMIN')) {
+    if (!organizationId || !organization || !idOrSlug || !role || (!isAllowed && user.role !== 'ADMIN')) {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
 
-    // Resolve context (currently supports only projects and organizations)
-    const context = idOrSlug ? await resolveEntity(entityType, idOrSlug) as OrganizationModel | ProjectModel : null;
+    // Resolve context
+    const context = idOrSlug ? await resolveEntity(entityType, idOrSlug) as supportedModelTypes : null;
 
-    if (!context || !['PROJECT', 'ORGANIZATION'].includes(context?.entity)) {
+    if (!context || !supportedEntityTypes.includes(context?.entity)) {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
 
     // Normalize emails for consistent comparison
     const normalizedEmails = emails.map(email => email.toLowerCase());
 
-    // Fetch existing users from the database
-    const existingUsers = await db
+    // Fetch existing users with there memberships from the database
+    const $where = [and(
+      eq(membershipsTableId(context), context.id),
+      eq(membershipsTable.type, context.entity as MembershipModel['type']),
+      eq(membershipsTable.userId, usersTable.id)
+    )];
+
+    if (context.entity !== 'ORGANIZATION') {
+      $where.push(and(
+        eq(membershipsTable.organizationId, organizationId),
+        eq(membershipsTable.type, 'ORGANIZATION'),
+        eq(membershipsTable.userId, usersTable.id)
+      ))
+    }
+
+    const existingMemberships = db
       .select()
+      .from(membershipsTable)
+      .where($where.length > 1 ? or(...$where) : $where[0])
+      .as('memberships');
+
+    const existingUsers = await db
+      .select({
+        existingUser: usersTable,
+        existingMemberships: membershipsTable,
+      })
       .from(usersTable)
+      .innerJoin(existingMemberships, eq(existingMemberships.userId, usersTable.id))
       .where(inArray(usersTable.email, normalizedEmails));
 
-    // Identify emails that do not have existing users
-    const nonExistingEmails = normalizedEmails.filter(email => 
-      !existingUsers.some(existingUser => existingUser.email === email)
-    );
+    // Map to track existing users
+    const existingUsersByEmail = new Map<string, UserModel>();
+    
+    // Array of emails to send invitations
+    const emailsToSendInvitation:string[] = [];
 
     // Establish memberships for existing users
-    for (const existingUser of existingUsers) {
-      // Fetch the existing membership for the user in the given context
-      const [existingMembership] = await db
-        .select()
-        .from(membershipsTable)
-        .where(and(
-          eq((context.entity === 'PROJECT' ? membershipsTable.projectId : membershipsTable.organizationId), context.id),
-          eq(membershipsTable.type, context.entity as MembershipModel['type']),
-          eq(membershipsTable.userId, existingUser.id)
-        ));
+    for (const { existingUser, existingMemberships } of existingUsers) {
+      existingUsersByEmail.set(existingUser.email, existingUser);
 
-      // If membership already exists, check if the role needs to be updated (downgrade or upgrade)
+      console.log(existingUser, existingMemberships)
+
+      const organizationMembership = existingMemberships.find(m => m.type === 'ORGANIZATION' && m.organizationId === organizationId);
+
       if (existingMembership) {
         logEvent(`User already member of ${context.entity.toLowerCase()}`, { user: existingUser.id, id: context.id });
 
+        // Check if the role needs to be updated (downgrade or upgrade)
         if (role && existingMembership.role !== role) {
           await db
             .update(membershipsTable)
@@ -95,86 +115,42 @@ const membershipsRoutes = app
         
             logEvent('User role updated', { user: existingUser.id, id: context.id, type: existingMembership.type, role });
         }
-      }
+      } else {
+        // Allow creating memberships only for non-organization contexts or for self-invitations within an organization context
+        const canCreateMembership = (context.entity !== 'ORGANIZATION' || existingUser.id === user.id);
 
-      // If membership doesn't exist, create one
-      if (!existingMembership) {
-        // Define the role to be assigned, defaulting to 'MEMBER' if not specified
-        const assignedRole = (role as MembershipModel['role']) || 'MEMBER';
+        if (canCreateMembership) {
+          const assignedRole = (role as MembershipModel['role']) || 'MEMBER';
 
-        // Insert new membership into the database
-        await db
-          .insert(membershipsTable)
-          .values({
-            organizationId,
-            userId: existingUser.id,
-            type: context.entity as MembershipModel['type'],
-            role: assignedRole,
-            createdBy: user.id,
-          })
-          .returning();
-
-        // Log the event of the user being added to the context
-        logEvent(`User added to ${context.entity.toLowerCase()}`, { user: user.id, id: context.id });
-
-        // Send a Server-Sent Event (SSE) to the newly added user
-        sendSSEToUsers([existingUser.id], 'update_entity', context);
-      }
-    }
-
-    // Create new users for non-existing emails
-    for (const email of nonExistingEmails) {
-    }
-
-
-    for (const email of emails) {
-      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
-
-      // Check if it's invitation to organization
-      if (targetUser && organization) {
-        // Check if user is already member of organization
-        const [existingMembership] = await db
-          .select()
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, targetUser.id)));
-        if (existingMembership) {
-          logEvent('User already member of organization', { user: targetUser.id, organization: organization.id });
-
-          // Update role if different
-          if (role && existingMembership.role !== role && existingMembership.organizationId && existingMembership.userId) {
-            await db
-              .update(membershipsTable)
-              .set({ role: role as MembershipModel['role'] })
-              .where(
-                and(eq(membershipsTable.organizationId, existingMembership.organizationId), eq(membershipsTable.userId, existingMembership.userId)),
-              );
-            logEvent('User role updated', { user: targetUser.id, organization: organization.id, role });
-
-            sendSSEToUsers([targetUser.id], 'update_entity', organization);
-          }
-
-          continue;
-        }
-
-        // Check if user is trying to invite themselves
-        if (user.id === targetUser.id) {
           await db
             .insert(membershipsTable)
             .values({
-              organizationId: organization.id,
-              userId: user.id,
-              type: 'ORGANIZATION',
-              role: (role as MembershipModel['role']) || 'MEMBER',
+              organizationId,
+              userId: existingUser.id,
+              type: context.entity as MembershipModel['type'],
+              role: assignedRole,
               createdBy: user.id,
-            })
-            .returning();
+            });
 
-          logEvent('User added to organization', { user: user.id, organization: organization.id });
+          logEvent(`User added to ${context.entity.toLowerCase()}`, { user: user.id, id: context.id });
 
-          sendSSEToUsers([user.id], 'update_entity', organization);
-          continue;
+          // Send a Server-Sent Event (SSE) to the newly added user
+          sendSSEToUsers([existingUser.id], 'update_entity', context);
+        } else if (context.entity === 'ORGANIZATION') {
+          // Add email to the invitation list for sending an organization invite to another user
+          emailsToSendInvitation.push(existingUser.email);
         }
       }
+    }
+
+    // Identify emails that do not have existing users (will need to send a invitation)
+    for (const email of normalizedEmails) {
+      if (!existingUsersByEmail.has(email)) emailsToSendInvitation.push(email)
+    }
+
+    // Send invitations for organization membership
+    for (const email of emailsToSendInvitation) {
+      const targetUser = existingUsersByEmail.get(email);
 
       const token = generateId(40);
       await db.insert(tokensTable).values({
@@ -201,12 +177,12 @@ const membershipsRoutes = app
           replyTo: user.email,
         }),
       );
-      logEvent('User invited to organization', { organization: organization?.id });
+      logEvent('User invited to organization', { organization: organization.id });
 
       emailSender
         .send(
           config.senderIsReceiver ? user.email : email.toLowerCase(),
-          organization ? `Invitation to ${organization.name} on Cella` : 'Invitation to Cella',
+          `Invitation to ${organization.name} on Cella`,
           emailHtml,
           user.email,
         )
