@@ -35,7 +35,6 @@ export const deleteMembersQuerySchema = z.object({
 export const membershipInfoSchema = z.object({
   id: apiMembershipSchema.shape.id,
   role: apiMembershipSchema.shape.role,
-  createdAt: apiMembershipSchema.shape.createdAt,
   archived: apiMembershipSchema.shape.inactive,
 }).nullable();
 

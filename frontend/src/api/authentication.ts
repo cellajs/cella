@@ -1,14 +1,13 @@
 import { apiClient, handleResponse } from '.';
 
-
 // Oath endpoints
-export const githubSignInUrl = apiClient.authenticate.github.$url().href;
-export const googleSignInUrl = apiClient.authenticate.google.$url().href;
-export const microsoftSignInUrl = apiClient.authenticate.microsoft.$url().href;
+export const githubSignInUrl = apiClient.auth.github.$url().href;
+export const googleSignInUrl = apiClient.auth.google.$url().href;
+export const microsoftSignInUrl = apiClient.auth.microsoft.$url().href;
 
 // Sign up a user with the provided email and password
 export const signUp = async ({ email, password, token }: { email: string; password: string; token?: string }) => {
-  const response = await apiClient.authenticate['sign-up'].$post({
+  const response = await apiClient.auth['sign-up'].$post({
     json: { email, password, token },
   });
 
@@ -18,7 +17,7 @@ export const signUp = async ({ email, password, token }: { email: string; passwo
 
 // Check if email exists
 export const checkEmail = async (email: string) => {
-  const response = await apiClient.authenticate['check-email'].$post({
+  const response = await apiClient.auth['check-email'].$post({
     json: { email },
   });
 
@@ -28,8 +27,8 @@ export const checkEmail = async (email: string) => {
 
 // Verify the user's email with token sent by email
 export const verifyEmail = async ({ token, resend }: { token: string; resend?: boolean }) => {
-  const response = await apiClient.authenticate['verify-email'][':token'].$get({
-    param: { token },
+  const response = await apiClient.auth['verify-email'].$post({
+    json: { token },
     query: { resend: String(resend) },
   });
 
@@ -37,16 +36,8 @@ export const verifyEmail = async ({ token, resend }: { token: string; resend?: b
 };
 
 // Sign in a user with email and password
-export const signIn = async ({
-  email,
-  password,
-  token,
-}: {
-  email: string;
-  password: string;
-  token?: string;
-}) => {
-  const response = await apiClient.authenticate['sign-in'].$post({
+export const signIn = async ({ email, password, token }: { email: string; password: string; token?: string }) => {
+  const response = await apiClient.auth['sign-in'].$post({
     json: { email, password, token },
   });
 
@@ -56,7 +47,7 @@ export const signIn = async ({
 
 // Send a verification email
 export const sendVerificationEmail = async (email: string) => {
-  const response = await apiClient.authenticate['verify-email'].$post({
+  const response = await apiClient.auth['send-verification-email'].$post({
     json: { email },
   });
 
@@ -65,7 +56,7 @@ export const sendVerificationEmail = async (email: string) => {
 
 // Send a reset password email
 export const sendResetPasswordEmail = async (email: string) => {
-  const response = await apiClient.authenticate['reset-password'].$post({
+  const response = await apiClient.auth['reset-password'].$post({
     json: { email },
   });
 
@@ -73,14 +64,8 @@ export const sendResetPasswordEmail = async (email: string) => {
 };
 
 // Reset the user's password
-export const resetPassword = async ({
-  token,
-  password,
-}: {
-  token: string;
-  password: string;
-}) => {
-  const response = await apiClient.authenticate['reset-password'][':token'].$post({
+export const resetPassword = async ({ token, password }: { token: string; password: string }) => {
+  const response = await apiClient.auth['reset-password'][':token'].$post({
     param: { token },
     json: { password },
   });
@@ -88,4 +73,4 @@ export const resetPassword = async ({
   await handleResponse(response);
 };
 
-export const signOut = () => apiClient.authenticate['sign-out'].$get();
+export const signOut = () => apiClient.auth['sign-out'].$get();

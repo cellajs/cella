@@ -2,7 +2,7 @@ import { type InfiniteData, type UseInfiniteQueryOptions, useInfiniteQuery } fro
 import { useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GetMembersParams } from '~/api/general';
-import { updateUser, type UpdateUserParams, type GetUsersParams } from '~/api/users';
+import { updateUser, type GetUsersParams } from '~/api/users';
 
 import type { getMembersQuerySchema } from 'backend/modules/general/schema';
 import type { getUsersQuerySchema } from 'backend/modules/users/schema';
@@ -22,9 +22,9 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import DeleteUsers from '../delete-users';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import type { config } from 'config';
 import { useMutation } from '~/hooks/use-mutations';
 import { updateMembership } from '~/api/memberships';
+import { useNavigationStore } from '~/store/navigation';
 
 export const LIMIT = 40;
 
@@ -48,7 +48,6 @@ export type queryOptions<T> = {
 // Users table renders members when entityType is provided, defaults to users in the system
 interface Props<T, U> {
   entityType?: ContextEntity;
-  canInvite?: boolean;
   queryOptions: (
     values: U,
   ) => UseInfiniteQueryOptions<queryOptions<T>, Error, InfiniteData<queryOptions<T>, unknown>, queryOptions<T>, (string | undefined)[], number>;
@@ -67,7 +66,6 @@ const UsersTable = <
   K extends z.infer<typeof getMembersQuerySchema> | z.infer<typeof getUsersQuerySchema>,
 >({
   entityType,
-  canInvite,
   queryOptions,
   routeFrom,
   customColumns,
@@ -79,7 +77,15 @@ const UsersTable = <
   const { t } = useTranslation();
   const idOrSlug = 'idOrSlug' in props ? props.idOrSlug : undefined;
   const containerRef = useRef(null);
-
+  const { menu } = useNavigationStore();
+  const [userRole] = Object.values(menu)
+    .map((el) => {
+      if (el.type === 'ORGANIZATION') {
+        const targetEntity = el.items.find((el) => el.id === idOrSlug || el.slug === idOrSlug);
+        if (targetEntity) return targetEntity.role;
+      }
+    })
+    .filter((el) => el !== undefined);
   const [rows, setRows] = useState<T[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<K['q']>(search.q);
@@ -104,19 +110,17 @@ const UsersTable = <
     [debounceQuery, role, sortColumns],
   );
 
-  const { mutate: updateEntityRole } = useMutation({
-    mutationFn: (values: { membershipId: string; role?: (typeof config.rolesByType.entityRoles)[number] }) => {
-      return updateMembership(values);
+  const { mutate: updateUserRole } = useMutation({
+    mutationFn: async (user: User | Member) => {
+      if (isMember(user)) {
+        return await updateMembership({ membershipId: user.membershipId, role: user.role }); // Update member role
+      }
+      return await updateUser(user.id, { role: user.role }); // Update user role
     },
-    onSuccess: () => toast.success('Role updated successfully'),
-    onError: () => toast.error('Error updating role'),
-  });
-
-  const { mutate: updateSystemRole } = useMutation({
-    mutationFn: (values: { userId: string; params: UpdateUserParams }) => {
-      return updateUser(values.userId, values.params);
+    onSuccess: (response) => {
+      callback([response], 'update');
+      toast.success('Role updated successfully');
     },
-    onSuccess: () => toast.success('Role updated successfully'),
     onError: () => toast.error('Error updating role'),
   });
 
@@ -205,14 +209,9 @@ const UsersTable = <
   };
 
   const onRowsChange = (changedRows: T[], { indexes, column }: RowsChangeData<T>) => {
-    // mutate member
+    // mutate user role
     for (const index of indexes) {
-      if (column.key === 'role') {
-        const user = changedRows[index];
-        callback([user], 'update');
-        if (isMember(user)) return updateEntityRole({ membershipId: user.membershipId, role: user.role });
-        return updateSystemRole({ userId: user.id, params: { role: user.role } });
-      }
+      if (column.key === 'role') updateUserRole(changedRows[index]);
     }
     setRows(changedRows);
   };
@@ -231,7 +230,7 @@ const UsersTable = <
       <Toolbar<T>
         entityType={entityType}
         isFiltered={isFiltered}
-        canInvite={canInvite}
+        isAdmin={userRole === 'ADMIN'}
         total={queryResult.data?.pages[0].total}
         query={query}
         setQuery={setQuery}

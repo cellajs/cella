@@ -11,8 +11,8 @@ import ErrorNotice from '~/modules/common/error-notice';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import UsersTable from '~/modules/users/users-table';
-import type { ContextEntity, Member } from '~/types';
 import { IndexRoute } from './routeTree';
+import type { Member } from '~/types';
 
 // Lazy-loaded components
 // const UsersTable = lazy(() => import('~/modules/users/users-table'));
@@ -29,18 +29,17 @@ const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order
     queryFn: async ({ pageParam, signal }) => {
       const fetchedData = await getMembers(
         {
-          idOrSlug,
-          entityType: 'ORGANIZATION',
           page: pageParam,
           q,
           sort,
           order,
           role,
           limit,
+          idOrSlug,
+          entityType: 'ORGANIZATION',
         },
         signal,
       );
-
       return fetchedData;
     },
     getNextPageParam: (_lastPage, allPages) => allPages.length,
@@ -80,9 +79,8 @@ export const OrganizationMembersRoute = createRoute({
   },
   component: () => (
     <Suspense>
-      <UsersTable<Member, GetMembersParams & { idOrSlug: string; entityType: ContextEntity }, z.infer<typeof getMembersQuerySchema>>
+      <UsersTable<Member, GetMembersParams, z.infer<typeof getMembersQuerySchema>>
         entityType="ORGANIZATION"
-        canInvite={true}
         queryOptions={membersQueryOptions}
         routeFrom={OrganizationMembersRoute.id}
         fetchForExport={getMembers}

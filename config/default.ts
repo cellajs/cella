@@ -38,7 +38,8 @@ export const config = {
   sentSentrySourceMaps: true,
 
   // Customer support with Gleap
-  gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
+  //gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
+  gleapToken: '',
 
   // Google maps key
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
@@ -72,7 +73,7 @@ export const config = {
 
   // Optional settings
   has: {
-    pwa: true, // Progressive Web App support for preloading static assets and offline support
+    pwa: false, // Progressive Web App support for preloading static assets and offline support
     signUp: true, // Allow users to sign up. If disabled, the app is by invitation only
     waitList: false, // Suggest a waitlist for unknown emails when sign up is disabled
     onboarding: true, // TODO: Show onboarding steps for new users

@@ -38,7 +38,14 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
           )}
           <AnimatePresence>
             {mode[0] && (
-              <motion.span className="flex items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.span
+                className="flex items-center gap-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+              >
+                {' '}
                 <ChevronRight className="opacity-50" size={16} />
                 {mode[0] === 'select' ? t('common:select') : t('common:create')}
               </motion.span>
@@ -52,7 +59,7 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
   return (
     <MotionConfig transition={{ type: 'spring', bounce: 0, duration: 0.4 }}>
       <AnimatePresence mode="popLayout">
-        {!creationMode ? (
+        {!creationMode && (
           <motion.div
             key="initial"
             initial={{ x: 0, scale: 0.9, opacity: 0 }}
@@ -82,29 +89,11 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
               </ToggleGroupItem>
             </ToggleGroup>
           </motion.div>
-        ) : creationMode === 'select' ? (
-          <motion.div
-            key="select"
-            initial={{ x: 40, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -40, opacity: 0 }}
-            className="flex flex-col gap-4"
-          >
-            Not yet ready
-            {/* <SelectProjectsForm organization={organization} workspace={workspace} callback={callback} dialog={isDialog} /> */}
+        )}
+        {creationMode && (
+          <motion.div key="add-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
+            {creationMode === 'create' ? <CreateProjectForm workspace={workspace} dialog /> : <>Not yet ready</>}
           </motion.div>
-        ) : (
-          creationMode === 'create' && (
-            <motion.div
-              key="create"
-              initial={{ x: 40, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -40, opacity: 0 }}
-              className="flex flex-col gap-4"
-            >
-              <CreateProjectForm workspace={workspace} dialog />
-            </motion.div>
-          )
         )}
       </AnimatePresence>
     </MotionConfig>

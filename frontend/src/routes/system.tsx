@@ -68,7 +68,6 @@ export const UsersTableRoute = createRoute({
     <Suspense>
       <UsersTable<User, GetUsersParams, z.infer<typeof getUsersQuerySchema>>
         queryOptions={usersQueryOptions}
-        canInvite={true}
         routeFrom={UsersTableRoute.id}
         customColumns={[
           {

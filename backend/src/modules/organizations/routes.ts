@@ -65,7 +65,7 @@ export const getOrganizationsRouteConfig = createRouteConfig({
 export const updateOrganizationRouteConfig = createRouteConfig({
   method: 'put',
   path: '/{idOrSlug}',
-  guard: [isAuthenticated, isAllowedTo('update', 'organization')],
+  guard: [isAuthenticated, isAllowedTo('update', 'ORGANIZATION')],
   tags: ['organizations'],
   summary: 'Update organization',
   description: 'Update organization by id or slug.',
@@ -95,7 +95,7 @@ export const updateOrganizationRouteConfig = createRouteConfig({
 export const getOrganizationRouteConfig = createRouteConfig({
   method: 'get',
   path: '/{idOrSlug}',
-  guard: [isAuthenticated, isAllowedTo('read', 'organization')],
+  guard: [isAuthenticated, isAllowedTo('read', 'ORGANIZATION')],
   tags: ['organizations'],
   summary: 'Get organization',
   description: 'Get an organization by id or slug.',

@@ -1,6 +1,10 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
+import {
+  errorResponses,
+  successResponseWithDataSchema,
+  successResponseWithoutDataSchema,
+} from '../../lib/common-responses';
 import { cookieSchema, passwordSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isPublicAccess } from '../../middlewares/guard';
@@ -11,7 +15,7 @@ import { checkEmailJsonSchema, signInJsonSchema, signUpJsonSchema } from './sche
 
 export const checkEmailRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/authenticate/check-email',
+  path: '/check-email',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -42,7 +46,7 @@ export const checkEmailRouteConfig = createRouteConfig({
 
 export const signUpRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/authenticate/sign-up',
+  path: '/sign-up',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Sign up with password',
@@ -76,7 +80,7 @@ export const signUpRouteConfig = createRouteConfig({
 
 export const sendVerificationEmailRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/authenticate/verify-email',
+  path: '/send-verification-email',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -108,8 +112,8 @@ export const sendVerificationEmailRouteConfig = createRouteConfig({
 });
 
 export const verifyEmailRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/authenticate/verify-email/{token}',
+  method: 'post',
+  path: '/verify-email',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -120,9 +124,15 @@ export const verifyEmailRouteConfig = createRouteConfig({
     query: z.object({
       resend: z.string().optional(),
     }),
-    params: z.object({
-      token: z.string(),
-    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            token: z.string(),
+          }),
+        },
+      },
+    },
   },
   responses: {
     200: {
@@ -139,7 +149,7 @@ export const verifyEmailRouteConfig = createRouteConfig({
 
 export const resetPasswordRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/authenticate/reset-password',
+  path: '/reset-password',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -172,7 +182,7 @@ export const resetPasswordRouteConfig = createRouteConfig({
 
 export const resetPasswordCallbackRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/authenticate/reset-password/{token}',
+  path: '/reset-password/{token}',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -204,7 +214,7 @@ export const resetPasswordCallbackRouteConfig = createRouteConfig({
 
 export const signInRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/authenticate/sign-in',
+  path: '/sign-in',
   guard: isPublicAccess,
   middleware: [signInRateLimiter()],
   tags: ['auth'],
@@ -242,7 +252,7 @@ export const signInRouteConfig = createRouteConfig({
 
 export const githubSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/authenticate/github',
+  path: '/github',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Authenticate with GitHub',
@@ -262,7 +272,7 @@ export const githubSignInRouteConfig = createRouteConfig({
 
 export const githubSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/authenticate/github/callback',
+  path: '/github/callback',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -288,7 +298,7 @@ export const githubSignInCallbackRouteConfig = createRouteConfig({
 
 export const googleSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/authenticate/google',
+  path: '/google',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Authenticate with Google',
@@ -308,7 +318,7 @@ export const googleSignInRouteConfig = createRouteConfig({
 
 export const googleSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/authenticate/google/callback',
+  path: '/google/callback',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -334,7 +344,7 @@ export const googleSignInCallbackRouteConfig = createRouteConfig({
 
 export const microsoftSignInRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/authenticate/microsoft',
+  path: '/microsoft',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Authenticate with Microsoft',
@@ -358,7 +368,7 @@ export const microsoftSignInRouteConfig = createRouteConfig({
 
 export const microsoftSignInCallbackRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/authenticate/microsoft/callback',
+  path: '/microsoft/callback',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -384,7 +394,7 @@ export const microsoftSignInCallbackRouteConfig = createRouteConfig({
 
 export const signOutRouteConfig = createRouteConfig({
   method: 'get',
-  path: '/authenticate/sign-out',
+  path: '/sign-out',
   guard: isPublicAccess,
   tags: ['auth'],
   summary: 'Sign out',

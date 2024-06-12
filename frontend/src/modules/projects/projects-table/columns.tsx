@@ -47,7 +47,7 @@ export const useColumns = () => {
           ...mobileColumns,
           {
             key: 'userRole',
-            name: t('common:your_role'),
+            name: t('common:role'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
@@ -59,14 +59,6 @@ export const useColumns = () => {
                 key: 'userRole',
                 options: config.rolesByType.entityRoles,
               }),
-          },
-          {
-            key: 'subscription',
-            name: t('common:subscription'),
-            sortable: false,
-            visible: true,
-            renderHeaderCell: HeaderCell,
-            renderCell: () => '-',
           },
           {
             key: 'createdAt',
