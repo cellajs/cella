@@ -8,7 +8,7 @@ import { apiWorkspaceSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchem
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
   path: '/',
-  guard: [isAuthenticated, isAllowedTo('create', 'workspace')],
+  guard: [isAuthenticated, isAllowedTo('create', 'WORKSPACE')],
   tags: ['workspaces'],
   summary: 'Create new workspace',
   description: 'Create personal workspace to organize projects and tasks.',
@@ -38,7 +38,7 @@ export const createWorkspaceRouteConfig = createRouteConfig({
 export const getWorkspaceRouteConfig = createRouteConfig({
   method: 'get',
   path: '/{idOrSlug}',
-  guard: [isAuthenticated, isAllowedTo('read', 'workspace')],
+  guard: [isAuthenticated, isAllowedTo('read', 'WORKSPACE')],
   tags: ['workspaces'],
   summary: 'Get workspace',
   description: 'Get workspace by id or slug.',
@@ -61,7 +61,7 @@ export const getWorkspaceRouteConfig = createRouteConfig({
 export const updateWorkspaceRouteConfig = createRouteConfig({
   method: 'put',
   path: '/{idOrSlug}',
-  guard: [isAuthenticated, isAllowedTo('update', 'workspace')],
+  guard: [isAuthenticated, isAllowedTo('update', 'WORKSPACE')],
   tags: ['workspaces'],
   summary: 'Update workspace',
   description: 'Update workspace by id or slug.',
