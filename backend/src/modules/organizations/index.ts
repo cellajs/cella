@@ -259,6 +259,8 @@ const organizationsRoutes = app
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
+    console.log('organizationLog', organization);
+
     const [membership] = await db
       .select()
       .from(membershipsTable)
