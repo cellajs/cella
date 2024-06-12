@@ -13,7 +13,7 @@ import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
-import { getUserMenuConfig, meRouteConfig, terminateSessionsConfig, updateSelfConfig } from './routes';
+import { deleteSelfConfig, getUserMenuConfig, meRouteConfig, terminateSessionsConfig, updateSelfConfig } from './routes';
 
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { generateElectricJWTToken } from '../../lib/utils';
@@ -210,17 +210,13 @@ const meRoutes = app
    */
   .openapi(updateSelfConfig, async (ctx) => {
     const user = ctx.get('user');
-    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
 
-    if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: user.id });
-    }
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
-    if (slug && slug !== targetUser.slug) {
+    if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-
       if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
     }
 
@@ -278,6 +274,25 @@ const meRoutes = app
       },
       200,
     );
+  })
+  /*
+   * Delete current user (self)
+   */
+  .openapi(deleteSelfConfig, async (ctx) => {
+    const user = ctx.get('user');
+    const errors: ErrorType[] = [];
+    // * Check if the user exist
+    if (!user) errors.push(createError(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' }));
+
+    // * Delete the self
+    await db.delete(usersTable).where(eq(usersTable.id, user.id));
+
+    // * Invalidate the user's sessions when deleting self
+    await auth.invalidateUserSessions(user.id);
+    removeSessionCookie(ctx);
+    logEvent('User deleted', { user: user.id });
+
+    return ctx.json({ success: true, errors: errors }, 200);
   });
 
 export default meRoutes;

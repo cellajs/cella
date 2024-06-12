@@ -29,6 +29,12 @@ export const updateSelf = async (params: Omit<UpdateUserParams, 'role'>) => {
   return json.data;
 };
 
+// Delete self
+export const deleteSelf = async () => {
+  const response = await client.me.$delete();
+  await handleResponse(response);
+};
+
 // Terminate a user sessions
 export const terminateMySessions = async (sessionIds: string[]) => {
   const response = await client.sessions.$delete({

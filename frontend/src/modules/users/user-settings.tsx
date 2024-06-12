@@ -8,9 +8,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
-import DeleteUsers from './delete-users';
 
-import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +22,7 @@ import { useThemeStore } from '~/store/theme';
 import { oauthProviders } from '../auth/oauth-options';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
+import DeleteSelf from './delete-self';
 
 export type Session = {
   id: string;
@@ -80,8 +79,7 @@ const SessionTile = ({ session, terminateMySessions, isPending }: SessionTilePro
 };
 
 const UserSettings = () => {
-  const { user, clearLastUser } = useUserStore();
-  const navigate = useNavigate();
+  const { user } = useUserStore();
   const { mode } = useThemeStore();
   const { t } = useTranslation();
 
@@ -109,13 +107,10 @@ const UserSettings = () => {
 
   const openDeleteDialog = () => {
     dialog(
-      <DeleteUsers
-        users={[user]}
+      <DeleteSelf
         dialog
         callback={() => {
           toast.success(t('common:success.delete_account'));
-          clearLastUser();
-          navigate({ to: '/sign-out', replace: true });
         }}
       />,
       {

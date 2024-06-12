@@ -26,6 +26,8 @@ const isAllowedTo =
       // Retrieve the context of the entity to be authorized (e.g., 'organization', 'workspace')
       const contextEntity = await getEntityContext(ctx, entityType);
 
+      console.log('contextEntityLog', contextEntity);
+
       // Check if user or context is missing
       if (!contextEntity || !user) {
         return errorResponse(ctx, 404, 'not_found', 'warn', entityType, {
@@ -46,8 +48,8 @@ const isAllowedTo =
       }
 
       // Store user memberships and authorized context entity in hono ctx
-      ctx.set('userMemberships', memberships);
-      ctx.set('contextEntity', contextEntity);
+      ctx.set('memberships', memberships);
+      ctx.set(entityType.toLowerCase(), contextEntity);
 
       // Log user allowance in the context
       logEvent(`User is allowed to ${action} ${contextEntity.entity}`, { user: user.id, id: contextEntity.id });
@@ -63,13 +65,13 @@ const isAllowedTo =
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function getEntityContext(ctx: any, entityType: string) {
+async function getEntityContext(ctx: any, entityType: ContextEntity) {
   // Check if entity is configured; if not, return early
-  if (!HierarchicalEntity.instanceMap.has(entityType)) {
+  if (!HierarchicalEntity.instanceMap.has(entityType.toLowerCase())) {
     return;
   }
 
-  const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query('idOrSlug') || ctx.req.query(entityType)?.toLowerCase();
+  const idOrSlug = ctx.req.param('idOrSlug');
   
   if (idOrSlug) {
     // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
@@ -87,8 +89,8 @@ async function getEntityContext(ctx: any, entityType: string) {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function createEntityContext(entityType: string, ctx: any) {
-  const entity = HierarchicalEntity.instanceMap.get(entityType);
+async function createEntityContext(entityType: ContextEntity, ctx: any) {
+  const entity = HierarchicalEntity.instanceMap.get(entityType.toLowerCase());
 
   // Return early if entity is not available
   if (!entity) return;
@@ -96,8 +98,9 @@ async function createEntityContext(entityType: string, ctx: any) {
   // Extract payload from request body
   const payload = await ctx.req.json();
 
-  // Initialize context to store the custom created entity context based on the lowest possible ancestor
-  const context: Record<string, string> = { entity: entityType.toUpperCase() };
+  // TODO make this more clear and explicit and tpye safe
+  // Initialize context to store the custom created context entity based on the lowest possible ancestor
+  const context: Record<string, string> = { entity: entityType };
 
   // Variable to hold the lowest ancestor found
   // biome-ignore lint/suspicious/noExplicitAny: The lowest ancestor can be of different entity types (e.g., organization, workspace, project) or undefined

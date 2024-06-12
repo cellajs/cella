@@ -1,12 +1,12 @@
 import { GripVertical, Plus } from 'lucide-react';
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
-import { WorkspaceContext } from '../../workspaces';
-import { ProjectContext } from './project-context';
+import { useProjectContext } from './project-context';
 import ToolTipButtons from './tooltip-buttons';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 interface BoardColumnHeaderProps {
   createFormOpen: boolean;
@@ -16,8 +16,8 @@ interface BoardColumnHeaderProps {
 }
 
 export function BoardColumnHeader({ createFormOpen, openSettings, createFormClick, dragRef }: BoardColumnHeaderProps) {
-  const { project } = useContext(ProjectContext);
-  const { workspace } = useContext(WorkspaceContext);
+  const { project } = useProjectContext(({ project }) => ({ project }));
+  const { workspace } = useWorkspaceContext(({ workspace }) => ({ workspace }));
   const { changeColumn } = useWorkspaceStore();
   const { t } = useTranslation();
   const [minimize, setMinimize] = useState(false);

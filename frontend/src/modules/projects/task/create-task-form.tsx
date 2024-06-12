@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import MDEditor from '@uiw/react-md-editor';
 import { Bolt, Bug, Star } from 'lucide-react';
-import { useCallback, useContext, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -18,11 +18,10 @@ import { dialog } from '../../common/dialoger/state.ts';
 import { type Task, useElectric } from '../../common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
-import { WorkspaceContext } from '../../workspaces/index.tsx';
-import { ProjectContext } from '../board/project-context.ts';
 import { SelectImpact } from './task-selectors/select-impact.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import SelectStatus from './task-selectors/select-status.tsx';
+import { useProjectContext } from '../board/project-context.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -68,10 +67,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   const { mode } = useThemeStore();
   const { user } = useUserStore(({ user }) => ({ user }));
 
-  const { tasks } = useContext(WorkspaceContext);
   const Electric = useElectric();
 
-  const { project, labels } = useContext(ProjectContext);
+  const { project, tasks, labels } = useProjectContext(({ project, tasks, labels }) => ({ project, tasks, labels }));
 
   const handleCloseForm = () => {
     if (isDialog) dialog.remove();
@@ -119,10 +117,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     const slug = summary.toLowerCase().replace(/ /g, '-');
     const projectTasks = tasks.filter((task) => task.project_id === project.id);
     const order = projectTasks.length > 0 ? projectTasks[0].sort_order / 1.1 : 1;
-
-    console.log(project);
-
-    console.log(project);
 
     Electric.db.tasks
       .create({

@@ -1,6 +1,6 @@
 'use client';
 import { Check } from 'lucide-react';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -10,13 +10,14 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Kbd } from '../../../common/kbd';
-import { TaskContext } from '../../board/board-column';
 import type { TaskImpact } from '../create-task-form';
 import { HighIcon } from './impact-icons/high';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
 import { NoneIcon } from './impact-icons/none';
 import { NotSelected } from './impact-icons/not-selected';
+import { useTaskContext } from '../task-context';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -42,7 +43,8 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('impact');
   const [openPopover, setOpenPopover] = useState(false);
-  const { task, focusedTaskId } = useContext(TaskContext);
+  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
+  const { task } = useTaskContext(({ task }) => ({ task }));
   const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(
     viewValue !== undefined && viewValue !== null ? impacts[viewValue] : impacts[formValue] || null,
   );

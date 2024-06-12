@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { SlidersHorizontal } from 'lucide-react';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
@@ -10,9 +10,9 @@ import { TooltipButton } from '../../../common/tooltip-button.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import ThreeStateSwitch from '../../../ui/three-state-switch.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../../../ui/toggle-group.tsx';
-import { WorkspaceContext } from '../../../workspaces/index.tsx';
 import { taskTypes } from '../../task/create-task-form.tsx';
 import { DualSlider } from './view-status-dual-slider.tsx';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 
 interface Props {
   className?: string;
@@ -51,7 +51,7 @@ export type ViewOptions = typeof viewOptions;
 const WorkspaceView = ({ className = '' }: Props) => {
   const { t } = useTranslation();
   const { getWorkspaceViewOptions, setWorkspaceViewOptions } = useWorkspaceStore();
-  const { workspace } = useContext(WorkspaceContext);
+  const { workspace } = useWorkspaceContext(({ workspace }) => ({ workspace }));
   const [workspaceId, setWorkspaceId] = useState(workspace.id);
   const [innerViewOptions, setInnerViewOptions] = useState(getWorkspaceViewOptions(workspaceId));
 
