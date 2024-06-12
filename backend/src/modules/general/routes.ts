@@ -70,16 +70,23 @@ export const getUploadTokenRouteConfig = createRouteConfig({
 });
 
 export const checkSlugRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/check-slug/{slug}',
+  method: 'post',
+  path: '/check-slug',
   guard: isAuthenticated,
   tags: ['general'],
   summary: 'Check if slug is available',
-  description: 'This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.',
+  description:
+    'This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.',
   request: {
-    params: z.object({
-      slug: z.string(),
-    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            slug: z.string(),
+          }),
+        },
+      },
+    },
   },
   responses: {
     200: {
@@ -95,8 +102,8 @@ export const checkSlugRouteConfig = createRouteConfig({
 });
 
 export const checkTokenRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/check-token/{token}',
+  method: 'post',
+  path: '/check-token',
   middleware: [authRateLimiter],
   guard: isPublicAccess,
   tags: ['general'],
@@ -104,9 +111,15 @@ export const checkTokenRouteConfig = createRouteConfig({
   description:
     'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
   request: {
-    params: z.object({
-      token: z.string(),
-    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            token: z.string(),
+          }),
+        },
+      },
+    },
   },
   responses: {
     200: {
@@ -125,7 +138,9 @@ export const inviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/invite',
   guard: [isAuthenticated, isSystemAdmin],
-  middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
+  middleware: [
+    rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success'),
+  ],
   tags: ['general'],
   summary: 'Invite to system',
   description: 'Invite one or more users to system by email address.',

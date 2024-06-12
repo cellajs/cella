@@ -12,7 +12,10 @@ export const getPublicCounts = async () => {
 };
 
 // Get upload token to securely upload files with imado: https://imado.eu
-export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
+export const getUploadToken = async (
+  type: UploadType,
+  query: UploadParams = { public: false, organizationId: undefined },
+) => {
   const id = query.organizationId;
 
   if (!id && type === UploadType.Organization) {
@@ -50,8 +53,8 @@ export const invite = async (values: InviteSystemProps) => {
 
 // Check if slug is available
 export const checkSlugAvailable = async (params: { slug: string }) => {
-  const response = await apiClient['check-slug'][':slug'].$get({
-    param: params,
+  const response = await apiClient['check-slug'].$post({
+    json: params,
   });
 
   const json = await handleResponse(response);
@@ -60,8 +63,8 @@ export const checkSlugAvailable = async (params: { slug: string }) => {
 
 // Check token validation
 export const checkToken = async (token: string) => {
-  const response = await apiClient['check-token'][':token'].$get({
-    param: { token },
+  const response = await apiClient['check-token'].$post({
+    json: { token },
   });
 
   const json = await handleResponse(response);
@@ -102,7 +105,9 @@ type RequiredGetMembersParams = {
   entityType: ContextEntity;
 };
 
-type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
+type OptionalGetMembersParams = Partial<
+  Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>
+> & {
   limit?: number;
   page?: number;
 };
