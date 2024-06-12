@@ -49,7 +49,7 @@ const docs = (app: CustomHono) => {
       description: `
       (ATTENTION: PRERELEASE!) This API documentation is split in modules. Each module relates to a module in the backend codebase. Each module should be at least loosely-coupled, but ideally entirely decoupled. The documentation is based upon zod schemas that are converted to openapi specs using hono middleware: zod-openapi.
 
-      API design differentiates between three types of resources: 
+      API differentiates between three types of resources: 
 
       1) page-related resources are called an 'entity' (ie ORGANIZATION or USER)
       2) a subclass are 'contextual entities' (ie ORGANIZATION, not USER)

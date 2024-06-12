@@ -2,7 +2,7 @@ import type { Config } from './default';
 
 export default {
   mode: 'production',
-  maintenance: true,
+  maintenance: false,
 
   frontendUrl: 'https://cellajs.com',
   backendUrl: 'https://cellajs.com/api/v1',
