@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type InviteSystemProps, invite as inviteSystem } from '~/api/general';
@@ -20,6 +20,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { ContextEntity } from '~/types';
+import { EntityContext } from '../common/entity-context';
 
 interface Props {
   entityId?: string;
@@ -40,6 +41,8 @@ type FormValues = z.infer<typeof formSchema>;
 // When no entity type, it's a system invite
 const InviteEmailForm = ({ entityId, entityType, callback, dialog: isDialog, children }: Props) => {
   if (entityType && !entityId) console.error('entityId is required when entityType is provided');
+
+  const { entity } = useContext(EntityContext);
 
   const { t } = useTranslation();
   const { nextStep } = useStepper();
@@ -76,6 +79,7 @@ const InviteEmailForm = ({ entityId, entityType, callback, dialog: isDialog, chi
     invite({
       ...values,
       idOrSlug: entityId,
+      organizationId: entity?.organizationId || entityId,
     });
   };
 

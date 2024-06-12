@@ -54,7 +54,8 @@ export const OrganizationRoute = createRoute({
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
   getParentRoute: () => IndexRoute,
   loader: async ({ params: { idOrSlug } }) => {
-    queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
+    const organization = await queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
+    return { organization };
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
@@ -107,5 +108,8 @@ export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,
+  beforeLoad: ({ context }) => {
+    console.log('context', context);
+  },
   component: () => <OrganizationSettings />,
 });

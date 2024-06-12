@@ -12,6 +12,8 @@ export const projectsTable = pgTable('projects', {
   slug: varchar('slug').notNull(),
   name: varchar('name').notNull(),
   color: varchar('color').notNull(),
+  thumbnailUrl: varchar('thumbnail_url'),
+  bannerUrl: varchar('banner_url'),
   organizationId: varchar('organization_id')
     .notNull()
     .references(() => organizationsTable.id, {
