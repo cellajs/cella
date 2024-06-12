@@ -18,41 +18,45 @@ const handler: ExportedHandler<Env> = {
       return Response.redirect(url.href, 301);
     }
 
-    if (url.pathname.startsWith('/upload')) {
-      const pathname = url.pathname.split('/upload').pop();
-      const apiServerUrl = env.TUS_RENDER_URL + pathname + url.search;
-      const apiRequest = new Request(apiServerUrl, request);
-      return fetch(apiRequest);
+    let apiServerUrl: string | null = null;
+    let additionalHeaders: HeadersInit | null = null;
+
+    if (url.pathname.startsWith('/upload/v1')) {
+      apiServerUrl = env.TUS_RENDER_URL + url.pathname.replace('/upload/v1', '') + url.search;
+    } else if (url.pathname.startsWith('/electric/v1')) {
+      apiServerUrl = env.ELECTRIC_RENDER_URL + url.pathname.replace('/electri/v1', '') + url.search;
+    } else if (url.pathname.startsWith('/api/v1')) {
+      apiServerUrl = env.BACKEND_RENDER_URL + url.pathname.replace('/api/v1', '') + url.search;
+      additionalHeaders = {
+        'X-Forwarded-For': request.headers.get('CF-Connecting-IP') || '',
+        'X-Forwarded-Host': url.host,
+        'X-Forwarded-Proto': url.protocol.replace(':', ''),
+      };
+    } else {
+      apiServerUrl = env.FRONTEND_RENDER_URL + url.pathname + url.search;
     }
 
-    if (url.pathname.startsWith('/electric')) {
-      const pathname = url.pathname.split('/electric').pop();
-      const apiServerUrl = env.ELECTRIC_RENDER_URL + pathname + url.search;
-      const apiRequest = new Request(apiServerUrl, request);
-      return fetch(apiRequest);
-    }
+    if (apiServerUrl) {
+      let headers = new Headers(request.headers);
 
-    if (url.pathname.startsWith('/api/v1')) {
-      const pathname = url.pathname.split('/api/v1').pop();
-      const apiServerUrl = env.BACKEND_RENDER_URL + pathname + url.search;
-      // Here we preserve the original request's headers and method
+      if (additionalHeaders) {
+        headers = new Headers(request.headers);
+        headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP') || '');
+        headers.set('X-Forwarded-Host', url.host);
+        headers.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
+      }
+
       const apiRequest = new Request(apiServerUrl, {
-        ...request,
-        headers: {
-          ...request.headers,
-          'X-Forwarded-For': request.headers.get('CF-Connecting-IP') || '',
-          'X-Forwarded-Host': url.host,
-          'X-Forwarded-Proto': url.protocol.replace(':', ''),
-        },
+        method: request.method,
+        headers,
+        body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : null,
+        redirect: 'follow',
       });
+
       return fetch(apiRequest);
     }
 
-    // For all other paths, serve from the React app server
-    const appServerUrl = env.FRONTEND_RENDER_URL + url.pathname;
-    // Here we preserve the original request's headers and method
-    const appRequest = new Request(appServerUrl, request);
-    return fetch(appRequest);
+    return new Response('Not found by proxy. Contact system administrator', { status: 404 });
   },
 };
 

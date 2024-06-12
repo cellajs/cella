@@ -7,7 +7,7 @@ import {
 } from '../../lib/common-responses';
 import { entityTypeSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
+import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteJsonSchema,
@@ -70,23 +70,30 @@ export const getUploadTokenRouteConfig = createRouteConfig({
 });
 
 export const checkSlugRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/check-slug/{slug}',
+  method: 'post',
+  path: '/check-slug',
   guard: isAuthenticated,
   tags: ['general'],
   summary: 'Check if slug is available',
-  description: 'This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.',
+  description:
+    'This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.',
   request: {
-    params: z.object({
-      slug: z.string(),
-    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            slug: z.string(),
+          }),
+        },
+      },
+    },
   },
   responses: {
     200: {
-      description: 'User',
+      description: 'Slug is available',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(z.boolean()),
+          schema: successResponseWithoutDataSchema,
         },
       },
     },
@@ -95,8 +102,8 @@ export const checkSlugRouteConfig = createRouteConfig({
 });
 
 export const checkTokenRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/check-token/{token}',
+  method: 'post',
+  path: '/check-token',
   middleware: [authRateLimiter],
   guard: isPublicAccess,
   tags: ['general'],
@@ -104,9 +111,15 @@ export const checkTokenRouteConfig = createRouteConfig({
   description:
     'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
   request: {
-    params: z.object({
-      token: z.string(),
-    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            token: z.string(),
+          }),
+        },
+      },
+    },
   },
   responses: {
     200: {
@@ -125,7 +138,9 @@ export const inviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/invite',
   guard: [isAuthenticated, isSystemAdmin],
-  middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
+  middleware: [
+    rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success'),
+  ],
   tags: ['general'],
   summary: 'Invite to system',
   description: 'Invite one or more users to system by email address.',
@@ -224,7 +239,7 @@ export const suggestionsConfig = createRouteConfig({
   path: '/suggestions',
   guard: isAuthenticated,
   tags: ['general'],
-  summary: 'Get search suggestions',
+  summary: 'Get list of suggestions',
   description: 'Get search suggestions for all entities, such as users and organizations.',
   request: {
     query: z.object({
@@ -248,7 +263,7 @@ export const suggestionsConfig = createRouteConfig({
 export const getMembersRouteConfig = createRouteConfig({
   method: 'get',
   path: '/members',
-  guard: [isAuthenticated, isAllowedTo('read', 'organization')],
+  guard: [isAuthenticated],
   tags: ['general'],
   summary: 'Get list of members',
   description: 'Get members of an entity by id or slug. It returns members (users) with their role.',

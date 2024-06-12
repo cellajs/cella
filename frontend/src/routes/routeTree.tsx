@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { createRootRouteWithContext, createRoute, createRouteMask, redirect } from '@tanstack/react-router';
+import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
 
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
@@ -134,11 +134,3 @@ export const routeTree = rootRoute.addChildren([
   ]),
 ]);
 
-export const VerifyEmailRouteWithTokenMask = createRouteMask({
-  routeTree,
-  from: '/auth/verify-email/$token',
-  to: '/auth/verify-email',
-  params: true,
-});
-
-export const routeMasks = [VerifyEmailRouteWithTokenMask];

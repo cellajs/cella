@@ -161,7 +161,6 @@ const meRoutes = app
         submenu: {
           items: projects.filter(({ id }) => projectsids.includes(id)),
           type: 'PROJECT' as const,
-          canCreate: false,
           submenuTo: workspace.id,
         },
       };
@@ -171,8 +170,8 @@ const meRoutes = app
       {
         success: true,
         data: {
-          organizations: { items: organizations, type: 'ORGANIZATION' as const, canCreate: true },
-          workspaces: { items: workspaces, type: 'WORKSPACE' as const, canCreate: true },
+          organizations: { items: organizations, type: 'ORGANIZATION' as const },
+          workspaces: { items: workspaces, type: 'WORKSPACE' as const },
         },
       },
       200,

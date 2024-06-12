@@ -3,19 +3,24 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { projectsTable } from '../../db/schema/projects';
 import { colorSchema, idSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
-
-import { apiMembershipSchema } from '../memberships/schema';
+import { membershipInfoSchema } from '../memberships/schema';
 
 export const apiProjectSchema = z.object({
   ...createSelectSchema(projectsTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  role: apiMembershipSchema.shape.role.nullable(),
+  membership: membershipInfoSchema,
+  counts: z.object({
+    admins: z.number(),
+    members: z.number(),
+  }),
 });
 
 export const apiProjectListSchema = z.object({
   ...apiProjectSchema.shape,
-  archived: z.boolean().nullable(),
+  membership: membershipInfoSchema,
+  workspaceId: z.string(),
+  counts: z.object({ admins: z.number(), members: z.number() }),
 });
 
 export const createProjectJsonSchema = z.object({
@@ -39,6 +44,7 @@ export const getProjectsQuerySchema = paginationQuerySchema.merge(
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
     organizationId: idSchema.optional(),
     workspaceId: idSchema.optional(),
+    requestedUserId: idSchema.optional(),
   }),
 );
 

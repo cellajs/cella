@@ -1,13 +1,17 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
+import {
+  errorResponses,
+  successResponseWithDataSchema,
+  successResponseWithoutDataSchema,
+} from '../../lib/common-responses';
 import { cookieSchema, passwordSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isPublicAccess } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { apiUserSchema } from '../users/schema';
-import { checkEmailJsonSchema, emailExistsJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
+import { checkEmailJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
 
 export const checkEmailRouteConfig = createRouteConfig({
   method: 'post',
@@ -29,10 +33,10 @@ export const checkEmailRouteConfig = createRouteConfig({
   },
   responses: {
     200: {
-      description: 'User email address exists or not',
+      description: 'Email exists',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(emailExistsJsonSchema),
+          schema: successResponseWithoutDataSchema,
         },
       },
     },
@@ -76,7 +80,7 @@ export const signUpRouteConfig = createRouteConfig({
 
 export const sendVerificationEmailRouteConfig = createRouteConfig({
   method: 'post',
-  path: '/verify-email',
+  path: '/send-verification-email',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -108,8 +112,8 @@ export const sendVerificationEmailRouteConfig = createRouteConfig({
 });
 
 export const verifyEmailRouteConfig = createRouteConfig({
-  method: 'get',
-  path: '/verify-email/{token}',
+  method: 'post',
+  path: '/verify-email',
   guard: isPublicAccess,
   middleware: [authRateLimiter],
   tags: ['auth'],
@@ -120,9 +124,15 @@ export const verifyEmailRouteConfig = createRouteConfig({
     query: z.object({
       resend: z.string().optional(),
     }),
-    params: z.object({
-      token: z.string(),
-    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            token: z.string(),
+          }),
+        },
+      },
+    },
   },
   responses: {
     200: {

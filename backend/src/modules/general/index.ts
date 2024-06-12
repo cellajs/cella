@@ -24,8 +24,6 @@ import { getOrderColumn } from '../../lib/order-column';
 import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { apiUserSchema } from '../users/schema';
-import { checkRole } from './helpers/check-role';
 import { checkSlugAvailable } from './helpers/check-slug';
 import {
   acceptInviteRouteConfig,
@@ -38,7 +36,7 @@ import {
   paddleWebhookRouteConfig,
   suggestionsConfig,
 } from './routes';
-import type { Suggestion } from './schema'
+import type { Suggestion } from './schema';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -65,19 +63,12 @@ const generalRoutes = app
         .from(usersTable),
     ]);
 
-    const organizations = organizationsResult[0].total;
-    const users = usersResult[0].total;
+    const data = {
+      organizations: organizationsResult[0].total,
+      users: usersResult[0].total,
+    };
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          organizations,
-          users,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Get upload token
@@ -99,35 +90,23 @@ const generalRoutes = app
       env.TUS_UPLOAD_API_SECRET,
     );
 
-    return ctx.json(
-      {
-        success: true,
-        data: token,
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: token }, 200);
   })
   /*
    * Check if slug is available
    */
   .openapi(checkSlugRouteConfig, async (ctx) => {
-    const { slug } = ctx.req.valid('param');
+    const { slug } = ctx.req.valid('json');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
-    return ctx.json(
-      {
-        success: true,
-        data: slugAvailable,
-      },
-      200,
-    );
+    return ctx.json({ success: slugAvailable }, 200);
   })
   /*
    * Check token (token validation)
    */
   .openapi(checkTokenRouteConfig, async (ctx) => {
-    const token = ctx.req.valid('param').token;
+    const { token } = ctx.req.valid('json');
 
     // Check if token exists
     const [tokenRecord] = await db
@@ -160,18 +139,15 @@ const generalRoutes = app
     };
 
     if (tokenRecord.type === 'ORGANIZATION_INVITATION' && tokenRecord.organizationId) {
-      const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
+      const [organization] = await db
+        .select()
+        .from(organizationsTable)
+        .where(eq(organizationsTable.id, tokenRecord.organizationId));
       data.organizationName = organization.name;
       data.organizationSlug = organization.slug;
     }
 
-    return ctx.json(
-      {
-        success: true,
-        data,
-      },
-      200,
-    );
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Invite users to the system
@@ -180,12 +156,11 @@ const generalRoutes = app
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    if (user.role !== 'ADMIN') return errorResponse(ctx, 403, 'forbidden', 'warn');
-
-    if (!checkRole(apiUserSchema, role)) return errorResponse(ctx, 400, 'invalid_role', 'warn');
-
     for (const email of emails) {
-      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
+      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (
+        | User
+        | undefined
+      )[];
 
       const token = generateId(40);
       await db.insert(tokensTable).values({
@@ -201,7 +176,9 @@ const generalRoutes = app
 
       const emailHtml = render(
         InviteEmail({
-          i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
+          i18n: i18n.cloneInstance({
+            lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
+          }),
           username: email.toLowerCase(),
           inviteUrl: `${config.frontendUrl}/auth/invite/${token}`,
           invitedBy: user.name,
@@ -211,9 +188,11 @@ const generalRoutes = app
       );
       logEvent('User invited on system level');
 
-      emailSender.send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email).catch((error) => {
-        logEvent('Error sending email', { error: (error as Error).message }, 'error');
-      });
+      emailSender
+        .send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email)
+        .catch((error) => {
+          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+        });
     }
 
     return ctx.json({ success: true }, 200);
@@ -248,12 +227,7 @@ const generalRoutes = app
         await db.update(usersTable).set({ role: 'ADMIN' }).where(eq(usersTable.id, user.id));
       }
 
-      return ctx.json(
-        {
-          success: true,
-        },
-        200,
-      );
+      return ctx.json({ success: true }, 200);
     }
 
     if (token.type === 'ORGANIZATION_INVITATION') {
@@ -333,16 +307,14 @@ const generalRoutes = app
     const user = ctx.get('user');
 
     // Retrieve user memberships to filter suggestions by relevant organization,  ADMIN users see everything
-    const memberships = await db.select()
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, user.id));
+    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     // Retrieve organizationIds for non-admin users and check if the user has at least one organization membership
     let organizationIds: string[] = [];
 
     if (user.role !== 'ADMIN') {
-      organizationIds = memberships.filter(el => el.type === 'ORGANIZATION').map(el => String(el.organizationId));
-      if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined ,{ user: user.id });
+      organizationIds = memberships.filter((el) => el.type === 'ORGANIZATION').map((el) => String(el.organizationId));
+      if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
     }
 
     // Provide suggestions for all entities or narrow them down to a specific type if specified
@@ -365,15 +337,15 @@ const generalRoutes = app
         ...('email' in table && { email: table.email }),
         ...('organizationId' in table && { organizationId: table.organizationId }),
         ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
-      }
+      };
 
       // Build search filters
-      const $or = [ilike(table.name, `%${q}%`)]
-      if ('email' in table) $or.push(ilike(table.email, `%${q}%`))
+      const $or = [ilike(table.name, `%${q}%`)];
+      if ('email' in table) $or.push(ilike(table.email, `%${q}%`));
 
       // Build organization filters
       const $and = [];
-      
+
       if (organizationIds.length) {
         if ('organizationId' in table) {
           $and.push(inArray(table.organizationId, organizationIds));
@@ -381,17 +353,25 @@ const generalRoutes = app
           $and.push(inArray(table.id, organizationIds));
         } else if (entityType === 'USER') {
           // Filter users based on their memberships in specified organizations
-          const userMemberships = await db.select({userId: membershipsTable.userId})
+          const userMemberships = await db
+            .select({ userId: membershipsTable.userId })
             .from(membershipsTable)
-            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')));
-          
-          if (!userMemberships.length) continue; 
-          $and.push(inArray(table.id, userMemberships.map(el => String(el.userId))));
+            .where(
+              and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')),
+            );
+
+          if (!userMemberships.length) continue;
+          $and.push(
+            inArray(
+              table.id,
+              userMemberships.map((el) => String(el.userId)),
+            ),
+          );
         }
       }
-      
+
       $and.push($or.length > 1 ? or(...$or) : $or[0]);
-      const $where = $and.length > 1 ? and(...$and) : $and[0]
+      const $where = $and.length > 1 ? and(...$and) : $and[0];
 
       // Build query
       queries.push(db.select(select).from(table).where($where).limit(10));
@@ -399,9 +379,9 @@ const generalRoutes = app
 
     const results = await Promise.all(queries);
     const entitiesResult = [];
-    
+
     // @TODO: Tmp Typescript type solution
-    for (const entities of results as unknown as Array<Suggestion[]>) entitiesResult.push(...entities.map(e => e))
+    for (const entities of results as unknown as Array<Suggestion[]>) entitiesResult.push(...entities.map((e) => e));
 
     return ctx.json(
       {
@@ -421,11 +401,16 @@ const generalRoutes = app
     const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
     const entity = await resolveEntity(entityType, idOrSlug);
 
+    // TODO use filter query helper to avoid code duplication. Also, this specific filter is missing name search?
     const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
-    const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];
+    // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
+    const membersFilters = [
+      eq(entityType === 'ORGANIZATION' ? membershipsTable.organizationId : membershipsTable.projectId, entity.id),
+      eq(membershipsTable.type, entityType),
+    ];
 
     if (role) {
       membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
@@ -441,6 +426,7 @@ const generalRoutes = app
       .where(and(...membersFilters))
       .as('roles');
 
+      // TODO: use count helper?
     const membershipCount = db
       .select({
         userId: membershipsTable.userId,

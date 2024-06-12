@@ -3,12 +3,12 @@ import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-sche
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import { apiWorkspacesSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchema } from './schema';
+import { apiWorkspaceSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchema } from './schema';
 
 export const createWorkspaceRouteConfig = createRouteConfig({
   method: 'post',
   path: '/',
-  guard: [isAuthenticated, isAllowedTo('create', 'workspace')],
+  guard: [isAuthenticated, isAllowedTo('create', 'WORKSPACE')],
   tags: ['workspaces'],
   summary: 'Create new workspace',
   description: 'Create personal workspace to organize projects and tasks.',
@@ -27,7 +27,7 @@ export const createWorkspaceRouteConfig = createRouteConfig({
       description: 'workspace was created',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiWorkspacesSchema),
+          schema: successResponseWithDataSchema(apiWorkspaceSchema),
         },
       },
     },
@@ -38,7 +38,7 @@ export const createWorkspaceRouteConfig = createRouteConfig({
 export const getWorkspaceRouteConfig = createRouteConfig({
   method: 'get',
   path: '/{idOrSlug}',
-  guard: [isAuthenticated, isAllowedTo('read', 'workspace')],
+  guard: [isAuthenticated, isAllowedTo('read', 'WORKSPACE')],
   tags: ['workspaces'],
   summary: 'Get workspace',
   description: 'Get workspace by id or slug.',
@@ -50,7 +50,7 @@ export const getWorkspaceRouteConfig = createRouteConfig({
       description: 'Workspace',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiWorkspacesSchema),
+          schema: successResponseWithDataSchema(apiWorkspaceSchema),
         },
       },
     },
@@ -61,7 +61,7 @@ export const getWorkspaceRouteConfig = createRouteConfig({
 export const updateWorkspaceRouteConfig = createRouteConfig({
   method: 'put',
   path: '/{idOrSlug}',
-  guard: [isAuthenticated, isAllowedTo('update', 'workspace')],
+  guard: [isAuthenticated, isAllowedTo('update', 'WORKSPACE')],
   tags: ['workspaces'],
   summary: 'Update workspace',
   description: 'Update workspace by id or slug.',
@@ -80,7 +80,7 @@ export const updateWorkspaceRouteConfig = createRouteConfig({
       description: 'Workspace updated',
       content: {
         'application/json': {
-          schema: successResponseWithDataSchema(apiWorkspacesSchema),
+          schema: successResponseWithDataSchema(apiWorkspaceSchema),
         },
       },
     },

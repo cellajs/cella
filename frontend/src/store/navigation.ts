@@ -1,4 +1,4 @@
-import type { EntityContextType } from 'backend/types/common';
+import type { ContextEntity } from 'backend/types/common';
 import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -8,7 +8,7 @@ import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
 import type { UserMenu } from '~/types';
 
 type EntitySubList = Record<string, string[]>;
-type EntityConfig = Record<EntityContextType, { mainList: string[]; subList: EntitySubList }>;
+export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: EntitySubList }>;
 
 interface NavigationState {
   recentSearches: string[];
@@ -29,14 +29,14 @@ interface NavigationState {
   focusView: boolean;
   setFocusView: (status: boolean) => void;
   archiveStateToggle: (itemId: string, active: boolean, mainId?: string | null) => void;
-  setMainMenuOrder: (entityType: EntityContextType, mainListOrder: string[]) => void;
-  setSubMenuOrder: (entityType: EntityContextType, mainId: string, subItemIds: string[]) => void;
+  setMainMenuOrder: (entityType: ContextEntity, mainListOrder: string[]) => void;
+  setSubMenuOrder: (entityType: ContextEntity, mainId: string, subItemIds: string[]) => void;
 }
 
 const initialMenuState: UserMenu = menuSections
   .filter((el) => !el.isSubmenu)
   .reduce<UserMenu>((acc, section) => {
-    acc[section.storageType as keyof UserMenu] = { items: [], canCreate: false, type: null as unknown as EntityContextType };
+    acc[section.storageType as keyof UserMenu] = { items: [], type: null as unknown as ContextEntity };
     return acc;
   }, {} as UserMenu);
 
@@ -112,7 +112,7 @@ export const useNavigationStore = create<NavigationState>()(
               }
             });
           },
-          setMainMenuOrder: (entityType: EntityContextType, mainListOrder: string[]) => {
+          setMainMenuOrder: (entityType: ContextEntity, mainListOrder: string[]) => {
             set((state) => {
               return {
                 ...state,
@@ -123,7 +123,7 @@ export const useNavigationStore = create<NavigationState>()(
               };
             });
           },
-          setSubMenuOrder: (entityType: EntityContextType, mainId: string, subItemIds: string[]) => {
+          setSubMenuOrder: (entityType: ContextEntity, mainId: string, subItemIds: string[]) => {
             set((state) => {
               return {
                 menuOrder: {

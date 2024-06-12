@@ -13,7 +13,7 @@ import { apiProjectListSchema, apiProjectSchema, createProjectJsonSchema, getPro
 export const createProjectRouteConfig = createRouteConfig({
   method: 'post',
   path: '/',
-  guard: [isAuthenticated, isAllowedTo('create', 'project')],
+  guard: [isAuthenticated, isAllowedTo('create', 'PROJECT')],
   tags: ['projects'],
   summary: 'Create new project',
   description: 'Create a new project in an organization. Creator will become admin and can invite other members.',
@@ -44,7 +44,7 @@ export const createProjectRouteConfig = createRouteConfig({
 export const getProjectRouteConfig = createRouteConfig({
   method: 'get',
   path: '/{idOrSlug}',
-  guard: [isAuthenticated, isAllowedTo('read', 'project')],
+  guard: [isAuthenticated, isAllowedTo('read', 'PROJECT')],
   tags: ['projects'],
   summary: 'Get project',
   description: 'Get project by id or slug.',
@@ -70,7 +70,7 @@ export const getProjectsRouteConfig = createRouteConfig({
   guard: [isAuthenticated],
   tags: ['projects'],
   summary: 'Get list of projects',
-  description: 'Get list of projects in which you have a membership.',
+  description: 'Get list of projects in which you have a membership or - if a `requestedUserId` is provided - the projects of this user.',
   request: {
     query: getProjectsQuerySchema,
   },
@@ -90,7 +90,7 @@ export const getProjectsRouteConfig = createRouteConfig({
 export const updateProjectRouteConfig = createRouteConfig({
   method: 'put',
   path: '/{idOrSlug}',
-  guard: [isAuthenticated, isAllowedTo('update', 'project')],
+  guard: [isAuthenticated, isAllowedTo('update', 'PROJECT')],
   tags: ['projects'],
   summary: 'Update project',
   description: 'Update project by id or slug.',

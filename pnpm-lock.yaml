@@ -52,10 +52,10 @@ importers:
         version: 1.11.2
       '@hono/sentry':
         specifier: ^1.1.0
-        version: 1.1.0(hono@4.4.4)
+        version: 1.1.0(hono@4.4.5)
       '@hono/zod-openapi':
         specifier: ^0.14.1
-        version: 0.14.2(hono@4.4.4)(zod@3.23.8)
+        version: 0.14.2(hono@4.4.5)(zod@3.23.8)
       '@logtail/node':
         specifier: ^0.4.21
         version: 0.4.21
@@ -76,7 +76,7 @@ importers:
         version: 0.0.1
       '@scalar/hono-api-reference':
         specifier: ^0.5.61
-        version: 0.5.62(hono@4.4.4)(nanoid@5.0.7)(postcss@8.4.38)(terser@5.31.0)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27(typescript@5.4.5))(yjs@13.6.15)
+        version: 0.5.62(hono@4.4.5)(nanoid@5.0.7)(postcss@8.4.38)(terser@5.31.0)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27(typescript@5.4.5))(yjs@13.6.15)
       '@sentry/cli':
         specifier: ^2.31.2
         version: 2.32.1
@@ -108,8 +108,8 @@ importers:
         specifier: workspace:*
         version: link:../env
       hono:
-        specifier: ^4.4.4
-        version: 4.4.4
+        specifier: ^4.4.5
+        version: 4.4.5
       i18next:
         specifier: ^23.11.3
         version: 23.11.5
@@ -402,8 +402,8 @@ importers:
         specifier: ^13.7.3
         version: 13.7.3
       hono:
-        specifier: 4.4.4
-        version: 4.4.4
+        specifier: 4.4.5
+        version: 4.4.5
       i18next:
         specifier: ^23.11.5
         version: 23.11.5
@@ -6991,8 +6991,8 @@ packages:
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
-  hono@4.4.4:
-    resolution: {integrity: sha512-zO5+4K8yf1iuKhBZhwmpZ/0LzPMr8Zt1RugEGM1xvOqgh9DyLb7tslOtoBks4bmm5bIcLtzLCXUpYpXOkwpABA==}
+  hono@4.4.5:
+    resolution: {integrity: sha512-hyf+1c+gTEo0+xjdYT2e8y4M3HcEy0ARuRZHPRgeRhq/mupkI4j9/qEWVKsyj0se4KhfRnYrld4Tk6z/9veq/Q==}
     engines: {node: '>=16.0.0'}
 
   hookable@5.5.3:
@@ -12538,21 +12538,21 @@ snapshots:
 
   '@hono/node-server@1.11.2': {}
 
-  '@hono/sentry@1.1.0(hono@4.4.4)':
+  '@hono/sentry@1.1.0(hono@4.4.5)':
     dependencies:
-      hono: 4.4.4
+      hono: 4.4.5
       toucan-js: 3.4.0
 
-  '@hono/zod-openapi@0.14.2(hono@4.4.4)(zod@3.23.8)':
+  '@hono/zod-openapi@0.14.2(hono@4.4.5)(zod@3.23.8)':
     dependencies:
       '@asteasolutions/zod-to-openapi': 7.0.0(zod@3.23.8)
-      '@hono/zod-validator': 0.2.2(hono@4.4.4)(zod@3.23.8)
-      hono: 4.4.4
+      '@hono/zod-validator': 0.2.2(hono@4.4.5)(zod@3.23.8)
+      hono: 4.4.5
       zod: 3.23.8
 
-  '@hono/zod-validator@0.2.2(hono@4.4.4)(zod@3.23.8)':
+  '@hono/zod-validator@0.2.2(hono@4.4.5)(zod@3.23.8)':
     dependencies:
-      hono: 4.4.4
+      hono: 4.4.5
       zod: 3.23.8
 
   '@hookform/resolvers@3.5.0(react-hook-form@7.51.5(react@18.3.1))':
@@ -14194,10 +14194,10 @@ snapshots:
       - typescript
       - vitest
 
-  '@scalar/hono-api-reference@0.5.62(hono@4.4.4)(nanoid@5.0.7)(postcss@8.4.38)(terser@5.31.0)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27(typescript@5.4.5))(yjs@13.6.15)':
+  '@scalar/hono-api-reference@0.5.62(hono@4.4.5)(nanoid@5.0.7)(postcss@8.4.38)(terser@5.31.0)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27(typescript@5.4.5))(yjs@13.6.15)':
     dependencies:
       '@scalar/api-reference': 1.23.5(nanoid@5.0.7)(postcss@8.4.38)(terser@5.31.0)(typescript@5.4.5)(unified@11.0.4)(vue-sonner@1.1.2)(vue@3.4.27(typescript@5.4.5))(yjs@13.6.15)
-      hono: 4.4.4
+      hono: 4.4.5
     transitivePeerDependencies:
       - '@jest/globals'
       - '@types/bun'
@@ -17620,7 +17620,7 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono@4.4.4: {}
+  hono@4.4.5: {}
 
   hookable@5.5.3: {}
 

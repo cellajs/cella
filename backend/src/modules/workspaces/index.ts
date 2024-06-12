@@ -9,6 +9,7 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { createWorkspaceRouteConfig, deleteWorkspacesRouteConfig, getWorkspaceRouteConfig, updateWorkspaceRouteConfig } from './routes';
+import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 
 const app = new CustomHono();
 
@@ -38,13 +39,16 @@ const workspacesRoutes = app
 
     logEvent('Workspace created', { workspace: workspace.id });
 
-    await db.insert(membershipsTable).values({
+    const [createdMembership] = await db
+    .insert(membershipsTable)
+    .values({
       userId: user.id,
       organizationId,
       workspaceId: workspace.id,
       type: 'WORKSPACE',
       role: 'ADMIN',
-    });
+    })
+    .returning();
 
     logEvent('User added to workspace', { user: user.id, workspace: workspace.id });
 
@@ -55,7 +59,7 @@ const workspacesRoutes = app
         success: true,
         data: {
           ...workspace,
-          role: 'ADMIN' as const,
+          membership: toMembershipInfo(createdMembership),
         },
       },
       200,
@@ -66,20 +70,16 @@ const workspacesRoutes = app
    * Get workspace by id or slug
    */
   .openapi(getWorkspaceRouteConfig, async (ctx) => {
-    const user = ctx.get('user');
     const workspace = ctx.get('workspace');
-
-    const [membership] = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.workspaceId, workspace.id)));
+    const memberships = ctx.get('memberships');
+    const membership = memberships.find(m => m.workspaceId === workspace.id && m.type === 'WORKSPACE');
 
     return ctx.json(
       {
         success: true,
         data: {
           ...workspace,
-          role: membership?.role || null,
+          membership: toMembershipInfo(membership),
         },
       },
       200,
@@ -132,7 +132,7 @@ const workspacesRoutes = app
         success: true,
         data: {
           ...updatedWorkspace,
-          role: memberships.find((member) => member.id === user.id)?.role || null,
+          membership: toMembershipInfo(memberships.find((member) => member.id === user.id)),
         },
       },
       200,

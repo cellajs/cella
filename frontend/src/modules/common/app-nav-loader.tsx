@@ -6,6 +6,7 @@ import useMounted from '~/hooks/use-mounted';
 import router from '~/lib/router';
 import { useNavigationStore } from '~/store/navigation';
 import Logo from './logo';
+import { sheet } from './sheeter/state';
 
 const AppNavLoader = () => {
   const { hasWaited } = useMounted();
@@ -18,7 +19,10 @@ const AppNavLoader = () => {
   useEffect(() => {
     // TODO: move this to a more general location?
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
-      if (toLocation.pathname !== fromLocation.pathname) setFocusView(false);
+      if (toLocation.pathname !== fromLocation.pathname) {
+        setFocusView(false);
+        sheet.remove();
+      }
       pathChanged && setLoading(true);
     });
     router.subscribe('onLoad', () => {

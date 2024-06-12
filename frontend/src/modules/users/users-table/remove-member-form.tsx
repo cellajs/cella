@@ -20,10 +20,7 @@ const RemoveMembersForm = ({ members, entityId, entityType = 'ORGANIZATION', cal
     mutationFn: baseRemoveMembers,
     onSuccess: () => {
       callback?.(members);
-
-      if (isDialog) {
-        dialog.remove();
-      }
+      if (isDialog) dialog.remove();
     },
   });
 

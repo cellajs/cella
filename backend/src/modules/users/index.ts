@@ -250,7 +250,7 @@ const usersRoutes = app
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })
-      .where(eq(usersTable.id, user.id))
+      .where(eq(usersTable.id, targetUser.id))
       .returning();
 
     const [{ memberships }] = await db
@@ -261,7 +261,6 @@ const usersRoutes = app
       .where(eq(membershipsTable.userId, updatedUser.id));
 
     logEvent('User updated', { user: updatedUser.id });
-
     return ctx.json(
       {
         success: true,

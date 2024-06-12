@@ -17,6 +17,7 @@ import {
   getProjectsRouteConfig,
   updateProjectRouteConfig,
 } from './routes';
+import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 
 const app = new CustomHono();
 
@@ -48,13 +49,15 @@ const projectsRoutes = app
 
     logEvent('Project created', { project: project.id });
 
-    await db.insert(membershipsTable).values({
+    const [createdMembership] = await db
+    .insert(membershipsTable)
+    .values({
       userId: user.id,
       organizationId,
       projectId: project.id,
       type: 'PROJECT',
       role: 'ADMIN',
-    });
+    }).returning();
 
     logEvent('User added to project', { user: user.id, project: project.id });
 
@@ -68,7 +71,7 @@ const projectsRoutes = app
       logEvent('Project added to workspace', { project: project.id, workspace: workspaceId });
     }
 
-    const createdProject = { ...project, role: 'ADMIN' as const };
+    const createdProject = { ...project, counts: { admins: 1, members: 0 }, membership: toMembershipInfo(createdMembership) };
 
     sendSSE(user.id, 'create_entity', createdProject);
 
@@ -78,20 +81,18 @@ const projectsRoutes = app
    * Get project by id or slug
    */
   .openapi(getProjectRouteConfig, async (ctx) => {
-    const user = ctx.get('user');
     const project = ctx.get('project');
+    const memberships = ctx.get('memberships');
+    const membership = memberships.find(m => m.projectId === project.id && m.type === 'PROJECT')
 
-    const [membership] = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.projectId, project.id)));
-
+    // TODO fix counts using a helper
     return ctx.json(
       {
         success: true,
         data: {
           ...project,
-          role: membership?.role || null,
+          membership: toMembershipInfo(membership),
+          counts: { admins: 0, members: 0 },
         },
       },
       200,
@@ -101,11 +102,9 @@ const projectsRoutes = app
    * Get list of projects
    */
   .openapi(getProjectsRouteConfig, async (ctx) => {
-    // also be able to filter on organizationId
-    const { q, sort, order, offset, limit, workspaceId } = ctx.req.valid('query');
+    // TODO: also be able to filter on organizationId
+    const { q, sort, order, offset, limit, workspaceId, requestedUserId } = ctx.req.valid('query');
     const user = ctx.get('user');
-
-    const membershipsFilters = [eq(membershipsTable.userId, user.id)];
 
     const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
     const projectsFilters = [filter];
@@ -125,22 +124,20 @@ const projectsRoutes = app
       .groupBy(membershipsTable.projectId)
       .as('counts');
 
-    const membership = db
-      .select({
-        projectId: membershipsTable.projectId,
-        role: membershipsTable.role,
-        archived: membershipsTable.inactive,
-      })
+    // @TODO: Permission check which projects a user is allowed to see? (this will skip when requestedUserId is used in query!)
+    // It should check organization permissions, project permissions and system admin permission
+    const memberships = db
+      .select()
       .from(membershipsTable)
-      .where(and(...membershipsFilters))
-      .as('membership_roles');
+      .where(eq(membershipsTable.userId, requestedUserId ? requestedUserId : user.id))
+      .as('memberships');
 
     const orderColumn = getOrderColumn(
       {
         id: projectsTable.id,
         name: projectsTable.name,
         createdAt: projectsTable.createdAt,
-        userRole: membership.role,
+        userRole: memberships.role,
       },
       sort,
       projectsTable.id,
@@ -149,48 +146,39 @@ const projectsRoutes = app
 
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     let projects: Array<any>;
-    let total = 0;
 
     if (!workspaceId) {
-      const [{ total: matches }] = await db.select({ total: count() }).from(projectsQuery.as('projects'));
-      total = matches;
       projects = await db
         .select({
           project: projectsTable,
-          role: membership.role,
-          archived: membership.archived,
+          membership: membershipsTable,
+          workspaceId: projectsToWorkspacesTable.workspaceId,
           admins: counts.admins,
           members: counts.members,
         })
         .from(projectsQuery.as('projects'))
-        .leftJoin(membership, eq(membership.projectId, projectsTable.id))
+        .innerJoin(memberships, eq(memberships.projectId, projectsTable.id))
+        .leftJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id))
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
         .orderBy(orderColumn)
         .limit(Number(limit))
         .offset(Number(offset));
     } else {
-      projectsFilters.push(eq(projectsToWorkspacesTable.workspaceId, workspaceId));
-
-      const [{ total: matches }] = await db
-        .select({ total: count() })
-        .from(projectsToWorkspacesTable)
-        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), ...projectsFilters))
-        .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId));
-
-      total = matches;
-
       projects = await db
         .select({
           project: projectsTable,
-          role: membership.role,
-          archived: membership.archived,
+          membership: membershipsTable,          
+          workspaceId: projectsToWorkspacesTable.workspaceId,
           admins: counts.admins,
           members: counts.members,
         })
         .from(projectsToWorkspacesTable)
-        .leftJoin(projectsTable, and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), ...projectsFilters))
+        .leftJoin(
+          projectsTable,
+          and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), eq(projectsToWorkspacesTable.workspaceId, workspaceId), ...projectsFilters),
+        )
         .leftJoin(counts, eq(projectsTable.id, counts.projectId))
-        .leftJoin(membership, eq(membership.projectId, projectsTable.id))
+        .leftJoin(memberships, and(eq(memberships.projectId, projectsTable.id)))
         .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId))
         .orderBy(orderColumn)
         .limit(Number(limit))
@@ -201,13 +189,13 @@ const projectsRoutes = app
       {
         success: true,
         data: {
-          items: projects.map(({ project, role, admins, members, archived }) => ({
+          items: projects.map(({ project, membership, workspaceId, admins, members }) => ({
             ...project,
-            role,
-            archived: archived,
+            membership: toMembershipInfo(membership),
+            workspaceId,
             counts: { admins, members },
           })),
-          total,
+          total: projects.length,
         },
       },
       200,
@@ -254,12 +242,14 @@ const projectsRoutes = app
 
     logEvent('Project updated', { project: updatedProject.id });
 
+    // TODO fix counts using a helper
     return ctx.json(
       {
         success: true,
         data: {
           ...updatedProject,
-          role: memberships.find((member) => member.id === user.id)?.role || null,
+          membership: toMembershipInfo(memberships.find((member) => member.id === user.id)),
+          counts: { admins: 0, members: 0 },
         },
       },
       200,

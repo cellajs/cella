@@ -73,7 +73,7 @@ export default function Board() {
   }));
   const { menuOrder, setSubMenuOrder, menu } = useNavigationStore();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects.filter((p) => !p.archived).sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])),
+    projects.sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])),
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 

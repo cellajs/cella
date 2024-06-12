@@ -1,6 +1,5 @@
 import { apiClient, handleResponse } from '.';
 
-
 // Oath endpoints
 export const githubSignInUrl = apiClient.auth.github.$url().href;
 export const googleSignInUrl = apiClient.auth.google.$url().href;
@@ -23,13 +22,13 @@ export const checkEmail = async (email: string) => {
   });
 
   const json = await handleResponse(response);
-  return json.data;
+  return json.success;
 };
 
 // Verify the user's email with token sent by email
 export const verifyEmail = async ({ token, resend }: { token: string; resend?: boolean }) => {
-  const response = await apiClient.auth['verify-email'][':token'].$get({
-    param: { token },
+  const response = await apiClient.auth['verify-email'].$post({
+    json: { token },
     query: { resend: String(resend) },
   });
 
@@ -37,15 +36,7 @@ export const verifyEmail = async ({ token, resend }: { token: string; resend?: b
 };
 
 // Sign in a user with email and password
-export const signIn = async ({
-  email,
-  password,
-  token,
-}: {
-  email: string;
-  password: string;
-  token?: string;
-}) => {
+export const signIn = async ({ email, password, token }: { email: string; password: string; token?: string }) => {
   const response = await apiClient.auth['sign-in'].$post({
     json: { email, password, token },
   });
@@ -56,7 +47,7 @@ export const signIn = async ({
 
 // Send a verification email
 export const sendVerificationEmail = async (email: string) => {
-  const response = await apiClient.auth['verify-email'].$post({
+  const response = await apiClient.auth['send-verification-email'].$post({
     json: { email },
   });
 
@@ -73,13 +64,7 @@ export const sendResetPasswordEmail = async (email: string) => {
 };
 
 // Reset the user's password
-export const resetPassword = async ({
-  token,
-  password,
-}: {
-  token: string;
-  password: string;
-}) => {
+export const resetPassword = async ({ token, password }: { token: string; password: string }) => {
   const response = await apiClient.auth['reset-password'][':token'].$post({
     param: { token },
     json: { password },

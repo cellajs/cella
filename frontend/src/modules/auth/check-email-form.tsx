@@ -17,29 +17,31 @@ import type { TokenData } from '.';
 
 const formSchema = checkEmailJsonSchema;
 
-export const CheckEmailForm = ({ tokenData, setStep }: { tokenData: TokenData | null; setStep: (step: string, email: string) => void }) => {
+interface CheckEmailProps {
+  tokenData: TokenData | null;
+  setStep: (step: string, email: string) => void;
+}
+
+export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
   const { t } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-    },
+    defaultValues: { email: '' },
   });
 
   const { mutate: checkEmail, isPending } = useMutation({
     mutationFn: baseCheckEmail,
-    onSuccess: (result) => {
+    onSuccess: (success) => {
+      // Depending on config, we have different steps
+      let nextStep = success ? 'signIn' : 'inviteOnly';
       if (config.has.signUp) {
-        const nextStep = result.exists ? 'signIn' : 'signUp';
-        setStep(nextStep, form.getValues('email'));
-      } else if (config.has.waitList && !config.has.signUp) {
-        const nextStep = result.exists ? 'signIn' : 'waitList';
-        setStep(nextStep, form.getValues('email'));
-      } else {
-        const nextStep = result.exists ? 'signIn' : 'inviteOnly';
-        setStep(nextStep, form.getValues('email'));
+        nextStep = success ? 'signIn' : 'signUp';
+      } else if (config.has.waitList) {
+        nextStep = success ? 'signIn' : 'waitList';
       }
+
+      setStep(nextStep, form.getValues('email'));
     },
   });
 

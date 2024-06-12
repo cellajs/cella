@@ -40,12 +40,17 @@ export const DownAlert = () => {
     };
   }, [downAlert]);
 
+  const cancelAlert = () => {
+    console.log('cancelAlert')
+    setDownAlert(null)
+  }
+
   if (!downAlert) return;
 
   return (
-    <div className="fixed z-[300] bottom-0 border-0 p-4 flex w-full justify-center">
+    <div className="fixed z-[2000] bottom-4 left-4 right-4 border-0 justify-center">
       <Alert variant="destructive" className="border-0 w-auto">
-        <Button variant="ghost" size="sm" className="absolute top-2 right-1" onClick={() => setDownAlert(null)}>
+        <Button variant="ghost" size="sm" className="absolute top-2 right-1" onClick={cancelAlert}>
           <X size={16} />
         </Button>
         {downAlert === 'maintenance' ? <Construction size={16} /> : <CloudOff size={16} />}

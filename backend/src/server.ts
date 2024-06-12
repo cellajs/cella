@@ -5,7 +5,7 @@ import middlewares from './middlewares';
 import authRoutes from './modules/auth';
 import generalRoutes from './modules/general';
 import meRoutes from './modules/me';
-import MembershipsRoutes from './modules/memberships';
+import membershipsRoutes from './modules/memberships';
 import organizationsRoutes from './modules/organizations';
 import projectsRoutes from './modules/projects';
 import requestsRoutes from './modules/requests';
@@ -39,18 +39,18 @@ app.onError((err, ctx) => {
 
 // Add routes for each module
 const routes = app
+  .route('/auth', authRoutes)
   .route('/me', meRoutes)
   .route('/users', usersRoutes)
-  .route('/memberships', MembershipsRoutes)
   .route('/organizations', organizationsRoutes)
-  .route('/requests', requestsRoutes)
-  .route('/', authRoutes)
   .route('/', generalRoutes)
+  .route('/requests', requestsRoutes)
+  .route('/memberships', membershipsRoutes)
 
   // App-specific routes go here
   .route('/workspaces', workspacesRoutes)
   .route('/projects', projectsRoutes);
 
-  export default app
+export default app;
 
-  export type AppType = typeof routes
+export type AppType = typeof routes;

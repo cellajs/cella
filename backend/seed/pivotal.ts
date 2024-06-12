@@ -94,6 +94,6 @@ zip.loadAsync(data).then(async (zip) => {
     )
     .onConflictDoNothing();
 
-  console.log('Done');
+  console.info('Done');
   process.exit(0);
 });

@@ -25,3 +25,11 @@ export const deleteMembersQuerySchema = z.object({
   entityType: z.enum(config.contextEntityTypes),
   ids: z.union([z.string(), z.array(z.string())]),
 });
+
+export const membershipInfoSchema = z.object({
+  id: apiMembershipSchema.shape.id,
+  role: apiMembershipSchema.shape.role,
+  archived: apiMembershipSchema.shape.inactive,
+}).nullable();
+
+export type membershipInfoType = z.infer<typeof membershipInfoSchema>;

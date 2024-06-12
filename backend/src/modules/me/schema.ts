@@ -25,11 +25,11 @@ const menuItemSchema = z.object({
 const menuSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
-    submenu: z.object({ items: z.array(menuItemSchema), canCreate: z.boolean(), submenuTo: z.string(), type: contextEntityTypeSchema }).optional(),
+    submenu: z.object({ items: z.array(menuItemSchema), submenuTo: z.string(), type: contextEntityTypeSchema }).optional(),
   }),
 );
 
-const menuSectionSchema = z.object({ items: menuSchema, canCreate: z.boolean(), type: contextEntityTypeSchema });
+const menuSectionSchema = z.object({ items: menuSchema, type: contextEntityTypeSchema });
 
 export const userMenuSchema = z.object({
   organizations: menuSectionSchema,

@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useRef } from 'react';
 import { createStore } from 'zustand';
-import type { ProjectList, Workspace } from '~/types';
+import type { Project, Workspace } from '~/types';
 import { useStoreWithEqualityFn } from 'zustand/traditional';
 
 interface WorkspaceProps {
   workspace: Workspace;
-  projects: ProjectList;
+  projects: Project[];
   selectedTasks: string[];
   searchQuery: string;
   setSelectedTasks: (tasks: string[]) => void;

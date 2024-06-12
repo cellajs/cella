@@ -18,18 +18,17 @@ import permissionManager from '../../lib/permission-manager';
 import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkRole } from '../general/helpers/check-role';
-import { deleteMembershipsRouteConfig, inviteMembershipRouteConfig, updateMembershipRouteConfig } from './routes';
-import { apiMembershipSchema } from './schema';
+import { createMembershipRouteConfig, deleteMembershipsRouteConfig, updateMembershipRouteConfig } from './routes';
 
 const app = new CustomHono();
 
 // * Membership endpoints
-const MembershipsRoutes = app
+const membershipsRoutes = app
   /*
-   * Invite members to an organization
+   * Invite members to an entity such as an organization
    */
-  .openapi(inviteMembershipRouteConfig, async (ctx) => {
+  // TODO: make this work for Projects too and check how this endpoint is protected from unauthorized access
+  .openapi(createMembershipRouteConfig, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('query');
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
@@ -38,11 +37,6 @@ const MembershipsRoutes = app
     const organization = idOrSlug ? ((await resolveEntity('ORGANIZATION', idOrSlug)) as OrganizationModel) : null;
 
     if (!organization) return errorResponse(ctx, 403, 'forbidden', 'warn');
-
-    // Check to invite on organization level
-    if (organization && !checkRole(apiMembershipSchema, role)) {
-      return errorResponse(ctx, 400, 'invalid_role', 'warn');
-    }
 
     for (const email of emails) {
       const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
@@ -141,7 +135,7 @@ const MembershipsRoutes = app
     const { idOrSlug, entityType, ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    if (config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
+    if (!config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
     // * Convert the member ids to an array
     const memberToDeleteIds = Array.isArray(ids) ? ids : [ids];
 
@@ -222,7 +216,7 @@ const MembershipsRoutes = app
       logEvent('Member deleted', { membership: membership.id });
     }
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json({ success: true, errors }, 200);
   })
   /*
    * Update user membership
@@ -288,4 +282,4 @@ const MembershipsRoutes = app
     return ctx.json({ success: true, data: updatedMembership }, 200);
   });
 
-export default MembershipsRoutes;
+export default membershipsRoutes;

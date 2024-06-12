@@ -55,7 +55,7 @@ const WorkspaceJoinLeaveButton = ({ workspace }: Props) => {
     });
   };
 
-  return workspace.role ? (
+  return workspace.membership?.role ? (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
         <Button size="sm" variant="darkSuccess" aria-label="Leave" className="items-center gap-1">

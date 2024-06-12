@@ -19,15 +19,7 @@ import { IndexRoute } from './routeTree';
 
 const membersSearchSchema = getMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
-const membersQueryOptions = ({
-  idOrSlug,
-  entityType,
-  q,
-  sort: initialSort,
-  order: initialOrder,
-  role,
-  limit,
-}: GetMembersParams & { idOrSlug: string; entityType: ContextEntity }) => {
+const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -37,18 +29,17 @@ const membersQueryOptions = ({
     queryFn: async ({ pageParam, signal }) => {
       const fetchedData = await getMembers(
         {
-          idOrSlug,
-          entityType: 'ORGANIZATION',
           page: pageParam,
           q,
           sort,
           order,
           role,
           limit,
+          idOrSlug,
+          entityType: 'ORGANIZATION',
         },
         signal,
       );
-
       return fetchedData;
     },
     getNextPageParam: (_lastPage, allPages) => allPages.length,
@@ -90,6 +81,7 @@ export const OrganizationMembersRoute = createRoute({
     <Suspense>
       <UsersTable<Member, GetMembersParams & { idOrSlug: string; entityType: ContextEntity }, z.infer<typeof getMembersQuerySchema>>
         entityType="ORGANIZATION"
+        canInvite={true}
         queryOptions={membersQueryOptions}
         routeFrom={OrganizationMembersRoute.id}
         fetchForExport={getMembers}
