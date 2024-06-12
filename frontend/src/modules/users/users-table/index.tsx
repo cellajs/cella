@@ -1,6 +1,6 @@
 import { type InfiniteData, type UseInfiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useParams, useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { GetMembersParams } from '~/api/general';
 import { updateUser, type GetUsersParams } from '~/api/users';
 
@@ -24,6 +24,7 @@ import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { useMutation } from '~/hooks/use-mutations';
 import { updateMembership } from '~/api/memberships';
+import { EntityContext } from '~/modules/common/entity-context';
 export const LIMIT = 40;
 
 const mutateUserTableData = (
@@ -81,6 +82,7 @@ const UsersTable = <
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<K['q']>(search.q);
   const [role, setRole] = useState<K['role']>(search.role);
+  const { entity } = useContext(EntityContext);
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order
@@ -119,7 +121,7 @@ const UsersTable = <
   const callback = mutateUserTableData(debounceQuery, sortColumns[0]?.columnKey, sortColumns[0]?.direction.toLowerCase(), role, idOrSlug, entityType);
 
   const openInviteDialog = () => {
-    dialog(<InviteUsers entityId={idOrSlug} entityType={entityType} mode={idOrSlug ? null : 'email'} dialog />, {
+    dialog(<InviteUsers entity={entity} mode={idOrSlug ? null : 'email'} dialog />, {
       id: 'user-invite',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[100] max-w-4xl',

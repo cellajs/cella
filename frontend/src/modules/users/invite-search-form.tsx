@@ -6,7 +6,7 @@ import { type InviteMemberProps, inviteMember } from '~/api/memberships';
 import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
-import { useMemo, useContext } from 'react';
+import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { getSuggestions } from '~/api/general';
@@ -18,12 +18,10 @@ import MultipleSelector from '~/modules/common/multi-select';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { ContextEntity } from '~/types';
-import { EntityContext } from '../common/entity-context';
+import type { Entity, EntityPage } from '~/types';
 
 interface Props {
-  entityId?: string;
-  entityType?: ContextEntity;
+  entity?: EntityPage;
   callback?: () => void;
   dialog?: boolean;
 }
@@ -37,9 +35,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 // Invite members by seaching for users which are already in the system
-const InviteSearchForm = ({ entityId, entityType, callback, dialog: isDialog }: Props) => {
+const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
+  if (!entity) return null;
+
   const { t } = useTranslation();
-  const { entity } = useContext(EntityContext);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -56,7 +55,12 @@ const InviteSearchForm = ({ entityId, entityType, callback, dialog: isDialog }: 
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      return inviteMember(values as InviteMemberProps);
+      return inviteMember({
+        ...values,
+        idOrSlug: entity.id,
+        entityType: entity.entity || 'ORGANIZATION',
+        organizationId: entity.organizationId || entity.id,
+      } as InviteMemberProps);
     },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
@@ -67,11 +71,7 @@ const InviteSearchForm = ({ entityId, entityType, callback, dialog: isDialog }: 
   });
 
   const onSubmit = (values: FormValues) => {
-    invite({
-      ...values,
-      idOrSlug: entityId,
-      organizationId: entity?.organizationId || entityId,
-    });
+    invite(values);
   };
 
   return (
@@ -115,7 +115,8 @@ const InviteSearchForm = ({ entityId, entityType, callback, dialog: isDialog }: 
             <FormItem className="flex-row gap-4 items-center">
               <FormLabel>{t('common:role')}:</FormLabel>
               <FormControl>
-                <SelectRole entityType={entityType} value={value} onChange={onChange} />
+                {/* TODO fix */}
+                <SelectRole entityType={entity.entity as unknown as Entity} value={value} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

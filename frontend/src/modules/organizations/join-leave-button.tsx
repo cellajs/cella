@@ -43,6 +43,8 @@ const JoinLeaveButton = ({ organization }: Props) => {
       emails: [user.email],
       role: 'MEMBER',
       idOrSlug: organization.slug,
+      entityType: 'ORGANIZATION',
+      organizationId: organization.id,
     });
   };
 

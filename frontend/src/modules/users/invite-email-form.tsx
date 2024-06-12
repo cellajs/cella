@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type InviteSystemProps, invite as inviteSystem } from '~/api/general';
@@ -19,12 +19,10 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { ContextEntity } from '~/types';
-import { EntityContext } from '../common/entity-context';
+import type { EntityPage } from '~/types';
 
 interface Props {
-  entityId?: string;
-  entityType?: ContextEntity;
+  entity?: EntityPage;
   callback?: () => void;
   dialog?: boolean;
   children?: React.ReactNode;
@@ -39,10 +37,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 // When no entity type, it's a system invite
-const InviteEmailForm = ({ entityId, entityType, callback, dialog: isDialog, children }: Props) => {
-  if (entityType && !entityId) console.error('entityId is required when entityType is provided');
-
-  const { entity } = useContext(EntityContext);
+const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props) => {
 
   const { t } = useTranslation();
   const { nextStep } = useStepper();
@@ -52,7 +47,7 @@ const InviteEmailForm = ({ entityId, entityType, callback, dialog: isDialog, chi
       resolver: zodResolver(formSchema),
       defaultValues: {
         emails: [],
-        role: entityType ? 'MEMBER' : 'USER',
+        role: entity ? 'MEMBER' : 'USER',
       },
     }),
     [],
@@ -60,15 +55,17 @@ const InviteEmailForm = ({ entityId, entityType, callback, dialog: isDialog, chi
 
   const form = useFormWithDraft<FormValues>('invite-users', formOptions);
 
+  console.log('entity', entity);
+
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      if (!entityType) return inviteSystem(values as InviteSystemProps);
+      if (!entity) return inviteSystem(values as InviteSystemProps);
       return inviteMember({
         ...values, 
-        idOrSlug: entityId, 
-        organizationId: entity?.organizationId || entity.id
-      }, as InviteMemberProps);
+        idOrSlug: entity.id, 
+        organizationId: entity.organizationId || entity.id
+      } as InviteMemberProps);
     },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });

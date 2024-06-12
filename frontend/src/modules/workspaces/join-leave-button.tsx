@@ -43,7 +43,9 @@ const WorkspaceJoinLeaveButton = ({ workspace }: Props) => {
     inviteMember({
       emails: [user.email],
       role: 'MEMBER',
+      entityType: 'WORKSPACE',
       idOrSlug: workspace.slug,
+      organizationId: workspace.organizationId,
     });
   };
 
