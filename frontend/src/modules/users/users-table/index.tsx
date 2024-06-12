@@ -24,8 +24,6 @@ import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { useMutation } from '~/hooks/use-mutations';
 import { updateMembership } from '~/api/memberships';
-import { useNavigationStore } from '~/store/navigation';
-
 export const LIMIT = 40;
 
 const mutateUserTableData = (
@@ -48,6 +46,7 @@ export type queryOptions<T> = {
 // Users table renders members when entityType is provided, defaults to users in the system
 interface Props<T, U> {
   entityType?: ContextEntity;
+  isAdmin?: boolean;
   queryOptions: (
     values: U,
   ) => UseInfiniteQueryOptions<queryOptions<T>, Error, InfiniteData<queryOptions<T>, unknown>, queryOptions<T>, (string | undefined)[], number>;
@@ -68,6 +67,7 @@ const UsersTable = <
   entityType,
   queryOptions,
   routeFrom,
+  isAdmin,
   customColumns,
   fetchForExport,
 }: Props<T, U>) => {
@@ -77,15 +77,6 @@ const UsersTable = <
   const { t } = useTranslation();
   const idOrSlug = 'idOrSlug' in props ? props.idOrSlug : undefined;
   const containerRef = useRef(null);
-  const { menu } = useNavigationStore();
-  const [userRole] = Object.values(menu)
-    .map((el) => {
-      if (el.type === 'ORGANIZATION') {
-        const targetEntity = el.items.find((el) => el.id === idOrSlug || el.slug === idOrSlug);
-        if (targetEntity) return targetEntity.role;
-      }
-    })
-    .filter((el) => el !== undefined);
   const [rows, setRows] = useState<T[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<K['q']>(search.q);
@@ -230,7 +221,7 @@ const UsersTable = <
       <Toolbar<T>
         entityType={entityType}
         isFiltered={isFiltered}
-        isAdmin={userRole === 'ADMIN'}
+        isAdmin={isAdmin}
         total={queryResult.data?.pages[0].total}
         query={query}
         setQuery={setQuery}

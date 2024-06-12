@@ -69,6 +69,7 @@ export const UsersTableRoute = createRoute({
       <UsersTable<User, GetUsersParams, z.infer<typeof getUsersQuerySchema>>
         queryOptions={usersQueryOptions}
         routeFrom={UsersTableRoute.id}
+        isAdmin={true}
         customColumns={[
           {
             key: 'membershipCount',
