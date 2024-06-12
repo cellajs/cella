@@ -1,7 +1,7 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
 import { GripVertical, Paperclip } from 'lucide-react';
-import { type MouseEventHandler, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -9,22 +9,22 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { type PreparedTask, useElectric } from '../../common/electric/electrify.ts';
+import { useElectric, type Label, type Task } from '../../common/electric/electrify.ts';
 import { Checkbox } from '../../ui/checkbox.tsx';
-import { WorkspaceContext } from '../../workspaces/index.tsx';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
 import { SelectImpact } from './task-selectors/select-impact.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
-import { toast } from 'sonner';
-import { TaskContext } from '../board/board-column.tsx';
-import { ProjectContext } from '../board/project-context.ts';
+import { useProjectContext } from '../board/project-context.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import SelectParent from './task-selectors/select-parent.tsx';
 import SetSubTasks from './task-selectors/select-sub-tasks.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
+import { useTaskContext } from './task-context.tsx';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
+import { useLiveQuery } from 'electric-sql/react';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
@@ -37,26 +37,77 @@ interface TaskCardProps {
 export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { setSelectedTasks, selectedTasks, tasks, projects } = useContext(WorkspaceContext);
-  const { labels, setFocusedProjectIndex } = useContext(ProjectContext);
+  const { task } = useTaskContext(({ task }) => ({
+    task,
+  }));
+  const { tasks, members } = useProjectContext(({ tasks, members }) => ({
+    tasks,
+    members,
+  }));
+  const { setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex } = useWorkspaceContext(
+    ({ setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex }) => ({
+      setSelectedTasks,
+      selectedTasks,
+      projects,
+      focusedTaskId,
+      setFocusedTaskId,
+      setFocusedProjectIndex,
+    }),
+  );
 
-  const { task, focusedTaskId, setFocusedTask, projectMembers } = useContext(TaskContext);
+  const parentTask = tasks.find((p) => p.id === task.parent_id);
+  const subTasks = tasks.filter((t) => t.parent_id === task.id);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const Electric = useElectric();
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const electric = useElectric()!;
 
-  const parentTask = useMemo(() => tasks.find((t) => t.id === task.parent_id), [tasks, task.parent_id]);
-  const subTasks = useMemo(() => tasks.filter((t) => t.parent_id === task.id), [tasks, task.id]);
+  const { results: labels = [] } = useLiveQuery(
+    electric.db.labels.liveMany({
+      where: {
+        id: {
+          in: task.labels || [],
+        },
+      },
+    }),
+  ) as {
+    results: Label[];
+  };
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const handleChange = (field: keyof PreparedTask, value: any) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    const db = Electric.db;
+  const handleChange = (field: keyof Task, value: any) => {
+    const db = electric.db;
 
     if (field === 'parent_id') {
+      if (Array.isArray(value)) {
+        const newSubTasks = value.filter((t) => !subTasks.find((ct) => ct.id === t.id));
+        for (const subTask of newSubTasks) {
+          db.tasks.update({
+            data: {
+              parent_id: task.id,
+            },
+            where: {
+              id: subTask.id,
+            },
+          });
+        }
+        const removedSubTasks = subTasks.filter((t) => !value.find((vt) => vt.id === t.id));
+        for (const subTask of removedSubTasks) {
+          db.tasks.update({
+            data: {
+              parent_id: null,
+            },
+            where: {
+              id: subTask.id,
+            },
+          });
+        }
+        return;
+      }
+
       db.tasks.update({
         data: {
           parent_id: value,
@@ -65,33 +116,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
           id: task.id,
         },
       });
-      return;
-    }
-
-    if (field === 'other_tasks' && Array.isArray(value)) {
-      const currentSubTasks = tasks.filter((t) => t.parent_id === task.id);
-      const newSubTasks = value.filter((t) => !currentSubTasks.find((ct) => ct.id === t.id));
-      for (const subTask of newSubTasks) {
-        db.tasks.update({
-          data: {
-            parent_id: task.id,
-          },
-          where: {
-            id: subTask.id,
-          },
-        });
-      }
-      const removedSubTasks = currentSubTasks.filter((t) => !value.find((vt) => vt.id === t.id));
-      for (const subTask of removedSubTasks) {
-        db.tasks.update({
-          data: {
-            parent_id: null,
-          },
-          where: {
-            id: subTask.id,
-          },
-        });
-      }
       return;
     }
 
@@ -192,7 +216,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     <Card
       onMouseDown={() => {
         if (isExpanded) return;
-        setFocusedTask(task.id);
+        setFocusedTaskId(task.id);
         setFocusedProjectIndex(projects.findIndex((p) => p.id === task.project_id) || 0);
         taskRef.current?.focus();
       }}
@@ -223,10 +247,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                 )}
                 checked={selectedTasks.includes(task.id)}
                 onCheckedChange={(checked) => {
-                  setSelectedTasks((prev) => {
-                    if (checked) return [...prev, task.id];
-                    return prev.filter((id) => id !== task.id);
-                  });
+                  if (checked) {
+                    setSelectedTasks([...selectedTasks, task.id]);
+                    return;
+                  }
+
+                  setSelectedTasks(selectedTasks.filter((id) => id !== task.id));
                 }}
               />
               <SelectTaskType
@@ -313,15 +339,15 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   organizationId={task.organization_id}
                   projectId={task.project_id}
                   changeLabels={(newLabels) => handleChange('labels', newLabels)}
-                  viewValue={task.labels}
+                  viewValue={labels}
                   mode="edit"
                 />
 
                 <div className="flex gap-1 ml-auto mr-1">
                   <AssignMembers
                     mode="edit"
-                    users={projectMembers}
-                    viewValue={projectMembers.filter((member) => task.assigned_to?.includes(member.id))}
+                    users={members}
+                    viewValue={members.filter((member) => task.assigned_to?.includes(member.id))}
                     changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers)}
                   />
                   <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
@@ -360,7 +386,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               tasks={tasks.filter((t) => t.id !== task.id && t.id !== task.parent_id)}
               // TODO: refactor this with db relation
               viewValue={subTasks}
-              onChange={(newSubTasks) => handleChange('other_tasks', newSubTasks)}
+              onChange={(newSubTasks) => handleChange('parent_id', newSubTasks)}
             />
           </div>
         </div>
