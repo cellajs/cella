@@ -392,7 +392,7 @@ const authRoutes = app
 
     createSession(ctx, 'github', state, '', redirect);
 
-    return ctx.redirect(url.toString());
+    return ctx.redirect(url.toString(), 302);
   })
   /*
    * Google authentication
@@ -406,7 +406,7 @@ const authRoutes = app
 
     createSession(ctx, 'google', state, codeVerifier, redirect);
 
-    return ctx.redirect(url.toString());
+    return ctx.redirect(url.toString(), 302);
   })
   /*
    * Microsoft authentication
@@ -420,7 +420,7 @@ const authRoutes = app
 
     createSession(ctx, 'microsoft', state, codeVerifier, redirect);
 
-    return ctx.redirect(url.toString());
+    return ctx.redirect(url.toString(), 302);
   })
   /*
    * Github authentication callback
@@ -485,7 +485,7 @@ const authRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
 
-        return ctx.redirect(redirectExistingUserUrl);
+        return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
       // * Get user emails from github
@@ -626,7 +626,7 @@ const authRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
 
-        return ctx.redirect(redirectExistingUserUrl);
+        return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
       // * Check if user already exists
@@ -719,7 +719,7 @@ const authRoutes = app
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
 
-        return ctx.redirect(redirectExistingUserUrl);
+        return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
       if (!user.email) {

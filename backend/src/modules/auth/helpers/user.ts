@@ -58,20 +58,16 @@ export const handleCreateUser = async (
     } else {
       await setSessionCookie(ctx, user.id, 'password');
     }
-    if (options?.redirectUrl) return ctx.redirect(options?.redirectUrl);
-    return ctx.json(
-      {
-        success: true,
-      },
-      200,
-    );
+    if (options?.redirectUrl) return ctx.redirect(options.redirectUrl, 302);
+    return ctx.json({ success: true }, 200);
   } catch (error) {
     // * If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {
       return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
     }
 
-    logEvent('Error creating user', { strategy: options?.provider ? options.provider.id : 'EMAIL', errorMessage: (error as Error).message }, 'error');
+    const strategy = options?.provider ? options.provider.id : 'EMAIL'
+    logEvent('Error creating user', { strategy, errorMessage: (error as Error).message }, 'error');
 
     throw error;
   }

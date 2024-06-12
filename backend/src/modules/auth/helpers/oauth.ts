@@ -95,10 +95,10 @@ export const handleExistingUser = async (
   if (!isEmailVerified) {
     sendVerificationEmail(providerUser.email.toLowerCase());
 
-    return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
+    return ctx.redirect(`${config.frontendUrl}/auth/verify-email`, 302);
   }
 
   await setSessionCookie(ctx, existingUser.id, providerId.toLowerCase());
 
-  return ctx.redirect(redirectUrl);
+  return ctx.redirect(redirectUrl, 302);
 };
