@@ -6,12 +6,14 @@ export interface InviteMemberProps {
   emails: string[];
   role?: Member['role'];
   idOrSlug: string;
+  organizationId: string;
+  entityType: ContextEntity;
 }
 
 // Invite users
-export const inviteMember = async ({ idOrSlug, ...rest }: InviteMemberProps) => {
+export const inviteMember = async ({ idOrSlug, entityType, organizationId, ...rest }: InviteMemberProps) => {
   const response = await client.$post({
-    query: { idOrSlug },
+    query: { idOrSlug, organizationId, entityType },
     json: rest,
   });
 

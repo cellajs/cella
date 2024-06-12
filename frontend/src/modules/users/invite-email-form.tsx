@@ -64,7 +64,11 @@ const InviteEmailForm = ({ entityId, entityType, callback, dialog: isDialog, chi
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
       if (!entityType) return inviteSystem(values as InviteSystemProps);
-      return inviteMember(values as InviteMemberProps);
+      return inviteMember({
+        ...values, 
+        idOrSlug: entityId, 
+        organizationId: entity?.organizationId || entity.id
+      }, as InviteMemberProps);
     },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
@@ -76,11 +80,7 @@ const InviteEmailForm = ({ entityId, entityType, callback, dialog: isDialog, chi
   });
 
   const onSubmit = (values: FormValues) => {
-    invite({
-      ...values,
-      idOrSlug: entityId,
-      organizationId: entity?.organizationId || entityId,
-    });
+    invite(values);
   };
 
   return (
