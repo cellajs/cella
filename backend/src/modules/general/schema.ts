@@ -35,10 +35,6 @@ export const inviteJsonSchema = z.object({
   role: z.union([apiUserSchema.shape.role, apiMembershipSchema.shape.role]).optional(),
 });
 
-export const inviteQuerySchema = z.object({
-  idOrSlug: idSchema.or(validSlugSchema).optional(),
-});
-
 export const acceptInviteJsonSchema = z.object({
   password: passwordSchema.optional(),
   oauth: z.enum(config.oauthProviderOptions).optional(),

@@ -20,6 +20,12 @@ export const updateMembershipJsonSchema = z.object({
   inactive: z.boolean().optional(),
 });
 
+export const createMembershipQuerySchema = z.object({
+  idOrSlug: idSchema.or(slugSchema),
+  entityType: z.enum(config.contextEntityTypes),
+  organizationId: idSchema,
+});
+
 export const deleteMembersQuerySchema = z.object({
   idOrSlug: idSchema.or(slugSchema),
   entityType: z.enum(config.contextEntityTypes),
