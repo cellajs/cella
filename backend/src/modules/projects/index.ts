@@ -10,13 +10,7 @@ import { sendSSE, sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import {
-  createProjectRouteConfig,
-  deleteProjectsRouteConfig,
-  getProjectRouteConfig,
-  getProjectsRouteConfig,
-  updateProjectRouteConfig,
-} from './routes';
+import projectRoutesConfig from './routes';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 
 const app = new CustomHono();
@@ -26,7 +20,7 @@ const projectsRoutes = app
   /*
    * Create project
    */
-  .openapi(createProjectRouteConfig, async (ctx) => {
+  .openapi(projectRoutesConfig.createProject, async (ctx) => {
     const { name, slug, color, organizationId, workspaceId } = ctx.req.valid('json');
     const user = ctx.get('user');
 
@@ -50,14 +44,15 @@ const projectsRoutes = app
     logEvent('Project created', { project: project.id });
 
     const [createdMembership] = await db
-    .insert(membershipsTable)
-    .values({
-      userId: user.id,
-      organizationId,
-      projectId: project.id,
-      type: 'PROJECT',
-      role: 'ADMIN',
-    }).returning();
+      .insert(membershipsTable)
+      .values({
+        userId: user.id,
+        organizationId,
+        projectId: project.id,
+        type: 'PROJECT',
+        role: 'ADMIN',
+      })
+      .returning();
 
     logEvent('User added to project', { user: user.id, project: project.id });
 
@@ -80,10 +75,10 @@ const projectsRoutes = app
   /*
    * Get project by id or slug
    */
-  .openapi(getProjectRouteConfig, async (ctx) => {
+  .openapi(projectRoutesConfig.getProject, async (ctx) => {
     const project = ctx.get('project');
     const memberships = ctx.get('memberships');
-    const membership = memberships.find(m => m.projectId === project.id && m.type === 'PROJECT')
+    const membership = memberships.find((m) => m.projectId === project.id && m.type === 'PROJECT');
 
     // TODO fix counts using a helper
     return ctx.json(
@@ -101,7 +96,7 @@ const projectsRoutes = app
   /*
    * Get list of projects
    */
-  .openapi(getProjectsRouteConfig, async (ctx) => {
+  .openapi(projectRoutesConfig.getProjects, async (ctx) => {
     // TODO: also be able to filter on organizationId
     const { q, sort, order, offset, limit, workspaceId, requestedUserId } = ctx.req.valid('query');
     const user = ctx.get('user');
@@ -167,7 +162,7 @@ const projectsRoutes = app
       projects = await db
         .select({
           project: projectsTable,
-          membership: membershipsTable,          
+          membership: membershipsTable,
           workspaceId: projectsToWorkspacesTable.workspaceId,
           admins: counts.admins,
           members: counts.members,
@@ -204,7 +199,7 @@ const projectsRoutes = app
   /*
    * Update project
    */
-  .openapi(updateProjectRouteConfig, async (ctx) => {
+  .openapi(projectRoutesConfig.updateProject, async (ctx) => {
     const user = ctx.get('user');
     const project = ctx.get('project');
 
@@ -259,7 +254,7 @@ const projectsRoutes = app
   /*
    * Delete projects
    */
-  .openapi(deleteProjectsRouteConfig, async (ctx) => {
+  .openapi(projectRoutesConfig.deleteProjects, async (ctx) => {
     // * Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');

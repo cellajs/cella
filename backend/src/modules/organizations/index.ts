@@ -10,13 +10,7 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import {
-  createOrganizationRouteConfig,
-  deleteOrganizationsRouteConfig,
-  getOrganizationRouteConfig,
-  getOrganizationsRouteConfig,
-  updateOrganizationRouteConfig,
-} from './routes';
+import organizationRoutesConfig from './routes';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 
 const app = new CustomHono();
@@ -26,7 +20,7 @@ const organizationsRoutes = app
   /*
    * Create organization
    */
-  .openapi(createOrganizationRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.createOrganization, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = ctx.get('user');
 
@@ -82,7 +76,7 @@ const organizationsRoutes = app
   /*
    * Get list of organizations
    */
-  .openapi(getOrganizationsRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.getOrganizations, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -153,7 +147,7 @@ const organizationsRoutes = app
   /*
    * Update an organization by id or slug
    */
-  .openapi(updateOrganizationRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -255,7 +249,7 @@ const organizationsRoutes = app
   /*
    * Get organization by id or slug
    */
-  .openapi(getOrganizationRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.getOrganization, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -297,7 +291,7 @@ const organizationsRoutes = app
   /*
    * Delete organizations by ids
    */
-  .openapi(deleteOrganizationsRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
     // * Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');

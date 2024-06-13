@@ -1,11 +1,11 @@
 import { config } from 'config';
-import AuthRoutes from '../routes';
+import authRoutesConfig from '../routes';
 import { logEvent } from '../../../middlewares/logger/log-event';
 
 export const sendVerificationEmail = (email: string) => {
   try {
-    fetch(config.backendAuthUrl + AuthRoutes.sendVerificationEmail.path, {
-      method: AuthRoutes.sendVerificationEmail.method,
+    fetch(config.backendAuthUrl + authRoutesConfig.sendVerificationEmail.path, {
+      method: authRoutesConfig.sendVerificationEmail.method,
       headers: {
         'Content-Type': 'application/json',
       },

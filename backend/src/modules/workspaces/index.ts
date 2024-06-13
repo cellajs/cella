@@ -8,7 +8,7 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { createWorkspaceRouteConfig, deleteWorkspacesRouteConfig, getWorkspaceRouteConfig, updateWorkspaceRouteConfig } from './routes';
+import workspaceRoutesConfig from './routes';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 
 const app = new CustomHono();
@@ -18,7 +18,7 @@ const workspacesRoutes = app
   /*
    * Create workspace
    */
-  .openapi(createWorkspaceRouteConfig, async (ctx) => {
+  .openapi(workspaceRoutesConfig.createWorkspace, async (ctx) => {
     const { name, slug, organizationId } = ctx.req.valid('json');
     const user = ctx.get('user');
 
@@ -40,19 +40,19 @@ const workspacesRoutes = app
     logEvent('Workspace created', { workspace: workspace.id });
 
     const [createdMembership] = await db
-    .insert(membershipsTable)
-    .values({
-      userId: user.id,
-      organizationId,
-      workspaceId: workspace.id,
-      type: 'WORKSPACE',
-      role: 'ADMIN',
-    })
-    .returning();
+      .insert(membershipsTable)
+      .values({
+        userId: user.id,
+        organizationId,
+        workspaceId: workspace.id,
+        type: 'WORKSPACE',
+        role: 'ADMIN',
+      })
+      .returning();
 
     logEvent('User added to workspace', { user: user.id, workspace: workspace.id });
 
-    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...workspace});
+    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...workspace });
 
     return ctx.json(
       {
@@ -65,14 +65,13 @@ const workspacesRoutes = app
       200,
     );
   })
-
   /*
    * Get workspace by id or slug
    */
-  .openapi(getWorkspaceRouteConfig, async (ctx) => {
+  .openapi(workspaceRoutesConfig.getWorkspace, async (ctx) => {
     const workspace = ctx.get('workspace');
     const memberships = ctx.get('memberships');
-    const membership = memberships.find(m => m.workspaceId === workspace.id && m.type === 'WORKSPACE');
+    const membership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'WORKSPACE');
 
     return ctx.json(
       {
@@ -85,11 +84,10 @@ const workspacesRoutes = app
       200,
     );
   })
-
   /*
    * Update workspace
    */
-  .openapi(updateWorkspaceRouteConfig, async (ctx) => {
+  .openapi(workspaceRoutesConfig.updateWorkspace, async (ctx) => {
     const user = ctx.get('user');
     const workspace = ctx.get('workspace');
 
@@ -138,11 +136,10 @@ const workspacesRoutes = app
       200,
     );
   })
-
   /*
    * Delete workspaces
    */
-  .openapi(deleteWorkspacesRouteConfig, async (ctx) => {
+  .openapi(workspaceRoutesConfig.deleteWorkspaces, async (ctx) => {
     // * Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');
