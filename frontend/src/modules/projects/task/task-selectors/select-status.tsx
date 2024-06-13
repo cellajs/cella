@@ -3,14 +3,12 @@ import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, Circl
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useHotkeys } from '~/hooks/use-hot-keys';
+// import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn } from '~/lib/utils';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Kbd } from '../../../common/kbd';
 import { Button } from '../../../ui/button';
-import { useTaskContext } from '../task-context';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];
@@ -57,19 +55,17 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
-  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-  const { task } = useTaskContext(({ task }) => ({ task }));
 
   const isSearching = searchValue.length > 0;
   // Open on key press
-  useHotkeys([
-    [
-      's',
-      () => {
-        if (focusedTaskId === task.id) setOpenPopover(true);
-      },
-    ],
-  ]);
+  // useHotkeys([
+  //   [
+  //     's',
+  //     () => {
+  //       if (focusedTaskId === task.id) setOpenPopover(true);
+  //     },
+  //   ],
+  // ]);
 
   const statusChange = (index: number) => {
     const newStatus = taskStatuses[index];

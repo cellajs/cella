@@ -2,7 +2,7 @@ import { Check, UserX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+// import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
@@ -11,8 +11,6 @@ import type { Member } from '~/types/index.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
-import { useTaskContext } from '../task-context.tsx';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 
 interface AssignMembersProps {
   mode: 'create' | 'edit';
@@ -30,8 +28,6 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
-  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-  const { task } = useTaskContext(({ task }) => ({ task }));
   const handleSelectClick = (id: string) => {
     if (!id) return;
     const existingUser = selectedUsers.find((user) => user.id === id);
@@ -46,14 +42,14 @@ const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembe
     }
   };
   // Open on key press
-  useHotkeys([
-    [
-      'a',
-      () => {
-        if (focusedTaskId === task.id) setOpenPopover(true);
-      },
-    ],
-  ]);
+  // useHotkeys([
+  //   [
+  //     'a',
+  //     () => {
+  //       if (focusedTaskId === task.id) setOpenPopover(true);
+  //     },
+  //   ],
+  // ]);
 
   useEffect(() => {
     if (changeAssignedTo && JSON.stringify(selectedUsers) !== JSON.stringify(viewValue)) changeAssignedTo(selectedUsers);
