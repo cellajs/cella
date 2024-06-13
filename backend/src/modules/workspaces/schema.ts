@@ -9,7 +9,7 @@ export const apiWorkspaceSchema = z.object({
   ...createSelectSchema(workspacesTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  membership: membershipInfoSchema,
+  membership: membershipInfoSchema.nullable(),
 });
 
 export const createWorkspaceJsonSchema = z.object({

@@ -56,7 +56,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {/* On new creation cant access role REDO */}
-            {item.submenu ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}` : item.role ? t(item.role.toLowerCase()) : ''}
+            {item.submenu ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}` : item.membership.role ? t(item.membership.role.toLowerCase()) : ''}
           </span>
         </div>
       </div>
@@ -96,7 +96,7 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
   const renderItems = () => {
     const mainItemId = data[0].mainId;
     const filteredItems = data
-      .filter((item) => (shownOption === 'archived' ? item.archived : !item.archived))
+      .filter((item) => (shownOption === 'archived' ? item.membership.archived : !item.membership.archived))
       .sort((a, b) => sortById(a.id, b.id, mainItemId ? menuOrder[type].subList[mainItemId] : menuOrder[type].mainList));
 
     return (
@@ -104,8 +104,8 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
         {filteredItems.map((item) => (
           <div key={item.id}>
             <SheetMenuItem item={item} type={type} mainItemId={item.mainId} className={className} searchResults={searchResults} />
-            {!item.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
-              <SheetMenuItems type={item.submenu[0].type} data={item.submenu} shownOption="unarchive" />
+            {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
+              <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
             )}
           </div>
         ))}

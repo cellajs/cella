@@ -19,7 +19,7 @@ export const apiOrganizationSchema = z.object({
   languages: z.array(z.string()),
   emailDomains: z.array(z.string()).nullable(),
   authStrategies: z.array(z.string()).nullable(),
-  membership: membershipInfoSchema,
+  membership: membershipInfoSchema.nullable(),
   counts: z.object({
     admins: z.number(),
     members: z.number(),

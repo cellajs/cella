@@ -17,6 +17,7 @@ import { deleteSelfConfig, getUserMenuConfig, meRouteConfig, terminateSessionsCo
 
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { generateElectricJWTToken } from '../../lib/utils';
+import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 
 const app = new CustomHono();
 
@@ -107,12 +108,9 @@ const meRoutes = app
         createdAt: organization.createdAt,
         modifiedAt: organization.modifiedAt,
         name: organization.name,
+        entity: organization.entity,
         thumbnailUrl: organization.thumbnailUrl,
-        archived: membership.inactive,
-        muted: membership.muted,
-        membershipId: membership.id,
-        type: membership.type,
-        role: membership.role,
+        membership: toMembershipInfo.required(membership),
       };
     });
 
@@ -124,12 +122,10 @@ const meRoutes = app
         modifiedAt: project.modifiedAt,
         name: project.name,
         color: project.color,
+        entity: project.entity,
         organizationId: project.organizationId,
-        archived: membership.inactive,
-        muted: membership.muted,
-        type: membership.type,
-        membershipId: membership.id,
-        role: membership.role,
+        membership: toMembershipInfo.required(membership),
+        // @TODO: what is mainId?
         mainId: workspace.workspaceId,
       };
     });
@@ -143,11 +139,8 @@ const meRoutes = app
         name: workspace.name,
         thumbnailUrl: workspace.thumbnailUrl,
         organizationId: workspace.organizationId,
-        type: membership.type,
-        archived: membership.inactive,
-        muted: membership.muted,
-        membershipId: membership.id,
-        role: membership.role,
+        entity: workspace.entity,
+        membership: toMembershipInfo.required(membership),
         submenu: projects.filter((p) => p.mainId === workspace.id),
       };
     });

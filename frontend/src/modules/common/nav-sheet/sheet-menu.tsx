@@ -66,7 +66,7 @@ export const SheetMenu = memo(() => {
 
   const searchResultsListItems = useCallback(() => {
     return Object.entries(searchResults).flatMap(([_, items]) => {
-      return items.length > 0 ? items.map((item: MenuItem) => <SheetMenuItem key={item.id} searchResults item={item} type={item.type} />) : [];
+      return items.length > 0 ? items.map((item: MenuItem) => <SheetMenuItem key={item.id} searchResults item={item} type={item.entity} />) : [];
     });
   }, [searchResults]);
 

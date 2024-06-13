@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
+import { config } from 'config';
 import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/common-schemas';
-import { apiMembershipSchema } from '../memberships/schema';
+import { membershipInfoSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
 
 export const meUserSchema = apiUserSchema.extend({
@@ -16,11 +17,8 @@ const menuItemSchema = z.object({
   modifiedAt: z.string().nullable(),
   name: nameSchema,
   thumbnailUrl: imageUrlSchema.nullish(),
-  archived: z.boolean(),
-  muted: z.boolean(),
-  role: apiMembershipSchema.shape.role,
-  membershipId: idSchema,
-  type: apiMembershipSchema.shape.type,
+  entity: z.enum(config.contextEntityTypes),
+  membership: membershipInfoSchema,
   mainId: z.string().optional(),
 });
 

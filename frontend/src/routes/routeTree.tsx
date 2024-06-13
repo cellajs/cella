@@ -35,14 +35,14 @@ export const getAndSetMenu = async () => {
 
   for (const menuItem of Object.values(menu)) {
     if (!menuItem.length) continue;
-    const entityType = menuItem[0].type;
+    const entityType = menuItem[0].entity;
     if (menuOrder[entityType] !== undefined) continue;
     const entityMainIds = menuItem
-      .filter((i) => !i.archived)
+      .filter((i) => !i.membership.archived)
       .map((item) => {
         if (!item.submenu || !item.submenu.length) return item.id;
-        const subtype = item.submenu[0].type;
-        const subItemIds = item.submenu.filter((i) => !i.archived).map((subItem) => subItem.id);
+        const subtype = item.submenu[0].entity;
+        const subItemIds = item.submenu.filter((i) => !i.membership.archived).map((subItem) => subItem.id);
         setSubMenuOrder(subtype, item.id, subItemIds);
         return item.id;
       });

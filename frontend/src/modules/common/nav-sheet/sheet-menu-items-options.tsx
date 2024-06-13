@@ -38,7 +38,7 @@ export const SheetMenuItemsOptions = ({
   const { t } = useTranslation();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
   const { hideSubmenu, menuOrder } = useNavigationStore();
-  const entityType = data[0].type;
+  const entityType = data[0].entity;
   const mainItemId = data[0].mainId;
   if (data.length === 0) {
     return (
@@ -48,7 +48,7 @@ export const SheetMenuItemsOptions = ({
     );
   }
   const items = data
-    .filter((i) => (shownOption === 'archived' ? i.archived : !i.archived))
+    .filter((i) => (shownOption === 'archived' ? i.membership.archived : !i.membership.archived))
     .sort((a, b) => sortById(a.id, b.id, mainItemId ? menuOrder[entityType].subList[mainItemId] : menuOrder[entityType].mainList));
 
   const toggleSubmenuVisibility = (itemId: string) => {
@@ -70,7 +70,7 @@ export const SheetMenuItemsOptions = ({
           setGlobalDragging={setGlobalDragging}
           mainItemId={mainItemId}
         />
-        {!item.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
+        {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
           <>
             <SheetMenuItemsOptions
               data={item.submenu}
@@ -80,7 +80,7 @@ export const SheetMenuItemsOptions = ({
             />
             <MenuArchiveToggle
               archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
-              inactiveCount={item.submenu.filter((i) => i.archived).length}
+              inactiveCount={item.submenu.filter((i) => i.membership.archived).length}
               isArchivedVisible={isSubmenuArchivedVisible}
               isSubmenu
             />
@@ -104,8 +104,8 @@ const ItemOptions = ({
   const dragButtonRef = useRef<HTMLButtonElement>(null);
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
-  const [isItemArchived, setItemArchived] = useState(item.archived);
-  const [isItemMuted, setItemMuted] = useState(item.muted);
+  const [isItemArchived, setItemArchived] = useState(item.membership.archived);
+  const [isItemMuted, setItemMuted] = useState(item.membership.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { menuOrder, setSubMenuOrder, setMainMenuOrder } = useNavigationStore();
 
@@ -142,8 +142,8 @@ const ItemOptions = ({
   const itemOptionStatesHandle = (state: 'archive' | 'mute') => {
     const archive = state === 'archive' ? !isItemArchived : isItemArchived;
     const muted = state === 'mute' ? !isItemMuted : isItemMuted;
-    const role = item.role ? item.role : undefined;
-    updateMembership({ membershipId: item.membershipId, role, archive, muted });
+    const role = item.membership.role ? item.membership.role : undefined;
+    updateMembership({ membershipId: item.membership.id, role, archive, muted });
   };
 
   const onDragOver = () => {

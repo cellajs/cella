@@ -99,7 +99,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
               <MenuArchiveToggle
                 isSubmenu={typeof mainItemId === 'string'}
                 archiveToggleClick={archiveToggleClick}
-                inactiveCount={data.filter((i) => i.archived).length}
+                inactiveCount={data.filter((i) => i.membership.archived).length}
                 isArchivedVisible={isArchivedVisible}
               />
               <div

@@ -9,7 +9,7 @@ export const apiProjectSchema = z.object({
   ...createSelectSchema(projectsTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  membership: membershipInfoSchema,
+  membership: membershipInfoSchema.nullable(),
   counts: z.object({
     admins: z.number(),
     members: z.number(),
@@ -18,7 +18,7 @@ export const apiProjectSchema = z.object({
 
 export const apiProjectListSchema = z.object({
   ...apiProjectSchema.shape,
-  membership: membershipInfoSchema,
+  membership: membershipInfoSchema.nullable(),
   workspaceId: z.string(),
   counts: z.object({ admins: z.number(), members: z.number() }),
 });
