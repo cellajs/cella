@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import type { UserMenu } from '~/types';
+import type { ContextEntity, UserMenu } from '~/types';
 
 import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
@@ -16,7 +16,7 @@ import { type MenuItem, type MenuList, MenuSection } from './sheet-menu-section'
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
-  label: string;
+  type: ContextEntity;
   createForm?: React.ReactNode;
   isSubmenu?: boolean;
   toPrefix?: boolean;
@@ -27,15 +27,20 @@ export type SectionItem = {
 export const menuSections: SectionItem[] = [
   {
     storageType: 'organizations',
-    label: 'common:organizations',
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
+    type: 'ORGANIZATION',
   },
   {
     storageType: 'workspaces',
     isSubmenu: false,
-    label: 'common:workspaces',
     createForm: <CreateWorkspaceForm dialog />,
+    type: 'WORKSPACE',
+  },
+  {
+    storageType: 'workspaces',
+    isSubmenu: true,
+    type: 'PROJECT',
   },
 ];
 
@@ -71,10 +76,12 @@ export const SheetMenu = memo(() => {
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return menuSections.map((section) => {
-      const menuSection = menu[section.storageType as keyof UserMenu];
-      return <MenuSection key={section.label} sectionType={section.storageType} data={menuSection} createForm={section.createForm} />;
-    });
+    return menuSections
+      .filter((el) => !el.isSubmenu)
+      .map((section) => {
+        const menuSection = menu[section.storageType as keyof UserMenu];
+        return <MenuSection key={section.type} sectionType={section.storageType} data={menuSection} createForm={section.createForm} />;
+      });
   }, [menu]);
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {
