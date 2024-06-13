@@ -41,7 +41,6 @@ export const DownAlert = () => {
   }, [downAlert]);
 
   const cancelAlert = () => {
-    console.log('cancelAlert')
     setDownAlert(null)
   }
 

@@ -24,7 +24,7 @@ const NavSheet = () => {
   const hideShadow = keepMenuOpen && activeSheet?.id === 'menu';
   const sheetClass = `${
     hideShadow ? 'xl:shadow-none' : ''
-  } max-xs:bottom-16 h-[calc(100%-16)] duration-300 ease-in-out p-0 md:left-16 md:top-0 z-[130] data-[state=closed]:duration-300 data-[state=open]:duration-300 overflow-hidden`;
+  } h-[calc(100%-16)] duration-300 ease-in-out p-0 md:left-16 md:top-0 z-[130] md:z-[85] data-[state=closed]:duration-300 data-[state=open]:duration-300 overflow-hidden`;
 
   useEffect(() => {
     if (!activeSheet) return;
@@ -37,7 +37,7 @@ const NavSheet = () => {
         <div
           onClick={() => setSheet(null)}
           onKeyDown={() => {}}
-          className="fixed inset-0 z-30 bg-background/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          className="fixed inset-0 z-[100] bg-background/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
         />
       )}
       <SheetContent side={sheetSide} ref={containerRef} className={sheetClass} onClick={() => setSheet(null)}>

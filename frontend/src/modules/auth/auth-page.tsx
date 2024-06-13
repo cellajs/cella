@@ -23,7 +23,7 @@ const AuthPage = ({ children }: AuthPageProps) => {
     <div className="container rich-gradient before:fixed after:fixed flex flex-col min-h-[90vh] sm:min-h-screen items-center">
       {/* Render bg animation */}
       <Suspense fallback={null}>
-        <div className={`absolute left-0 top-0 w-full h-full duration-1000 transition-opacity ${hasWaited ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`fixed left-0 top-0 w-full h-full duration-1000 transition-opacity ${hasWaited ? 'opacity-100' : 'opacity-0'}`}>
           <BgAnimation />
         </div>
       </Suspense>

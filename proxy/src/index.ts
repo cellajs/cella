@@ -24,7 +24,7 @@ const handler: ExportedHandler<Env> = {
     if (url.pathname.startsWith('/upload/v1')) {
       apiServerUrl = env.TUS_RENDER_URL + url.pathname.replace('/upload/v1', '') + url.search;
     } else if (url.pathname.startsWith('/electric/v1')) {
-      apiServerUrl = env.ELECTRIC_RENDER_URL + url.pathname.replace('/electri/v1', '') + url.search;
+      apiServerUrl = env.ELECTRIC_RENDER_URL + url.pathname.replace('/electric/v1', '') + url.search;
     } else if (url.pathname.startsWith('/api/v1')) {
       apiServerUrl = env.BACKEND_RENDER_URL + url.pathname.replace('/api/v1', '') + url.search;
       additionalHeaders = {
@@ -37,23 +37,47 @@ const handler: ExportedHandler<Env> = {
     }
 
     if (apiServerUrl) {
-      let headers = new Headers(request.headers);
+      const headers = new Headers(request.headers);
 
       if (additionalHeaders) {
-        headers = new Headers(request.headers);
-        headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP') || '');
-        headers.set('X-Forwarded-Host', url.host);
-        headers.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
+        for (const [key, value] of Object.entries(additionalHeaders)) {
+          headers.set(key, value);
+        }
       }
 
       const apiRequest = new Request(apiServerUrl, {
         method: request.method,
         headers,
         body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : null,
-        redirect: 'follow',
+        redirect: 'manual'
       });
 
-      return fetch(apiRequest);
+      const response = await fetch(apiRequest);
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('Location');
+        const setCookie = response.headers.get('Set-Cookie');
+        if (location) {
+          const headers = new Headers(response.headers);
+          if (setCookie) {
+            headers.set('Set-Cookie', setCookie);
+          }
+          return new Response(null, {
+            status: response.status,
+            headers: {
+              ...headers,
+              Location: location,
+            },
+          });
+        }
+      }
+
+      const responseHeaders = new Headers(response.headers);
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
     }
 
     return new Response('Not found by proxy. Contact system administrator', { status: 404 });

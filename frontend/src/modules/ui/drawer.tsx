@@ -1,9 +1,7 @@
 import * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
-import { motion } from 'framer-motion';
 
 import { cn } from '~/lib/utils';
-import { useMeasure } from '~/hooks/use-measure';
 
 const Drawer = ({ shouldScaleBackground = true, ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
   <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
@@ -20,7 +18,7 @@ const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-50 bg-background/40 backdrop-blur-sm', className)} {...props} />
+  <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-[100] bg-background/40 backdrop-blur-sm', className)} {...props} />
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
@@ -28,7 +26,6 @@ const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  const { ref: MeasureRef, bounds } = useMeasure();
 
   return (
     <DrawerPortal>
@@ -38,12 +35,8 @@ const DrawerContent = React.forwardRef<
         className={cn('fixed inset-x-0 bottom-0 z-[150] mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background', className)}
         {...props}
       >
-        <motion.div animate={{ height: bounds.height }} transition={{ type: 'spring', duration: 0.2, bounce: 0 }}>
-          <div ref={MeasureRef as React.LegacyRef<HTMLDivElement>}>
             <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
             {children}
-          </div>
-        </motion.div>
       </DrawerPrimitive.Content>
     </DrawerPortal>
   );
