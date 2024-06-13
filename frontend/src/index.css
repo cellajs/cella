@@ -75,11 +75,11 @@
   }
 
   body {
-    @apply bg-background text-foreground h-screen;
+    @apply bg-background text-foreground min-h-full;
   }
 
   #root {
-    @apply flex flex-col h-full;
+    @apply flex flex-col min-h-full;
   }
 }
 

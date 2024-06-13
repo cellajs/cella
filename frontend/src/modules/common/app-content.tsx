@@ -48,9 +48,9 @@ export const AppContent = () => {
       className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding} ${focusView && 'addPadding'}`}
     >
       <div
-        className={`flex flex-col justify-between min-h-[100vh] sm:min-h-[100vh] transition duration-300 ease-in-out ${
+        className={`flex flex-col justify-between min-h-[100vh] max-sm:min-h-[calc(100vh-64px)] transition duration-300 ease-in-out ${
           !focusView && 'sm:ml-16'
-        } sm:mt-0`}
+        }`}
       >
         <main id="main-app-content" className="flex-1 flex flex-col" aria-label="Main Content">
           {/* Prerelease heads up */}
