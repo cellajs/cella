@@ -153,7 +153,6 @@
   "global_search.text": "Search organizations & users within {{appName}}.",
   "hi": "Hey there!",
   "hide": "Hide",
-  "hide_submenus": "Hide submenus",
   "history": "History",
   "home": "Home",
   "home.text": "An overview of your activity on {{appName}}",
@@ -421,5 +420,6 @@
   "year": "year",
   "your_role": "Your role",
   "accept_invite": "Accept invitation",
-  "accept_invite_text": "Hi {{email}}, click accept to become part of organization {{organization}}."
+  "accept_invite_text": "Hi {{email}}, click accept to become part of organization {{organization}}.",
+  "hide_projects": "Hide projects"
 }

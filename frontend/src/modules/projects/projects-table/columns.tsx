@@ -8,7 +8,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import type { ProjectRow } from '~/types';
+import type { Project } from '~/types';
 import { renderSelect } from '../../common/data-table/select-column';
 import { config } from 'config';
 
@@ -16,7 +16,7 @@ export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const mobileColumns: ColumnOrColumnGroup<ProjectRow>[] = [
+  const mobileColumns: ColumnOrColumnGroup<Project>[] = [
     CheckboxColumn,
     {
       key: 'name',
@@ -29,7 +29,8 @@ export const useColumns = () => {
           <Link
             to="/workspace/$idOrSlug"
             tabIndex={tabIndex}
-            params={{ idOrSlug: row.workspaceId }}
+            // TODO: Fix this
+            params={{ idOrSlug: row.workspaceId || row.id }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
             <AvatarWrap type="PROJECT" className="h-8 w-8" id={row.id} name={row.name} />
@@ -40,7 +41,7 @@ export const useColumns = () => {
     },
   ];
 
-  return useState<ColumnOrColumnGroup<ProjectRow>[]>(
+  return useState<ColumnOrColumnGroup<Project>[]>(
     isMobile
       ? mobileColumns
       : [
@@ -77,7 +78,7 @@ export const useColumns = () => {
             renderCell: ({ row }) => (
               <>
                 <UserRound className="mr-2 opacity-50" size={16} />
-                {row.counts?.members || 0}
+                {row.counts.memberships.members}
               </>
             ),
           },
@@ -90,7 +91,7 @@ export const useColumns = () => {
             renderCell: ({ row }) => (
               <>
                 <Shield className="mr-2 opacity-50" size={16} />
-                {row.counts?.admins || 0}
+                {row.counts.memberships.admins}
               </>
             ),
           },

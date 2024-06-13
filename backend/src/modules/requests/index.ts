@@ -5,10 +5,7 @@ import { requestsTable } from '../../db/schema/requests';
 import { sendSlackNotification } from '../../lib/notification';
 import { getOrderColumn } from '../../lib/order-column';
 import { CustomHono } from '../../types/common';
-import {
-  createRequestConfig,
-  getRequestsConfig,
-} from './routes';
+import requestsRoutesConfig from './routes';
 
 const app = new CustomHono();
 
@@ -17,7 +14,7 @@ const requestsRoutes = app
   /*
    *  Create request
    */
-  .openapi(createRequestConfig, async (ctx) => {
+  .openapi(requestsRoutesConfig.createRequest, async (ctx) => {
     const { email, type, message } = ctx.req.valid('json');
 
     const [createdAccessRequest] = await db
@@ -48,7 +45,7 @@ const requestsRoutes = app
   /*
    *  Get list of requests for system admins
    */
-  .openapi(getRequestsConfig, async (ctx) => {
+  .openapi(requestsRoutesConfig.getRequests, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
     const filter: SQL | undefined = q ? ilike(requestsTable.email, `%${q}%`) : undefined;
@@ -72,7 +69,6 @@ const requestsRoutes = app
     const requests = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ success: true, data: { items: requests, total } }, 200);
-  })
-
+  });
 
 export default requestsRoutes;

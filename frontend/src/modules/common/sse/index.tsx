@@ -1,21 +1,15 @@
 import { useNavigationStore } from '~/store/navigation';
 import { useSSE } from './use-sse';
-import type { ContextEntity } from '~/types';
-
-const storageTypeList = {
-  PROJECT: 'workspaces',
-  WORKSPACE: 'workspaces',
-  ORGANIZATION: 'organizations',
-} as const;
+import { menuSections } from '../nav-sheet/sheet-menu';
 
 const SSE = () => {
   const updateEntity = (e: MessageEvent<string>) => {
     try {
       const entityData = JSON.parse(e.data);
-      const entityType = entityData[0].type as ContextEntity;
-      if (!entityType) return;
-      const storageType = storageTypeList[entityType];
-      if (!storageType) return;
+
+      const storage = menuSections.find((el) => el.type === entityData.type);
+      if (!storage) return;
+      const storageType = storage.storageType;
       useNavigationStore.setState((state) => {
         const mainEntity = state.menu[storageType].find((el) => el.id === entityData.workspaceId);
         if (mainEntity) {
@@ -50,10 +44,9 @@ const SSE = () => {
   const addEntity = (e: MessageEvent<string>) => {
     try {
       const entityData = JSON.parse(e.data);
-      const entityType = entityData[0].type as ContextEntity;
-      if (!entityType) return;
-      const storageType = storageTypeList[entityType];
-      if (!storageType) return;
+      const storage = menuSections.find((el) => el.type === entityData.type);
+      if (!storage) return;
+      const storageType = storage.storageType;
       useNavigationStore.setState((state) => {
         const mainEntity = state.menu[storageType].find((el) => el.id === entityData.workspaceId);
         if (mainEntity) {
@@ -86,10 +79,9 @@ const SSE = () => {
   const removeEntity = (e: MessageEvent<string>) => {
     try {
       const entityData = JSON.parse(e.data);
-      const entityType = entityData[0].type as ContextEntity;
-      if (!entityType) return;
-      const storageType = storageTypeList[entityType];
-      if (!storageType) return;
+      const storage = menuSections.find((el) => el.type === entityData.type);
+      if (!storage) return;
+      const storageType = storage.storageType;
       useNavigationStore.setState((state) => {
         const mainEntity = state.menu[storageType].find((el) => el.id === entityData.workspaceId);
         // Ensure the mainEntity exists

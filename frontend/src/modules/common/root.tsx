@@ -7,8 +7,8 @@ import ReloadPrompt from '~/modules/common/reload-prompt';
 import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
-import { DownAlert } from '../down-alert';
-import { DebugWidget } from '../debug-widget';
+import { DownAlert } from './down-alert';
+import { DebugWidget } from './debug-widget';
 import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 
 // Lazy load Tanstack dev tools in development

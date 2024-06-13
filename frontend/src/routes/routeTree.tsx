@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
+import * as Sentry from "@sentry/react";
 
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
@@ -34,14 +35,14 @@ export const getAndSetMenu = async () => {
 
   for (const menuItem of Object.values(menu)) {
     if (!menuItem.length) continue;
-    const entityType = menuItem[0].type;
+    const entityType = menuItem[0].entity;
     if (menuOrder[entityType] !== undefined) continue;
     const entityMainIds = menuItem
-      .filter((i) => !i.archived)
+      .filter((i) => !i.membership.archived)
       .map((item) => {
-        if (!item.submenu) return item.id;
-        const subtype = item.submenu[0].type;
-        const subItemIds = item.submenu.filter((i) => !i.archived).map((subItem) => subItem.id);
+        if (!item.submenu || !item.submenu.length) return item.id;
+        const subtype = item.submenu[0].entity;
+        const subItemIds = item.submenu.filter((i) => !i.membership.archived).map((subItem) => subItem.id);
         setSubMenuOrder(subtype, item.id, subItemIds);
         return item.id;
       });
@@ -86,7 +87,9 @@ export const IndexRoute = createRoute({
       };
 
       await Promise.all([getMe(), getMenu()]);
-    } catch {
+    } catch (error) {
+      Sentry.captureException(error);
+      if (location.pathname.startsWith('/auth/')) return console.info('Not authenticated');
       console.info('Not authenticated (silent check) -> redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { fromRoot: true, redirect: location.pathname } });
     }

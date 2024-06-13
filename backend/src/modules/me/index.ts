@@ -13,10 +13,11 @@ import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
-import { deleteSelfConfig, getUserMenuConfig, meRouteConfig, terminateSessionsConfig, updateSelfConfig } from './routes';
+import meRoutesConfig from './routes';
 
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { generateElectricJWTToken } from '../../lib/utils';
+import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 
 const app = new CustomHono();
 
@@ -25,7 +26,7 @@ const meRoutes = app
   /*
    * Get current user
    */
-  .openapi(meRouteConfig, async (ctx) => {
+  .openapi(meRoutesConfig.me, async (ctx) => {
     const user = ctx.get('user');
 
     const [{ memberships }] = await db
@@ -65,7 +66,7 @@ const meRoutes = app
   /*
    * Get current user menu
    */
-  .openapi(getUserMenuConfig, async (ctx) => {
+  .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = ctx.get('user');
 
     const organizationsWithMemberships = await db
@@ -107,12 +108,9 @@ const meRoutes = app
         createdAt: organization.createdAt,
         modifiedAt: organization.modifiedAt,
         name: organization.name,
+        entity: organization.entity,
         thumbnailUrl: organization.thumbnailUrl,
-        archived: membership.inactive,
-        muted: membership.muted,
-        membershipId: membership.id,
-        type: membership.type,
-        role: membership.role,
+        membership: toMembershipInfo.required(membership),
       };
     });
 
@@ -124,16 +122,13 @@ const meRoutes = app
         modifiedAt: project.modifiedAt,
         name: project.name,
         color: project.color,
+        entity: project.entity,
         organizationId: project.organizationId,
-        archived: membership.inactive,
-        muted: membership.muted,
-        type: membership.type,
-        membershipId: membership.id,
-        role: membership.role,
+        membership: toMembershipInfo.required(membership),
+        // @TODO: what is mainId?
         mainId: workspace.workspaceId,
       };
     });
-    console.log('projects:', projects);
 
     const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
       return {
@@ -144,11 +139,8 @@ const meRoutes = app
         name: workspace.name,
         thumbnailUrl: workspace.thumbnailUrl,
         organizationId: workspace.organizationId,
-        type: membership.type,
-        archived: membership.inactive,
-        muted: membership.muted,
-        membershipId: membership.id,
-        role: membership.role,
+        entity: workspace.entity,
+        membership: toMembershipInfo.required(membership),
         submenu: projects.filter((p) => p.mainId === workspace.id),
       };
     });
@@ -167,7 +159,7 @@ const meRoutes = app
   /*
    * Terminate a session
    */
-  .openapi(terminateSessionsConfig, async (ctx) => {
+  .openapi(meRoutesConfig.terminateSessions, async (ctx) => {
     const { ids } = ctx.req.valid('query');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
@@ -195,7 +187,7 @@ const meRoutes = app
   /*
    * Update current user (self)
    */
-  .openapi(updateSelfConfig, async (ctx) => {
+  .openapi(meRoutesConfig.updateSelf, async (ctx) => {
     const user = ctx.get('user');
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });
@@ -265,21 +257,20 @@ const meRoutes = app
   /*
    * Delete current user (self)
    */
-  .openapi(deleteSelfConfig, async (ctx) => {
+  .openapi(meRoutesConfig.deleteSelf, async (ctx) => {
     const user = ctx.get('user');
-    const errors: ErrorType[] = [];
-    // * Check if the user exist
-    if (!user) errors.push(createError(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' }));
+    // * Check if user exists
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });
 
-    // * Delete the self
+    // * Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
 
-    // * Invalidate the user's sessions when deleting self
+    // * Invalidate sessions
     await auth.invalidateUserSessions(user.id);
     removeSessionCookie(ctx);
     logEvent('User deleted', { user: user.id });
 
-    return ctx.json({ success: true, errors: errors }, 200);
+    return ctx.json({ success: true }, 200);
   });
 
 export default meRoutes;

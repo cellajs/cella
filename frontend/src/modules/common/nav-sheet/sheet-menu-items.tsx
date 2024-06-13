@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import type { EntityType } from 'backend/types/common';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -7,12 +6,12 @@ import { cn, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types';
+import type { ContextEntity, UserMenuItem } from '~/types';
 import type { MenuItem } from './sheet-menu-section';
 
 interface SheetMenuItemProps {
   item: MenuItem;
-  type: EntityType;
+  type: ContextEntity;
   mainItemId?: string;
   className?: string;
   searchResults?: boolean;
@@ -57,7 +56,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {/* On new creation cant access role REDO */}
-            {item.submenu ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}` : item.role ? t(item.role.toLowerCase()) : ''}
+            {item.submenu ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}` : item.membership.role ? t(item.membership.role.toLowerCase()) : ''}
           </span>
         </div>
       </div>
@@ -71,17 +70,12 @@ interface SheetMenuItemsProps {
   createDialog?: () => void;
   className?: string;
   searchResults?: boolean;
+  type: ContextEntity;
 }
 
-export const SheetMenuItems = ({ data, shownOption, createDialog, className, searchResults }: SheetMenuItemsProps) => {
+export const SheetMenuItems = ({ data, type, shownOption, createDialog, className, searchResults }: SheetMenuItemsProps) => {
   const { t } = useTranslation();
   const { hideSubmenu, menuOrder } = useNavigationStore();
-  const entityType = data[0].type;
-  const mainItemId = data[0].mainId;
-
-  const filteredItems = data
-    .filter((item) => (shownOption === 'archived' ? item.archived : !item.archived))
-    .sort((a, b) => sortById(a.id, b.id, mainItemId ? menuOrder[entityType].subList[mainItemId] : menuOrder[entityType].mainList));
 
   const renderNoItems = () =>
     createDialog ? (
@@ -89,25 +83,35 @@ export const SheetMenuItems = ({ data, shownOption, createDialog, className, sea
         <Button className="w-full" variant="ghost" onClick={createDialog}>
           <Plus size={14} />
           <span className="ml-1 text-sm text-light">
-            {t('common:create_your_first')} {t(entityType.toLowerCase()).toLowerCase()}
+            {t('common:create_your_first')} {t(type.toLowerCase()).toLowerCase()}
           </span>
         </Button>
       </div>
     ) : (
       <li className="py-2 text-muted-foreground text-sm text-light text-center">
-        {t('common:no_resource_yet', { resource: t(entityType.toLowerCase()).toLowerCase() })}
+        {t('common:no_resource_yet', { resource: t(type.toLowerCase()).toLowerCase() })}
       </li>
     );
 
-  const renderItems = () =>
-    filteredItems.map((item) => {
-      return (
-        <div key={item.id}>
-          <SheetMenuItem item={item} type={entityType} mainItemId={item.mainId} className={className} searchResults={searchResults} />
-          {!item.archived && item.submenu && !!item.submenu.length && !hideSubmenu && <SheetMenuItems data={item.submenu} shownOption="unarchive" />}
-        </div>
-      );
-    });
+  const renderItems = () => {
+    const mainItemId = data[0].mainId;
+    const filteredItems = data
+      .filter((item) => (shownOption === 'archived' ? item.membership.archived : !item.membership.archived))
+      .sort((a, b) => sortById(a.id, b.id, mainItemId ? menuOrder[type].subList[mainItemId] : menuOrder[type].mainList));
+
+    return (
+      <>
+        {filteredItems.map((item) => (
+          <div key={item.id}>
+            <SheetMenuItem item={item} type={type} mainItemId={item.mainId} className={className} searchResults={searchResults} />
+            {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
+              <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
+            )}
+          </div>
+        ))}
+      </>
+    );
+  };
 
   return data.length === 0 ? renderNoItems() : renderItems();
 };

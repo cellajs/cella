@@ -36,6 +36,7 @@ export const membershipInfoSchema = z.object({
   id: apiMembershipSchema.shape.id,
   role: apiMembershipSchema.shape.role,
   archived: apiMembershipSchema.shape.inactive,
-}).nullable();
+  muted: apiMembershipSchema.shape.muted,
+});
 
 export type membershipInfoType = z.infer<typeof membershipInfoSchema>;

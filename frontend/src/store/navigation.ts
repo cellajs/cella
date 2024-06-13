@@ -101,14 +101,14 @@ export const useNavigationStore = create<NavigationState>()(
                 for (const sectionKey of Object.keys(state.menu)) {
                   const section = state.menu[sectionKey as keyof UserMenu];
                   const itemIndex = section.findIndex((item) => item.id === itemId);
-                  if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu][itemIndex].archived = active;
+                  if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu][itemIndex].membership.archived = active;
                 }
               } else {
                 const section = state.menu.workspaces;
                 const workspace = section.find((item) => item.id === mainId);
                 if (!workspace || !workspace.submenu) return;
                 const itemIndex = workspace.submenu.findIndex((item) => item.id === itemId);
-                if (itemIndex && itemIndex !== -1) workspace.submenu[itemIndex].archived = active;
+                if (itemIndex && itemIndex !== -1) workspace.submenu[itemIndex].membership.archived = active;
               }
             });
           },

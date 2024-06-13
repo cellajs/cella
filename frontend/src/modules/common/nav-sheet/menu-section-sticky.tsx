@@ -38,7 +38,7 @@ export const MenuSectionSticky = ({
                   {t(`common:${sectionType}`)}
                 </motion.span>
                 {!isSectionVisible && (
-                  <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.filter((i) => !i.archived).length}</span>
+                  <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">{data.filter((i) => !i.membership.archived).length}</span>
                 )}
               </div>
 

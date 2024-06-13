@@ -13,10 +13,10 @@ interface Props {
 }
 
 function deleteDB(dbName: string) {
-  console.log("Deleting DB as schema doesn't match server's");
+  console.info('Deleting DB due to schema mismatch in relation to server');
   const DBDeleteRequest = window.indexedDB.deleteDatabase(dbName);
   DBDeleteRequest.onsuccess = () => {
-    console.log('Database deleted successfully');
+    console.info('Database deleted successfully');
   };
   // the indexedDB cannot be deleted if the database connection is still open,
   // so we need to reload the page to close any open connections.
@@ -92,7 +92,7 @@ const ElectricProvider = ({ children }: Props) => {
           console.log(`Synced in ${timeToSync}ms from page load`);
         }
       } catch (error) {
-        if ((error as Error).message.startsWith("Local schema doesn't match server's")) {
+        if ((error as Error).message.startsWith('Local database schema mismatches with server schema')) {
           deleteDB(scopedDbName);
         }
         throw error;

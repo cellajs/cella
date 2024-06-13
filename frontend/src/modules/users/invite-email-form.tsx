@@ -54,8 +54,6 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
 
   const form = useFormWithDraft<FormValues>('invite-users', formOptions);
 
-  console.log('entity', entity);
-
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
@@ -63,6 +61,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
       return inviteMember({
         ...values,
         idOrSlug: entity.id,
+        entityType: entity.entity,
         organizationId: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },

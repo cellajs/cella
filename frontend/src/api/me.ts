@@ -3,7 +3,7 @@ import type { UpdateUserParams } from './users';
 
 const client = apiClient.me;
 
-// Get the current user
+// Get current user
 export const getMe = async () => {
   const response = await client.$get();
 
@@ -11,7 +11,7 @@ export const getMe = async () => {
   return json.data;
 };
 
-// Get the current user menu
+// Get current user menu
 export const getUserMenu = async () => {
   const response = await client.menu.$get();
 
@@ -31,11 +31,11 @@ export const updateSelf = async (params: Omit<UpdateUserParams, 'role'>) => {
 
 // Delete self
 export const deleteSelf = async () => {
-  const response = await client.me.$delete();
+  const response = await client.$delete();
   await handleResponse(response);
 };
 
-// Terminate a user sessions
+// Terminate user sessions
 export const terminateMySessions = async (sessionIds: string[]) => {
   const response = await client.sessions.$delete({
     query: { ids: sessionIds },

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '../../db/schema/organizations';
 import {
+  countsSchema,
   imageUrlSchema,
   nameSchema,
   paginationQuerySchema,
@@ -19,11 +20,8 @@ export const apiOrganizationSchema = z.object({
   languages: z.array(z.string()),
   emailDomains: z.array(z.string()).nullable(),
   authStrategies: z.array(z.string()).nullable(),
-  membership: membershipInfoSchema,
-  counts: z.object({
-    admins: z.number(),
-    members: z.number(),
-  }),
+  membership: membershipInfoSchema.nullable(),
+  counts: countsSchema,
 });
 
 export const createOrganizationJsonSchema = z.object({

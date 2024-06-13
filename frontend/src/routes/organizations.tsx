@@ -85,7 +85,7 @@ export const OrganizationMembersRoute = createRoute({
     const [userRole] = Object.values(menu)
       .map((el) => {
         const targetEntity = el.find((el) => el.id === idOrSlug || el.slug === idOrSlug);
-        if (targetEntity) return targetEntity.role;
+        if (targetEntity) return targetEntity.membership.role;
       })
       .filter((el) => el !== undefined);
     return (
@@ -106,8 +106,5 @@ export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,
-  beforeLoad: ({ context }) => {
-    console.log('context', context);
-  },
   component: () => <OrganizationSettings />,
 });

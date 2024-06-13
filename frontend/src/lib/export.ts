@@ -10,11 +10,17 @@ interface Column {
   name: ReactElement | string;
 }
 
-const formatBodyData = <R>(rows: R[], columns: Column[]): string[][] => {
+const formatBodyData = <R>(rows: R[], columns: Column[]): (string | number)[][] => {
   const formatRowData = <R>(row: R, column: Column) => {
     if (column.key === 'adminCount' || column.key === 'memberCount') {
       const key = column.key.replace('Count', 's');
-      return (row as { counts: Record<string, string> }).counts[key];
+      return (
+        row as {
+          counts: {
+            memberships: Record<string, number>;
+          };
+        }
+      ).counts.memberships[key];
     }
     const date = dayjs((row as Record<string, string>)[column.key]);
     if (date.isValid()) {
@@ -31,7 +37,11 @@ const filterColumns = (column: Column) => {
   return false;
 };
 // Export table data to CSV
-export async function exportToCsv<R>(columns: { key: string; name: ReactElement | string }[], rows: R[], fileName: string) {
+export async function exportToCsv<R>(
+  columns: { key: string; name: ReactElement | string }[],
+  rows: R[],
+  fileName: string,
+) {
   if (!rows.length) return;
 
   const preparedColumns = columns.filter((column) => filterColumns(column));

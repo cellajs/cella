@@ -14,15 +14,7 @@ import { deleteCookie, getCookie } from 'hono/cookie';
 import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 
-import {
-  createSession,
-  findOauthAccount,
-  findUserByEmail,
-  getRedirectUrl,
-  handleExistingUser,
-  slugFromEmail,
-  splitFullName,
-} from './helpers/oauth';
+import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
 
 import { config } from 'config';
 import type { z } from 'zod';
@@ -35,27 +27,12 @@ import { i18n } from '../../lib/i18n';
 import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
-import { checkTokenRouteConfig } from '../general/routes';
+import generalRouteConfig from '../general/routes';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
-import {
-  checkEmailRouteConfig,
-  githubSignInCallbackRouteConfig,
-  githubSignInRouteConfig,
-  googleSignInCallbackRouteConfig,
-  googleSignInRouteConfig,
-  microsoftSignInCallbackRouteConfig,
-  microsoftSignInRouteConfig,
-  resetPasswordCallbackRouteConfig,
-  resetPasswordRouteConfig,
-  sendVerificationEmailRouteConfig,
-  signInRouteConfig,
-  signOutRouteConfig,
-  signUpRouteConfig,
-  verifyEmailRouteConfig,
-} from './routes';
+import authRoutesConfig from './routes';
 
 // Scopes for OAuth providers
 const githubScopes = { scopes: ['user:email'] };
@@ -64,9 +41,7 @@ const microsoftScopes = { scopes: ['profile', 'email'] };
 
 const app = new CustomHono();
 
-type CheckTokenResponse =
-  | z.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']>
-  | undefined;
+type CheckTokenResponse = z.infer<(typeof generalRouteConfig.checkToken.responses)['200']['content']['application/json']['schema']> | undefined;
 type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
 // * Authentication endpoints
@@ -74,7 +49,7 @@ const authRoutes = app
   /*
    * Check if email exists
    */
-  .openapi(checkEmailRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.checkEmail, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
@@ -84,12 +59,12 @@ const authRoutes = app
   /*
    * Sign up with email and password
    */
-  .openapi(signUpRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.signUp, async (ctx) => {
     const { email, password, token } = ctx.req.valid('json');
 
     let tokenData: TokenData | undefined;
     if (token) {
-      const response = await fetch(`${config.backendUrl + checkTokenRouteConfig.path.replace('{token}', token)}`);
+      const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path.replace('{token}', token)}`);
 
       const data = (await response.json()) as CheckTokenResponse;
       tokenData = data?.data;
@@ -129,14 +104,11 @@ const authRoutes = app
   /*
    * Send verification email
    */
-  .openapi(sendVerificationEmailRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.sendVerificationEmail, async (ctx) => {
     const { email } = ctx.req.valid('json');
-
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
-    }
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
 
     // * creating email verification token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
@@ -160,7 +132,6 @@ const authRoutes = app
         verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
       }),
     );
-
     emailSender.send(email, 'Verify email for Cella', emailHtml);
 
     logEvent('Verification email sent', { user: user.id });
@@ -170,7 +141,7 @@ const authRoutes = app
   /*
    * Verify email
    */
-  .openapi(verifyEmailRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.verifyEmail, async (ctx) => {
     const { resend } = ctx.req.valid('query');
     const { token: verificationToken } = ctx.req.valid('json');
 
@@ -235,12 +206,12 @@ const authRoutes = app
   /*
    * Request reset password email with token
    */
-  .openapi(resetPasswordRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.resetPassword, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    if (!user || !user.emailVerified) {
+    if (!user) {
       // t('common:error.invalid_email')
       return errorResponse(ctx, 400, 'invalid_email', 'warn');
     }
@@ -277,7 +248,7 @@ const authRoutes = app
   /*
    * Reset password with token
    */
-  .openapi(resetPasswordCallbackRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.resetPasswordCallback, async (ctx) => {
     const { password } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
 
@@ -292,9 +263,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     // * If the user is not found or the email is different from the token email
-    if (!user || user.email !== token.email) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { userId: token.userId });
-    }
+    if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { userId: token.userId });
 
     await auth.invalidateUserSessions(user.id);
 
@@ -312,12 +281,12 @@ const authRoutes = app
   /*
    * Sign in with email and password
    */
-  .openapi(signInRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.signIn, async (ctx) => {
     const { email, password, token } = ctx.req.valid('json');
 
     let tokenData: TokenData | undefined;
     if (token) {
-      const response = await fetch(`${config.backendUrl + checkTokenRouteConfig.path.replace('{token}', token)}`);
+      const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path.replace('{token}', token)}`);
 
       const data = (await response.json()) as CheckTokenResponse;
       tokenData = data?.data;
@@ -361,7 +330,7 @@ const authRoutes = app
   /*
    * Sign out
    */
-  .openapi(signOutRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.signOut, async (ctx) => {
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
 
@@ -384,7 +353,7 @@ const authRoutes = app
   /*
    * Github authentication
    */
-  .openapi(githubSignInRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.githubSignIn, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
@@ -397,7 +366,7 @@ const authRoutes = app
   /*
    * Google authentication
    */
-  .openapi(googleSignInRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.googleSignIn, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
@@ -411,7 +380,7 @@ const authRoutes = app
   /*
    * Microsoft authentication
    */
-  .openapi(microsoftSignInRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.microsoftSignIn, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
     const state = generateState();
@@ -425,7 +394,7 @@ const authRoutes = app
   /*
    * Github authentication callback
    */
-  .openapi(githubSignInCallbackRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.githubSignInCallback, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
 
     const stateCookie = getCookie(ctx, 'oauth_state');
@@ -590,7 +559,7 @@ const authRoutes = app
   /*
    * Google authentication callback
    */
-  .openapi(googleSignInCallbackRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.googleSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     const storedState = getCookie(ctx, 'oauth_state');
@@ -685,7 +654,7 @@ const authRoutes = app
   /*
    * Microsoft authentication callback
    */
-  .openapi(microsoftSignInCallbackRouteConfig, async (ctx) => {
+  .openapi(authRoutesConfig.microsoftSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     const storedState = getCookie(ctx, 'oauth_state');

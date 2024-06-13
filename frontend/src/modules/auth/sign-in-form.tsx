@@ -28,9 +28,7 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   const navigate = useNavigate();
   const { setUser, lastUser, clearLastUser } = useUserStore();
 
-  const { redirect } = useSearch({
-    from: SignInRoute.id,
-  });
+  const { redirect } = useSearch({ from: SignInRoute.id });
 
   const { mutate: signIn, isPending } = useMutation({
     mutationFn: baseSignIn,
@@ -46,7 +44,11 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
 
       setUser(result as MeUser);
 
-      const to = tokenData ? '/auth/invite/$token' : redirect || '/';
+      // Redirect to the invite page if token is present
+      // Otherwise, redirect to a redirect URL or to home
+      const to = tokenData ? '/auth/invite/$token' : redirect || '/home';
+
+      console.log('Redirecting to', to);
 
       navigate({
         to,

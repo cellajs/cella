@@ -1,10 +1,9 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import type { UserMenu } from '~/types';
+import type { ContextEntity, UserMenu } from '~/types';
 
 import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
 
-import type { EntityType } from 'backend/types/common';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
@@ -16,7 +15,7 @@ import { type MenuItem, type MenuList, MenuSection } from './sheet-menu-section'
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
-  label: string;
+  type: ContextEntity;
   createForm?: React.ReactNode;
   isSubmenu?: boolean;
   toPrefix?: boolean;
@@ -27,15 +26,20 @@ export type SectionItem = {
 export const menuSections: SectionItem[] = [
   {
     storageType: 'organizations',
-    label: 'common:organizations',
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
+    type: 'ORGANIZATION',
   },
   {
     storageType: 'workspaces',
     isSubmenu: false,
-    label: 'common:workspaces',
     createForm: <CreateWorkspaceForm dialog />,
+    type: 'WORKSPACE',
+  },
+  {
+    storageType: 'workspaces',
+    isSubmenu: true,
+    type: 'PROJECT',
   },
 ];
 
@@ -61,20 +65,26 @@ export const SheetMenu = memo(() => {
   const [searchResults, setSearchResults] = useState<SearchResultsType>(initialSearchResults);
 
   const searchResultsListItems = useCallback(() => {
-    return Object.entries(searchResults).flatMap(([type, items]) => {
-      return items.length > 0
-        ? items.map((item: MenuItem) => (
-            <SheetMenuItem key={item.id} searchResults item={item} type={type.slice(0, -1).toUpperCase() as EntityType} />
-          ))
-        : [];
+    return Object.entries(searchResults).flatMap(([_, items]) => {
+      return items.length > 0 ? items.map((item: MenuItem) => <SheetMenuItem key={item.id} searchResults item={item} type={item.entity} />) : [];
     });
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return menuSections.map((section) => {
-      const menuSection = menu[section.storageType as keyof UserMenu];
-      return <MenuSection key={section.label} sectionType={section.storageType} data={menuSection} createForm={section.createForm} />;
-    });
+    return menuSections
+      .filter((el) => !el.isSubmenu)
+      .map((section) => {
+        const menuSection = menu[section.storageType as keyof UserMenu];
+        return (
+          <MenuSection
+            entityType={section.type}
+            key={section.type}
+            sectionType={section.storageType}
+            data={menuSection}
+            createForm={section.createForm}
+          />
+        );
+      });
   }, [menu]);
 
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {
@@ -105,10 +115,10 @@ export const SheetMenu = memo(() => {
               {t('common:keep_menu_open')}
             </label>
           </div>
-          <div className="max-xl:hidden my-4 flex items-center justify-center space-x-2">
-            <Checkbox id="hideSubmenuProjects" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} aria-label={t('common:hide_submenus')} />
+          <div className="max-sm:hidden my-4 flex items-center justify-center space-x-2">
+            <Checkbox id="hideSubmenuProjects" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} aria-label={t('common:hide_projects')} />
             <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
-              {t('common:hide_submenus')}
+              {t('common:hide_projects')}
             </label>
           </div>
         </div>

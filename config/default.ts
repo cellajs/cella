@@ -6,6 +6,7 @@ export const config = {
 
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:4000',
+  backendAuthUrl: 'http://localhost:4000/auth',
   electricUrl: 'http://localhost:5133',
 
   defaultRedirectPath: '/home',

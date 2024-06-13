@@ -124,7 +124,7 @@ const UsersTable = <
     dialog(<InviteUsers entity={entity} mode={idOrSlug ? null : 'email'} dialog />, {
       id: 'user-invite',
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-[100] max-w-4xl',
+      className: 'w-auto shadow-none relative z-[120] max-w-4xl',
       container: containerRef.current,
       title: t('common:invite'),
       text: `${t('common:invite_users.text')}`,

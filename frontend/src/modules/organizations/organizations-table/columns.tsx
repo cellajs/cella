@@ -94,7 +94,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             renderCell: ({ row }) => (
               <>
                 <UserRound className="mr-2 opacity-50" size={16} />
-                {row.counts?.members || 0}
+                {row.counts.memberships.members}
               </>
             ),
             width: 140,
@@ -108,7 +108,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
             renderCell: ({ row }) => (
               <>
                 <Shield className="mr-2 opacity-50" size={16} />
-                {row.counts?.admins || 0}
+                {row.counts.memberships.admins}
               </>
             ),
             width: 140,
