@@ -67,7 +67,7 @@ export function Sheeter() {
         <SheetPortal>
           <SheetContent className={`${sheet.className} items-start`}>
             {sheet.title && (
-              <StickyBox className="z-10 flex items-center justify-between bg-background py-3">
+              <StickyBox className="z-10 flex items-center justify-between bg-background py-4">
                 {existingSheet?.title ? (
                   <SheetTitle>{existingSheet.title}</SheetTitle>
                 ) : (

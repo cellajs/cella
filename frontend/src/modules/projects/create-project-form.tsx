@@ -67,11 +67,12 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
     },
     onSuccess: (project) => {
       form.reset();
-      callback([project], 'create');
-      if (isDialog) dialog.remove();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
       setSubMenuOrder(type, workspace.id, [...menuOrder[type].subList[workspace.id], project.id]);
+      callback([project], 'create');
+      // TODO remove this when listening to route to close sheet
       setSheet(null);
+      if (isDialog) dialog.remove();
     },
   });
 

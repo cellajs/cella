@@ -20,7 +20,6 @@ import type { Organization } from '~/types';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
-import { useStepper } from '../common/stepper/use-stepper';
 import { Form, type LabelDirectionType } from '../ui/form';
 
 interface CreateOrganizationFormProps {
@@ -38,7 +37,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setSheet, setMainMenuOrder, menuOrder } = useNavigationStore();
-  const { nextStep } = useStepper();
   const type = 'ORGANIZATION';
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -61,21 +59,19 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     mutationFn: createOrganization,
     onSuccess: (result) => {
       form.reset();
-      callback?.(result);
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
       setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
-      console.log('redddsult', result,nextStep );
-      // If in stepper
-      nextStep?.();
 
+      callback?.(result);
 
-      if (!callback && !children) {
+      if (!callback) {
         navigate({
           to: '/$idOrSlug/members',
           params: {
             idOrSlug: result.slug,
           },
         });
+        // TODO remove this when listening to route to close sheet
         setSheet(null);
       }
 

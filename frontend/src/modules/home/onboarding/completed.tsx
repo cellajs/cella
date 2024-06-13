@@ -22,14 +22,14 @@ export const OnboardingCompleted = () => {
 
     createWorkspace({
       name: 'Demo workspace',
-      slug: `${lastCreatedOrganization.slug.replace(/---/g, '-')}-workspace`,
+      slug: `${lastCreatedOrganization.slug}-workspace`,
       organizationId: lastCreatedOrganization.id,
     }).then((workspace) => {
       for (let i = 3; i !== 0; i--) {
         const namingArr = ['one', 'two', 'three'];
         createProject({
           name: `Demo project ${namingArr[i - 1]}`,
-          slug: `${lastCreatedOrganization.slug.replace(/---/g, '-')}-project-${i}`,
+          slug: `${lastCreatedOrganization.slug}-project-${i}`,
           organizationId: lastCreatedOrganization.id,
           workspaceId: workspace.id,
           color: '#000000',
