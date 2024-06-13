@@ -34,7 +34,7 @@ const membershipsRoutes = app
     const user = ctx.get('user');
 
     // Check params
-    if (!organizationId || !entityType || supportedEntityTypes.includes(entityType) || !idOrSlug) {
+    if (!organizationId || !entityType || !supportedEntityTypes.includes(entityType) || !idOrSlug) {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
 
