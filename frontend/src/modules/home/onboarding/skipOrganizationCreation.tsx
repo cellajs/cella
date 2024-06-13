@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
+import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
@@ -14,7 +15,7 @@ export const SkipOrganizationCreation = () => {
     resetAlertSeen(alertsSeen.filter((el) => el !== 'skip_org_creation'));
     dialog.remove(true, 'skip_org_creation');
     navigate({
-      to: '/home',
+      to: config.defaultRedirectPath,
       replace: true,
     });
   };

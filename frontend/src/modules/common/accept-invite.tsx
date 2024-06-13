@@ -13,6 +13,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { cn } from '~/lib/utils';
 import AuthPage from '../auth/auth-page';
 import { Button, buttonVariants } from '../ui/button';
+import { config } from 'config';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 
@@ -35,7 +36,7 @@ const AcceptInvite = () => {
     onSuccess: () => {
       toast.success(t('common:invitation_accepted'));
       navigate({
-        to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : '/home',
+        to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath,
       });
     },
     onError: (error) => {

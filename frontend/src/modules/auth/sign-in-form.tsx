@@ -20,6 +20,7 @@ import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types';
 import type { TokenData } from '.';
+import { config } from 'config';
 
 const formSchema = signInJsonSchema;
 
@@ -46,9 +47,7 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
 
       // Redirect to the invite page if token is present
       // Otherwise, redirect to a redirect URL or to home
-      const to = tokenData ? '/auth/invite/$token' : redirect || '/home';
-
-      console.log('Redirecting to', to);
+      const to = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
 
       navigate({
         to,

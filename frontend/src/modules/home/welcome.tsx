@@ -5,6 +5,7 @@ import Onboarding from '~/modules/home/onboarding';
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
 import { useUserStore } from '~/store/user';
 import { OnboardingCompleted } from './onboarding/completed';
+import { config } from 'config';
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ const Welcome = () => {
   const [onboarding, setOnboarding] = useState<OnboardingStates>(finishOnboarding ? 'completed' : 'start');
 
   const onOpenChange = () => {
-    navigate({ to: '/home', replace: true });
+    navigate({ to: config.defaultRedirectPath, replace: true });
   };
 
   return (
