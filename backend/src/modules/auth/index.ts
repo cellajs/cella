@@ -14,15 +14,7 @@ import { deleteCookie, getCookie } from 'hono/cookie';
 import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 
-import {
-  createSession,
-  findOauthAccount,
-  findUserByEmail,
-  getRedirectUrl,
-  handleExistingUser,
-  slugFromEmail,
-  splitFullName,
-} from './helpers/oauth';
+import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
 
 import { config } from 'config';
 import type { z } from 'zod';
@@ -64,9 +56,7 @@ const microsoftScopes = { scopes: ['profile', 'email'] };
 
 const app = new CustomHono();
 
-type CheckTokenResponse =
-  | z.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']>
-  | undefined;
+type CheckTokenResponse = z.infer<(typeof checkTokenRouteConfig.responses)['200']['content']['application/json']['schema']> | undefined;
 type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
 // * Authentication endpoints
@@ -130,9 +120,49 @@ const authRoutes = app
    * Send verification email
    */
   .openapi(sendVerificationEmailRouteConfig, async (ctx) => {
+    console.log(222222222);
+
+    console.log(222222222);
+    console.log(222222222);
+    console.log(222222222);
+    console.log(222222222);
+    console.log(222222222);
+    console.log(222222222);
+    console.log(222222222);
+
     const { email } = ctx.req.valid('json');
+    console.log('email:', email);
+    console.log('email:', email);
+    console.log('email:', email);
+    console.log('email:', email);
+    console.log('email:', email);
+    console.log('email:', email);
+    console.log('email:', email);
+    console.log('email:', email);
+    console.log('email:', email);
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
+    console.log('user:', user);
 
     if (!user) {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
@@ -160,7 +190,6 @@ const authRoutes = app
         verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
       }),
     );
-
     emailSender.send(email, 'Verify email for Cella', emailHtml);
 
     logEvent('Verification email sent', { user: user.id });

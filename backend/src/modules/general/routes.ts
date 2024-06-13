@@ -75,8 +75,7 @@ export const checkSlugRouteConfig = createRouteConfig({
   guard: isAuthenticated,
   tags: ['general'],
   summary: 'Check if slug is available',
-  description:
-    'This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.',
+  description: 'This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.',
   request: {
     body: {
       content: {
@@ -138,9 +137,7 @@ export const inviteRouteConfig = createRouteConfig({
   method: 'post',
   path: '/invite',
   guard: [isAuthenticated, isSystemAdmin],
-  middleware: [
-    rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success'),
-  ],
+  middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
   tags: ['general'],
   summary: 'Invite to system',
   description: 'Invite one or more users to system by email address.',

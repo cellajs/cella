@@ -66,7 +66,7 @@ export const handleCreateUser = async (
       return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
     }
 
-    const strategy = options?.provider ? options.provider.id : 'EMAIL'
+    const strategy = options?.provider ? options.provider.id : 'EMAIL';
     logEvent('Error creating user', { strategy, errorMessage: (error as Error).message }, 'error');
 
     throw error;
