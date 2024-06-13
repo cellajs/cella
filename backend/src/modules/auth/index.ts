@@ -269,7 +269,7 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    if (!user || !user.emailVerified) {
+    if (!user) {
       // t('common:error.invalid_email')
       return errorResponse(ctx, 400, 'invalid_email', 'warn');
     }
@@ -321,9 +321,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     // * If the user is not found or the email is different from the token email
-    if (!user || user.email !== token.email) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { userId: token.userId });
-    }
+    if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { userId: token.userId });
 
     await auth.invalidateUserSessions(user.id);
 

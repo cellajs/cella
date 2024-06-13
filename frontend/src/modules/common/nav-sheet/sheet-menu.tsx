@@ -4,7 +4,6 @@ import type { ContextEntity, UserMenu } from '~/types';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
 
-import type { EntityType } from 'backend/types/common';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
@@ -66,12 +65,8 @@ export const SheetMenu = memo(() => {
   const [searchResults, setSearchResults] = useState<SearchResultsType>(initialSearchResults);
 
   const searchResultsListItems = useCallback(() => {
-    return Object.entries(searchResults).flatMap(([type, items]) => {
-      return items.length > 0
-        ? items.map((item: MenuItem) => (
-            <SheetMenuItem key={item.id} searchResults item={item} type={type.slice(0, -1).toUpperCase() as EntityType} />
-          ))
-        : [];
+    return Object.entries(searchResults).flatMap(([_, items]) => {
+      return items.length > 0 ? items.map((item: MenuItem) => <SheetMenuItem key={item.id} searchResults item={item} type={item.type} />) : [];
     });
   }, [searchResults]);
 
@@ -80,7 +75,15 @@ export const SheetMenu = memo(() => {
       .filter((el) => !el.isSubmenu)
       .map((section) => {
         const menuSection = menu[section.storageType as keyof UserMenu];
-        return <MenuSection key={section.type} sectionType={section.storageType} data={menuSection} createForm={section.createForm} />;
+        return (
+          <MenuSection
+            entityType={section.type}
+            key={section.type}
+            sectionType={section.storageType}
+            data={menuSection}
+            createForm={section.createForm}
+          />
+        );
       });
   }, [menu]);
 
