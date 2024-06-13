@@ -16,6 +16,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { passwordSchema } from 'backend/lib/common-schemas';
+import { config } from 'config';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -43,7 +44,7 @@ const ResetPassword = () => {
     mutationFn: baseResetPassword,
     onSuccess: () => {
       toast.success(t('common:success.password_reset'));
-      navigate({ to: '/home' });
+      navigate({ to: config.defaultRedirectPath });
     },
   });
 

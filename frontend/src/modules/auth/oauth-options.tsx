@@ -61,7 +61,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
                 token
                   ? () =>
                       acceptInvite({ token, oauth: option.id }).then(() => {
-                        window.location.href = '/home';
+                        window.location.href = config.defaultRedirectPath;
                       })
                   : () => {
                       window.location.href = option.url + redirectQuery;

@@ -4,10 +4,11 @@ export const config = {
   name: 'Cella',
   slug: 'cella',
 
-  frontendUrl: 'http://localhost:3000',
-  backendUrl: 'http://localhost:4000',
-  backendAuthUrl: 'http://localhost:4000/auth',
-  electricUrl: 'http://localhost:5133',
+  frontendUrl: 'https://cellajs.com',
+  backendUrl: 'https://api.cellajs.com',
+  backendAuthUrl: 'https://api.cellajs.com/auth',
+  tusUrl: 'https://tus.cellajs.com',
+  electricUrl: 'https://electric-sync.cellajs.com',
 
   defaultRedirectPath: '/home',
   firstSignInRedirectPath: '/welcome',
@@ -46,7 +47,6 @@ export const config = {
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
   // File handling with imado
-  tusUrl: 'http://localhost:1080',
   tusPort: 1080,
   s3UploadBucket: 'cella-uploads',
   s3UploadRegion: 'eu-west-1',
