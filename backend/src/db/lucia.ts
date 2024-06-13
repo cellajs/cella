@@ -35,7 +35,7 @@ const sessionCookieOptions: SessionCookieOptions = {
   expires: true,
   attributes: {
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    sameSite: isProduction ? 'lax' : 'lax',
   },
 };
 
