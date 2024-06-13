@@ -20,6 +20,7 @@ interface Props {
   replyTo?: string;
 }
 
+// TODO: perhaps just use frontendUrl?
 const baseUrl = config.frontendUrl;
 const productionUrl = config.productionUrl;
 

@@ -204,7 +204,7 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Request reset password email with token
+   * Request reset password email
    */
   .openapi(authRoutesConfig.resetPassword, async (ctx) => {
     const { email } = ctx.req.valid('json');
@@ -270,8 +270,8 @@ const authRoutes = app
     // * hash password
     const hashedPassword = await new Argon2id().hash(password);
 
-    // * update user password
-    await db.update(usersTable).set({ hashedPassword }).where(eq(usersTable.id, user.id));
+    // * update user password and set email verified
+    await db.update(usersTable).set({ hashedPassword, emailVerified: true }).where(eq(usersTable.id, user.id));
 
     // Sign in user
     await setSessionCookie(ctx, user.id, 'password_reset');
