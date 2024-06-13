@@ -15,7 +15,7 @@ const convertMembershipToInfo = (membership: MembershipModel): membershipInfoTyp
 });
 
 /**
- * Converts a membership to a membershipInfo object.
+ * Converts a membership to a membershipInfo object. Handles nullable input.
  *
  * @param {MembershipModel | undefined | null} membership - The membership to be converted. (Can also be undefined or null).
  * @returns {membershipInfoType | null} The converted membership information object, or null if the input is undefined or null.
