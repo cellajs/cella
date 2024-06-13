@@ -8,20 +8,20 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { ProjectRow } from '~/types';
+import type { Project } from '~/types';
 import DeleteProjects from '../delete-project';
 
 interface Props {
   total?: number;
   query?: string;
-  selectedProjects: ProjectRow[];
+  selectedProjects: Project[];
   setQuery: (value?: string) => void;
   isFiltered?: boolean;
   onResetFilters: () => void;
   onResetSelectedRows?: () => void;
-  callback: (projects: ProjectRow[], action: 'create' | 'update' | 'delete') => void;
-  columns: ColumnOrColumnGroup<ProjectRow>[];
-  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<ProjectRow>[]>>;
+  callback: (projects: Project[], action: 'create' | 'update' | 'delete') => void;
+  columns: ColumnOrColumnGroup<Project>[];
+  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Project>[]>>;
 }
 
 function Toolbar({ total, isFiltered, query, setQuery, onResetFilters, onResetSelectedRows, columns, setColumns, selectedProjects }: Props) {

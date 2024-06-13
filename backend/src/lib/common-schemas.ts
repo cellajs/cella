@@ -74,6 +74,14 @@ export const entityParamSchema = z.object({
   idOrSlug: idSchema.or(slugSchema),
 });
 
+export const countsSchema = z.object({
+  memberships: z.object({
+    admins: z.number(),
+    members: z.number(),
+    total: z.number(),
+  }),
+});
+
 export const imageUrlSchema = z
   .string()
   .url()
@@ -91,4 +99,6 @@ export const colorSchema = z
   .max(7)
   .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, 'Color may only contain letters, numbers & starts with #');
 
-export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');
+export const validUrlSchema = z
+  .string()
+  .refine((url: string) => url.startsWith('https'), 'URL must start with https://');

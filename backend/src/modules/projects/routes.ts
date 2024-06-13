@@ -8,7 +8,7 @@ import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-sche
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import { apiProjectListSchema, apiProjectSchema, createProjectJsonSchema, getProjectsQuerySchema, updateProjectJsonSchema } from './schema';
+import { apiProjectSchema, createProjectJsonSchema, getProjectsQuerySchema, updateProjectJsonSchema } from './schema';
 
 class ProjectRoutesConfig {
   public createProject = createRouteConfig({
@@ -71,7 +71,8 @@ class ProjectRoutesConfig {
     guard: [isAuthenticated, isAllowedTo('read', 'ORGANIZATION')],
     tags: ['projects'],
     summary: 'Get list of projects',
-    description: 'Get list of projects in which you have a membership or - if a `requestedUserId` is provided - the projects of this user.',
+    description:
+      'Get list of projects in which you have a membership or - if a `requestedUserId` is provided - the projects of this user.',
     request: {
       query: getProjectsQuerySchema,
     },
@@ -80,11 +81,11 @@ class ProjectRoutesConfig {
         description: 'Projects',
         content: {
           'application/json': {
-            schema: successResponseWithPaginationSchema(apiProjectListSchema),
+            schema: successResponseWithPaginationSchema(apiProjectSchema),
           },
         },
+        ...errorResponses,
       },
-      ...errorResponses,
     },
   });
 

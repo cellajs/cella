@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useColumns } from './columns';
-import type { ProjectRow } from '~/types';
+import type { Project } from '~/types';
 import Toolbar from './toolbar';
 import type { getProjectsQuerySchema } from 'backend/modules/projects/schema';
 import type { z } from 'zod';
@@ -17,13 +17,13 @@ export type ProjectsSearch = z.infer<typeof getProjectsQuerySchema>;
 
 export default function ProjectsTable({ userId }: { userId?: string }) {
   const { t } = useTranslation();
-  const [rows, setRows] = useState<ProjectRow[]>([]);
+  const [rows, setRows] = useState<Project[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [columns, setColumns] = useColumns();
   const [query, setQuery] = useState<GetProjectsParams['q']>('');
   const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'createdAt', direction: 'DESC' }]);
 
-  const onRowsChange = (records: ProjectRow[]) => {
+  const onRowsChange = (records: Project[]) => {
     setRows(records);
   };
 
@@ -79,7 +79,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
         columns={columns}
         setColumns={setColumns}
       />
-      <DataTable<ProjectRow>
+      <DataTable<Project>
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
