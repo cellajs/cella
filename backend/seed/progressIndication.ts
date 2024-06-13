@@ -1,7 +1,6 @@
 import chalk from 'chalk';
 
-import { TaskView, renderWithTask } from 'hanji';
-import { organizationsSeed } from '.';
+import { TaskView } from 'hanji';
 
 class Spinner {
   private offset = 0;
@@ -25,9 +24,9 @@ class Spinner {
 
 type ValueOf<T> = T[keyof T];
 export type Status = 'inserting' | 'done';
-export type Stage = 'users' | 'organizations' | 'memberships';
-type State = {
-  [key in Stage]: {
+
+export type State = {
+  [key: string]: {
     count: number;
     name: string;
     status: Status;
@@ -35,38 +34,21 @@ type State = {
 };
 
 export class Progress extends TaskView {
+  private state: State;
   private readonly spinner: Spinner = new Spinner('⣷⣯⣟⡿⢿⣻⣽⣾'.split(''));
   private timeout: NodeJS.Timeout | undefined;
 
-  private state: State = {
-    organizations: {
-      count: 0,
-      name: 'organizations',
-      status: 'inserting',
-    },
-    users: {
-      count: 0,
-      name: 'users',
-      status: 'inserting',
-    },
-    memberships: {
-      count: 0,
-      name: 'memberships',
-      status: 'inserting',
-    },
-  };
-
-  constructor() {
+  constructor(state: State) {
     super();
     this.timeout = setInterval(() => {
       this.spinner.tick();
       this.requestLayout();
     }, 128);
-
+    this.state = state;
     this.on('detach', () => clearInterval(this.timeout));
   }
 
-  public update(stage: Stage, count: number, status: Status) {
+  public update(stage: string, count: number, status: Status) {
     this.state[stage].count = count;
     this.state[stage].status = status;
     this.requestLayout();
@@ -96,22 +78,9 @@ export class Progress extends TaskView {
   render(): string {
     let info = '';
     const spin = this.spinner.value();
-    info += this.statusText(spin, this.state.organizations);
-    info += this.statusText(spin, this.state.users);
-    info += this.statusText(spin, this.state.memberships);
+    for (const stage of Object.values(this.state)) {
+      info += this.statusText(spin, stage);
+    }
     return info;
   }
 }
-
-const progress = new Progress();
-renderWithTask(
-  progress,
-  organizationsSeed((stage, count, status) => {
-    progress.update(stage, count, status);
-  })
-    .catch((error) => {
-      console.error(error);
-      process.exit(1);
-    })
-    .finally(() => process.exit(0)),
-);

@@ -1,26 +1,16 @@
 import { renderWithTask } from 'hanji';
 import { Progress, type State } from '../progressIndication';
-import { dataSeed } from './data';
+import { organizationsSeed } from './organizations';
 
-const DataState: State = {
-  workspaces: {
+const OrganizationsState: State = {
+  organizations: {
     count: 0,
-    name: 'workspaces',
+    name: 'organizations',
     status: 'inserting',
   },
-  projects: {
+  users: {
     count: 0,
-    name: 'projects',
-    status: 'inserting',
-  },
-  tasks: {
-    count: 0,
-    name: 'tasks ⚡',
-    status: 'inserting',
-  },
-  labels: {
-    count: 0,
-    name: 'labels ⚡',
+    name: 'users',
     status: 'inserting',
   },
   memberships: {
@@ -30,11 +20,11 @@ const DataState: State = {
   },
 };
 
-const progress = new Progress(DataState);
+const progress = new Progress(OrganizationsState);
 
 renderWithTask(
   progress,
-  dataSeed((stage, count, status) => {
+  organizationsSeed((stage, count, status) => {
     progress.update(stage, count, status);
   })
     .catch((error) => {
