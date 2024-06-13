@@ -12,7 +12,7 @@ import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from './helpers/transform-database-user';
-import { deleteUsersRouteConfig, getUserRouteConfig, getUsersConfig, updateUserConfig } from './routes';
+import usersRoutesConfig from './routes';
 
 const app = new CustomHono();
 
@@ -21,7 +21,7 @@ const usersRoutes = app
   /*
    * Get list of  users
    */
-  .openapi(getUsersConfig, async (ctx) => {
+  .openapi(usersRoutesConfig.getUsers, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const memberships = db
@@ -98,7 +98,7 @@ const usersRoutes = app
   /*
    * Delete users
    */
-  .openapi(deleteUsersRouteConfig, async (ctx) => {
+  .openapi(usersRoutesConfig.deleteUsers, async (ctx) => {
     const { ids } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -166,7 +166,7 @@ const usersRoutes = app
   /*
    * Get a user by id or slug
    */
-  .openapi(getUserRouteConfig, async (ctx) => {
+  .openapi(usersRoutesConfig.getUser, async (ctx) => {
     const idOrSlug = ctx.req.param('idOrSlug');
     const user = ctx.get('user');
 
@@ -206,7 +206,7 @@ const usersRoutes = app
   /*
    * Update a user by id or slug
    */
-  .openapi(updateUserConfig, async (ctx) => {
+  .openapi(usersRoutesConfig.updateUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
     const user = ctx.get('user');

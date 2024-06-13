@@ -25,17 +25,7 @@ import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from './helpers/check-slug';
-import {
-  acceptInviteRouteConfig,
-  checkSlugRouteConfig,
-  checkTokenRouteConfig,
-  getMembersRouteConfig,
-  getPublicCountsRouteConfig,
-  getUploadTokenRouteConfig,
-  inviteRouteConfig,
-  paddleWebhookRouteConfig,
-  suggestionsConfig,
-} from './routes';
+import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
@@ -49,7 +39,7 @@ const generalRoutes = app
   /*
    * Get public counts
    */
-  .openapi(getPublicCountsRouteConfig, async (ctx) => {
+  .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
     const [organizationsResult, usersResult] = await Promise.all([
       db
         .select({
@@ -73,7 +63,7 @@ const generalRoutes = app
   /*
    * Get upload token
    */
-  .openapi(getUploadTokenRouteConfig, async (ctx) => {
+  .openapi(generalRouteConfig.getUploadToken, async (ctx) => {
     const isPublic = ctx.req.query('public');
     const user = ctx.get('user');
     // TODO: validate query param organization?
@@ -95,7 +85,7 @@ const generalRoutes = app
   /*
    * Check if slug is available
    */
-  .openapi(checkSlugRouteConfig, async (ctx) => {
+  .openapi(generalRouteConfig.checkSlug, async (ctx) => {
     const { slug } = ctx.req.valid('json');
 
     const slugAvailable = await checkSlugAvailable(slug);
@@ -105,7 +95,7 @@ const generalRoutes = app
   /*
    * Check token (token validation)
    */
-  .openapi(checkTokenRouteConfig, async (ctx) => {
+  .openapi(generalRouteConfig.checkToken, async (ctx) => {
     const { token } = ctx.req.valid('json');
 
     // Check if token exists
@@ -139,10 +129,7 @@ const generalRoutes = app
     };
 
     if (tokenRecord.type === 'ORGANIZATION_INVITATION' && tokenRecord.organizationId) {
-      const [organization] = await db
-        .select()
-        .from(organizationsTable)
-        .where(eq(organizationsTable.id, tokenRecord.organizationId));
+      const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
       data.organizationName = organization.name;
       data.organizationSlug = organization.slug;
     }
@@ -152,15 +139,12 @@ const generalRoutes = app
   /*
    * Invite users to the system
    */
-  .openapi(inviteRouteConfig, async (ctx) => {
+  .openapi(generalRouteConfig.invite, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
 
     for (const email of emails) {
-      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (
-        | User
-        | undefined
-      )[];
+      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
 
       const token = generateId(40);
       await db.insert(tokensTable).values({
@@ -188,11 +172,9 @@ const generalRoutes = app
       );
       logEvent('User invited on system level');
 
-      emailSender
-        .send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email)
-        .catch((error) => {
-          logEvent('Error sending email', { error: (error as Error).message }, 'error');
-        });
+      emailSender.send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email).catch((error) => {
+        logEvent('Error sending email', { error: (error as Error).message }, 'error');
+      });
     }
 
     return ctx.json({ success: true }, 200);
@@ -200,7 +182,7 @@ const generalRoutes = app
   /*
    * Accept invite token
    */
-  .openapi(acceptInviteRouteConfig, async (ctx) => {
+  .openapi(generalRouteConfig.acceptInvite, async (ctx) => {
     const verificationToken = ctx.req.valid('param').token;
 
     const [token] = await db
@@ -274,7 +256,7 @@ const generalRoutes = app
   /*
    * Paddle webhook
    */
-  .openapi(paddleWebhookRouteConfig, async (ctx) => {
+  .openapi(generalRouteConfig.paddleWebhook, async (ctx) => {
     const signature = ctx.req.header('paddle-signature');
     const rawRequestBody = String(ctx.req.raw.body);
 
@@ -302,7 +284,7 @@ const generalRoutes = app
   /*
    * Get suggestions
    */
-  .openapi(suggestionsConfig, async (ctx) => {
+  .openapi(generalRouteConfig.suggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -356,9 +338,7 @@ const generalRoutes = app
           const userMemberships = await db
             .select({ userId: membershipsTable.userId })
             .from(membershipsTable)
-            .where(
-              and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')),
-            );
+            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')));
 
           if (!userMemberships.length) continue;
           $and.push(
@@ -397,7 +377,7 @@ const generalRoutes = app
   /*
    * Get members by entity id and type
    */
-  .openapi(getMembersRouteConfig, async (ctx) => {
+  .openapi(generalRouteConfig.getMembers, async (ctx) => {
     const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
     const entity = await resolveEntity(entityType, idOrSlug);
 
@@ -426,7 +406,7 @@ const generalRoutes = app
       .where(and(...membersFilters))
       .as('roles');
 
-      // TODO: use count helper?
+    // TODO: use count helper?
     const membershipCount = db
       .select({
         userId: membershipsTable.userId,

@@ -9,7 +9,7 @@ import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { apiUserSchema } from '../users/schema';
 import { checkEmailJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
 
-class AuthRoutes {
+class AuthRoutesConfig {
   public checkEmail = createRouteConfig({
     method: 'post',
     path: '/check-email',
@@ -410,4 +410,4 @@ class AuthRoutes {
   });
 }
 
-export default new AuthRoutes();
+export default new AuthRoutesConfig();

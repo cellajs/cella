@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, inArray, sql } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
@@ -10,14 +10,9 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import {
-  createOrganizationRouteConfig,
-  deleteOrganizationsRouteConfig,
-  getOrganizationRouteConfig,
-  getOrganizationsRouteConfig,
-  updateOrganizationRouteConfig,
-} from './routes';
+import organizationRoutesConfig from './routes';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
+import { counts } from '../../lib/counts';
 
 const app = new CustomHono();
 
@@ -26,7 +21,7 @@ const organizationsRoutes = app
   /*
    * Create organization
    */
-  .openapi(createOrganizationRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.createOrganization, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = ctx.get('user');
 
@@ -71,8 +66,11 @@ const organizationsRoutes = app
           ...createdOrganization,
           membership: toMembershipInfo(createdMembership),
           counts: {
-            admins: 1,
-            members: 1,
+            memberships: {
+              admins: 1,
+              members: 1,
+              total: 1,
+            },
           },
         },
       },
@@ -82,7 +80,7 @@ const organizationsRoutes = app
   /*
    * Get list of organizations
    */
-  .openapi(getOrganizationsRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.getOrganizations, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -91,17 +89,6 @@ const organizationsRoutes = app
     const organizationsQuery = db.select().from(organizationsTable).where(filter);
 
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
-
-    // TODO: Try to optimize this count query and move to a helper
-    const counts = db
-      .select({
-        organizationId: membershipsTable.organizationId,
-        admins: count(sql`CASE WHEN ${membershipsTable.role} = 'ADMIN' THEN 1 ELSE NULL END`).as('admins'),
-        members: count().as('members'),
-      })
-      .from(membershipsTable)
-      .groupBy(membershipsTable.organizationId)
-      .as('counts');
 
     const memberships = db
       .select()
@@ -121,16 +108,18 @@ const organizationsRoutes = app
       order,
     );
 
+    const countsQuery = await counts('ORGANIZATION');
+
     const organizations = await db
       .select({
         organization: organizationsTable,
         membership: membershipsTable,
-        admins: counts.admins,
-        members: counts.members,
+        admins: countsQuery.admins,
+        members: countsQuery.members,
       })
       .from(organizationsQuery.as('organizations'))
       .leftJoin(memberships, eq(organizationsTable.id, memberships.organizationId))
-      .leftJoin(counts, eq(organizationsTable.id, counts.organizationId))
+      .leftJoin(countsQuery, eq(organizationsTable.id, countsQuery.id))
       .orderBy(orderColumn)
       .limit(Number(limit))
       .offset(Number(offset));
@@ -142,7 +131,13 @@ const organizationsRoutes = app
           items: organizations.map(({ organization, membership, admins, members }) => ({
             ...organization,
             membership: toMembershipInfo(membership),
-            counts: { admins, members },
+            counts: {
+              memberships: {
+                admins,
+                members,
+                total: members,
+              },
+            },
           })),
           total,
         },
@@ -153,7 +148,7 @@ const organizationsRoutes = app
   /*
    * Update an organization by id or slug
    */
-  .openapi(updateOrganizationRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -221,20 +216,6 @@ const organizationsRoutes = app
       sendSSEToUsers(membersId, 'update_entity', updatedOrganization);
     }
 
-    // TODO: Try to optimize this count query and move to a helper
-    const [{ admins }] = await db
-      .select({
-        admins: count(),
-      })
-      .from(membershipsTable);
-
-    const [{ members }] = await db
-      .select({
-        members: count(),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.organizationId, organization.id));
-
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
     return ctx.json(
@@ -243,10 +224,7 @@ const organizationsRoutes = app
         data: {
           ...updatedOrganization,
           membership: toMembershipInfo(memberships.find((member) => member.id === user.id)),
-          counts: {
-            admins,
-            members,
-          },
+          counts: await counts('ORGANIZATION', organization.id),
         },
       },
       200,
@@ -255,7 +233,7 @@ const organizationsRoutes = app
   /*
    * Get organization by id or slug
    */
-  .openapi(getOrganizationRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.getOrganization, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
 
@@ -264,30 +242,13 @@ const organizationsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
 
-    const [{ admins }] = await db
-      .select({
-        admins: count(),
-      })
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.role, 'ADMIN')));
-
-    const [{ members }] = await db
-      .select({
-        members: count(),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.organizationId, organization.id));
-
     return ctx.json(
       {
         success: true,
         data: {
           ...organization,
           membership: toMembershipInfo(membership),
-          counts: {
-            admins,
-            members,
-          },
+          counts: await counts('ORGANIZATION', organization.id),
         },
       },
       200,
@@ -297,13 +258,15 @@ const organizationsRoutes = app
   /*
    * Delete organizations by ids
    */
-  .openapi(deleteOrganizationsRouteConfig, async (ctx) => {
+  .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
     // * Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');
 
     // * Map errors of workspaces user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: id }));
+    const errors: ErrorType[] = disallowedIds.map((id) =>
+      createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: id }),
+    );
 
     // * Get members
     const organizationsMembers = await db

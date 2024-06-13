@@ -13,7 +13,7 @@ import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
-import { deleteSelfConfig, getUserMenuConfig, meRouteConfig, terminateSessionsConfig, updateSelfConfig } from './routes';
+import meRoutesConfig from './routes';
 
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { generateElectricJWTToken } from '../../lib/utils';
@@ -26,7 +26,7 @@ const meRoutes = app
   /*
    * Get current user
    */
-  .openapi(meRouteConfig, async (ctx) => {
+  .openapi(meRoutesConfig.me, async (ctx) => {
     const user = ctx.get('user');
 
     const [{ memberships }] = await db
@@ -66,7 +66,7 @@ const meRoutes = app
   /*
    * Get current user menu
    */
-  .openapi(getUserMenuConfig, async (ctx) => {
+  .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = ctx.get('user');
 
     const organizationsWithMemberships = await db
@@ -159,7 +159,7 @@ const meRoutes = app
   /*
    * Terminate a session
    */
-  .openapi(terminateSessionsConfig, async (ctx) => {
+  .openapi(meRoutesConfig.terminateSessions, async (ctx) => {
     const { ids } = ctx.req.valid('query');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
@@ -187,7 +187,7 @@ const meRoutes = app
   /*
    * Update current user (self)
    */
-  .openapi(updateSelfConfig, async (ctx) => {
+  .openapi(meRoutesConfig.updateSelf, async (ctx) => {
     const user = ctx.get('user');
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });
@@ -257,7 +257,7 @@ const meRoutes = app
   /*
    * Delete current user (self)
    */
-  .openapi(deleteSelfConfig, async (ctx) => {
+  .openapi(meRoutesConfig.deleteSelf, async (ctx) => {
     const user = ctx.get('user');
     // * Check if user exists
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });

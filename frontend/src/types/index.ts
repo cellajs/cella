@@ -32,25 +32,50 @@ export type User = Extract<InferResponseType<(typeof apiClient.users)[':idOrSlug
 
 export type MeUser = User & { electricJWTToken: string; sessions: Session[] };
 
-export type Organization = Extract<InferResponseType<(typeof apiClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
+export type Organization = Extract<
+  InferResponseType<(typeof apiClient.organizations)['$get']>,
+  { data: unknown }
+>['data']['items'][number];
 
-export type Request = Extract<InferResponseType<(typeof apiClient.requests)['$get']>, { data: unknown }>['data']['items'][number];
+export type Request = Extract<
+  InferResponseType<(typeof apiClient.requests)['$get']>,
+  { data: unknown }
+>['data']['items'][number];
 
-export type Workspace = Extract<InferResponseType<(typeof apiClient.workspaces)[':idOrSlug']['$get']>, { data: unknown }>['data'];
+export type Workspace = Extract<
+  InferResponseType<(typeof apiClient.workspaces)[':idOrSlug']['$get']>,
+  { data: unknown }
+>['data'];
 
-// TODO what is difference with ProjectRow?
-export type Project = Extract<InferResponseType<(typeof apiClient.projects)[':idOrSlug']['$get']>, { data: unknown }>['data'];
-
-type EntityPageProps = 'id' | 'slug' | 'entity' | 'name' | 'createdAt' | 'thumbnailUrl' | 'bannerUrl' | 'organizationId';
+type EntityPageProps =
+  | 'id'
+  | 'slug'
+  | 'entity'
+  | 'name'
+  | 'createdAt'
+  | 'thumbnailUrl'
+  | 'bannerUrl'
+  | 'organizationId';
 type BaseEntityPage = Pick<Project, EntityPageProps>;
 
-export type EntityPage = Omit<BaseEntityPage, 'organizationId'> & { organizationId: Project['organizationId'] | null | undefined };
+export type EntityPage = Omit<BaseEntityPage, 'organizationId'> & {
+  organizationId: Project['organizationId'] | null | undefined;
+};
 
-export type ProjectRow = Extract<InferResponseType<(typeof apiClient.projects)['$get']>, { data: unknown }>['data']['items'][number];
+export type Project = Extract<
+  InferResponseType<(typeof apiClient.projects)['$get']>,
+  { data: unknown }
+>['data']['items'][number];
 
-export type Member = Extract<InferResponseType<(typeof apiClient.members)['$get']>, { data: unknown }>['data']['items'][number];
+export type Member = Extract<
+  InferResponseType<(typeof apiClient.members)['$get']>,
+  { data: unknown }
+>['data']['items'][number];
 
-export type Membership = Extract<InferResponseType<(typeof apiClient.memberships)[':id']['$put']>, { data: unknown }>['data'];
+export type Membership = Extract<
+  InferResponseType<(typeof apiClient.memberships)[':id']['$put']>,
+  { data: unknown }
+>['data'];
 
 export type UserMenu = Extract<InferResponseType<(typeof apiClient.me.menu)['$get']>, { data: unknown }>['data'];
 
