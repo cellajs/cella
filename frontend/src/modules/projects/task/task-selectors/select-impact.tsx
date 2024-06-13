@@ -3,7 +3,7 @@ import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useHotkeys } from '~/hooks/use-hot-keys';
+// import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useMeasure } from '~/hooks/use-measure';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
@@ -16,8 +16,6 @@ import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
 import { NoneIcon } from './impact-icons/none';
 import { NotSelected } from './impact-icons/not-selected';
-import { useTaskContext } from '../task-context';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -43,8 +41,6 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
   const { t } = useTranslation();
   const formValue = useFormContext?.()?.getValues('impact');
   const [openPopover, setOpenPopover] = useState(false);
-  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-  const { task } = useTaskContext(({ task }) => ({ task }));
   const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(
     viewValue !== undefined && viewValue !== null ? impacts[viewValue] : impacts[formValue] || null,
   );
@@ -54,14 +50,14 @@ export const SelectImpact = ({ mode = 'create', viewValue, changeTaskImpact }: S
   const { ref, bounds } = useMeasure();
 
   // Open on key press
-  useHotkeys([
-    [
-      'i',
-      () => {
-        if (focusedTaskId === task.id) setOpenPopover(true);
-      },
-    ],
-  ]);
+  // useHotkeys([
+  //   [
+  //     'i',
+  //     () => {
+  //       if (focusedTaskId === task.id) setOpenPopover(true);
+  //     },
+  //   ],
+  // ]);
 
   // Whenever the form value changes (also on reset), update the internal state
   useEffect(() => {

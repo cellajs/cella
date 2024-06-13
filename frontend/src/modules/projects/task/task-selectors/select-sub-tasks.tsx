@@ -3,7 +3,7 @@ import { Check, Dot, History } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+// import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { Button } from '~/modules/ui/button';
 import type { Task } from '../../../common/electric/electrify.ts';
@@ -11,8 +11,6 @@ import { Kbd } from '../../../common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
 import { ScrollArea } from '~/modules/ui/scroll-area.tsx';
-import { useTaskContext } from '../task-context.tsx';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 
 interface Props {
   mode: 'create' | 'edit';
@@ -27,8 +25,6 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Task[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
-  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-  const { task } = useTaskContext(({ task }) => ({ task }));
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
 
@@ -71,14 +67,14 @@ const SetSubTasks = ({ mode, viewValue, onChange, tasks }: Props) => {
   };
 
   // Open on key press
-  useHotkeys([
-    [
-      'l',
-      () => {
-        if (focusedTaskId === task.id) setOpenPopover(true);
-      },
-    ],
-  ]);
+  // useHotkeys([
+  //   [
+  //     'l',
+  //     () => {
+  //       if (focusedTaskId === task.id) setOpenPopover(true);
+  //     },
+  //   ],
+  // ]);
 
   // callback to change labels in task card
   useEffect(() => {

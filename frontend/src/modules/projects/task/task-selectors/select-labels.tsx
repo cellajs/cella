@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+// import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { cn, nanoid } from '~/lib/utils.ts';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -13,8 +13,6 @@ import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
-import { useTaskContext } from '../task-context.tsx';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 
 const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -36,8 +34,6 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, l
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
-  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-  const { task } = useTaskContext(({ task }) => ({ task }));
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
   const Electric = useElectric();
@@ -104,14 +100,14 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, l
   };
 
   // Open on key press
-  useHotkeys([
-    [
-      'l',
-      () => {
-        if (focusedTaskId === task.id) setOpenPopover(true);
-      },
-    ],
-  ]);
+  // useHotkeys([
+  //   [
+  //     'l',
+  //     () => {
+  //       if (focusedTaskId === task.id) setOpenPopover(true);
+  //     },
+  //   ],
+  // ]);
 
   // callback to change labels in task card
   useEffect(() => {

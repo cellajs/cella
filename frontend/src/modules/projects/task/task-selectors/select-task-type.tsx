@@ -1,14 +1,12 @@
 import { Bolt, Bug, Check, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHotkeys } from '~/hooks/use-hot-keys';
+// import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Button } from '../../../ui/button';
 import type { TaskType } from '../create-task-form';
-import { useTaskContext } from '../task-context';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 type Type = {
   value: (typeof types)[number]['value'];
@@ -34,18 +32,17 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedType, setSelectedType] = useState<Type | undefined>(types[types.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
-  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-  const { task } = useTaskContext(({ task }) => ({ task }));
   const isSearching = searchValue.length > 0;
+
   // Open on key press
-  useHotkeys([
-    [
-      't',
-      () => {
-        if (focusedTaskId === task.id) setOpenPopover(true);
-      },
-    ],
-  ]);
+  // useHotkeys([
+  //   [
+  //     't',
+  //     () => {
+  //       if (focusedTaskId === task.id) setOpenPopover(true);
+  //     },
+  //   ],
+  // ]);
 
   useEffect(() => {
     setSelectedType(types[types.findIndex((type) => type.value === currentType)]);

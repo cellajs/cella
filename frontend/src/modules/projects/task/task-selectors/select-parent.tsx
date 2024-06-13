@@ -2,15 +2,13 @@ import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+// import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { Button } from '~/modules/ui/button';
 import type { Task } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
-import { useTaskContext } from '../task-context.tsx';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 
 interface Props {
   mode: 'create' | 'edit';
@@ -27,8 +25,7 @@ const SelectParent = ({ tasks, mode, parent, onChange }: Props) => {
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
   const { ref, bounds } = useMeasure();
-  const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-  const { task } = useTaskContext(({ task }) => ({ task }));
+
   const handleSelectClick = (id: string) => {
     if (!id) return;
     const existingTask = selectedTask?.id === id;
@@ -43,14 +40,14 @@ const SelectParent = ({ tasks, mode, parent, onChange }: Props) => {
     }
   };
   // Open on key press
-  useHotkeys([
-    [
-      'a',
-      () => {
-        if (focusedTaskId === task.id) setOpenPopover(true);
-      },
-    ],
-  ]);
+  // useHotkeys([
+  //   [
+  //     'a',
+  //     () => {
+  //       if (focusedTaskId === task.id) setOpenPopover(true);
+  //     },
+  //   ],
+  // ]);
 
   useEffect(() => {
     if (onChange && JSON.stringify(selectedTask) !== JSON.stringify(parent)) onChange(selectedTask);
