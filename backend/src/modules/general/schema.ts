@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '../../db/schema/tokens';
-import { apiMembershipSchema } from '../memberships/schema';
+import { apiMembershipSchema, membershipInfoSchema } from '../memberships/schema';
 import { apiUserSchema } from '../users/schema';
 import {
   contextEntityTypeSchema,
@@ -58,8 +58,7 @@ export const suggestionsSchema = z.object({
 
 export const apiMemberSchema = z.object({
   ...apiUserSchema.shape,
-  membershipId: idSchema,
-  role: apiMembershipSchema.shape.role,
+  membership: membershipInfoSchema
 });
 
 export const getMembersQuerySchema = paginationQuerySchema.extend({
