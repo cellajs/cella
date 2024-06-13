@@ -14,7 +14,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail } from '~/api/authentication';
+import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { AsideNav } from '~/modules/common/aside-nav';
 import UpdateUserForm from '~/modules/users/update-user-form';

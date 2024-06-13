@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { signOut } from '~/api/authentication';
+import { signOut } from '~/api/auth';
 import { useDraftStore } from '~/store/draft';
 import { useUserStore } from '~/store/user';
 import { useNavigationStore, type EntityConfig } from '~/store/navigation';
