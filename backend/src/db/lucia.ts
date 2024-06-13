@@ -4,26 +4,26 @@ import { config } from 'config';
 import { Lucia, type SessionCookieOptions, TimeSpan } from 'lucia';
 
 import { env } from 'env';
-import { githubSignInCallbackRouteConfig, googleSignInCallbackRouteConfig, microsoftSignInCallbackRouteConfig } from '../modules/auth/routes';
+import AuthRoutes from '../modules/auth/routes';
 import { db } from './db';
 import { sessionsTable } from './schema/sessions';
 import { type UserModel, usersTable } from './schema/users';
 
 export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', {
-  redirectURI: config.backendAuthUrl + githubSignInCallbackRouteConfig.path,
+  redirectURI: config.backendAuthUrl + AuthRoutes.githubSignInCallback.path,
 });
 
 export const googleAuth = new Google(
   env.GOOGLE_CLIENT_ID || '',
   env.GOOGLE_CLIENT_SECRET || '',
-  config.backendAuthUrl + googleSignInCallbackRouteConfig.path,
+  config.backendAuthUrl + AuthRoutes.googleSignInCallback.path,
 );
 
 export const microsoftAuth = new MicrosoftEntraId(
   env.MICROSOFT_TENANT_ID || '',
   env.MICROSOFT_CLIENT_ID || '',
   env.MICROSOFT_CLIENT_SECRET || '',
-  config.backendAuthUrl + microsoftSignInCallbackRouteConfig.path,
+  config.backendAuthUrl + AuthRoutes.microsoftSignInCallback.path,
 );
 
 // Create Lucia adapter instance

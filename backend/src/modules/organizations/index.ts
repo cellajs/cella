@@ -51,14 +51,14 @@ const organizationsRoutes = app
     logEvent('Organization created', { organization: createdOrganization.id });
 
     const [createdMembership] = await db
-    .insert(membershipsTable)
-    .values({
-      type: 'ORGANIZATION',
-      userId: user.id,
-      organizationId: createdOrganization.id,
-      role: 'ADMIN',
-    })
-    .returning();
+      .insert(membershipsTable)
+      .values({
+        type: 'ORGANIZATION',
+        userId: user.id,
+        organizationId: createdOrganization.id,
+        role: 'ADMIN',
+      })
+      .returning();
 
     logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
 
@@ -221,8 +221,8 @@ const organizationsRoutes = app
       sendSSEToUsers(membersId, 'update_entity', updatedOrganization);
     }
 
-     // TODO: Try to optimize this count query and move to a helper
-     const [{ admins }] = await db
+    // TODO: Try to optimize this count query and move to a helper
+    const [{ admins }] = await db
       .select({
         admins: count(),
       })
@@ -258,8 +258,6 @@ const organizationsRoutes = app
   .openapi(getOrganizationRouteConfig, async (ctx) => {
     const user = ctx.get('user');
     const organization = ctx.get('organization');
-
-    console.log('organizationLog', organization);
 
     const [membership] = await db
       .select()

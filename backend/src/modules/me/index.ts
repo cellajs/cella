@@ -133,7 +133,6 @@ const meRoutes = app
         mainId: workspace.workspaceId,
       };
     });
-    console.log('projects:', projects);
 
     const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
       return {
