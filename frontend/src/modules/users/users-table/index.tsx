@@ -57,7 +57,7 @@ interface Props<T, U> {
 }
 
 export const isMember = (resource: User | Member): resource is Member => {
-  return (resource as Member).membershipId !== undefined;
+  return (resource as Member).membership.id !== undefined;
 };
 
 const UsersTable = <
@@ -106,7 +106,7 @@ const UsersTable = <
   const { mutate: updateUserRole } = useMutation({
     mutationFn: async (user: User | Member) => {
       if (isMember(user)) {
-        return await updateMembership({ membershipId: user.membershipId, role: user.role }); // Update member role
+        return await updateMembership({ membershipId: user.membership.id, role: user.membership.role }); // Update member role
       }
       return await updateUser(user.id, { role: user.role }); // Update user role
     },

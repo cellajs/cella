@@ -27,6 +27,7 @@ import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
+import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -396,15 +397,11 @@ const generalRoutes = app
       membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
     }
 
-    const roles = db
-      .select({
-        userId: membershipsTable.userId,
-        id: membershipsTable.id,
-        role: membershipsTable.role,
-      })
+    const memberships = db
+      .select()
       .from(membershipsTable)
       .where(and(...membersFilters))
-      .as('roles');
+      .as('memberships');
 
     // TODO: use count helper?
     const membershipCount = db
@@ -423,8 +420,7 @@ const generalRoutes = app
         email: usersTable.email,
         createdAt: usersTable.createdAt,
         lastSeenAt: usersTable.lastSeenAt,
-        role: roles.role,
-        membershipId: roles.id,
+        role: memberships.role,
       },
       sort,
       usersTable.id,
@@ -434,14 +430,13 @@ const generalRoutes = app
     const membersQuery = db
       .select({
         user: usersTable,
-        role: roles.role,
-        membershipId: roles.id,
+        membership: membershipsTable,
         counts: {
           memberships: membershipCount.memberships,
         },
       })
       .from(usersQuery)
-      .innerJoin(roles, eq(usersTable.id, roles.userId))
+      .innerJoin(memberships, eq(usersTable.id, memberships.userId))
       .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
       .orderBy(orderColumn);
 
@@ -450,10 +445,9 @@ const generalRoutes = app
     const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
 
     const members = await Promise.all(
-      result.map(async ({ user, role, membershipId, counts }) => ({
+      result.map(async ({ user, membership, counts }) => ({
         ...user,
-        role,
-        membershipId,
+        membership: toMembershipInfo.required(membership),
         counts,
       })),
     );

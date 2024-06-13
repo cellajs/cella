@@ -22,7 +22,7 @@ import InputFormField from '../form-fields/input';
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
 const formSchema = z.object({
-  name: z.string().min(5, i18n.t('common:error.name_required')).default(''),
+  name: z.string().min(2, i18n.t('common:error.name_required')).default(''),
   email: z.string().email(i18n.t('common:error.invalid_email')).default(''),
   message: z.string().default(''),
 });

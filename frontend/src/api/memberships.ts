@@ -1,10 +1,10 @@
-import type { ContextEntity, Member } from '~/types';
+import type { ContextEntity, Membership } from '~/types';
 import { apiClient, handleResponse } from '.';
 
 const client = apiClient.memberships;
 export interface InviteMemberProps {
   emails: string[];
-  role?: Member['role'];
+  role?: Membership['role'];
   idOrSlug: string;
   organizationId: string;
   entityType: ContextEntity;
@@ -27,7 +27,7 @@ export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: s
 
   await handleResponse(response);
 };
-export type UpdateMenuOptionsProp = { membershipId: string; role?: Member['role']; archive?: boolean; muted?: boolean };
+export type UpdateMenuOptionsProp = { membershipId: string; role?: Membership['role']; archive?: boolean; muted?: boolean };
 
 export const updateMembership = async (values: UpdateMenuOptionsProp) => {
   const { membershipId, role, archive, muted } = values;
