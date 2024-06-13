@@ -63,7 +63,6 @@ This document describes the high-level architecture of Cella.
 │   │   ├── types             
 ├── info                      General info
 ├── locales                   Translations
-├── proxy                     Cloudflare proxy server
 └── tus                       TUS server
 
 ```
