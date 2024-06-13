@@ -61,6 +61,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
       return inviteMember({
         ...values,
         idOrSlug: entity.id,
+        entityType: entity.entity,
         organizationId: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },
