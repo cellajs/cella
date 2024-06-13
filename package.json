@@ -40,7 +40,6 @@
     "push": "dotenv -e env/.env -- turbo push --filter backend",
     "studio": "dotenv -e env/.env -- turbo studio --filter backend",
     "studio:electric": "dotenv -e env/.env -- turbo studio:electric --filter backend",
-    "proxy:deploy": "cd proxy && node_modules/.bin/wrangler deploy",
     "email:dev": "dotenv -e env/.env -- turbo dev --filter email",
     "electrify": "dotenv -e env/.env -- turbo prepare:electric:dev --filter frontend --force"
   },

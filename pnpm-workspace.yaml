@@ -2,7 +2,6 @@ packages:
   - 'backend'
   - 'frontend'
   - 'locales'
-  - 'proxy'
   - 'email'
   - 'email/.react-email'
   - 'tus'
