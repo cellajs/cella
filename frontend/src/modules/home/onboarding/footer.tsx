@@ -21,7 +21,7 @@ const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
   const { menu } = useNavigationStore();
   const haveOrganizations = menu.organizations.length > 0;
 
-  // prevent accidental submit
+  // Ask to confirm
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (onDefaultBoardingSteps[activeStep].id === 'organization' && !haveOrganizations) {

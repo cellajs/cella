@@ -64,8 +64,10 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       callback?.(result);
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
       setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
+      console.log('redddsult', result,nextStep );
       // If in stepper
       nextStep?.();
+
 
       if (!callback && !children) {
         navigate({
