@@ -69,7 +69,7 @@ async function getEntityContext(ctx: any, entityType: ContextEntity) {
     return;
   }
 
-  const idOrSlug = ctx.req.param('idOrSlug');
+  const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(`${entityType.toLowerCase()}Id`);
   
   if (idOrSlug) {
     // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
@@ -93,8 +93,14 @@ async function createEntityContext(entityType: ContextEntity, ctx: any) {
   // Return early if entity is not available
   if (!entity) return;
 
-  // Extract payload from request body
-  const payload = await ctx.req.json();
+  // Extract payload from request body, with try/catch to handle potential empty body bug in HONO (see: https://github.com/honojs/hono/issues/2651)
+  // biome-ignore lint/suspicious/noExplicitAny: Using 'any' here because the payload can be of any type
+  let payload:Record<string, any> = {};
+  try {
+    payload = await ctx.req.json();
+  } catch {
+    payload = {};
+  }
 
   // TODO make this more clear and explicit and tpye safe
   // Initialize context to store the custom created context entity based on the lowest possible ancestor
@@ -109,7 +115,7 @@ async function createEntityContext(entityType: ContextEntity, ctx: any) {
     // Continue searching for the lowest ancestor if not found yet
     if (!lowestAncestor) {
       // Check if ancestor identifier is provided in params or query
-      let lowestAncestorIdOrSlug = ctx.req.param(ancestor.name)?.toLowerCase() || ctx.req.query(ancestor.name)?.toLowerCase();
+      let lowestAncestorIdOrSlug = (ctx.req.param(ancestor.name) || ctx.req.param(`${ancestor.name}Id`) || ctx.req.query(ancestor.name) || ctx.req.query(`${ancestor.name}Id`))?.toLowerCase();
 
       // If not found in params or query, check if it's provided in the request body
       if (!lowestAncestorIdOrSlug && payload) {

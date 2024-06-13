@@ -67,7 +67,7 @@ export const getProjectRouteConfig = createRouteConfig({
 export const getProjectsRouteConfig = createRouteConfig({
   method: 'get',
   path: '/',
-  guard: [isAuthenticated],
+  guard: [isAuthenticated, isAllowedTo('read', 'ORGANIZATION')],
   tags: ['projects'],
   summary: 'Get list of projects',
   description: 'Get list of projects in which you have a membership or - if a `requestedUserId` is provided - the projects of this user.',
