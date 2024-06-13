@@ -37,7 +37,7 @@ export const sheetVariants = cva(
         right:
           'inset-y-0 right-0 h-full w-[85%] max-w-md border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-xs',
         mirrorOnMobile:
-          'inset-y-0 right-0 h-full w-[85%] max-w-md border-l sm:border-r sm:border-l-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-xs md:left-0 md:data-[state=closed]:slide-out-to-left md:data-[state=open]:slide-in-from-left',
+          'inset-y-0 right-0 h-full w-[85%] max-w-md border-l sm:border-r sm:border-l-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-xs sm:left-0 sm:data-[state=closed]:slide-out-to-left sm:data-[state=open]:slide-in-from-left',
       },
     },
     defaultVariants: {

@@ -106,8 +106,5 @@ export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,
-  beforeLoad: ({ context }) => {
-    console.log('context', context);
-  },
   component: () => <OrganizationSettings />,
 });

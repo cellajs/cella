@@ -89,25 +89,25 @@ const AppNav = () => {
       <nav
         id="app-nav"
         className={cn(
-          'fixed z-[90] w-full max-xs:bottom-0 overflow-y-auto transition-transform ease-out md:fixed md:left-0 md:top-0 md:h-screen md:w-16',
+          'fixed z-[90] w-full max-sm:bottom-0 overflow-y-auto transition-transform ease-out sm:left-0 sm:top-0 sm:h-screen sm:w-16',
           navBackground,
-          !hasStarted && 'max-md:translate-y-full md:-translate-x-full',
+          !hasStarted && 'max-sm:translate-y-full sm:-translate-x-full',
           focusView && 'hidden',
         )}
       >
-        <ul className="flex flex-row justify-between p-1 md:flex-col md:space-y-1 md:my-1">
+        <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1 sm:my-1">
           {navItemsToMap.map((navItem: NavItem, index: number) => {
             const isSecondItem = index === 1;
             const isActive = activeSheet?.id === navItem.id;
 
             const listItemClass = isSecondItem
-              ? 'flex xs:absolute xs:left-1/2 md:left-0 transform xs:-translate-x-1/2 md:relative md:transform-none md:justify-start'
+              ? 'flex xs:absolute xs:left-1/2 sm:left-0 transform xs:-translate-x-1/2 sm:relative sm:transform-none sm:justify-start'
               : 'flex justify-start';
 
             return (
               <Fragment key={navItem.id}>
-                {isSecondItem && <div className="hidden xs:flex xs:grow md:hidden" />}
-                <li className={cn('md:grow-0', listItemClass)} key={navItem.id}>
+                {isSecondItem && <div className="hidden xs:flex xs:grow sm:hidden" />}
+                <li className={cn('sm:grow-0', listItemClass)} key={navItem.id}>
                   <NavButton navItem={navItem} isActive={isActive} onClick={() => navButtonClick(navItem)} />
                 </li>
               </Fragment>

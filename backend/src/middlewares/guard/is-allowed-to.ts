@@ -26,8 +26,6 @@ const isAllowedTo =
       // Retrieve the context of the entity to be authorized (e.g., 'organization', 'workspace')
       const contextEntity = await getEntityContext(ctx, entityType);
 
-      console.log('contextEntityLog', contextEntity);
-
       // Check if user or context is missing
       if (!contextEntity || !user) {
         return errorResponse(ctx, 404, 'not_found', 'warn', entityType, {

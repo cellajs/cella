@@ -44,7 +44,7 @@ export const SheetAccount = () => {
     <>
       <SheetTitle>{t('common:account')}</SheetTitle>
 
-      <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} onClick={() => setSheet(null)} className="max-sm:hidden w-full">
+      <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} onClick={() => setSheet(null)} className="w-full">
         <div className={bannerClass} style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}>
           <div className="flex justify-center items-center bg-background/75 w-full group-hover:opacity-100 transition duration-300 h-full opacity-0">
             {t('common:view_profile')}

@@ -36,7 +36,7 @@ const AuthPage = ({ children }: AuthPageProps) => {
             <Logo height={34} />
           </Link>
 
-          <FooterLinks className="max-md:hidden scale-110" links={authFooterLinks} />
+          <FooterLinks className="max-sm:hidden scale-110" links={authFooterLinks} />
         </div>
       </div>
     </div>

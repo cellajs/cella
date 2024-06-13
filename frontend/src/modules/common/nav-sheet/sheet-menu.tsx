@@ -112,10 +112,10 @@ export const SheetMenu = memo(() => {
               {t('common:keep_menu_open')}
             </label>
           </div>
-          <div className="max-xl:hidden my-4 flex items-center justify-center space-x-2">
-            <Checkbox id="hideSubmenuProjects" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} aria-label={t('common:hide_submenus')} />
+          <div className="max-sm:hidden my-4 flex items-center justify-center space-x-2">
+            <Checkbox id="hideSubmenuProjects" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} aria-label={t('common:hide_projects')} />
             <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
-              {t('common:hide_submenus')}
+              {t('common:hide_projects')}
             </label>
           </div>
         </div>
