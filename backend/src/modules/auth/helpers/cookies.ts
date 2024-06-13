@@ -8,11 +8,15 @@ import { auth } from '../../../db/lucia';
 import { usersTable } from '../../../db/schema/users';
 import { logEvent } from '../../../middlewares/logger/log-event';
 
+const isProduction = config.mode === 'production';
+
 export const setCookie = (ctx: Context, name: string, value: string) =>
   baseSetCookie(ctx, name, value, {
-    secure: config.mode === 'production', // set `Secure` flag in HTTPS
+    secure: isProduction, // set `Secure` flag in HTTPS
     path: '/',
+    domain: isProduction ? config.domain : undefined,
     httpOnly: true,
+    sameSite: isProduction ? 'None' : 'Strict',
     maxAge: 60 * 10, // 10 min
   });
 

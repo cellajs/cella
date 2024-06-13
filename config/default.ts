@@ -4,6 +4,7 @@ export const config = {
   name: 'Cella',
   slug: 'cella',
 
+  domain: 'cellajs.com',
   frontendUrl: 'https://cellajs.com',
   backendUrl: 'https://api.cellajs.com',
   backendAuthUrl: 'https://api.cellajs.com/auth',
