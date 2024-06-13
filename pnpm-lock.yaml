@@ -321,11 +321,11 @@ importers:
         specifier: ^5.45.0
         version: 5.45.0(react@18.3.1)
       '@tanstack/react-router':
-        specifier: ^1.36.3
-        version: 1.36.3(react-dom@18.3.1)(react@18.3.1)
+        specifier: 1.35.1
+        version: 1.35.1(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/router-devtools':
         specifier: ^1.36.3
-        version: 1.36.3(@tanstack/react-router@1.36.3)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1)
+        version: 1.36.3(@tanstack/react-router@1.35.1)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1)
       '@uiw/react-md-editor':
         specifier: ^4.0.4
         version: 4.0.4(@types/react@18.3.3)(react-dom@18.3.1)(react@18.3.1)
@@ -8823,8 +8823,8 @@ packages:
       react: 18.3.1
     dev: false
 
-  /@tanstack/react-router@1.36.3(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-587W8jYCUtK9HsPSkmSbxm9VHH+ullmAT/ttOIbMjqhKLg9Sb30Gg6NxzGlzxRSF0t6QSy28wt+4ChPREVizFA==}
+  /@tanstack/react-router@1.35.1(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-hdQynBRSnOF/D06INIAxQY8gR36I/RIVdrIyQeoFCqYZEWvjEtGy7yWtXUbpbb4paisdHnH1rbBHlNk+UYBXvQ==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8'
@@ -8850,7 +8850,7 @@ packages:
       use-sync-external-store: 1.2.2(react@18.3.1)
     dev: false
 
-  /@tanstack/router-devtools@1.36.3(@tanstack/react-router@1.36.3)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1):
+  /@tanstack/router-devtools@1.36.3(@tanstack/react-router@1.35.1)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-GfYDsubnyv18R2ni03oojczr1jfwTYo2TXi5yNLAGVRYHaLFPeTplobM8MZbTzTb0E+CKtlrmkoOx8AODmurvQ==}
     engines: {node: '>=12'}
     peerDependencies:
@@ -8858,7 +8858,7 @@ packages:
       react: '>=16.8'
       react-dom: '>=16.8'
     dependencies:
-      '@tanstack/react-router': 1.36.3(react-dom@18.3.1)(react@18.3.1)
+      '@tanstack/react-router': 1.35.1(react-dom@18.3.1)(react@18.3.1)
       clsx: 2.1.1
       date-fns: 2.30.0
       goober: 2.1.14(csstype@3.1.3)
