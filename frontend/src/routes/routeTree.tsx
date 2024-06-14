@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
-import * as Sentry from "@sentry/react";
+import * as Sentry from '@sentry/react';
 
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
@@ -8,7 +8,6 @@ import { useUserStore } from '~/store/user';
 
 import { getMe, getUserMenu } from '~/api/me';
 
-import App from '~/modules/common/app';
 import ErrorNotice from '~/modules/common/error-notice';
 
 import { queryClient } from '~/lib/router';
@@ -21,6 +20,10 @@ import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute 
 import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
+import { Suspense, lazy } from 'react';
+import { Loader2 } from 'lucide-react';
+
+const App = lazy(() => import('~/modules/common/app'));
 
 export const getAndSetMe = async () => {
   const user = await getMe();
@@ -94,7 +97,11 @@ export const IndexRoute = createRoute({
       throw redirect({ to: '/auth/sign-in', replace: true, search: { fromRoot: true, redirect: location.pathname } });
     }
   },
-  component: () => <App />,
+  component: () => (
+    <Suspense fallback={<Loader2 className="text-muted-foreground mx-auto mt-[40vh] h-10 w-10 animate-spin" />}>
+      <App />
+    </Suspense>
+  ),
 });
 
 export const acceptInviteRoute = createRoute({
