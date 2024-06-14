@@ -16,7 +16,7 @@ export const setCookie = (ctx: Context, name: string, value: string) =>
     path: '/',
     domain: isProduction ? config.domain : undefined,
     httpOnly: true,
-    sameSite: isProduction ? 'None' : 'Strict',
+    sameSite: isProduction ? 'lax' : 'lax',
     maxAge: 60 * 10, // 10 min
   });
 

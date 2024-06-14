@@ -1,7 +1,7 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
-import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/authentication';
+import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/auth';
 import { acceptInvite } from '~/api/general';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/authentication';

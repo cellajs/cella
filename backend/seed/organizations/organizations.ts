@@ -3,46 +3,17 @@ import { UniqueEnforcer } from 'enforce-unique';
 import { Argon2id } from 'oslo/password';
 
 import { config } from 'config';
-import { db } from '../src/db/db';
-import { nanoid } from '../src/lib/nanoid';
-import type { Stage, Status } from './organizations';
+import { db } from '../../src/db/db';
+import { nanoid } from '../../src/lib/nanoid';
 
-import { type InsertMembershipModel, membershipsTable } from '../src/db/schema/memberships';
-import { type InsertOrganizationModel, organizationsTable } from '../src/db/schema/organizations';
-import { type InsertUserModel, usersTable } from '../src/db/schema/users';
-
-// Seed an admin user to access app first time
-export const userSeed = async () => {
-  const usersInTable = await db.select().from(usersTable).limit(1);
-
-  if (usersInTable.length > 0) {
-    console.info('Users table is not empty, skipping seed');
-    return;
-  }
-  const password = '12345678';
-  const hashedPassword = await new Argon2id().hash(password);
-  const email = 'admin-test@cellajs.com';
-  const adminId = 'admin12345678';
-
-  await db
-    .insert(usersTable)
-    .values({
-      id: adminId,
-      email,
-      emailVerified: true,
-      name: 'Admin User',
-      language: config.defaultLanguage,
-      slug: 'admin-user',
-      role: 'ADMIN',
-      hashedPassword,
-    })
-    .onConflictDoNothing();
-
-  console.info(`Created admin user with verified email ${email} and password ${password}.`);
-};
+import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
+import { type InsertOrganizationModel, organizationsTable } from '../../src/db/schema/organizations';
+import { type InsertUserModel, usersTable } from '../../src/db/schema/users';
+import type { Status } from '../progressIndication';
+import { adminUser } from '../user/user';
 
 // Seed organizations with data
-export const organizationsSeed = async (progressCallback?: (stage: Stage, count: number, status: Status) => void) => {
+export const organizationsSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
   if (organizationsInTable.length > 0) {
@@ -139,7 +110,7 @@ export const organizationsSeed = async (progressCallback?: (stage: Stage, count:
     if (organizationsCount % 2 === 0) {
       memberships.push({
         id: nanoid(),
-        userId: 'admin12345678',
+        userId: adminUser.id,
         organizationId: organization.id,
         type: 'ORGANIZATION',
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),

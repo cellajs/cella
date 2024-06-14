@@ -3,16 +3,12 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { useAlertStore } from '~/store/alert';
 
 export const SkipOrganizationCreation = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { alertsSeen, resetAlertSeen } = useAlertStore();
-
   const onDelete = () => {
-    resetAlertSeen(alertsSeen.filter((el) => el !== 'skip_org_creation'));
     dialog.remove(true, 'skip_org_creation');
     navigate({
       to: config.defaultRedirectPath,

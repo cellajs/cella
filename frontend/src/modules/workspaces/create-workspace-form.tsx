@@ -64,11 +64,14 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     mutationFn: createWorkspace,
     onSuccess: (result) => {
       form.reset();
-      callback?.(result);
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
       setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
+
+      callback?.(result);
+      // TODO remove this when listening to route to close sheet
       setSheet(null);
       if (isDialog) dialog.remove();
+
       navigate({
         to: '/workspace/$idOrSlug/board',
         params: { idOrSlug: result.slug },

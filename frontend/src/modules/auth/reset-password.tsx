@@ -10,7 +10,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { ApiError } from '~/api';
-import { resetPassword as baseResetPassword } from '~/api/authentication';
+import { resetPassword as baseResetPassword } from '~/api/auth';
 import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';

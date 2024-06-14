@@ -8,7 +8,7 @@ import type * as z from 'zod';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
-import { signUp as baseSignUp } from '~/api/authentication';
+import { signUp as baseSignUp } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
