@@ -16,7 +16,7 @@ import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { dialog } from '~/modules/common/dialoger/state';
 import InviteUsers from '~/modules/users/invite-users';
-import RemoveMembersForm from '~/modules/users/users-table/remove-member-form';
+import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
 import type { ContextEntity, Member, User } from '~/types';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import DeleteUsers from '../delete-users';

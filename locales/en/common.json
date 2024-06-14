@@ -43,7 +43,7 @@
   "confirm.delete_account": "Are you sure you want to delete your account with {{email}} email?",
   "confirm.delete_resource": "Are you sure you want to delete {{resource}} {{name}} ?",
   "confirm.delete_resources": "Are you sure you want to delete these {{resources}}?",
-  "confirm.remove_members": "Are you sure you want to remove {{emails}} from the organization?",
+  "confirm.remove_members": "Are you sure you want to delete membership of {{emails}} for this organization?",
   "connect": "Connect",
   "contact": "Contact",
   "contact_us": "Contact us",
