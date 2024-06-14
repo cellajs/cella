@@ -15,7 +15,7 @@ interface NavigationState {
   menuOrder: EntityConfig;
   setRecentSearches: (searchValue: string[]) => void;
   activeSheet: NavItem | null;
-  setSheet: (activeSheet: NavItem | null) => void;
+  setSheet: (activeSheet: NavItem | null, action?: 'force' | 'routeChange') => void;
   menu: UserMenu;
   keepMenuOpen: boolean;
   toggleKeepMenu: (status: boolean) => void;
@@ -59,8 +59,15 @@ export const useNavigationStore = create<NavigationState>()(
               state.recentSearches = searchValues;
             });
           },
-          setSheet: (component) => {
+          setSheet: (component, action) => {
             set((state) => {
+              if (action === 'force') state.activeSheet = component;
+              if (action === 'routeChange') {
+                const shouldClose = state.activeSheet?.id !== 'menu' || !state.keepMenuOpen
+                const smallScreen = window.innerWidth < 1280;
+                if (shouldClose || smallScreen) state.activeSheet = null;
+                return;
+              }
               state.activeSheet = component;
             });
           },

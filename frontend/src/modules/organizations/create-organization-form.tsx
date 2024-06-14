@@ -38,7 +38,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { nextStep } = useStepper();
-  const { setSheet, setMainMenuOrder, menuOrder } = useNavigationStore();
+  const { setMainMenuOrder, menuOrder } = useNavigationStore();
   const type = 'ORGANIZATION';
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -72,8 +72,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
             idOrSlug: result.slug,
           },
         });
-        // TODO remove this when listening to route to close sheet
-        setSheet(null);
       }
 
       if (isDialog) dialog.remove(true, 'create-organization');

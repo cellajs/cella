@@ -34,7 +34,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
   // const navigate = useNavigate();
-  const { setSheet, setSubMenuOrder, menuOrder } = useNavigationStore();
+  const { setSubMenuOrder, menuOrder } = useNavigationStore();
   const type = 'PROJECT';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -69,8 +69,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
       setSubMenuOrder(type, workspace.id, [...menuOrder[type].subList[workspace.id], project.id]);
       callback([project], 'create');
-      // TODO remove this when listening to route to close sheet
-      setSheet(null);
+
       if (isDialog) dialog.remove();
     },
   });

@@ -14,9 +14,11 @@ const NavSheet = () => {
   const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [sheetSide, setSheetSide] = useState<SheetSideType>('left');
+
+  // Close sheet when user presses ESC
   const onKeyPress = () => {
     const isFocusedWithin = containerRef?.current?.contains(document.activeElement as Node);
-    if (isFocusedWithin && activeSheet) setSheet(null);
+    if (isFocusedWithin && activeSheet) setSheet(null, 'force');
   };
 
   useKeyPress('Escape', onKeyPress);
@@ -35,12 +37,12 @@ const NavSheet = () => {
     <Sheet open={!!activeSheet} modal={false}>
       {isMobile && !!activeSheet && (
         <div
-          onClick={() => setSheet(null)}
+          onClick={() => setSheet(null, 'force')}
           onKeyDown={() => {}}
           className="fixed inset-0 z-[100] sm:z-[80] bg-background/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
         />
       )}
-      <SheetContent side={sheetSide} ref={containerRef} className={sheetClass} onClick={() => setSheet(null)}>
+      <SheetContent side={sheetSide} ref={containerRef} className={sheetClass}>
         <ScrollArea className="h-full" id="nav-sheet">
           <div className="p-4">{activeSheet?.sheet}</div>
         </ScrollArea>
