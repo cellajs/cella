@@ -284,7 +284,7 @@ const projectsRoutes = app
           .filter(({ projectId }) => projectId === id)
           .map((member) => member.id)
           .filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', { id, type: 'PROJECT' });
+        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'PROJECT' });
       }
 
       logEvent('Project deleted', { project: id });

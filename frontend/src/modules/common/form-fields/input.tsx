@@ -16,6 +16,7 @@ interface Props<TFieldValues extends FieldValues> {
   onFocus?: () => void;
   minimal?: boolean;
   prefix?: string;
+  prefixNaming?: string;
   subComponent?: React.ReactNode;
   required?: boolean;
   disabled?: boolean;
@@ -36,6 +37,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
   subComponent,
   required,
   prefix,
+  prefixNaming,
   disabled,
   icon,
   inputClassName,
@@ -46,14 +48,14 @@ const InputFormField = <TFieldValues extends FieldValues>({
 
   useEffect(() => {
     if (prefix) {
-      const spanPrefix = document.querySelector(`#${name.toString()}-prefix`);
+      const spanPrefix = document.querySelector(`#${prefixNaming}-prefix`);
       if (prefix && spanPrefix && 'offsetWidth' in spanPrefix) setPrefixPadding(`${Number(spanPrefix.offsetWidth) + 16}px`);
     }
     if (subComponent) {
       const elSubComponent = document.querySelector('#slug-subComponent');
       if (subComponent && elSubComponent && 'offsetWidth' in elSubComponent) setSubComponentPadding(`${Number(elSubComponent.offsetWidth)}px`);
     }
-  }, [subComponent, prefix]);
+  }, [subComponent, prefix, prefixNaming]);
 
   const prefixClick = () => {
     setFocus(name.toString());
@@ -75,9 +77,9 @@ const InputFormField = <TFieldValues extends FieldValues>({
               {(prefix || icon) && (
                 // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
                 <span
-                  id={`${name.toString()}-prefix`}
+                  id={`${prefixNaming}-prefix`}
                   onClick={prefixClick}
-                  className="absolute font-light top-3 left-3 text-sm"
+                  className="absolute font-light left-3 text-sm"
                   style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
                 >
                   {prefix || icon}

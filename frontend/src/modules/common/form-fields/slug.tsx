@@ -80,7 +80,8 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   return (
     <InputFormField
       control={control}
-      name={type}
+      name={'slug'}
+      prefixNaming={type}
       inputClassName={`
         ${isSlugAvailable === 'available' ? 'ring-2 focus-visible:ring-2 ring-green-500  focus-visible:ring-green-500' : ''} 
         ${isSlugAvailable === 'notAvailable' ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : ''}`}

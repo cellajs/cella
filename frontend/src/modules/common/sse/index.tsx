@@ -1,6 +1,8 @@
 import { useNavigationStore } from '~/store/navigation';
 import { useSSE } from './use-sse';
 import { menuSections } from '../nav-sheet/sheet-menu';
+import type { ContextEntity } from '~/types';
+import { removeIdFromSubMenu } from './helpers';
 
 const SSE = () => {
   const updateEntity = (e: MessageEvent<string>) => {
@@ -81,8 +83,12 @@ const SSE = () => {
       const storage = menuSections.find((el) => el.type === entityData.entity);
       if (!storage) return;
       const storageType = storage.storageType;
+      const entityType = entityData.entity as ContextEntity;
       useNavigationStore.setState((state) => {
-        const mainEntity = state.menu[storageType].find((el) => el.id === entityData.workspaceId);
+        state.menuOrder[entityType].mainList = state.menuOrder[entityType].mainList.filter((id) => id !== entityData.id);
+        state.menuOrder[entityType].subList = removeIdFromSubMenu(state.menuOrder[entityType].subList, entityData.id);
+
+        const mainEntity = state.menu[storageType].find((el) => el.id === entityData.id);
         // Ensure the mainEntity exists
         if (mainEntity) {
           // Merge project with existing item

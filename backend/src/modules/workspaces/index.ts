@@ -171,7 +171,7 @@ const workspacesRoutes = app
           .filter(({ workspaceId }) => workspaceId === id)
           .map((member) => member.id)
           .filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', { id, type: 'WORKSPACE' });
+        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'WORKSPACE' });
       }
 
       logEvent('Workspace deleted', { workspace: id });

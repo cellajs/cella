@@ -150,7 +150,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
   };
 
   const openDialog = () => {
-    return dialog(
+    dialog(
       <div>
         <Input
           type="email"
