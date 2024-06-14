@@ -13,7 +13,7 @@ import type { errorResponseSchema } from '../lib/common-schemas';
 // TODO: rename to Entity
 export type EntityType = (typeof config.entityTypes)[number];
 
-export type ContextEntity = (typeof config.contextEntityTypes)[number];
+export type ContextEntityType = (typeof config.contextEntityTypes)[number];
 
 export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
 

@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import type { ContextEntity, UserMenu } from '~/types';
+import type { ContextEntityType, UserMenu } from '~/types';
 
 import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
@@ -15,7 +15,7 @@ import { type MenuItem, type MenuList, MenuSection } from './sheet-menu-section'
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
-  type: ContextEntity;
+  type: ContextEntityType;
   createForm?: React.ReactNode;
   isSubmenu?: boolean;
   toPrefix?: boolean;

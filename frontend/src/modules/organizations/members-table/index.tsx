@@ -1,58 +1,34 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { type GetUsersParams, getUsers, updateUser } from '~/api/users';
 
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { toast } from 'sonner';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { DataTable } from '~/modules/common/data-table';
-import type { User } from '~/types';
+import type { ContextEntityType, Member } from '~/types';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { useMutation } from '~/hooks/use-mutations';
-import { UsersTableRoute, type UsersSearchType } from '~/routes/system';
+import { updateMembership } from '~/api/memberships';
+import { membersQueryOptions, OrganizationMembersRoute, type MembersSearchType } from '~/routes/organizations';
 import type { config } from 'config';
+import { getMembers } from '~/api/general';
 
-export const LIMIT = 40;
+const LIMIT = 40;
 
-const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, role, limit }: GetUsersParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+export type MembersRoles = (typeof config.rolesByType.entityRoles)[number] | undefined;
 
-  return infiniteQueryOptions({
-    queryKey: ['users', q, sort, order, role],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getUsers(
-        {
-          page: pageParam,
-          q,
-          sort,
-          order,
-          role,
-          limit,
-        },
-        signal,
-      );
-      return fetchedData;
-    },
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
-    refetchOnWindowFocus: false,
-  });
-};
+const MembersTable = ({ entityType, isAdmin }: { entityType: ContextEntityType; isAdmin: boolean }) => {
+  const search = useSearch({ from: OrganizationMembersRoute.id });
+  const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
 
-export type SystemRoles = (typeof config.rolesByType.systemRoles)[number] | undefined;
-
-const UsersTable = () => {
-  const search = useSearch({ from: UsersTableRoute.id });
-
-  const [rows, setRows] = useState<User[]>([]);
+  const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<UsersSearchType['q']>(search.q);
-  const [role, setRole] = useState<UsersSearchType['role']>(search.role);
+  const [query, setQuery] = useState<MembersSearchType['q']>(search.q);
+  const [role, setRole] = useState<MembersSearchType['role']>(search.role);
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(
     search.sort && search.order
@@ -62,6 +38,9 @@ const UsersTable = () => {
 
   const debounceQuery = useDebounce(query, 300);
 
+  const onRoleChange = (role?: string) => {
+    setRole(role === 'all' ? undefined : (role as MembersRoles));
+  };
   // Save filters in search params
   const filters = useMemo(
     () => ({
@@ -73,18 +52,9 @@ const UsersTable = () => {
     [debounceQuery, role, sortColumns],
   );
 
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-  const callback = useMutateInfiniteQueryData([
-    'users',
-    debounceQuery,
-    sortColumns[0]?.columnKey as UsersSearchType['sort'],
-    sortColumns[0]?.direction.toLowerCase() as UsersSearchType['order'],
-    role,
-  ]);
-
-  const { mutate: updateUserRole } = useMutation({
-    mutationFn: async (user: User) => {
-      return await updateUser(user.id, { role: user.role }); // Update user role
+  const { mutate: updateMemberRole } = useMutation({
+    mutationFn: async (user: Member) => {
+      return await updateMembership({ membershipId: user.membership.id, role: user.membership.role }); // Update member role
     },
     onSuccess: (response) => {
       callback([response], 'update');
@@ -93,16 +63,33 @@ const UsersTable = () => {
     onError: () => toast.error('Error updating role'),
   });
 
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+
+  // redo 4 all members
+  const callback = useMutateInfiniteQueryData([
+    'members',
+    idOrSlug,
+    entityType,
+    debounceQuery,
+    sortColumns[0]?.columnKey as MembersSearchType['sort'],
+    sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'],
+
+    role,
+  ]);
+
+  // redo 4 all members
   const queryResult = useInfiniteQuery(
-    usersQueryOptions({
+    membersQueryOptions({
+      idOrSlug,
+      entityType,
       q: debounceQuery,
-      sort: sortColumns[0]?.columnKey as UsersSearchType['sort'],
-      order: sortColumns[0]?.direction.toLowerCase() as UsersSearchType['order'],
+      sort: sortColumns[0]?.columnKey as MembersSearchType['sort'],
+      order: sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'],
       role,
       limit: LIMIT,
     }),
   );
-  const [columns, setColumns] = useColumns(callback);
+  const [columns, setColumns] = useColumns(isAdmin);
 
   const isFiltered = role !== undefined || !!debounceQuery;
 
@@ -112,13 +99,10 @@ const UsersTable = () => {
     setRole(undefined);
   };
 
-  const onRoleChange = (role?: string) => {
-    setRole(role === 'all' ? undefined : (role as SystemRoles));
-  };
-  const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
+  const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
     // mutate user role
     for (const index of indexes) {
-      if (column.key === 'role') updateUserRole(changedRows[index]);
+      if (column.key === 'role') updateMemberRole(changedRows[index]);
     }
     setRows(changedRows);
   };
@@ -135,6 +119,8 @@ const UsersTable = () => {
   return (
     <div className="space-y-4 h-full">
       <Toolbar
+        callback={callback}
+        entityType={entityType}
         isFiltered={isFiltered}
         total={queryResult.data?.pages[0].total}
         query={query}
@@ -142,14 +128,26 @@ const UsersTable = () => {
         onResetFilters={onResetFilters}
         onResetSelectedRows={() => setSelectedRows(new Set<string>())}
         role={role}
+        isAdmin={isAdmin}
+        selectedMembers={rows.filter((row) => selectedRows.has(row.id)) as Member[]}
         onRoleChange={onRoleChange}
-        selectedUsers={rows.filter((row) => selectedRows.has(row.id))}
         columns={columns}
         setColumns={setColumns}
-        callback={callback}
+        idOrSlug={idOrSlug}
+        fetchForExport={async (limit: number) => {
+          const data = await getMembers({
+            q: debounceQuery,
+            sort: sortColumns[0]?.columnKey as MembersSearchType['sort'],
+            order: sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'],
+            role,
+            limit,
+            idOrSlug,
+            entityType,
+          });
+          return data.items;
+        }}
       />
-
-      <DataTable<User>
+      <DataTable<Member>
         {...{
           columns: columns.filter((column) => column.visible),
           rowHeight: 42,
@@ -174,4 +172,4 @@ const UsersTable = () => {
   );
 };
 
-export default UsersTable;
+export default MembersTable;

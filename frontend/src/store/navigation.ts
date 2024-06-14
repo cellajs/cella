@@ -1,4 +1,4 @@
-import type { ContextEntity } from 'backend/types/common';
+import type { ContextEntityType } from 'backend/types/common';
 import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -8,7 +8,7 @@ import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
 import type { UserMenu } from '~/types';
 
 type EntitySubList = Record<string, string[]>;
-export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: EntitySubList }>;
+export type EntityConfig = Record<ContextEntityType, { mainList: string[]; subList: EntitySubList }>;
 
 interface NavigationState {
   recentSearches: string[];
@@ -29,8 +29,8 @@ interface NavigationState {
   focusView: boolean;
   setFocusView: (status: boolean) => void;
   archiveStateToggle: (itemId: string, active: boolean, mainId?: string | null) => void;
-  setMainMenuOrder: (entityType: ContextEntity, mainListOrder: string[]) => void;
-  setSubMenuOrder: (entityType: ContextEntity, mainId: string, subItemIds: string[]) => void;
+  setMainMenuOrder: (entityType: ContextEntityType, mainListOrder: string[]) => void;
+  setSubMenuOrder: (entityType: ContextEntityType, mainId: string, subItemIds: string[]) => void;
 }
 
 const initialMenuState: UserMenu = menuSections
@@ -112,7 +112,7 @@ export const useNavigationStore = create<NavigationState>()(
               }
             });
           },
-          setMainMenuOrder: (entityType: ContextEntity, mainListOrder: string[]) => {
+          setMainMenuOrder: (entityType: ContextEntityType, mainListOrder: string[]) => {
             set((state) => {
               return {
                 ...state,
@@ -123,7 +123,7 @@ export const useNavigationStore = create<NavigationState>()(
               };
             });
           },
-          setSubMenuOrder: (entityType: ContextEntity, mainId: string, subItemIds: string[]) => {
+          setSubMenuOrder: (entityType: ContextEntityType, mainId: string, subItemIds: string[]) => {
             set((state) => {
               return {
                 menuOrder: {

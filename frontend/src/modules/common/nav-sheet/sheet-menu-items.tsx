@@ -6,12 +6,12 @@ import { cn, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenuItem } from '~/types';
+import type { ContextEntityType, UserMenuItem } from '~/types';
 import type { MenuItem } from './sheet-menu-section';
 
 interface SheetMenuItemProps {
   item: MenuItem;
-  type: ContextEntity;
+  type: ContextEntityType;
   mainItemId?: string;
   className?: string;
   searchResults?: boolean;
@@ -56,7 +56,11 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {/* On new creation cant access role REDO */}
-            {item.submenu ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}` : item.membership.role ? t(item.membership.role.toLowerCase()) : ''}
+            {item.submenu
+              ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}`
+              : item.membership.role
+                ? t(item.membership.role.toLowerCase())
+                : ''}
           </span>
         </div>
       </div>
@@ -70,7 +74,7 @@ interface SheetMenuItemsProps {
   createDialog?: () => void;
   className?: string;
   searchResults?: boolean;
-  type: ContextEntity;
+  type: ContextEntityType;
 }
 
 export const SheetMenuItems = ({ data, type, shownOption, createDialog, className, searchResults }: SheetMenuItemsProps) => {

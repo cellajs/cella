@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Combobox from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity } from '~/types';
+import type { ContextEntityType } from '~/types';
 
 interface Props {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -11,7 +11,7 @@ interface Props {
   name: string;
   label: string;
   collection: 'organizations' | 'workspaces';
-  type: ContextEntity;
+  type: ContextEntityType;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;

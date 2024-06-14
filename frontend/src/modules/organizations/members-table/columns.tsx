@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import type { User } from '~/types';
+import type { Member, User } from '~/types';
 
-import { UserRoundCheck } from 'lucide-react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { renderSelect } from '~/modules/common/data-table/select-column';
@@ -9,13 +8,12 @@ import { AvatarWrap } from '../../common/avatar-wrap';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import RowEdit from './row-edit';
 import { config } from 'config';
 import { sheet } from '~/modules/common/sheeter/state';
-import { UserProfile } from '../user-profile';
 import { useState } from 'react';
+import { UserProfile } from '~/modules/users/user-profile';
 
-export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
+export const useColumns = (isAdmin: boolean) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -26,8 +24,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       id: 'user-preview',
     });
   };
-  const mobileColumns: ColumnOrColumnGroup<User>[] = [
-    CheckboxColumn,
+  const mobileColumns: ColumnOrColumnGroup<Member>[] = [
     {
       key: 'name',
       name: t('common:name'),
@@ -36,21 +33,14 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
-        <button className="flex space-x-2 items-center outline-0 ring-0 group" type="button" onClick={() => openUserPreviewSheet(row)}>
+        <button className="flex space-x-2 items-center outline-0 ring-0 group" type="button" onClick={() => openUserPreviewSheet(row as User)}>
           <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
         </button>
       ),
     },
-    {
-      key: 'edit',
-      name: '',
-      visible: true,
-      width: 32,
-      renderCell: ({ row, tabIndex }) => <RowEdit user={row} tabIndex={tabIndex} callback={callback} />,
-    },
   ];
-  const columns: ColumnOrColumnGroup<User>[] = [
+  const columns: ColumnOrColumnGroup<Member>[] = [
     {
       key: 'email',
       name: t('common:email'),
@@ -77,7 +67,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       renderEditCell: (props) =>
         renderSelect({
           props,
-          options: config.rolesByType.systemRoles,
+          options: config.rolesByType.entityRoles,
           key: 'role',
         }),
     },
@@ -99,21 +89,9 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       renderCell: ({ row }) => dateShort(row.lastSeenAt),
       minWidth: 180,
     },
-    {
-      key: 'membershipCount',
-      name: 'Memberships',
-      sortable: false,
-      visible: true,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <>
-          <UserRoundCheck className="mr-2 opacity-50" size={16} />
-          {row.counts?.memberships | 0}
-        </>
-      ),
-      width: 140,
-    },
   ];
 
-  return useState<ColumnOrColumnGroup<User>[]>(isMobile ? mobileColumns : [...mobileColumns, ...columns]);
+  if (isAdmin) mobileColumns.unshift(CheckboxColumn);
+
+  return useState<ColumnOrColumnGroup<Member>[]>(isMobile ? mobileColumns : [...mobileColumns, ...columns]);
 };

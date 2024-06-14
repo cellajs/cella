@@ -2,7 +2,7 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { createRoute, useParams } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { getMembersQuerySchema } from 'backend/modules/general/schema';
-import { Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import type { z } from 'zod';
 import { type GetMembersParams, getMembers } from '~/api/general';
 import { queryClient } from '~/lib/router';
@@ -10,17 +10,15 @@ import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
-import UsersTable from '~/modules/users/users-table';
 import { IndexRoute } from './routeTree';
-import type { Member } from '~/types';
 import { useNavigationStore } from '~/store/navigation';
 
-// Lazy-loaded components
-// const UsersTable = lazy(() => import('~/modules/users/users-table'));
+//Lazy-loaded components
+const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
 const membersSearchSchema = getMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
-const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams) => {
+export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -48,6 +46,8 @@ const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order
   });
 };
 
+export type MembersSearchType = z.infer<typeof getMembersQuerySchema>;
+
 export const OrganizationRoute = createRoute({
   path: '$idOrSlug',
   staticData: { pageTitle: 'Organization' },
@@ -69,7 +69,6 @@ export const OrganizationMembersRoute = createRoute({
   path: '/members',
   staticData: { pageTitle: 'Members' },
   getParentRoute: () => OrganizationRoute,
-  validateSearch: membersSearchSchema,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'ORGANIZATION';
@@ -90,16 +89,11 @@ export const OrganizationMembersRoute = createRoute({
       .filter((el) => el !== undefined);
     return (
       <Suspense>
-        <UsersTable<Member, GetMembersParams, z.infer<typeof getMembersQuerySchema>>
-          entityType="ORGANIZATION"
-          queryOptions={membersQueryOptions}
-          routeFrom={OrganizationMembersRoute.id}
-          fetchForExport={getMembers}
-          isAdmin={userRole === 'ADMIN'}
-        />
+        <MembersTable entityType="ORGANIZATION" isAdmin={userRole === 'ADMIN'} />
       </Suspense>
     );
   },
+  validateSearch: membersSearchSchema,
 });
 
 export const OrganizationSettingsRoute = createRoute({

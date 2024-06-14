@@ -5,7 +5,7 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
-import type { Env, ContextEntity } from '../../types/common';
+import type { Env, ContextEntityType } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
 export type PermissionAction = 'create' | 'update' | 'read' | 'write';
@@ -18,7 +18,7 @@ export type PermissionAction = 'create' | 'update' | 'read' | 'write';
  */
 const isAllowedTo =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    (action: PermissionAction, entityType: ContextEntity): MiddlewareHandler<Env, any> =>
+    (action: PermissionAction, entityType: ContextEntityType): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
       const user = ctx.get('user');
@@ -63,14 +63,14 @@ const isAllowedTo =
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function getEntityContext(ctx: any, entityType: ContextEntity) {
+async function getEntityContext(ctx: any, entityType: ContextEntityType) {
   // Check if entity is configured; if not, return early
   if (!HierarchicalEntity.instanceMap.has(entityType.toLowerCase())) {
     return;
   }
 
   const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(`${entityType.toLowerCase()}Id`);
-  
+
   if (idOrSlug) {
     // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
     return await resolveEntity(entityType, idOrSlug);
@@ -87,7 +87,7 @@ async function getEntityContext(ctx: any, entityType: ContextEntity) {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function createEntityContext(entityType: ContextEntity, ctx: any) {
+async function createEntityContext(entityType: ContextEntityType, ctx: any) {
   const entity = HierarchicalEntity.instanceMap.get(entityType.toLowerCase());
 
   // Return early if entity is not available
@@ -95,7 +95,7 @@ async function createEntityContext(entityType: ContextEntity, ctx: any) {
 
   // Extract payload from request body, with try/catch to handle potential empty body bug in HONO (see: https://github.com/honojs/hono/issues/2651)
   // biome-ignore lint/suspicious/noExplicitAny: Using 'any' here because the payload can be of any type
-  let payload:Record<string, any> = {};
+  let payload: Record<string, any> = {};
   try {
     payload = await ctx.req.json();
   } catch {
@@ -115,7 +115,12 @@ async function createEntityContext(entityType: ContextEntity, ctx: any) {
     // Continue searching for the lowest ancestor if not found yet
     if (!lowestAncestor) {
       // Check if ancestor identifier is provided in params or query
-      let lowestAncestorIdOrSlug = (ctx.req.param(ancestor.name) || ctx.req.param(`${ancestor.name}Id`) || ctx.req.query(ancestor.name) || ctx.req.query(`${ancestor.name}Id`))?.toLowerCase();
+      let lowestAncestorIdOrSlug = (
+        ctx.req.param(ancestor.name) ||
+        ctx.req.param(`${ancestor.name}Id`) ||
+        ctx.req.query(ancestor.name) ||
+        ctx.req.query(`${ancestor.name}Id`)
+      )?.toLowerCase();
 
       // If not found in params or query, check if it's provided in the request body
       if (!lowestAncestorIdOrSlug && payload) {

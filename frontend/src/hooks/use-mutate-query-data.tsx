@@ -55,6 +55,7 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey) => {
         total: number;
       }>
     >(queryKey, (data) => {
+      console.log('queryKey:', queryKey);
       if (!data) {
         return;
       }

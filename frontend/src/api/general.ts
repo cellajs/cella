@@ -1,6 +1,6 @@
 import type { EntityType } from 'backend/types/common';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
-import { type UploadParams, UploadType, type User, type ContextEntity } from '~/types';
+import { type UploadParams, UploadType, type User, type ContextEntityType } from '~/types';
 import { apiClient, handleResponse } from '.';
 
 // Get public counts for about page
@@ -12,10 +12,7 @@ export const getPublicCounts = async () => {
 };
 
 // Get upload token to securely upload files with imado: https://imado.eu
-export const getUploadToken = async (
-  type: UploadType,
-  query: UploadParams = { public: false, organizationId: undefined },
-) => {
+export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
   const id = query.organizationId;
 
   if (!id && type === UploadType.Organization) {
@@ -102,12 +99,10 @@ export const acceptInvite = async ({
 
 type RequiredGetMembersParams = {
   idOrSlug: string;
-  entityType: ContextEntity;
+  entityType: ContextEntityType;
 };
 
-type OptionalGetMembersParams = Partial<
-  Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>
-> & {
+type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
   limit?: number;
   page?: number;
 };

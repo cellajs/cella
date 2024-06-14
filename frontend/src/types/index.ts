@@ -1,4 +1,3 @@
-import type { EntityType } from 'backend/types/common';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
 import type { apiClient } from '~/api';
@@ -22,11 +21,8 @@ export type DraggableItemData<T> = {
   index: number;
 };
 
-export type Role = (typeof config.rolesByType.systemRoles)[number] | (typeof config.rolesByType.entityRoles)[number];
-
-// TODO change to EntityType and ContextEntityType
-export type Entity = (typeof config.entityTypes)[number];
-export type ContextEntity = (typeof config.contextEntityTypes)[number];
+export type EntityType = (typeof config.entityTypes)[number];
+export type ContextEntityType = (typeof config.contextEntityTypes)[number];
 
 export type User = Extract<InferResponseType<(typeof apiClient.users)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 

@@ -18,7 +18,7 @@ import MultipleSelector from '~/modules/common/multi-select';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { ContextEntity, EntityPage } from '~/types';
+import type { ContextEntityType, EntityPage } from '~/types';
 
 interface Props {
   entity?: EntityPage;
@@ -116,7 +116,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
               <FormLabel>{t('common:role')}:</FormLabel>
               <FormControl>
                 {/* TODO fix */}
-                <SelectRole entityType={entity.entity as unknown as ContextEntity} value={value} onChange={onChange} />
+                <SelectRole entityType={entity.entity as unknown as ContextEntityType} value={value} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
