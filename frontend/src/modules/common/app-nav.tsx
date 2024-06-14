@@ -67,7 +67,7 @@ const AppNav = () => {
 
     // Open new sheet
     const isNew = !activeSheet || activeSheet.id !== navItem.id;
-    if (isNew) setSheet(navItem);
+    setSheet(isNew ? navItem : null);
   };
 
   useEffect(() => {
