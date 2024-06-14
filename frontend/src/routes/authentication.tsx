@@ -29,7 +29,7 @@ export const SignInRoute = createRoute({
 
     try {
       await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
-      console.info('Authenticated, go to home');
+      console.info('Authenticated -> go to home');
       throw redirect({ to: '/', replace: true });
     } catch (error) {
       return console.info('Not authenticated (silent check)');
