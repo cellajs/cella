@@ -27,11 +27,10 @@ export const OnboardingCompleted = () => {
     }).then((workspace) => {
       for (let i = 3; i !== 0; i--) {
         const namingArr = ['one', 'two', 'three'];
-        createProject({
+        createProject(workspace.id, {
           name: `Demo project ${namingArr[i - 1]}`,
           slug: `${lastCreatedOrganization.slug}-project-${i}`,
           organizationId: lastCreatedOrganization.id,
-          workspaceId: workspace.id,
           color: '#000000',
         });
       }

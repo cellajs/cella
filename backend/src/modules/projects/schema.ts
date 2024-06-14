@@ -2,14 +2,7 @@ import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { projectsTable } from '../../db/schema/projects';
-import {
-  colorSchema,
-  countsSchema,
-  idSchema,
-  nameSchema,
-  paginationQuerySchema,
-  validSlugSchema,
-} from '../../lib/common-schemas';
+import { colorSchema, countsSchema, idSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const apiProjectSchema = z.object({
@@ -26,6 +19,9 @@ export const createProjectJsonSchema = z.object({
   slug: validSlugSchema,
   color: colorSchema,
   organizationId: idSchema,
+});
+
+export const createProjectQuerySchema = z.object({
   workspaceId: idSchema.optional(),
 });
 

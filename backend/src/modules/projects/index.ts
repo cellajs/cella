@@ -22,7 +22,8 @@ const projectsRoutes = app
    * Create project
    */
   .openapi(projectRoutesConfig.createProject, async (ctx) => {
-    const { name, slug, color, organizationId, workspaceId } = ctx.req.valid('json');
+    const { name, slug, color, organizationId } = ctx.req.valid('json');
+    const workspaceId = ctx.req.query('workspaceId');
     const user = ctx.get('user');
 
     const slugAvailable = await checkSlugAvailable(slug);

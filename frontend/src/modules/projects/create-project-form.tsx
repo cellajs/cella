@@ -58,10 +58,9 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      return createProject({
+      return createProject(workspace.id, {
         ...values,
         color: '#000000',
-        workspaceId: workspace.id,
         organizationId: workspace.organizationId,
       });
     },
