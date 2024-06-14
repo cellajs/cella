@@ -21,6 +21,7 @@ import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import { Form, type LabelDirectionType } from '../ui/form';
+import { useStepper } from '../common/stepper/use-stepper';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -36,6 +37,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callback, dialog: isDialog, labelDirection = 'top', children }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { nextStep } = useStepper();
   const { setSheet, setMainMenuOrder, menuOrder } = useNavigationStore();
   const type = 'ORGANIZATION';
 
@@ -61,9 +63,8 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
       setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
-
       callback?.(result);
-
+      nextStep?.();
       if (!callback) {
         navigate({
           to: '/$idOrSlug/members',

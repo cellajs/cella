@@ -170,11 +170,7 @@ const projectsRoutes = app
         .from(projectsToWorkspacesTable)
         .leftJoin(
           projectsTable,
-          and(
-            eq(projectsToWorkspacesTable.projectId, projectsTable.id),
-            eq(projectsToWorkspacesTable.workspaceId, workspaceId),
-            ...projectsFilters,
-          ),
+          and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), eq(projectsToWorkspacesTable.workspaceId, workspaceId), ...projectsFilters),
         )
         .leftJoin(countsQuery, eq(projectsTable.id, countsQuery.id))
         .leftJoin(memberships, and(eq(memberships.projectId, projectsTable.id)))
@@ -237,8 +233,12 @@ const projectsRoutes = app
       .where(and(eq(membershipsTable.type, 'PROJECT'), eq(membershipsTable.projectId, project.id)));
 
     if (memberships.length > 0) {
-      const membersId = memberships.map((member) => member.id);
-      sendSSEToUsers(membersId, 'update_entity', updatedProject);
+      memberships.map((member) =>
+        sendSSEToUsers([member.id], 'update_entity', {
+          ...updatedProject,
+          membership: toMembershipInfo(memberships.find((m) => m.id === member.id)),
+        }),
+      );
     }
 
     logEvent('Project updated', { project: updatedProject.id });
@@ -265,9 +265,7 @@ const projectsRoutes = app
     const disallowedIds = ctx.get('disallowedIds');
 
     // * Map errors of workspaces user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) =>
-      createError(ctx, 404, 'not_found', 'warn', 'PROJECT', { project: id }),
-    );
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'PROJECT', { project: id }));
 
     // * Get members
     const projectsMembers = await db

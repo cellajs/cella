@@ -6,8 +6,7 @@ const SSE = () => {
   const updateEntity = (e: MessageEvent<string>) => {
     try {
       const entityData = JSON.parse(e.data);
-
-      const storage = menuSections.find((el) => el.type === entityData.type);
+      const storage = menuSections.find((el) => el.type === entityData.entity);
       if (!storage) return;
       const storageType = storage.storageType;
       useNavigationStore.setState((state) => {
@@ -44,7 +43,7 @@ const SSE = () => {
   const addEntity = (e: MessageEvent<string>) => {
     try {
       const entityData = JSON.parse(e.data);
-      const storage = menuSections.find((el) => el.type === entityData.type);
+      const storage = menuSections.find((el) => el.type === entityData.entity);
       if (!storage) return;
       const storageType = storage.storageType;
       useNavigationStore.setState((state) => {
@@ -79,7 +78,7 @@ const SSE = () => {
   const removeEntity = (e: MessageEvent<string>) => {
     try {
       const entityData = JSON.parse(e.data);
-      const storage = menuSections.find((el) => el.type === entityData.type);
+      const storage = menuSections.find((el) => el.type === entityData.entity);
       if (!storage) return;
       const storageType = storage.storageType;
       useNavigationStore.setState((state) => {

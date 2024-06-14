@@ -57,7 +57,10 @@ const organizationsRoutes = app
 
     logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
 
-    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...createdOrganization });
+    sendSSEToUsers([user.id], 'create_entity', {
+      ...createdOrganization,
+      membership: toMembershipInfo(createdMembership),
+    });
 
     return ctx.json(
       {
@@ -212,8 +215,12 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.type, 'ORGANIZATION'), eq(membershipsTable.organizationId, organization.id)));
 
     if (memberships.length > 0) {
-      const membersId = memberships.map((member) => member.id);
-      sendSSEToUsers(membersId, 'update_entity', updatedOrganization);
+      memberships.map((member) =>
+        sendSSEToUsers([member.id], 'update_entity', {
+          ...updatedOrganization,
+          membership: toMembershipInfo(memberships.find((m) => m.id === member.id)),
+        }),
+      );
     }
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
@@ -264,9 +271,7 @@ const organizationsRoutes = app
     const disallowedIds = ctx.get('disallowedIds');
 
     // * Map errors of workspaces user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) =>
-      createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: id }),
-    );
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: id }));
 
     // * Get members
     const organizationsMembers = await db

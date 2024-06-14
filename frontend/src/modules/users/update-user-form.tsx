@@ -58,7 +58,6 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
-  
   const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
@@ -148,13 +147,16 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           <InputFormField inputClassName="border" control={form.control} name="firstName" label={t('common:first_name')} required />
           <InputFormField inputClassName="border" control={form.control} name="lastName" label={t('common:last_name')} required />
         </div>
-        <SlugFormField
-          control={form.control}
-          type="USER"
-          label={t('common:user_handle')}
-          description={t('common:user_handle.text')}
-          previousSlug={user.slug}
-        />
+        {(!hiddenFields || !hiddenFields.includes('slug')) && (
+          <SlugFormField
+            control={form.control}
+            type="USER"
+            label={t('common:user_handle')}
+            description={t('common:user_handle.text')}
+            previousSlug={user.slug}
+          />
+        )}
+
         <InputFormField
           inputClassName="border"
           control={form.control}

@@ -52,7 +52,10 @@ const workspacesRoutes = app
 
     logEvent('User added to workspace', { user: user.id, workspace: workspace.id });
 
-    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...workspace });
+    sendSSEToUsers([user.id], 'create_entity', {
+      ...workspace,
+      membership: toMembershipInfo(createdMembership),
+    });
 
     return ctx.json(
       {
@@ -119,8 +122,12 @@ const workspacesRoutes = app
       .where(and(eq(membershipsTable.type, 'WORKSPACE'), eq(membershipsTable.workspaceId, workspace.id)));
 
     if (memberships.length > 0) {
-      const membersId = memberships.map((member) => member.id);
-      sendSSEToUsers(membersId, 'update_entity', updatedWorkspace);
+      memberships.map((member) =>
+        sendSSEToUsers([member.id], 'update_entity', {
+          ...updatedWorkspace,
+          membership: toMembershipInfo(memberships.find((m) => m.id === member.id)),
+        }),
+      );
     }
 
     logEvent('Workspace updated', { workspace: updatedWorkspace.id });
