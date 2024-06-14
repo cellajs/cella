@@ -28,7 +28,7 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   return (
     <TooltipButton toolTipContent={t(`common:${navItem.id}`)} side="right" sideOffset={10} hideWhenDetached>
       <Button variant="ghost" className={cn('hover:bg-accent/10 group h-14 w-14', navIconColor, activeClass)} onClick={() => onClick(navItem.id)}>
-        {navItem.id === 'account' ? (
+        {navItem.id === 'account' && user ? (
           <AvatarWrap
             type="USER"
             className="border-[1.5px] rounded-full border-primary group-hover:scale-110 transition-transform text-primary-foreground"

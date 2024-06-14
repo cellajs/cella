@@ -155,12 +155,7 @@ const authRoutes = app
 
         await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
-        return ctx.json(
-          {
-            success: true,
-          },
-          200,
-        );
+        return ctx.json({ success: true }, 200);
       }
 
       // t('common:error.invalid_token')
@@ -180,23 +175,13 @@ const authRoutes = app
 
         await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
-        return ctx.json(
-          {
-            success: true,
-          },
-          200,
-        );
+        return ctx.json({ success: true }, 200);
       }
 
       return errorResponse(ctx, 400, 'invalid_token', 'warn');
     }
 
-    await db
-      .update(usersTable)
-      .set({
-        emailVerified: true,
-      })
-      .where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ emailVerified: true }).where(eq(usersTable.id, user.id));
 
     // Sign in user
     await setSessionCookie(ctx, user.id, 'email_verification');

@@ -32,6 +32,7 @@ const ElectricProvider = ({ children }: Props) => {
 
   const [electric, setElectric] = useState<Electric>();
 
+  // TODO: can we move this out of a useEffect?
   useEffect(() => {
     let isMounted = true;
 
@@ -47,11 +48,13 @@ const ElectricProvider = ({ children }: Props) => {
           url: config.electricUrl,
         });
 
-        await electric.connect(user.electricJWTToken);
-
-        if (!isMounted) {
+        // Wait until the user is loaded
+        if (!isMounted || !user || !user.electricJWTToken) {
           return;
         }
+
+        // Connect to the server with the user's JWT token.
+        await electric.connect(user.electricJWTToken);
 
         if (debug) {
           const { addToolbar } = await import('@electric-sql/debug-toolbar');
@@ -104,7 +107,7 @@ const ElectricProvider = ({ children }: Props) => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user]);
 
   return (
     <>
