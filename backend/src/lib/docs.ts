@@ -59,7 +59,6 @@ const docs = (app: CustomHono) => {
         they run through the Electric SQL sync engine
       - SSE stream is not included in this API documentation
       - API design is flat, not nested
-      - Production API is versioned
       `,
     },
     openapi: '3.1.0',

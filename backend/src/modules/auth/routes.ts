@@ -133,7 +133,7 @@ class AuthRoutesConfig {
     },
     responses: {
       200: {
-        description: 'Email address verified',
+        description: 'Verified & session given',
         content: {
           'application/json': {
             schema: successResponseWithoutDataSchema,
