@@ -245,8 +245,8 @@ export function BoardColumn({ project }: BoardColumnProps) {
   ]);
 
   useEffect(() => {
-    setViewOptions(workspaces[workspace.id].viewOptions);
-  }, [workspaces[workspace.id].viewOptions]);
+    if (workspaces[workspace.id].viewOptions) setViewOptions(workspaces[workspace.id].viewOptions);
+  }, [workspaces[workspace.id]]);
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
