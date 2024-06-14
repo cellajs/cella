@@ -10,7 +10,7 @@ import { sheet } from './sheeter/state';
 
 const AppNavLoader = () => {
   const { hasWaited } = useMounted();
-  const { navLoading, setLoading, setFocusView } = useNavigationStore();
+  const { setSheet, navLoading, setLoading, setFocusView } = useNavigationStore();
   const isFetching = useIsFetching();
 
   // Show loading spinner when fetching data or navigating
@@ -20,8 +20,13 @@ const AppNavLoader = () => {
     // TODO: move this to a more general location?
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
       if (toLocation.pathname !== fromLocation.pathname) {
+
+        // Disable focus view
         setFocusView(false);
+        // Remove sheets in content
         sheet.remove();
+        // Remove navigation sheet
+        setSheet(null, 'routeChange');
       }
       pathChanged && setLoading(true);
     });

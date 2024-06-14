@@ -38,7 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setSheet, menu, setMainMenuOrder, menuOrder } = useNavigationStore();
+  const { menu, setMainMenuOrder, menuOrder } = useNavigationStore();
   const type = 'WORKSPACE';
 
   const organizations = menu.organizations;
@@ -68,8 +68,6 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
 
       callback?.(result);
-      // TODO remove this when listening to route to close sheet
-      setSheet(null);
       if (isDialog) dialog.remove();
 
       navigate({

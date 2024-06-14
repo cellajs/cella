@@ -2,7 +2,6 @@ import { Outlet, useMatches } from '@tanstack/react-router';
 import { Info } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AppAlert } from '~/modules/common/app-alert';
 import { AppFooter } from '~/modules/common/app-footer';
 import { useNavigationStore } from '~/store/navigation';
@@ -10,7 +9,6 @@ import { useNavigationStore } from '~/store/navigation';
 export const AppContent = () => {
   const { t } = useTranslation();
   const { activeSheet, keepMenuOpen, setSheet, focusView } = useNavigationStore();
-  const isLargeScreen = useBreakpoints('min', 'xl');
 
   const clickContentRef = useRef<HTMLDivElement>(null);
   const [showFooter, setShowFooter] = useState(false);
@@ -22,8 +20,7 @@ export const AppContent = () => {
   useEffect(() => {
     const handleClickContent = (e: MouseEvent) => {
       if (clickContentRef.current?.contains(e.target as Node)) {
-        if (keepMenuOpen && activeSheet?.id === 'menu' && isLargeScreen) return;
-        setSheet(null);
+        setSheet(null, 'routeChange');
       }
     };
 
@@ -31,7 +28,7 @@ export const AppContent = () => {
     return () => {
       document.removeEventListener('click', handleClickContent);
     };
-  }, [keepMenuOpen, activeSheet, isLargeScreen]);
+  }, []);
 
   // Custom hook for setting document title
   const matches = useMatches();

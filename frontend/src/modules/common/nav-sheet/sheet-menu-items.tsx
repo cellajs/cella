@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { cn, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
@@ -19,12 +18,6 @@ interface SheetMenuItemProps {
 
 export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults }: SheetMenuItemProps) => {
   const { t } = useTranslation();
-  const isSmallScreen = useBreakpoints('max', 'lg');
-  const { keepMenuOpen, setSheet } = useNavigationStore();
-
-  const handleClick = () => {
-    if (isSmallScreen || !keepMenuOpen) setSheet(null);
-  };
 
   return (
     <Link
@@ -35,7 +28,6 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
         } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
         className,
       )}
-      onClick={handleClick}
       aria-label={item.name}
       to={type === 'ORGANIZATION' ? '/$idOrSlug' : '/workspace/$idOrSlug'}
       params={{ idOrSlug: mainItemId ? mainItemId : item.slug }}
