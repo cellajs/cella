@@ -11,7 +11,7 @@ import { AvatarWrap } from '../../common/avatar-wrap';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import { renderSelect } from '../../common/data-table/select-column';
-import RowEdit from './row-edit';
+import UpdateRow from './update-row';
 import { config } from 'config';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
@@ -43,7 +43,7 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => <RowEdit organization={row} tabIndex={tabIndex} callback={callback} />,
+      renderCell: ({ row, tabIndex }) => <UpdateRow organization={row} tabIndex={tabIndex} callback={callback} />,
     },
   ];
 

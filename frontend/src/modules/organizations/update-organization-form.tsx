@@ -78,7 +78,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   const onSubmit = (values: FormValues) => {
     mutate(values, {
       onSuccess: (data) => {
-        if (isSheet) sheet.remove('edit-organization');
+        if (isSheet) sheet.remove('update-organization');
         callback?.(data);
         toast.success(t('common:success.update_resource', { resource: t('common:organization') }));
       },
@@ -114,15 +114,15 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   // Update sheet title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
-      const targetSheet = sheet.get('edit-organization');
+      const targetSheet = sheet.get('update-organization');
       if (targetSheet && checkSheet(targetSheet)) {
-        sheet.update('edit-organization', {
+        sheet.update('update-organization', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
       }
       return;
     }
-    sheet.reset('edit-organization');
+    sheet.reset('update-organization');
   }, [form.unsavedChanges]);
 
   return (

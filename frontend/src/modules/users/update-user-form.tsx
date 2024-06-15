@@ -103,7 +103,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           toast.success(t('common:success.updated_user'));
         }
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
-        if (isSheet) sheet.remove('edit-user');
+        if (isSheet) sheet.remove('update-user');
 
         form.reset(data);
         callback?.(data);
@@ -116,15 +116,15 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   // Update sheet title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
-      const targetSheet = sheet.get('edit-user');
+      const targetSheet = sheet.get('update-user');
       if (targetSheet && checkSheet(targetSheet)) {
-        sheet.update('edit-user', {
+        sheet.update('update-user', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
       }
       return;
     }
-    sheet.reset('edit-user');
+    sheet.reset('update-user');
   }, [form.unsavedChanges]);
 
   const setImageUrl = (url: string) => {

@@ -59,7 +59,7 @@ function Toolbar({
         organizations={selectedOrganizations}
         callback={(organizations) => {
           callback(organizations, 'delete');
-          toast.success(t('success.delete_resources', { resources: t('common:organizations') }));
+          toast.success(t('common:success.delete_resources', { resources: t('common:organizations') }));
         }}
         dialog
       />,
@@ -67,14 +67,14 @@ function Toolbar({
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
+        text: t('common:confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
       },
     );
   };
 
   const openNewsletterSheet = () => {
     sheet(<NewsletterForm sheet />, {
-      className: 'sm:max-w-[52rem]',
+      className: 'xl:w-[50vw]',
       title: t('common:newsletter'),
       text: t('common:newsletter.text'),
       id: 'newsletter-form',

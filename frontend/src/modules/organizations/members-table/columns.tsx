@@ -22,8 +22,7 @@ export const useColumns = () => {
 
   const openUserPreviewSheet = (user: User) => {
     sheet(<UserProfile user={user} />, {
-      className: 'sm:max-w-full max-w-full w-[50vw]',
-      title: t('common:user_preview'),
+      className: 'sm:max-w-full max-w-full xl:w-[50vw] p-0',
       id: 'user-preview',
     });
   };

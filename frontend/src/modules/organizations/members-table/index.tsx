@@ -31,6 +31,7 @@ interface MembersTableProps {
   entityType: ContextEntityType;
 }
 
+// Build query to get members with infinite scroll
 export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
@@ -39,7 +40,6 @@ export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort
     queryKey: ['members', idOrSlug, entityType, q, sort, order, role],
     initialPageParam: 0,
     queryFn: async ({ pageParam: page, signal }) => {
-      const entityType = 'ORGANIZATION';
       const fetchedData = await getMembers({ page, q, sort, order, role, limit, idOrSlug, entityType }, signal);
       return fetchedData;
     },

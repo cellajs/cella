@@ -9,7 +9,7 @@ import { AvatarWrap } from '../../common/avatar-wrap';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import RowEdit from './row-edit';
+import UpdateRow from './update-row';
 import { config } from 'config';
 import { sheet } from '~/modules/common/sheeter/state';
 import { UserProfile } from '../user-profile';
@@ -21,8 +21,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
 
   const openUserPreviewSheet = (user: User) => {
     sheet(<UserProfile user={user} />, {
-      className: 'sm:max-w-full max-w-full w-[50vw]',
-      title: t('common:user_preview'),
+      className: 'sm:max-w-full max-w-full xl:w-[50vw] p-0',
       id: 'user-preview',
     });
   };
@@ -47,7 +46,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => <RowEdit user={row} tabIndex={tabIndex} callback={callback} />,
+      renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} callback={callback} />,
     },
   ];
   const columns: ColumnOrColumnGroup<User>[] = [

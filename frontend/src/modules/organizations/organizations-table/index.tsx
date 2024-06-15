@@ -20,6 +20,7 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
+import { getInitialSortColumns } from '~/lib/utils';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -34,11 +35,7 @@ const OrganizationsTable = () => {
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(
-    search.sort && search.order
-      ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
-      : [{ columnKey: 'createdAt', direction: 'DESC' }],
-  );
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   const debounceQuery = useDebounce(query, 300);
 
