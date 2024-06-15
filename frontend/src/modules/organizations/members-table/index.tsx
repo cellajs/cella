@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -13,15 +13,43 @@ import { useColumns } from './columns';
 import Toolbar from './toolbar';
 import { useMutation } from '~/hooks/use-mutations';
 import { updateMembership } from '~/api/memberships';
-import { membersQueryOptions, OrganizationMembersRoute, type MembersSearchType } from '~/routes/organizations';
+import { OrganizationMembersRoute } from '~/routes/organizations';
 import type { config } from 'config';
-import { getMembers } from '~/api/general';
+import { type GetMembersParams, getMembers } from '~/api/general';
+import { useTranslation } from 'react-i18next';
+import { getInitialSortColumns } from '~/lib/utils';
+import type { getMembersQuerySchema } from 'backend/modules/general/schema';
+import type { z } from 'zod';
 
 const LIMIT = 40;
 
 export type MembersRoles = (typeof config.rolesByType.entityRoles)[number] | undefined;
 
-const MembersTable = ({ entityType, isAdmin }: { entityType: ContextEntityType; isAdmin: boolean }) => {
+export type MembersSearchType = z.infer<typeof getMembersQuerySchema>;
+
+interface MembersTableProps {
+  entityType: ContextEntityType;
+}
+
+export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams) => {
+  const sort = initialSort || 'createdAt';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['members', idOrSlug, entityType, q, sort, order, role],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam: page, signal }) => {
+      const entityType = 'ORGANIZATION';
+      const fetchedData = await getMembers({ page, q, sort, order, role, limit, idOrSlug, entityType }, signal);
+      return fetchedData;
+    },
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+    refetchOnWindowFocus: false,
+  });
+};
+
+const MembersTable = ({ entityType }: MembersTableProps) => {
+  const { t } = useTranslation();
   const search = useSearch({ from: OrganizationMembersRoute.id });
   const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
 
@@ -30,13 +58,22 @@ const MembersTable = ({ entityType, isAdmin }: { entityType: ContextEntityType; 
   const [query, setQuery] = useState<MembersSearchType['q']>(search.q);
   const [role, setRole] = useState<MembersSearchType['role']>(search.role);
 
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(
-    search.sort && search.order
-      ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
-      : [{ columnKey: 'createdAt', direction: 'DESC' }],
-  );
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
-  const debounceQuery = useDebounce(query, 300);
+  // Search query options
+  const q = useDebounce(query, 200);
+  const sort = sortColumns[0]?.columnKey as MembersSearchType['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'];
+  const limit = LIMIT;
+
+  // Check if table has enabled filtered
+  const isFiltered = role !== undefined || !!q;
+
+  // Query members
+  const queryResult = useInfiniteQuery(membersQueryOptions({ idOrSlug, entityType, q, sort, order, role, limit }));
+
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
 
   const onRoleChange = (role?: string) => {
     setRole(role === 'all' ? undefined : (role as MembersRoles));
@@ -44,54 +81,39 @@ const MembersTable = ({ entityType, isAdmin }: { entityType: ContextEntityType; 
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q: debounceQuery,
+      q,
       sort: sortColumns[0]?.columnKey,
       order: sortColumns[0]?.direction.toLowerCase(),
       role,
     }),
-    [debounceQuery, role, sortColumns],
+    [q, role, sortColumns],
   );
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
+
+  // Update member role
   const { mutate: updateMemberRole } = useMutation({
-    mutationFn: async (user: Member) => {
-      return await updateMembership({ membershipId: user.membership.id, role: user.membership.role }); // Update member role
-    },
+    mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role }),
     onSuccess: (response) => {
       callback([response], 'update');
-      toast.success('Role updated successfully');
+      toast.success(t('common:success:user_role_updated'));
     },
     onError: () => toast.error('Error updating role'),
   });
 
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // redo 4 all members
   const callback = useMutateInfiniteQueryData([
     'members',
     idOrSlug,
     entityType,
-    debounceQuery,
+    q,
     sortColumns[0]?.columnKey as MembersSearchType['sort'],
     sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'],
-
     role,
   ]);
 
-  // redo 4 all members
-  const queryResult = useInfiniteQuery(
-    membersQueryOptions({
-      idOrSlug,
-      entityType,
-      q: debounceQuery,
-      sort: sortColumns[0]?.columnKey as MembersSearchType['sort'],
-      order: sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'],
-      role,
-      limit: LIMIT,
-    }),
-  );
-  const [columns, setColumns] = useColumns(isAdmin);
-
-  const isFiltered = role !== undefined || !!debounceQuery;
+  const [columns, setColumns] = useColumns();
 
   const onResetFilters = () => {
     setQuery('');
@@ -100,7 +122,6 @@ const MembersTable = ({ entityType, isAdmin }: { entityType: ContextEntityType; 
   };
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
-    // mutate user role
     for (const index of indexes) {
       if (column.key === 'role') updateMemberRole(changedRows[index]);
     }
@@ -122,13 +143,12 @@ const MembersTable = ({ entityType, isAdmin }: { entityType: ContextEntityType; 
         callback={callback}
         entityType={entityType}
         isFiltered={isFiltered}
-        total={queryResult.data?.pages[0].total}
+        total={totalCount}
         query={query}
         setQuery={setQuery}
         onResetFilters={onResetFilters}
         onResetSelectedRows={() => setSelectedRows(new Set<string>())}
         role={role}
-        isAdmin={isAdmin}
         selectedMembers={rows.filter((row) => selectedRows.has(row.id)) as Member[]}
         onRoleChange={onRoleChange}
         columns={columns}
@@ -136,7 +156,7 @@ const MembersTable = ({ entityType, isAdmin }: { entityType: ContextEntityType; 
         idOrSlug={idOrSlug}
         fetchForExport={async (limit: number) => {
           const data = await getMembers({
-            q: debounceQuery,
+            q,
             sort: sortColumns[0]?.columnKey as MembersSearchType['sort'],
             order: sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'],
             role,
@@ -154,8 +174,8 @@ const MembersTable = ({ entityType, isAdmin }: { entityType: ContextEntityType; 
           enableVirtualization: false,
           onRowsChange,
           rows,
-          limit: LIMIT,
-          totalCount: queryResult.data?.pages[0].total,
+          limit,
+          totalCount,
           rowKeyGetter: (row) => row.id,
           error: queryResult.error,
           isLoading: queryResult.isLoading,

@@ -39,9 +39,7 @@ const AcceptInvite = () => {
         to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath,
       });
     },
-    onError: (error) => {
-      setError(error);
-    },
+    onError: (error) =>  setError(error),
   });
 
   const onSubmit = () => {

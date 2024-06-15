@@ -15,6 +15,7 @@ const OrganizationsTable = lazy(() => import('~/modules/organizations/organizati
 const UsersTable = lazy(() => import('~/modules/users/users-table'));
 const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
 
+// Search query schemas
 const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
@@ -32,6 +33,7 @@ export const SystemPanelRoute = createRoute({
 
 export const UsersTableRoute = createRoute({
   path: '/users',
+  validateSearch: usersSearchSchema,
   staticData: { pageTitle: 'Users' },
   getParentRoute: () => SystemPanelRoute,
   component: () => (
@@ -39,11 +41,11 @@ export const UsersTableRoute = createRoute({
       <UsersTable />
     </Suspense>
   ),
-  validateSearch: usersSearchSchema,
 });
 
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
+  validateSearch: organizationsSearchSchema,
   staticData: { pageTitle: 'Organizations' },
   getParentRoute: () => SystemPanelRoute,
   component: () => (
@@ -51,11 +53,11 @@ export const OrganizationsTableRoute = createRoute({
       <OrganizationsTable />
     </Suspense>
   ),
-  validateSearch: organizationsSearchSchema,
 });
 
 export const RequestsTableRoute = createRoute({
   path: '/requests',
+  validateSearch: requestSearchSchema,
   staticData: { pageTitle: 'Requests' },
   getParentRoute: () => SystemPanelRoute,
   component: () => (
@@ -63,5 +65,4 @@ export const RequestsTableRoute = createRoute({
       <RequestsTable />
     </Suspense>
   ),
-  validateSearch: requestSearchSchema,
 });

@@ -24,12 +24,13 @@ const OrganizationPage = () => {
   const { idOrSlug } = useParams({ from: OrganizationRoute.id });
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
+  const isAdmin = organization.membership?.role === 'ADMIN';
 
-  const tabs = organization.membership?.role === 'ADMIN' ? organizationTabs : [organizationTabs[0]];
+  const tabs = isAdmin ? organizationTabs : [organizationTabs[0]];
 
   return (
     // TODO clean this line
-    <EntityContext.Provider value={{ entity: organization as unknown as EntityPage, organization: organization }}>
+    <EntityContext.Provider value={{ entity: organization as unknown as EntityPage, isAdmin, organization: organization }}>
       <PageHeader
         id={organization.id}
         title={organization.name}

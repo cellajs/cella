@@ -21,9 +21,7 @@ export const WorkspaceRoute = createRoute({
   staticData: { pageTitle: 'Workspace', hideFooter: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => IndexRoute,
-  loader: async ({ params: { idOrSlug } }) => {
-    queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
-  },
+  loader: async ({ params: { idOrSlug } }) => queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug)),
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
     return (

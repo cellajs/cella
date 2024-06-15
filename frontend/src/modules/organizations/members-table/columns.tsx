@@ -10,12 +10,15 @@ import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import { config } from 'config';
 import { sheet } from '~/modules/common/sheeter/state';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { UserProfile } from '~/modules/users/user-profile';
+import { EntityContext } from '~/modules/common/entity-context';
 
-export const useColumns = (isAdmin: boolean) => {
+export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
+
+  const { isAdmin } = useContext(EntityContext);
 
   const openUserPreviewSheet = (user: User) => {
     sheet(<UserProfile user={user} />, {

@@ -15,6 +15,8 @@ import Toolbar from './toolbar';
 import { useMutation } from '~/hooks/use-mutations';
 import { UsersTableRoute, type UsersSearchType } from '~/routes/system';
 import type { config } from 'config';
+import { useTranslation } from 'react-i18next';
+import { getInitialSortColumns } from '~/lib/utils';
 
 export const LIMIT = 40;
 
@@ -25,20 +27,7 @@ const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, role, li
   return infiniteQueryOptions({
     queryKey: ['users', q, sort, order, role],
     initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getUsers(
-        {
-          page: pageParam,
-          q,
-          sort,
-          order,
-          role,
-          limit,
-        },
-        signal,
-      );
-      return fetchedData;
-    },
+    queryFn: async ({ pageParam: page, signal }) => await getUsers({ page, q, sort, order, role, limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
     refetchOnWindowFocus: false,
   });
@@ -47,76 +36,75 @@ const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, role, li
 export type SystemRoles = (typeof config.rolesByType.systemRoles)[number] | undefined;
 
 const UsersTable = () => {
+  const { t } = useTranslation();
   const search = useSearch({ from: UsersTableRoute.id });
 
   const [rows, setRows] = useState<User[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<UsersSearchType['q']>(search.q);
   const [role, setRole] = useState<UsersSearchType['role']>(search.role);
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(
-    search.sort && search.order
-      ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
-      : [{ columnKey: 'createdAt', direction: 'DESC' }],
-  );
+  // Search query options
+  const q = useDebounce(query, 200);
+  const sort = sortColumns[0]?.columnKey as UsersSearchType['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as UsersSearchType['order'];
+  const limit = LIMIT;
 
-  const debounceQuery = useDebounce(query, 300);
+  const isFiltered = role !== undefined || !!q;
+
+  // Query users
+  const queryResult = useInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
+
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
 
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q: debounceQuery,
+      q,
       sort: sortColumns[0]?.columnKey,
       order: sortColumns[0]?.direction.toLowerCase(),
       role,
     }),
-    [debounceQuery, role, sortColumns],
+    [q, role, sortColumns],
   );
-
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+
   const callback = useMutateInfiniteQueryData([
     'users',
-    debounceQuery,
+    q,
     sortColumns[0]?.columnKey as UsersSearchType['sort'],
     sortColumns[0]?.direction.toLowerCase() as UsersSearchType['order'],
     role,
   ]);
 
+  const [columns, setColumns] = useColumns(callback);
+
+  // Update user role
   const { mutate: updateUserRole } = useMutation({
-    mutationFn: async (user: User) => {
-      return await updateUser(user.id, { role: user.role }); // Update user role
-    },
+    mutationFn: async (user: User) => await updateUser(user.id, { role: user.role }), // Update user role,
     onSuccess: (response) => {
       callback([response], 'update');
-      toast.success('Role updated successfully');
+      toast.success(t('common:success:user_role_updated'));
     },
     onError: () => toast.error('Error updating role'),
   });
 
-  const queryResult = useInfiniteQuery(
-    usersQueryOptions({
-      q: debounceQuery,
-      sort: sortColumns[0]?.columnKey as UsersSearchType['sort'],
-      order: sortColumns[0]?.direction.toLowerCase() as UsersSearchType['order'],
-      role,
-      limit: LIMIT,
-    }),
-  );
-  const [columns, setColumns] = useColumns(callback);
-
-  const isFiltered = role !== undefined || !!debounceQuery;
-
+  // Reset filters
   const onResetFilters = () => {
     setQuery('');
     setSelectedRows(new Set<string>());
     setRole(undefined);
   };
 
+  // Change role filter
   const onRoleChange = (role?: string) => {
     setRole(role === 'all' ? undefined : (role as SystemRoles));
   };
+
+  // Update user role
   const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
-    // mutate user role
     for (const index of indexes) {
       if (column.key === 'role') updateUserRole(changedRows[index]);
     }
@@ -136,7 +124,7 @@ const UsersTable = () => {
     <div className="space-y-4 h-full">
       <Toolbar
         isFiltered={isFiltered}
-        total={queryResult.data?.pages[0].total}
+        total={totalCount}
         query={query}
         setQuery={setQuery}
         onResetFilters={onResetFilters}
@@ -156,8 +144,8 @@ const UsersTable = () => {
           enableVirtualization: false,
           onRowsChange,
           rows,
-          limit: LIMIT,
-          totalCount: queryResult.data?.pages[0].total,
+          limit,
+          totalCount,
           rowKeyGetter: (row) => row.id,
           error: queryResult.error,
           isLoading: queryResult.isLoading,

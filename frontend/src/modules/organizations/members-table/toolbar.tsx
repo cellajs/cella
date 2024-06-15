@@ -26,7 +26,6 @@ interface Props {
   idOrSlug: string;
   setQuery: (value?: string) => void;
   isFiltered?: boolean;
-  isAdmin: boolean;
   role?: MembersRoles;
   onRoleChange: (role?: string) => void;
   selectedMembers: Member[];
@@ -49,7 +48,6 @@ function Toolbar({
   onResetSelectedRows,
   query,
   setQuery,
-  isAdmin,
   columns,
   setColumns,
   idOrSlug,
@@ -58,7 +56,7 @@ function Toolbar({
 }: Props) {
   const { t } = useTranslation();
   const containerRef = useRef(null);
-  const { entity } = useContext(EntityContext);
+  const { entity, isAdmin } = useContext(EntityContext);
 
   const openInviteDialog = () => {
     dialog(<InviteUsers entity={entity} mode={null} dialog />, {

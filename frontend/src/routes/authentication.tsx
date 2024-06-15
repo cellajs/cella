@@ -17,6 +17,7 @@ export const AuthRoute = createRoute({
 
 export const SignInRoute = createRoute({
   path: '/auth/sign-in',
+  validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional(), token: z.string().optional() }),
   staticData: { pageTitle: 'Sign in' },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ cause, search }) => {
@@ -36,7 +37,6 @@ export const SignInRoute = createRoute({
     }
   },
   component: () => <SignIn />,
-  validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional(), token: z.string().optional() }),
 });
 
 export const ResetPasswordRoute = createRoute({
