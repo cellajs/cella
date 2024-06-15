@@ -27,7 +27,7 @@ const AcceptInvite = () => {
 
   const { mutate: checkToken, isPending: isChecking } = useMutation({
     mutationFn: baseCheckToken,
-    onSuccess: (data) => setTokenData(data),
+    onSuccess: (result) => setTokenData(result),
     onError: (error) => setError(error),
   });
 

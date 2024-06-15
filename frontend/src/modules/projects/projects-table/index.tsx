@@ -11,20 +11,36 @@ import type { z } from 'zod';
 import { getProjects, type GetProjectsParams } from '~/api/projects';
 import { useDebounce } from '~/hooks/use-debounce';
 import type { SortColumn } from 'react-data-grid';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 
 export type ProjectsSearch = z.infer<typeof getProjectsQuerySchema>;
 
+export const projectsQueryOptions = ({ q, sort: initialSort, order: initialOrder, limit, requestedUserId }: GetProjectsParams) => {
+  const sort = initialSort || 'createdAt';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['projects', q, sort, order],
+    initialPageParam: 0,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ pageParam: page, signal }) => await getProjects({ page, q, sort, order, limit, requestedUserId }, signal),
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+  });
+};
+
+const LIMIT = 40;
+
 export default function ProjectsTable({ userId }: { userId?: string }) {
   const { t } = useTranslation();
+  
   const [rows, setRows] = useState<Project[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [columns, setColumns] = useColumns();
   const [query, setQuery] = useState<GetProjectsParams['q']>('');
   const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'createdAt', direction: 'DESC' }]);
 
-  const onRowsChange = (records: Project[]) => {
-    setRows(records);
+  const onRowsChange = (changedRows: Project[]) => {
+    setRows(changedRows);
   };
 
   const onResetFilters = () => {
@@ -32,29 +48,20 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
     setSelectedRows(new Set<string>());
   };
 
-  const debounceQuery = useDebounce(query, 300);
+  // Search query options
+  const q = useDebounce(query, 200);
+  const sort = sortColumns[0]?.columnKey as ProjectsSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as ProjectsSearch['order'];
+  const limit = LIMIT;
+  const requestedUserId = userId;
 
-  const queryResult = useInfiniteQuery({
-    queryKey: ['projects', debounceQuery, sortColumns],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getProjects(
-        {
-          page: pageParam,
-          q: debounceQuery,
-          sort: sortColumns[0]?.columnKey as GetProjectsParams['sort'],
-          order: sortColumns[0]?.direction.toLowerCase() as GetProjectsParams['order'],
-          limit: 10,
-          requestedUserId: userId,
-        },
-        signal,
-      );
-      return fetchedData;
-    },
-    getNextPageParam: (_lastGroup, groups) => groups.length,
-    refetchOnWindowFocus: false,
-  });
-  const isFiltered = !!debounceQuery;
+  // Query projects
+  const queryResult = useInfiniteQuery(projectsQueryOptions({ q, sort, order, limit, requestedUserId }));
+
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
+
+  const isFiltered = !!q;
 
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
@@ -68,7 +75,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
   return (
     <div className="space-y-4 h-full">
       <Toolbar
-        total={queryResult.data?.pages?.[0]?.total}
+        total={totalCount}
         query={query}
         isFiltered={isFiltered}
         setQuery={setQuery}
@@ -83,8 +90,8 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          limit: 10,
-          rowHeight: 36,
+          limit,
+          rowHeight: 42,
           selectedRows,
           onRowsChange,
           onSelectedRowsChange: setSelectedRows,

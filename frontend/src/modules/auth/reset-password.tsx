@@ -35,7 +35,7 @@ const ResetPassword = () => {
   // Check reset password token and get email
   const { mutate: checkToken } = useMutation({
     mutationFn: baseCheckToken,
-    onSuccess: (data) => setEmail(data.email),
+    onSuccess: (result) => setEmail(result.email),
     onError: (error) => setError(error),
   });
 

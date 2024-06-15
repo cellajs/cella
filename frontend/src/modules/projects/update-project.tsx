@@ -44,8 +44,8 @@ export const useUpdateProjectMutation = (idOrSlug: string) => {
   //   return useMutation<Project, DefaultError, UpdateProjectParams>({
   //     mutationKey: ['project', 'update', idOrSlug],
   //     mutationFn: (params) => UpdateProjectForm(idOrSlug, params),
-  //     onSuccess: (project) => {
-  //       queryClient.setQueryData(['project', idOrSlug], project);
+  //     onSuccess: (updatedProject) => {
+  //       queryClient.setQueryData(['project', idOrSlug], updatedProject);
   //     },
   //     gcTime: 1000 * 10,
   //   });
@@ -78,8 +78,8 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
 
     toast.success(t('common:success.update_resource', { resource: t('common:project') }));
     // mutate(values, {
-    //   onSuccess: (data) => {
-    //     callback?.(data as Project);
+    //   onSuccess: (updatedProject) => {
+    //     callback?.(updatedProject as Project);
     //     if (isDialog) dialog.remove();
     //     toast.success(t('common:success.update_resource', { resource: t('common:project') }));
     //   },

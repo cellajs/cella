@@ -1,7 +1,7 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { getOrganizations } from '~/api/organizations';
+import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { Bird } from 'lucide-react';
@@ -20,9 +20,22 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { getInitialSortColumns } from '~/lib/utils';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
+
+export const organizationsQueryOptions = ({ q, sort: initialSort, order: initialOrder, limit }: GetOrganizationsParams) => {
+  const sort = initialSort || 'createdAt';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['organizations', q, sort, order],
+    initialPageParam: 0,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ pageParam: page, signal }) => await getOrganizations({ page, q, sort, order, limit }, signal),
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+  });
+};
 
 const LIMIT = 40;
 
@@ -37,47 +50,36 @@ const OrganizationsTable = () => {
   const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
-  const debounceQuery = useDebounce(query, 300);
+  // Search query options
+  const q = useDebounce(query, 200);
+  const sort = sortColumns[0]?.columnKey as OrganizationsSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'];
+  const limit = LIMIT;
 
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q: debounceQuery,
+      q,
       sort: sortColumns[0]?.columnKey,
       order: sortColumns[0]?.direction.toLowerCase(),
     }),
-    [debounceQuery, sortColumns],
+    [q, sortColumns],
   );
-
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-  const queryResult = useInfiniteQuery({
-    queryKey: ['organizations', debounceQuery, sortColumns],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getOrganizations(
-        {
-          page: pageParam,
-          q: debounceQuery,
-          sort: sortColumns[0]?.columnKey as OrganizationsSearch['sort'],
-          order: sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'],
-          limit: LIMIT,
-        },
-        signal,
-      );
-      return fetchedData;
-    },
-    getNextPageParam: (_lastGroup, groups) => groups.length,
-    refetchOnWindowFocus: false,
-  });
+  // Query organizations
+  const queryResult = useInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
 
-  const callback = useMutateInfiniteQueryData(['organizations', debounceQuery, sortColumns]);
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
+
+  const callback = useMutateInfiniteQueryData(['organizations', q, sortColumns]);
   const [columns, setColumns] = useColumns(callback);
 
-  const onRowsChange = async (records: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
+  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
     // mutate member
     for (const index of indexes) {
-      const organization = records[index];
+      const organization = changedRows[index];
       if (column.key === 'userRole' && organization.membership?.role) {
         inviteMember({
           idOrSlug: organization.id,
@@ -95,10 +97,10 @@ const OrganizationsTable = () => {
       }
     }
 
-    setRows(records);
+    setRows(changedRows);
   };
 
-  const isFiltered = !!debounceQuery;
+  const isFiltered = !!q;
 
   const onResetFilters = () => {
     setQuery('');
@@ -117,7 +119,7 @@ const OrganizationsTable = () => {
   return (
     <div className="space-y-4 h-full">
       <Toolbar
-        total={queryResult.data?.pages?.[0]?.total}
+        total={totalCount}
         query={query}
         setQuery={setQuery}
         callback={callback}
@@ -134,7 +136,7 @@ const OrganizationsTable = () => {
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          totalCount: queryResult.data?.pages[0].total,
+          totalCount,
           rowHeight: 42,
           rowKeyGetter: (row) => row.id,
           error: queryResult.error,
@@ -142,7 +144,7 @@ const OrganizationsTable = () => {
           isFetching: queryResult.isFetching,
           enableVirtualization: false,
           isFiltered,
-          limit: LIMIT,
+          limit,
           selectedRows,
           onRowsChange,
           fetchMore: queryResult.fetchNextPage,

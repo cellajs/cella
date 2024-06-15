@@ -113,19 +113,19 @@ const ItemOptions = ({
     mutationFn: (values: UpdateMenuOptionsProp) => {
       return baseUpdateMembership(values);
     },
-    onSuccess: (data) => {
-      if (data.inactive !== isItemArchived) {
-        const archived = data.inactive || !isItemArchived;
+    onSuccess: (updatedMembership) => {
+      if (updatedMembership.inactive !== isItemArchived) {
+        const archived = updatedMembership.inactive || !isItemArchived;
         archiveStateToggle(item.id, archived, mainItemId ? mainItemId : null);
         toast.success(
-          data.inactive
+          updatedMembership.inactive
             ? t('common:success.archived_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
             : t('common:success.restore_resource', { resource: t(`common:${itemType.toLowerCase()}`) }),
         );
         setItemArchived(archived);
       }
-      if (data.muted !== isItemMuted) {
-        const muted = data.muted || !isItemMuted;
+      if (updatedMembership.muted !== isItemMuted) {
+        const muted = updatedMembership.muted || !isItemMuted;
         toast.success(
           muted
             ? t('common:success.mute_resource', { resource: t(`common:${itemType.toLowerCase()}`) })

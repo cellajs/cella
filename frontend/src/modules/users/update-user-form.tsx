@@ -48,8 +48,8 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
   return useMutation<User, DefaultError, UpdateUserParams>({
     mutationKey: ['me', 'update', idOrSlug],
     mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
-    onSuccess: (user) => {
-      queryClient.setQueryData(['users', user.id], user);
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(['users', updatedUser.id], updatedUser);
     },
     gcTime: 1000 * 10,
   });
@@ -95,9 +95,9 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     if (!user) return;
 
     mutate(values, {
-      onSuccess: (data) => {
+      onSuccess: (updatedUser) => {
         if (isSelf) {
-          setUser(data as MeUser);
+          setUser(updatedUser as MeUser);
           toast.success(t('common:success.you_updated'));
         } else {
           toast.success(t('common:success.updated_user'));
@@ -105,8 +105,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
         if (isSheet) sheet.remove('update-user');
 
-        form.reset(data);
-        callback?.(data);
+        form.reset(updatedUser);
+        callback?.(updatedUser);
 
         nextStep?.();
       },

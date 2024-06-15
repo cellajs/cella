@@ -88,7 +88,7 @@ const UserSettings = () => {
 
   const { mutate: terminateMySessions, isPending } = useMutation({
     mutationFn: baseTerminateMySessions,
-    onSuccess: (_data, variables) => {
+    onSuccess: (_, variables) => {
       useUserStore.setState((state) => {
         state.user.sessions = state.user.sessions.filter((session) => !variables.includes(session.id));
       });

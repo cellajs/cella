@@ -38,10 +38,10 @@ export const OrganizationMembersRoute = createRoute({
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'ORGANIZATION';
-    const membersInfiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role });
-    const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
+    const infiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role });
+    const cachedMembers = queryClient.getQueryData(infiniteQueryOptions.queryKey);
     if (!cachedMembers) {
-      queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
+      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
     }
   },
   component: () => (

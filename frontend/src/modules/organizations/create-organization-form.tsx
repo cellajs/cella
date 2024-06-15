@@ -59,17 +59,17 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createOrganization,
-    onSuccess: (result) => {
+    onSuccess: (createdOrganization) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
-      callback?.(result);
+      setMainMenuOrder(type, [...menuOrder[type].mainList, createdOrganization.id]);
+      callback?.(createdOrganization);
       nextStep?.();
       if (!callback) {
         navigate({
           to: '/$idOrSlug/members',
           params: {
-            idOrSlug: result.slug,
+            idOrSlug: createdOrganization.slug,
           },
         });
       }

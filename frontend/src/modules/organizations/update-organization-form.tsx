@@ -42,8 +42,8 @@ export const useUpdateOrganizationMutation = (idOrSlug: string) => {
   return useMutation<Organization, DefaultError, UpdateOrganizationParams>({
     mutationKey: ['organizations', 'update', idOrSlug],
     mutationFn: (params) => updateOrganization(idOrSlug, params),
-    onSuccess: (organization) => {
-      queryClient.setQueryData(['organizations', idOrSlug], organization);
+    onSuccess: (updatedOrganization) => {
+      queryClient.setQueryData(['organizations', idOrSlug], updatedOrganization);
     },
     gcTime: 1000 * 10,
   });
@@ -77,9 +77,9 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
 
   const onSubmit = (values: FormValues) => {
     mutate(values, {
-      onSuccess: (data) => {
+      onSuccess: (updatedOrganization) => {
         if (isSheet) sheet.remove('update-organization');
-        callback?.(data);
+        callback?.(updatedOrganization);
         toast.success(t('common:success.update_resource', { resource: t('common:organization') }));
       },
     });

@@ -8,7 +8,10 @@ import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPanel from '~/modules/system/system-panel';
 import { IndexRoute } from './routeTree';
-import type { z } from 'zod';
+import { queryClient } from '~/lib/router';
+import { usersQueryOptions } from '~/modules/users/users-table';
+import { organizationsQueryOptions } from '~/modules/organizations/organizations-table';
+import { requestsQueryOptions } from '~/modules/system/requests-table';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
@@ -19,8 +22,6 @@ const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
 const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
 const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
-
-export type UsersSearchType = z.infer<typeof getUsersQuerySchema>;
 
 export const SystemPanelRoute = createRoute({
   path: '/system',
@@ -36,6 +37,14 @@ export const UsersTableRoute = createRoute({
   validateSearch: usersSearchSchema,
   staticData: { pageTitle: 'Users' },
   getParentRoute: () => SystemPanelRoute,
+  loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
+  loader: async ({ deps: { q, sort, order, role } }) => {
+    const infiniteQueryOptions = usersQueryOptions({ q, sort, order, role });
+    const cachedUsers = queryClient.getQueryData(infiniteQueryOptions.queryKey);
+    if (!cachedUsers) {
+      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
+    }
+  },
   component: () => (
     <Suspense>
       <UsersTable />
@@ -48,6 +57,14 @@ export const OrganizationsTableRoute = createRoute({
   validateSearch: organizationsSearchSchema,
   staticData: { pageTitle: 'Organizations' },
   getParentRoute: () => SystemPanelRoute,
+  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
+  loader: async ({ deps: { q, sort, order } }) => {
+    const infiniteQueryOptions = organizationsQueryOptions({ q, sort, order });
+    const cachedOrganizations = queryClient.getQueryData(infiniteQueryOptions.queryKey);
+    if (!cachedOrganizations) {
+      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
+    }
+  },
   component: () => (
     <Suspense>
       <OrganizationsTable />
@@ -60,6 +77,14 @@ export const RequestsTableRoute = createRoute({
   validateSearch: requestSearchSchema,
   staticData: { pageTitle: 'Requests' },
   getParentRoute: () => SystemPanelRoute,
+  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
+  loader: async ({ deps: { q, sort, order } }) => {
+    const infiniteQueryOptions = requestsQueryOptions({ q, sort, order });
+    const cachedRequests = queryClient.getQueryData(infiniteQueryOptions.queryKey);
+    if (!cachedRequests) {
+      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
+    }
+  },
   component: () => (
     <Suspense>
       <RequestsTable />

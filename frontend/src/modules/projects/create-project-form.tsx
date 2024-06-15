@@ -64,11 +64,11 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
         organizationId: workspace.organizationId,
       });
     },
-    onSuccess: (project) => {
+    onSuccess: (createdProject) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      setSubMenuOrder(type, workspace.id, [...menuOrder[type].subList[workspace.id], project.id]);
-      callback([project], 'create');
+      setSubMenuOrder(type, workspace.id, [...menuOrder[type].subList[workspace.id], createdProject.id]);
+      callback([createdProject], 'create');
 
       if (isDialog) dialog.remove();
     },

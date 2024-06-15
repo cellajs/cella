@@ -49,7 +49,7 @@ export const useColumns = () => {
           {
             key: 'userRole',
             name: t('common:role'),
-            sortable: true,
+            sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role.toLowerCase()) : '-'),

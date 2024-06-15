@@ -62,17 +62,17 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createWorkspace,
-    onSuccess: (result) => {
+    onSuccess: (updatedWorkspace) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
+      setMainMenuOrder(type, [...menuOrder[type].mainList, updatedWorkspace.id]);
 
-      callback?.(result);
+      callback?.(updatedWorkspace);
       if (isDialog) dialog.remove();
 
       navigate({
         to: '/workspace/$idOrSlug/board',
-        params: { idOrSlug: result.slug },
+        params: { idOrSlug: updatedWorkspace.slug },
       });
     },
   });

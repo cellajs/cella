@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -7,7 +7,7 @@ import { Bird } from 'lucide-react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { getRequests } from '~/api/requests';
+import { type GetRequestsParams, getRequests } from '~/api/requests';
 import { useDebounce } from '~/hooks/use-debounce';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { RequestsTableRoute } from '~/routes/system';
@@ -16,9 +16,22 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { getInitialSortColumns } from '~/lib/utils';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 
 export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
+
+export const requestsQueryOptions = ({ q, sort: initialSort, order: initialOrder, limit }: GetRequestsParams) => {
+  const sort = initialSort || 'createdAt';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['requests', q, sort, order],
+    initialPageParam: 0,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ pageParam: page, signal }) => await getRequests({ page, q, sort, order, limit }, signal),
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+  });
+};
 
 const LIMIT = 40;
 
@@ -30,46 +43,36 @@ const RequestsTable = () => {
   const [query, setQuery] = useState<RequestsSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
-  const debounceQuery = useDebounce(query, 300);
+  // Search query options
+  const q = useDebounce(query, 200);
+  const sort = sortColumns[0]?.columnKey as RequestsSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'];
+  const limit = LIMIT;
 
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q: debounceQuery,
+      q,
       sort: sortColumns[0]?.columnKey,
       order: sortColumns[0]?.direction.toLowerCase(),
     }),
-    [debounceQuery, sortColumns],
+    [q, sortColumns],
   );
-
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-  const queryResult = useInfiniteQuery({
-    queryKey: ['requests', debounceQuery, sortColumns],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const requestData = {
-        page: pageParam,
-        q: debounceQuery,
-        sort: sortColumns[0]?.columnKey as RequestsSearch['sort'],
-        order: sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'],
-        limit: LIMIT,
-      };
+  // Query organizations
+  const queryResult = useInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
 
-      const fetchedData = await getRequests(requestData, signal);
-      return fetchedData;
-    },
-    getNextPageParam: (_lastGroup, groups) => groups.length,
-    refetchOnWindowFocus: false,
-  });
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
 
   const [columns, setColumns] = useColumns();
 
-  const onRowsChange = async (records: Request[]) => {
-    setRows(records);
+  const onRowsChange = async (changedRows: Request[]) => {
+    setRows(changedRows);
   };
 
-  const isFiltered = !!debounceQuery;
+  const isFiltered = !!q;
 
   const onResetFilters = () => {
     setQuery('');
@@ -88,7 +91,7 @@ const RequestsTable = () => {
   return (
     <div className="space-y-4 h-full">
       <Toolbar
-        total={queryResult.data?.pages?.[0]?.total}
+        total={totalCount}
         query={query}
         setQuery={setQuery}
         isFiltered={isFiltered}
@@ -104,7 +107,7 @@ const RequestsTable = () => {
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          totalCount: queryResult.data?.pages[0].total,
+          totalCount,
           rowHeight: 42,
           rowKeyGetter: (row) => row.id,
           error: queryResult.error,
@@ -112,7 +115,7 @@ const RequestsTable = () => {
           isFetching: queryResult.isFetching,
           enableVirtualization: false,
           isFiltered,
-          limit: LIMIT,
+          limit,
           selectedRows,
           onRowsChange,
           fetchMore: queryResult.fetchNextPage,
