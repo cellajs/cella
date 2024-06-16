@@ -1,14 +1,14 @@
+import { useLiveQuery } from 'electric-sql/react';
+import { Bird } from 'lucide-react';
 import { type Key, useEffect, useMemo, useState } from 'react';
 import { type RenderRowProps, Row } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import { useColumns } from './columns';
-import { Bird } from 'lucide-react';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { type Task, useElectric } from '~/modules/common/electric/electrify';
-import { useLiveQuery } from 'electric-sql/react';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { TaskProvider } from '../task/task-context';
+import { useColumns } from './columns';
 
 const renderRow = (key: Key, props: RenderRowProps<Task>) => {
   return (

@@ -1,17 +1,17 @@
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import type { getProjectsQuerySchema } from 'backend/modules/projects/schema';
 import { Bird } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
+import type { z } from 'zod';
+import { type GetProjectsParams, getProjects } from '~/api/projects';
+import { useDebounce } from '~/hooks/use-debounce';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import { useColumns } from './columns';
 import type { Project } from '~/types';
+import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import type { getProjectsQuerySchema } from 'backend/modules/projects/schema';
-import type { z } from 'zod';
-import { getProjects, type GetProjectsParams } from '~/api/projects';
-import { useDebounce } from '~/hooks/use-debounce';
-import type { SortColumn } from 'react-data-grid';
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 
 export type ProjectsSearch = z.infer<typeof getProjectsQuerySchema>;
 
@@ -32,7 +32,7 @@ const LIMIT = 40;
 
 export default function ProjectsTable({ userId }: { userId?: string }) {
   const { t } = useTranslation();
-  
+
   const [rows, setRows] = useState<Project[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [columns, setColumns] = useColumns();

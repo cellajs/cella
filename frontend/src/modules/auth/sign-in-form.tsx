@@ -9,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { config } from 'config';
 import { t } from 'i18next';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -20,7 +21,6 @@ import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types';
 import type { TokenData } from '.';
-import { config } from 'config';
 
 const formSchema = signInJsonSchema;
 

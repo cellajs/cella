@@ -3,7 +3,7 @@ import type { AppType } from 'backend/server';
 import type { EntityType } from 'backend/types/common';
 
 import { config } from 'config';
-import { hc, type ClientResponse } from 'hono/client';
+import { type ClientResponse, hc } from 'hono/client';
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
@@ -55,4 +55,3 @@ const clientConfig = {
 
 // Create Hono clients to make requests to the backend
 export const apiClient = hc<AppType>(config.backendUrl, clientConfig);
-

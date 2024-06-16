@@ -5,12 +5,12 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { useEffect, useRef, useState } from 'react';
 import { getDraggableItemData } from '~/lib/utils';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '../../common/drop-indicator';
 import type { Task } from '../../common/electric/electrify';
 import { TaskCard } from './task-card';
 import { useTaskContext } from './task-context';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 

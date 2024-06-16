@@ -8,12 +8,12 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import workspaceRoutesConfig from './routes';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
+import workspaceRoutesConfig from './routes';
 
 const app = new CustomHono();
 
-// * Workspace endpoints
+// Workspace endpoints
 const workspacesRoutes = app
   /*
    * Create workspace
@@ -47,6 +47,7 @@ const workspacesRoutes = app
         workspaceId: workspace.id,
         type: 'WORKSPACE',
         role: 'ADMIN',
+        order: 1,
       })
       .returning();
 
@@ -137,7 +138,7 @@ const workspacesRoutes = app
         success: true,
         data: {
           ...updatedWorkspace,
-          membership: toMembershipInfo(memberships.find((member) => member.id === user.id)),
+          membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
         },
       },
       200,
@@ -147,25 +148,25 @@ const workspacesRoutes = app
    * Delete workspaces
    */
   .openapi(workspaceRoutesConfig.deleteWorkspaces, async (ctx) => {
-    // * Extract allowed and disallowed ids
+    // Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');
 
-    // * Map errors of workspaces user is not allowed to delete
+    // Map errors of workspaces user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', { workspace: id }));
 
-    // * Get members
+    // Get members
     const workspaceMembers = await db
       .select({ id: membershipsTable.userId, workspaceId: membershipsTable.workspaceId })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'WORKSPACE'), inArray(membershipsTable.workspaceId, allowedIds)));
 
-    // * Delete the workspaces
+    // Delete the workspaces
     await db.delete(workspacesTable).where(inArray(workspacesTable.id, allowedIds));
 
-    // * Send SSE events for the workspaces that were deleted
+    // Send SSE events for the workspaces that were deleted
     for (const id of allowedIds) {
-      // * Send the event to the user if they are a member of the workspace
+      // Send the event to the user if they are a member of the workspace
       if (workspaceMembers.length > 0) {
         const membersId = workspaceMembers
           .filter(({ workspaceId }) => workspaceId === id)

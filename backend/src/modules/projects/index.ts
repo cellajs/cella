@@ -4,19 +4,19 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { projectsTable } from '../../db/schema/projects';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 
+import { counts } from '../../lib/counts';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSE, sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import projectRoutesConfig from './routes';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
-import { counts } from '../../lib/counts';
+import projectRoutesConfig from './routes';
 
 const app = new CustomHono();
 
-// * Project endpoints
+// Project endpoints
 const projectsRoutes = app
   /*
    * Create project
@@ -53,6 +53,7 @@ const projectsRoutes = app
         projectId: project.id,
         type: 'PROJECT',
         role: 'ADMIN',
+        order: 1,
       })
       .returning();
 
@@ -249,7 +250,7 @@ const projectsRoutes = app
         success: true,
         data: {
           ...updatedProject,
-          membership: toMembershipInfo(memberships.find((member) => member.id === user.id)),
+          membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
           counts: await counts('PROJECT', project.id),
         },
       },
@@ -261,25 +262,25 @@ const projectsRoutes = app
    * Delete projects
    */
   .openapi(projectRoutesConfig.deleteProjects, async (ctx) => {
-    // * Extract allowed and disallowed ids
+    // Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');
 
-    // * Map errors of workspaces user is not allowed to delete
+    // Map errors of workspaces user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'PROJECT', { project: id }));
 
-    // * Get members
+    // Get members
     const projectsMembers = await db
       .select({ id: membershipsTable.userId, projectId: membershipsTable.projectId })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'PROJECT'), inArray(membershipsTable.projectId, allowedIds)));
 
-    // * Delete the projectId
+    // Delete the projectId
     await db.delete(projectsTable).where(inArray(projectsTable.id, allowedIds));
 
-    // * Send SSE events for the projects that were deleted
+    // Send SSE events for the projects that were deleted
     for (const id of allowedIds) {
-      // * Send the event to the user if they are a member of the project
+      // Send the event to the user if they are a member of the project
       if (projectsMembers.length > 0) {
         const membersId = projectsMembers
           .filter(({ projectId }) => projectId === id)
@@ -291,13 +292,7 @@ const projectsRoutes = app
       logEvent('Project deleted', { project: id });
     }
 
-    return ctx.json(
-      {
-        success: true,
-        errors: errors,
-      },
-      200,
-    );
+    return ctx.json({ success: true, errors: errors }, 200);
   });
 
 export default projectsRoutes;

@@ -1,21 +1,21 @@
+import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
+import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { User } from '~/types';
-import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
-import TableCount from '../../common/data-table/table-count';
-import { dialog } from '~/modules/common/dialoger/state';
 import InviteUsers from '~/modules/users/invite-users';
-import DeleteUsers from '../delete-users';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+import type { User } from '~/types';
 import type { SystemRoles } from '.';
+import TableCount from '../../common/data-table/table-count';
+import DeleteUsers from '../delete-users';
 
 interface Props {
   total?: number;

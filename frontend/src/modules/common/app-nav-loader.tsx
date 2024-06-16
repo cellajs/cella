@@ -20,7 +20,6 @@ const AppNavLoader = () => {
     // TODO: move this to a more general location?
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
       if (toLocation.pathname !== fromLocation.pathname) {
-
         // Disable focus view
         setFocusView(false);
         // Remove sheets in content

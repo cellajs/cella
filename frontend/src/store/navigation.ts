@@ -63,7 +63,7 @@ export const useNavigationStore = create<NavigationState>()(
             set((state) => {
               if (action === 'force') state.activeSheet = component;
               if (action === 'routeChange') {
-                const shouldStayOpen = state.activeSheet?.id === 'menu' && state.keepMenuOpen
+                const shouldStayOpen = state.activeSheet?.id === 'menu' && state.keepMenuOpen;
                 const smallScreen = window.innerWidth < 1280;
                 if (!shouldStayOpen || smallScreen) state.activeSheet = null;
                 return;

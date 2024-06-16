@@ -2,13 +2,13 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { arrayMove, getReorderDestinationIndex, sortById } from '~/lib/utils';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
+import { useNavigationStore } from '~/store/navigation';
 import type { Project } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn, isProjectData } from './board-column';
-import { useNavigationStore } from '~/store/navigation';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels

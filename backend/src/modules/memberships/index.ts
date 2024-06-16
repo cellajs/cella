@@ -1,6 +1,6 @@
 import { and, eq, inArray, or } from 'drizzle-orm';
 import { db } from '../../db/db';
-import { membershipsTable, type MembershipModel } from '../../db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 
 import { render } from '@react-email/render';
 import { config } from 'config';
@@ -8,22 +8,22 @@ import { emailSender } from 'email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
 import { InviteEmail } from '../../../../email/emails/invite';
-import { tokensTable, type TokenModel } from '../../db/schema/tokens';
+import type { OrganizationModel } from '../../db/schema/organizations';
+import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { type UserModel, usersTable } from '../../db/schema/users';
 import { resolveEntity } from '../../lib/entity';
-import { createError, errorResponse, type ErrorType } from '../../lib/errors';
+import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import permissionManager from '../../lib/permission-manager';
 import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { membershipsTableId, supportedEntityTypes, type supportedModelTypes } from './helpers/create-membership-config';
 import membershipRouteConfig from './routes';
-import type { OrganizationModel } from '../../db/schema/organizations';
-import { type supportedModelTypes, supportedEntityTypes, membershipsTableId } from './helpers/create-membership-config';
 
 const app = new CustomHono();
 
-// * Membership endpoints
+// Membership endpoints
 const membershipsRoutes = app
   /*
    * Invite members to an entity such as an organization
@@ -143,6 +143,7 @@ const membershipsRoutes = app
               type: context.entity as MembershipModel['type'],
               role: assignedRole,
               createdBy: user.id,
+              order: 1,
             });
 
             logEvent(`User added to ${context.entity.toLowerCase()}`, { user: user.id, id: context.id });
@@ -219,7 +220,7 @@ const membershipsRoutes = app
     const user = ctx.get('user');
 
     if (!config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
-    // * Convert the member ids to an array
+    // Convert the member ids to an array
     const memberToDeleteIds = Array.isArray(ids) ? ids : [ids];
 
     // Check if the user has permission to delete the memberships
@@ -243,26 +244,26 @@ const membershipsRoutes = app
       ),
     );
 
-    // * Get the user membership
+    // Get the user membership
     const [currentUserMembership] = (await db
       .select()
       .from(membershipsTable)
       .where(and(where, eq(membershipsTable.userId, user.id)))) as (MembershipModel | undefined)[];
 
-    // * Get the memberships
+    // Get the memberships
     const targets = await db
       .select()
       .from(membershipsTable)
       .where(and(inArray(membershipsTable.userId, memberToDeleteIds), where));
 
-    // * Check if the memberships exist
+    // Check if the memberships exist
     for (const id of memberToDeleteIds) {
       if (!targets.some((target) => target.userId === id)) {
         errors.push(createError(ctx, 404, 'not_found', 'warn', entityType, { user: id }));
       }
     }
 
-    // * Filter out memberships that the user doesn't have permission to delete
+    // Filter out memberships that the user doesn't have permission to delete
     const allowedTargets = targets.filter((target) => {
       if (user.role !== 'ADMIN' && currentUserMembership?.role !== 'ADMIN') {
         errors.push(
@@ -277,12 +278,12 @@ const membershipsRoutes = app
       return true;
     });
 
-    // * If the user doesn't have permission to delete any of the memberships, return an error
+    // If the user doesn't have permission to delete any of the memberships, return an error
     if (allowedTargets.length === 0) {
       return ctx.json({ success: false, errors: errors }, 200);
     }
 
-    // * Delete the memberships
+    // Delete the memberships
     await db.delete(membershipsTable).where(
       inArray(
         membershipsTable.id,
@@ -290,9 +291,9 @@ const membershipsRoutes = app
       ),
     );
 
-    // * Send SSE events for the memberships that were deleted
+    // Send SSE events for the memberships that were deleted
     for (const membership of allowedTargets) {
-      // * Send the event to the user if they are a member of the organization
+      // Send the event to the user if they are a member of the organization
       const memberIds = targets.map((el) => el.userId).filter(Boolean) as string[];
       sendSSEToUsers(memberIds, 'remove_entity', { ...membershipContext, ...membership });
 
@@ -309,7 +310,7 @@ const membershipsRoutes = app
     const { role, inactive, muted } = ctx.req.valid('json');
     const user = ctx.get('user');
 
-    // * Get the membership
+    // Get the membership
     const [membershipToUpdate] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
     if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { membership: membershipId });
 
@@ -321,7 +322,7 @@ const membershipsRoutes = app
       membershipToUpdate.projectId || membershipToUpdate.workspaceId || membershipToUpdate.organizationId || '',
     );
 
-    // * Check if user has permission to someone elses membership
+    // Check if user has permission to someone elses membership
     if (user.id !== membershipToUpdate.userId) {
       const permissionMemberships = await db
         .select()

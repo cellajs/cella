@@ -1,11 +1,11 @@
 import { useNavigate } from '@tanstack/react-router';
+import { config } from 'config';
 import { useState } from 'react';
 import type { OnboardingStates } from '~/modules/home/onboarding';
 import Onboarding from '~/modules/home/onboarding';
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
 import { useUserStore } from '~/store/user';
 import { OnboardingCompleted } from './onboarding/completed';
-import { config } from 'config';
 
 const Welcome = () => {
   const navigate = useNavigate();

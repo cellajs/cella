@@ -18,7 +18,6 @@ type AccountButtonProps = {
 
 // Create a button for each account action
 const AccountButton: React.FC<AccountButtonProps> = ({ lucideButton: Icon, label, id, accountAction }) => {
-  
   const btnClass = `${id === 'btn-signout' && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left`;
 
   return (

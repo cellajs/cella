@@ -1,8 +1,8 @@
 import { useNavigationStore } from '~/store/navigation';
-import { useSSE } from './use-sse';
-import { menuSections } from '../nav-sheet/sheet-menu';
 import type { ContextEntityType } from '~/types';
+import { menuSections } from '../nav-sheet/sheet-menu';
 import { removeIdFromSubMenu } from './helpers';
+import { useSSE } from './use-sse';
 
 const SSE = () => {
   const updateEntity = (e: MessageEvent<string>) => {

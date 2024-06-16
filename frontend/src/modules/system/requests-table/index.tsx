@@ -10,13 +10,13 @@ import type { z } from 'zod';
 import { type GetRequestsParams, getRequests } from '~/api/requests';
 import { useDebounce } from '~/hooks/use-debounce';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { RequestsTableRoute } from '~/routes/system';
 import type { Request } from '~/types';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 
 export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 

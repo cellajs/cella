@@ -32,9 +32,7 @@ const getQuery = (entity: EntityType) => {
 export function counts<T extends string | undefined = undefined>(
   entity: EntityType,
   id?: T,
-): T extends string
-  ? Promise<{ memberships: { admins: number; members: number; total: number } }>
-  : Promise<ReturnType<typeof getQuery>>;
+): T extends string ? Promise<{ memberships: { admins: number; members: number; total: number } }> : Promise<ReturnType<typeof getQuery>>;
 export async function counts(entity: EntityType, id?: string | undefined) {
   const query = getQuery(entity);
 

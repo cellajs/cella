@@ -88,9 +88,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
           )}
         />
 
-        <Suspense fallback={null}>
-          Here should be blocknotejs editor
-        </Suspense>
+        <Suspense fallback={null}>Here should be blocknotejs editor</Suspense>
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>

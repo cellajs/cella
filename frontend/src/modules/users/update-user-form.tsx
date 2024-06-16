@@ -7,8 +7,8 @@ import type { z } from 'zod';
 import type { MeUser, User } from '~/types';
 import AvatarFormField from '../common/form-fields/avatar';
 
-import { type UpdateUserParams, updateUser } from '~/api/users';
 import { updateSelf } from '~/api/me';
+import { type UpdateUserParams, updateUser } from '~/api/users';
 
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -136,7 +136,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
         <AvatarFormField
           control={form.control}
-          label={t('common:profile_picture')}
+          label={children ? '' : t('common:profile_picture')}
           type="USER"
           name="thumbnailUrl"
           entity={user}

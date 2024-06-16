@@ -13,6 +13,7 @@ import { inviteMember } from '~/api/memberships';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
@@ -20,7 +21,6 @@ import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { DataTable } from '../../common/data-table';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 

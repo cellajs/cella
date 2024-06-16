@@ -89,8 +89,8 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
                   onChange={(options) => onChange(options.map((o) => o.value))}
                   onSearch={async (query) => {
                     const data = await getSuggestions(query, 'USER');
-                    if (data.entities.length > 0) {
-                      return data.entities.map((u) => ({
+                    if (data.items.length > 0) {
+                      return data.items.map((u) => ({
                         label: u.name || u.email || '',
                         value: u.email || '',
                       }));

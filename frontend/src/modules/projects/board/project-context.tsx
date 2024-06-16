@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useRef } from 'react';
 import { createStore } from 'zustand';
-import type { Member, Project } from '~/types';
 import { useStoreWithEqualityFn } from 'zustand/traditional';
 import type { Label, Task } from '~/modules/common/electric/electrify';
+import type { Member, Project } from '~/types';
 
 interface ProjectProps {
   project: Project;

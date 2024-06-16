@@ -1,13 +1,13 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
 import { getOrganization } from '~/api/organizations';
+import { EntityContext } from '~/modules/common/entity-context';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
+import type { EntityPage } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
 import JoinLeaveButton from './join-leave-button';
-import { EntityContext } from '~/modules/common/entity-context';
-import type { EntityPage } from '~/types';
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },

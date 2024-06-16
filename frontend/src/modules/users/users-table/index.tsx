@@ -3,22 +3,22 @@ import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { type GetUsersParams, getUsers, updateUser } from '~/api/users';
 
+import type { getUsersQuerySchema } from 'backend/modules/users/schema';
+import type { config } from 'config';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutation } from '~/hooks/use-mutations';
 import { DataTable } from '~/modules/common/data-table';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import { UsersTableRoute } from '~/routes/system';
 import type { User } from '~/types';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { useMutation } from '~/hooks/use-mutations';
-import { UsersTableRoute } from '~/routes/system';
-import type { config } from 'config';
-import { useTranslation } from 'react-i18next';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import type { z } from 'zod';
-import type { getUsersQuerySchema } from 'backend/modules/users/schema';
 
 type UsersSearch = z.infer<typeof getUsersQuerySchema>;
 

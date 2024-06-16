@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useProjectContext } from './project-context';
 import ToolTipButtons from './tooltip-buttons';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 interface BoardColumnHeaderProps {
   createFormOpen: boolean;

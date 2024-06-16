@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { relations } from 'drizzle-orm';
-import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
@@ -29,6 +29,7 @@ export const membershipsTable = pgTable('memberships', {
   }),
   inactive: boolean('inactive').default(false).notNull(),
   muted: boolean('muted').default(false).notNull(),
+  order: doublePrecision('sort_order').notNull(),
 });
 
 export const membershipsTableRelations = relations(membershipsTable, ({ one }) => ({

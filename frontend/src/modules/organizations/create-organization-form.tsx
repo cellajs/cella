@@ -20,8 +20,8 @@ import type { Organization } from '~/types';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
-import { Form, type LabelDirectionType } from '../ui/form';
 import { useStepper } from '../common/stepper/use-stepper';
+import { Form, type LabelDirectionType } from '../ui/form';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;

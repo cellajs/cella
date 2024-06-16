@@ -1,5 +1,5 @@
-import type { MembershipModel } from "../../../db/schema/memberships"
-import type { membershipInfoType } from "../schema";
+import type { MembershipModel } from '../../../db/schema/memberships';
+import type { membershipInfoType } from '../schema';
 
 /**
  * Converts a membership to a membershipInfo object.
@@ -8,10 +8,11 @@ import type { membershipInfoType } from "../schema";
  * @returns {membershipInfoType} The converted membership information object.
  */
 const convertMembershipToInfo = (membership: MembershipModel): membershipInfoType => ({
-    id: membership.id,
-    role: membership.role,
-    archived: membership.inactive || false,
-    muted: membership.muted || false,
+  id: membership.id,
+  role: membership.role,
+  archived: membership.inactive || false,
+  muted: membership.muted || false,
+  order: membership.order,
 });
 
 /**
@@ -21,7 +22,7 @@ const convertMembershipToInfo = (membership: MembershipModel): membershipInfoTyp
  * @returns {membershipInfoType | null} The converted membership information object, or null if the input is undefined or null.
  */
 export const toMembershipInfo = (membership: MembershipModel | undefined | null): membershipInfoType | null => {
-    return membership ? convertMembershipToInfo(membership) : null;
+  return membership ? convertMembershipToInfo(membership) : null;
 };
 
 /**
@@ -31,7 +32,7 @@ export const toMembershipInfo = (membership: MembershipModel | undefined | null)
  * @returns {membershipInfoType | null} The converted membership information object, or null if the input is undefined or null.
  */
 toMembershipInfo.nullable = (membership: MembershipModel | undefined | null): membershipInfoType | null => {
-    return membership ? convertMembershipToInfo(membership) : null;
+  return membership ? convertMembershipToInfo(membership) : null;
 };
 
 /**
@@ -41,5 +42,5 @@ toMembershipInfo.nullable = (membership: MembershipModel | undefined | null): me
  * @returns {membershipInfoType} The converted membership information object.
  */
 toMembershipInfo.required = (membership: MembershipModel): membershipInfoType => {
-    return convertMembershipToInfo(membership);
+  return convertMembershipToInfo(membership);
 };

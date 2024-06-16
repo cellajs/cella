@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef } from 'react';
 import { createStore } from 'zustand';
-import type { Project, Workspace } from '~/types';
 import { useStoreWithEqualityFn } from 'zustand/traditional';
+import type { Project, Workspace } from '~/types';
 
 interface WorkspaceProps {
   workspace: Workspace;

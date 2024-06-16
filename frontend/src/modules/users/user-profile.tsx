@@ -7,8 +7,8 @@ import { UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '~/modules/common/page-header';
 import { useUserStore } from '~/store/user';
-import { Button } from '../ui/button';
 import ProjectsTable from '../projects/projects-table';
+import { Button } from '../ui/button';
 
 interface UserContextValue {
   user: User;

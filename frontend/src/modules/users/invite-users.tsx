@@ -1,3 +1,4 @@
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +9,6 @@ import type { EntityPage } from '~/types';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import InviteEmailForm from './invite-email-form';
 import InviteSearchForm from './invite-search-form';
-import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 
 interface InviteUsersProps {
   entity?: EntityPage;
