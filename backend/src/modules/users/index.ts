@@ -11,7 +11,7 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { transformDatabaseUser } from './helpers/transform-database-user';
+import { transformDatabaseUserWithCount } from './helpers/transform-database-user';
 import usersRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -79,10 +79,7 @@ const usersRoutes = app
 
     const result = await usersQuery.limit(Number(limit)).offset(Number(offset));
 
-    const items = result.map(({ user, counts }) => ({
-      ...transformDatabaseUser(user),
-      counts,
-    }));
+    const items = result.map(({ user, counts }) => transformDatabaseUserWithCount(user, counts.memberships));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   })
@@ -184,12 +181,7 @@ const usersRoutes = app
     return ctx.json(
       {
         success: true,
-        data: {
-          ...transformDatabaseUser(targetUser),
-          counts: {
-            memberships,
-          },
-        },
+        data: transformDatabaseUserWithCount(targetUser, memberships),
       },
       200,
     );
@@ -255,12 +247,7 @@ const usersRoutes = app
     return ctx.json(
       {
         success: true,
-        data: {
-          ...transformDatabaseUser(updatedUser),
-          counts: {
-            memberships,
-          },
-        },
+        data: transformDatabaseUserWithCount(updatedUser, memberships),
       },
       200,
     );

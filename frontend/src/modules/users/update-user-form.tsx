@@ -4,7 +4,7 @@ import { updateUserJsonSchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import type { MeUser, User } from '~/types';
+import type { User } from '~/types';
 import AvatarFormField from '../common/form-fields/avatar';
 
 import { updateSelf } from '~/api/me';
@@ -58,7 +58,7 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
-  const { user: currentUser, setUser } = useUserStore();
+  const { user: currentUser, updateUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
   // Hide fields if requested
@@ -97,7 +97,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     mutate(values, {
       onSuccess: (updatedUser) => {
         if (isSelf) {
-          setUser(updatedUser as MeUser);
+          updateUser(updatedUser);
           toast.success(t('common:success.you_updated'));
         } else {
           toast.success(t('common:success.updated_user'));

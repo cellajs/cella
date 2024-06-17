@@ -39,7 +39,7 @@ export const SheetMenuItemsOptions = ({
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
   const { hideSubmenu, menuOrder } = useNavigationStore();
   const entityType = data[0].entity;
-  const mainItemId = data[0].mainId;
+  const mainItemId = data[0].parentId;
   if (data.length === 0) {
     return (
       <li className="py-2 text-muted-foreground text-sm text-light text-center">

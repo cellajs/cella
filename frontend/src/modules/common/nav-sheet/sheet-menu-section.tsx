@@ -27,7 +27,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
   const [globalDragging, setGlobalDragging] = useState(false);
   const { activeSections } = useNavigationStore();
   const isSectionVisible = activeSections[sectionType];
-  const mainItemId = data.length > 0 ? data[0].mainId : '';
+  const mainItemId = data.length > 0 ? data[0].parentId : '';
 
   const sectionRef = useRef<HTMLDivElement>(null);
   const archivedRef = useRef<HTMLDivElement>(null);

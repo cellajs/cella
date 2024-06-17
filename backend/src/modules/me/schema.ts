@@ -19,7 +19,7 @@ const menuItemSchema = z.object({
   thumbnailUrl: imageUrlSchema.nullish(),
   entity: z.enum(config.contextEntityTypes),
   membership: membershipInfoSchema,
-  mainId: z.string().optional(),
+  parentId: z.string().optional(),
 });
 
 const menuSchema = z.array(

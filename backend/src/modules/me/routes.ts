@@ -7,7 +7,7 @@ import {
 import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import { updateUserJsonSchema } from '../users/schema';
+import { apiUserSchema, updateUserJsonSchema } from '../users/schema';
 import { meUserSchema, userMenuSchema } from './schema';
 
 class MeRoutesConfig {
@@ -54,7 +54,7 @@ class MeRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(meUserSchema),
+            schema: successResponseWithDataSchema(apiUserSchema),
           },
         },
       },

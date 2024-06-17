@@ -90,7 +90,7 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
     );
 
   const renderItems = () => {
-    const mainItemId = data[0].mainId;
+    const mainItemId = data[0].parentId;
     const filteredItems = data
       .filter((item) => (shownOption === 'archived' ? item.membership.archived : !item.membership.archived))
       .sort((a, b) => sortById(a.id, b.id, mainItemId ? menuOrder[type].subList[mainItemId] : menuOrder[type].mainList));
@@ -99,7 +99,7 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
       <>
         {filteredItems.map((item) => (
           <div key={item.id}>
-            <SheetMenuItem item={item} type={type} mainItemId={item.mainId} className={className} searchResults={searchResults} />
+            <SheetMenuItem item={item} type={type} mainItemId={item.parentId} className={className} searchResults={searchResults} />
             {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
               <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
             )}

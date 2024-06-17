@@ -28,9 +28,9 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   setFocusView: (status: boolean) => void;
-  archiveStateToggle: (itemId: string, active: boolean, mainId?: string | null) => void;
+  archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => void;
   setMainMenuOrder: (entityType: ContextEntityType, mainListOrder: string[]) => void;
-  setSubMenuOrder: (entityType: ContextEntityType, mainId: string, subItemIds: string[]) => void;
+  setSubMenuOrder: (entityType: ContextEntityType, parentId: string, subItemIds: string[]) => void;
 }
 
 const initialMenuState: UserMenu = menuSections
@@ -102,9 +102,9 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = sectionState;
             });
           },
-          archiveStateToggle: (itemId: string, active: boolean, mainId?: string | null) => {
+          archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => {
             set((state) => {
-              if (!mainId) {
+              if (!parentId) {
                 for (const sectionKey of Object.keys(state.menu)) {
                   const section = state.menu[sectionKey as keyof UserMenu];
                   const itemIndex = section.findIndex((item) => item.id === itemId);
@@ -112,7 +112,7 @@ export const useNavigationStore = create<NavigationState>()(
                 }
               } else {
                 const section = state.menu.workspaces;
-                const workspace = section.find((item) => item.id === mainId);
+                const workspace = section.find((item) => item.id === parentId);
                 if (!workspace || !workspace.submenu) return;
                 const itemIndex = workspace.submenu.findIndex((item) => item.id === itemId);
                 if (itemIndex && itemIndex !== -1) workspace.submenu[itemIndex].membership.archived = active;
@@ -130,7 +130,7 @@ export const useNavigationStore = create<NavigationState>()(
               };
             });
           },
-          setSubMenuOrder: (entityType: ContextEntityType, mainId: string, subItemIds: string[]) => {
+          setSubMenuOrder: (entityType: ContextEntityType, parentId: string, subItemIds: string[]) => {
             set((state) => {
               return {
                 menuOrder: {
@@ -139,7 +139,7 @@ export const useNavigationStore = create<NavigationState>()(
                     ...state.menuOrder[entityType],
                     subList: {
                       ...state.menuOrder[entityType]?.subList,
-                      [mainId]: subItemIds,
+                      [parentId]: subItemIds,
                     },
                   },
                 },
