@@ -1,11 +1,10 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useContext, useRef } from 'react';
 
 import type { getMembersQuerySchema } from 'backend/modules/general/schema';
-import type { config } from 'config';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { type GetMembersParams, getMembers } from '~/api/general';
@@ -16,16 +15,27 @@ import { useMutation } from '~/hooks/use-mutations';
 import { DataTable } from '~/modules/common/data-table';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import type { ContextEntityType, Member } from '~/types';
-import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { useColumns } from './columns';
-import Toolbar from './toolbar';
+import { motion } from 'framer-motion';
+import { Mail, Trash, XSquare } from 'lucide-react';
+import Export from '~/modules/common/data-table/export';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import TableSearch from '~/modules/common/data-table/table-search';
+import { dialog } from '~/modules/common/dialoger/state';
+import { EntityContext } from '~/modules/common/entity-context';
+import { FocusView } from '~/modules/common/focus-view';
+import SelectRole from '~/modules/common/form-fields/select-role';
+import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
+import InviteUsers from '~/modules/users/invite-users';
+import ColumnsView from '~/modules/common/data-table/columns-view';
+import TableCount from '~/modules/common/data-table/table-count';
 
 const LIMIT = 40;
 
-// TODO: isnt this type already available elsewhere?
-export type MembersRoles = (typeof config.rolesByType.entityRoles)[number] | undefined;
-
-export type UsersSearch = z.infer<typeof getMembersQuerySchema>;
+type MemberSearch = z.infer<typeof getMembersQuerySchema>;
 
 interface MembersTableProps {
   idOrSlug: string;
@@ -51,18 +61,20 @@ export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort
 const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTableProps) => {
   const { t } = useTranslation();
   const search = useSearch({ from: route });
+  const containerRef = useRef(null);
+  const { entity, isAdmin } = useContext(EntityContext);
 
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<UsersSearch['q']>(search.q);
-  const [role, setRole] = useState<UsersSearch['role']>(search.role);
+  const [query, setQuery] = useState<MemberSearch['q']>(search.q);
+  const [role, setRole] = useState<MemberSearch['role']>(search.role);
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
   const q = useDebounce(query, 200);
-  const sort = sortColumns[0]?.columnKey as UsersSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'];
+  const sort = sortColumns[0]?.columnKey as MemberSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'];
   const limit = LIMIT;
 
   // Check if table has enabled filtered
@@ -75,7 +87,7 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
   const totalCount = queryResult.data?.pages[0].total;
 
   const onRoleChange = (role?: string) => {
-    setRole(role === 'all' ? undefined : (role as MembersRoles));
+    setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
   };
   // Save filters in search params
   const filters = useMemo(
@@ -87,6 +99,11 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
     }),
     [q, role, sortColumns],
   );
+
+  const selectedMembers = useMemo(() => {
+    return rows.filter((row) => selectedRows.has(row.id));
+  }, [selectedRows, rows]);
+
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Update member role
@@ -104,8 +121,8 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
     idOrSlug,
     entityType,
     q,
-    sortColumns[0]?.columnKey as UsersSearch['sort'],
-    sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
+    sortColumns[0]?.columnKey as MemberSearch['sort'],
+    sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
     role,
   ]);
 
@@ -124,6 +141,58 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
     setRows(changedRows);
   };
 
+  const fetchForExport = async (limit: number) => {
+    const data = await getMembers({
+      q,
+      sort: sortColumns[0]?.columnKey as MemberSearch['sort'],
+      order: sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
+      role,
+      limit,
+      idOrSlug,
+      entityType,
+    });
+    return data.items;
+  };
+
+  const openInviteDialog = () => {
+    dialog(<InviteUsers entity={entity} mode={null} dialog />, {
+      id: 'user-invite',
+      drawerOnMobile: false,
+      className: 'w-auto shadow-none relative z-[120] max-w-4xl',
+      container: containerRef.current,
+      title: t('common:invite'),
+      text: `${t('common:invite_users.text')}`,
+    });
+  };
+
+  const openRemoveDialog = () => {
+    dialog(
+      <RemoveMembersForm
+        entityId={idOrSlug}
+        entityType={entityType}
+        dialog
+        callback={(members) => {
+          callback(members, 'delete');
+          toast.success(t('common:success.delete_members'));
+        }}
+        members={selectedMembers}
+      />,
+      {
+        drawerOnMobile: false,
+        className: 'max-w-xl',
+        title: t('common:remove_member'),
+        text: (
+          <Trans
+            i18nKey="common:confirm.remove_members"
+            values={{
+              emails: selectedMembers.map((member) => member.email).join(', '),
+            }}
+          />
+        ),
+      },
+    );
+  };
+
   useEffect(() => {
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
 
@@ -135,35 +204,73 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
 
   return (
     <div className="space-y-4 h-full">
-      <Toolbar
-        callback={callback}
-        entityType={entityType}
-        isFiltered={isFiltered}
-        total={totalCount}
-        query={query}
-        setQuery={setQuery}
-        onResetFilters={onResetFilters}
-        onResetSelectedRows={() => setSelectedRows(new Set<string>())}
-        role={role}
-        selectedMembers={rows.filter((row) => selectedRows.has(row.id)) as Member[]}
-        onRoleChange={onRoleChange}
-        columns={columns}
-        focus={focus}
-        setColumns={setColumns}
-        idOrSlug={idOrSlug}
-        fetchForExport={async (limit: number) => {
-          const data = await getMembers({
-            q,
-            sort: sortColumns[0]?.columnKey as UsersSearch['sort'],
-            order: sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
-            role,
-            limit,
-            idOrSlug,
-            entityType,
-          });
-          return data.items;
-        }}
-      />
+      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+          <FilterBarActions>
+            {selectedMembers.length > 0 ? (
+              <>
+                <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
+                  <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
+                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2 animate-in zoom-in">
+                      {selectedMembers.length}
+                    </Badge>
+                    <motion.span layoutId="members-filter-bar-icon">
+                      <Trash size={16} />
+                    </motion.span>
+
+                    <span className="ml-1 max-xs:hidden">{idOrSlug ? t('common:remove') : t('common:delete')}</span>
+                  </motion.button>
+                </Button>
+
+                <Button asChild variant="ghost" onClick={() => setSelectedRows(new Set<string>())}>
+                  <motion.button
+                    transition={{
+                      bounce: 0,
+                      duration: 0.2,
+                    }}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -20, opacity: 0 }}
+                  >
+                    <XSquare size={16} />
+                    <span className="ml-1">{t('common:clear')}</span>
+                  </motion.button>
+                </Button>
+              </>
+            ) : (
+              !isFiltered &&
+              isAdmin && (
+                <Button asChild onClick={openInviteDialog}>
+                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
+                    <motion.span layoutId="members-filter-bar-icon">
+                      <Mail size={16} />
+                    </motion.span>
+                    <span className="ml-1">{t('common:invite')}</span>
+                  </motion.button>
+                </Button>
+              )
+            )}
+            {selectedMembers.length === 0 && <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          </FilterBarActions>
+          <div className="sm:grow" />
+          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
+            <TableSearch value={query} setQuery={setQuery} />
+            <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
+          </FilterBarContent>
+        </TableFilterBar>
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+        {fetchForExport && (
+          <Export<Member>
+            className="max-lg:hidden"
+            filename={`${entityType} members`}
+            columns={columns}
+            selectedRows={selectedMembers}
+            fetchRows={fetchForExport}
+          />
+        )}
+        {focus && <FocusView iconOnly />}
+      </div>
+      <div ref={containerRef} />
       <DataTable<Member>
         {...{
           columns: columns.filter((column) => column.visible),
