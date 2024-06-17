@@ -1,8 +1,8 @@
 // Original source: https://github.com/axisj/react-multi-email
 
 // This file is a modified version of the original source code.
-// * Removed autofocus
-// * Use shadcn UI components and css
+// Removed autofocus
+// Use shadcn UI components and css
 
 import { X } from 'lucide-react';
 import * as React from 'react';

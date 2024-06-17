@@ -1,3 +1,4 @@
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { ChevronRight, Shrub, SquareMousePointer } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,6 @@ import type { Organization, Workspace } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { CreateProjectForm } from './create-project-form';
-import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 
 interface AddProjectsProps {
   workspace: Workspace;

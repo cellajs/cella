@@ -16,7 +16,7 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
   '429': t('common:error.too_many_requests'),
 });
 
-const onError = (error: Error) => {
+export const onError = (error: Error) => {
   if (error instanceof ApiError) {
     const statusCode = Number(error.status);
     // Abort if /me or /menu, it should fail silently

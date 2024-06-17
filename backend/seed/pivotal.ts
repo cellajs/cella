@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import { Command } from 'commander';
+import { eq } from 'drizzle-orm';
 import JSZip from 'jszip';
 import papaparse from 'papaparse';
 import { db } from '../src/db/db.electric';
 import { tasksTable } from '../src/db/schema-electric/tasks';
 import { projectsTable } from '../src/db/schema/projects';
-import { eq } from 'drizzle-orm';
 
 const program = new Command().option('--file <file>', 'Zip file to upload').option('--project <project>', 'Project to upload tasks to').parse();
 

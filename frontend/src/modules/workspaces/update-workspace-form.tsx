@@ -36,8 +36,8 @@ export const useUpdateWorkspaceMutation = (idOrSlug: string) => {
   return useMutation<Workspace, DefaultError, UpdateWorkspaceParams>({
     mutationKey: ['workspace', 'update', idOrSlug],
     mutationFn: (params) => updateWorkspace(idOrSlug, params),
-    onSuccess: (workspace) => {
-      queryClient.setQueryData(['workspace', idOrSlug], workspace);
+    onSuccess: (updatedWorkspace) => {
+      queryClient.setQueryData(['workspace', idOrSlug], updatedWorkspace);
     },
     gcTime: 1000 * 10,
   });
@@ -64,8 +64,8 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
 
   const onSubmit = (values: FormValues) => {
     mutate(values, {
-      onSuccess: (data) => {
-        callback?.(data);
+      onSuccess: (updatedWorkspace) => {
+        callback?.(updatedWorkspace);
         if (isDialog) dialog.remove();
         toast.success(t('common:success.update_resource', { resource: t('common:workspace') }));
       },

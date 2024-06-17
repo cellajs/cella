@@ -6,11 +6,11 @@ import { useTranslation } from 'react-i18next';
 // import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure.tsx';
 import { Button } from '~/modules/ui/button';
+import { ScrollArea } from '~/modules/ui/scroll-area.tsx';
 import type { Task } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
-import { ScrollArea } from '~/modules/ui/scroll-area.tsx';
 
 interface Props {
   mode: 'create' | 'edit';

@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Bell, Home, type LucideProps, Menu, Search, User, Bug, BugOff } from 'lucide-react';
+import { Bell, Bug, BugOff, Home, type LucideProps, Menu, Search, User } from 'lucide-react';
 import type React from 'react';
 import { Fragment, useEffect, useState } from 'react';
 import { useThemeStore } from '~/store/theme';

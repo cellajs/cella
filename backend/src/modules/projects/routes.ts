@@ -16,8 +16,8 @@ class ProjectRoutesConfig {
     path: '/',
     guard: [isAuthenticated, isAllowedTo('create', 'PROJECT')],
     tags: ['projects'],
-    summary: 'create new project',
-    description: 'create a new project in an organization. Creator will become admin and can invite other members.',
+    summary: 'Create new project',
+    description: 'Create a new project in an organization. Creator will become admin and can invite other members.',
     security: [{ bearerAuth: [] }],
     request: {
       query: createProjectQuerySchema,

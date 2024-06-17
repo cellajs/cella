@@ -9,22 +9,22 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { useElectric, type Label, type Task } from '../../common/electric/electrify.ts';
+import { type Label, type Task, useElectric } from '../../common/electric/electrify.ts';
 import { Checkbox } from '../../ui/checkbox.tsx';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
 import { SelectImpact } from './task-selectors/select-impact.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
+import { useLiveQuery } from 'electric-sql/react';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 import { useProjectContext } from '../board/project-context.tsx';
+import { useTaskContext } from './task-context.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import SelectParent from './task-selectors/select-parent.tsx';
 import SetSubTasks from './task-selectors/select-sub-tasks.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
-import { useTaskContext } from './task-context.tsx';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
-import { useLiveQuery } from 'electric-sql/react';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;

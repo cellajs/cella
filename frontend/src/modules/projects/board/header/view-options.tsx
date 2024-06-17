@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import { TooltipButton } from '../../../common/tooltip-button.tsx';
 import { Badge } from '../../../ui/badge.tsx';
@@ -12,7 +13,6 @@ import ThreeStateSwitch from '../../../ui/three-state-switch.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../../../ui/toggle-group.tsx';
 import { taskTypes } from '../../task/create-task-form.tsx';
 import { DualSlider } from './view-status-dual-slider.tsx';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 
 interface Props {
   className?: string;

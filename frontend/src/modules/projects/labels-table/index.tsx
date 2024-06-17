@@ -32,8 +32,8 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
       : [{ columnKey: 'name', direction: 'ASC' }],
   );
 
-  const onRowsChange = (records: Label[]) => {
-    setRows(records);
+  const onRowsChange = (changedRows: Label[]) => {
+    setRows(changedRows);
   };
 
   const isFiltered = !!query;

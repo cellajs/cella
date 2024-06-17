@@ -20,8 +20,8 @@ import type { Organization } from '~/types';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
-import { Form, type LabelDirectionType } from '../ui/form';
 import { useStepper } from '../common/stepper/use-stepper';
+import { Form, type LabelDirectionType } from '../ui/form';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -59,17 +59,17 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createOrganization,
-    onSuccess: (result) => {
+    onSuccess: (createdOrganization) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
-      callback?.(result);
+      setMainMenuOrder(type, [...menuOrder[type].mainList, createdOrganization.id]);
+      callback?.(createdOrganization);
       nextStep?.();
       if (!callback) {
         navigate({
           to: '/$idOrSlug/members',
           params: {
-            idOrSlug: result.slug,
+            idOrSlug: createdOrganization.slug,
           },
         });
       }

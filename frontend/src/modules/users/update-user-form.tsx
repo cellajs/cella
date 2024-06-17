@@ -7,8 +7,8 @@ import type { z } from 'zod';
 import type { MeUser, User } from '~/types';
 import AvatarFormField from '../common/form-fields/avatar';
 
-import { type UpdateUserParams, updateUser } from '~/api/users';
 import { updateSelf } from '~/api/me';
+import { type UpdateUserParams, updateUser } from '~/api/users';
 
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -48,8 +48,8 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
   return useMutation<User, DefaultError, UpdateUserParams>({
     mutationKey: ['me', 'update', idOrSlug],
     mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
-    onSuccess: (user) => {
-      queryClient.setQueryData(['users', user.id], user);
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(['users', updatedUser.id], updatedUser);
     },
     gcTime: 1000 * 10,
   });
@@ -95,9 +95,9 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     if (!user) return;
 
     mutate(values, {
-      onSuccess: (data) => {
+      onSuccess: (updatedUser) => {
         if (isSelf) {
-          setUser(data as MeUser);
+          setUser(updatedUser as MeUser);
           toast.success(t('common:success.you_updated'));
         } else {
           toast.success(t('common:success.updated_user'));
@@ -105,8 +105,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
         if (isSheet) sheet.remove('update-user');
 
-        form.reset(data);
-        callback?.(data);
+        form.reset(updatedUser);
+        callback?.(updatedUser);
 
         nextStep?.();
       },
@@ -136,7 +136,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
         <AvatarFormField
           control={form.control}
-          label={t('common:profile_picture')}
+          label={children ? '' : t('common:profile_picture')}
           type="USER"
           name="thumbnailUrl"
           entity={user}

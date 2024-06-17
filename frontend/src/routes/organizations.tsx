@@ -1,14 +1,14 @@
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { getMembersQuerySchema } from 'backend/modules/general/schema';
-import { lazy, Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
+import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import { IndexRoute } from './routeTree';
-import { membersQueryOptions } from '~/modules/organizations/members-table';
 
 //Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
@@ -38,10 +38,10 @@ export const OrganizationMembersRoute = createRoute({
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'ORGANIZATION';
-    const membersInfiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role });
-    const cachedMembers = queryClient.getQueryData(membersInfiniteQueryOptions.queryKey);
+    const infiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role });
+    const cachedMembers = queryClient.getQueryData(infiniteQueryOptions.queryKey);
     if (!cachedMembers) {
-      queryClient.fetchInfiniteQuery(membersInfiniteQueryOptions);
+      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
     }
   },
   component: () => (

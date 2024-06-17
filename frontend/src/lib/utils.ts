@@ -12,7 +12,6 @@ import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import type { Task } from '~/modules/common/electric/electrify';
 import type { DraggableItemData } from '~/types';
-import type { SortColumn } from 'react-data-grid';
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
@@ -117,14 +116,6 @@ export const translationExists = (key: string) => {
 export const noDirectAccess = (pathname: string, param: string, redirectLocation: string) => {
   if (!pathname.endsWith(param)) return;
   throw redirect({ to: pathname + redirectLocation, replace: true });
-};
-
-// Initial sort of columns for tables
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export const getInitialSortColumns = (search: any): SortColumn[] => {
-  return search.sort && search.order
-    ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
-    : [{ columnKey: 'createdAt', direction: 'DESC' }];
 };
 
 // To sort Tasks by its status & order

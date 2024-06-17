@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { signOut } from '~/api/auth';
 import { useDraftStore } from '~/store/draft';
+import { type EntityConfig, useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import { useNavigationStore, type EntityConfig } from '~/store/navigation';
 import type { MeUser } from '~/types';
 
 export const signOutUser = async () => {

@@ -1,0 +1,1 @@
+ALTER TABLE "memberships" ADD COLUMN "sort_order" double precision NOT NULL;

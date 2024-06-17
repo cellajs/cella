@@ -9,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { config } from 'config';
 import { t } from 'i18next';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -20,7 +21,6 @@ import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types';
 import type { TokenData } from '.';
-import { config } from 'config';
 
 const formSchema = signInJsonSchema;
 
@@ -33,29 +33,15 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
 
   const { mutate: signIn, isPending } = useMutation({
     mutationFn: baseSignIn,
-    onSuccess: (result) => {
-      if (!result.emailVerified) {
-        navigate({
-          to: '/auth/verify-email',
-          replace: true,
-        });
-
-        return;
-      }
-
-      setUser(result as MeUser);
+    onSuccess: (signedInUser) => {
+      setUser(signedInUser as MeUser);
 
       // Redirect to the invite page if token is present
       // Otherwise, redirect to a redirect URL or to home
       const to = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
+      const params = { token: tokenData?.token };
 
-      navigate({
-        to,
-        replace: true,
-        params: {
-          token: tokenData?.token,
-        },
-      });
+      navigate({ to, params, replace: true });
     },
   });
 
@@ -68,10 +54,8 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    signIn({
-      ...values,
-      token: tokenData?.token,
-    });
+    const token = tokenData?.token;
+    signIn({ ...values, token });
   };
 
   const cancel = () => {

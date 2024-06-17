@@ -1,7 +1,7 @@
 import { config } from 'config';
 import type { Context } from 'hono';
 import { db } from '../../../db/db';
-import { usersTable, type InsertUserModel } from '../../../db/schema/users';
+import { type InsertUserModel, usersTable } from '../../../db/schema/users';
 import { errorResponse } from '../../../lib/errors';
 import { logEvent } from '../../../middlewares/logger/log-event';
 import type { OauthProviderOptions } from '../../../types/common';
@@ -10,7 +10,7 @@ import { setSessionCookie } from './cookies';
 import { insertOauthAccount } from './oauth';
 import { sendVerificationEmail } from './verify-email';
 
-// * Handle creating a user
+// Handle creating a user
 export const handleCreateUser = async (
   ctx: Context,
   data: InsertUserModel,
@@ -23,16 +23,16 @@ export const handleCreateUser = async (
     redirectUrl?: string;
   },
 ) => {
-  // * If sign up is disabled, return an error
+  // If sign up is disabled, return an error
   if (!config.has.signUp) {
     return errorResponse(ctx, 403, 'sign_up_disabled', 'warn', undefined);
   }
 
-  // * Check if the slug is available
+  // Check if the slug is available
   const slugAvailable = await checkSlugAvailable(data.slug);
 
   try {
-    // * Insert the user into the database
+    // Insert the user into the database
     const [user] = await db
       .insert(usersTable)
       .values({
@@ -46,13 +46,13 @@ export const handleCreateUser = async (
       })
       .returning();
 
-    // * If a provider is passed, insert the oauth account
+    // If a provider is passed, insert the oauth account
     if (options?.provider) {
       await insertOauthAccount(data.id, options.provider.id, options.provider.userId);
       // await setSessionCookie(ctx, data.id, options.provider.id.toLowerCase());
     }
 
-    // * If the email is not verified, send a verification email
+    // If the email is not verified, send a verification email
     if (!options?.isEmailVerified) {
       sendVerificationEmail(data.email);
     } else {
@@ -61,7 +61,7 @@ export const handleCreateUser = async (
     if (options?.redirectUrl) return ctx.redirect(options.redirectUrl, 302);
     return ctx.json({ success: true }, 200);
   } catch (error) {
-    // * If the email already exists, return an error
+    // If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {
       return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
     }

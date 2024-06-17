@@ -2,9 +2,7 @@ import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '../../db/schema/requests';
-import {
-  paginationQuerySchema,
-} from '../../lib/common-schemas';
+import { paginationQuerySchema } from '../../lib/common-schemas';
 
 export const requestsSchema = createSelectSchema(requestsTable);
 

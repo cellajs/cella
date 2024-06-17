@@ -103,6 +103,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         type: 'ORGANIZATION',
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
         createdAt: faker.date.past(),
+        order: organizationsCount + 1,
       };
     });
 
@@ -115,6 +116,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         type: 'ORGANIZATION',
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
         createdAt: faker.date.past(),
+        order: organizationsCount + 1,
       });
     }
     membershipsCount += memberships.length;

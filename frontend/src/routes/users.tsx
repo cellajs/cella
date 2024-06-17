@@ -1,14 +1,14 @@
+import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { createRoute } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { Suspense } from 'react';
+import { getUser } from '~/api/users';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
 import { UserProfile } from '~/modules/users/user-profile';
 import UserSettings from '~/modules/users/user-settings';
 import { IndexRoute } from './routeTree';
-import { useParams } from '@tanstack/react-router';
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { getUser } from '~/api/users';
 
 export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({

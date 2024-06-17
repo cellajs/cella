@@ -3,8 +3,6 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '../../db/schema/tokens';
-import { apiMembershipSchema, membershipInfoSchema } from '../memberships/schema';
-import { apiUserSchema } from '../users/schema';
 import {
   contextEntityTypeSchema,
   idSchema,
@@ -14,10 +12,16 @@ import {
   passwordSchema,
   slugSchema,
 } from '../../lib/common-schemas';
+import { apiMembershipSchema, membershipInfoSchema } from '../memberships/schema';
+import { apiUserSchema } from '../users/schema';
 
 export const apiPublicCountsSchema = z.object({
-  organizations: z.number(),
   users: z.number(),
+  organizations: z.number(),
+  workspaces: z.number(),
+  projects: z.number(),
+  tasks: z.number(),
+  labels: z.number(),
 });
 
 export const tokensSchema = createSelectSchema(tokensTable);
@@ -52,7 +56,7 @@ export const entitySuggestionSchema = suggestionSchema.extend({ entity: z.enum(c
 export type Suggestion = z.infer<typeof entitySuggestionSchema>;
 
 export const suggestionsSchema = z.object({
-  entities: z.array(entitySuggestionSchema),
+  items: z.array(entitySuggestionSchema),
   total: z.number(),
 });
 

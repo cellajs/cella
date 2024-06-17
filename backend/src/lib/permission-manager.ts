@@ -26,7 +26,7 @@ permissionManager.accessPolicies.configureAccessPolicies(({ subject, contexts }:
   // Configure actions based on the subject (organization or workspace)
   switch (subject.name) {
     case 'organization':
-      contexts.organization.ADMIN({ create: 0, read: 1, update: 1, delete: 1 });
+      contexts.organization.ADMIN({ create: 1, read: 1, update: 1, delete: 1 });
       contexts.organization.MEMBER({ create: 0, read: 1, update: 0, delete: 0 });
       break;
     case 'workspace':

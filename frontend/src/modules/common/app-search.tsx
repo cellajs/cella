@@ -73,7 +73,7 @@ export const AppSearch = () => {
     queryKey: ['search', searchValue],
     queryFn: () => getSuggestions(searchValue),
     enabled: searchValue.length > 0,
-    initialData: { entities: [], total: 0 },
+    initialData: { items: [], total: 0 },
   });
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {
@@ -166,7 +166,7 @@ export const AppSearch = () => {
                       <CommandSeparator />
                       <CommandGroup className="">
                         <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
-                        {suggestions.entities
+                        {suggestions.items
                           .filter((el) => el.entity === section.type)
                           .map((suggestion: SuggestionType) => (
                             <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>

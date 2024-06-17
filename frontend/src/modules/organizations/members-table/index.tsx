@@ -2,30 +2,31 @@ import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 
+import type { getMembersQuerySchema } from 'backend/modules/general/schema';
+import type { config } from 'config';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import type { z } from 'zod';
+import { type GetMembersParams, getMembers } from '~/api/general';
+import { updateMembership } from '~/api/memberships';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutation } from '~/hooks/use-mutations';
 import { DataTable } from '~/modules/common/data-table';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import { OrganizationMembersRoute } from '~/routes/organizations';
 import type { ContextEntityType, Member } from '~/types';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
 import Toolbar from './toolbar';
-import { useMutation } from '~/hooks/use-mutations';
-import { updateMembership } from '~/api/memberships';
-import { OrganizationMembersRoute } from '~/routes/organizations';
-import type { config } from 'config';
-import { type GetMembersParams, getMembers } from '~/api/general';
-import { useTranslation } from 'react-i18next';
-import { getInitialSortColumns } from '~/lib/utils';
-import type { getMembersQuerySchema } from 'backend/modules/general/schema';
-import type { z } from 'zod';
 
 const LIMIT = 40;
 
+// TODO: isnt this type already available elsewhere?
 export type MembersRoles = (typeof config.rolesByType.entityRoles)[number] | undefined;
 
-export type MembersSearchType = z.infer<typeof getMembersQuerySchema>;
+export type UsersSearch = z.infer<typeof getMembersQuerySchema>;
 
 interface MembersTableProps {
   entityType: ContextEntityType;
@@ -39,12 +40,9 @@ export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort
   return infiniteQueryOptions({
     queryKey: ['members', idOrSlug, entityType, q, sort, order, role],
     initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) => {
-      const fetchedData = await getMembers({ page, q, sort, order, role, limit, idOrSlug, entityType }, signal);
-      return fetchedData;
-    },
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
     refetchOnWindowFocus: false,
+    queryFn: async ({ pageParam: page, signal }) => getMembers({ page, q, sort, order, role, limit, idOrSlug, entityType }, signal),
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
 
@@ -55,15 +53,15 @@ const MembersTable = ({ entityType }: MembersTableProps) => {
 
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<MembersSearchType['q']>(search.q);
-  const [role, setRole] = useState<MembersSearchType['role']>(search.role);
+  const [query, setQuery] = useState<UsersSearch['q']>(search.q);
+  const [role, setRole] = useState<UsersSearch['role']>(search.role);
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
   const q = useDebounce(query, 200);
-  const sort = sortColumns[0]?.columnKey as MembersSearchType['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'];
+  const sort = sortColumns[0]?.columnKey as UsersSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'];
   const limit = LIMIT;
 
   // Check if table has enabled filtered
@@ -90,17 +88,15 @@ const MembersTable = ({ entityType }: MembersTableProps) => {
   );
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-
   // Update member role
   const { mutate: updateMemberRole } = useMutation({
     mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role }),
-    onSuccess: (response) => {
-      callback([response], 'update');
+    onSuccess: (updatedMembership) => {
+      callback([updatedMembership], 'update');
       toast.success(t('common:success:user_role_updated'));
     },
     onError: () => toast.error('Error updating role'),
   });
-
 
   // redo 4 all members
   const callback = useMutateInfiniteQueryData([
@@ -108,8 +104,8 @@ const MembersTable = ({ entityType }: MembersTableProps) => {
     idOrSlug,
     entityType,
     q,
-    sortColumns[0]?.columnKey as MembersSearchType['sort'],
-    sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'],
+    sortColumns[0]?.columnKey as UsersSearch['sort'],
+    sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
     role,
   ]);
 
@@ -157,8 +153,8 @@ const MembersTable = ({ entityType }: MembersTableProps) => {
         fetchForExport={async (limit: number) => {
           const data = await getMembers({
             q,
-            sort: sortColumns[0]?.columnKey as MembersSearchType['sort'],
-            order: sortColumns[0]?.direction.toLowerCase() as MembersSearchType['order'],
+            sort: sortColumns[0]?.columnKey as UsersSearch['sort'],
+            order: sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
             role,
             limit,
             idOrSlug,

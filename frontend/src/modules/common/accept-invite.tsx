@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import type { checkTokenSchema } from 'backend/modules/general/schema';
+import { config } from 'config';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -13,7 +14,6 @@ import { useMutation } from '~/hooks/use-mutations';
 import { cn } from '~/lib/utils';
 import AuthPage from '../auth/auth-page';
 import { Button, buttonVariants } from '../ui/button';
-import { config } from 'config';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 
@@ -27,7 +27,7 @@ const AcceptInvite = () => {
 
   const { mutate: checkToken, isPending: isChecking } = useMutation({
     mutationFn: baseCheckToken,
-    onSuccess: (data) => setTokenData(data),
+    onSuccess: (result) => setTokenData(result),
     onError: (error) => setError(error),
   });
 
@@ -39,7 +39,7 @@ const AcceptInvite = () => {
         to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath,
       });
     },
-    onError: (error) =>  setError(error),
+    onError: (error) => setError(error),
   });
 
   const onSubmit = () => {

@@ -1,3 +1,4 @@
+import { useLiveQuery } from 'electric-sql/react';
 import { FilterX, PanelTopClose, Plus, Settings, Tag, Trash, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -8,6 +9,7 @@ import BoardSearch from '~/modules/projects/board/header/board-search';
 import DisplayOptions from '~/modules/projects/board/header/display-options';
 import WorkspaceView from '~/modules/projects/board/header/view-options';
 import { Button } from '~/modules/ui/button';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { AvatarWrap } from '../../../common/avatar-wrap';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '../../../common/data-table/table-filter-bar';
@@ -16,8 +18,6 @@ import { TooltipButton } from '../../../common/tooltip-button';
 import { Badge } from '../../../ui/badge';
 import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
-import { useLiveQuery } from 'electric-sql/react';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;

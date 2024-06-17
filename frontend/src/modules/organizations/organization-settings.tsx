@@ -5,15 +5,15 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
+import { useContext } from 'react';
 import StickyBox from 'react-sticky-box';
 import { toast } from 'sonner';
 import { AsideNav } from '~/modules/common/aside-nav';
 import { AsideAnchor } from '../common/aside-anchor';
 import { dialog } from '../common/dialoger/state';
+import { EntityContext } from '../common/entity-context';
 import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
-import { useContext } from 'react';
-import { EntityContext } from '../common/entity-context';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

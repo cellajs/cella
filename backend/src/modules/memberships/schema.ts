@@ -18,6 +18,7 @@ export const updateMembershipJsonSchema = z.object({
   role: membershipSchema.shape.role.optional(),
   muted: z.boolean().optional(),
   inactive: z.boolean().optional(),
+  order: z.number().optional(),
 });
 
 export const createMembershipQuerySchema = z.object({
@@ -37,6 +38,7 @@ export const membershipInfoSchema = z.object({
   role: apiMembershipSchema.shape.role,
   archived: apiMembershipSchema.shape.inactive,
   muted: apiMembershipSchema.shape.muted,
+  order: apiMembershipSchema.shape.order,
 });
 
 export type membershipInfoType = z.infer<typeof membershipInfoSchema>;

@@ -1,6 +1,6 @@
 import type { EntityType } from 'backend/types/common';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
-import { type UploadParams, UploadType, type User, type ContextEntityType } from '~/types';
+import { type ContextEntityType, type UploadParams, UploadType, type User } from '~/types';
 import { apiClient, handleResponse } from '.';
 
 // Get public counts for about page

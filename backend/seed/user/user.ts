@@ -35,4 +35,3 @@ export const userSeed = async () => {
 
   console.info(`Created admin user with verified email ${adminUser.email} and password ${adminUser.password}.`);
 };
-

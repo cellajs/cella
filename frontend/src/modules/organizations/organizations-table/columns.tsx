@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
 
 import { Link } from '@tanstack/react-router';
+import { config } from 'config';
 import { Shield, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -12,7 +13,6 @@ import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import { renderSelect } from '../../common/data-table/select-column';
 import UpdateRow from './update-row';
-import { config } from 'config';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();

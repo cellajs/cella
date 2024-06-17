@@ -1,6 +1,6 @@
+import * as Sentry from '@sentry/react';
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
-import * as Sentry from '@sentry/react';
 
 import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
@@ -13,6 +13,10 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { queryClient } from '~/lib/router';
 import AcceptInvite from '~/modules/common/accept-invite';
 
+import { Loader2 } from 'lucide-react';
+import { Suspense, lazy } from 'react';
+import type { ApiError } from '~/api';
+import { onError } from '~/lib/query-client';
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
@@ -20,8 +24,6 @@ import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute 
 import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
-import { Suspense, lazy } from 'react';
-import { Loader2 } from 'lucide-react';
 
 const App = lazy(() => import('~/modules/common/app'));
 
@@ -91,8 +93,12 @@ export const IndexRoute = createRoute({
 
       await Promise.all([getMe(), getMenu()]);
     } catch (error) {
+      // TODO but sentry and onError in a reusable wrapper to reuse it in frontend catch blocks
       Sentry.captureException(error);
+      onError(error as ApiError);
+
       if (location.pathname.startsWith('/auth/')) return console.info('Not authenticated');
+
       console.info('Not authenticated (silent check) -> redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { fromRoot: true, redirect: location.pathname } });
     }

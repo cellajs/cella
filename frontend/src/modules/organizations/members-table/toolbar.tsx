@@ -1,23 +1,23 @@
+import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { useContext, useRef, type Dispatch, type SetStateAction } from 'react';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
-import { FocusView } from '~/modules/common/focus-view';
-import SelectRole from '~/modules/common/form-fields/select-role';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
-import type { ContextEntityType, Member } from '~/types';
-import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/columns-view';
-import TableCount from '../../common/data-table/table-count';
+import { type Dispatch, type SetStateAction, useContext, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { dialog } from '~/modules/common/dialoger/state';
-import InviteUsers from '~/modules/users/invite-users';
-import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
-import { motion } from 'framer-motion';
 import Export from '~/modules/common/data-table/export';
-import type { MembersRoles } from '.';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import TableSearch from '~/modules/common/data-table/table-search';
+import { dialog } from '~/modules/common/dialoger/state';
 import { EntityContext } from '~/modules/common/entity-context';
+import { FocusView } from '~/modules/common/focus-view';
+import SelectRole from '~/modules/common/form-fields/select-role';
+import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
+import InviteUsers from '~/modules/users/invite-users';
+import type { ContextEntityType, Member } from '~/types';
+import type { MembersRoles } from '.';
+import ColumnsView, { type ColumnOrColumnGroup } from '../../common/data-table/columns-view';
+import TableCount from '../../common/data-table/table-count';
 
 interface Props {
   entityType: ContextEntityType;

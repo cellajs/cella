@@ -1,5 +1,5 @@
-import type { EntityPage, Organization, Project } from "~/types";
 import { createContext } from 'react';
+import type { EntityPage, Organization, Project } from '~/types';
 
 interface EntityContextValue {
   entity: EntityPage;
