@@ -21,7 +21,7 @@ import ContentPlaceholder from '../../common/content-placeholder';
 import { DropIndicator } from '../../common/drop-indicator';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
-import { ProjectSettings } from '../project-settings';
+import { ProjectSheet } from '../project-sheet';
 import CreateTaskForm from '../task/create-task-form';
 import { DraggableTaskCard, isTaskData } from '../task/draggable-task-card';
 import { TaskProvider } from '../task/task-context';
@@ -29,6 +29,7 @@ import { taskStatuses } from '../task/task-selectors/select-status';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './board-column-skeleton';
 import { ProjectProvider } from './project-context';
+import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 // import { FixedSizeList as List } from 'react-window';
 // import AutoSizer from "react-virtualized-auto-sizer";
 
@@ -155,12 +156,23 @@ export function BoardColumn({ project }: BoardColumnProps) {
   };
 
   const openSettingsSheet = () => {
-    sheet(<ProjectSettings sheet project={project} />, {
-      className: 'sm:max-w-[52rem]',
-      title: t('common:project_settings'),
-      text: t('common:project_settings.text'),
-      id: 'edit-project',
-    });
+    const projectTabs: PageNavTab[] = [
+      { id: 'general', label: 'common:general', path: '/workspace/$idOrSlug/board' },
+      { id: 'members', label: 'common:members', path: '/workspace/$idOrSlug/board?projectSettings=members' },
+    ];
+
+    sheet(
+      <>
+        <PageNav className="mb-2 bg-transparent border-b-0" title={project.name} avatar={project} tabs={projectTabs} />
+        <ProjectSheet project={project} />
+      </>,
+      {
+        className: 'sm:max-w-[52rem]',
+        title: t('common:project_settings'),
+        text: t('common:project_settings.text'),
+        id: 'edit-project',
+      },
+    );
   };
 
   const handleTaskFormClick = () => {

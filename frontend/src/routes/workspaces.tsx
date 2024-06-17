@@ -9,6 +9,8 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { workspaceQueryOptions } from '~/modules/workspaces';
 import { IndexRoute } from './routeTree';
+import { membersSearchSchema } from './organizations';
+import { z } from 'zod';
 
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));
@@ -18,6 +20,10 @@ const ElectricSuspense = lazy(() => import('~/modules/common/electric/suspense')
 
 export const WorkspaceRoute = createRoute({
   path: 'workspace/$idOrSlug',
+  validateSearch: z.object({
+    ...membersSearchSchema.shape,
+    projectSettings: z.enum(['general', 'members']).default('general').optional(),
+  }),
   staticData: { pageTitle: 'Workspace', hideFooter: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => IndexRoute,

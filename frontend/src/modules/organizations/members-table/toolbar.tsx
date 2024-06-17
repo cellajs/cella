@@ -35,6 +35,7 @@ interface Props {
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Member>[]>>;
   callback: (items: Member[], action: 'create' | 'update' | 'delete') => void;
   fetchForExport: (limit: number) => Promise<Member[]>;
+  focus?: boolean;
 }
 
 function Toolbar({
@@ -51,6 +52,7 @@ function Toolbar({
   columns,
   setColumns,
   idOrSlug,
+  focus = true,
   callback,
   fetchForExport,
 }: Props) {
@@ -167,8 +169,7 @@ function Toolbar({
             fetchRows={fetchForExport}
           />
         )}
-
-        <FocusView iconOnly />
+        {focus && <FocusView iconOnly />}
       </div>
       <div ref={containerRef} />
     </>

@@ -1,4 +1,4 @@
-import { createRoute } from '@tanstack/react-router';
+import { createRoute, useParams } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { getMembersQuerySchema } from 'backend/modules/general/schema';
 import { Suspense, lazy } from 'react';
@@ -14,7 +14,7 @@ import { IndexRoute } from './routeTree';
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
 // Search query schema
-const membersSearchSchema = getMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+export const membersSearchSchema = getMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export const OrganizationRoute = createRoute({
   path: '$idOrSlug',
@@ -44,11 +44,14 @@ export const OrganizationMembersRoute = createRoute({
       queryClient.fetchInfiniteQuery(infiniteQueryOptions);
     }
   },
-  component: () => (
-    <Suspense>
-      <MembersTable entityType="ORGANIZATION" />
-    </Suspense>
-  ),
+  component: () => {
+    const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
+    return (
+      <Suspense>
+        <MembersTable idOrSlug={idOrSlug} route={OrganizationMembersRoute.id} entityType="ORGANIZATION" />
+      </Suspense>
+    );
+  },
 });
 
 export const OrganizationSettingsRoute = createRoute({

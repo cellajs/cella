@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { useParams, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { getMembersQuerySchema } from 'backend/modules/general/schema';
@@ -15,7 +15,6 @@ import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import { DataTable } from '~/modules/common/data-table';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import { OrganizationMembersRoute } from '~/routes/organizations';
 import type { ContextEntityType, Member } from '~/types';
 import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
 import { useColumns } from './columns';
@@ -29,7 +28,10 @@ export type MembersRoles = (typeof config.rolesByType.entityRoles)[number] | und
 export type UsersSearch = z.infer<typeof getMembersQuerySchema>;
 
 interface MembersTableProps {
+  idOrSlug: string;
   entityType: ContextEntityType;
+  route: '/layout/$idOrSlug/members' | '/layout/workspace/$idOrSlug';
+  focus?: boolean;
 }
 
 // Build query to get members with infinite scroll
@@ -46,10 +48,9 @@ export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort
   });
 };
 
-const MembersTable = ({ entityType }: MembersTableProps) => {
+const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTableProps) => {
   const { t } = useTranslation();
-  const search = useSearch({ from: OrganizationMembersRoute.id });
-  const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
+  const search = useSearch({ from: route });
 
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
@@ -98,7 +99,6 @@ const MembersTable = ({ entityType }: MembersTableProps) => {
     onError: () => toast.error('Error updating role'),
   });
 
-  // redo 4 all members
   const callback = useMutateInfiniteQueryData([
     'members',
     idOrSlug,
@@ -148,6 +148,7 @@ const MembersTable = ({ entityType }: MembersTableProps) => {
         selectedMembers={rows.filter((row) => selectedRows.has(row.id)) as Member[]}
         onRoleChange={onRoleChange}
         columns={columns}
+        focus={focus}
         setColumns={setColumns}
         idOrSlug={idOrSlug}
         fetchForExport={async (limit: number) => {
