@@ -33,14 +33,14 @@ export const insertMembership = async ({ user, role, entity, createdBy = user.id
   };
 
   // Set workspaceId or projectId if entity is workspace or project
-  if (entity.entity === 'WORKSPACE') {
-    newMembership.workspaceId = entity.id;
-  } else if (entity.entity === 'PROJECT') {
-    newMembership.projectId = entity.id;
-  }
+  if (entity.entity === 'WORKSPACE')  newMembership.workspaceId = entity.id;
+  
+  else if (entity.entity === 'PROJECT') newMembership.projectId = entity.id;
+
 
   // Get user memberships
   let userMemberships = memberships;
+  
   if (!memberships) {
     userMemberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
   }
