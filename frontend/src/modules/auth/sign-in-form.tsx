@@ -64,9 +64,7 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   };
 
   useEffect(() => {
-    if (tokenData?.email) {
-      form.setValue('email', tokenData.email);
-    }
+    if (tokenData?.email) form.setValue('email', tokenData.email);
   }, [tokenData]);
 
   return (

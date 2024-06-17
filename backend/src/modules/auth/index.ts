@@ -275,15 +275,12 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     // If the user is not found or signed up with oauth
-    if (!user || !user.hashedPassword) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
-    }
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
+    if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
 
-    if (!validPassword) {
-      return errorResponse(ctx, 400, 'invalid_password', 'warn');
-    }
+    if (!validPassword) return errorResponse(ctx, 400, 'invalid_password', 'warn');
 
     const isEmailVerified = user.emailVerified || tokenData?.email === user.email;
 
