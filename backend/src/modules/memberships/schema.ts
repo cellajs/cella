@@ -18,6 +18,7 @@ export const updateMembershipJsonSchema = z.object({
   role: membershipSchema.shape.role.optional(),
   muted: z.boolean().optional(),
   inactive: z.boolean().optional(),
+  order: z.number().optional(),
 });
 
 export const createMembershipQuerySchema = z.object({

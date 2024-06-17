@@ -13,6 +13,7 @@ import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import organizationRoutesConfig from './routes';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const app = new CustomHono();
 
@@ -45,18 +46,8 @@ const organizationsRoutes = app
 
     logEvent('Organization created', { organization: createdOrganization.id });
 
-    const [createdMembership] = await db
-      .insert(membershipsTable)
-      .values({
-        type: 'ORGANIZATION',
-        userId: user.id,
-        organizationId: createdOrganization.id,
-        role: 'ADMIN',
-        order: 1,
-      })
-      .returning();
-
-    logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
+    // Insert membership
+    const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: createdOrganization });
 
     sendSSEToUsers([user.id], 'create_entity', {
       ...createdOrganization,

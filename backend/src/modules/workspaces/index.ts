@@ -10,6 +10,7 @@ import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import workspaceRoutesConfig from './routes';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const app = new CustomHono();
 
@@ -21,6 +22,7 @@ const workspacesRoutes = app
   .openapi(workspaceRoutesConfig.createWorkspace, async (ctx) => {
     const { name, slug, organizationId } = ctx.req.valid('json');
     const user = ctx.get('user');
+    const memberships = ctx.get('memberships');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -39,19 +41,8 @@ const workspacesRoutes = app
 
     logEvent('Workspace created', { workspace: workspace.id });
 
-    const [createdMembership] = await db
-      .insert(membershipsTable)
-      .values({
-        userId: user.id,
-        organizationId,
-        workspaceId: workspace.id,
-        type: 'WORKSPACE',
-        role: 'ADMIN',
-        order: 1,
-      })
-      .returning();
-
-    logEvent('User added to workspace', { user: user.id, workspace: workspace.id });
+    // Insert membership
+    const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: workspace, memberships });
 
     sendSSEToUsers([user.id], 'create_entity', {
       ...workspace,

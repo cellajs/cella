@@ -32,6 +32,7 @@ import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -247,14 +248,9 @@ const generalRoutes = app
         return ctx.json({ success: true }, 200);
       }
 
-      await db.insert(membershipsTable).values({
-        organizationId: organization.id,
-        type: 'ORGANIZATION',
-        userId: user.id,
-        role: token.role as MembershipModel['role'],
-        createdBy: user.id,
-        order: 1,
-      });
+      // Insert membership
+      const role = token.role as MembershipModel['role'];
+      await insertMembership({ user, role, entity: organization });
     }
 
     return ctx.json({ success: true }, 200);

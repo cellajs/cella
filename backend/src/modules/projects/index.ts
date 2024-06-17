@@ -13,6 +13,7 @@ import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import projectRoutesConfig from './routes';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const app = new CustomHono();
 
@@ -24,7 +25,9 @@ const projectsRoutes = app
   .openapi(projectRoutesConfig.createProject, async (ctx) => {
     const { name, slug, color, organizationId } = ctx.req.valid('json');
     const workspaceId = ctx.req.query('workspaceId');
+    
     const user = ctx.get('user');
+    const memberships = ctx.get('memberships');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -45,19 +48,8 @@ const projectsRoutes = app
 
     logEvent('Project created', { project: project.id });
 
-    const [createdMembership] = await db
-      .insert(membershipsTable)
-      .values({
-        userId: user.id,
-        organizationId,
-        projectId: project.id,
-        type: 'PROJECT',
-        role: 'ADMIN',
-        order: 1,
-      })
-      .returning();
-
-    logEvent('User added to project', { user: user.id, project: project.id });
+    // Insert membership
+    const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: project, memberships });
 
     // If project created in workspace, add project to it
     if (workspaceId) {

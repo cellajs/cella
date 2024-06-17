@@ -20,6 +20,7 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { membershipsTableId, supportedEntityTypes, type supportedModelTypes } from './helpers/create-membership-config';
 import membershipRouteConfig from './routes';
+import { insertMembership } from './helpers/insert-membership';
 
 const app = new CustomHono();
 
@@ -137,16 +138,8 @@ const membershipsRoutes = app
           if (canCreateMembership) {
             const assignedRole = (role as MembershipModel['role']) || 'MEMBER';
 
-            await db.insert(membershipsTable).values({
-              organizationId,
-              userId: existingUser.id,
-              type: context.entity as MembershipModel['type'],
-              role: assignedRole,
-              createdBy: user.id,
-              order: 1,
-            });
-
-            logEvent(`User added to ${context.entity.toLowerCase()}`, { user: user.id, id: context.id });
+            // Insert membership
+            await insertMembership({ user: existingUser, role: assignedRole, entity: context, memberships });
 
             // Send a Server-Sent Event (SSE) to the newly added user
             sendSSEToUsers([existingUser.id], 'update_entity', context);
