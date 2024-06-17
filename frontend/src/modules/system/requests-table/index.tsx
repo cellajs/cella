@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { getRequestsQuerySchema } from 'backend/modules/requests/schema';
 import { Bird } from 'lucide-react';
@@ -13,8 +13,9 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { RequestsTableRoute } from '~/routes/system';
 import type { Request } from '~/types';
-import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
-import { DataTable } from '../../common/data-table';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import useQueryResultEffect from '~/hooks/use-query-result-effect';
+import { DataTable } from '~/modules/common/data-table';
 import { useColumns } from './columns';
 import { config } from 'config';
 import { Mailbox, Trash, XSquare } from 'lucide-react';
@@ -108,14 +109,7 @@ const RequestsTable = () => {
     });
   };
 
-  useEffect(() => {
-    const data = queryResult.data?.pages?.flatMap((page) => page.items);
-
-    if (data) {
-      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
-      setRows(data);
-    }
-  }, [queryResult.data]);
+  useQueryResultEffect<Request>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
@@ -17,8 +17,9 @@ import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-col
 import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
-import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
-import { DataTable } from '../../common/data-table';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import useQueryResultEffect from '~/hooks/use-query-result-effect';
+import { DataTable } from '~/modules/common/data-table';
 import { useColumns } from './columns';
 import { config } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
@@ -153,14 +154,7 @@ const OrganizationsTable = () => {
     setSelectedRows(new Set<string>());
   };
 
-  useEffect(() => {
-    const data = queryResult.data?.pages?.flatMap((page) => page.items);
-
-    if (data) {
-      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
-      setRows(data);
-    }
-  }, [queryResult.data]);
+  useQueryResultEffect<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

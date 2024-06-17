@@ -1,12 +1,13 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import type { getProjectsQuerySchema } from 'backend/modules/projects/schema';
 import { Bird } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type GetProjectsParams, getProjects } from '~/api/projects';
 import { useDebounce } from '~/hooks/use-debounce';
+import useQueryResultEffect from '~/hooks/use-query-result-effect';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { Project } from '~/types';
@@ -85,14 +86,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
     });
   };
 
-  useEffect(() => {
-    const data = queryResult.data?.pages?.flatMap((page) => page.items);
-
-    if (data) {
-      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
-      setRows(data);
-    }
-  }, [queryResult.data]);
+  useQueryResultEffect<Project>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

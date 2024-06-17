@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState, useContext, useRef } from 'react';
+import { useMemo, useState, useContext, useRef } from 'react';
 
 import type { getMembersQuerySchema } from 'backend/modules/general/schema';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
@@ -16,6 +16,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import type { ContextEntityType, Member } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import useQueryResultEffect from '~/hooks/use-query-result-effect';
 import { useColumns } from './columns';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
@@ -193,14 +194,7 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
     );
   };
 
-  useEffect(() => {
-    const data = queryResult.data?.pages?.flatMap((page) => page.items);
-
-    if (data) {
-      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
-      setRows(data);
-    }
-  }, [queryResult.data]);
+  useQueryResultEffect<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

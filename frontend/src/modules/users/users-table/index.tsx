@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { type GetUsersParams, getUsers, updateUser } from '~/api/users';
 
 import type { getUsersQuerySchema } from 'backend/modules/users/schema';
@@ -27,6 +27,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
+import useQueryResultEffect from '~/hooks/use-query-result-effect';
 import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -166,14 +167,7 @@ const UsersTable = () => {
     );
   };
 
-  useEffect(() => {
-    const data = queryResult.data?.pages?.flatMap((page) => page.items);
-
-    if (data) {
-      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
-      setRows(data);
-    }
-  }, [queryResult.data]);
+  useQueryResultEffect<User>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

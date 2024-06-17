@@ -29,7 +29,6 @@ export default function TasksTable() {
     }),
   );
   const [rows, setRows] = useState<Task[]>([]);
-
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
 
