@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { config } from 'config';
 import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
-import { apiUserSchema } from '../users/schema';
+import { userSchema } from '../users/schema';
 
-export const meUserSchema = apiUserSchema.extend({
+export const meUserSchema = userSchema.extend({
   electricJWTToken: z.string(),
   sessions: z.array(z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string() })),
 });
@@ -22,7 +22,7 @@ const menuItemSchema = z.object({
   parentId: z.string().optional(),
 });
 
-const menuSchema = z.array(
+const menuItemsSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
     submenu: z.array(menuItemSchema).optional(),
@@ -30,6 +30,6 @@ const menuSchema = z.array(
 );
 
 export const userMenuSchema = z.object({
-  organizations: menuSchema,
-  workspaces: menuSchema,
+  organizations: menuItemsSchema,
+  workspaces: menuItemsSchema,
 });

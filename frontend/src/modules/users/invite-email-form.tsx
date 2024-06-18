@@ -3,9 +3,8 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type InviteSystemProps, invite as inviteSystem } from '~/api/general';
-import { type InviteMemberProps, inviteMember } from '~/api/memberships';
+import { type InviteMemberProps, inviteMembers } from '~/api/memberships';
 
-import { idSchema, slugSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
@@ -20,6 +19,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types';
+import { idOrSlugSchema } from 'backend/lib/common-schemas';
 
 interface Props {
   entity?: EntityPage;
@@ -31,7 +31,7 @@ interface Props {
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
   role: z.enum(config.rolesByType.allRoles),
-  idOrSlug: idSchema.or(slugSchema).optional(),
+  idOrSlug: idOrSlugSchema.optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -58,7 +58,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
       if (!entity) return inviteSystem(values as InviteSystemProps);
-      return inviteMember({
+      return inviteMembers({
         ...values,
         idOrSlug: entity.id,
         entityType: entity.entity,

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
-import { signUpJsonSchema } from 'backend/modules/auth/schema';
+import { authBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
@@ -19,7 +19,7 @@ import { LegalText } from '../marketing/legals';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
-const formSchema = signUpJsonSchema;
+const formSchema = authBodySchema;
 
 export const SignUpForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: string) => void }) => {
   const { t } = useTranslation();

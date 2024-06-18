@@ -1,6 +1,6 @@
 import type { ErrorType } from 'backend/lib/errors';
 import type { AppType } from 'backend/server';
-import type { EntityType } from 'backend/types/common';
+import type { Entity } from 'backend/types/common';
 
 import { config } from 'config';
 import { type ClientResponse, hc } from 'hono/client';
@@ -9,7 +9,7 @@ import { type ClientResponse, hc } from 'hono/client';
 export class ApiError extends Error {
   status: string | number;
   type?: string;
-  entityType?: EntityType;
+  entityType?: Entity;
   severity?: string;
   logId?: string;
   path?: string;

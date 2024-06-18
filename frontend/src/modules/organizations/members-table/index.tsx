@@ -2,7 +2,7 @@ import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState, useContext, useRef } from 'react';
 
-import type { getMembersQuerySchema } from 'backend/modules/general/schema';
+import type { membersQuerySchema } from 'backend/modules/general/schema';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation, Trans } from 'react-i18next';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import { DataTable } from '~/modules/common/data-table';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import type { ContextEntityType, Member } from '~/types';
+import type { ContextEntity, Member } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import useQueryResultEffect from '~/hooks/use-query-result-effect';
 import { useColumns } from './columns';
@@ -36,11 +36,11 @@ import TableCount from '~/modules/common/data-table/table-count';
 
 const LIMIT = 40;
 
-type MemberSearch = z.infer<typeof getMembersQuerySchema>;
+type MemberSearch = z.infer<typeof membersQuerySchema>;
 
 interface MembersTableProps {
   idOrSlug: string;
-  entityType: ContextEntityType;
+  entityType: ContextEntity;
   route: '/layout/$idOrSlug/members' | '/layout/workspace/$idOrSlug';
   focus?: boolean;
 }

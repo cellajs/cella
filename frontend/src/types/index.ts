@@ -1,5 +1,5 @@
 import type { config } from 'config';
-import type { InferResponseType } from 'hono/client';
+import type { InferRequestType, InferResponseType } from 'hono/client';
 import type { apiClient } from '~/api';
 import type { Session } from '~/modules/users/user-settings';
 
@@ -16,13 +16,15 @@ export interface UploadParams {
 export type DraggableItemData<T> = {
   type: string;
   item: T;
-  itemType: EntityType;
+  itemType: Entity;
   dragItem: true;
   index: number;
 };
 
-export type EntityType = (typeof config.entityTypes)[number];
-export type ContextEntityType = (typeof config.contextEntityTypes)[number];
+export type Entity = (typeof config.entityTypes)[number];
+export type ContextEntity = (typeof config.contextEntityTypes)[number];
+
+export type RequestProp = InferRequestType<typeof apiClient.requests.$post>['json'];
 
 export type User = Extract<InferResponseType<(typeof apiClient.users)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 

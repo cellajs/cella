@@ -1,5 +1,5 @@
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntityType } from '~/types';
+import type { ContextEntity } from '~/types';
 import { menuSections } from '../nav-sheet/sheet-menu';
 import { removeIdFromSubMenu } from './helpers';
 import { useSSE } from './use-sse';
@@ -83,7 +83,7 @@ const SSE = () => {
       const storage = menuSections.find((el) => el.type === entityData.entity);
       if (!storage) return;
       const storageType = storage.storageType;
-      const entityType = entityData.entity as ContextEntityType;
+      const entityType = entityData.entity as ContextEntity;
       useNavigationStore.setState((state) => {
         state.menuOrder[entityType].mainList = state.menuOrder[entityType].mainList.filter((id) => id !== entityData.id);
         state.menuOrder[entityType].subList = removeIdFromSubMenu(state.menuOrder[entityType].subList, entityData.id);

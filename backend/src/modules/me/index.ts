@@ -27,7 +27,7 @@ const meRoutes = app
   /*
    * Get current user
    */
-  .openapi(meRoutesConfig.me, async (ctx) => {
+  .openapi(meRoutesConfig.getSelf, async (ctx) => {
     const user = ctx.get('user');
 
     const [{ memberships }] = await db
@@ -147,7 +147,7 @@ const meRoutes = app
   /*
    * Terminate a session
    */
-  .openapi(meRoutesConfig.terminateSessions, async (ctx) => {
+  .openapi(meRoutesConfig.deleteSessions, async (ctx) => {
     const { ids } = ctx.req.valid('query');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];

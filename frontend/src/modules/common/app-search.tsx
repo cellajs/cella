@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { entitySuggestionSchema } from 'backend/modules/general/schema';
-import type { EntityType } from 'backend/types/common';
+import type { Entity } from 'backend/types/common';
 import { config } from 'config';
 import { History, Loader2, Search, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
@@ -21,7 +21,7 @@ type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 interface SuggestionSection {
   id: 'users' | 'organizations' | 'workspaces' | 'projects';
   label: string;
-  type: EntityType;
+  type: Entity;
 }
 
 const suggestionSections: SuggestionSection[] = [

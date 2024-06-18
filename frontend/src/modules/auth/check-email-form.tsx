@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { checkEmailJsonSchema } from 'backend/modules/auth/schema';
+import { emailBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
@@ -15,7 +15,7 @@ import { checkEmail as baseCheckEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import type { TokenData } from '.';
 
-const formSchema = checkEmailJsonSchema;
+const formSchema = emailBodySchema;
 
 interface CheckEmailProps {
   tokenData: TokenData | null;

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { signInJsonSchema } from 'backend/modules/auth/schema';
+import { authBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
@@ -22,7 +22,7 @@ import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types';
 import type { TokenData } from '.';
 
-const formSchema = signInJsonSchema;
+const formSchema = authBodySchema;
 
 export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: string) => void }) => {
   const { t } = useTranslation();

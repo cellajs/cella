@@ -5,7 +5,7 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
-import type { ContextEntityType, Env } from '../../types/common';
+import type { ContextEntity, Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
 export type PermissionAction = 'create' | 'update' | 'read' | 'write';
@@ -18,7 +18,7 @@ export type PermissionAction = 'create' | 'update' | 'read' | 'write';
  */
 const isAllowedTo =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    (action: PermissionAction, entityType: ContextEntityType): MiddlewareHandler<Env, any> =>
+    (action: PermissionAction, entityType: ContextEntity): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
       const user = ctx.get('user');
@@ -63,7 +63,7 @@ const isAllowedTo =
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function getEntityContext(ctx: any, entityType: ContextEntityType) {
+async function getEntityContext(ctx: any, entityType: ContextEntity) {
   // Check if entity is configured; if not, return early
   if (!HierarchicalEntity.instanceMap.has(entityType.toLowerCase())) {
     return;
@@ -87,7 +87,7 @@ async function getEntityContext(ctx: any, entityType: ContextEntityType) {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function createEntityContext(entityType: ContextEntityType, ctx: any) {
+async function createEntityContext(entityType: ContextEntity, ctx: any) {
   const entity = HierarchicalEntity.instanceMap.get(entityType.toLowerCase());
 
   // Return early if entity is not available

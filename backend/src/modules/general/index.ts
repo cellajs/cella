@@ -145,7 +145,7 @@ const generalRoutes = app
   /*
    * Invite users to the system
    */
-  .openapi(generalRouteConfig.invite, async (ctx) => {
+  .openapi(generalRouteConfig.createInvite, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
 
@@ -286,7 +286,7 @@ const generalRoutes = app
   /*
    * Get suggestions
    */
-  .openapi(generalRouteConfig.suggestionsConfig, async (ctx) => {
+  .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
     const user = ctx.get('user');
 

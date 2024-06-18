@@ -2,7 +2,7 @@ import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getRequestsQuerySchema } from 'backend/modules/requests/schema';
-import { getUsersQuerySchema } from 'backend/modules/users/schema';
+import { usersQuerySchema } from 'backend/modules/users/schema';
 import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
@@ -20,7 +20,7 @@ const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
 
 // Search query schemas
 const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
-const usersSearchSchema = getUsersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+const usersSearchSchema = usersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
 
 export const SystemPanelRoute = createRoute({

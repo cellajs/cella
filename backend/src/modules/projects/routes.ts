@@ -1,14 +1,9 @@
-import {
-  errorResponses,
-  successResponseWithDataSchema,
-  successResponseWithErrorsSchema,
-  successResponseWithPaginationSchema,
-} from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '../../lib/common-responses';
+import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import { apiProjectSchema, createProjectJsonSchema, createProjectQuerySchema, getProjectsQuerySchema, updateProjectJsonSchema } from './schema';
+import { projectSchema, createProjectBodySchema, createProjectQuerySchema, getProjectsQuerySchema, updateProjectBodySchema } from './schema';
 
 class ProjectRoutesConfig {
   public createProject = createRouteConfig({
@@ -25,7 +20,7 @@ class ProjectRoutesConfig {
         required: true,
         content: {
           'application/json': {
-            schema: createProjectJsonSchema,
+            schema: createProjectBodySchema,
           },
         },
       },
@@ -35,7 +30,7 @@ class ProjectRoutesConfig {
         description: 'Project',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiProjectSchema),
+            schema: successWithDataSchema(projectSchema),
           },
         },
       },
@@ -58,7 +53,7 @@ class ProjectRoutesConfig {
         description: 'Project',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiProjectSchema),
+            schema: successWithDataSchema(projectSchema),
           },
         },
       },
@@ -81,7 +76,7 @@ class ProjectRoutesConfig {
         description: 'Projects',
         content: {
           'application/json': {
-            schema: successResponseWithPaginationSchema(apiProjectSchema),
+            schema: successWithPaginationSchema(projectSchema),
           },
         },
         ...errorResponses,
@@ -101,7 +96,7 @@ class ProjectRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateProjectJsonSchema,
+            schema: updateProjectBodySchema,
           },
         },
       },
@@ -111,7 +106,7 @@ class ProjectRoutesConfig {
         description: 'Project updated',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiProjectSchema),
+            schema: successWithDataSchema(projectSchema),
           },
         },
       },
@@ -127,14 +122,14 @@ class ProjectRoutesConfig {
     summary: 'Delete projects',
     description: 'Delete projects by ids.',
     request: {
-      query: deleteByIdsQuerySchema,
+      query: idsQuerySchema,
     },
     responses: {
       200: {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successResponseWithErrorsSchema(),
+            schema: successWithErrorsSchema(),
           },
         },
       },

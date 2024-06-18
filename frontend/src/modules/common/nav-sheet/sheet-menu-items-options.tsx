@@ -1,7 +1,7 @@
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import type { ContextEntityType } from 'backend/types/common';
+import type { ContextEntity } from 'backend/types/common';
 import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff, GripVertical } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -98,7 +98,7 @@ const ItemOptions = ({
   isGlobalDragging,
   mainItemId,
   setGlobalDragging,
-}: MenuItemProps & { mainItemId?: string; item: MenuItem; itemType: ContextEntityType }) => {
+}: MenuItemProps & { mainItemId?: string; item: MenuItem; itemType: ContextEntity }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);

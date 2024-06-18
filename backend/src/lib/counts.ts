@@ -1,9 +1,9 @@
 import { count, eq, sql } from 'drizzle-orm';
 import { db } from '../db/db';
 import { membershipsTable } from '../db/schema/memberships';
-import type { EntityType } from '../types/common';
+import type { Entity } from '../types/common';
 
-const getQuery = (entity: EntityType) => {
+const getQuery = (entity: Entity) => {
   let columnName: keyof typeof membershipsTable;
 
   switch (entity) {
@@ -30,10 +30,10 @@ const getQuery = (entity: EntityType) => {
 };
 
 export function counts<T extends string | undefined = undefined>(
-  entity: EntityType,
+  entity: Entity,
   id?: T,
 ): T extends string ? Promise<{ memberships: { admins: number; members: number; total: number } }> : Promise<ReturnType<typeof getQuery>>;
-export async function counts(entity: EntityType, id?: string | undefined) {
+export async function counts(entity: Entity, id?: string | undefined) {
   const query = getQuery(entity);
 
   if (id) {

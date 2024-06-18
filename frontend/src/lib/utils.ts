@@ -1,6 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
-import type { EntityType } from 'backend/types/common';
+import type { Entity } from 'backend/types/common';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
@@ -138,7 +138,7 @@ export const getDraggableItemData = <T>(
   item: T,
   itemIndex: number,
   type: 'task' | 'column' | 'menuItem',
-  itemType?: EntityType,
+  itemType?: Entity,
 ): DraggableItemData<T> => {
   return { dragItem: true, item, index: itemIndex, type, itemType: itemType || 'ORGANIZATION' };
 };

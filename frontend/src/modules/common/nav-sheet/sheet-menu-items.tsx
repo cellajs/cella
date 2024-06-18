@@ -5,12 +5,12 @@ import { cn, sortById } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntityType, UserMenuItem } from '~/types';
+import type { ContextEntity, UserMenuItem } from '~/types';
 import type { MenuItem } from './sheet-menu-section';
 
 interface SheetMenuItemProps {
   item: MenuItem;
-  type: ContextEntityType;
+  type: ContextEntity;
   mainItemId?: string;
   className?: string;
   searchResults?: boolean;
@@ -66,7 +66,7 @@ interface SheetMenuItemsProps {
   createDialog?: () => void;
   className?: string;
   searchResults?: boolean;
-  type: ContextEntityType;
+  type: ContextEntity;
 }
 
 export const SheetMenuItems = ({ data, type, shownOption, createDialog, className, searchResults }: SheetMenuItemsProps) => {

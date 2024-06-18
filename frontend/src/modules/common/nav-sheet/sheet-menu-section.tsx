@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntityType, UserMenu } from '~/types';
+import type { ContextEntity, UserMenu } from '~/types';
 import { dialog } from '../dialoger/state';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import { MenuSectionSticky } from './menu-section-sticky';
@@ -13,7 +13,7 @@ import { SheetMenuItemsOptions } from './sheet-menu-items-options';
 interface MenuSectionProps {
   data: UserMenu[keyof UserMenu];
   sectionType: 'workspaces' | 'organizations';
-  entityType: ContextEntityType;
+  entityType: ContextEntity;
   createForm: ReactNode;
 }
 

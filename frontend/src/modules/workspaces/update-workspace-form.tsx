@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { Workspace } from '~/types';
 
-import { updateWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
+import { workspaceBodySchema } from 'backend/modules/workspaces/schema';
 import { useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -28,7 +28,7 @@ interface Props {
   sheet?: boolean;
 }
 
-const formSchema = updateWorkspaceJsonSchema;
+const formSchema = workspaceBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

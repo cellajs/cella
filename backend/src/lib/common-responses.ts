@@ -1,16 +1,16 @@
 import type { createRoute } from '@hono/zod-openapi';
 import { z } from 'zod';
-import { errorResponseSchema, errorSchema } from './common-schemas';
+import { failWithErrorSchema, errorSchema } from './common-schemas';
 
 type Responses = Parameters<typeof createRoute>[0]['responses'];
 
-export const successResponseWithoutDataSchema = z.object({
+export const successWithoutDataSchema = z.object({
   success: z.boolean(),
 });
 
-export const successResponseWithDataSchema = <T extends z.ZodTypeAny>(schema: T) => z.object({ success: z.boolean(), data: schema });
+export const successWithDataSchema = <T extends z.ZodTypeAny>(schema: T) => z.object({ success: z.boolean(), data: schema });
 
-export const successResponseWithPaginationSchema = <T extends z.ZodTypeAny>(schema: T) =>
+export const successWithPaginationSchema = <T extends z.ZodTypeAny>(schema: T) =>
   z.object({
     success: z.boolean(),
     data: z.object({
@@ -19,7 +19,7 @@ export const successResponseWithPaginationSchema = <T extends z.ZodTypeAny>(sche
     }),
   });
 
-export const successResponseWithErrorsSchema = () =>
+export const successWithErrorsSchema = () =>
   z.object({
     success: z.boolean(),
     errors: z.array(errorSchema),
@@ -30,7 +30,7 @@ export const errorResponses = {
     description: 'Bad request: problem processing request.',
     content: {
       'application/json': {
-        schema: errorResponseSchema,
+        schema: failWithErrorSchema,
       },
     },
   },
@@ -38,7 +38,7 @@ export const errorResponses = {
     description: 'Unauthorized: authentication required.',
     content: {
       'application/json': {
-        schema: errorResponseSchema,
+        schema: failWithErrorSchema,
       },
     },
   },
@@ -46,7 +46,7 @@ export const errorResponses = {
     description: 'Forbidden: insufficient permissions.',
     content: {
       'application/json': {
-        schema: errorResponseSchema,
+        schema: failWithErrorSchema,
       },
     },
   },
@@ -54,7 +54,7 @@ export const errorResponses = {
     description: 'Not found: resource does not exist.',
     content: {
       'application/json': {
-        schema: errorResponseSchema,
+        schema: failWithErrorSchema,
       },
     },
   },
@@ -62,7 +62,7 @@ export const errorResponses = {
     description: 'Server error: something went wrong.',
     content: {
       'application/json': {
-        schema: errorResponseSchema,
+        schema: failWithErrorSchema,
       },
     },
   },

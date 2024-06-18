@@ -6,7 +6,7 @@ import { Root } from '~/modules/common/root';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
-import { getMe, getUserMenu } from '~/api/me';
+import { getSelf, getUserMenu } from '~/api/me';
 
 import ErrorNotice from '~/modules/common/error-notice';
 
@@ -28,7 +28,7 @@ import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceT
 const App = lazy(() => import('~/modules/common/app'));
 
 export const getAndSetMe = async () => {
-  const user = await getMe();
+  const user = await getSelf();
   useUserStore.getState().setUser(user);
   return user;
 };
@@ -83,7 +83,7 @@ export const IndexRoute = createRoute({
 
     // If just entered, fetch me and menu
     try {
-      const getMe = async () => {
+      const getSelf = async () => {
         return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
       };
 
@@ -91,7 +91,7 @@ export const IndexRoute = createRoute({
         return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu });
       };
 
-      await Promise.all([getMe(), getMenu()]);
+      await Promise.all([getSelf(), getMenu()]);
     } catch (error) {
       // TODO but sentry and onError in a reusable wrapper to reuse it in frontend catch blocks
       Sentry.captureException(error);

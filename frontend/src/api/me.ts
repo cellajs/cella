@@ -4,7 +4,7 @@ import type { UpdateUserParams } from './users';
 const client = apiClient.me;
 
 // Get current user
-export const getMe = async () => {
+export const getSelf = async () => {
   const response = await client.$get();
 
   const json = await handleResponse(response);
@@ -36,7 +36,7 @@ export const deleteSelf = async () => {
 };
 
 // Terminate user sessions
-export const terminateMySessions = async (sessionIds: string[]) => {
+export const deleteMySessions = async (sessionIds: string[]) => {
   const response = await client.sessions.$delete({
     query: { ids: sessionIds },
   });

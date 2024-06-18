@@ -1,6 +1,6 @@
-import type { EntityType } from 'backend/types/common';
+import type { Entity } from 'backend/types/common';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
-import { type ContextEntityType, type UploadParams, UploadType, type User } from '~/types';
+import { type ContextEntity, type UploadParams, UploadType, type User } from '~/types';
 import { apiClient, handleResponse } from '.';
 
 // Get public counts for about page
@@ -15,13 +15,9 @@ export const getPublicCounts = async () => {
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
   const id = query.organizationId;
 
-  if (!id && type === UploadType.Organization) {
-    return console.error('Organization id required for organization uploads');
-  }
+  if (!id && type === UploadType.Organization) return console.error('Organization id required for organization uploads');
 
-  if (id && type === UploadType.Personal) {
-    return console.error('Personal uploads should be typed as personal');
-  }
+  if (id && type === UploadType.Personal) return console.error('Personal uploads should be typed as personal');
 
   const preparedQuery = {
     public: String(query.public),
@@ -69,7 +65,7 @@ export const checkToken = async (token: string) => {
 };
 
 // Get suggestions
-export const getSuggestions = async (query: string, type?: EntityType | undefined) => {
+export const getSuggestions = async (query: string, type?: Entity | undefined) => {
   const response = await apiClient.suggestions.$get({
     query: { q: query, type },
   });
@@ -99,7 +95,7 @@ export const acceptInvite = async ({
 
 type RequiredGetMembersParams = {
   idOrSlug: string;
-  entityType: ContextEntityType;
+  entityType: ContextEntity;
 };
 
 type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {

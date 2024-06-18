@@ -5,7 +5,7 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { resolveEntities } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import permissionManager from '../../lib/permission-manager';
-import type { EntityType, Env } from '../../types/common';
+import type { Entity, Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
 /**
@@ -27,7 +27,7 @@ const splitByAllowance =
 
       // Check if ids are missing
       if (!rawIds || !ids.length) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', entityType.toUpperCase() as EntityType, { user: user?.id });
+        return errorResponse(ctx, 404, 'not_found', 'warn', entityType.toUpperCase() as Entity, { user: user?.id });
       }
 
       // Resolve ids
@@ -52,7 +52,7 @@ const splitByAllowance =
 
       // Check if user or context is missing
       if (!allowedIds.length) {
-        return errorResponse(ctx, 403, 'forbidden', 'warn', entityType.toUpperCase() as EntityType, { user: user.id });
+        return errorResponse(ctx, 403, 'forbidden', 'warn', entityType.toUpperCase() as Entity, { user: user.id });
       }
 
       // Attach the split IDs to the context

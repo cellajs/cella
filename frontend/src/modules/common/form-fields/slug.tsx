@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import type { EntityType } from 'backend/types/common';
+import type { Entity } from 'backend/types/common';
 import { config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -18,7 +18,7 @@ interface SlugFieldProps {
   nameValue?: string;
   description?: string;
   previousSlug?: string;
-  type: EntityType;
+  type: Entity;
 }
 
 export const SlugFormField = ({ control, label, previousSlug, description, nameValue, type }: SlugFieldProps) => {
@@ -36,7 +36,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const { mutate: checkAvailability } = useMutation({
     mutationFn: async (params: {
       slug: string;
-      type: EntityType;
+      type: Entity;
     }) => {
       return checkSlugAvailable(params);
     },

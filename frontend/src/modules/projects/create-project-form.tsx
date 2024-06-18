@@ -4,7 +4,7 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
+import { workspaceBodySchema } from 'backend/modules/workspaces/schema';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { createProject } from '~/api/projects';
@@ -27,7 +27,7 @@ interface CreateProjectFormProps {
   dialog?: boolean;
 }
 
-const formSchema = createWorkspaceJsonSchema;
+const formSchema = workspaceBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

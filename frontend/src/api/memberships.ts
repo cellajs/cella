@@ -1,17 +1,18 @@
-import type { ContextEntityType, Membership } from '~/types';
+import type { ContextEntity, Membership } from '~/types';
 import { apiClient, handleResponse } from '.';
 
 const client = apiClient.memberships;
+
 export interface InviteMemberProps {
   emails: string[];
   role?: Membership['role'];
   idOrSlug: string;
   organizationId: string;
-  entityType: ContextEntityType;
+  entityType: ContextEntity;
 }
 
 // Invite users
-export const inviteMember = async ({ idOrSlug, entityType, organizationId, ...rest }: InviteMemberProps) => {
+export const inviteMembers = async ({ idOrSlug, entityType, organizationId, ...rest }: InviteMemberProps) => {
   const response = await client.$post({
     query: { idOrSlug, organizationId, entityType },
     json: rest,
@@ -20,7 +21,7 @@ export const inviteMember = async ({ idOrSlug, entityType, organizationId, ...re
   await handleResponse(response);
 };
 
-export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: string; ids: string[]; entityType: ContextEntityType }) => {
+export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: string; ids: string[]; entityType: ContextEntity }) => {
   const response = await client.$delete({
     query: { idOrSlug, entityType, ids },
   });

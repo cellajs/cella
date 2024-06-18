@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
 // Change this in the future on current schema
-import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
+import { workspaceBodySchema } from 'backend/modules/workspaces/schema';
 import { createWorkspace } from '~/api/workspaces';
 
 import { useNavigate } from '@tanstack/react-router';
@@ -31,7 +31,7 @@ interface CreateWorkspaceFormProps {
   dialog?: boolean;
 }
 
-const formSchema = createWorkspaceJsonSchema;
+const formSchema = workspaceBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

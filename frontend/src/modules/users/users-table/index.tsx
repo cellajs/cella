@@ -3,7 +3,7 @@ import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState, useRef } from 'react';
 import { type GetUsersParams, getUsers, updateUser } from '~/api/users';
 
-import type { getUsersQuerySchema } from 'backend/modules/users/schema';
+import type { usersQuerySchema } from 'backend/modules/users/schema';
 import type { config } from 'config';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +33,7 @@ import InviteUsers from '~/modules/users/invite-users';
 import TableCount from '~/modules/common/data-table/table-count';
 import DeleteUsers from '../delete-users';
 
-type UsersSearch = z.infer<typeof getUsersQuerySchema>;
+type UsersSearch = z.infer<typeof usersQuerySchema>;
 
 const LIMIT = 40;
 

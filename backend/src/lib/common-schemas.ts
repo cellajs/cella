@@ -12,6 +12,12 @@ export const idSchema = z.string();
 
 export const slugSchema = z.string();
 
+export const idOrSlugSchema = idSchema.or(slugSchema);
+
+export const tokenSchema = z.object({
+  token: z.string(),
+});
+
 export const errorSchema = z.object({
   message: z.string(),
   type: z.string(),
@@ -26,7 +32,7 @@ export const errorSchema = z.object({
   org: z.string().optional(),
 });
 
-export const errorResponseSchema = z.object({
+export const failWithErrorSchema = z.object({
   success: z.boolean().default(false),
   error: errorSchema,
 });
@@ -42,7 +48,7 @@ export const paginationQuerySchema = z.object({
   limit: z.string().default('50').optional().refine(limitRefine, 'Must be number greater than 0'),
 });
 
-export const deleteByIdsQuerySchema = z.object({
+export const idsQuerySchema = z.object({
   ids: z.union([z.string(), z.array(z.string())]),
 });
 
@@ -71,10 +77,10 @@ export const validDomainsSchema = z
   .optional();
 
 export const entityParamSchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
+  idOrSlug: idOrSlugSchema,
 });
 
-export const countsSchema = z.object({
+export const membershipsCountSchema = z.object({
   memberships: z.object({
     admins: z.number(),
     members: z.number(),

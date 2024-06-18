@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
 // Change this in the future on current schema
-import { createOrganizationJsonSchema } from 'backend/modules/organizations/schema';
+import { createOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { createOrganization } from '~/api/organizations';
 
 import { useNavigate } from '@tanstack/react-router';
@@ -30,7 +30,7 @@ interface CreateOrganizationFormProps {
   children?: React.ReactNode;
 }
 
-const formSchema = createOrganizationJsonSchema;
+const formSchema = createOrganizationBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

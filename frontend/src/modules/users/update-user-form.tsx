@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type DefaultError, useMutation } from '@tanstack/react-query';
-import { updateUserJsonSchema } from 'backend/modules/users/schema';
+import { updateUserBodySchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -37,7 +37,7 @@ interface UpdateUserFormProps {
   children?: React.ReactNode;
 }
 
-const formSchema = updateUserJsonSchema;
+const formSchema = updateUserBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

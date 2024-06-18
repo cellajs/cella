@@ -2,10 +2,10 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import type { ContextEntityType } from '~/types';
+import type { ContextEntity } from '~/types';
 
 interface SelectRoleProps {
-  entityType?: ContextEntityType;
+  entityType?: ContextEntity;
   onChange: (value?: string) => void;
   value?: string;
   className?: string;

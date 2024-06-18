@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { type InviteMemberProps, inviteMember } from '~/api/memberships';
+import { type InviteMemberProps, inviteMembers } from '~/api/memberships';
 
-import { idSchema, slugSchema } from 'backend/lib/common-schemas';
+import { idOrSlugSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
@@ -18,7 +18,7 @@ import MultipleSelector from '~/modules/common/multi-select';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { ContextEntityType, EntityPage } from '~/types';
+import type { ContextEntity, EntityPage } from '~/types';
 
 interface Props {
   entity?: EntityPage;
@@ -29,7 +29,7 @@ interface Props {
 const formSchema = z.object({
   emails: z.array(z.string().email('Invalid email')).min(1),
   role: z.enum(config.rolesByType.entityRoles).optional(),
-  idOrSlug: idSchema.or(slugSchema).optional(),
+  idOrSlug: idOrSlugSchema.optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -55,7 +55,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      return inviteMember({
+      return inviteMembers({
         ...values,
         idOrSlug: entity.id,
         entityType: entity.entity || 'ORGANIZATION',
@@ -116,7 +116,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
               <FormLabel>{t('common:role')}:</FormLabel>
               <FormControl>
                 {/* TODO fix */}
-                <SelectRole entityType={entity.entity as unknown as ContextEntityType} value={value} onChange={onChange} />
+                <SelectRole entityType={entity.entity as unknown as ContextEntity} value={value} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

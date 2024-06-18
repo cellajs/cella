@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type DefaultError, useMutation } from '@tanstack/react-query';
-import { updateOrganizationJsonSchema } from 'backend/modules/organizations/schema';
+import { updateOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
@@ -34,7 +34,7 @@ interface Props {
   sheet?: boolean;
 }
 
-const formSchema = updateOrganizationJsonSchema;
+const formSchema = updateOrganizationBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

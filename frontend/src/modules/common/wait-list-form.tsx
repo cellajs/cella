@@ -43,6 +43,7 @@ export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step
     createRequest({
       email: values.email,
       type: 'WAITLIST_REQUEST',
+      message: null,
     });
   };
 

@@ -9,7 +9,7 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
-import { inviteMember } from '~/api/memberships';
+import { inviteMembers } from '~/api/memberships';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -128,7 +128,7 @@ const OrganizationsTable = () => {
     for (const index of indexes) {
       const organization = changedRows[index];
       if (column.key === 'userRole' && organization.membership?.role) {
-        inviteMember({
+        inviteMembers({
           idOrSlug: organization.id,
           emails: [user.email],
           role: organization.membership?.role,

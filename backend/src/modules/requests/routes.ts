@@ -1,8 +1,8 @@
-import { errorResponses, successResponseWithDataSchema, successResponseWithPaginationSchema } from '../../lib/common-responses';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema } from '../../lib/common-responses';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
-import { apiRequestSchema, createRequestSchema, getRequestsQuerySchema, requestResponseSchema } from './schema';
+import { requestsInfoSchema, createRequestSchema, getRequestsQuerySchema, requestsSchema } from './schema';
 
 class RequestsRoutesConfig {
   public createRequest = createRouteConfig({
@@ -27,7 +27,7 @@ class RequestsRoutesConfig {
         description: 'Requests',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(requestResponseSchema),
+            schema: successWithDataSchema(requestsSchema),
           },
         },
       },
@@ -50,7 +50,7 @@ class RequestsRoutesConfig {
         description: 'Requests',
         content: {
           'application/json': {
-            schema: successResponseWithPaginationSchema(apiRequestSchema),
+            schema: successWithPaginationSchema(requestsInfoSchema),
           },
         },
       },

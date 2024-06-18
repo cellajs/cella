@@ -1,12 +1,12 @@
 import type { AvatarProps } from '@radix-ui/react-avatar';
-import type { EntityType } from 'backend/types/common';
+import type { Entity } from 'backend/types/common';
 import { memo, useMemo } from 'react';
 import { cn, getColorClass } from '~/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 
 export interface AvatarWrapProps extends AvatarProps {
   id?: string;
-  type?: EntityType;
+  type?: Entity;
   name?: string | null;
   url?: string | null;
   backgroundColor?: string;

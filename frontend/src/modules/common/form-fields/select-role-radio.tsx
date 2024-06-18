@@ -2,10 +2,10 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
-import type { ContextEntityType } from '~/types';
+import type { ContextEntity } from '~/types';
 
 interface SelectRoleProps {
-  entityType?: ContextEntityType;
+  entityType?: ContextEntity;
   onChange: (value?: string) => void;
   value?: (typeof config.rolesByType.allRoles)[number];
   className?: string;
