@@ -82,7 +82,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
       drawerOnMobile: false,
       className: 'max-w-xl',
       title: t('common:delete'),
-      text: t('confirm.delete_resources', { resources: t('common:projects').toLowerCase() }),
+      text: t('common:confirm.delete_resources', { resources: t('common:projects').toLowerCase() }),
     });
   };
 
