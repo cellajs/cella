@@ -57,10 +57,8 @@ const ResetPassword = () => {
 
   // Submit new password
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    resetPassword({
-      token,
-      password: values.password,
-    });
+    const { password } = values;
+    resetPassword({ token, password });
   };
 
   useEffect(() => {

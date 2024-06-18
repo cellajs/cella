@@ -43,9 +43,7 @@ const AcceptInvite = () => {
   });
 
   const onSubmit = () => {
-    acceptInvite({
-      token,
-    });
+    acceptInvite({ token });
   };
 
   useEffect(() => {
