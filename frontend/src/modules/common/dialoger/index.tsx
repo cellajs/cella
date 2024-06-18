@@ -86,7 +86,7 @@ export function Dialoger() {
                 {dialog.text && <DialogDescription>{dialog.text}</DialogDescription>}
               </DialogHeader>
             ) : null}
-            {dialog.content}
+            {existingDialog?.content ? existingDialog.content : dialog.content}
           </DialogContent>
         </Dialog>
       );

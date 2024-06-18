@@ -128,6 +128,15 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
   });
 
   const handleResetRequestSubmit = () => {
+    // TODO maybe find a better way
+    dialog.update('send-reset-password', {
+      content: (
+        <div>
+          <Input type="email" className="mb-4" defaultValue={email} />
+          <Button className="w-full" loading={true} />
+        </div>
+      ),
+    });
     sendResetPasswordEmail(resetEmailRef.current);
   };
 
@@ -151,6 +160,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
         </Button>
       </div>,
       {
+        id: 'send-reset-password',
         className: 'md:max-w-xl',
         title: t('common:reset_password'),
         text: t('common:reset_password.text'),
