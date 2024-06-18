@@ -18,18 +18,15 @@ const debugOptions: DebugItem[] = [
 ];
 
 const DebugToolbars = () => {
-  const debugToggle = (id: string) => {
-    const item = debugOptions.find((option) => option.id === id);
-    if (!item) return;
-
+  const debugToggle = (item: DebugItem) => {
     const parent = document.querySelector<HTMLElement>(item.parent);
     if (!parent) return;
 
     let htmlElement: HTMLButtonElement | null | undefined = parent.querySelector<HTMLButtonElement>(item.element);
-    if (id === 'electric-sql') htmlElement = parent.shadowRoot?.querySelector<HTMLButtonElement>(item.element);
+    if (item.id === 'electric-sql') htmlElement = parent.shadowRoot?.querySelector<HTMLButtonElement>(item.element);
     if (!htmlElement) return;
 
-    if (id === 'electric-sql') parent.classList.remove('hidden');
+    if (item.id === 'electric-sql') parent.classList.remove('hidden');
     htmlElement.click();
   };
 
@@ -38,18 +35,18 @@ const DebugToolbars = () => {
       <TanStackRouterDevtools />
       <ReactQueryDevtools />
 
-      <div className="max-sm:hidden left-3 fixed bottom-3 z-[9999]">
+      <div className="max-sm:hidden left-3 fixed bottom-3 z-[300]">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" aria-label="toggle debug toolbar">
               🐞
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="end" sideOffset={24} className="w-48 z-[99999999]">
-            {debugOptions.map(({ id, icon }) => (
-              <DropdownMenuItem key={id} onClick={() => debugToggle(id)}>
-                <span className="mr-2">{icon}</span>
-                <span>{id}</span>
+          <DropdownMenuContent side="right" align="end" sideOffset={24} className="w-48 z-[300]">
+            {debugOptions.map((item) => (
+              <DropdownMenuItem key={item.id} onClick={() => debugToggle(item)}>
+                <span className="mr-2">{item.icon}</span>
+                <span>{item.id}</span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
