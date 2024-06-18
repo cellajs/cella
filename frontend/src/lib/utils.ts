@@ -11,7 +11,8 @@ import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import type { Task } from '~/modules/common/electric/electrify';
-import type { DraggableItemData } from '~/types';
+import type { DraggableItemData, UserMenuItem } from '~/types';
+import { updateMembershipOrder } from '~/api/memberships';
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
@@ -191,4 +192,22 @@ export const sortById = (a: string, b: string, order: string[]) => {
   const indexB = order.indexOf(b);
   if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
   return indexA - indexB;
+};
+
+export const updateOrderInMembership = async (items: UserMenuItem[], targetIndex: number, membershipId: string) => {
+  const itemsLength = items.length;
+  let newOrder = 0;
+
+  if (targetIndex > 0 && targetIndex < itemsLength - 1) {
+    const itemBefore = items[targetIndex - 1];
+    const itemAfter = items[targetIndex];
+    newOrder = (itemBefore.membership.order + itemAfter.membership.order) / 2;
+  } else if (targetIndex === 0 && itemsLength > 0) {
+    const itemAfter = items[targetIndex];
+    newOrder = itemAfter.membership.order / 1.1;
+  } else if (targetIndex === itemsLength - 1 && itemsLength > 0) {
+    const itemBefore = items[targetIndex - 1];
+    newOrder = itemBefore.membership.order * 1.1;
+  }
+  await updateMembershipOrder(membershipId, newOrder);
 };

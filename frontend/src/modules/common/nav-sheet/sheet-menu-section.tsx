@@ -27,7 +27,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
   const [globalDragging, setGlobalDragging] = useState(false);
   const { activeSections } = useNavigationStore();
   const isSectionVisible = activeSections[sectionType];
-  const mainItemId = data.length > 0 ? data[0].parentId : '';
+  const parentItemId = data.length > 0 ? data[0].parentId : '';
 
   const sectionRef = useRef<HTMLDivElement>(null);
   const archivedRef = useRef<HTMLDivElement>(null);
@@ -74,7 +74,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
 
   return (
     <>
-      {!mainItemId && (
+      {!parentItemId && (
         <MenuSectionSticky
           data={data}
           sectionType={sectionType}
@@ -97,7 +97,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
           {!!data.length && (
             <>
               <MenuArchiveToggle
-                isSubmenu={typeof mainItemId === 'string'}
+                isSubmenu={typeof parentItemId === 'string'}
                 archiveToggleClick={archiveToggleClick}
                 inactiveCount={data.filter((i) => i.membership.archived).length}
                 isArchivedVisible={isArchivedVisible}

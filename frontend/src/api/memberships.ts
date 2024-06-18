@@ -21,6 +21,18 @@ export const inviteMembers = async ({ idOrSlug, entityType, organizationId, ...r
   await handleResponse(response);
 };
 
+export const updateMembershipOrder = async (membershipId: string, order: number) => {
+  const response = await client.order[':id'].$put({
+    param: {
+      id: membershipId,
+    },
+    json: { order },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
 export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: string; ids: string[]; entityType: ContextEntity }) => {
   const response = await client.$delete({
     query: { idOrSlug, entityType, ids },

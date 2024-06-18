@@ -3,7 +3,7 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { arrayMove, getReorderDestinationIndex, sortById } from '~/lib/utils';
+import { arrayMove, getReorderDestinationIndex, sortById, updateOrderInMembership } from '~/lib/utils';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
 import type { Project } from '~/types';
@@ -96,7 +96,7 @@ export default function Board() {
         canMonitor({ source }) {
           return source.data.type === 'column';
         },
-        onDrop({ location, source }) {
+        async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
           const sourceData = source.data;
           if (!target) return;
@@ -107,6 +107,10 @@ export default function Board() {
             const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'horizontal');
             const newItemOrder = arrayMove(menuOrder.PROJECT.subList[workspace.id], sourceData.index, destination);
             setSubMenuOrder('PROJECT', workspace.id, newItemOrder);
+            // strange counts of the item
+            if (sourceData.item.membership && currentWorkspace && currentWorkspace.submenu) {
+              await updateOrderInMembership(currentWorkspace.submenu, target.data.index, sourceData.item.membership?.id);
+            }
           }
         },
       }),

@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
-import { arrayMove, getDraggableItemData, getReorderDestinationIndex, sortById } from '~/lib/utils';
+import { arrayMove, getDraggableItemData, getReorderDestinationIndex, sortById, updateOrderInMembership } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -39,7 +39,8 @@ export const SheetMenuItemsOptions = ({
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
   const { hideSubmenu, menuOrder } = useNavigationStore();
   const entityType = data[0].entity;
-  const mainItemId = data[0].parentId;
+  const parentItemId = data[0].parentId;
+
   if (data.length === 0) {
     return (
       <li className="py-2 text-muted-foreground text-sm text-light text-center">
@@ -47,9 +48,10 @@ export const SheetMenuItemsOptions = ({
       </li>
     );
   }
-  const items = data
+
+  const filteredItems = data
     .filter((i) => (shownOption === 'archived' ? i.membership.archived : !i.membership.archived))
-    .sort((a, b) => sortById(a.id, b.id, mainItemId ? menuOrder[entityType].subList[mainItemId] : menuOrder[entityType].mainList));
+    .sort((a, b) => sortById(a.id, b.id, parentItemId ? menuOrder[entityType].subList[parentItemId] : menuOrder[entityType].mainList));
 
   const toggleSubmenuVisibility = (itemId: string) => {
     setSubmenuVisibility((prevState) => ({
@@ -58,17 +60,18 @@ export const SheetMenuItemsOptions = ({
     }));
   };
 
-  return items.map((item) => {
+  return filteredItems.map((item) => {
     const isSubmenuArchivedVisible = submenuVisibility[item.id] || false;
 
     return (
       <div key={item.id}>
         <ItemOptions
+          filteredItems={filteredItems}
           item={item}
           itemType={entityType}
           isGlobalDragging={isGlobalDragging}
           setGlobalDragging={setGlobalDragging}
-          mainItemId={mainItemId}
+          parentItemId={parentItemId}
         />
         {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
           <>
@@ -93,12 +96,13 @@ export const SheetMenuItemsOptions = ({
 };
 
 const ItemOptions = ({
+  filteredItems,
   item,
   itemType,
   isGlobalDragging,
-  mainItemId,
+  parentItemId,
   setGlobalDragging,
-}: MenuItemProps & { mainItemId?: string; item: MenuItem; itemType: ContextEntity }) => {
+}: MenuItemProps & { filteredItems: UserMenuItem[]; parentItemId?: string; item: MenuItem; itemType: ContextEntity }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
@@ -116,7 +120,7 @@ const ItemOptions = ({
     onSuccess: (updatedMembership) => {
       if (updatedMembership.inactive !== isItemArchived) {
         const archived = updatedMembership.inactive || !isItemArchived;
-        archiveStateToggle(item.id, archived, mainItemId ? mainItemId : null);
+        archiveStateToggle(item.id, archived, parentItemId ? parentItemId : null);
         toast.success(
           updatedMembership.inactive
             ? t('common:success.archived_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
@@ -151,11 +155,11 @@ const ItemOptions = ({
   };
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const submenuItemIndex = mainItemId ? menuOrder[itemType].subList[mainItemId].findIndex((el) => el === item.id) : 0;
+    const submenuItemIndex = parentItemId ? menuOrder[itemType].subList[parentItemId].findIndex((el) => el === item.id) : 0;
     const itemIndex = menuOrder[itemType].mainList ? menuOrder[itemType].mainList.findIndex((el) => el === item.id) : 0;
     const element = dragRef.current;
     const dragButton = dragButtonRef.current;
-    const data = getDraggableItemData(item, mainItemId ? submenuItemIndex : itemIndex, 'menuItem', itemType);
+    const data = getDraggableItemData(item, parentItemId ? submenuItemIndex : itemIndex, 'menuItem', itemType);
 
     if (!element || !dragButton) return;
 
@@ -198,7 +202,7 @@ const ItemOptions = ({
         onDragLeave: () => onDragOver(),
       }),
     );
-  }, [item, menuOrder[itemType], mainItemId]);
+  }, [item, menuOrder[itemType], parentItemId]);
 
   // monitoring drop event
   useEffect(() => {
@@ -206,15 +210,15 @@ const ItemOptions = ({
       canMonitor({ source }) {
         return isPageData(source.data) && source.data.item.id === item.id;
       },
-      onDrop({ location, source }) {
+      async onDrop({ location, source }) {
         const target = location.current.dropTargets[0];
+
         const sourceData = source.data;
         if (!target || !isPageData(sourceData) || !isPageData(target.data)) return;
-
+        const targetIndex = target.data.index;
         const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
-        const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'vertical');
+        const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, targetIndex, 'vertical');
         const subList = menuOrder[itemType].subList;
-
         if (subList) {
           const mainMenuId = Object.keys(subList).find((key) => {
             return subList[key].includes(item.id);
@@ -226,6 +230,7 @@ const ItemOptions = ({
           const newItemOrder = arrayMove(menuOrder[itemType].mainList, sourceData.index, destination);
           setMainMenuOrder(itemType, newItemOrder);
         }
+        await updateOrderInMembership(filteredItems, targetIndex, item.membership.id);
       },
     });
   }, [item, menuOrder[itemType]]);
@@ -236,19 +241,19 @@ const ItemOptions = ({
         layoutId={`sheet-menu-item-${item.id}`}
         ref={dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
-        className={`group flex relative items-center sm:max-w-[18rem] ${mainItemId ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0  cursor-pointer justify-start rounded  focus:outline-none
+        className={`group flex relative items-center sm:max-w-[18rem] ${parentItemId ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0  cursor-pointer justify-start rounded  focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground space-x-1
       ${!isItemArchived && 'ring-1'} `}
       >
         <AvatarWrap
-          className={`${mainItemId ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'}`}
+          className={`${parentItemId ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'}`}
           type={itemType}
           id={item.id}
           name={item.name}
           url={item.thumbnailUrl}
         />
         <div className="truncate grow py-2 text-left">
-          <div className={`truncate text-foreground/80 ${mainItemId ? 'text-sm' : 'text-base mb-1'} leading-5`}>{item.name}</div>
+          <div className={`truncate text-foreground/80 ${parentItemId ? 'text-sm' : 'text-base mb-1'} leading-5`}>{item.name}</div>
           <div className={`flex items-center gap-4 transition-opacity ${isGlobalDragging ? 'opacity-40 delay-0' : 'delay-500'}`}>
             <Button
               variant="link"
@@ -259,11 +264,11 @@ const ItemOptions = ({
             >
               {isItemArchived ? (
                 <>
-                  <ArchiveRestore size={mainItemId ? 12 : 14} className="mr-1" /> {t('common:restore')}
+                  <ArchiveRestore size={parentItemId ? 12 : 14} className="mr-1" /> {t('common:restore')}
                 </>
               ) : (
                 <>
-                  <Archive size={mainItemId ? 12 : 14} className="mr-1" />
+                  <Archive size={parentItemId ? 12 : 14} className="mr-1" />
                   {t('common:archive')}
                 </>
               )}
@@ -277,12 +282,12 @@ const ItemOptions = ({
             >
               {isItemMuted ? (
                 <>
-                  <Bell size={mainItemId ? 12 : 14} className="mr-1" />
+                  <Bell size={parentItemId ? 12 : 14} className="mr-1" />
                   {t('common:unmute')}
                 </>
               ) : (
                 <>
-                  <BellOff size={mainItemId ? 12 : 14} className="mr-1" />
+                  <BellOff size={parentItemId ? 12 : 14} className="mr-1" />
                   {t('common:mute')}
                 </>
               )}

@@ -44,10 +44,14 @@ export const getAndSetMenu = async () => {
     if (menuOrder[entityType] !== undefined) continue;
     const entityMainIds = menuItem
       .filter((i) => !i.membership.archived)
+      .sort((a, b) => a.membership.order - b.membership.order)
       .map((item) => {
         if (!item.submenu || !item.submenu.length) return item.id;
         const subtype = item.submenu[0].entity;
-        const subItemIds = item.submenu.filter((i) => !i.membership.archived).map((subItem) => subItem.id);
+        const subItemIds = item.submenu
+          .filter((i) => !i.membership.archived)
+          .sort((a, b) => a.membership.order - b.membership.order)
+          .map((subItem) => subItem.id);
         setSubMenuOrder(subtype, item.id, subItemIds);
         return item.id;
       });

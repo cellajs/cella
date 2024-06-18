@@ -357,6 +357,41 @@ const membershipsRoutes = app
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 
     return ctx.json({ success: true, data: updatedMembership }, 200);
+  })
+  /*
+   * Update user membership
+   */
+  .openapi(membershipRouteConfig.updateMembershipOrder, async (ctx) => {
+    const { id: membershipId } = ctx.req.valid('param');
+    const { order } = ctx.req.valid('json');
+    const user = ctx.get('user');
+
+    // Get the membership
+    const [membershipToUpdate] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
+    if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { membership: membershipId });
+
+    const updatedType = membershipToUpdate.type;
+
+    // TODO: Refactor
+    const membershipContext = await resolveEntity(
+      updatedType,
+      membershipToUpdate.projectId || membershipToUpdate.workspaceId || membershipToUpdate.organizationId || '',
+    );
+
+    const [updatedMembership] = await db
+      .update(membershipsTable)
+      .set({ order: order })
+      .where(and(eq(membershipsTable.id, membershipId)))
+      .returning();
+
+    sendSSEToUsers([user.id], 'update_entity', {
+      ...updatedMembership,
+      ...membershipContext,
+    });
+
+    logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
+
+    return ctx.json({ success: true, data: updatedMembership }, 200);
   });
 
 export default membershipsRoutes;
