@@ -1,25 +1,17 @@
-import { useTranslation } from 'react-i18next';
 import type { Member, User } from '~/types';
 
 import { config } from 'config';
-import { useContext, useState } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { renderSelect } from '~/modules/common/data-table/select-column';
-import { EntityContext } from '~/modules/common/entity-context';
 import { sheet } from '~/modules/common/sheeter/state';
 import { UserProfile } from '~/modules/users/user-profile';
-import { AvatarWrap } from '../../common/avatar-wrap';
-import CheckboxColumn from '../../common/data-table/checkbox-column';
-import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
-import HeaderCell from '../../common/data-table/header-cell';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import HeaderCell from '~/modules/common/data-table/header-cell';
+import type { TFunction } from 'i18next';
 
-export const useColumns = () => {
-  const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm');
-
-  const { isAdmin } = useContext(EntityContext);
-
+export const getColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean) => {
   const openUserPreviewSheet = (user: User) => {
     sheet(<UserProfile user={user} />, {
       className: 'sm:max-w-full max-w-full xl:w-[50vw] p-0',
@@ -95,5 +87,5 @@ export const useColumns = () => {
 
   if (isAdmin) mobileColumns.unshift(CheckboxColumn);
 
-  return useState<ColumnOrColumnGroup<Member>[]>(isMobile ? mobileColumns : [...mobileColumns, ...columns]);
+  return isMobile ? mobileColumns : [...mobileColumns, ...columns];
 };

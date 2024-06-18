@@ -73,8 +73,8 @@ export function Dialoger() {
             onOpenAutoFocus={(event: Event) => {
               if (!dialog.autoFocus) event.preventDefault();
             }}
-            className={dialog.className}
-            container={dialog.container}
+            className={existingDialog?.className ? existingDialog.className : dialog.className}
+            container={existingDialog?.container ? existingDialog.container : dialog.container}
           >
             {dialog.title || dialog.text ? (
               <DialogHeader>

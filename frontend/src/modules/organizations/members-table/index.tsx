@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo, useState, useContext, useRef } from 'react';
+import { useMemo, useState, useContext, useRef, useEffect } from 'react';
 
 import type { membersQuerySchema } from 'backend/modules/general/schema';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
@@ -17,7 +17,8 @@ import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-col
 import type { ContextEntity, Member } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import useQueryResultEffect from '~/hooks/use-query-result-effect';
-import { useColumns } from './columns';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { getColumns } from './columns';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import Export from '~/modules/common/data-table/export';
@@ -33,6 +34,7 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 
 const LIMIT = 40;
 
@@ -65,11 +67,12 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
   const containerRef = useRef(null);
   const { entity, isAdmin } = useContext(EntityContext);
 
+  const isMobile = useBreakpoints('max', 'sm');
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<MemberSearch['q']>(search.q);
   const [role, setRole] = useState<MemberSearch['role']>(search.role);
-
+  const [columns, setColumns] = useState<ColumnOrColumnGroup<Member>[]>([]);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
@@ -126,8 +129,6 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
     sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
     role,
   ]);
-
-  const [columns, setColumns] = useColumns();
 
   const onResetFilters = () => {
     setQuery('');
@@ -195,6 +196,10 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
   };
 
   useQueryResultEffect<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
+
+  useEffect(() => {
+    setColumns(getColumns(t, isMobile, isAdmin));
+  }, [isAdmin]);
 
   return (
     <div className="space-y-4 h-full">
