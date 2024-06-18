@@ -47,7 +47,7 @@
 ## Installation
 
 #### Prerequisites
-- **Node:** Check node with `node -v`. Install Node 20.x or 22.x with (recommended) [Volta](https://docs.volta.sh/guide/).
+- **Node:** Check node with `node -v`. Install Node 20.x or 22.x. (ie. [Volta](https://docs.volta.sh/guide/)).
 - **Docker:** Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/)
 
 ### Step 1
