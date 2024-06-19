@@ -1,33 +1,30 @@
-import { useNavigationStore } from '~/store/navigation';
 import { useSSE } from './use-sse';
-import { getUserMenu } from '~/api/me';
+import { useNavigationStore } from '~/store/navigation';
+import { addMenuItem, updateMenuItem, deleteMenuItem } from './helpers';
 
 const SSE = () => {
-  const updateEntity = async (e: MessageEvent<string>) => {
+  const addEntity = (e: MessageEvent<string>) => {
     try {
-      console.log('e:', e);
-      const menu = await getUserMenu();
-      useNavigationStore.setState({ menu });
-    } catch (error) {
-      console.error('Error parsing main update event', error);
-    }
-  };
-
-  const addEntity = async (e: MessageEvent<string>) => {
-    try {
-      console.log('e:', e);
-      const menu = await getUserMenu();
-      useNavigationStore.setState({ menu });
+      const newMenuItem = JSON.parse(e.data);
+      useNavigationStore.setState({ menu: addMenuItem(newMenuItem) });
     } catch (error) {
       console.error('Error parsing main create new event', error);
     }
   };
 
-  const removeEntity = async (e: MessageEvent<string>) => {
+  const updateEntity = (e: MessageEvent<string>) => {
     try {
-      console.log('e:', e);
-      const menu = await getUserMenu();
-      useNavigationStore.setState({ menu });
+      const updatedItem = JSON.parse(e.data);
+      useNavigationStore.setState({ menu: updateMenuItem(updatedItem) });
+    } catch (error) {
+      console.error('Error parsing main update event', error);
+    }
+  };
+
+  const removeEntity = (e: MessageEvent<string>) => {
+    try {
+      const deleteResponse = JSON.parse(e.data);
+      useNavigationStore.setState({ menu: deleteMenuItem(deleteResponse.id) });
     } catch (error) {
       console.error('Error parsing main remove event', error);
     }

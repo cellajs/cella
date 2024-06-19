@@ -25,7 +25,7 @@ const projectsRoutes = app
   .openapi(projectRoutesConfig.createProject, async (ctx) => {
     const { name, slug, color, organizationId } = ctx.req.valid('json');
     const workspaceId = ctx.req.query('workspaceId');
-    
+
     const user = ctx.get('user');
     const memberships = ctx.get('memberships');
 
@@ -70,7 +70,7 @@ const projectsRoutes = app
       membership: toMembershipInfo(createdMembership),
     };
 
-    sendSSE(user.id, 'create_entity', createdProject);
+    sendSSE(user.id, 'create_entity', { ...createdProject, ...{ parentId: createdProject.workspaceId } });
 
     return ctx.json({ success: true, data: createdProject }, 200);
   })

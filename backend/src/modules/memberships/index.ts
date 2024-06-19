@@ -21,6 +21,7 @@ import { CustomHono } from '../../types/common';
 import { membershipsTableId, supportedEntityTypes, type supportedModelTypes } from './helpers/create-membership-config';
 import membershipRouteConfig from './routes';
 import { insertMembership } from './helpers/insert-membership';
+import { toMembershipInfo } from './helpers/to-membership-info';
 
 const app = new CustomHono();
 
@@ -142,7 +143,10 @@ const membershipsRoutes = app
             await insertMembership({ user: existingUser, role: assignedRole, entity: context, memberships });
 
             // Send a Server-Sent Event (SSE) to the newly added user
-            sendSSEToUsers([existingUser.id], 'update_entity', context);
+            sendSSEToUsers([existingUser.id], 'update_entity', {
+              ...context,
+              membership: toMembershipInfo(memberships.find((m) => m.userId === existingUser.id)),
+            });
           }
 
           if (needsInvitation) {
@@ -288,7 +292,7 @@ const membershipsRoutes = app
     for (const membership of allowedTargets) {
       // Send the event to the user if they are a member of the organization
       const memberIds = targets.map((el) => el.userId).filter(Boolean) as string[];
-      sendSSEToUsers(memberIds, 'remove_entity', { ...membershipContext, ...membership });
+      sendSSEToUsers(memberIds, 'remove_entity', { id: membershipContext.id, entity: membershipContext.entity });
 
       logEvent('Member deleted', { membership: membership.id });
     }
@@ -355,10 +359,12 @@ const membershipsRoutes = app
       );
 
     const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
-
     sendSSEToUsers(membersIds, 'update_entity', {
-      ...updatedMembership,
       ...membershipContext,
+      membership: {
+        ...updatedMembership,
+        archived: updatedMembership.inactive,
+      },
     });
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });

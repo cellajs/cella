@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenu, UserMenuItem } from '~/types';
+import type { ContextEntity, UserMenuItem } from '~/types';
 import { dialog } from '../dialoger/state';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import { MenuSectionSticky } from './menu-section-sticky';
