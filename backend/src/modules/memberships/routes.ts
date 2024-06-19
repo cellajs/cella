@@ -90,35 +90,5 @@ class MembershipRoutesConfig {
       ...errorResponses,
     },
   });
-
-  public updateMembershipOrder = createRouteConfig({
-    method: 'put',
-    path: '/order/{id}',
-    guard: isAuthenticated,
-    tags: ['memberships'],
-    summary: 'Update membership',
-    description: 'Update role, muted, or archived status in a membership.',
-    request: {
-      params: z.object({ id: idSchema }),
-      body: {
-        content: {
-          'application/json': {
-            schema: z.object({ order: z.number() }),
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Membership updated',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(membershipSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
 }
 export default new MembershipRoutesConfig();

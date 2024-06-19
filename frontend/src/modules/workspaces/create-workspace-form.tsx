@@ -4,12 +4,10 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-// Change this in the future on current schema
 import { workspaceBodySchema } from 'backend/modules/workspaces/schema';
 import { createWorkspace } from '~/api/workspaces';
 
 import { useNavigate } from '@tanstack/react-router';
-// import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -38,7 +36,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { menu, setMainMenuOrder, menuOrder } = useNavigationStore();
+  const { menu } = useNavigationStore();
   const type = 'WORKSPACE';
 
   const organizations = menu.organizations;
@@ -65,8 +63,6 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     onSuccess: (updatedWorkspace) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      setMainMenuOrder(type, [...menuOrder[type].mainList, updatedWorkspace.id]);
-
       callback?.(updatedWorkspace);
       if (isDialog) dialog.remove();
 

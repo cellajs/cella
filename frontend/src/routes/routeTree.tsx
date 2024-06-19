@@ -36,28 +36,6 @@ export const getAndSetMe = async () => {
 export const getAndSetMenu = async () => {
   const menu = await getUserMenu();
   useNavigationStore.setState({ menu });
-  const { menuOrder, setMainMenuOrder, setSubMenuOrder } = useNavigationStore.getState();
-
-  for (const menuItem of Object.values(menu)) {
-    if (!menuItem.length) continue;
-    const entityType = menuItem[0].entity;
-    if (menuOrder[entityType] !== undefined) continue;
-    const entityMainIds = menuItem
-      .filter((i) => !i.membership.archived)
-      .sort((a, b) => a.membership.order - b.membership.order)
-      .map((item) => {
-        if (!item.submenu || !item.submenu.length) return item.id;
-        const subtype = item.submenu[0].entity;
-        const subItemIds = item.submenu
-          .filter((i) => !i.membership.archived)
-          .sort((a, b) => a.membership.order - b.membership.order)
-          .map((subItem) => subItem.id);
-        setSubMenuOrder(subtype, item.id, subItemIds);
-        return item.id;
-      });
-
-    setMainMenuOrder(entityType, entityMainIds);
-  }
   return menu;
 };
 

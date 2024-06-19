@@ -11,7 +11,8 @@ import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import ContentPlaceholder from '../content-placeholder';
 import { SheetMenuItem } from './sheet-menu-items';
 import { SheetMenuSearch } from './sheet-menu-search';
-import { type MenuItem, type MenuList, MenuSection } from './sheet-menu-section';
+import { MenuSection } from './sheet-menu-section';
+import type { UserMenuItem } from '~/types';
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
@@ -51,7 +52,7 @@ export const initialSearchResults = menuSections
       acc[section.storageType] = [];
       return acc;
     },
-    {} as Record<string, MenuList>,
+    {} as Record<string, UserMenuItem[]>,
   );
 
 export type SearchResultsType = typeof initialSearchResults;
@@ -66,7 +67,7 @@ export const SheetMenu = memo(() => {
 
   const searchResultsListItems = useCallback(() => {
     return Object.entries(searchResults).flatMap(([_, items]) => {
-      return items.length > 0 ? items.map((item: MenuItem) => <SheetMenuItem key={item.id} searchResults item={item} type={item.entity} />) : [];
+      return items.length > 0 ? items.map((item: UserMenuItem) => <SheetMenuItem key={item.id} searchResults item={item} type={item.entity} />) : [];
     });
   }, [searchResults]);
 

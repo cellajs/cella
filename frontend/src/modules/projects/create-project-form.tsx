@@ -14,7 +14,6 @@ import { useMutation } from '~/hooks/use-mutations';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
@@ -34,7 +33,6 @@ type FormValues = z.infer<typeof formSchema>;
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
   // const navigate = useNavigate();
-  const { setSubMenuOrder, menuOrder } = useNavigationStore();
   const type = 'PROJECT';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -67,9 +65,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
     onSuccess: (createdProject) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      setSubMenuOrder(type, workspace.id, [...menuOrder[type].subList[workspace.id], createdProject.id]);
       callback([createdProject], 'create');
-
       if (isDialog) dialog.remove();
     },
   });

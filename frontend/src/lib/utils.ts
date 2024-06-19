@@ -11,8 +11,8 @@ import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import type { Task } from '~/modules/common/electric/electrify';
-import type { DraggableItemData, UserMenuItem } from '~/types';
-import { updateMembershipOrder } from '~/api/memberships';
+import type { DraggableItemData, NewDraggableItemData, UserMenuItem } from '~/types';
+import type { UserMenu } from '~/types';
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
@@ -128,86 +128,59 @@ export const sortTaskOrder = (task1: Pick<Task, 'status' | 'sort_order'>, task2:
   return 0;
 };
 
-export const arrayMove = (array: string[], startIndex: number, endIndex: number) => {
-  const newArray = [...array];
-  const [removedElement] = newArray.splice(startIndex, 1);
-  newArray.splice(endIndex, 0, removedElement);
-  return newArray;
-};
-
 export const getDraggableItemData = <T>(
   item: T,
-  itemIndex: number,
+  itemIndex: number | null,
   type: 'task' | 'column' | 'menuItem',
   itemType?: Entity,
 ): DraggableItemData<T> => {
-  return { dragItem: true, item, index: itemIndex, type, itemType: itemType || 'ORGANIZATION' };
+  return { dragItem: true, item, index: itemIndex ? itemIndex : 0, type, itemType: itemType || 'ORGANIZATION' };
+};
+
+export const getNewDraggableItemData = <T>(
+  item: T,
+  itemOrder: number,
+  type: 'task' | 'column' | 'menuItem',
+  itemType: Entity,
+): NewDraggableItemData<T> => {
+  return { dragItem: true, item, order: itemOrder, type, itemType: itemType };
 };
 
 // To get target index for drop on DnD
-export const getReorderDestinationIndex = (
-  currentIndex: number,
+export const getReorderDestinationOrder = (
+  targetOrder: number,
   closestEdgeOfTarget: Edge | null,
-  targetIndex: number,
   axis: 'vertical' | 'horizontal',
+  sourceOrder?: number,
 ): number => {
-  if (targetIndex === currentIndex) return currentIndex;
+  if (!closestEdgeOfTarget && sourceOrder) {
+    if (sourceOrder > targetOrder) return targetOrder - 0.01;
+    if (sourceOrder < targetOrder) return targetOrder + 0.01;
+  }
   if (axis === 'horizontal') {
-    if (
-      (targetIndex === currentIndex - 1 && closestEdgeOfTarget === 'right') ||
-      (targetIndex === currentIndex + 1 && closestEdgeOfTarget === 'left')
-    ) {
-      return currentIndex;
-    }
-    if ((targetIndex === 0 && closestEdgeOfTarget === 'right') || (currentIndex > targetIndex && closestEdgeOfTarget === 'right')) {
-      return targetIndex + 1;
-    }
-    if (currentIndex < targetIndex && closestEdgeOfTarget === 'left') return targetIndex - 1;
-
-    return targetIndex;
+    if (closestEdgeOfTarget === 'left') return targetOrder - 0.01;
+    if (closestEdgeOfTarget === 'right') return targetOrder + 0.01;
   }
-
   if (axis === 'vertical') {
-    if (
-      (targetIndex === currentIndex - 1 && closestEdgeOfTarget === 'bottom') ||
-      (targetIndex === currentIndex + 1 && closestEdgeOfTarget === 'top')
-    ) {
-      return currentIndex;
-    }
-
-    if ((targetIndex === 0 && closestEdgeOfTarget === 'bottom') || (currentIndex > targetIndex && closestEdgeOfTarget === 'bottom')) {
-      return targetIndex + 1;
-    }
-    if (currentIndex < targetIndex && closestEdgeOfTarget === 'top') return targetIndex - 1;
-
-    return targetIndex;
+    if (closestEdgeOfTarget === 'top') return targetOrder - 0.01;
+    if (closestEdgeOfTarget === 'bottom') return targetOrder + 0.01;
   }
 
-  return currentIndex;
+  return targetOrder;
 };
 
-export const sortById = (a: string, b: string, order: string[]) => {
-  if (!order) return 0;
-  const indexA = order.indexOf(a);
-  const indexB = order.indexOf(b);
-  if (indexA === -1 || indexB === -1) return indexA === -1 ? 1 : -1;
-  return indexA - indexB;
-};
+export const findMembershipOrderById = (data: UserMenu, id: string) => {
+  const search = (items: UserMenuItem[]): number => {
+    const filtered = items.filter((i) => !i.membership.archived);
+    for (const item of filtered) {
+      if (item.id === id) return item.membership.order;
+      if (item.submenu) {
+        const found = search(item.submenu);
+        if (found) return found;
+      }
+    }
+    return 0;
+  };
 
-export const updateOrderInMembership = async (items: UserMenuItem[], targetIndex: number, membershipId: string) => {
-  const itemsLength = items.length;
-  let newOrder = 0;
-
-  if (targetIndex > 0 && targetIndex < itemsLength - 1) {
-    const itemBefore = items[targetIndex - 1];
-    const itemAfter = items[targetIndex];
-    newOrder = (itemBefore.membership.order + itemAfter.membership.order) / 2;
-  } else if (targetIndex === 0 && itemsLength > 0) {
-    const itemAfter = items[targetIndex];
-    newOrder = itemAfter.membership.order / 1.1;
-  } else if (targetIndex === itemsLength - 1 && itemsLength > 0) {
-    const itemBefore = items[targetIndex - 1];
-    newOrder = itemBefore.membership.order * 1.1;
-  }
-  await updateMembershipOrder(membershipId, newOrder);
+  return Object.values(data).reduce<number>((result, entities) => result || search(entities), 0);
 };

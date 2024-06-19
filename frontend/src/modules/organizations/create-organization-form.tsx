@@ -15,7 +15,6 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
@@ -38,7 +37,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { nextStep } = useStepper();
-  const { setMainMenuOrder, menuOrder } = useNavigationStore();
   const type = 'ORGANIZATION';
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -62,7 +60,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     onSuccess: (createdOrganization) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      setMainMenuOrder(type, [...menuOrder[type].mainList, createdOrganization.id]);
       callback?.(createdOrganization);
       nextStep?.();
       if (!callback) {
@@ -73,7 +70,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
           },
         });
       }
-
       if (isDialog) dialog.remove(true, 'create-organization');
     },
   });

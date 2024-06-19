@@ -21,6 +21,14 @@ export type DraggableItemData<T> = {
   index: number;
 };
 
+export type NewDraggableItemData<T> = {
+  type: string;
+  item: T;
+  itemType: Entity;
+  dragItem: true;
+  order: number;
+};
+
 export type Entity = (typeof config.entityTypes)[number];
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
 

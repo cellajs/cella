@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenu } from '~/types';
+import type { ContextEntity, UserMenu, UserMenuItem } from '~/types';
 import { dialog } from '../dialoger/state';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import { MenuSectionSticky } from './menu-section-sticky';
@@ -11,14 +11,11 @@ import { SheetMenuItems } from './sheet-menu-items';
 import { SheetMenuItemsOptions } from './sheet-menu-items-options';
 
 interface MenuSectionProps {
-  data: UserMenu[keyof UserMenu];
+  data: UserMenuItem[];
   sectionType: 'workspaces' | 'organizations';
   entityType: ContextEntity;
   createForm: ReactNode;
 }
-
-export type MenuList = UserMenu[keyof UserMenu];
-export type MenuItem = MenuList[number];
 
 export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuSectionProps) => {
   const { t } = useTranslation();

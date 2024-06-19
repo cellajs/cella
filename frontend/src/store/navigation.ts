@@ -12,7 +12,6 @@ export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: 
 
 interface NavigationState {
   recentSearches: string[];
-  menuOrder: EntityConfig;
   setRecentSearches: (searchValue: string[]) => void;
   activeSheet: NavItem | null;
   setSheet: (activeSheet: NavItem | null, action?: 'force' | 'routeChange') => void;
@@ -29,8 +28,6 @@ interface NavigationState {
   focusView: boolean;
   setFocusView: (status: boolean) => void;
   archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => void;
-  setMainMenuOrder: (entityType: ContextEntity, mainListOrder: string[]) => void;
-  setSubMenuOrder: (entityType: ContextEntity, parentId: string, subItemIds: string[]) => void;
 }
 
 const initialMenuState: UserMenu = menuSections
@@ -45,7 +42,6 @@ export const useNavigationStore = create<NavigationState>()(
     immer(
       persist(
         (set) => ({
-          menuOrder: {} as EntityConfig,
           recentSearches: [] as string[],
           activeSheet: null as NavItem | null,
           keepMenuOpen: false as boolean,
@@ -119,43 +115,15 @@ export const useNavigationStore = create<NavigationState>()(
               }
             });
           },
-          setMainMenuOrder: (entityType: ContextEntity, mainListOrder: string[]) => {
-            set((state) => {
-              return {
-                ...state,
-                menuOrder: {
-                  ...state.menuOrder,
-                  [entityType]: { ...state.menuOrder[entityType], mainList: mainListOrder },
-                },
-              };
-            });
-          },
-          setSubMenuOrder: (entityType: ContextEntity, parentId: string, subItemIds: string[]) => {
-            set((state) => {
-              return {
-                menuOrder: {
-                  ...state.menuOrder,
-                  [entityType]: {
-                    ...state.menuOrder[entityType],
-                    subList: {
-                      ...state.menuOrder[entityType]?.subList,
-                      [parentId]: subItemIds,
-                    },
-                  },
-                },
-              };
-            });
-          },
         }),
         {
-          version: 1,
+          version: 2,
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
             keepMenuOpen: state.keepMenuOpen,
             hideSubmenu: state.hideSubmenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
-            menuOrder: state.menuOrder,
           }),
           storage: createJSONStorage(() => localStorage),
         },

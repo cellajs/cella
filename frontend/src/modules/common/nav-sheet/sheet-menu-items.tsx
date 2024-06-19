@@ -1,15 +1,14 @@
 import { Link } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { cn, sortById } from '~/lib/utils';
+import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenuItem } from '~/types';
-import type { MenuItem } from './sheet-menu-section';
 
 interface SheetMenuItemProps {
-  item: MenuItem;
+  item: UserMenuItem;
   type: ContextEntity;
   mainItemId?: string;
   className?: string;
@@ -71,7 +70,7 @@ interface SheetMenuItemsProps {
 
 export const SheetMenuItems = ({ data, type, shownOption, createDialog, className, searchResults }: SheetMenuItemsProps) => {
   const { t } = useTranslation();
-  const { hideSubmenu, menuOrder } = useNavigationStore();
+  const { hideSubmenu } = useNavigationStore();
 
   const renderNoItems = () =>
     createDialog ? (
@@ -90,11 +89,9 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
     );
 
   const renderItems = () => {
-    const mainItemId = data[0].parentId;
     const filteredItems = data
       .filter((item) => (shownOption === 'archived' ? item.membership.archived : !item.membership.archived))
-      .sort((a, b) => sortById(a.id, b.id, mainItemId ? menuOrder[type].subList[mainItemId] : menuOrder[type].mainList));
-
+      .sort((a, b) => a.membership.order - b.membership.order);
     return (
       <>
         {filteredItems.map((item) => (

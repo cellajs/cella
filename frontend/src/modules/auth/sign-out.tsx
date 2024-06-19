@@ -4,13 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { signOut } from '~/api/auth';
 import { useDraftStore } from '~/store/draft';
-import { type EntityConfig, useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types';
 
 export const signOutUser = async () => {
   useUserStore.setState({ user: null as unknown as MeUser });
-  useNavigationStore.setState({ menuOrder: {} as EntityConfig });
   await signOut();
   useDraftStore.getState().clearForms(); // Clear all drafts when signing out
 };

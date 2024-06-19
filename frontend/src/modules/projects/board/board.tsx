@@ -3,12 +3,13 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { arrayMove, getReorderDestinationIndex, sortById, updateOrderInMembership } from '~/lib/utils';
+import { getReorderDestinationOrder, findMembershipOrderById } from '~/lib/utils';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
 import type { Project } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn, isProjectData } from './board-column';
+import { updateMembership } from '~/api/memberships';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -71,9 +72,9 @@ export default function Board() {
     workspace,
     projects,
   }));
-  const { menuOrder, setSubMenuOrder, menu } = useNavigationStore();
+  const { menu } = useNavigationStore();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects.sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])),
+    projects.sort((a, b) => findMembershipOrderById(menu, a.id) - findMembershipOrderById(menu, b.id)),
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
@@ -86,9 +87,9 @@ export default function Board() {
     if (currentWorkspace) {
       const currentActiveProjects = currentWorkspace.submenu?.filter((p) => !p.membership.archived) as unknown as Project[];
       if (!currentActiveProjects) return setMappedProjects(projects);
-      setMappedProjects(currentActiveProjects.sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])));
+      setMappedProjects(currentActiveProjects.sort((a, b) => findMembershipOrderById(menu, a.id) - findMembershipOrderById(menu, b.id)));
     }
-  }, [currentWorkspace, menuOrder.PROJECT, workspace.id]);
+  }, [currentWorkspace, menu, workspace.id]);
 
   useEffect(() => {
     return combine(
@@ -98,24 +99,17 @@ export default function Board() {
         },
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
-          const sourceData = source.data;
-          if (!target) return;
-
+          if (!target || !isProjectData(target.data) || !isProjectData(source.data)) return;
           // Drag a column
-          if (isProjectData(sourceData) && isProjectData(target.data)) {
-            const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
-            const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'horizontal');
-            const newItemOrder = arrayMove(menuOrder.PROJECT.subList[workspace.id], sourceData.index, destination);
-            setSubMenuOrder('PROJECT', workspace.id, newItemOrder);
-            // strange counts of the item
-            if (sourceData.item.membership && currentWorkspace && currentWorkspace.submenu) {
-              await updateOrderInMembership(currentWorkspace.submenu, target.data.index, sourceData.item.membership?.id);
-            }
-          }
+          const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
+
+          //findOut y closest endge null
+          const newOrder = getReorderDestinationOrder(target.data.order, closestEdgeOfTarget, 'horizontal', source.data.order);
+          if (source.data.item.membership) await updateMembership({ membershipId: source.data.item.membership.id, order: newOrder });
         },
       }),
     );
-  }, [menuOrder.PROJECT.subList[workspace.id]]);
+  }, [menu]);
 
   if (!isDesktopLayout) {
     return (

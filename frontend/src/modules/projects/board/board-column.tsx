@@ -10,13 +10,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { cn, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
+import { cn, getNewDraggableItemData, sortTaskOrder, findMembershipOrderById } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { DraggableItemData, Project } from '~/types/index.ts';
+import type { NewDraggableItemData, Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
 import { DropIndicator } from '../../common/drop-indicator';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
@@ -37,10 +37,10 @@ interface BoardColumnProps {
   project: Project;
 }
 
-type ProjectDraggableItemData = DraggableItemData<Project> & { type: 'column' };
+type ProjectDraggableItemData = NewDraggableItemData<Project> & { type: 'column' };
 
 export const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
-  return data.dragItem === true && typeof data.index === 'number';
+  return data.dragItem === true && typeof data.order === 'number';
 };
 
 export function BoardColumn({ project }: BoardColumnProps) {
@@ -56,7 +56,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const { menuOrder } = useNavigationStore();
+  const { menu } = useNavigationStore();
   const { workspace, searchQuery, selectedTasks, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId } =
     useWorkspaceContext(
       ({ workspace, searchQuery, selectedTasks, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId }) => ({
@@ -194,13 +194,6 @@ export function BoardColumn({ project }: BoardColumnProps) {
     setClosestEdge(extractClosestEdge(self.data));
   };
 
-  // const createTask = () => {
-  //   dialog(<CreateTaskForm project={project} dialog />, {
-  //     className: 'md:max-w-xl',
-  //     title: t('common:create_task'),
-  //   });
-  // };
-
   const handleArrowKeyDown = (event: KeyboardEvent) => {
     if (focusedProjectIndex === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
     if (projects[focusedProjectIndex || 0].id !== project.id) return;
@@ -267,11 +260,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
     const cardList = cardListRef.current;
     const scrollable = scrollableRef.current;
 
-    const data = getDraggableItemData<Project>(
-      project,
-      menuOrder.PROJECT.subList[workspace.id].findIndex((el) => el === project.id),
-      'column',
-    );
+    const data = getNewDraggableItemData<Project>(project, findMembershipOrderById(menu, project.id), 'column', 'PROJECT');
     if (!column || !headerDragButton || !cardList) return;
     // Don't start drag if only 1 project
     if (projects.length <= 1) return;
@@ -322,7 +311,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
           })
         : () => {},
     );
-  }, [project, projects, menuOrder, sortedTasks]);
+  }, [project, projects, menu, sortedTasks]);
 
   useEffect(() => {
     return combine(
@@ -370,7 +359,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
         },
       }),
     );
-  }, [menuOrder.PROJECT.subList[workspace.id], filteredByViewOptionsTasks]);
+  }, [menu, filteredByViewOptionsTasks]);
 
   // Hides underscroll elements
   // 64px refers to the header height

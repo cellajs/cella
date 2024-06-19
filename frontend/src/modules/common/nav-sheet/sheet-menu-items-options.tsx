@@ -9,24 +9,23 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
-import { arrayMove, getDraggableItemData, getReorderDestinationIndex, sortById, updateOrderInMembership } from '~/lib/utils';
+import { getNewDraggableItemData, getReorderDestinationOrder } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { DraggableItemData, UserMenuItem } from '~/types';
+import type { NewDraggableItemData, UserMenuItem } from '~/types';
 import { DropIndicator } from '../drop-indicator';
 import { MenuArchiveToggle } from './menu-archive-toggle';
-import type { MenuItem } from './sheet-menu-section';
 
 interface MenuItemProps {
   isGlobalDragging?: boolean;
   setGlobalDragging?: (dragging: boolean) => void;
 }
 
-type PageDraggableItemData = DraggableItemData<MenuItem>;
+type PageDraggableItemData = NewDraggableItemData<UserMenuItem>;
 
 const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
-  return data.dragItem === true && typeof data.index === 'number';
+  return data.dragItem === true && typeof data.order === 'number';
 };
 
 export const SheetMenuItemsOptions = ({
@@ -37,7 +36,7 @@ export const SheetMenuItemsOptions = ({
 }: MenuItemProps & { data: UserMenuItem[]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
-  const { hideSubmenu, menuOrder } = useNavigationStore();
+  const { hideSubmenu } = useNavigationStore();
   const entityType = data[0].entity;
   const parentItemId = data[0].parentId;
 
@@ -51,7 +50,7 @@ export const SheetMenuItemsOptions = ({
 
   const filteredItems = data
     .filter((i) => (shownOption === 'archived' ? i.membership.archived : !i.membership.archived))
-    .sort((a, b) => sortById(a.id, b.id, parentItemId ? menuOrder[entityType].subList[parentItemId] : menuOrder[entityType].mainList));
+    .sort((a, b) => a.membership.order - b.membership.order);
 
   const toggleSubmenuVisibility = (itemId: string) => {
     setSubmenuVisibility((prevState) => ({
@@ -66,7 +65,6 @@ export const SheetMenuItemsOptions = ({
     return (
       <div key={item.id}>
         <ItemOptions
-          filteredItems={filteredItems}
           item={item}
           itemType={entityType}
           isGlobalDragging={isGlobalDragging}
@@ -96,13 +94,12 @@ export const SheetMenuItemsOptions = ({
 };
 
 const ItemOptions = ({
-  filteredItems,
   item,
   itemType,
   isGlobalDragging,
   parentItemId,
   setGlobalDragging,
-}: MenuItemProps & { filteredItems: UserMenuItem[]; parentItemId?: string; item: MenuItem; itemType: ContextEntity }) => {
+}: MenuItemProps & { parentItemId?: string; item: UserMenuItem; itemType: ContextEntity }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
@@ -111,7 +108,7 @@ const ItemOptions = ({
   const [isItemArchived, setItemArchived] = useState(item.membership.archived);
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
-  const { menuOrder, setSubMenuOrder, setMainMenuOrder } = useNavigationStore();
+  const { menu } = useNavigationStore();
 
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
@@ -122,7 +119,7 @@ const ItemOptions = ({
         const archived = updatedMembership.inactive || !isItemArchived;
         archiveStateToggle(item.id, archived, parentItemId ? parentItemId : null);
         toast.success(
-          updatedMembership.inactive
+          archived
             ? t('common:success.archived_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
             : t('common:success.restore_resource', { resource: t(`common:${itemType.toLowerCase()}`) }),
         );
@@ -155,12 +152,9 @@ const ItemOptions = ({
   };
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const submenuItemIndex = parentItemId ? menuOrder[itemType].subList[parentItemId].findIndex((el) => el === item.id) : 0;
-    const itemIndex = menuOrder[itemType].mainList ? menuOrder[itemType].mainList.findIndex((el) => el === item.id) : 0;
     const element = dragRef.current;
     const dragButton = dragButtonRef.current;
-    const data = getDraggableItemData(item, parentItemId ? submenuItemIndex : itemIndex, 'menuItem', itemType);
-
+    const data = getNewDraggableItemData(item, item.membership.order, 'menuItem', itemType);
     if (!element || !dragButton) return;
 
     return combine(
@@ -202,7 +196,7 @@ const ItemOptions = ({
         onDragLeave: () => onDragOver(),
       }),
     );
-  }, [item, menuOrder[itemType], parentItemId]);
+  }, [item, menu]);
 
   // monitoring drop event
   useEffect(() => {
@@ -210,30 +204,15 @@ const ItemOptions = ({
       canMonitor({ source }) {
         return isPageData(source.data) && source.data.item.id === item.id;
       },
-      async onDrop({ location, source }) {
+      onDrop({ location }) {
         const target = location.current.dropTargets[0];
-
-        const sourceData = source.data;
-        if (!target || !isPageData(sourceData) || !isPageData(target.data)) return;
-        const targetIndex = target.data.index;
+        if (!target || !isPageData(target.data)) return;
         const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
-        const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, targetIndex, 'vertical');
-        const subList = menuOrder[itemType].subList;
-        if (subList) {
-          const mainMenuId = Object.keys(subList).find((key) => {
-            return subList[key].includes(item.id);
-          });
-          if (!mainMenuId) return;
-          const newItemOrder = arrayMove(menuOrder[itemType].subList[mainMenuId], sourceData.index, destination);
-          setSubMenuOrder(itemType, mainMenuId, newItemOrder);
-        } else {
-          const newItemOrder = arrayMove(menuOrder[itemType].mainList, sourceData.index, destination);
-          setMainMenuOrder(itemType, newItemOrder);
-        }
-        await updateOrderInMembership(filteredItems, targetIndex, item.membership.id);
+        const newOrder = getReorderDestinationOrder(target.data.order, closestEdgeOfTarget, 'vertical');
+        baseUpdateMembership({ membershipId: item.membership.id, order: newOrder });
       },
     });
-  }, [item, menuOrder[itemType]]);
+  }, [item]);
 
   return (
     <div key={item.id} className="relative my-1" ref={dragRef}>
