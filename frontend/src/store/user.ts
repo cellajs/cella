@@ -11,11 +11,9 @@ type PartialUser = Partial<MeUser>;
 interface UserState {
   user: MeUser;
   lastUser: PartialUser | null;
-  finishOnboarding: boolean;
   clearLastUser: () => void;
   setUser: (user: MeUser) => void;
   updateUser: (user: User) => void;
-  completeOnboarding: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -23,7 +21,6 @@ export const useUserStore = create<UserState>()(
     persist(
       immer((set) => ({
         user: null as unknown as MeUser,
-        finishOnboarding: false,
         lastUser: null,
         clearLastUser: () => {
           set((state) => {
@@ -55,11 +52,6 @@ export const useUserStore = create<UserState>()(
 
           i18n.changeLanguage(user.language || 'en');
         },
-        completeOnboarding: () => {
-          set((state) => {
-            state.finishOnboarding = true;
-          });
-        },
       })),
       {
         version: 2,
@@ -67,7 +59,6 @@ export const useUserStore = create<UserState>()(
         partialize: (state) => ({
           user: state.user,
           lastUser: state.lastUser,
-          finishOnboarding: state.finishOnboarding,
         }),
         storage: createJSONStorage(() => localStorage),
       },
