@@ -1,30 +1,26 @@
 import type { UserMenuItem } from '~/types';
 import { useNavigationStore } from '~/store/navigation';
 
-export const addMenuItem = (newEntity: UserMenuItem) => {
+export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 'workspaces') => {
   const menu = useNavigationStore.getState().menu;
 
   const add = (items: UserMenuItem[]): UserMenuItem[] => {
     return items.map((item) => {
-      if (item.id === newEntity.parentId && item.submenu) {
+      if (item.id === newEntity.parentId) {
         return {
           ...item,
-          submenu: [...item.submenu, newEntity],
-        };
-      }
-      if (item.submenu) {
-        return {
-          ...item,
-          submenu: add(item.submenu),
+          submenu: item.submenu ? [...item.submenu, newEntity] : [newEntity],
         };
       }
       return item;
     });
   };
 
+  const updatedStorage = newEntity.parentId ? add(menu[storage]) : [...menu[storage], newEntity];
+
   return {
-    organizations: add(menu.organizations),
-    workspaces: add(menu.workspaces),
+    ...menu,
+    [storage]: updatedStorage,
   };
 };
 
@@ -64,7 +60,7 @@ export const deleteMenuItem = (itemId: string) => {
   const remove = (items: UserMenuItem[]): UserMenuItem[] => {
     const updatedItems: UserMenuItem[] = [];
     for (const item of items) {
-      if (item.id !== itemId) {
+      if (item.id !== itemId && item.organizationId !== itemId) {
         const updatedItem: UserMenuItem = { ...item };
         if (item.submenu) updatedItem.submenu = remove(item.submenu);
         updatedItems.push(updatedItem);

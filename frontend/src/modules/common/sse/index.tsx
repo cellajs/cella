@@ -1,12 +1,16 @@
 import { useSSE } from './use-sse';
 import { useNavigationStore } from '~/store/navigation';
 import { addMenuItem, updateMenuItem, deleteMenuItem } from './helpers';
+import { menuSections } from '../nav-sheet/sheet-menu';
 
 const SSE = () => {
-  const addEntity = (e: MessageEvent<string>) => {
+  const addEntity = async (e: MessageEvent<string>) => {
     try {
       const newMenuItem = JSON.parse(e.data);
-      useNavigationStore.setState({ menu: addMenuItem(newMenuItem) });
+      const storage = menuSections.find((i) => i.type === newMenuItem.entity);
+      if (!storage) return;
+      const storageType = storage.storageType;
+      useNavigationStore.setState({ menu: addMenuItem(newMenuItem, storageType) });
     } catch (error) {
       console.error('Error parsing main create new event', error);
     }

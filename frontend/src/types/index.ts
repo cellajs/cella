@@ -60,5 +60,5 @@ export type Membership = Extract<InferResponseType<(typeof apiClient.memberships
 export type UserMenu = Extract<InferResponseType<(typeof apiClient.me.menu)['$get']>, { data: unknown }>['data'];
 
 export type UserMenuItem = NonNullable<
-  Extract<InferResponseType<(typeof apiClient.me.menu)['$get']>, { data: unknown }>['data']['organizations'][number]
+  Extract<InferResponseType<(typeof apiClient.me.menu)['$get']>, { data: unknown }>['data']['workspaces'][number]
 >;
