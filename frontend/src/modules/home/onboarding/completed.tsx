@@ -6,19 +6,17 @@ import { createProject } from '~/api/projects';
 import { createWorkspace } from '~/api/workspaces';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { useNavigationStore } from '~/store/navigation';
-import { useUserStore } from '~/store/user';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
-  const { menu, setSheet, setSection } = useNavigationStore();
+  const { menu, setSheet, setSection, finishedOnboarding, setFinishedOnboarding } = useNavigationStore();
   const [isExploding, _] = useState(true);
-  const { finishOnboarding, completeOnboarding } = useUserStore();
 
   useEffect(() => {
     const sortedOrganizations = [...menu.organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const lastCreatedOrganization = sortedOrganizations[0];
 
-    if (finishOnboarding || !lastCreatedOrganization) return;
+    if (finishedOnboarding || !lastCreatedOrganization) return;
 
     createWorkspace({
       name: 'Demo workspace',
@@ -40,19 +38,19 @@ export const OnboardingCompleted = () => {
     setTimeout(
       () => {
         setSheet({ id: 'menu', sheet: <SheetMenu />, icon: Menu });
-        completeOnboarding();
+        setFinishedOnboarding();
       },
-      finishOnboarding ? 500 : 4000,
+      finishedOnboarding ? 500 : 4000,
     );
   }, []);
 
   return (
     <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-[1] max-w-[700px]">
-      {isExploding && !finishOnboarding && (
+      {isExploding && !finishedOnboarding && (
         <ConfettiExplosion zIndex={0} duration={5000} force={0.8} particleCount={250} height={'100vh'} width={1500} />
       )}
 
-      {finishOnboarding && (
+      {finishedOnboarding && (
         <Undo size={400} strokeWidth={0.1} className="max-xl:hidden scale-y-75 -mt-40 -mb-12 -translate-x-32 text-primary rotate-[30deg]" />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>

@@ -4,13 +4,13 @@ import { useState } from 'react';
 import type { OnboardingStates } from '~/modules/home/onboarding';
 import Onboarding from '~/modules/home/onboarding';
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
-import { useUserStore } from '~/store/user';
+import { useNavigationStore } from '~/store/navigation';
 import { OnboardingCompleted } from './onboarding/completed';
 
 const Welcome = () => {
   const navigate = useNavigate();
-  const { finishOnboarding } = useUserStore();
-  const [onboarding, setOnboarding] = useState<OnboardingStates>(finishOnboarding ? 'completed' : 'start');
+  const { finishedOnboarding } = useNavigationStore();
+  const [onboarding, setOnboarding] = useState<OnboardingStates>(finishedOnboarding ? 'completed' : 'start');
 
   const onOpenChange = () => {
     navigate({ to: config.defaultRedirectPath, replace: true });

@@ -12,15 +12,20 @@ interface AlertState {
   setAlertSeen: (alertSeen: string) => void;
   resetAlertSeen: (alertSeen: string[]) => void;
   setDownAlert: (downLevel: downLevels) => void;
+  clearAlertStore: () => void;
 }
+
+const initStore = {
+  downAlert: config.maintenance ? 'maintenance' : null as downLevels,
+  alertsSeen: [],
+};
 
 export const useAlertStore = create<AlertState>()(
   devtools(
     immer(
       persist(
         (set) => ({
-          downAlert: config.maintenance ? 'maintenance' : null,
-          alertsSeen: [],
+          ...initStore,
           setAlertSeen: (alertSeen) => {
             set((state) => {
               state.alertsSeen.push(alertSeen);
@@ -36,6 +41,7 @@ export const useAlertStore = create<AlertState>()(
               state.alertsSeen = alertsSeen;
             });
           },
+          clearAlertStore: () => set(initStore, true),
         }),
         {
           version: 1,

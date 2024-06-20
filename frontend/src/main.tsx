@@ -9,10 +9,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import './lib/i18n';
 
 const root = document.getElementById('root');
-
-if (!root) {
-  throw new Error('Root element not found');
-}
+if (!root) throw new Error('Root element not found');
 
 import { renderAscii } from '~/lib/ascii';
 import { queryClient } from '~/lib/router';

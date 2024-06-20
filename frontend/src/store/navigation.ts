@@ -28,6 +28,9 @@ interface NavigationState {
   focusView: boolean;
   setFocusView: (status: boolean) => void;
   archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => void;
+  finishedOnboarding: boolean;
+  setFinishedOnboarding: () => void;
+  clearNavigationStore: () => void;
 }
 
 const initialMenuState: UserMenu = menuSections
@@ -37,19 +40,24 @@ const initialMenuState: UserMenu = menuSections
     return acc;
   }, {} as UserMenu);
 
+const initStore = {
+  recentSearches: [] as string[],
+  activeSheet: null as NavItem | null,
+  keepMenuOpen: false as boolean,
+  hideSubmenu: false as boolean,
+  navLoading: false as boolean,
+  focusView: false as boolean,
+  menu: initialMenuState,
+  activeSections: {},
+  finishedOnboarding: false,
+};
+
 export const useNavigationStore = create<NavigationState>()(
   devtools(
     immer(
       persist(
         (set) => ({
-          recentSearches: [] as string[],
-          activeSheet: null as NavItem | null,
-          keepMenuOpen: false as boolean,
-          hideSubmenu: false as boolean,
-          navLoading: false as boolean,
-          focusView: false as boolean,
-          menu: initialMenuState,
-          activeSections: {},
+          ...initStore,
           setRecentSearches: (searchValues: string[]) => {
             set((state) => {
               state.recentSearches = searchValues;
@@ -115,6 +123,12 @@ export const useNavigationStore = create<NavigationState>()(
               }
             });
           },
+          setFinishedOnboarding: () => {
+            set((state) => {
+              state.finishedOnboarding = true;
+            });
+          },
+          clearNavigationStore: () => set(initStore, true),
         }),
         {
           version: 2,
@@ -124,6 +138,7 @@ export const useNavigationStore = create<NavigationState>()(
             hideSubmenu: state.hideSubmenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
+            finishedOnboarding: state.finishedOnboarding,
           }),
           storage: createJSONStorage(() => localStorage),
         },
