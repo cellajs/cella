@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { cn } from '~/lib/utils';
+import { cn, nanoid } from '~/lib/utils';
 
 export type PageNavTab = {
   id: string;
@@ -83,8 +83,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
                 {t(label)}
                 {isActive && (
                   <motion.div
-                    layoutId={`page-nav-underline-${title}`}
-                    key={`page-nav-underline-${title}`}
+                    key={nanoid()}
                     transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
                     className="h-1 bg-primary w-full absolute bottom-0 left-0"
                   />

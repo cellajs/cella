@@ -166,7 +166,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
       {
         id: 'members',
         label: 'common:members',
-        element: <MembersTable focus={false} idOrSlug={project.id} route={WorkspaceRoute.id} entityType={'PROJECT'} />,
+        element: <MembersTable entity={project} isSheet={true} route={WorkspaceRoute.id} />,
       },
     ];
 

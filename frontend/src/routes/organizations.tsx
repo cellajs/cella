@@ -9,6 +9,7 @@ import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import OrganizationSettings from '~/modules/organizations/organization-settings';
 import { IndexRoute } from './routeTree';
+import type { Organization as OrganizationType} from '~/types';
 
 //Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
@@ -46,9 +47,11 @@ export const OrganizationMembersRoute = createRoute({
   },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
+    const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
+    if (!organization) return;
     return (
       <Suspense>
-        <MembersTable idOrSlug={idOrSlug} route={OrganizationMembersRoute.id} entityType="ORGANIZATION" />
+        <MembersTable entity={organization} route={OrganizationMembersRoute.id} />
       </Suspense>
     );
   },
@@ -58,5 +61,10 @@ export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings' },
   getParentRoute: () => OrganizationRoute,
-  component: () => <OrganizationSettings />,
+  component: () => {
+    const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
+    const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
+    if (!organization) return;
+    return <OrganizationSettings organization={organization} />;
+  },
 });
