@@ -44,11 +44,6 @@ const workspacesRoutes = app
     // Insert membership
     const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: workspace, memberships });
 
-    sendSSEToUsers([user.id], 'create_entity', {
-      ...workspace,
-      membership: toMembershipInfo(createdMembership),
-    });
-
     return ctx.json(
       {
         success: true,

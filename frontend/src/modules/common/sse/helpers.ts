@@ -1,29 +1,6 @@
 import type { UserMenuItem } from '~/types';
 import { useNavigationStore } from '~/store/navigation';
 
-export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 'workspaces') => {
-  const menu = useNavigationStore.getState().menu;
-
-  const add = (items: UserMenuItem[]): UserMenuItem[] => {
-    return items.map((item) => {
-      if (item.id === newEntity.parentId) {
-        return {
-          ...item,
-          submenu: item.submenu ? [...item.submenu, newEntity] : [newEntity],
-        };
-      }
-      return item;
-    });
-  };
-
-  const updatedStorage = newEntity.parentId ? add(menu[storage]) : [...menu[storage], newEntity];
-
-  return {
-    ...menu,
-    [storage]: updatedStorage,
-  };
-};
-
 export const updateMenuItem = (updatedEntity: UserMenuItem) => {
   const menu = useNavigationStore.getState().menu;
 

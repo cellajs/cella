@@ -15,12 +15,14 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
-import type { Organization } from '~/types';
+import type { Organization, UserMenuItem } from '~/types';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
-import InputFormField from '../common/form-fields/input';
-import { SlugFormField } from '../common/form-fields/slug';
-import { useStepper } from '../common/stepper/use-stepper';
+import InputFormField from '~/modules/common/form-fields/input';
+import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { Form, type LabelDirectionType } from '../ui/form';
+import { useNavigationStore } from '~/store/navigation';
+import { addMenuItem } from '~/lib/utils';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -62,6 +64,10 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
       callback?.(createdOrganization);
       nextStep?.();
+
+      useNavigationStore.setState({
+        menu: addMenuItem(createdOrganization as UserMenuItem, 'organizations'),
+      });
       if (!callback) {
         navigate({
           to: '/$idOrSlug/members',
@@ -70,6 +76,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
           },
         });
       }
+
       if (isDialog) dialog.remove(true, 'create-organization');
     },
   });

@@ -12,7 +12,7 @@ import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import type { Task } from '~/modules/common/electric/electrify';
 import type { DraggableItemData, NewDraggableItemData, UserMenuItem } from '~/types';
-import type { UserMenu } from '~/types';
+import { useNavigationStore } from '~/store/navigation';
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
@@ -146,7 +146,7 @@ export const getNewDraggableItemData = <T>(
   return { dragItem: true, item, order: itemOrder, type, itemType: itemType };
 };
 
-// To get target index for drop on DnD
+// To get target order for drop on DnD
 export const getReorderDestinationOrder = (
   targetOrder: number,
   closestEdgeOfTarget: Edge | null,
@@ -169,7 +169,9 @@ export const getReorderDestinationOrder = (
   return targetOrder;
 };
 
-export const findMembershipOrderById = (data: UserMenu, id: string) => {
+// finds item order number by it's id in user's menu
+export const findMembershipOrderById = (id: string) => {
+  const menu = useNavigationStore.getState().menu;
   const search = (items: UserMenuItem[]): number => {
     const filtered = items.filter((i) => !i.membership.archived);
     for (const item of filtered) {
@@ -182,5 +184,29 @@ export const findMembershipOrderById = (data: UserMenu, id: string) => {
     return 0;
   };
 
-  return Object.values(data).reduce<number>((result, entities) => result || search(entities), 0);
+  return Object.values(menu).reduce<number>((result, entities) => result || search(entities), 0);
+};
+
+// adding new item on local store user's menu
+export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 'workspaces') => {
+  const menu = useNavigationStore.getState().menu;
+
+  const add = (items: UserMenuItem[]): UserMenuItem[] => {
+    return items.map((item) => {
+      if (item.id === newEntity.parentId) {
+        return {
+          ...item,
+          submenu: item.submenu ? [...item.submenu, newEntity] : [newEntity],
+        };
+      }
+      return item;
+    });
+  };
+
+  const updatedStorage = newEntity.parentId ? add(menu[storage]) : [...menu[storage], newEntity];
+
+  return {
+    ...menu,
+    [storage]: updatedStorage,
+  };
 };

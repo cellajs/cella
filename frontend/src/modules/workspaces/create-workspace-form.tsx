@@ -15,7 +15,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { Organization, Workspace } from '~/types';
+import type { Organization, Workspace, UserMenuItem } from '~/types';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import SelectParentFormField from '../common/form-fields/select-parent';
@@ -23,6 +23,7 @@ import { SlugFormField } from '../common/form-fields/slug';
 import CreateOrganizationForm from '../organizations/create-organization-form';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Form } from '../ui/form';
+import { addMenuItem } from '~/lib/utils';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
@@ -60,15 +61,18 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createWorkspace,
-    onSuccess: (updatedWorkspace) => {
+    onSuccess: (createdWorkspace) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      callback?.(updatedWorkspace);
+      callback?.(createdWorkspace);
       if (isDialog) dialog.remove();
 
+      useNavigationStore.setState({
+        menu: addMenuItem(createdWorkspace as UserMenuItem, 'workspaces'),
+      });
       navigate({
         to: '/workspace/$idOrSlug/board',
-        params: { idOrSlug: updatedWorkspace.slug },
+        params: { idOrSlug: createdWorkspace.slug },
       });
     },
   });

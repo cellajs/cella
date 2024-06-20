@@ -260,7 +260,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
     const cardList = cardListRef.current;
     const scrollable = scrollableRef.current;
 
-    const data = getNewDraggableItemData<Project>(project, findMembershipOrderById(menu, project.id), 'column', 'PROJECT');
+    const data = getNewDraggableItemData<Project>(project, findMembershipOrderById(project.id), 'column', 'PROJECT');
     if (!column || !headerDragButton || !cardList) return;
     // Don't start drag if only 1 project
     if (projects.length <= 1) return;

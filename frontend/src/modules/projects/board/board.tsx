@@ -74,7 +74,7 @@ export default function Board() {
   }));
   const { menu } = useNavigationStore();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects.sort((a, b) => findMembershipOrderById(menu, a.id) - findMembershipOrderById(menu, b.id)),
+    projects.sort((a, b) => findMembershipOrderById(a.id) - findMembershipOrderById(b.id)),
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
@@ -87,7 +87,7 @@ export default function Board() {
     if (currentWorkspace) {
       const currentActiveProjects = currentWorkspace.submenu?.filter((p) => !p.membership.archived) as unknown as Project[];
       if (!currentActiveProjects) return setMappedProjects(projects);
-      setMappedProjects(currentActiveProjects.sort((a, b) => findMembershipOrderById(menu, a.id) - findMembershipOrderById(menu, b.id)));
+      setMappedProjects(currentActiveProjects.sort((a, b) => findMembershipOrderById(a.id) - findMembershipOrderById(b.id)));
     }
   }, [currentWorkspace, menu, workspace.id]);
 

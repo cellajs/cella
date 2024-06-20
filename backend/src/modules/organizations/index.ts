@@ -49,11 +49,6 @@ const organizationsRoutes = app
     // Insert membership
     const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: createdOrganization });
 
-    sendSSEToUsers([user.id], 'create_entity', {
-      ...createdOrganization,
-      membership: toMembershipInfo(createdMembership),
-    });
-
     return ctx.json(
       {
         success: true,

@@ -7,7 +7,7 @@ import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspace
 import { counts } from '../../lib/counts';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
-import { sendSSE, sendSSEToUsers } from '../../lib/sse';
+import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -69,8 +69,6 @@ const projectsRoutes = app
       },
       membership: toMembershipInfo(createdMembership),
     };
-
-    sendSSE(user.id, 'create_entity', { ...createdProject, ...{ parentId: createdProject.workspaceId } });
 
     return ctx.json({ success: true, data: createdProject }, 200);
   })
