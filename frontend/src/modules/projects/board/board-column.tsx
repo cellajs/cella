@@ -6,7 +6,7 @@ import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/
 import { useQuery } from '@tanstack/react-query';
 import { useLiveQuery } from 'electric-sql/react';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -21,7 +21,6 @@ import ContentPlaceholder from '../../common/content-placeholder';
 import { DropIndicator } from '../../common/drop-indicator';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
-import { ProjectSheet } from '../project-sheet';
 import CreateTaskForm from '../task/create-task-form';
 import { DraggableTaskCard, isTaskData } from '../task/draggable-task-card';
 import { TaskProvider } from '../task/task-context';
@@ -29,7 +28,11 @@ import { taskStatuses } from '../task/task-selectors/select-status';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './board-column-skeleton';
 import { ProjectProvider } from './project-context';
-import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
+import { ProjectSettings } from '../project-settings';
+import { SheetNav } from '~/modules/common/sheet-nav';
+import { WorkspaceRoute } from '~/routes/workspaces';
+
+const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
 interface BoardColumnProps {
   project: Project;
@@ -158,23 +161,21 @@ export function BoardColumn({ project }: BoardColumnProps) {
   };
 
   const openSettingsSheet = () => {
-    const projectTabs: PageNavTab[] = [
-      { id: 'general', label: 'common:general', path: '/workspace/$idOrSlug/board' },
-      { id: 'members', label: 'common:members', path: '/workspace/$idOrSlug/board?projectSettings=members' },
+    const projectTabs = [
+      { id: 'general', label: 'common:general', element: <ProjectSettings project={project} sheet /> },
+      {
+        id: 'members',
+        label: 'common:members',
+        element: <MembersTable focus={false} idOrSlug={project.id} route={WorkspaceRoute.id} entityType={'PROJECT'} />,
+      },
     ];
 
-    sheet(
-      <>
-        <PageNav className="mb-2 bg-transparent border-b-0" title={project.name} avatar={project} tabs={projectTabs} />
-        <ProjectSheet project={project} />
-      </>,
-      {
-        className: 'sm:max-w-[52rem]',
-        title: t('common:project_settings'),
-        text: t('common:project_settings.text'),
-        id: 'edit-project',
-      },
-    );
+    sheet(<SheetNav tabs={projectTabs} />, {
+      className: 'sm:max-w-[52rem]',
+      title: t('common:project_settings'),
+      text: t('common:project_settings.text'),
+      id: 'edit-project',
+    });
   };
 
   const handleTaskFormClick = () => {
