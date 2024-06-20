@@ -22,10 +22,11 @@ function getScrollerWidth(containerWidth: number, projectsLength: number) {
 
 function BoardDesktop({
   workspaceId,
+  projects,
 }: {
+  projects: Project[];
   workspaceId: string;
 }) {
-  const { projects } = useWorkspaceContext(({ projects }) => ({ projects }));
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(() => containerRef.current?.clientWidth ?? 0);
   const scrollerWidth = getScrollerWidth(containerWidth, projects.length);
@@ -89,7 +90,7 @@ export default function Board() {
       if (!currentActiveProjects) return setMappedProjects(projects);
       setMappedProjects(currentActiveProjects.sort((a, b) => findMembershipOrderById(a.id) - findMembershipOrderById(b.id)));
     }
-  }, [currentWorkspace, menu, workspace.id]);
+  }, [currentWorkspace]);
 
   useEffect(() => {
     return combine(
@@ -111,15 +112,12 @@ export default function Board() {
     );
   }, [menu]);
 
-  if (!isDesktopLayout) {
-    return (
-      <div className="flex flex-col gap-4">
-        {mappedProjects.map((project) => (
-          <BoardColumn key={project.id} project={project} />
-        ))}
-      </div>
-    );
-  }
-
-  return <BoardDesktop workspaceId={workspace.id} />;
+  if (isDesktopLayout) return <BoardDesktop projects={mappedProjects} workspaceId={workspace.id} />;
+  return (
+    <div className="flex flex-col gap-4">
+      {mappedProjects.map((project) => (
+        <BoardColumn key={project.id} project={project} />
+      ))}
+    </div>
+  );
 }
