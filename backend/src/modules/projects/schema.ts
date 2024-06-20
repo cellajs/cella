@@ -38,8 +38,14 @@ export const updateProjectBodySchema = createInsertSchema(projectsTable, {
   slug: validSlugSchema,
   name: nameSchema,
   color: colorSchema,
-}).pick({
-  slug: true,
-  name: true,
-  color: true,
-});
+})
+  .pick({
+    slug: true,
+    name: true,
+    color: true,
+  })
+  .merge(
+    z.object({
+      workspaceId: idSchema,
+    }),
+  );

@@ -197,7 +197,7 @@ const projectsRoutes = app
     const user = ctx.get('user');
     const project = ctx.get('project');
 
-    const { name, slug, color } = ctx.req.valid('json');
+    const { name, slug, color, workspaceId } = ctx.req.valid('json');
 
     if (slug && slug !== project.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -218,6 +218,14 @@ const projectsRoutes = app
       })
       .where(eq(projectsTable.id, project.id))
       .returning();
+
+    const [workspaceRelation] = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.projectId, project.id));
+    if (workspaceRelation.workspaceId !== workspaceId) {
+      await db.update(projectsToWorkspacesTable).set({
+        projectId: project.id,
+        workspaceId: workspaceId,
+      });
+    }
 
     const memberships = await db
       .select()
@@ -240,6 +248,7 @@ const projectsRoutes = app
         success: true,
         data: {
           ...updatedProject,
+          parentId: workspaceId,
           membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
           counts: await counts('PROJECT', project.id),
         },

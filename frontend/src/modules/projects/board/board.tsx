@@ -86,7 +86,11 @@ export default function Board() {
   useEffect(() => {
     //Fix types
     if (currentWorkspace) {
-      const currentActiveProjects = currentWorkspace.submenu?.filter((p) => !p.membership.archived) as unknown as Project[];
+      const currentActiveProjects = currentWorkspace.submenu
+        ?.filter((p) => !p.membership.archived)
+        .map((p) => {
+          return { ...p, ...{ workspaceId: p.parentId } };
+        }) as unknown as Project[];
       if (!currentActiveProjects) return setMappedProjects(projects);
       setMappedProjects(currentActiveProjects.sort((a, b) => findMembershipOrderById(a.id) - findMembershipOrderById(b.id)));
     }
