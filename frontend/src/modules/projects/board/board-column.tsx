@@ -165,7 +165,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
         <ProjectSheet project={project} />
       </>,
       {
-        className: 'sm:max-w-[52rem]',
+        className: 'sm:max-w-full max-w-full xl:w-[50vw]',
         title: t('common:project_settings'),
         text: t('common:project_settings.text'),
         id: 'edit-project',

@@ -94,21 +94,22 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
     setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
   };
   // Save filters in search params
-  const filters = useMemo(
-    () => ({
-      q,
-      sort: sortColumns[0]?.columnKey,
-      order: sortColumns[0]?.direction.toLowerCase(),
-      role,
-    }),
-    [q, role, sortColumns],
-  );
+  if (entityType !== 'PROJECT') {
+    const filters = useMemo(
+      () => ({
+        q,
+        sort: sortColumns[0]?.columnKey,
+        order: sortColumns[0]?.direction.toLowerCase(),
+        role,
+      }),
+      [q, role, sortColumns],
+    );
+    useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+  }
 
   const selectedMembers = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
-
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Update member role
   const { mutate: updateMemberRole } = useMutation({

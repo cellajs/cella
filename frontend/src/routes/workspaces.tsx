@@ -73,7 +73,7 @@ export const WorkspaceOverviewRoute = createRoute({
         title="Not built yet."
         text={
           <>
-            <p>Here will be a grid with tiles/cards that summarize projects with stats.</p>
+            <p>Here will be a grid of project cards for stats, analytics and advisory.</p>
             <p className="mt-4">
               Please connect on
               <a href={config.company.githubUrl} className="underline underline-offset-2 text-primary mx-1" target="_blank" rel="noreferrer">
