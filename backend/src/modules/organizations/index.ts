@@ -234,7 +234,9 @@ const organizationsRoutes = app
     const [membership] = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
+      .where(
+        and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'ORGANIZATION')),
+      );
 
     return ctx.json(
       {

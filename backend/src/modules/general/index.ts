@@ -23,7 +23,6 @@ import { usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
-import { i18n } from '../../lib/i18n';
 import { getOrderColumn } from '../../lib/order-column';
 import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -162,18 +161,12 @@ const generalRoutes = app
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 
-      const emailLanguage = targetUser?.language || config.defaultLanguage;
-
       const emailHtml = render(
         InviteEmail({
-          i18n: i18n.cloneInstance({
-            lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
-          }),
-          username: email.toLowerCase(),
-          inviteUrl: `${config.frontendUrl}/auth/invite/${token}`,
-          invitedBy: user.name,
+          user,
           type: 'system',
-          replyTo: user.email,
+          targetUser,
+          token,
         }),
       );
       logEvent('User invited on system level');

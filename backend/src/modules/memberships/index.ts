@@ -13,7 +13,6 @@ import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { type UserModel, usersTable } from '../../db/schema/users';
 import { resolveEntity } from '../../lib/entity';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
-import { i18n } from '../../lib/i18n';
 import permissionManager from '../../lib/permission-manager';
 import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -178,22 +177,8 @@ const membershipsRoutes = app
           expiresAt: createDate(new TimeSpan(7, 'd')),
         });
 
-        const emailLanguage = organization.defaultLanguage || targetUser?.language || config.defaultLanguage;
-
-        // Prepare email content
-        const emailData = {
-          i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
-          orgName: organization.name || '',
-          orgImage: organization.logoUrl || '',
-          userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
-          username: targetUser?.name || email || '',
-          invitedBy: user.name,
-          inviteUrl: `${config.frontendUrl}/auth/invite/${token}`,
-          replyTo: user.email,
-        };
-
         // Render email template
-        const emailHtml = render(InviteEmail(emailData));
+        const emailHtml = render(InviteEmail({ organization, targetUser, user, token }));
 
         // Log event for user invitation
         logEvent('User invited to organization', { organization: organization.id });
