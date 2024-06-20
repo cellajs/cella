@@ -24,7 +24,7 @@ import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
 import SubTask from './sub-task-card.tsx';
-
+import CreateSubTaskForm from './create-sub-task-form.tsx';
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
   taskDragButtonRef: React.RefObject<HTMLButtonElement>;
@@ -57,6 +57,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   const subTasks = tasks.filter((t) => t.parent_id === task.id);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [createSubTask, setCreateSubTask] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -194,7 +195,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
         className,
       )}
     >
-      <CardContent id={`${task.id}-content`} className="p-1 space-between gap-1 flex flex-col relative">
+      <CardContent id={`${task.id}-content`} className="p-1 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
             <div className="flex flex-col justify-between gap-[2px] relative">
@@ -324,7 +325,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                     <span className="text-success text-xs">{subTasks.filter((t) => t.status === 6).length}</span>
                     <span className="font-light text-xs">/</span>
                     <span className="font-light text-xs">{subTasks.length}</span>
-                    <span className="font-light text-zinc-400 text-xs">todo's completed</span>
+                    <span className="font-light text-zinc-400 text-xs">{t('common:completed_todo')}</span>
                   </div>
                   <div className="flex flex-col gap-2">
                     <div>
@@ -338,6 +339,14 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
             </>
           )}
         </div>
+        {isExpanded && (
+          <CreateSubTaskForm
+            firstSubTask={subTasks.length < 1}
+            formOpen={createSubTask}
+            setFormState={(value) => setCreateSubTask(value)}
+            parentTaskId={task.id}
+          />
+        )}
       </CardContent>
     </Card>
   );
