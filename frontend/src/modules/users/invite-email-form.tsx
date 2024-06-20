@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { type InviteSystemProps, invite as inviteSystem } from '~/api/general';
+import { type SystemInviteProps, invite as inviteSystem } from '~/api/general';
 import { type InviteMemberProps, inviteMembers } from '~/api/memberships';
 
 import { config } from 'config';
@@ -57,7 +57,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      if (!entity) return inviteSystem(values as InviteSystemProps);
+      if (!entity) return inviteSystem(values as SystemInviteProps);
       return inviteMembers({
         ...values,
         idOrSlug: entity.id,

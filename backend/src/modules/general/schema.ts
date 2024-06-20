@@ -13,7 +13,7 @@ import {
   passwordSchema,
   slugSchema,
 } from '../../lib/common-schemas';
-import { membershipSchema, membershipInfoSchema } from '../memberships/schema';
+import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
 export const publicCountsSchema = z.object({
@@ -34,7 +34,7 @@ export const checkTokenSchema = z.object({
 
 export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1),
-  role: z.union([userSchema.shape.role, membershipSchema.shape.role]).optional(),
+  role: userSchema.shape.role,
 });
 
 export const acceptInviteBodySchema = z.object({

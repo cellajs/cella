@@ -5,7 +5,7 @@ const client = apiClient.memberships;
 
 export interface InviteMemberProps {
   emails: string[];
-  role?: Membership['role'];
+  role: Membership['role'];
   idOrSlug: string;
   organizationId: string;
   entityType: ContextEntity;

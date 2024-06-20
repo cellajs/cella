@@ -11,9 +11,7 @@ const roleEnum = config.rolesByType.entityRoles;
 
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
-  type: varchar('type', {
-    enum: config.contextEntityTypes,
-  }).notNull(),
+  type: varchar('type', { enum: config.contextEntityTypes }).notNull(),
   organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),

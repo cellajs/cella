@@ -172,21 +172,21 @@ const membershipsRoutes = app
           id: token,
           type: 'ORGANIZATION_INVITATION',
           userId: targetUser?.id,
-          email: email.toLowerCase(),
-          role: (role as TokenModel['role']) || 'USER',
-          organizationId: organization?.id,
+          email: email,
+          role: (role as TokenModel['role']) || 'MEMBER',
+          organizationId: organization.id,
           expiresAt: createDate(new TimeSpan(7, 'd')),
         });
 
-        const emailLanguage = organization?.defaultLanguage || targetUser?.language || config.defaultLanguage;
+        const emailLanguage = organization.defaultLanguage || targetUser?.language || config.defaultLanguage;
 
         // Prepare email content
         const emailData = {
           i18n: i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage }),
-          orgName: organization?.name || '',
-          orgImage: organization?.logoUrl || '',
+          orgName: organization.name || '',
+          orgImage: organization.logoUrl || '',
           userImage: targetUser?.thumbnailUrl ? `${targetUser.thumbnailUrl}?width=100&format=avif` : '',
-          username: targetUser?.name || email.toLowerCase() || '',
+          username: targetUser?.name || email || '',
           invitedBy: user.name,
           inviteUrl: `${config.frontendUrl}/auth/invite/${token}`,
           replyTo: user.email,
@@ -200,7 +200,7 @@ const membershipsRoutes = app
 
         // Send invitation email
         emailSender
-          .send(config.senderIsReceiver ? user.email : email.toLowerCase(), `Invitation to ${organization.name} on Cella`, emailHtml, user.email)
+          .send(config.senderIsReceiver ? user.email : email, `Invitation to ${organization.name} on Cella`, emailHtml, user.email)
           .catch((error) => {
             logEvent('Error sending email', { error: (error as Error).message }, 'error');
           });

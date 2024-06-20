@@ -4,8 +4,13 @@ import { errorResponses, successWithDataSchema, successWithErrorsSchema, success
 import { idSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import { inviteBodySchema } from '../general/schema';
-import { membershipSchema, createMembershipQuerySchema, deleteMembersQuerySchema, updateMembershipBodySchema } from './schema';
+import {
+  membershipSchema,
+  createMembershipBodySchema,
+  createMembershipQuerySchema,
+  deleteMembersQuerySchema,
+  updateMembershipBodySchema,
+} from './schema';
 
 class MembershipRoutesConfig {
   public createMembership = createRouteConfig({
@@ -20,7 +25,7 @@ class MembershipRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: inviteBodySchema,
+            schema: createMembershipBodySchema,
           },
         },
       },
