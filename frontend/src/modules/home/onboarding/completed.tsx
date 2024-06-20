@@ -6,6 +6,8 @@ import { createProject } from '~/api/projects';
 import { createWorkspace } from '~/api/workspaces';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { useNavigationStore } from '~/store/navigation';
+import type { UserMenuItem } from '~/types';
+import { addMenuItem } from '~/lib/utils';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
@@ -25,14 +27,19 @@ export const OnboardingCompleted = () => {
       name: 'Demo workspace',
       slug: `${lastCreatedOrganization.slug}-workspace`,
       organizationId: lastCreatedOrganization.id,
-    }).then((workspace) => {
+    }).then((createdWorkspace) => {
+      useNavigationStore.setState({ menu: addMenuItem(createdWorkspace as UserMenuItem, 'workspaces') });
       for (let i = 3; i !== 0; i--) {
         const namingArr = ['one', 'two', 'three'];
-        createProject(workspace.id, {
+        createProject(createdWorkspace.id, {
           name: `Demo project ${namingArr[i - 1]}`,
           slug: `${lastCreatedOrganization.slug}-project-${i}`,
           organizationId: lastCreatedOrganization.id,
           color: '#000000',
+        }).then((createdProject) => {
+          useNavigationStore.setState({
+            menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
+          });
         });
       }
     });
