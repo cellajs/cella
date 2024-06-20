@@ -128,16 +128,20 @@ export function BoardColumn({ project }: BoardColumnProps) {
     );
   }, [viewOptions, filteredTasks]);
 
-  const acceptedCount = useMemo(() => filteredByViewOptionsTasks.filter((t) => t.status === 6).length || 0, [filteredByViewOptionsTasks]);
+  const acceptedCount = useMemo(
+    () => filteredByViewOptionsTasks.filter((t) => !t.parent_id && t.status === 6).length || 0,
+    [filteredByViewOptionsTasks],
+  );
   const icedCount = useMemo(() => filteredByViewOptionsTasks.filter((t) => t.status === 0).length || 0, [filteredByViewOptionsTasks]);
   const sortedTasks = useMemo(() => filteredByViewOptionsTasks.sort((a, b) => sortTaskOrder(a, b)) || [], [filteredByViewOptionsTasks]);
 
   const showingTasks = useMemo(() => {
-    return sortedTasks.filter((t) => {
+    const filteredByStatus = sortedTasks.filter((t) => {
       if (showAccepted && t.status === 6) return true;
       if (showIced && t.status === 0) return true;
       return t.status !== 0 && t.status !== 6;
     });
+    return filteredByStatus.filter((t) => !t.parent_id);
   }, [showAccepted, showIced, sortedTasks]);
 
   const handleIcedClick = () => {
@@ -165,7 +169,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
         <ProjectSheet project={project} />
       </>,
       {
-        className: 'sm:max-w-full max-w-full xl:w-[50vw]',
+        className: 'sm:max-w-[52rem]',
         title: t('common:project_settings'),
         text: t('common:project_settings.text'),
         id: 'edit-project',

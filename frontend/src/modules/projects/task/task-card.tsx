@@ -22,9 +22,8 @@ import { useProjectContext } from '../board/project-context.tsx';
 import { useTaskContext } from './task-context.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
-import SelectParent from './task-selectors/select-parent.tsx';
-import SetSubTasks from './task-selectors/select-sub-tasks.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
+import SubTask from './sub-task-card.tsx';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
@@ -55,7 +54,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     }),
   );
 
-  const parentTask = tasks.find((p) => p.id === task.parent_id);
   const subTasks = tasks.filter((t) => t.parent_id === task.id);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -78,46 +76,8 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   };
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const handleChange = (field: keyof Task, value: any) => {
+  const handleChange = (field: keyof Task, value: any, taskId: string) => {
     const db = electric.db;
-
-    if (field === 'parent_id') {
-      if (Array.isArray(value)) {
-        const newSubTasks = value.filter((t) => !subTasks.find((ct) => ct.id === t.id));
-        for (const subTask of newSubTasks) {
-          db.tasks.update({
-            data: {
-              parent_id: task.id,
-            },
-            where: {
-              id: subTask.id,
-            },
-          });
-        }
-        const removedSubTasks = subTasks.filter((t) => !value.find((vt) => vt.id === t.id));
-        for (const subTask of removedSubTasks) {
-          db.tasks.update({
-            data: {
-              parent_id: null,
-            },
-            where: {
-              id: subTask.id,
-            },
-          });
-        }
-        return;
-      }
-
-      db.tasks.update({
-        data: {
-          parent_id: value,
-        },
-        where: {
-          id: task.id,
-        },
-      });
-      return;
-    }
 
     if (field === 'assigned_to' && Array.isArray(value)) {
       db.tasks.update({
@@ -125,7 +85,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
           assigned_to: value.map((user) => user.id),
         },
         where: {
-          id: task.id,
+          id: taskId,
         },
       });
       return;
@@ -138,7 +98,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
           labels: value.map((label) => label.id),
         },
         where: {
-          id: task.id,
+          id: taskId,
         },
       });
       return;
@@ -149,7 +109,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
         [field]: value,
       },
       where: {
-        id: task.id,
+        id: taskId,
       },
     });
   };
@@ -188,6 +148,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
       setIsExpanded(true);
     },
     allowedTargets: ['p', 'div'],
+    excludeIds: ['sub-item'],
     ref: taskRef,
     latency: 250,
   });
@@ -215,7 +176,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   return (
     <Card
       onMouseDown={() => {
-        if (isExpanded) return;
         setFocusedTaskId(task.id);
         setFocusedProjectIndex(projects.findIndex((p) => p.id === task.project_id) || 0);
         taskRef.current?.focus();
@@ -258,7 +218,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               <SelectTaskType
                 className={cn('group-[.is-selected]/column:mt-[34px] transition-spacing', isExpanded && 'mt-[34px]')}
                 currentType={task.type as TaskType}
-                changeTaskType={(newType) => handleChange('type', newType)}
+                changeTaskType={(newType) => handleChange('type', newType, task.id)}
               />
               <Button
                 ref={taskDragButtonRef}
@@ -275,8 +235,8 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                 <TaskEditor
                   mode={mode}
                   markdown={task.markdown || ''}
-                  setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown)}
-                  setSummary={(newSummary) => handleChange('summary', newSummary)}
+                  setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown, task.id)}
+                  setSummary={(newSummary) => handleChange('summary', newSummary, task.id)}
                   toggleEditorState={toggleEditorState}
                   id={task.id}
                 />
@@ -327,7 +287,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   <SelectImpact
                     viewValue={task.impact as TaskImpact}
                     mode="edit"
-                    changeTaskImpact={(newImpact) => handleChange('impact', newImpact)}
+                    changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)}
                   />
                 )}
 
@@ -338,7 +298,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   labels={labels}
                   organizationId={task.organization_id}
                   projectId={task.project_id}
-                  changeLabels={(newLabels) => handleChange('labels', newLabels)}
+                  changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
                   viewValue={labels}
                   mode="edit"
                 />
@@ -348,47 +308,35 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                     mode="edit"
                     users={members}
                     viewValue={members.filter((member) => task.assigned_to?.includes(member.id))}
-                    changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers)}
+                    changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
                   />
-                  <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
+                  <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            {parentTask && (
-              <SelectParent
-                mode="edit"
-                tasks={tasks.filter((t) => t.id !== task.id)}
-                parent={parentTask}
-                onChange={(newParentTask) => handleChange('parent_id', newParentTask?.id || null)}
-              />
-            )}
-            {subTasks.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {isExpanded && (
-                  <div>
-                    {subTasks.map(({ summary, id, status }) => {
-                      return (
-                        <div key={id} className="flex bg-secondary items-center gap-1 p-1">
-                          <Checkbox checked={status === 6} />
-                          {summary}
-                        </div>
-                      );
-                    })}
+          {subTasks.length > 0 && (
+            <>
+              {isExpanded && (
+                <>
+                  <div className="inline-flex py-0 h-4 items-center ml-4 gap-1">
+                    <span className="text-success text-xs">{subTasks.filter((t) => t.status === 6).length}</span>
+                    <span className="font-light text-xs">/</span>
+                    <span className="font-light text-xs">{subTasks.length}</span>
+                    <span className="font-light text-zinc-400 text-xs">todo's completed</span>
                   </div>
-                )}
-              </div>
-            )}
-            <SetSubTasks
-              mode="edit"
-              tasks={tasks.filter((t) => t.id !== task.id && t.id !== task.parent_id)}
-              // TODO: refactor this with db relation
-              viewValue={subTasks}
-              onChange={(newSubTasks) => handleChange('parent_id', newSubTasks)}
-            />
-          </div>
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      {subTasks.map((task) => (
+                        <SubTask key={task.id} task={task} handleChange={handleChange} />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -21,7 +21,6 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
 export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   const { task } = useTaskContext(({ task }) => ({ task }));
   const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
   const [dragging, setDragging] = useState(false);
