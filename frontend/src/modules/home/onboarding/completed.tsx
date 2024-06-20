@@ -1,5 +1,5 @@
 import { Menu, Undo } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
 import { useTranslation } from 'react-i18next';
 import { createProject } from '~/api/projects';
@@ -11,13 +11,16 @@ export const OnboardingCompleted = () => {
   const { t } = useTranslation();
   const { menu, setSheet, setSection, finishedOnboarding, setFinishedOnboarding } = useNavigationStore();
   const [isExploding, _] = useState(true);
+  const effectRan = useRef(false);
 
   useEffect(() => {
+    // If already run, exit
+    if (effectRan.current || finishedOnboarding) return;
+    effectRan.current = true;
     const sortedOrganizations = [...menu.organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const lastCreatedOrganization = sortedOrganizations[0];
 
-    if (finishedOnboarding || !lastCreatedOrganization) return;
-
+    if (!lastCreatedOrganization) return;
     createWorkspace({
       name: 'Demo workspace',
       slug: `${lastCreatedOrganization.slug}-workspace`,

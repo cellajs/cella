@@ -46,7 +46,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       defaultValues: {
         name: '',
         slug: '',
-        organizationId: organizations.length === 1 ? organizations[0].id : '',
+        organizationId: organizations.length >= 1 ? organizations[0].id : '',
       },
     }),
     [],
