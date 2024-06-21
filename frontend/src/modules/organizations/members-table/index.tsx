@@ -53,6 +53,7 @@ export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort
   return infiniteQueryOptions({
     queryKey: ['members', idOrSlug, entityType, q, sort, order, role],
     initialPageParam: 0,
+    retry: 1,
     refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) => getMembers({ page, q, sort, order, role, limit, idOrSlug, entityType }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,

@@ -32,6 +32,7 @@ export const projectsQueryOptions = ({ q, sort: initialSort, order: initialOrder
   return infiniteQueryOptions({
     queryKey: ['projects', q, sort, order],
     initialPageParam: 0,
+    retry: 1,
     refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) => await getProjects({ page, q, sort, order, limit, requestedUserId }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,

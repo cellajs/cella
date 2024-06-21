@@ -45,6 +45,7 @@ export const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, r
     queryKey: ['users', q, sort, order, role],
     initialPageParam: 0,
     refetchOnWindowFocus: false,
+    retry: 1,
     queryFn: async ({ pageParam: page, signal }) => await getUsers({ page, q, sort, order, role, limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
@@ -73,7 +74,6 @@ const UsersTable = () => {
 
   // Query users
   const queryResult = useInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
-
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 

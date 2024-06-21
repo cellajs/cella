@@ -46,6 +46,7 @@ export const organizationsQueryOptions = ({ q, sort: initialSort, order: initial
   return infiniteQueryOptions({
     queryKey: ['organizations', q, sort, order],
     initialPageParam: 0,
+    retry: 1,
     refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) => await getOrganizations({ page, q, sort, order, limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
