@@ -28,7 +28,7 @@ const UpdateRow = ({ user, callback, tabIndex }: Props) => {
       </Card>,
       {
         id: 'update-user',
-        className: 'xl:max-w-[50vw]',
+        className: 'max-w-full lg:max-w-[900px]',
         title: t('common:edit_user'),
       },
     );

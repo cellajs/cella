@@ -14,7 +14,7 @@ import type { TFunction } from 'i18next';
 export const getColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean) => {
   const openUserPreviewSheet = (user: User) => {
     sheet(<UserProfile user={user} />, {
-      className: 'sm:max-w-full max-w-full xl:w-[50vw] p-0',
+      className: 'max-w-full lg:max-w-[900px] p-0',
       id: 'user-preview',
     });
   };

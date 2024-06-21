@@ -51,7 +51,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet workspace={workspace} />, {
-      className: 'sm:max-w-[52rem]',
+      className: 'max-w-full lg:max-w-[900px]',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),
       id: 'edit-workspace',
@@ -60,7 +60,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
 
   const openLabelsSheet = () => {
     sheet(<LabelsTable labels={labels} />, {
-      className: 'sm:max-w-[48rem]',
+      className: 'max-w-full lg:max-w-[900px]',
       title: t('common:manage_labels'),
       // text: '',
       id: 'workspace_settings',

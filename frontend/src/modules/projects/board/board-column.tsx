@@ -171,7 +171,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
     ];
 
     sheet(<SheetNav tabs={projectTabs} />, {
-      className: 'sm:max-w-[52rem]',
+      className: 'max-w-full lg:max-w-[900px]',
       title: t('common:project_settings'),
       text: t('common:project_settings.text'),
       id: 'edit-project',
