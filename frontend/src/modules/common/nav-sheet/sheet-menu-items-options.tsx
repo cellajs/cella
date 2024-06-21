@@ -143,7 +143,7 @@ const ItemOptions = ({
   const itemOptionStatesHandle = (state: 'archive' | 'mute') => {
     const archive = state === 'archive' ? !isItemArchived : isItemArchived;
     const muted = state === 'mute' ? !isItemMuted : isItemMuted;
-    const role = item.membership.role ? item.membership.role : undefined;
+    const role = item.membership.role;
     updateMembership({ membershipId: item.membership.id, role, archive, muted });
   };
 

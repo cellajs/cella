@@ -320,10 +320,10 @@ const membershipsRoutes = app
     const [updatedMembership] = await db
       .update(membershipsTable)
       .set({
-        ...(role && { role }),
-        ...(order && { order }),
-        ...(muted && { muted }),
-        ...(inactive && { inactive }),
+        role,
+        ...(order !== undefined && { order }),
+        ...(muted !== undefined && { muted }),
+        ...(inactive !== undefined && { inactive }),
         modifiedBy: user.id,
         modifiedAt: new Date(),
       })
