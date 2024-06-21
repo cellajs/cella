@@ -105,8 +105,9 @@ export default function Board() {
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
           if (!target || !isProjectData(target.data) || !isProjectData(source.data)) return;
-          // Drag a column
-          const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
+          // Cos of Header contain the edge, if 2 element we use second if one use it
+          const targetEdge = location.current.dropTargets.length > 1 ? location.current.dropTargets[1].data : location.current.dropTargets[0].data;
+          const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetEdge);
 
           //findOut y closest endge null
           const newOrder = getReorderDestinationOrder(target.data.order, closestEdgeOfTarget, 'horizontal', source.data.order);
