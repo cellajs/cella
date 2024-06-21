@@ -66,7 +66,7 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
             animate={{ x: 0, scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
           >
-            <ToggleGroup type="multiple" onValueChange={updateMode}>
+            <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col">
               <ToggleGroupItem size="tile" variant="tile" value="create" aria-label="Create project" id="create-project-option">
                 <Shrub size={48} strokeWidth={1} />
                 <div className="flex flex-col p-4">

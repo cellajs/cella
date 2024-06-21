@@ -14,31 +14,42 @@ import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import { UserProfile } from '../user-profile';
 import UpdateRow from './update-row';
+import { Link } from '@tanstack/react-router';
+
+export const openUserPreviewSheet = (user: User) => {
+  sheet(<UserProfile user={user} />, {
+    className: 'max-w-full lg:max-w-[900px] p-0',
+    id: 'user-preview',
+  });
+};
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const openUserPreviewSheet = (user: User) => {
-    sheet(<UserProfile user={user} />, {
-      className: 'max-w-full lg:max-w-[900px] p-0',
-      id: 'user-preview',
-    });
-  };
   const mobileColumns: ColumnOrColumnGroup<User>[] = [
     CheckboxColumn,
-    {
+   {
       key: 'name',
       name: t('common:name'),
       visible: true,
-      minWidth: 180,
       sortable: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <button className="flex space-x-2 items-center outline-0 ring-0 group" type="button" onClick={() => openUserPreviewSheet(row)}>
+      renderCell: ({ row, tabIndex }) => (
+        <Link
+          to="/user/$idOrSlug"
+          tabIndex={tabIndex}
+          params={{ idOrSlug: row.slug }}
+          className="flex space-x-2 items-center outline-0 ring-0 group"
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) return;
+            e.preventDefault();
+            openUserPreviewSheet(row);
+          }}
+        >
           <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
-        </button>
+        </Link>
       ),
     },
     {

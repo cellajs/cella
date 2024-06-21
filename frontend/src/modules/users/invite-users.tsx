@@ -62,7 +62,7 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
       <AnimatePresence mode="popLayout">
         {!inviteMode && (
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <ToggleGroup type="multiple" onValueChange={updateMode} className="gap-4 max-sm:flex-col">
+            <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col">
               <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
                 <Search size={48} strokeWidth={1} />
                 <div className="flex flex-col p-4">
