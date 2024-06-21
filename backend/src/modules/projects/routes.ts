@@ -64,7 +64,7 @@ class ProjectRoutesConfig {
   public getProjects = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, isAllowedTo('read', 'ORGANIZATION')],
+    guard: isAuthenticated,
     tags: ['projects'],
     summary: 'Get list of projects',
     description: 'Get list of projects in which you have a membership or - if a `requestedUserId` is provided - the projects of this user.',

@@ -21,7 +21,9 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import DeleteProjects from '../delete-project';
+import DeleteProjects from '../delete-projects';
+import { toast } from 'sonner';
+import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 
 export type ProjectsSearch = z.infer<typeof getProjectsQuerySchema>;
 
@@ -74,12 +76,17 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
 
   const isFiltered = !!q;
 
+  const callback = useMutateInfiniteQueryData(['projects', q, sortColumns]);
+
   const selectedProjects = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
   const openDeleteDialog = () => {
-    dialog(<DeleteProjects dialog projects={selectedProjects} />, {
+    dialog(<DeleteProjects dialog projects={selectedProjects} callback={(projects) => {
+      callback(projects, 'delete');
+      toast.success(t('common:success.delete_resources', { resources: t('common:projects') }));
+    }} />, {
       drawerOnMobile: false,
       className: 'max-w-xl',
       title: t('common:delete'),
