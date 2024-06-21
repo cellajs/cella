@@ -6,8 +6,7 @@ import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
 import type { Organization } from '~/types';
 
-import { Loader2 } from 'lucide-react';
-import { Suspense, lazy, useEffect } from 'react';
+import { lazy, useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -105,13 +104,6 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
-  // useEffect(() => {
-  //   if (form.formState.isSubmitSuccessful) {
-  //     form.reset(form.getValues());
-  //   }
-  // }, [form.formState.isSubmitSuccessful]);
-
-  // Update sheet title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-organization');
@@ -181,9 +173,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
             <FormItem name="country">
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
-                <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectCountry onChange={onChange} />
-                </Suspense>
+                <SelectCountry onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -196,9 +186,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
             <FormItem name="timezone">
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
-                <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectTimezone onChange={onChange} />
-                </Suspense>
+                <SelectTimezone onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

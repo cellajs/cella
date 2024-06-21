@@ -43,7 +43,10 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => <UpdateRow organization={row} tabIndex={tabIndex} callback={callback} />,
+      renderCell: ({ row, tabIndex }) => {
+        if (row.counts.memberships.admins > 0 || row.counts.memberships.members > 0)
+          return <UpdateRow organization={row} tabIndex={tabIndex} callback={callback} />;
+      },
     },
   ];
 

@@ -57,8 +57,8 @@ export const validSlugSchema = z
   .min(2)
   .max(100)
   .refine(
-    (s) => /^[a-z0-9]+(-[a-z0-9]+)*$/i.test(s),
-    'Slug may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.',
+    (s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s),
+    'Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.',
   )
   .transform((str) => str.toLowerCase().trim());
 

@@ -52,8 +52,9 @@ const InputFormField = <TFieldValues extends FieldValues>({
       const prefixWidth = prefixRefWidth === 0 ? prefix.length * 6 : prefixRefWidth;
       setPrefixPadding(`${prefixWidth + 16}px`);
     }
-    if (subComponent && subComponentRef.current) {
-      setSubComponentPadding(`${subComponentRef.current.offsetWidth}px`);
+    if (subComponent && subComponentRef.current?.children[0]) {
+      const element = subComponentRef.current?.children[0] as HTMLElement;
+      setSubComponentPadding(`${element.offsetWidth + 6}px`);
     }
   }, [subComponent, prefix]);
 

@@ -55,8 +55,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // Only show green ring if slug is valid
   const isValidSlug = (value: string) => {
     if (!value || value.trim().length < 2) return false;
-    const regex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    return regex.test(value) && !value.startsWith('-') && !value.endsWith('-') && value.replaceAll(' ', '') !== '';
+    return /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/.test(value);
   };
 
   // Check on change
