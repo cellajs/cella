@@ -18,14 +18,6 @@ export type DraggableItemData<T> = {
   item: T;
   itemType: Entity;
   dragItem: true;
-  index: number;
-};
-
-export type NewDraggableItemData<T> = {
-  type: string;
-  item: T;
-  itemType: Entity;
-  dragItem: true;
   order: number;
 };
 

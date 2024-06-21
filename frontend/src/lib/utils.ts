@@ -11,7 +11,7 @@ import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import type { Task } from '~/modules/common/electric/electrify';
-import type { DraggableItemData, NewDraggableItemData, UserMenuItem } from '~/types';
+import type { DraggableItemData, UserMenuItem } from '~/types';
 import { useNavigationStore } from '~/store/navigation';
 
 dayjs.extend(calendar);
@@ -128,21 +128,7 @@ export const sortTaskOrder = (task1: Pick<Task, 'status' | 'sort_order'>, task2:
   return 0;
 };
 
-export const getDraggableItemData = <T>(
-  item: T,
-  itemIndex: number | null,
-  type: 'task' | 'column' | 'menuItem',
-  itemType?: Entity,
-): DraggableItemData<T> => {
-  return { dragItem: true, item, index: itemIndex ? itemIndex : 0, type, itemType: itemType || 'ORGANIZATION' };
-};
-
-export const getNewDraggableItemData = <T>(
-  item: T,
-  itemOrder: number,
-  type: 'task' | 'column' | 'menuItem',
-  itemType: Entity,
-): NewDraggableItemData<T> => {
+export const getDraggableItemData = <T>(item: T, itemOrder: number, type: 'task' | 'column' | 'menuItem', itemType: Entity): DraggableItemData<T> => {
   return { dragItem: true, item, order: itemOrder, type, itemType: itemType };
 };
 

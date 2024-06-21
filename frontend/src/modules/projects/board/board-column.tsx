@@ -10,13 +10,13 @@ import { lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { cn, getNewDraggableItemData, sortTaskOrder, findMembershipOrderById } from '~/lib/utils';
+import { cn, getDraggableItemData, sortTaskOrder, findMembershipOrderById, getReorderDestinationOrder } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { NewDraggableItemData, Project } from '~/types/index.ts';
+import type { DraggableItemData, Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
 import { DropIndicator } from '../../common/drop-indicator';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
@@ -38,7 +38,7 @@ interface BoardColumnProps {
   project: Project;
 }
 
-type ProjectDraggableItemData = NewDraggableItemData<Project> & { type: 'column' };
+type ProjectDraggableItemData = DraggableItemData<Project> & { type: 'column' };
 
 export const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
   return data.dragItem === true && typeof data.order === 'number';
@@ -263,7 +263,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
     const cardList = cardListRef.current;
     const scrollable = scrollableRef.current;
 
-    const data = getNewDraggableItemData<Project>(project, findMembershipOrderById(project.id), 'column', 'PROJECT');
+    const data = getDraggableItemData<Project>(project, findMembershipOrderById(project.id), 'column', 'PROJECT');
     if (!column || !headerDragButton || !cardList) return;
     // Don't start drag if only 1 project
     if (projects.length <= 1) return;
@@ -326,28 +326,28 @@ export function BoardColumn({ project }: BoardColumnProps) {
           const target = location.current.dropTargets[0];
           const sourceData = source.data;
           if (!target) return;
-
+          const targetData = target.data;
           // Drag a task
-          if (isTaskData(sourceData) && isTaskData(target.data)) {
+          if (isTaskData(sourceData) && isTaskData(targetData)) {
             // Drag a task in different column
-            if (sourceData.item.project_id !== target.data.item.project_id) {
-              console.log('ChangeProject');
+            if (sourceData.item.project_id !== targetData.item.project_id) {
+              const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
+              const newOrder = getReorderDestinationOrder(targetData.order, closestEdgeOfTarget, 'vertical', sourceData.order);
+              // Update order of dragged task
+              electric?.db.tasks.update({
+                data: {
+                  sort_order: newOrder,
+                  project_id: targetData.item.project_id,
+                },
+                where: {
+                  id: sourceData.item.id,
+                },
+              });
             }
             // Drag a task in same column
-            if (sourceData.item.project_id === target.data.item.project_id) {
-              let newOrder = 0;
-              if (target.data.index > 0 && target.data.index < filteredByViewOptionsTasks.length - 1) {
-                const itemBefore = filteredByViewOptionsTasks[target.data.index - 1];
-                const itemAfter = filteredByViewOptionsTasks[target.data.index];
-                newOrder = (itemBefore.sort_order + itemAfter.sort_order) / 2;
-              } else if (target.data.index === 0 && filteredByViewOptionsTasks.length > 0) {
-                const itemAfter = filteredByViewOptionsTasks[target.data.index];
-                newOrder = itemAfter.sort_order / 1.1;
-              } else if (target.data.index === filteredByViewOptionsTasks.length - 1 && filteredByViewOptionsTasks.length > 0) {
-                const itemBefore = filteredByViewOptionsTasks[target.data.index - 1];
-                newOrder = itemBefore.sort_order * 1.1;
-              }
-
+            if (sourceData.item.project_id === targetData.item.project_id) {
+              const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
+              const newOrder = getReorderDestinationOrder(targetData.order, closestEdgeOfTarget, 'vertical', sourceData.order);
               // Update order of dragged task
               electric?.db.tasks.update({
                 data: {
@@ -362,7 +362,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
         },
       }),
     );
-  }, [menu, filteredByViewOptionsTasks]);
+  }, [menu]);
 
   // Hides underscroll elements
   // 64px refers to the header height
@@ -411,7 +411,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
                         </Button>
                         {showingTasks.map((task) => (
                           <TaskProvider key={task.id} task={task}>
-                            <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
+                            <DraggableTaskCard />
                           </TaskProvider>
                         ))}
                         <Button

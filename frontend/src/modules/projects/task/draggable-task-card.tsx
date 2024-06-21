@@ -15,10 +15,10 @@ import { useTaskContext } from './task-context';
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-  return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
 };
 
-export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
+export const DraggableTaskCard = () => {
   const { task } = useTaskContext(({ task }) => ({ task }));
   const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
   const taskDragRef = useRef(null);
@@ -42,7 +42,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   useEffect(() => {
     const element = taskDragRef.current;
     const dragButton = taskDragButtonRef.current;
-    const data = getDraggableItemData<Task>(task, taskIndex, 'task');
+    const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'PROJECT');
     if (!element || !dragButton) return;
 
     return combine(

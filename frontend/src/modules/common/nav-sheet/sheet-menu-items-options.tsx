@@ -9,11 +9,11 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
-import { getNewDraggableItemData, getReorderDestinationOrder } from '~/lib/utils';
+import { getDraggableItemData, getReorderDestinationOrder } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { NewDraggableItemData, UserMenuItem } from '~/types';
+import type { DraggableItemData, UserMenuItem } from '~/types';
 import { DropIndicator } from '../drop-indicator';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 
@@ -22,7 +22,7 @@ interface MenuItemProps {
   setGlobalDragging?: (dragging: boolean) => void;
 }
 
-type PageDraggableItemData = NewDraggableItemData<UserMenuItem>;
+type PageDraggableItemData = DraggableItemData<UserMenuItem>;
 
 const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
   return data.dragItem === true && typeof data.order === 'number';
@@ -154,7 +154,7 @@ const ItemOptions = ({
   useEffect(() => {
     const element = dragRef.current;
     const dragButton = dragButtonRef.current;
-    const data = getNewDraggableItemData(item, item.membership.order, 'menuItem', itemType);
+    const data = getDraggableItemData(item, item.membership.order, 'menuItem', itemType);
     if (!element || !dragButton) return;
 
     return combine(
