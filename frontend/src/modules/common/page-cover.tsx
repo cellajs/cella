@@ -1,6 +1,6 @@
 import type { Entity } from 'backend/types/common';
 import { Upload } from 'lucide-react';
-import { Suspense, lazy, memo } from 'react';
+import { Suspense, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getColorClass } from '~/lib/utils';
@@ -9,9 +9,10 @@ import { useUpdateOrganizationMutation } from '~/modules/organizations/update-or
 import { Button } from '~/modules/ui/button';
 import { useUpdateUserMutation } from '~/modules/users/update-user-form';
 import { UploadType } from '~/types';
+import { lazyWithPreload } from 'react-lazy-with-preload';
 
 // Lazy load the upload component
-const UploadUppy = lazy(() => import('~/modules/common/upload/upload-uppy'));
+const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));
 
 export interface PageCoverProps {
   id: string;
@@ -71,7 +72,6 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
       },
     );
   };
-
   return (
     <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={url ? { backgroundImage: `url(${url})` } : {}}>
       <Button
@@ -79,6 +79,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
         size="sm"
         className="absolute top-3 right-3 opacity-50 hover:opacity-80 hover:bg-secondary"
         onClick={openUploadDialog}
+        onMouseOver={() => UploadUppy.preload()}
       >
         <Upload size={16} />
         <span className="ml-1">{t('common:upload_cover')}</span>

@@ -2,6 +2,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '../../ui/button';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
+import useMounted from '~/hooks/use-mounted';
 import './style.css';
 
 interface DebugItem {
@@ -18,10 +19,10 @@ const debugOptions: DebugItem[] = [
 ];
 
 const DebugToolbars = () => {
+  const { hasStarted } = useMounted();
   const debugToggle = (item: DebugItem) => {
     const parent = document.querySelector<HTMLElement>(item.parent);
     if (!parent) return;
-
     let htmlElement: HTMLButtonElement | null | undefined = parent.querySelector<HTMLButtonElement>(item.element);
     if (item.id === 'electric-sql') htmlElement = parent.shadowRoot?.querySelector<HTMLButtonElement>(item.element);
     if (!htmlElement) return;
@@ -34,8 +35,10 @@ const DebugToolbars = () => {
     <>
       <TanStackRouterDevtools />
       <ReactQueryDevtools />
-
-      <div className="max-sm:hidden left-3 fixed bottom-3 z-[300]">
+      <div
+        className={`max-sm:hidden left-3 bottom-0 fixed z-[99] transition-transform ease-out'
+          ${!hasStarted && 'sm:-translate-x-full'}`}
+      >
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" aria-label="toggle debug toolbar">

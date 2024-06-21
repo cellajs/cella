@@ -97,6 +97,7 @@
     "react-hook-form": "^7.51.5",
     "react-i18next": "^14.1.2",
     "react-intersection-observer": "^9.10.2",
+    "react-lazy-with-preload": "^2.2.1",
     "react-resizable-panels": "^2.0.19",
     "react-sticky-box": "^2.0.5",
     "slugify": "1.6.6",
@@ -139,11 +140,7 @@
     "vite-plugin-static-copy": "^1.0.5",
     "workbox-window": "^7.1.0"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not op_mini all"
-  ],
+  "browserslist": [">0.2%", "not dead", "not op_mini all"],
   "postcss": {
     "plugins": {
       "postcss-import": {},

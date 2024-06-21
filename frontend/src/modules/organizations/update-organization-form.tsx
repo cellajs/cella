@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
 import type { Organization } from '~/types';
 
-import { lazy, useEffect } from 'react';
+import { useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -22,10 +22,8 @@ import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
 import UnsavedBadge from '../common/unsaved-badge';
-
-// Lazy load to prevent JSON from being loaded on initial load
-const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
-const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
+import SelectTimezone from '~/modules/common/form-fields/select-timezone';
+import SelectCountry from '~/modules/common/form-fields/select-country';
 
 interface Props {
   organization: Organization;
