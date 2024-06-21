@@ -56,7 +56,7 @@ export const getColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => t(row.role.toLowerCase()),
+      renderCell: ({ row }) => t(row.membership.role.toLowerCase()),
       width: 100,
       renderEditCell: (props) =>
         renderSelect({

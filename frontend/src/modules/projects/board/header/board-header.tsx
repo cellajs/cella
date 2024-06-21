@@ -127,11 +127,6 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
                   <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
                 </Button>
               </TooltipButton>
-              <TooltipButton toolTipContent={t('common:workspace_settings')}>
-                <Button variant="outline" onClick={openSettingsSheet}>
-                  <Settings size={16} />
-                </Button>
-              </TooltipButton>
             </div>
           )}
         </FilterBarActions>
@@ -171,6 +166,11 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
           <BoardSearch />
         </FilterBarContent>
       </TableFilterBar>
+      <TooltipButton toolTipContent={t('common:workspace_settings')}>
+        <Button variant="outline" onClick={openSettingsSheet}>
+          <Settings size={16} />
+        </Button>
+      </TooltipButton>
       <WorkspaceView className="max-sm:hidden" />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />

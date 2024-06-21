@@ -1,11 +1,9 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
 import { getOrganization } from '~/api/organizations';
-import { EntityContext } from '~/modules/common/entity-context';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
-import type { EntityPage } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
 import JoinLeaveButton from './join-leave-button';
 
@@ -25,12 +23,10 @@ const OrganizationPage = () => {
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
   const isAdmin = organization.membership?.role === 'ADMIN';
-
   const tabs = isAdmin ? organizationTabs : [organizationTabs[0]];
 
   return (
-    // TODO clean this line
-    <EntityContext.Provider value={{ entity: organization as unknown as EntityPage, isAdmin, organization: organization }}>
+    <>
       <PageHeader
         id={organization.id}
         title={organization.name}
@@ -47,7 +43,7 @@ const OrganizationPage = () => {
       <FocusViewContainer className="container min-h-screen mt-4">
         <Outlet />
       </FocusViewContainer>
-    </EntityContext.Provider>
+    </>
   );
 };
 

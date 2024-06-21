@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo, useState, useContext, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 
 import type { membersQuerySchema } from 'backend/modules/general/schema';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
@@ -14,7 +14,7 @@ import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import { DataTable } from '~/modules/common/data-table';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import type { ContextEntity, Member } from '~/types';
+import type { EntityPage, Member, Organization, Project } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import useQueryResultEffect from '~/hooks/use-query-result-effect';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -25,7 +25,6 @@ import Export from '~/modules/common/data-table/export';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
-import { EntityContext } from '~/modules/common/entity-context';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
@@ -41,10 +40,9 @@ const LIMIT = 40;
 type MemberSearch = z.infer<typeof membersQuerySchema>;
 
 interface MembersTableProps {
-  idOrSlug: string;
-  entityType: ContextEntity;
+  entity: Project | Organization;
   route: '/layout/$idOrSlug/members' | '/layout/workspace/$idOrSlug';
-  focus?: boolean;
+  isSheet?: boolean;
 }
 
 // Build query to get members with infinite scroll
@@ -61,12 +59,13 @@ export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort
   });
 };
 
-const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTableProps) => {
+const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
   const search = useSearch({ from: route });
   const containerRef = useRef(null);
-  const { entity, isAdmin } = useContext(EntityContext);
 
+  const entityType = entity.entity;
+  const isAdmin = entity.membership?.role === 'ADMIN';
   const isMobile = useBreakpoints('max', 'sm');
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
@@ -85,7 +84,7 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
   const isFiltered = role !== undefined || !!q;
 
   // Query members
-  const queryResult = useInfiniteQuery(membersQueryOptions({ idOrSlug, entityType, q, sort, order, role, limit }));
+  const queryResult = useInfiniteQuery(membersQueryOptions({ idOrSlug: entity.id, entityType, q, sort, order, role, limit }));
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
@@ -94,7 +93,7 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
     setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
   };
   // Save filters in search params
-  if (entityType !== 'PROJECT') {
+  if (!isSheet) {
     const filters = useMemo(
       () => ({
         q,
@@ -123,7 +122,7 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
 
   const callback = useMutateInfiniteQueryData([
     'members',
-    idOrSlug,
+    entity.id,
     entityType,
     q,
     sortColumns[0]?.columnKey as MemberSearch['sort'],
@@ -151,14 +150,14 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
       order: sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
       role,
       limit,
-      idOrSlug,
+      idOrSlug: entity.id,
       entityType,
     });
     return data.items;
   };
 
   const openInviteDialog = () => {
-    dialog(<InviteUsers entity={entity} mode={null} dialog />, {
+    dialog(<InviteUsers entity={entity as EntityPage} mode={null} dialog />, {
       id: 'user-invite',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[120] max-w-4xl',
@@ -171,7 +170,7 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
   const openRemoveDialog = () => {
     dialog(
       <RemoveMembersForm
-        entityId={idOrSlug}
+        entityId={entity.id}
         entityType={entityType}
         dialog
         callback={(members) => {
@@ -218,7 +217,7 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
                       <Trash size={16} />
                     </motion.span>
 
-                    <span className="ml-1 max-xs:hidden">{idOrSlug ? t('common:remove') : t('common:delete')}</span>
+                    <span className="ml-1 max-xs:hidden">{entity.id ? t('common:remove') : t('common:delete')}</span>
                   </motion.button>
                 </Button>
 
@@ -259,7 +258,7 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-        {fetchForExport && (
+        {!isSheet && fetchForExport && (
           <Export<Member>
             className="max-lg:hidden"
             filename={`${entityType} members`}
@@ -268,7 +267,7 @@ const MembersTable = ({ entityType, route, idOrSlug, focus = true }: MembersTabl
             fetchRows={fetchForExport}
           />
         )}
-        {focus && <FocusView iconOnly />}
+        {!isSheet && <FocusView iconOnly />}
       </div>
       <div ref={containerRef} />
       <DataTable<Member>
