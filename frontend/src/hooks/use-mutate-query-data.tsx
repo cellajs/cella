@@ -5,7 +5,7 @@ interface Item {
   id: string;
 }
 
-// This hook is used to mutate the data of a infinite query
+// This hook is used to mutate the data of a query
 export const useMutateQueryData = (queryKey: QueryKey) => {
   return (items: Item[], action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<{
@@ -46,7 +46,7 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
   };
 };
 
-// This hook is used to mutate the data of a infinite query
+// This hook is used to mutate the data of an infinite query
 export const useMutateInfiniteQueryData = (queryKey: QueryKey) => {
   return (items: Item[], action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<
