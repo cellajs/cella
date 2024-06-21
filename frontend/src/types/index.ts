@@ -37,10 +37,10 @@ export type Request = Extract<InferResponseType<(typeof apiClient.requests)['$ge
 export type Workspace = Extract<InferResponseType<(typeof apiClient.workspaces)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 
 type EntityPageProps = 'id' | 'slug' | 'entity' | 'name' | 'createdAt' | 'thumbnailUrl' | 'bannerUrl' | 'organizationId';
-type BaseEntityPage = Pick<Project, EntityPageProps>;
+type BaseEntityPage = Pick<Omit<Project, 'entity'> & { entity: ContextEntity }, EntityPageProps>;
 
 export type EntityPage = Omit<BaseEntityPage, 'organizationId'> & {
-  organizationId: Project['organizationId'] | null | undefined;
+  organizationId?: Project['organizationId'] | null;
 };
 
 export type Project = Extract<InferResponseType<(typeof apiClient.projects)['$get']>, { data: unknown }>['data']['items'][number];

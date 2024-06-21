@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/car
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { EntityPage, Organization } from '~/types';
+import type { Organization } from '~/types';
 import InviteUsers from '../../users/invite-users';
 import StepperFooter from './footer';
 import { OnboardingStart } from './start';
@@ -75,8 +75,7 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
                         </CreateOrganizationForm>
                       )}
                       {id === 'invitation' && organization && (
-                        // TODO: Fix this
-                        <InviteUsers entity={organization as unknown as EntityPage} mode="email">
+                        <InviteUsers entity={organization} mode="email">
                           <StepperFooter organization={organization} setOnboarding={setOnboarding} />
                         </InviteUsers>
                       )}
