@@ -28,11 +28,12 @@ export default function TasksTable() {
       projects,
     }),
   );
+  const [columns] = useColumns();
   const [rows, setRows] = useState<Task[]>([]);
+
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
-
-  const { results: tasks = [], updatedAt } = useLiveQuery(
+  const { results: tasks, updatedAt } = useLiveQuery(
     electric.db.tasks.liveMany({
       where: {
         project_id: {
@@ -49,6 +50,7 @@ export default function TasksTable() {
   };
 
   const filteredTasks = useMemo(() => {
+    if (!tasks) return;
     if (!searchQuery) return tasks;
     return tasks.filter(
       (task) =>
@@ -57,8 +59,6 @@ export default function TasksTable() {
         task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [searchQuery, updatedAt]);
-
-  const [columns] = useColumns();
 
   const onRowsChange = (changedRows: Task[]) => {
     setRows(changedRows);
@@ -69,7 +69,7 @@ export default function TasksTable() {
   };
 
   useEffect(() => {
-    setRows(filteredTasks);
+    if (filteredTasks) setRows(filteredTasks);
   }, [filteredTasks]);
 
   return (
@@ -81,6 +81,8 @@ export default function TasksTable() {
           limit: 10,
           rowHeight: 42,
           onRowsChange,
+          isLoading: tasks === undefined,
+          isFetching: tasks === undefined,
           renderRow,
           isFiltered: !!searchQuery,
           selectedRows: new Set<string>(selectedTasks),

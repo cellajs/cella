@@ -129,6 +129,8 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
           rowHeight: 42,
           selectedRows,
           onRowsChange,
+          isLoading: queryResult.isLoading,
+          isFetching: queryResult.isFetching,
           onSelectedRowsChange: setSelectedRows,
           rowKeyGetter: (row) => row.id,
           enableVirtualization: false,
