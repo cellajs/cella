@@ -7,7 +7,8 @@ import { config } from 'config';
 import { emailSender } from 'email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
-import { InviteEmail } from '../../../../email/emails/invite';
+import { InviteMemberEmail } from '../../../../email/emails/member-invite';
+
 import type { OrganizationModel } from '../../db/schema/organizations';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { type UserModel, usersTable } from '../../db/schema/users';
@@ -178,7 +179,7 @@ const membershipsRoutes = app
         });
 
         // Render email template
-        const emailHtml = render(InviteEmail({ organization, targetUser, user, token }));
+        const emailHtml = render(InviteMemberEmail({ organization, targetUser, user, token }));
 
         // Log event for user invitation
         logEvent('User invited to organization', { organization: organization.id });

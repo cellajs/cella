@@ -1,6 +1,6 @@
 import { type SQL, and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { emailSender } from '../../../../email';
-import { InviteEmail } from '../../../../email/emails/invite';
+import { InviteSystemEmail } from '../../../../email/emails/system-invite';
 
 import { render } from '@react-email/render';
 import { config } from 'config';
@@ -162,9 +162,8 @@ const generalRoutes = app
       });
 
       const emailHtml = render(
-        InviteEmail({
+        InviteSystemEmail({
           user,
-          type: 'system',
           targetUser,
           token,
         }),
