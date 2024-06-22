@@ -1,6 +1,6 @@
-import { type SQL, and, count, eq, ilike, or, sql, inArray } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { emailSender } from '../../../../email';
-import { InviteEmail } from '../../../../email/emails/invite';
+import { InviteSystemEmail } from '../../../../email/emails/system-invite';
 
 import { render } from '@react-email/render';
 import { config } from 'config';
@@ -13,21 +13,25 @@ import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { labelsTable } from '../../db/schema-electric/labels';
+import { tasksTable } from '../../db/schema-electric/tasks';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
+import { projectsTable } from '../../db/schema/projects';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
+import { workspacesTable } from '../../db/schema/workspaces';
 import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
-import { i18n } from '../../lib/i18n';
 import { getOrderColumn } from '../../lib/order-column';
 import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
-import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -35,28 +39,28 @@ const app = new CustomHono();
 
 export const streams = new Map<string, SSEStreamingApi>();
 
-// * General endpoints
+// General endpoints
 const generalRoutes = app
   /*
    * Get public counts
    */
   .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
-    const [organizationsResult, usersResult] = await Promise.all([
-      db
-        .select({
-          total: sql<number>`count(*)`.mapWith(Number),
-        })
-        .from(organizationsTable),
-      db
-        .select({
-          total: sql<number>`count(*)`.mapWith(Number),
-        })
-        .from(usersTable),
+    const [users, organizations, workspaces, projects, tasks, labels] = await Promise.all([
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(usersTable),
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(organizationsTable),
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(workspacesTable),
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(projectsTable),
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(tasksTable),
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(labelsTable),
     ]);
 
     const data = {
-      organizations: organizationsResult[0].total,
-      users: usersResult[0].total,
+      users: users[0].total,
+      organizations: organizations[0].total,
+      workspaces: workspaces[0].total,
+      projects: projects[0].total,
+      tasks: tasks[0].total,
+      labels: labels[0].total,
     };
 
     return ctx.json({ success: true, data }, 200);
@@ -140,7 +144,7 @@ const generalRoutes = app
   /*
    * Invite users to the system
    */
-  .openapi(generalRouteConfig.invite, async (ctx) => {
+  .openapi(generalRouteConfig.createInvite, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
     const user = ctx.get('user');
 
@@ -157,18 +161,11 @@ const generalRoutes = app
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 
-      const emailLanguage = targetUser?.language || config.defaultLanguage;
-
       const emailHtml = render(
-        InviteEmail({
-          i18n: i18n.cloneInstance({
-            lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
-          }),
-          username: email.toLowerCase(),
-          inviteUrl: `${config.frontendUrl}/auth/invite/${token}`,
-          invitedBy: user.name,
-          type: 'system',
-          replyTo: user.email,
+        InviteSystemEmail({
+          user,
+          targetUser,
+          token,
         }),
       );
       logEvent('User invited on system level');
@@ -243,13 +240,9 @@ const generalRoutes = app
         return ctx.json({ success: true }, 200);
       }
 
-      await db.insert(membershipsTable).values({
-        organizationId: organization.id,
-        type: 'ORGANIZATION',
-        userId: user.id,
-        role: token.role as MembershipModel['role'],
-        createdBy: user.id,
-      });
+      // Insert membership
+      const role = token.role as MembershipModel['role'];
+      await insertMembership({ user, role, entity: organization });
     }
 
     return ctx.json({ success: true }, 200);
@@ -285,7 +278,7 @@ const generalRoutes = app
   /*
    * Get suggestions
    */
-  .openapi(generalRouteConfig.suggestionsConfig, async (ctx) => {
+  .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
     const user = ctx.get('user');
 
@@ -359,21 +352,12 @@ const generalRoutes = app
     }
 
     const results = await Promise.all(queries);
-    const entitiesResult = [];
+    const items = [];
 
     // @TODO: Tmp Typescript type solution
-    for (const entities of results as unknown as Array<Suggestion[]>) entitiesResult.push(...entities.map((e) => e));
+    for (const entities of results as unknown as Array<Suggestion[]>) items.push(...entities.map((e) => e));
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          entities: entitiesResult,
-          total: entitiesResult.length,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: { items, total: items.length } }, 200);
   })
   /*
    * Get members by entity id and type

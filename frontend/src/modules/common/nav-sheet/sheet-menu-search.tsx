@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
 import { Input } from '~/modules/ui/input';
-import type { UserMenu } from '~/types';
+import type { UserMenu, UserMenuItem } from '~/types';
 import { type SearchResultsType, initialSearchResults, menuSections } from './sheet-menu';
-import type { MenuList } from './sheet-menu-section';
 
 interface SheetMenuSearchProps {
   menu: UserMenu;
@@ -32,7 +31,7 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResul
             acc[section.storageType] = menu[section.storageType as keyof UserMenu].filter((page) => page.name.toLowerCase().includes(lowerCaseTerm));
             return acc;
           },
-          {} as Record<string, MenuList>,
+          {} as Record<string, UserMenuItem[]>,
         );
     };
 

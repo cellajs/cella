@@ -1,14 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type DefaultError, useMutation } from '@tanstack/react-query';
-import { updateUserJsonSchema } from 'backend/modules/users/schema';
+import { updateUserBodySchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import type { MeUser, User } from '~/types';
+import type { User } from '~/types';
 import AvatarFormField from '../common/form-fields/avatar';
 
-import { type UpdateUserParams, updateUser } from '~/api/users';
 import { updateSelf } from '~/api/me';
+import { type UpdateUserParams, updateUser } from '~/api/users';
 
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -37,7 +37,7 @@ interface UpdateUserFormProps {
   children?: React.ReactNode;
 }
 
-const formSchema = updateUserJsonSchema;
+const formSchema = updateUserBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -48,8 +48,8 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
   return useMutation<User, DefaultError, UpdateUserParams>({
     mutationKey: ['me', 'update', idOrSlug],
     mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
-    onSuccess: (user) => {
-      queryClient.setQueryData(['users', user.id], user);
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(['users', updatedUser.id], updatedUser);
     },
     gcTime: 1000 * 10,
   });
@@ -58,8 +58,7 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
-  
-  const { user: currentUser, setUser } = useUserStore();
+  const { user: currentUser, updateUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
   // Hide fields if requested
@@ -96,18 +95,18 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     if (!user) return;
 
     mutate(values, {
-      onSuccess: (data) => {
+      onSuccess: (updatedUser) => {
         if (isSelf) {
-          setUser(data as MeUser);
+          updateUser(updatedUser);
           toast.success(t('common:success.you_updated'));
         } else {
           toast.success(t('common:success.updated_user'));
         }
         //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
-        if (isSheet) sheet.remove('edit-user');
+        if (isSheet) sheet.remove('update-user');
 
-        form.reset(data);
-        callback?.(data);
+        form.reset(updatedUser);
+        callback?.(updatedUser);
 
         nextStep?.();
       },
@@ -117,15 +116,15 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   // Update sheet title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
-      const targetSheet = sheet.get('edit-user');
+      const targetSheet = sheet.get('update-user');
       if (targetSheet && checkSheet(targetSheet)) {
-        sheet.update('edit-user', {
+        sheet.update('update-user', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
       }
       return;
     }
-    sheet.reset('edit-user');
+    sheet.reset('update-user');
   }, [form.unsavedChanges]);
 
   const setImageUrl = (url: string) => {
@@ -137,7 +136,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
         <AvatarFormField
           control={form.control}
-          label={t('common:profile_picture')}
+          label={children ? '' : t('common:profile_picture')}
           type="USER"
           name="thumbnailUrl"
           entity={user}
@@ -148,13 +147,16 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           <InputFormField inputClassName="border" control={form.control} name="firstName" label={t('common:first_name')} required />
           <InputFormField inputClassName="border" control={form.control} name="lastName" label={t('common:last_name')} required />
         </div>
-        <SlugFormField
-          control={form.control}
-          type="USER"
-          label={t('common:user_handle')}
-          description={t('common:user_handle.text')}
-          previousSlug={user.slug}
-        />
+        {(!hiddenFields || !hiddenFields.includes('slug')) && (
+          <SlugFormField
+            control={form.control}
+            type="USER"
+            label={t('common:user_handle')}
+            description={t('common:user_handle.text')}
+            previousSlug={user.slug}
+          />
+        )}
+
         <InputFormField
           inputClassName="border"
           control={form.control}

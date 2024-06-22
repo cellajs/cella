@@ -17,6 +17,7 @@ export const AuthRoute = createRoute({
 
 export const SignInRoute = createRoute({
   path: '/auth/sign-in',
+  validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional(), token: z.string().optional() }),
   staticData: { pageTitle: 'Sign in' },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ cause, search }) => {
@@ -29,14 +30,13 @@ export const SignInRoute = createRoute({
 
     try {
       await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
-      console.info('Authenticated, go to home');
+      console.info('Authenticated -> go to home');
       throw redirect({ to: '/', replace: true });
     } catch (error) {
       return console.info('Not authenticated (silent check)');
     }
   },
   component: () => <SignIn />,
-  validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional(), token: z.string().optional() }),
 });
 
 export const ResetPasswordRoute = createRoute({

@@ -8,12 +8,13 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import workspaceRoutesConfig from './routes';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
+import workspaceRoutesConfig from './routes';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const app = new CustomHono();
 
-// * Workspace endpoints
+// Workspace endpoints
 const workspacesRoutes = app
   /*
    * Create workspace
@@ -21,6 +22,7 @@ const workspacesRoutes = app
   .openapi(workspaceRoutesConfig.createWorkspace, async (ctx) => {
     const { name, slug, organizationId } = ctx.req.valid('json');
     const user = ctx.get('user');
+    const memberships = ctx.get('memberships');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -39,20 +41,8 @@ const workspacesRoutes = app
 
     logEvent('Workspace created', { workspace: workspace.id });
 
-    const [createdMembership] = await db
-      .insert(membershipsTable)
-      .values({
-        userId: user.id,
-        organizationId,
-        workspaceId: workspace.id,
-        type: 'WORKSPACE',
-        role: 'ADMIN',
-      })
-      .returning();
-
-    logEvent('User added to workspace', { user: user.id, workspace: workspace.id });
-
-    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...workspace });
+    // Insert membership
+    const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: workspace, memberships });
 
     return ctx.json(
       {
@@ -119,8 +109,12 @@ const workspacesRoutes = app
       .where(and(eq(membershipsTable.type, 'WORKSPACE'), eq(membershipsTable.workspaceId, workspace.id)));
 
     if (memberships.length > 0) {
-      const membersId = memberships.map((member) => member.id);
-      sendSSEToUsers(membersId, 'update_entity', updatedWorkspace);
+      memberships.map((member) =>
+        sendSSEToUsers([member.id], 'update_entity', {
+          ...updatedWorkspace,
+          membership: toMembershipInfo(memberships.find((m) => m.id === member.id)),
+        }),
+      );
     }
 
     logEvent('Workspace updated', { workspace: updatedWorkspace.id });
@@ -130,7 +124,7 @@ const workspacesRoutes = app
         success: true,
         data: {
           ...updatedWorkspace,
-          membership: toMembershipInfo(memberships.find((member) => member.id === user.id)),
+          membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
         },
       },
       200,
@@ -140,31 +134,31 @@ const workspacesRoutes = app
    * Delete workspaces
    */
   .openapi(workspaceRoutesConfig.deleteWorkspaces, async (ctx) => {
-    // * Extract allowed and disallowed ids
+    // Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');
 
-    // * Map errors of workspaces user is not allowed to delete
+    // Map errors of workspaces user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', { workspace: id }));
 
-    // * Get members
+    // Get members
     const workspaceMembers = await db
       .select({ id: membershipsTable.userId, workspaceId: membershipsTable.workspaceId })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'WORKSPACE'), inArray(membershipsTable.workspaceId, allowedIds)));
 
-    // * Delete the workspaces
+    // Delete the workspaces
     await db.delete(workspacesTable).where(inArray(workspacesTable.id, allowedIds));
 
-    // * Send SSE events for the workspaces that were deleted
+    // Send SSE events for the workspaces that were deleted
     for (const id of allowedIds) {
-      // * Send the event to the user if they are a member of the workspace
+      // Send the event to the user if they are a member of the workspace
       if (workspaceMembers.length > 0) {
         const membersId = workspaceMembers
           .filter(({ workspaceId }) => workspaceId === id)
           .map((member) => member.id)
           .filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', { id, type: 'WORKSPACE' });
+        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'WORKSPACE' });
       }
 
       logEvent('Workspace deleted', { workspace: id });

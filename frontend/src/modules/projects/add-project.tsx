@@ -1,3 +1,4 @@
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { ChevronRight, Shrub, SquareMousePointer } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,6 @@ import type { Organization, Workspace } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { CreateProjectForm } from './create-project-form';
-import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 
 interface AddProjectsProps {
   workspace: Workspace;
@@ -66,7 +66,7 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
             animate={{ x: 0, scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
           >
-            <ToggleGroup type="multiple" onValueChange={updateMode}>
+            <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col">
               <ToggleGroupItem size="tile" variant="tile" value="create" aria-label="Create project" id="create-project-option">
                 <Shrub size={48} strokeWidth={1} />
                 <div className="flex flex-col p-4">

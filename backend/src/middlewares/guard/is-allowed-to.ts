@@ -5,7 +5,7 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
-import type { Env, ContextEntity } from '../../types/common';
+import type { ContextEntity, Env } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
 export type PermissionAction = 'create' | 'update' | 'read' | 'write';
@@ -70,7 +70,7 @@ async function getEntityContext(ctx: any, entityType: ContextEntity) {
   }
 
   const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(`${entityType.toLowerCase()}Id`);
-  
+
   if (idOrSlug) {
     // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
     return await resolveEntity(entityType, idOrSlug);
@@ -95,7 +95,7 @@ async function createEntityContext(entityType: ContextEntity, ctx: any) {
 
   // Extract payload from request body, with try/catch to handle potential empty body bug in HONO (see: https://github.com/honojs/hono/issues/2651)
   // biome-ignore lint/suspicious/noExplicitAny: Using 'any' here because the payload can be of any type
-  let payload:Record<string, any> = {};
+  let payload: Record<string, any> = {};
   try {
     payload = await ctx.req.json();
   } catch {
@@ -115,7 +115,12 @@ async function createEntityContext(entityType: ContextEntity, ctx: any) {
     // Continue searching for the lowest ancestor if not found yet
     if (!lowestAncestor) {
       // Check if ancestor identifier is provided in params or query
-      let lowestAncestorIdOrSlug = (ctx.req.param(ancestor.name) || ctx.req.param(`${ancestor.name}Id`) || ctx.req.query(ancestor.name) || ctx.req.query(`${ancestor.name}Id`))?.toLowerCase();
+      let lowestAncestorIdOrSlug = (
+        ctx.req.param(ancestor.name) ||
+        ctx.req.param(`${ancestor.name}Id`) ||
+        ctx.req.query(ancestor.name) ||
+        ctx.req.query(`${ancestor.name}Id`)
+      )?.toLowerCase();
 
       // If not found in params or query, check if it's provided in the request body
       if (!lowestAncestorIdOrSlug && payload) {

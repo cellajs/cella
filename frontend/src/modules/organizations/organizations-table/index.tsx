@@ -1,7 +1,7 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
-import { getOrganizations } from '~/api/organizations';
+import { useMemo, useState } from 'react';
+import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { Bird } from 'lucide-react';
@@ -9,19 +9,49 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
-import { inviteMember } from '~/api/memberships';
+import { inviteMembers } from '~/api/memberships';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
-import useSaveInSearchParams from '../../../hooks/use-save-in-search-params';
-import { DataTable } from '../../common/data-table';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import { DataTable } from '~/modules/common/data-table';
 import { useColumns } from './columns';
-import Toolbar from './toolbar';
+import { config } from 'config';
+import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
+import ColumnsView from '~/modules/common/data-table/columns-view';
+import Export from '~/modules/common/data-table/export';
+import TableCount from '~/modules/common/data-table/table-count';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import TableSearch from '~/modules/common/data-table/table-search';
+import { dialog } from '~/modules/common/dialoger/state';
+import { FocusView } from '~/modules/common/focus-view';
+import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
+import { sheet } from '~/modules/common/sheeter/state';
+import DeleteOrganizations from '~/modules/organizations/delete-organizations';
+import NewsletterForm from '~/modules/system/newsletter-form';
 
-export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
+type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
+
+export const organizationsQueryOptions = ({ q, sort: initialSort, order: initialOrder, limit }: GetOrganizationsParams) => {
+  const sort = initialSort || 'createdAt';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['organizations', q, sort, order],
+    initialPageParam: 0,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ pageParam: page, signal }) => await getOrganizations({ page, q, sort, order, limit }, signal),
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+  });
+};
 
 const LIMIT = 40;
 
@@ -34,55 +64,72 @@ const OrganizationsTable = () => {
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(
-    search.sort && search.order
-      ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
-      : [{ columnKey: 'createdAt', direction: 'DESC' }],
-  );
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
-  const debounceQuery = useDebounce(query, 300);
+  // Search query options
+  const q = useDebounce(query, 200);
+  const sort = sortColumns[0]?.columnKey as OrganizationsSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'];
+  const limit = LIMIT;
+
+  const selectedOrganizations = useMemo(() => {
+    return rows.filter((row) => selectedRows.has(row.id));
+  }, [rows, selectedRows]);
+
+  const openDeleteDialog = () => {
+    dialog(
+      <DeleteOrganizations
+        organizations={selectedOrganizations}
+        callback={(organizations) => {
+          callback(organizations, 'delete');
+          toast.success(t('common:success.delete_resources', { resources: t('common:organizations') }));
+        }}
+        dialog
+      />,
+      {
+        drawerOnMobile: false,
+        className: 'max-w-xl',
+        title: t('common:delete'),
+        text: t('common:confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
+      },
+    );
+  };
+
+  const openNewsletterSheet = () => {
+    sheet(<NewsletterForm sheet />, {
+      className: 'max-w-full lg:max-w-[900px]',
+      title: t('common:newsletter'),
+      text: t('common:newsletter.text'),
+      id: 'newsletter-form',
+    });
+  };
 
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q: debounceQuery,
-      sort: sortColumns[0]?.columnKey,
-      order: sortColumns[0]?.direction.toLowerCase(),
+      q,
+      sort,
+      order,
     }),
-    [debounceQuery, sortColumns],
+    [q, sort, order],
   );
-
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-  const queryResult = useInfiniteQuery({
-    queryKey: ['organizations', debounceQuery, sortColumns],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam, signal }) => {
-      const fetchedData = await getOrganizations(
-        {
-          page: pageParam,
-          q: debounceQuery,
-          sort: sortColumns[0]?.columnKey as OrganizationsSearch['sort'],
-          order: sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'],
-          limit: LIMIT,
-        },
-        signal,
-      );
-      return fetchedData;
-    },
-    getNextPageParam: (_lastGroup, groups) => groups.length,
-    refetchOnWindowFocus: false,
-  });
+  // Query organizations
+  const queryResult = useInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
 
-  const callback = useMutateInfiniteQueryData(['organizations', debounceQuery, sortColumns]);
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
+
+  const callback = useMutateInfiniteQueryData(['organizations', q, sort, order]);
   const [columns, setColumns] = useColumns(callback);
 
-  const onRowsChange = async (records: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
+  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
     // mutate member
     for (const index of indexes) {
-      const organization = records[index];
+      const organization = changedRows[index];
       if (column.key === 'userRole' && organization.membership?.role) {
-        inviteMember({
+        inviteMembers({
           idOrSlug: organization.id,
           emails: [user.email],
           role: organization.membership?.role,
@@ -98,46 +145,86 @@ const OrganizationsTable = () => {
       }
     }
 
-    setRows(records);
+    setRows(changedRows);
   };
 
-  const isFiltered = !!debounceQuery;
+  const isFiltered = !!q;
 
   const onResetFilters = () => {
     setQuery('');
     setSelectedRows(new Set<string>());
   };
 
-  useEffect(() => {
-    const data = queryResult.data?.pages?.flatMap((page) => page.items);
-
-    if (data) {
-      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
-      setRows(data);
-    }
-  }, [queryResult.data]);
+  useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">
-      <Toolbar
-        total={queryResult.data?.pages?.[0]?.total}
-        query={query}
-        setQuery={setQuery}
-        callback={callback}
-        isFiltered={isFiltered}
-        selectedOrganizations={rows.filter((row) => selectedRows.has(row.id))}
-        onResetFilters={onResetFilters}
-        onResetSelectedRows={() => setSelectedRows(new Set<string>())}
-        columns={columns}
-        setColumns={setColumns}
-        sort={sortColumns[0]?.columnKey as OrganizationsSearch['sort']}
-        order={sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order']}
-      />
+      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+          <FilterBarActions>
+            {selectedOrganizations.length > 0 ? (
+              <>
+                <Button onClick={openNewsletterSheet} className="relative">
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
+                  <Mailbox size={16} />
+                  <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
+                </Button>
+                <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
+                  <Trash size={16} />
+                  <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
+                </Button>
+                <Button variant="ghost" onClick={() => setSelectedRows(new Set<string>())}>
+                  <XSquare size={16} />
+                  <span className="ml-1">{t('common:clear')}</span>
+                </Button>
+              </>
+            ) : (
+              !isFiltered &&
+              user.role === 'ADMIN' && (
+                <Button
+                  onClick={() => {
+                    dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
+                      className: 'md:max-w-2xl',
+                      id: 'create-organization',
+                      title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
+                    });
+                  }}
+                >
+                  <Plus size={16} />
+                  <span className="ml-1">{t('common:create')}</span>
+                </Button>
+              )
+            )}
+            {selectedOrganizations.length === 0 && (
+              <TableCount count={totalCount} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            )}
+          </FilterBarActions>
+
+          <div className="sm:grow" />
+
+          <FilterBarContent>
+            <TableSearch value={query} setQuery={setQuery} />
+          </FilterBarContent>
+        </TableFilterBar>
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+        <Export
+          className="max-lg:hidden"
+          filename={`${config.slug}-organizations`}
+          columns={columns}
+          selectedRows={selectedOrganizations}
+          fetchRows={async (limit) => {
+            const { items } = await getOrganizations({ limit, q: query, sort, order });
+            return items;
+          }}
+        />
+        <FocusView iconOnly />
+      </div>
       <DataTable<Organization>
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          totalCount: queryResult.data?.pages[0].total,
+          totalCount,
           rowHeight: 42,
           rowKeyGetter: (row) => row.id,
           error: queryResult.error,
@@ -145,7 +232,7 @@ const OrganizationsTable = () => {
           isFetching: queryResult.isFetching,
           enableVirtualization: false,
           isFiltered,
-          limit: LIMIT,
+          limit,
           selectedRows,
           onRowsChange,
           fetchMore: queryResult.fetchNextPage,

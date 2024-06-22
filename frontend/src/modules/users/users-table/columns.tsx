@@ -1,48 +1,55 @@
 import { useTranslation } from 'react-i18next';
-import type { Member, User } from '~/types';
+import type { User } from '~/types';
 
+import { config } from 'config';
+import { UserRoundCheck } from 'lucide-react';
+import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { renderSelect } from '~/modules/common/data-table/select-column';
+import { sheet } from '~/modules/common/sheeter/state';
 import { AvatarWrap } from '../../common/avatar-wrap';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import RowEdit from './row-edit';
-import { isMember } from '.';
-import { config } from 'config';
-import { sheet } from '~/modules/common/sheeter/state';
 import { UserProfile } from '../user-profile';
-import { useState } from 'react';
+import UpdateRow from './update-row';
+import { Link } from '@tanstack/react-router';
 
-export const useColumns = <T extends User | Member>(
-  callback: (users: T[], action: 'create' | 'update' | 'delete') => void,
-  customColumns?: ColumnOrColumnGroup<T>[],
-) => {
+export const openUserPreviewSheet = (user: User) => {
+  sheet(<UserProfile user={user} />, {
+    className: 'max-w-full lg:max-w-[900px] p-0',
+    id: 'user-preview',
+  });
+};
+
+export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const openUserPreviewSheet = (user: User) => {
-    sheet(<UserProfile user={user} />, {
-      className: 'sm:max-w-full max-w-full w-[50vw]',
-      title: t('common:user_preview'),
-      id: 'user-preview',
-    });
-  };
-  const mobileColumns: ColumnOrColumnGroup<T>[] = [
+  const mobileColumns: ColumnOrColumnGroup<User>[] = [
     CheckboxColumn,
-    {
+   {
       key: 'name',
       name: t('common:name'),
       visible: true,
-      minWidth: 180,
       sortable: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <button className="flex space-x-2 items-center outline-0 ring-0 group" type="button" onClick={() => openUserPreviewSheet(row as User)}>
+      renderCell: ({ row, tabIndex }) => (
+        <Link
+          to="/user/$idOrSlug"
+          tabIndex={tabIndex}
+          params={{ idOrSlug: row.slug }}
+          className="flex space-x-2 items-center outline-0 ring-0 group"
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) return;
+            e.preventDefault();
+            openUserPreviewSheet(row);
+          }}
+        >
           <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
-        </button>
+        </Link>
       ),
     },
     {
@@ -50,12 +57,10 @@ export const useColumns = <T extends User | Member>(
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => (
-        <RowEdit user={row as User} tabIndex={tabIndex} callback={callback as (users: User[], action: 'delete' | 'update' | 'create') => void} />
-      ),
+      renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} callback={callback} />,
     },
   ];
-  const columns: ColumnOrColumnGroup<T>[] = [
+  const columns: ColumnOrColumnGroup<User>[] = [
     {
       key: 'email',
       name: t('common:email'),
@@ -82,7 +87,7 @@ export const useColumns = <T extends User | Member>(
       renderEditCell: (props) =>
         renderSelect({
           props,
-          options: isMember(props.row) ? config.rolesByType.entityRoles : config.rolesByType.systemRoles,
+          options: config.rolesByType.systemRoles,
           key: 'role',
         }),
     },
@@ -104,9 +109,21 @@ export const useColumns = <T extends User | Member>(
       renderCell: ({ row }) => dateShort(row.lastSeenAt),
       minWidth: 180,
     },
+    {
+      key: 'membershipCount',
+      name: 'Memberships',
+      sortable: false,
+      visible: true,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (
+        <>
+          <UserRoundCheck className="mr-2 opacity-50" size={16} />
+          {row.counts?.memberships | 0}
+        </>
+      ),
+      width: 140,
+    },
   ];
 
-  if (customColumns) columns.push(...customColumns);
-
-  return useState<ColumnOrColumnGroup<T>[]>(isMobile ? mobileColumns : [...mobileColumns, ...columns]);
+  return useState<ColumnOrColumnGroup<User>[]>(isMobile ? mobileColumns : [...mobileColumns, ...columns]);
 };

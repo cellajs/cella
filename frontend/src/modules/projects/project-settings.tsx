@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 import type { Project } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import { Button } from '../ui/button';
-import DeleteProjects from './delete-project';
-import UpdateProjectForm from './update-project';
+import DeleteProjects from './delete-projects';
+import UpdateProjectForm from './update-project-form';
 
 export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();

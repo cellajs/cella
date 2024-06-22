@@ -4,19 +4,20 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 
 import { config } from 'config';
+import { counts } from '../../lib/counts';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import organizationRoutesConfig from './routes';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
-import { counts } from '../../lib/counts';
+import organizationRoutesConfig from './routes';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const app = new CustomHono();
 
-// * Organization endpoints
+// Organization endpoints
 const organizationsRoutes = app
   /*
    * Create organization
@@ -45,19 +46,8 @@ const organizationsRoutes = app
 
     logEvent('Organization created', { organization: createdOrganization.id });
 
-    const [createdMembership] = await db
-      .insert(membershipsTable)
-      .values({
-        type: 'ORGANIZATION',
-        userId: user.id,
-        organizationId: createdOrganization.id,
-        role: 'ADMIN',
-      })
-      .returning();
-
-    logEvent('User added to organization', { user: user.id, organization: createdOrganization.id });
-
-    sendSSEToUsers([user.id], 'create_entity', { role: 'ADMIN', ...createdOrganization });
+    // Insert membership
+    const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: createdOrganization });
 
     return ctx.json(
       {
@@ -212,8 +202,12 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.type, 'ORGANIZATION'), eq(membershipsTable.organizationId, organization.id)));
 
     if (memberships.length > 0) {
-      const membersId = memberships.map((member) => member.id);
-      sendSSEToUsers(membersId, 'update_entity', updatedOrganization);
+      memberships.map((member) =>
+        sendSSEToUsers([member.id], 'update_entity', {
+          ...updatedOrganization,
+          membership: toMembershipInfo(memberships.find((m) => m.id === member.id)),
+        }),
+      );
     }
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
@@ -223,7 +217,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...updatedOrganization,
-          membership: toMembershipInfo(memberships.find((member) => member.id === user.id)),
+          membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
           counts: await counts('ORGANIZATION', organization.id),
         },
       },
@@ -240,7 +234,9 @@ const organizationsRoutes = app
     const [membership] = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id)));
+      .where(
+        and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'ORGANIZATION')),
+      );
 
     return ctx.json(
       {
@@ -259,30 +255,28 @@ const organizationsRoutes = app
    * Delete organizations by ids
    */
   .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
-    // * Extract allowed and disallowed ids
+    // Extract allowed and disallowed ids
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');
 
-    // * Map errors of workspaces user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) =>
-      createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: id }),
-    );
+    // Map errors of workspaces user is not allowed to delete
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: id }));
 
-    // * Get members
+    // Get members
     const organizationsMembers = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'ORGANIZATION'), inArray(membershipsTable.organizationId, allowedIds)));
 
-    // * Delete the organizations
+    // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
-    // * Send SSE events for the organizations that were deleted
+    // Send SSE events for the organizations that were deleted
     for (const id of allowedIds) {
-      // * Send the event to the user if they are a member of the organization
+      // Send the event to the user if they are a member of the organization
       if (organizationsMembers.length > 0) {
         const membersId = organizationsMembers.map((member) => member.id).filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', { id, type: 'ORGANIZATION' });
+        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'ORGANIZATION' });
       }
 
       logEvent('Organization deleted', { organization: id });

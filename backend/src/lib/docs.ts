@@ -37,9 +37,9 @@ const docs = (app: CustomHono) => {
     type: 'apiKey',
     in: 'cookie',
     name: `${config.slug}-session-v1`,
-    description: "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
+    description:
+      "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
-
 
   app.doc31('/openapi.json', {
     servers: [{ url: config.backendUrl }],

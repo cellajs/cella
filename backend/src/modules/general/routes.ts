@@ -1,21 +1,16 @@
 import { z } from '@hono/zod-openapi';
-import {
-  errorResponses,
-  successResponseWithDataSchema,
-  successResponseWithPaginationSchema,
-  successResponseWithoutDataSchema,
-} from '../../lib/common-responses';
-import { entityTypeSchema } from '../../lib/common-schemas';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '../../lib/common-responses';
+import { entityTypeSchema, slugSchema, tokenSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
-  acceptInviteJsonSchema,
-  apiMemberSchema,
-  apiPublicCountsSchema,
+  acceptInviteBodySchema,
+  membersSchema,
+  publicCountsSchema,
   checkTokenSchema,
-  getMembersQuerySchema,
-  inviteJsonSchema,
+  membersQuerySchema,
+  inviteBodySchema,
   suggestionsSchema,
 } from './schema';
 
@@ -31,7 +26,7 @@ class GeneralRoutesConfig {
         description: 'Public counts',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiPublicCountsSchema),
+            schema: successWithDataSchema(publicCountsSchema),
           },
         },
       },
@@ -62,7 +57,7 @@ class GeneralRoutesConfig {
         description: 'Upload token with a scope for a user or organization',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(z.string()),
+            schema: successWithDataSchema(z.string()),
           },
         },
       },
@@ -82,7 +77,7 @@ class GeneralRoutesConfig {
         content: {
           'application/json': {
             schema: z.object({
-              slug: z.string(),
+              slug: slugSchema,
             }),
           },
         },
@@ -93,7 +88,7 @@ class GeneralRoutesConfig {
         description: 'Slug is available',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -114,9 +109,7 @@ class GeneralRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              token: z.string(),
-            }),
+            schema: tokenSchema,
           },
         },
       },
@@ -126,7 +119,7 @@ class GeneralRoutesConfig {
         description: 'Token is valid',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(checkTokenSchema),
+            schema: successWithDataSchema(checkTokenSchema),
           },
         },
       },
@@ -134,7 +127,7 @@ class GeneralRoutesConfig {
     },
   });
 
-  public invite = createRouteConfig({
+  public createInvite = createRouteConfig({
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, isSystemAdmin],
@@ -146,7 +139,7 @@ class GeneralRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: inviteJsonSchema,
+            schema: inviteBodySchema,
           },
         },
       },
@@ -156,7 +149,7 @@ class GeneralRoutesConfig {
         description: 'Invitations are sent',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -173,13 +166,11 @@ class GeneralRoutesConfig {
     summary: 'Accept invitation',
     description: 'Accept invitation token',
     request: {
-      params: z.object({
-        token: z.string(),
-      }),
+      params: tokenSchema,
       body: {
         content: {
           'application/json': {
-            schema: acceptInviteJsonSchema,
+            schema: acceptInviteBodySchema,
           },
         },
       },
@@ -189,7 +180,7 @@ class GeneralRoutesConfig {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -224,7 +215,7 @@ class GeneralRoutesConfig {
         description: 'Paddle webhook received',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -232,7 +223,7 @@ class GeneralRoutesConfig {
     },
   });
 
-  public suggestionsConfig = createRouteConfig({
+  public getSuggestionsConfig = createRouteConfig({
     method: 'get',
     path: '/suggestions',
     guard: isAuthenticated,
@@ -250,7 +241,7 @@ class GeneralRoutesConfig {
         description: 'Suggestions',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(suggestionsSchema),
+            schema: successWithDataSchema(suggestionsSchema),
           },
         },
       },
@@ -266,14 +257,14 @@ class GeneralRoutesConfig {
     summary: 'Get list of members',
     description: 'Get members of an entity by id or slug. It returns members (users) with their role.',
     request: {
-      query: getMembersQuerySchema,
+      query: membersQuerySchema,
     },
     responses: {
       200: {
         description: 'Members',
         content: {
           'application/json': {
-            schema: successResponseWithPaginationSchema(apiMemberSchema),
+            schema: successWithPaginationSchema(membersSchema),
           },
         },
       },

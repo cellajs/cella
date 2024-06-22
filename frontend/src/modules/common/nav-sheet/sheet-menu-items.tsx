@@ -1,16 +1,14 @@
 import { Link } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { cn, sortById } from '~/lib/utils';
+import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenuItem } from '~/types';
-import type { MenuItem } from './sheet-menu-section';
 
 interface SheetMenuItemProps {
-  item: MenuItem;
+  item: UserMenuItem;
   type: ContextEntity;
   mainItemId?: string;
   className?: string;
@@ -19,12 +17,6 @@ interface SheetMenuItemProps {
 
 export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults }: SheetMenuItemProps) => {
   const { t } = useTranslation();
-  const isSmallScreen = useBreakpoints('max', 'lg');
-  const { keepMenuOpen, setSheet } = useNavigationStore();
-
-  const handleClick = () => {
-    if (isSmallScreen || !keepMenuOpen) setSheet(null);
-  };
 
   return (
     <Link
@@ -35,7 +27,6 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
         } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
         className,
       )}
-      onClick={handleClick}
       aria-label={item.name}
       to={type === 'ORGANIZATION' ? '/$idOrSlug' : '/workspace/$idOrSlug'}
       params={{ idOrSlug: mainItemId ? mainItemId : item.slug }}
@@ -52,11 +43,15 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
         <div className={`truncate ${mainItemId ? 'max-sm:pt-[6px] text-sm sm:-mb-1 sm:-mt-[2px]' : 'max-sm:pt-[10px] text-base'} leading-5`}>
           {item.name}
         </div>
-        <div className={`max-sm:hidden text-muted-foreground ${mainItemId ? 'text-xs' : 'text-sm'} font-light`}>
+        <div className={`max-sm:hidden text-muted-foreground ${mainItemId ? 'text-xs mt-[2px]' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {/* On new creation cant access role REDO */}
-            {item.submenu ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}` : item.membership.role ? t(item.membership.role.toLowerCase()) : ''}
+            {item.submenu
+              ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}`
+              : item.membership.role
+                ? t(item.membership.role.toLowerCase())
+                : ''}
           </span>
         </div>
       </div>
@@ -75,7 +70,7 @@ interface SheetMenuItemsProps {
 
 export const SheetMenuItems = ({ data, type, shownOption, createDialog, className, searchResults }: SheetMenuItemsProps) => {
   const { t } = useTranslation();
-  const { hideSubmenu, menuOrder } = useNavigationStore();
+  const { hideSubmenu } = useNavigationStore();
 
   const renderNoItems = () =>
     createDialog ? (
@@ -94,16 +89,14 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
     );
 
   const renderItems = () => {
-    const mainItemId = data[0].mainId;
     const filteredItems = data
       .filter((item) => (shownOption === 'archived' ? item.membership.archived : !item.membership.archived))
-      .sort((a, b) => sortById(a.id, b.id, mainItemId ? menuOrder[type].subList[mainItemId] : menuOrder[type].mainList));
-
+      .sort((a, b) => a.membership.order - b.membership.order);
     return (
       <>
         {filteredItems.map((item) => (
           <div key={item.id}>
-            <SheetMenuItem item={item} type={type} mainItemId={item.mainId} className={className} searchResults={searchResults} />
+            <SheetMenuItem item={item} type={type} mainItemId={item.parentId} className={className} searchResults={searchResults} />
             {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
               <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
             )}

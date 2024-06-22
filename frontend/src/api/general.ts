@@ -1,6 +1,6 @@
-import type { EntityType } from 'backend/types/common';
+import type { Entity } from 'backend/types/common';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
-import { type UploadParams, UploadType, type User, type ContextEntity } from '~/types';
+import { UploadType, type ContextEntity, type UploadParams, type User } from '~/types';
 import { apiClient, handleResponse } from '.';
 
 // Get public counts for about page
@@ -12,19 +12,12 @@ export const getPublicCounts = async () => {
 };
 
 // Get upload token to securely upload files with imado: https://imado.eu
-export const getUploadToken = async (
-  type: UploadType,
-  query: UploadParams = { public: false, organizationId: undefined },
-) => {
+export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
   const id = query.organizationId;
 
-  if (!id && type === UploadType.Organization) {
-    return console.error('Organization id required for organization uploads');
-  }
+  if (!id && type === UploadType.Organization) return console.error('Organization id required for organization uploads');
 
-  if (id && type === UploadType.Personal) {
-    return console.error('Personal uploads should be typed as personal');
-  }
+  if (id && type === UploadType.Personal) return console.error('Personal uploads should be typed as personal');
 
   const preparedQuery = {
     public: String(query.public),
@@ -37,13 +30,13 @@ export const getUploadToken = async (
   return json.data;
 };
 
-export interface InviteSystemProps {
+export interface SystemInviteProps {
   emails: string[];
-  role?: User['role'];
+  role: User['role'];
 }
 
 // Invite users
-export const invite = async (values: InviteSystemProps) => {
+export const invite = async (values: SystemInviteProps) => {
   const response = await apiClient.invite.$post({
     json: values,
   });
@@ -72,7 +65,7 @@ export const checkToken = async (token: string) => {
 };
 
 // Get suggestions
-export const getSuggestions = async (query: string, type?: EntityType | undefined) => {
+export const getSuggestions = async (query: string, type?: Entity | undefined) => {
   const response = await apiClient.suggestions.$get({
     query: { q: query, type },
   });
@@ -81,16 +74,14 @@ export const getSuggestions = async (query: string, type?: EntityType | undefine
   return json.data;
 };
 
-// Accept an invitation
-export const acceptInvite = async ({
-  token,
-  password,
-  oauth,
-}: {
+interface AcceptInviteProps {
   token: string;
   password?: string;
   oauth?: OauthProviderOptions | undefined;
-}) => {
+}
+
+// Accept an invitation
+export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps) => {
   const response = await apiClient.invite[':token'].$post({
     param: { token },
     json: { password, oauth },
@@ -105,9 +96,7 @@ type RequiredGetMembersParams = {
   entityType: ContextEntity;
 };
 
-type OptionalGetMembersParams = Partial<
-  Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>
-> & {
+type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
   limit?: number;
   page?: number;
 };

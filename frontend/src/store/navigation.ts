@@ -12,10 +12,9 @@ export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: 
 
 interface NavigationState {
   recentSearches: string[];
-  menuOrder: EntityConfig;
   setRecentSearches: (searchValue: string[]) => void;
   activeSheet: NavItem | null;
-  setSheet: (activeSheet: NavItem | null) => void;
+  setSheet: (activeSheet: NavItem | null, action?: 'force' | 'routeChange') => void;
   menu: UserMenu;
   keepMenuOpen: boolean;
   toggleKeepMenu: (status: boolean) => void;
@@ -28,9 +27,10 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   setFocusView: (status: boolean) => void;
-  archiveStateToggle: (itemId: string, active: boolean, mainId?: string | null) => void;
-  setMainMenuOrder: (entityType: ContextEntity, mainListOrder: string[]) => void;
-  setSubMenuOrder: (entityType: ContextEntity, mainId: string, subItemIds: string[]) => void;
+  archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => void;
+  finishedOnboarding: boolean;
+  setFinishedOnboarding: () => void;
+  clearNavigationStore: () => void;
 }
 
 const initialMenuState: UserMenu = menuSections
@@ -40,27 +40,38 @@ const initialMenuState: UserMenu = menuSections
     return acc;
   }, {} as UserMenu);
 
+const initStore = {
+  recentSearches: [] as string[],
+  activeSheet: null as NavItem | null,
+  keepMenuOpen: false,
+  hideSubmenu: false,
+  navLoading: false,
+  focusView: false,
+  menu: initialMenuState,
+  activeSections: {},
+  finishedOnboarding: false,
+};
+
 export const useNavigationStore = create<NavigationState>()(
   devtools(
     immer(
       persist(
         (set) => ({
-          menuOrder: {} as EntityConfig,
-          recentSearches: [] as string[],
-          activeSheet: null as NavItem | null,
-          keepMenuOpen: false as boolean,
-          hideSubmenu: false as boolean,
-          navLoading: false as boolean,
-          focusView: false as boolean,
-          menu: initialMenuState,
-          activeSections: {},
+          ...initStore,
           setRecentSearches: (searchValues: string[]) => {
             set((state) => {
               state.recentSearches = searchValues;
             });
           },
-          setSheet: (component) => {
+          setSheet: (component, action) => {
             set((state) => {
+              if (action === 'force') state.activeSheet = component;
+              if (action === 'routeChange') {
+                const shouldStayOpen = state.activeSheet?.id === 'menu' && state.keepMenuOpen;
+                const smallScreen = window.innerWidth < 1280;
+                if (!shouldStayOpen || smallScreen) state.activeSheet = null;
+                return;
+              }
               state.activeSheet = component;
             });
           },
@@ -95,9 +106,9 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections[section] = sectionState;
             });
           },
-          archiveStateToggle: (itemId: string, active: boolean, mainId?: string | null) => {
+          archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => {
             set((state) => {
-              if (!mainId) {
+              if (!parentId) {
                 for (const sectionKey of Object.keys(state.menu)) {
                   const section = state.menu[sectionKey as keyof UserMenu];
                   const itemIndex = section.findIndex((item) => item.id === itemId);
@@ -105,50 +116,29 @@ export const useNavigationStore = create<NavigationState>()(
                 }
               } else {
                 const section = state.menu.workspaces;
-                const workspace = section.find((item) => item.id === mainId);
+                const workspace = section.find((item) => item.id === parentId);
                 if (!workspace || !workspace.submenu) return;
                 const itemIndex = workspace.submenu.findIndex((item) => item.id === itemId);
                 if (itemIndex && itemIndex !== -1) workspace.submenu[itemIndex].membership.archived = active;
               }
             });
           },
-          setMainMenuOrder: (entityType: ContextEntity, mainListOrder: string[]) => {
+          setFinishedOnboarding: () => {
             set((state) => {
-              return {
-                ...state,
-                menuOrder: {
-                  ...state.menuOrder,
-                  [entityType]: { ...state.menuOrder[entityType], mainList: mainListOrder },
-                },
-              };
+              state.finishedOnboarding = true;
             });
           },
-          setSubMenuOrder: (entityType: ContextEntity, mainId: string, subItemIds: string[]) => {
-            set((state) => {
-              return {
-                menuOrder: {
-                  ...state.menuOrder,
-                  [entityType]: {
-                    ...state.menuOrder[entityType],
-                    subList: {
-                      ...state.menuOrder[entityType]?.subList,
-                      [mainId]: subItemIds,
-                    },
-                  },
-                },
-              };
-            });
-          },
+          clearNavigationStore: () => set(initStore, true),
         }),
         {
-          version: 1,
+          version: 2,
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
             keepMenuOpen: state.keepMenuOpen,
             hideSubmenu: state.hideSubmenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
-            menuOrder: state.menuOrder,
+            finishedOnboarding: state.finishedOnboarding,
           }),
           storage: createJSONStorage(() => localStorage),
         },

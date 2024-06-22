@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import type { EntityType } from 'backend/types/common';
+import type { Entity } from 'backend/types/common';
 import { config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -18,7 +18,7 @@ interface SlugFieldProps {
   nameValue?: string;
   description?: string;
   previousSlug?: string;
-  type: EntityType;
+  type: Entity;
 }
 
 export const SlugFormField = ({ control, label, previousSlug, description, nameValue, type }: SlugFieldProps) => {
@@ -36,7 +36,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const { mutate: checkAvailability } = useMutation({
     mutationFn: async (params: {
       slug: string;
-      type: EntityType;
+      type: Entity;
     }) => {
       return checkSlugAvailable(params);
     },
@@ -55,8 +55,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // Only show green ring if slug is valid
   const isValidSlug = (value: string) => {
     if (!value || value.trim().length < 2) return false;
-    const regex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    return regex.test(value) && !value.startsWith('-') && !value.endsWith('-') && value.replaceAll(' ', '') !== '';
+    return /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/.test(value);
   };
 
   // Check on change
@@ -80,7 +79,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   return (
     <InputFormField
       control={control}
-      name="slug"
+      name={'slug'}
       inputClassName={`
         ${isSlugAvailable === 'available' ? 'ring-2 focus-visible:ring-2 ring-green-500  focus-visible:ring-green-500' : ''} 
         ${isSlugAvailable === 'notAvailable' ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : ''}`}

@@ -1,3 +1,4 @@
+import { useLiveQuery } from 'electric-sql/react';
 import { FilterX, PanelTopClose, Plus, Settings, Tag, Trash, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -8,6 +9,7 @@ import BoardSearch from '~/modules/projects/board/header/board-search';
 import DisplayOptions from '~/modules/projects/board/header/display-options';
 import WorkspaceView from '~/modules/projects/board/header/view-options';
 import { Button } from '~/modules/ui/button';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { AvatarWrap } from '../../../common/avatar-wrap';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '../../../common/data-table/table-filter-bar';
@@ -16,8 +18,6 @@ import { TooltipButton } from '../../../common/tooltip-button';
 import { Badge } from '../../../ui/badge';
 import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
-import { useLiveQuery } from 'electric-sql/react';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 interface BoardHeaderProps {
   showPageHeader: boolean;
@@ -51,7 +51,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet workspace={workspace} />, {
-      className: 'sm:max-w-[52rem]',
+      className: 'max-w-full lg:max-w-[900px]',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),
       id: 'edit-workspace',
@@ -60,7 +60,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
 
   const openLabelsSheet = () => {
     sheet(<LabelsTable labels={labels} />, {
-      className: 'sm:max-w-[48rem]',
+      className: 'max-w-full lg:max-w-[900px]',
       title: t('common:manage_labels'),
       // text: '',
       id: 'workspace_settings',
@@ -127,11 +127,6 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
                   <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
                 </Button>
               </TooltipButton>
-              <TooltipButton toolTipContent={t('common:workspace_settings')}>
-                <Button variant="outline" onClick={openSettingsSheet}>
-                  <Settings size={16} />
-                </Button>
-              </TooltipButton>
             </div>
           )}
         </FilterBarActions>
@@ -171,6 +166,11 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
           <BoardSearch />
         </FilterBarContent>
       </TableFilterBar>
+      <TooltipButton toolTipContent={t('common:workspace_settings')}>
+        <Button variant="outline" onClick={openSettingsSheet}>
+          <Settings size={16} />
+        </Button>
+      </TooltipButton>
       <WorkspaceView className="max-sm:hidden" />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />

@@ -61,7 +61,7 @@ export const WorkspaceSettings = ({ workspace, sheet: isSheet }: { workspace: Wo
         <CardHeader>
           <CardTitle>{t('common:delete_resource', { resource: t('common:workspace').toLowerCase() })}</CardTitle>
           <CardDescription>
-            <Trans i18nKey={'common:delete_resource_notice.text'} values={{ name: workspace.name, resource: t('common:workspace').toLowerCase() }} />
+            <Trans i18nKey={'common:delete_workspace_notice.text'} values={{ name: workspace.name, resource: t('common:workspace').toLowerCase() }} />
           </CardDescription>
         </CardHeader>
         <CardContent>

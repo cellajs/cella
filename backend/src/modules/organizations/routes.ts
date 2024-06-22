@@ -1,13 +1,8 @@
-import {
-  errorResponses,
-  successResponseWithDataSchema,
-  successResponseWithErrorsSchema,
-  successResponseWithPaginationSchema,
-} from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '../../lib/common-responses';
+import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
-import { apiOrganizationSchema, createOrganizationJsonSchema, getOrganizationsQuerySchema, updateOrganizationJsonSchema } from './schema';
+import { organizationSchema, createOrganizationBodySchema, getOrganizationsQuerySchema, updateOrganizationBodySchema } from './schema';
 
 class OrganizationRoutesConfig {
   public createOrganization = createRouteConfig({
@@ -22,7 +17,7 @@ class OrganizationRoutesConfig {
         required: true,
         content: {
           'application/json': {
-            schema: createOrganizationJsonSchema,
+            schema: createOrganizationBodySchema,
           },
         },
       },
@@ -32,7 +27,7 @@ class OrganizationRoutesConfig {
         description: 'Organization was createRouteConfigd',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiOrganizationSchema),
+            schema: successWithDataSchema(organizationSchema),
           },
         },
       },
@@ -55,7 +50,7 @@ class OrganizationRoutesConfig {
         description: 'Organizations',
         content: {
           'application/json': {
-            schema: successResponseWithPaginationSchema(apiOrganizationSchema),
+            schema: successWithPaginationSchema(organizationSchema),
           },
         },
       },
@@ -75,7 +70,7 @@ class OrganizationRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateOrganizationJsonSchema,
+            schema: updateOrganizationBodySchema,
           },
         },
       },
@@ -85,7 +80,7 @@ class OrganizationRoutesConfig {
         description: 'Organization was updated',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiOrganizationSchema),
+            schema: successWithDataSchema(organizationSchema),
           },
         },
       },
@@ -108,7 +103,7 @@ class OrganizationRoutesConfig {
         description: 'Organization',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiOrganizationSchema),
+            schema: successWithDataSchema(organizationSchema),
           },
         },
       },
@@ -124,14 +119,14 @@ class OrganizationRoutesConfig {
     summary: 'Delete organizations',
     description: 'Delete organizations by ids.',
     request: {
-      query: deleteByIdsQuerySchema,
+      query: idsQuerySchema,
     },
     responses: {
       200: {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successResponseWithErrorsSchema(),
+            schema: successWithErrorsSchema(),
           },
         },
       },

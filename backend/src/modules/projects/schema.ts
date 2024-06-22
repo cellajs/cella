@@ -2,40 +2,28 @@ import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { projectsTable } from '../../db/schema/projects';
-import {
-  colorSchema,
-  countsSchema,
-  idSchema,
-  nameSchema,
-  paginationQuerySchema,
-  validSlugSchema,
-} from '../../lib/common-schemas';
+import { colorSchema, membershipsCountSchema, idSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
-export const apiProjectSchema = z.object({
+export const projectSchema = z.object({
   ...createSelectSchema(projectsTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
   membership: membershipInfoSchema.nullable(),
   workspaceId: z.string().nullish(),
-  counts: countsSchema,
+  counts: membershipsCountSchema,
 });
 
-export const createProjectJsonSchema = z.object({
+export const createProjectBodySchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
   color: colorSchema,
   organizationId: idSchema,
-  workspaceId: idSchema.optional(),
 });
 
-export const apiUserProjectSchema = z.array(
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    createdAt: z.string(),
-  }),
-);
+export const createProjectQuerySchema = z.object({
+  workspaceId: idSchema.optional(),
+});
 
 export const getProjectsQuerySchema = paginationQuerySchema.merge(
   z.object({
@@ -46,12 +34,18 @@ export const getProjectsQuerySchema = paginationQuerySchema.merge(
   }),
 );
 
-export const updateProjectJsonSchema = createInsertSchema(projectsTable, {
+export const updateProjectBodySchema = createInsertSchema(projectsTable, {
   slug: validSlugSchema,
   name: nameSchema,
   color: colorSchema,
-}).pick({
-  slug: true,
-  name: true,
-  color: true,
-});
+})
+  .pick({
+    slug: true,
+    name: true,
+    color: true,
+  })
+  .merge(
+    z.object({
+      workspaceId: idSchema,
+    }),
+  );

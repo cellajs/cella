@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { cn, nanoid } from '~/lib/utils';
 
 export type PageNavTab = {
   id: string;
@@ -19,9 +20,10 @@ interface Props {
     name: string;
   };
   tabs: PageNavTab[];
+  className?: string;
 }
 
-export const PageNav = ({ title, avatar, tabs }: Props) => {
+export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
   const { t } = useTranslation();
   const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
@@ -58,7 +60,7 @@ export const PageNav = ({ title, avatar, tabs }: Props) => {
   return (
     <>
       <div id="tabs-position" ref={inViewRef} />
-      <div className="flex justify-center border-b sticky top-0 bg-background/75 backdrop-blur-sm z-[80]" ref={tabsRef}>
+      <div className={cn('flex justify-center border-b sticky top-0 bg-background/75 backdrop-blur-sm z-[80]', className)} ref={tabsRef}>
         <div className="hidden" ref={nameRef}>
           <div className="absolute left-0 h-full flex items-center">
             {avatar && <AvatarWrap className="m-2 h-8 w-8" type="ORGANIZATION" id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
@@ -73,7 +75,7 @@ export const PageNav = ({ title, avatar, tabs }: Props) => {
             className="relative p-2 lg:px-4"
             to={path}
             params={true}
-            activeOptions={{ exact: true, includeSearch: false }}
+            activeOptions={{ exact: true, includeSearch: true }}
             onClick={updateScrollPosition}
           >
             {({ isActive }) => (
@@ -81,8 +83,7 @@ export const PageNav = ({ title, avatar, tabs }: Props) => {
                 {t(label)}
                 {isActive && (
                   <motion.div
-                    layoutId={`page-nav-underline-${title}`}
-                    key={`page-nav-underline-${title}`}
+                    key={nanoid()}
                     transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
                     className="h-1 bg-primary w-full absolute bottom-0 left-0"
                   />

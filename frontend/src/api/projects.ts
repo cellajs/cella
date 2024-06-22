@@ -7,8 +7,9 @@ export type CreateProjectParams = Parameters<(typeof client)['$post']>['0']['jso
 };
 
 // Create a new project
-export const createProject = async ({ ...rest }: CreateProjectParams) => {
+export const createProject = async (workspaceId: string, { ...rest }: CreateProjectParams) => {
   const response = await client.$post({
+    query: { workspaceId },
     json: rest,
   });
 

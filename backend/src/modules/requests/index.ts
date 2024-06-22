@@ -9,7 +9,7 @@ import requestsRoutesConfig from './routes';
 
 const app = new CustomHono();
 
-// * Requests endpoints
+// Requests endpoints
 const requestsRoutes = app
   /*
    *  Create request
@@ -66,9 +66,9 @@ const requestsRoutes = app
       order,
     );
 
-    const requests = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
-    return ctx.json({ success: true, data: { items: requests, total } }, 200);
+    return ctx.json({ success: true, data: { items, total } }, 200);
   });
 
 export default requestsRoutes;

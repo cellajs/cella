@@ -65,7 +65,7 @@ export function Sheeter() {
     return (
       <Sheet key={sheet.id} open={open} onOpenChange={onOpenChange(sheet)} modal={true}>
         <SheetPortal>
-          <SheetContent className={`${sheet.className} items-start`}>
+          <SheetContent className={`${existingSheet?.className ? existingSheet.className : sheet.className} items-start`}>
             {sheet.title && (
               <StickyBox className="z-10 flex items-center justify-between bg-background py-4">
                 {existingSheet?.title ? (
@@ -84,7 +84,7 @@ export function Sheeter() {
                 <SheetDescription>{sheet.text}</SheetDescription>
               </SheetHeader>
             )}
-            {sheet.content}
+            {existingSheet?.content ? existingSheet.content : sheet.content}
           </SheetContent>
         </SheetPortal>
       </Sheet>

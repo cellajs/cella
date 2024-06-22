@@ -3,7 +3,7 @@ import { Check, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { inviteMember as baseInvite, removeMembers } from '~/api/memberships';
+import { inviteMembers as baseInvite, removeMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { useUserStore } from '~/store/user';
 import type { Workspace } from '~/types';
@@ -23,7 +23,7 @@ const WorkspaceJoinLeaveButton = ({ workspace }: Props) => {
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(workspace.slug));
 
   // ADD invite to workspace
-  const { mutate: inviteMember } = useMutation({
+  const { mutate: inviteMembers } = useMutation({
     mutationFn: baseInvite,
     onSuccess: () => {
       workspaceQuery.refetch();
@@ -40,7 +40,7 @@ const WorkspaceJoinLeaveButton = ({ workspace }: Props) => {
   });
 
   const onJoin = () => {
-    inviteMember({
+    inviteMembers({
       emails: [user.email],
       role: 'MEMBER',
       entityType: 'WORKSPACE',

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { signInJsonSchema } from 'backend/modules/auth/schema';
+import { authBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
@@ -9,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { config } from 'config';
 import { t } from 'i18next';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -20,9 +21,8 @@ import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types';
 import type { TokenData } from '.';
-import { config } from 'config';
 
-const formSchema = signInJsonSchema;
+const formSchema = authBodySchema;
 
 export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: string) => void }) => {
   const { t } = useTranslation();
@@ -33,29 +33,15 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
 
   const { mutate: signIn, isPending } = useMutation({
     mutationFn: baseSignIn,
-    onSuccess: (result) => {
-      if (!result.emailVerified) {
-        navigate({
-          to: '/auth/verify-email',
-          replace: true,
-        });
-
-        return;
-      }
-
-      setUser(result as MeUser);
+    onSuccess: (signedInUser) => {
+      setUser(signedInUser as MeUser);
 
       // Redirect to the invite page if token is present
       // Otherwise, redirect to a redirect URL or to home
       const to = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
+      const params = { token: tokenData?.token };
 
-      navigate({
-        to,
-        replace: true,
-        params: {
-          token: tokenData?.token,
-        },
-      });
+      navigate({ to, params, replace: true });
     },
   });
 
@@ -68,10 +54,8 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    signIn({
-      ...values,
-      token: tokenData?.token,
-    });
+    const token = tokenData?.token;
+    signIn({ ...values, token });
   };
 
   const cancel = () => {
@@ -80,9 +64,7 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   };
 
   useEffect(() => {
-    if (tokenData?.email) {
-      form.setValue('email', tokenData.email);
-    }
+    if (tokenData?.email) form.setValue('email', tokenData.email);
   }, [tokenData]);
 
   return (
@@ -146,11 +128,20 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
   });
 
   const handleResetRequestSubmit = () => {
+    // TODO maybe find a better way
+    dialog.update('send-reset-password', {
+      content: (
+        <div>
+          <Input type="email" className="mb-4" defaultValue={email} />
+          <Button className="w-full" loading={true} />
+        </div>
+      ),
+    });
     sendResetPasswordEmail(resetEmailRef.current);
   };
 
   const openDialog = () => {
-    return dialog(
+    dialog(
       <div>
         <Input
           type="email"
@@ -169,6 +160,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
         </Button>
       </div>,
       {
+        id: 'send-reset-password',
         className: 'md:max-w-xl',
         title: t('common:reset_password'),
         text: t('common:reset_password.text'),

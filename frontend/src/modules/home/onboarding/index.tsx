@@ -3,13 +3,13 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
-import { Step, type StepItem, Stepper, useStepper } from '~/modules/common/stepper';
+import { Step, type StepItem, Stepper } from '~/modules/common/stepper';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { EntityPage, Organization } from '~/types';
+import type { Organization } from '~/types';
 import InviteUsers from '../../users/invite-users';
 import StepperFooter from './footer';
 import { OnboardingStart } from './start';
@@ -28,7 +28,6 @@ interface OnboardingProps {
 }
 
 const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) => {
-  const { nextStep } = useStepper();
   const [steps, setSteps] = useState(onDefaultBoardingSteps);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const { hasStarted } = useMounted();
@@ -40,7 +39,6 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
 
   const onCreateOrganization = (organization: Organization) => {
     setOrganization(organization);
-    nextStep?.();
   };
 
   useEffect(() => {
@@ -76,9 +74,8 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
                           <StepperFooter setOnboarding={setOnboarding} />
                         </CreateOrganizationForm>
                       )}
-                      {id === 'invitation' && organization &&  (
-                        // TODO: Fix this
-                        <InviteUsers entity={organization as unknown as EntityPage} mode="email">
+                      {id === 'invitation' && organization && (
+                        <InviteUsers entity={organization} mode="email">
                           <StepperFooter organization={organization} setOnboarding={setOnboarding} />
                         </InviteUsers>
                       )}

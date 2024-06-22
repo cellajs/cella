@@ -1,16 +1,16 @@
-import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
+import { config } from 'config';
 import { Shield, UserRound } from 'lucide-react';
-import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
-import { AvatarWrap } from '../../common/avatar-wrap';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
+import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
+import type { Project } from '~/types';
+import { AvatarWrap } from '../../common/avatar-wrap';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import type { Project } from '~/types';
 import { renderSelect } from '../../common/data-table/select-column';
-import { config } from 'config';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -49,7 +49,7 @@ export const useColumns = () => {
           {
             key: 'userRole',
             name: t('common:role'),
-            sortable: true,
+            sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role.toLowerCase()) : '-'),

@@ -4,8 +4,8 @@ import React, { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import router from '~/lib/router';
 import { Input } from '~/modules/ui/input';
-import { TableFilterBarContext } from '../../../common/data-table/table-filter-bar';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
+import { TableFilterBarContext } from '../../../common/data-table/table-filter-bar';
 
 const BoardSearch = () => {
   const { t } = useTranslation();

@@ -6,8 +6,6 @@ import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
 import { FocusViewContainer } from '../common/focus-view';
 import JoinLeaveButton from './join-leave-button';
-import { EntityContext } from '~/modules/common/entity-context';
-import type { EntityPage } from '~/types';
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
@@ -24,12 +22,11 @@ const OrganizationPage = () => {
   const { idOrSlug } = useParams({ from: OrganizationRoute.id });
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
-
-  const tabs = organization.membership?.role === 'ADMIN' ? organizationTabs : [organizationTabs[0]];
+  const isAdmin = organization.membership?.role === 'ADMIN';
+  const tabs = isAdmin ? organizationTabs : [organizationTabs[0]];
 
   return (
-    // TODO clean this line
-    <EntityContext.Provider value={{ entity: organization as unknown as EntityPage, organization: organization }}>
+    <>
       <PageHeader
         id={organization.id}
         title={organization.name}
@@ -46,7 +43,7 @@ const OrganizationPage = () => {
       <FocusViewContainer className="container min-h-screen mt-4">
         <Outlet />
       </FocusViewContainer>
-    </EntityContext.Provider>
+    </>
   );
 };
 

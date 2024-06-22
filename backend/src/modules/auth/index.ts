@@ -44,7 +44,7 @@ const app = new CustomHono();
 type CheckTokenResponse = z.infer<(typeof generalRouteConfig.checkToken.responses)['200']['content']['application/json']['schema']> | undefined;
 type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
-// * Authentication endpoints
+// Authentication endpoints
 const authRoutes = app
   /*
    * Check if email exists
@@ -70,7 +70,7 @@ const authRoutes = app
       tokenData = data?.data;
     }
 
-    // * hash password
+    // hash password
     const hashedPassword = await new Argon2id().hash(password);
     const userId = nanoid();
 
@@ -78,7 +78,7 @@ const authRoutes = app
 
     const isEmailVerified = tokenData?.email === email;
 
-    // * create user and send verification email
+    // create user and send verification email
     await handleCreateUser(
       ctx,
       {
@@ -94,12 +94,7 @@ const authRoutes = app
       },
     );
 
-    return ctx.json(
-      {
-        success: true,
-      },
-      200,
-    );
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Send verification email
@@ -110,7 +105,7 @@ const authRoutes = app
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
 
-    // * creating email verification token
+    // creating email verification token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
     const token = generateId(40);
     await db.insert(tokensTable).values({
@@ -123,7 +118,7 @@ const authRoutes = app
 
     const emailLanguage = user?.language || config.defaultLanguage;
 
-    // * generating email html
+    // generating email html
     const emailHtml = render(
       VerificationEmail({
         i18n: i18n.cloneInstance({
@@ -147,9 +142,9 @@ const authRoutes = app
 
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
 
-    // * If the token is not found or expired
+    // If the token is not found or expired
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
-      // * If 'resend' is true and the token has an email we will resend the email
+      // If 'resend' is true and the token has an email we will resend the email
       if (resend === 'true' && token && token.email) {
         sendVerificationEmail(token.email);
 
@@ -167,9 +162,9 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
-    // * If the user is not found or the email is different from the token email
+    // If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) {
-      // * If 'resend' is true and the token has an email we will resend the email
+      // If 'resend' is true and the token has an email we will resend the email
       if (resend === 'true' && token && token.email) {
         sendVerificationEmail(token.email);
 
@@ -201,7 +196,7 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'invalid_email', 'warn');
     }
 
-    // * creating password reset token
+    // creating password reset token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
     const token = generateId(40);
     await db.insert(tokensTable).values({
@@ -214,7 +209,7 @@ const authRoutes = app
 
     const emailLanguage = user?.language || config.defaultLanguage;
 
-    // * generating email html
+    // generating email html
     const emailHtml = render(
       ResetPasswordEmail({
         i18n: i18n.cloneInstance({
@@ -240,22 +235,22 @@ const authRoutes = app
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
-    // * If the token is not found or expired
+    // If the token is not found or expired
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
       return errorResponse(ctx, 400, 'invalid_token', 'warn');
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
-    // * If the user is not found or the email is different from the token email
+    // If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { userId: token.userId });
 
     await auth.invalidateUserSessions(user.id);
 
-    // * hash password
+    // hash password
     const hashedPassword = await new Argon2id().hash(password);
 
-    // * update user password and set email verified
+    // update user password and set email verified
     await db.update(usersTable).set({ hashedPassword, emailVerified: true }).where(eq(usersTable.id, user.id));
 
     // Sign in user
@@ -279,24 +274,21 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    // * If the user is not found or signed up with oauth
-    if (!user || !user.hashedPassword) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
-    }
+    // If the user is not found or signed up with oauth
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
+    if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
 
-    if (!validPassword) {
-      return errorResponse(ctx, 400, 'invalid_password', 'warn');
-    }
+    if (!validPassword) return errorResponse(ctx, 400, 'invalid_password', 'warn');
 
     const isEmailVerified = user.emailVerified || tokenData?.email === user.email;
 
-    // * send verify email first
+    // send verify email first
     if (!isEmailVerified) {
       sendVerificationEmail(email);
 
-      // return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
+      // TODO return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
       // return ctx.json({}, 302, {
       //   Location: `${config.frontendUrl}/auth/verify-email`,
       // });
@@ -304,13 +296,7 @@ const authRoutes = app
       await setSessionCookie(ctx, user.id, 'password');
     }
 
-    return ctx.json(
-      {
-        success: true,
-        data: transformDatabaseUser(user),
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: transformDatabaseUser(user) }, 200);
   })
   /*
    * Sign out
@@ -384,7 +370,7 @@ const authRoutes = app
 
     const stateCookie = getCookie(ctx, 'oauth_state');
 
-    // * verify state
+    // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
       // t('common:error.invalid_state.text')
       return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'github' });
@@ -395,7 +381,7 @@ const authRoutes = app
     try {
       const { accessToken } = await githubAuth.validateAuthorizationCode(code);
 
-      // * Get user info from github
+      // Get user info from github
       const githubUserResponse = await fetch('https://api.github.com/user', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -434,7 +420,7 @@ const authRoutes = app
         twitter_username?: string | null;
       } = await githubUserResponse.json();
 
-      // * Check if oauth account already exists
+      // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount('GITHUB', String(githubUser.id));
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
@@ -442,7 +428,7 @@ const authRoutes = app
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
-      // * Get user emails from github
+      // Get user emails from github
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -464,7 +450,7 @@ const authRoutes = app
       const slug = slugify(githubUser.login, { lower: true });
       const { firstName, lastName } = splitFullName(githubUser.name || slug);
 
-      // * Check if user has an invite token
+      // Check if user has an invite token
       const inviteToken = getCookie(ctx, 'oauth_invite_token');
 
       deleteCookie(ctx, 'oauth_invite_token');
@@ -475,7 +461,7 @@ const authRoutes = app
       if (inviteToken) {
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
 
-        // * If token is invalid or expired
+        // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
           return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
             strategy: 'github',
@@ -486,7 +472,7 @@ const authRoutes = app
         userEmail = token.email;
       }
 
-      // * Check if user already exists
+      // Check if user already exists
       const [existingUser] = await findUserByEmail(userEmail);
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'GITHUB', {
@@ -505,7 +491,7 @@ const authRoutes = app
 
       const userId = nanoid();
       const redirectNewUserUrl = getRedirectUrl(ctx, true);
-      // * Create new user and oauth account
+      // Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
@@ -530,7 +516,7 @@ const authRoutes = app
         },
       );
     } catch (error) {
-      // * Handle invalid credentials
+      // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
         // t('common:error.invalid_credentials.text')
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'github' });
@@ -550,7 +536,7 @@ const authRoutes = app
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
 
-    // * verify state
+    // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
       return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'google' });
     }
@@ -560,7 +546,7 @@ const authRoutes = app
     try {
       const { accessToken } = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
 
-      // * Get user info from google
+      // Get user info from google
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -575,7 +561,7 @@ const authRoutes = app
         locale: string;
       } = await response.json();
 
-      // * Check if oauth account already exists
+      // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount('GOOGLE', user.sub);
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
@@ -583,7 +569,7 @@ const authRoutes = app
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
-      // * Check if user already exists
+      // Check if user already exists
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'GOOGLE', {
@@ -602,7 +588,7 @@ const authRoutes = app
 
       const userId = nanoid();
       const redirectNewUserUrl = getRedirectUrl(ctx, true);
-      // * Create new user and oauth account
+      // Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
@@ -625,7 +611,7 @@ const authRoutes = app
         },
       );
     } catch (error) {
-      // * Handle invalid credentials
+      // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'google' });
       }
@@ -645,7 +631,7 @@ const authRoutes = app
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
 
-    // * verify state
+    // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
       return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'microsoft' });
     }
@@ -655,7 +641,7 @@ const authRoutes = app
     try {
       const { accessToken } = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
 
-      // * Get user info from microsoft
+      // Get user info from microsoft
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -668,7 +654,7 @@ const authRoutes = app
         email: string | undefined;
       } = await response.json();
 
-      // * Check if oauth account already exists
+      // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount('MICROSOFT', user.sub);
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
@@ -680,7 +666,7 @@ const authRoutes = app
         return errorResponse(ctx, 400, 'no_email_found', 'warn', undefined);
       }
 
-      // * Check if user already exists
+      // Check if user already exists
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'MICROSOFT', {
@@ -699,7 +685,7 @@ const authRoutes = app
 
       const userId = nanoid();
       const redirectNewUserUrl = getRedirectUrl(ctx, true);
-      // * Create new user and oauth account
+      // Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
@@ -722,7 +708,7 @@ const authRoutes = app
         },
       );
     } catch (error) {
-      // * Handle invalid credentials
+      // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'microsoft' });
       }

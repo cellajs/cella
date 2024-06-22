@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
 import { logEvent, logtail } from '../middlewares/logger/log-event';
-import type { EntityType } from '../types/common';
+import type { Entity } from '../types/common';
 import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
 
@@ -25,7 +25,7 @@ export const createError = (
   status: HttpErrorStatus,
   type: string,
   severity: Severity = 'info',
-  entityType?: EntityType,
+  entityType?: Entity,
   eventData?: EventData,
   err?: Error,
 ) => {
@@ -66,7 +66,7 @@ export const errorResponse = (
   status: HttpErrorStatus,
   type: string,
   severity: Severity = 'info',
-  entityType?: EntityType,
+  entityType?: Entity,
   eventData?: EventData,
   err?: Error,
 ) => {

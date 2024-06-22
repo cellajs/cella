@@ -1,38 +1,45 @@
 import { Menu, Undo } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
 import { useTranslation } from 'react-i18next';
 import { createProject } from '~/api/projects';
 import { createWorkspace } from '~/api/workspaces';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { useNavigationStore } from '~/store/navigation';
-import { useUserStore } from '~/store/user';
+import type { UserMenuItem } from '~/types';
+import { addMenuItem } from '~/lib/utils';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
-  const { menu, setSheet, setSection } = useNavigationStore();
+  const { menu, setSheet, setSection, finishedOnboarding, setFinishedOnboarding } = useNavigationStore();
   const [isExploding, _] = useState(true);
-  const { finishOnboarding, completeOnboarding } = useUserStore();
+  const effectRan = useRef(false);
 
   useEffect(() => {
+    // If already run, exit
+    if (effectRan.current || finishedOnboarding) return;
+    effectRan.current = true;
     const sortedOrganizations = [...menu.organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const lastCreatedOrganization = sortedOrganizations[0];
 
-    if (finishOnboarding || !lastCreatedOrganization) return;
-
+    if (!lastCreatedOrganization) return;
     createWorkspace({
       name: 'Demo workspace',
       slug: `${lastCreatedOrganization.slug}-workspace`,
       organizationId: lastCreatedOrganization.id,
-    }).then((workspace) => {
+    }).then((createdWorkspace) => {
+      useNavigationStore.setState({ menu: addMenuItem(createdWorkspace as UserMenuItem, 'workspaces') });
       for (let i = 3; i !== 0; i--) {
         const namingArr = ['one', 'two', 'three'];
-        createProject({
+        createProject(createdWorkspace.id, {
           name: `Demo project ${namingArr[i - 1]}`,
           slug: `${lastCreatedOrganization.slug}-project-${i}`,
           organizationId: lastCreatedOrganization.id,
-          workspaceId: workspace.id,
           color: '#000000',
+        }).then((createdProject) => {
+          useNavigationStore.setState({
+            menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
+          });
         });
       }
     });
@@ -41,19 +48,19 @@ export const OnboardingCompleted = () => {
     setTimeout(
       () => {
         setSheet({ id: 'menu', sheet: <SheetMenu />, icon: Menu });
-        completeOnboarding();
+        setFinishedOnboarding();
       },
-      finishOnboarding ? 500 : 4000,
+      finishedOnboarding ? 500 : 4000,
     );
   }, []);
 
   return (
     <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-[1] max-w-[700px]">
-      {isExploding && !finishOnboarding && (
+      {isExploding && !finishedOnboarding && (
         <ConfettiExplosion zIndex={0} duration={5000} force={0.8} particleCount={250} height={'100vh'} width={1500} />
       )}
 
-      {finishOnboarding && (
+      {finishedOnboarding && (
         <Undo size={400} strokeWidth={0.1} className="max-xl:hidden scale-y-75 -mt-40 -mb-12 -translate-x-32 text-primary rotate-[30deg]" />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>

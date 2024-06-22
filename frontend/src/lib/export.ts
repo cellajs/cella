@@ -37,11 +37,7 @@ const filterColumns = (column: Column) => {
   return false;
 };
 // Export table data to CSV
-export async function exportToCsv<R>(
-  columns: { key: string; name: ReactElement | string }[],
-  rows: R[],
-  fileName: string,
-) {
+export async function exportToCsv<R>(columns: { key: string; name: ReactElement | string }[], rows: R[], fileName: string) {
   if (!rows.length) return;
 
   const preparedColumns = columns.filter((column) => filterColumns(column));

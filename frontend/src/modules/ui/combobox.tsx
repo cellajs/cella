@@ -102,7 +102,7 @@ const Combobox: React.FC<ComboboxProps> = ({
 
           <CommandList>
             <CommandEmpty>No option found</CommandEmpty>
-            <ScrollArea className="max-h-[30vh] h-fit overflow-y-auto">
+            <ScrollArea className="max-h-[30vh] h-[30vh] overflow-y-auto">
               <CommandGroup>
                 {options.map((option) => (
                   <CommandItem

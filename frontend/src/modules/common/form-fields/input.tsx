@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState, useRef } from 'react';
 import { type Control, type FieldValues, type Path, useFormContext } from 'react-hook-form';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -43,15 +43,18 @@ const InputFormField = <TFieldValues extends FieldValues>({
   const { setFocus } = useFormContext();
   const [prefixPadding, setPrefixPadding] = useState('12px');
   const [subComponentPadding, setSubComponentPadding] = useState('12px');
+  const prefixRef = useRef<HTMLSpanElement>(null);
+  const subComponentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (prefix) {
-      const spanPrefix = document.querySelector(`#${name.toString()}-prefix`);
-      if (prefix && spanPrefix && 'offsetWidth' in spanPrefix) setPrefixPadding(`${Number(spanPrefix.offsetWidth) + 16}px`);
+    if (prefix && prefixRef.current) {
+      const prefixRefWidth = prefixRef.current.offsetWidth;
+      const prefixWidth = prefixRefWidth === 0 ? prefix.length * 6 : prefixRefWidth;
+      setPrefixPadding(`${prefixWidth + 16}px`);
     }
-    if (subComponent) {
-      const elSubComponent = document.querySelector('#slug-subComponent');
-      if (subComponent && elSubComponent && 'offsetWidth' in elSubComponent) setSubComponentPadding(`${Number(elSubComponent.offsetWidth)}px`);
+    if (subComponent && subComponentRef.current?.children[0]) {
+      const element = subComponentRef.current?.children[0] as HTMLElement;
+      setSubComponentPadding(`${element.offsetWidth + 6}px`);
     }
   }, [subComponent, prefix]);
 
@@ -75,9 +78,9 @@ const InputFormField = <TFieldValues extends FieldValues>({
               {(prefix || icon) && (
                 // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
                 <span
-                  id={`${name.toString()}-prefix`}
+                  ref={prefixRef}
                   onClick={prefixClick}
-                  className="absolute font-light top-3 left-3 text-sm"
+                  className="absolute font-light left-3 text-sm"
                   style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
                 >
                   {prefix || icon}
@@ -107,7 +110,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                   {...rest}
                 />
               )}
-              {subComponent}
+              <div ref={subComponentRef}>{subComponent}</div>
             </div>
           </FormControl>
           <FormMessage />

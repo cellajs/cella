@@ -2,13 +2,14 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { arrayMove, getReorderDestinationIndex, sortById } from '~/lib/utils';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { getReorderDestinationOrder, findMembershipOrderById } from '~/lib/utils';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
+import { useNavigationStore } from '~/store/navigation';
 import type { Project } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn, isProjectData } from './board-column';
-import { useNavigationStore } from '~/store/navigation';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
+import { updateMembership } from '~/api/memberships';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -21,10 +22,11 @@ function getScrollerWidth(containerWidth: number, projectsLength: number) {
 
 function BoardDesktop({
   workspaceId,
+  projects,
 }: {
+  projects: Project[];
   workspaceId: string;
 }) {
-  const { projects } = useWorkspaceContext(({ projects }) => ({ projects }));
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(() => containerRef.current?.clientWidth ?? 0);
   const scrollerWidth = getScrollerWidth(containerWidth, projects.length);
@@ -71,9 +73,9 @@ export default function Board() {
     workspace,
     projects,
   }));
-  const { menuOrder, setSubMenuOrder, menu } = useNavigationStore();
+  const { menu } = useNavigationStore();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects.sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])),
+    projects.sort((a, b) => findMembershipOrderById(a.id) - findMembershipOrderById(b.id)),
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
@@ -84,11 +86,15 @@ export default function Board() {
   useEffect(() => {
     //Fix types
     if (currentWorkspace) {
-      const currentActiveProjects = currentWorkspace.submenu?.filter((p) => !p.membership.archived) as unknown as Project[];
+      const currentActiveProjects = currentWorkspace.submenu
+        ?.filter((p) => !p.membership.archived)
+        .map((p) => {
+          return { ...p, ...{ workspaceId: p.parentId } };
+        }) as unknown as Project[];
       if (!currentActiveProjects) return setMappedProjects(projects);
-      setMappedProjects(currentActiveProjects.sort((a, b) => sortById(a.id, b.id, menuOrder.PROJECT.subList[workspace.id])));
+      setMappedProjects(currentActiveProjects.sort((a, b) => findMembershipOrderById(a.id) - findMembershipOrderById(b.id)));
     }
-  }, [currentWorkspace, menuOrder.PROJECT, workspace.id]);
+  }, [currentWorkspace]);
 
   useEffect(() => {
     return combine(
@@ -96,32 +102,25 @@ export default function Board() {
         canMonitor({ source }) {
           return source.data.type === 'column';
         },
-        onDrop({ location, source }) {
+        async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
-          const sourceData = source.data;
-          if (!target) return;
-
-          // Drag a column
-          if (isProjectData(sourceData) && isProjectData(target.data)) {
-            const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
-            const destination = getReorderDestinationIndex(sourceData.index, closestEdgeOfTarget, target.data.index, 'horizontal');
-            const newItemOrder = arrayMove(menuOrder.PROJECT.subList[workspace.id], sourceData.index, destination);
-            setSubMenuOrder('PROJECT', workspace.id, newItemOrder);
-          }
+          if (!target || !isProjectData(target.data) || !isProjectData(source.data)) return;
+          // Cos of Header contain the edge, if 2 element we use second if one use it
+          const targetEdge = location.current.dropTargets.length > 1 ? location.current.dropTargets[1].data : location.current.dropTargets[0].data;
+          const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetEdge);
+          const newOrder = getReorderDestinationOrder(target.data.order, closestEdgeOfTarget, 'horizontal', source.data.order);
+          if (source.data.item.membership) await updateMembership({ membershipId: source.data.item.membership.id, order: newOrder });
         },
       }),
     );
-  }, [menuOrder.PROJECT.subList[workspace.id]]);
+  }, [menu]);
 
-  if (!isDesktopLayout) {
-    return (
-      <div className="flex flex-col gap-4">
-        {mappedProjects.map((project) => (
-          <BoardColumn key={project.id} project={project} />
-        ))}
-      </div>
-    );
-  }
-
-  return <BoardDesktop workspaceId={workspace.id} />;
+  if (isDesktopLayout) return <BoardDesktop projects={mappedProjects} workspaceId={workspace.id} />;
+  return (
+    <div className="flex flex-col gap-4">
+      {mappedProjects.map((project) => (
+        <BoardColumn key={project.id} project={project} />
+      ))}
+    </div>
+  );
 }

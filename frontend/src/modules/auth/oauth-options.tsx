@@ -1,5 +1,6 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/auth';
 import { acceptInvite } from '~/api/general';
@@ -7,7 +8,6 @@ import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/authentication';
 import { useThemeStore } from '~/store/theme';
 import type { Step } from '.';
-
 export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
 
 type OauthProvider = {
@@ -30,6 +30,8 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { token }: { token: string } = useParams({ strict: false });
+
+  const [loading, setLoading] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';
   let redirect = '';
   if (token) {
@@ -54,19 +56,20 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
 
           return (
             <Button
+              loading={loading}
               key={option.name}
               type="button"
               variant="outline"
-              onClick={
-                token
-                  ? () =>
-                      acceptInvite({ token, oauth: option.id }).then(() => {
-                        window.location.href = config.defaultRedirectPath;
-                      })
-                  : () => {
-                      window.location.href = option.url + redirectQuery;
-                    }
-              }
+              onClick={() => {
+                setLoading(true);
+                if (token) {
+                  acceptInvite({ token, oauth: option.id }).then(() => {
+                    window.location.href = config.defaultRedirectPath;
+                  });
+                } else {
+                  window.location.href = option.url + redirectQuery;
+                }
+              }}
             >
               <img
                 src={`/static/images/${option.name.toLowerCase()}-icon.svg`}

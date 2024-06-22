@@ -1,12 +1,8 @@
-import { useState, useEffect, lazy, type ComponentType, type LazyExoticComponent } from 'react';
-
+import { type ComponentType, type LazyExoticComponent, lazy, useEffect, useState } from 'react';
 
 // Load a component lazily and with a delay
 // biome-ignore lint/suspicious/noExplicitAny: Any component can be included
-function useLazyComponent<T extends ComponentType<any>>(
-  importFunc: () => Promise<{ default: T }>,
-  delay: number
-): LazyExoticComponent<T> | null {
+function useLazyComponent<T extends ComponentType<any>>(importFunc: () => Promise<{ default: T }>, delay: number): LazyExoticComponent<T> | null {
   const [Component, setComponent] = useState<LazyExoticComponent<T> | null>(null);
 
   useEffect(() => {

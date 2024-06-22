@@ -5,7 +5,7 @@ import { config } from 'config';
 import { usersTable } from '../../db/schema/users';
 import { imageUrlSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
 
-export const apiUserSchema = createSelectSchema(usersTable, {
+export const userSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
   lastSeenAt: z.string().nullable(),
   lastVisitAt: z.string().nullable(),
@@ -23,14 +23,14 @@ export const apiUserSchema = createSelectSchema(usersTable, {
     }),
   );
 
-export const getUsersQuerySchema = paginationQuerySchema.merge(
+export const usersQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),
     role: z.enum(config.rolesByType.systemRoles).default('USER').optional(),
   }),
 );
 
-export const updateUserJsonSchema = createInsertSchema(usersTable, {
+export const updateUserBodySchema = createInsertSchema(usersTable, {
   email: z.string().email(),
   firstName: nameSchema,
   lastName: nameSchema,

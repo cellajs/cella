@@ -18,10 +18,10 @@ import { dialog } from '../../common/dialoger/state.ts';
 import { type Task, useElectric } from '../../common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
+import { useProjectContext } from '../board/project-context.tsx';
 import { SelectImpact } from './task-selectors/select-impact.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import SelectStatus from './task-selectors/select-status.tsx';
-import { useProjectContext } from '../board/project-context.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;

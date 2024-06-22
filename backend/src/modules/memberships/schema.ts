@@ -1,42 +1,46 @@
 import { z } from 'zod';
 
-import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
-import { idSchema, slugSchema } from '../../lib/common-schemas';
+import { contextEntityTypeSchema, idOrSlugSchema, idSchema, idsQuerySchema } from '../../lib/common-schemas';
+import { userSchema } from '../users/schema';
 
-export const membershipSchema = createSelectSchema(membershipsTable);
+const membershipTableSchema = createSelectSchema(membershipsTable);
 
-export const apiMembershipSchema = membershipSchema.extend({
+export const membershipSchema = membershipTableSchema.extend({
   inactive: z.boolean(),
   muted: z.boolean(),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
 });
 
-export const updateMembershipJsonSchema = z.object({
-  role: membershipSchema.shape.role.optional(),
+export const createMembershipBodySchema = z.object({
+  emails: userSchema.shape.email.array().min(1),
+  role: membershipSchema.shape.role,
+});
+
+export const updateMembershipBodySchema = z.object({
+  role: membershipTableSchema.shape.role.optional(),
   muted: z.boolean().optional(),
   inactive: z.boolean().optional(),
+  order: z.number().optional(),
 });
 
-export const createMembershipQuerySchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
-  entityType: z.enum(config.contextEntityTypes),
-  organizationId: idSchema,
+const baseMembersQuerySchema = z.object({
+  idOrSlug: idOrSlugSchema,
+  entityType: contextEntityTypeSchema,
 });
 
-export const deleteMembersQuerySchema = z.object({
-  idOrSlug: idSchema.or(slugSchema),
-  entityType: z.enum(config.contextEntityTypes),
-  ids: z.union([z.string(), z.array(z.string())]),
-});
+export const createMembershipQuerySchema = baseMembersQuerySchema.extend({ organizationId: idSchema });
+
+export const deleteMembersQuerySchema = baseMembersQuerySchema.extend(idsQuerySchema.shape);
 
 export const membershipInfoSchema = z.object({
-  id: apiMembershipSchema.shape.id,
-  role: apiMembershipSchema.shape.role,
-  archived: apiMembershipSchema.shape.inactive,
-  muted: apiMembershipSchema.shape.muted,
+  id: membershipTableSchema.shape.id,
+  role: membershipTableSchema.shape.role,
+  archived: membershipTableSchema.shape.inactive,
+  muted: membershipTableSchema.shape.muted,
+  order: membershipTableSchema.shape.order,
 });
 
 export type membershipInfoType = z.infer<typeof membershipInfoSchema>;

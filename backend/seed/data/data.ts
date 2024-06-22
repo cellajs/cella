@@ -9,10 +9,10 @@ import { type InsertTaskModel, tasksTable } from '../../src/db/schema-electric/t
 import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
 import { organizationsTable } from '../../src/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '../../src/db/schema/projects';
+import { projectsToWorkspacesTable } from '../../src/db/schema/projects-to-workspaces';
 import { type InsertWorkspaceModel, workspacesTable } from '../../src/db/schema/workspaces';
 import type { Status } from '../progressIndication';
 import { adminUser } from '../user/user';
-import { projectsToWorkspacesTable } from '../../src/db/schema/projects-to-workspaces';
 
 export const dataSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
@@ -70,6 +70,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
           workspaceId: workspace.id,
           role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
           createdAt: faker.date.past(),
+          order: workspacesCount + 1,
         };
       });
 
@@ -86,6 +87,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
           workspaceId: workspace.id,
           role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
           createdAt: faker.date.past(),
+          order: workspacesCount + 1,
         });
       }
       await db.insert(membershipsTable).values(workspaceMemberships).onConflictDoNothing();
@@ -126,6 +128,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             projectId: project.id,
             role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
             createdAt: faker.date.past(),
+            order: projectsCount + 1,
           };
         });
 
@@ -139,6 +142,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             projectId: project.id,
             role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
             createdAt: faker.date.past(),
+            order: projectsCount + 1,
           });
         }
 

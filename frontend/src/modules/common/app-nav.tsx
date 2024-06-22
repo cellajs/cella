@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Bell, Home, type LucideProps, Menu, Search, User, Bug, BugOff } from 'lucide-react';
+import { Bell, Home, type LucideProps, Menu, Search, User } from 'lucide-react';
 import type React from 'react';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -37,52 +37,29 @@ const AppNav = () => {
   const navigate = useNavigate();
   const { hasStarted } = useMounted();
   const isSmallScreen = useBreakpoints('max', 'xl');
-  const { activeSheet, setSheet, keepMenuOpen, focusView } = useNavigationStore();
+  const { activeSheet, setSheet, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
-  const [navItemsToMap, setNavItemsToMap] = useState([] as NavItem[]);
-  const [debugState, setDebugState] = useState(window.localStorage.debug === 'true');
 
   const navButtonClick = (navItem: NavItem) => {
-    //Toggle debugclick
-    if (navItem.id.includes('debug')) {
-      window.localStorage.setItem('debug', `${!debugState}`);
-      setDebugState(!debugState);
-      window.dispatchEvent(new Event('storage'));
-      if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
-      return;
-    }
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
-      dialog(<AppSearch />, {
+      return dialog(<AppSearch />, {
         className: 'sm:max-w-2xl p-0 border-0',
         drawerOnMobile: false,
         refocus: false,
         hideClose: true,
         autoFocus: !isSmallScreen,
       });
-
-      if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
-      return;
     }
 
-    // If its a route, navigate to it, otherwise open sheet component
-    if (navItem.href) {
-      if (!keepMenuOpen || isSmallScreen || activeSheet?.id !== 'menu') setSheet(null);
-      navigate({ to: navItem.href });
-    } else {
-      const isNew = !activeSheet || activeSheet.id !== navItem.id;
-      setSheet(isNew ? navItem : null);
-    }
+    // If its a route, navigate to it
+    if (navItem.href) return navigate({ to: navItem.href });
+
+    // Open new sheet
+    const isNew = !activeSheet || activeSheet.id !== navItem.id;
+    setSheet(isNew ? navItem : null);
   };
-
-  useEffect(() => {
-    if (!debugState) {
-      setNavItemsToMap([...navItems.slice(0, -1), { id: 'debugOn', icon: Bug }, navItems.slice(-1)[0]]);
-      return;
-    }
-    setNavItemsToMap([...navItems.slice(0, -1), { id: 'debugOff', icon: BugOff }, navItems.slice(-1)[0]]);
-  }, [debugState]);
 
   return (
     <>
@@ -96,7 +73,7 @@ const AppNav = () => {
         )}
       >
         <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1 sm:my-1">
-          {navItemsToMap.map((navItem: NavItem, index: number) => {
+          {navItems.map((navItem: NavItem, index: number) => {
             const isSecondItem = index === 1;
             const isActive = activeSheet?.id === navItem.id;
 

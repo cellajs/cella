@@ -36,7 +36,7 @@ const ElectricProvider = ({ children }: Props) => {
   useEffect(() => {
     let isMounted = true;
 
-    const debug = config.mode !== 'production';
+    const debug = config.mode === 'development';
     const { tabId } = uniqueTabId();
     const scopedDbName = `basic-${LIB_VERSION}-${tabId}.db`;
 
@@ -60,8 +60,8 @@ const ElectricProvider = ({ children }: Props) => {
           const { addToolbar } = await import('@electric-sql/debug-toolbar');
           addToolbar(electric);
 
-          const toolbarContainer = document.getElementById('__electric_debug_toolbar_container');
-          if (toolbarContainer) toolbarContainer.style.display = 'none';
+          const toolbarNode = document.getElementById('__electric_debug_toolbar_container');
+          if (toolbarNode) toolbarNode.classList.add('hidden');
         }
 
         setElectric(electric);

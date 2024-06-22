@@ -12,12 +12,13 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { transformDatabaseUser } from '../users/helpers/transform-database-user';
+import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { generateElectricJWTToken } from '../../lib/utils';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
+import { getPreparedSessions } from './helpers/get-sessions';
 
 const app = new CustomHono();
 
@@ -26,7 +27,7 @@ const meRoutes = app
   /*
    * Get current user
    */
-  .openapi(meRoutesConfig.me, async (ctx) => {
+  .openapi(meRoutesConfig.getSelf, async (ctx) => {
     const user = ctx.get('user');
 
     const [{ memberships }] = await db
@@ -36,15 +37,6 @@ const meRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, user.id));
 
-    //TODO: move this to a helper function
-    const sessions = await auth.getUserSessions(user.id);
-    const currentSessionId = auth.readSessionCookie(ctx.req.raw.headers.get('Cookie') ?? '');
-    const preparedSessions = sessions.map((session) => ({
-      ...session,
-      type: 'DESKTOP' as const,
-      current: session.id === currentSessionId,
-    }));
-
     // Generate a JWT token for electric
     const electricJWTToken = await generateElectricJWTToken({ userId: user.id });
 
@@ -52,12 +44,9 @@ const meRoutes = app
       {
         success: true,
         data: {
-          ...transformDatabaseUser(user),
-          sessions: preparedSessions,
+          ...transformDatabaseUserWithCount(user, memberships),
+          sessions: await getPreparedSessions(user.id, ctx),
           electricJWTToken,
-          counts: {
-            memberships,
-          },
         },
       },
       200,
@@ -125,8 +114,7 @@ const meRoutes = app
         entity: project.entity,
         organizationId: project.organizationId,
         membership: toMembershipInfo.required(membership),
-        // @TODO: what is mainId?
-        mainId: workspace.workspaceId,
+        parentId: workspace.workspaceId,
       };
     });
 
@@ -141,7 +129,7 @@ const meRoutes = app
         organizationId: workspace.organizationId,
         entity: workspace.entity,
         membership: toMembershipInfo.required(membership),
-        submenu: projects.filter((p) => p.mainId === workspace.id),
+        submenu: projects.filter((p) => p.parentId === workspace.id),
       };
     });
 
@@ -159,7 +147,7 @@ const meRoutes = app
   /*
    * Terminate a session
    */
-  .openapi(meRoutesConfig.terminateSessions, async (ctx) => {
+  .openapi(meRoutesConfig.deleteSessions, async (ctx) => {
     const { ids } = ctx.req.valid('query');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
@@ -227,29 +215,10 @@ const meRoutes = app
 
     logEvent('User updated', { user: updatedUser.id });
 
-    // Generate a JWT token for electric
-    const electricJWTToken = await generateElectricJWTToken({ userId: user.id });
-
-    //TODO: move this to a helper function
-    const sessions = await auth.getUserSessions(user.id);
-    const currentSessionId = auth.readSessionCookie(ctx.req.raw.headers.get('Cookie') ?? '');
-    const preparedSessions = sessions.map((session) => ({
-      ...session,
-      type: 'DESKTOP' as const,
-      current: session.id === currentSessionId,
-    }));
-
     return ctx.json(
       {
         success: true,
-        data: {
-          ...transformDatabaseUser(updatedUser),
-          electricJWTToken,
-          sessions: preparedSessions,
-          counts: {
-            memberships,
-          },
-        },
+        data: transformDatabaseUserWithCount(updatedUser, memberships),
       },
       200,
     );
@@ -259,13 +228,13 @@ const meRoutes = app
    */
   .openapi(meRoutesConfig.deleteSelf, async (ctx) => {
     const user = ctx.get('user');
-    // * Check if user exists
+    // Check if user exists
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });
 
-    // * Delete user
+    // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
 
-    // * Invalidate sessions
+    // Invalidate sessions
     await auth.invalidateUserSessions(user.id);
     removeSessionCookie(ctx);
     logEvent('User deleted', { user: user.id });

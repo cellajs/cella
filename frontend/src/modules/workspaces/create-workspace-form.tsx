@@ -4,12 +4,10 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-// Change this in the future on current schema
-import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
+import { workspaceBodySchema } from 'backend/modules/workspaces/schema';
 import { createWorkspace } from '~/api/workspaces';
 
 import { useNavigate } from '@tanstack/react-router';
-// import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -17,7 +15,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { Organization, Workspace } from '~/types';
+import type { Organization, Workspace, UserMenuItem } from '~/types';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import SelectParentFormField from '../common/form-fields/select-parent';
@@ -25,20 +23,21 @@ import { SlugFormField } from '../common/form-fields/slug';
 import CreateOrganizationForm from '../organizations/create-organization-form';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Form } from '../ui/form';
+import { addMenuItem } from '~/lib/utils';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
   dialog?: boolean;
 }
 
-const formSchema = createWorkspaceJsonSchema;
+const formSchema = workspaceBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
 const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dialog: isDialog }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setSheet, menu, setMainMenuOrder, menuOrder } = useNavigationStore();
+  const { menu } = useNavigationStore();
   const type = 'WORKSPACE';
 
   const organizations = menu.organizations;
@@ -48,7 +47,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       defaultValues: {
         name: '',
         slug: '',
-        organizationId: organizations.length === 1 ? organizations[0].id : '',
+        organizationId: organizations.length >= 1 ? organizations[0].id : '',
       },
     }),
     [],
@@ -62,19 +61,18 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createWorkspace,
-    onSuccess: (result) => {
+    onSuccess: (createdWorkspace) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      setMainMenuOrder(type, [...menuOrder[type].mainList, result.id]);
-
-      callback?.(result);
-      // TODO remove this when listening to route to close sheet
-      setSheet(null);
+      callback?.(createdWorkspace);
       if (isDialog) dialog.remove();
 
+      useNavigationStore.setState({
+        menu: addMenuItem(createdWorkspace as UserMenuItem, 'workspaces'),
+      });
       navigate({
         to: '/workspace/$idOrSlug/board',
-        params: { idOrSlug: result.slug },
+        params: { idOrSlug: createdWorkspace.slug },
       });
     },
   });

@@ -1,9 +1,9 @@
-import { errorResponses, successResponseWithDataSchema, successResponseWithErrorsSchema } from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema } from '../../lib/common-responses';
+import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import { apiWorkspaceSchema, createWorkspaceJsonSchema, updateWorkspaceJsonSchema } from './schema';
+import { workspaceSchema, workspaceBodySchema } from './schema';
 
 class WorkspaceRoutesConfig {
   public createWorkspace = createRouteConfig({
@@ -18,7 +18,7 @@ class WorkspaceRoutesConfig {
         required: true,
         content: {
           'application/json': {
-            schema: createWorkspaceJsonSchema,
+            schema: workspaceBodySchema,
           },
         },
       },
@@ -28,7 +28,7 @@ class WorkspaceRoutesConfig {
         description: 'workspace was created',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiWorkspaceSchema),
+            schema: successWithDataSchema(workspaceSchema),
           },
         },
       },
@@ -51,7 +51,7 @@ class WorkspaceRoutesConfig {
         description: 'Workspace',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiWorkspaceSchema),
+            schema: successWithDataSchema(workspaceSchema),
           },
         },
       },
@@ -71,7 +71,7 @@ class WorkspaceRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateWorkspaceJsonSchema,
+            schema: workspaceBodySchema,
           },
         },
       },
@@ -81,7 +81,7 @@ class WorkspaceRoutesConfig {
         description: 'Workspace updated',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiWorkspaceSchema),
+            schema: successWithDataSchema(workspaceSchema),
           },
         },
       },
@@ -97,14 +97,14 @@ class WorkspaceRoutesConfig {
     summary: 'Delete workspaces',
     description: 'Delete workspaces by ids.',
     request: {
-      query: deleteByIdsQuerySchema,
+      query: idsQuerySchema,
     },
     responses: {
       200: {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successResponseWithErrorsSchema(),
+            schema: successWithErrorsSchema(),
           },
         },
       },

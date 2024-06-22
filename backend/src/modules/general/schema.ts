@@ -3,10 +3,9 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '../../db/schema/tokens';
-import { apiMembershipSchema, membershipInfoSchema } from '../memberships/schema';
-import { apiUserSchema } from '../users/schema';
 import {
   contextEntityTypeSchema,
+  idOrSlugSchema,
   idSchema,
   imageUrlSchema,
   nameSchema,
@@ -14,56 +13,60 @@ import {
   passwordSchema,
   slugSchema,
 } from '../../lib/common-schemas';
+import { membershipInfoSchema } from '../memberships/schema';
+import { userSchema } from '../users/schema';
 
-export const apiPublicCountsSchema = z.object({
-  organizations: z.number(),
+export const publicCountsSchema = z.object({
   users: z.number(),
+  organizations: z.number(),
+  workspaces: z.number(),
+  projects: z.number(),
+  tasks: z.number(),
+  labels: z.number(),
 });
 
-export const tokensSchema = createSelectSchema(tokensTable);
-
 export const checkTokenSchema = z.object({
-  type: tokensSchema.shape.type,
+  type: createSelectSchema(tokensTable).shape.type,
   email: z.string().email(),
   organizationName: z.string().optional(),
   organizationSlug: z.string().optional(),
 });
 
-export const inviteJsonSchema = z.object({
-  emails: apiUserSchema.shape.email.array().min(1),
-  role: z.union([apiUserSchema.shape.role, apiMembershipSchema.shape.role]).optional(),
+export const inviteBodySchema = z.object({
+  emails: userSchema.shape.email.array().min(1),
+  role: userSchema.shape.role,
 });
 
-export const acceptInviteJsonSchema = z.object({
+export const acceptInviteBodySchema = z.object({
   password: passwordSchema.optional(),
   oauth: z.enum(config.oauthProviderOptions).optional(),
 });
 
-const suggestionSchema = z.object({
+export const entitySuggestionSchema = z.object({
   slug: slugSchema,
   id: idSchema,
   name: nameSchema,
   organizationId: idSchema,
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
+  entity: z.enum(config.entityTypes),
 });
 
-export const entitySuggestionSchema = suggestionSchema.extend({ entity: z.enum(config.entityTypes) });
 export type Suggestion = z.infer<typeof entitySuggestionSchema>;
 
 export const suggestionsSchema = z.object({
-  entities: z.array(entitySuggestionSchema),
+  items: z.array(entitySuggestionSchema),
   total: z.number(),
 });
 
-export const apiMemberSchema = z.object({
-  ...apiUserSchema.shape,
-  membership: membershipInfoSchema
+export const membersSchema = z.object({
+  ...userSchema.shape,
+  membership: membershipInfoSchema,
 });
 
-export const getMembersQuerySchema = paginationQuerySchema.extend({
-  idOrSlug: idSchema.or(slugSchema),
+export const membersQuerySchema = paginationQuerySchema.extend({
+  idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-  role: z.enum(config.rolesByType.allRoles).default('MEMBER').optional(),
+  role: z.enum(config.rolesByType.entityRoles).default('MEMBER').optional(),
 });

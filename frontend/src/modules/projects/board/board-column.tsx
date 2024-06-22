@@ -3,34 +3,36 @@ import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/prag
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { useQuery } from '@tanstack/react-query';
+import { useLiveQuery } from 'electric-sql/react';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { cn, getDraggableItemData, sortTaskOrder } from '~/lib/utils';
+import { cn, getDraggableItemData, sortTaskOrder, findMembershipOrderById, getReorderDestinationOrder } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { DraggableItemData, Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
 import { DropIndicator } from '../../common/drop-indicator';
-import { type Task, useElectric, type Label } from '../../common/electric/electrify';
+import { type Label, type Task, useElectric } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
-import { BoardColumnHeader } from './board-column-header';
 import CreateTaskForm from '../task/create-task-form';
 import { DraggableTaskCard, isTaskData } from '../task/draggable-task-card';
-import { ProjectSettings } from '../project-settings';
-import { useQuery } from '@tanstack/react-query';
-import { ColumnSkeleton } from './board-column-skeleton';
-import { useLiveQuery } from 'electric-sql/react';
-import { taskStatuses } from '../task/task-selectors/select-status';
-import { ProjectProvider } from './project-context';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { TaskProvider } from '../task/task-context';
-// import { FixedSizeList as List } from 'react-window';
-// import AutoSizer from "react-virtualized-auto-sizer";
+import { taskStatuses } from '../task/task-selectors/select-status';
+import { BoardColumnHeader } from './board-column-header';
+import { ColumnSkeleton } from './board-column-skeleton';
+import { ProjectProvider } from './project-context';
+import { ProjectSettings } from '../project-settings';
+import { SheetNav } from '~/modules/common/sheet-nav';
+import { WorkspaceRoute } from '~/routes/workspaces';
+
+const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
 interface BoardColumnProps {
   project: Project;
@@ -39,7 +41,7 @@ interface BoardColumnProps {
 type ProjectDraggableItemData = DraggableItemData<Project> & { type: 'column' };
 
 export const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
-  return data.dragItem === true && typeof data.index === 'number';
+  return data.dragItem === true && typeof data.order === 'number';
 };
 
 export function BoardColumn({ project }: BoardColumnProps) {
@@ -55,7 +57,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const { menuOrder } = useNavigationStore();
+  const { menu } = useNavigationStore();
   const { workspace, searchQuery, selectedTasks, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId } =
     useWorkspaceContext(
       ({ workspace, searchQuery, selectedTasks, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId }) => ({
@@ -129,16 +131,20 @@ export function BoardColumn({ project }: BoardColumnProps) {
     );
   }, [viewOptions, filteredTasks]);
 
-  const acceptedCount = useMemo(() => filteredByViewOptionsTasks.filter((t) => t.status === 6).length || 0, [filteredByViewOptionsTasks]);
+  const acceptedCount = useMemo(
+    () => filteredByViewOptionsTasks.filter((t) => !t.parent_id && t.status === 6).length || 0,
+    [filteredByViewOptionsTasks],
+  );
   const icedCount = useMemo(() => filteredByViewOptionsTasks.filter((t) => t.status === 0).length || 0, [filteredByViewOptionsTasks]);
   const sortedTasks = useMemo(() => filteredByViewOptionsTasks.sort((a, b) => sortTaskOrder(a, b)) || [], [filteredByViewOptionsTasks]);
 
   const showingTasks = useMemo(() => {
-    return sortedTasks.filter((t) => {
+    const filteredByStatus = sortedTasks.filter((t) => {
       if (showAccepted && t.status === 6) return true;
       if (showIced && t.status === 0) return true;
       return t.status !== 0 && t.status !== 6;
     });
+    return filteredByStatus.filter((t) => !t.parent_id);
   }, [showAccepted, showIced, sortedTasks]);
 
   const handleIcedClick = () => {
@@ -155,8 +161,17 @@ export function BoardColumn({ project }: BoardColumnProps) {
   };
 
   const openSettingsSheet = () => {
-    sheet(<ProjectSettings sheet project={project} />, {
-      className: 'sm:max-w-[52rem]',
+    const projectTabs = [
+      { id: 'general', label: 'common:general', element: <ProjectSettings project={project} sheet /> },
+      {
+        id: 'members',
+        label: 'common:members',
+        element: <MembersTable entity={project} isSheet={true} route={WorkspaceRoute.id} />,
+      },
+    ];
+
+    sheet(<SheetNav tabs={projectTabs} />, {
+      className: 'max-w-full lg:max-w-[900px]',
       title: t('common:project_settings'),
       text: t('common:project_settings.text'),
       id: 'edit-project',
@@ -181,13 +196,6 @@ export function BoardColumn({ project }: BoardColumnProps) {
     if (!isProjectData(source.data) || !isProjectData(self.data) || source.data.item.id === project.id) return;
     setClosestEdge(extractClosestEdge(self.data));
   };
-
-  // const createTask = () => {
-  //   dialog(<CreateTaskForm project={project} dialog />, {
-  //     className: 'md:max-w-xl',
-  //     title: t('common:create_task'),
-  //   });
-  // };
 
   const handleArrowKeyDown = (event: KeyboardEvent) => {
     if (focusedProjectIndex === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
@@ -245,8 +253,8 @@ export function BoardColumn({ project }: BoardColumnProps) {
   ]);
 
   useEffect(() => {
-    setViewOptions(workspaces[workspace.id].viewOptions);
-  }, [workspaces[workspace.id].viewOptions]);
+    if (workspaces[workspace.id].viewOptions) setViewOptions(workspaces[workspace.id].viewOptions);
+  }, [workspaces[workspace.id]]);
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
@@ -255,11 +263,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
     const cardList = cardListRef.current;
     const scrollable = scrollableRef.current;
 
-    const data = getDraggableItemData<Project>(
-      project,
-      menuOrder.PROJECT.subList[workspace.id].findIndex((el) => el === project.id),
-      'column',
-    );
+    const data = getDraggableItemData<Project>(project, findMembershipOrderById(project.id), 'column', 'PROJECT');
     if (!column || !headerDragButton || !cardList) return;
     // Don't start drag if only 1 project
     if (projects.length <= 1) return;
@@ -310,7 +314,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
           })
         : () => {},
     );
-  }, [project, projects, menuOrder, sortedTasks]);
+  }, [project, projects, menu, sortedTasks]);
 
   useEffect(() => {
     return combine(
@@ -322,28 +326,28 @@ export function BoardColumn({ project }: BoardColumnProps) {
           const target = location.current.dropTargets[0];
           const sourceData = source.data;
           if (!target) return;
-
+          const targetData = target.data;
           // Drag a task
-          if (isTaskData(sourceData) && isTaskData(target.data)) {
+          if (isTaskData(sourceData) && isTaskData(targetData)) {
             // Drag a task in different column
-            if (sourceData.item.project_id !== target.data.item.project_id) {
-              console.log('ChangeProject');
+            if (sourceData.item.project_id !== targetData.item.project_id) {
+              const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
+              const newOrder = getReorderDestinationOrder(targetData.order, closestEdgeOfTarget, 'vertical', sourceData.order);
+              // Update order of dragged task
+              electric?.db.tasks.update({
+                data: {
+                  sort_order: newOrder,
+                  project_id: targetData.item.project_id,
+                },
+                where: {
+                  id: sourceData.item.id,
+                },
+              });
             }
             // Drag a task in same column
-            if (sourceData.item.project_id === target.data.item.project_id) {
-              let newOrder = 0;
-              if (target.data.index > 0 && target.data.index < filteredByViewOptionsTasks.length - 1) {
-                const itemBefore = filteredByViewOptionsTasks[target.data.index - 1];
-                const itemAfter = filteredByViewOptionsTasks[target.data.index];
-                newOrder = (itemBefore.sort_order + itemAfter.sort_order) / 2;
-              } else if (target.data.index === 0 && filteredByViewOptionsTasks.length > 0) {
-                const itemAfter = filteredByViewOptionsTasks[target.data.index];
-                newOrder = itemAfter.sort_order / 1.1;
-              } else if (target.data.index === filteredByViewOptionsTasks.length - 1 && filteredByViewOptionsTasks.length > 0) {
-                const itemBefore = filteredByViewOptionsTasks[target.data.index - 1];
-                newOrder = itemBefore.sort_order * 1.1;
-              }
-
+            if (sourceData.item.project_id === targetData.item.project_id) {
+              const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
+              const newOrder = getReorderDestinationOrder(targetData.order, closestEdgeOfTarget, 'vertical', sourceData.order);
               // Update order of dragged task
               electric?.db.tasks.update({
                 data: {
@@ -358,7 +362,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
         },
       }),
     );
-  }, [menuOrder.PROJECT.subList[workspace.id], filteredByViewOptionsTasks]);
+  }, [menu]);
 
   // Hides underscroll elements
   // 64px refers to the header height
@@ -407,7 +411,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
                         </Button>
                         {showingTasks.map((task) => (
                           <TaskProvider key={task.id} task={task}>
-                            <DraggableTaskCard taskIndex={sortedTasks.findIndex((t) => t.id === task.id)} />
+                            <DraggableTaskCard />
                           </TaskProvider>
                         ))}
                         <Button
@@ -462,135 +466,4 @@ export function BoardColumn({ project }: BoardColumnProps) {
       </div>
     </ProjectProvider>
   );
-
-  // return (
-  //   <ProjectProvider
-  //     key={project.id}
-  //     project={project}
-  //     tasks={sortedTasks}
-  //     labels={labels}
-  //     members={members}
-  //     focusedProjectIndex={focusedProjectIndex}
-  //     setFocusedProjectIndex={setFocusedProjectIndex}
-  //   >
-  //     <div ref={columnRef} className="h-full flex flex-col">
-  //       <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
-  //       <div
-  //         className={cn(
-  //           `grow relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b
-  //         opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
-  //           selectedTasks.length && 'is-selected',
-  //         )}
-  //       >
-  //         {stickyBackground}
-
-  //         <div className="grow flex flex-col border-l border-r">
-  //           {createForm && <CreateTaskForm onCloseForm={() => setCreateForm(false)} />}
-
-  //           <div ref={containerRef} />
-
-  //           {!updatedAt ? (
-  //             <ColumnSkeleton />
-  //           ) : (
-  //             <>
-  //               <div className="flex flex-col grow" ref={cardListRef}>
-  //                 {!!filteredByViewOptionsTasks.length && (
-  //                   <ScrollArea
-  //                     ref={scrollableRef}
-  //                     id={project.id}
-  //                     size="indicatorVertical"
-  //                     className="grow mx-[-1px] relative [&>div>div]:!flex [&>div>div]:h-full"
-  //                   >
-  //                     <ScrollBar size="indicatorVertical" />
-  //                     <div className="flex flex-col px-0 grow">
-  //                       <Button
-  //                         onClick={handleAcceptedClick}
-  //                         variant="ghost"
-  //                         disabled={!acceptedCount}
-  //                         size="sm"
-  //                         className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[1px]"
-  //                       >
-  //                         <span className="text-xs">
-  //                           {acceptedCount} {t('common:accepted').toLowerCase()}
-  //                         </span>
-  //                         {!!acceptedCount && (
-  //                           <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
-  //                         )}
-  //                       </Button>
-  //                       <div className='grow'>
-  //                         <AutoSizer>
-  //                           {({ width, height }) => (
-  //                             <List
-  //                               height={height}
-  //                               width={width}
-  //                               // rowHeight={120}
-  //                               itemCount={showingTasks.length}
-  //                               itemSize={123.5}
-  //                             >
-  //                               {({ index, style }) => {
-  //                                 const task = showingTasks[index];
-  //                                 return (
-  //                                   <div style={style}>
-  //                                     <TaskProvider task={task}>
-  //                                       <DraggableTaskCard taskIndex={index} />
-  //                                     </TaskProvider>
-  //                                   </div>
-  //                                 );
-  //                               }}
-  //                             </List>
-  //                           )}
-  //                         </AutoSizer>
-  //                       </div>
-  //                       <Button
-  //                         onClick={handleIcedClick}
-  //                         variant="ghost"
-  //                         disabled={!icedCount}
-  //                         size="sm"
-  //                         className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[1px]"
-  //                       >
-  //                         <span className="text-xs">
-  //                           {icedCount} {t('common:iced').toLowerCase()}
-  //                         </span>
-  //                         {!!icedCount && (
-  //                           <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />
-  //                         )}
-  //                       </Button>
-  //                     </div>
-  //                   </ScrollArea>
-  //                 )}
-
-  //                 {!filteredByViewOptionsTasks.length && !searchQuery && (
-  //                   <ContentPlaceholder
-  //                     Icon={Palmtree}
-  //                     title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
-  //                     text={
-  //                       !createForm && (
-  //                         <>
-  //                           <Undo
-  //                             size={200}
-  //                             strokeWidth={0.2}
-  //                             className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
-  //                           />
-  //                           <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
-  //                             <span>{t('common:click')}</span>
-  //                             <span className="text-primary">{`+${t('common:task')}`}</span>
-  //                             <span>{t('common:no_tasks.text')}</span>
-  //                           </p>
-  //                         </>
-  //                       )
-  //                     }
-  //                   />
-  //                 )}
-  //                 {!filteredByViewOptionsTasks.length && searchQuery && (
-  //                   <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
-  //                 )}
-  //               </div>
-  //             </>
-  //           )}
-  //         </div>
-  //         {closestEdge && <DropIndicator className="w-[2px] mp-[58px]" edge={closestEdge} />}
-  //       </div>
-  //     </div>
-  //   </ProjectProvider>
-  // );
 }

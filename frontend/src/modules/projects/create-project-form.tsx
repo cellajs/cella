@@ -4,7 +4,7 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { createWorkspaceJsonSchema } from 'backend/modules/workspaces/schema';
+import { workspaceBodySchema } from 'backend/modules/workspaces/schema';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { createProject } from '~/api/projects';
@@ -14,12 +14,13 @@ import { useMutation } from '~/hooks/use-mutations';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
-import type { Workspace } from '~/types';
-import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
-import InputFormField from '../common/form-fields/input';
-import { SlugFormField } from '../common/form-fields/slug';
+import type { Workspace, UserMenuItem } from '~/types';
+import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
+import InputFormField from '~/modules/common/form-fields/input';
+import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { Form } from '../ui/form';
+import { useNavigationStore } from '~/store/navigation';
+import { addMenuItem } from '~/lib/utils';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -27,14 +28,13 @@ interface CreateProjectFormProps {
   dialog?: boolean;
 }
 
-const formSchema = createWorkspaceJsonSchema;
+const formSchema = workspaceBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
   // const navigate = useNavigate();
-  const { setSheet, setSubMenuOrder, menuOrder } = useNavigationStore();
   const type = 'PROJECT';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -58,20 +58,19 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      return createProject({
+      return createProject(workspace.id, {
         ...values,
         color: '#000000',
-        workspaceId: workspace.id,
         organizationId: workspace.organizationId,
       });
     },
-    onSuccess: (project) => {
+    onSuccess: (createdProject) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
-      setSubMenuOrder(type, workspace.id, [...menuOrder[type].subList[workspace.id], project.id]);
-      callback([project], 'create');
-      // TODO remove this when listening to route to close sheet
-      setSheet(null);
+      callback([createdProject], 'create');
+      useNavigationStore.setState({
+        menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
+      });
       if (isDialog) dialog.remove();
     },
   });

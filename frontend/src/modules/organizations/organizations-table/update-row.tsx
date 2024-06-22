@@ -14,7 +14,7 @@ interface Props {
   tabIndex: number;
 }
 
-const RowEdit = ({ organization, callback, tabIndex }: Props) => {
+const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
   const openUpdateDialog = () => {
@@ -28,8 +28,8 @@ const RowEdit = ({ organization, callback, tabIndex }: Props) => {
         </CardContent>
       </Card>,
       {
-        id: 'edit-organization',
-        className: 'sm:max-w-2xl',
+        id: 'update-organization',
+        className: 'max-w-full lg:max-w-[900px]',
         title: t('common:edit_organization'),
       },
     );
@@ -42,4 +42,4 @@ const RowEdit = ({ organization, callback, tabIndex }: Props) => {
   );
 };
 
-export default RowEdit;
+export default UpdateRow;

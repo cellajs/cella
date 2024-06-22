@@ -5,23 +5,22 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { useEffect, useRef, useState } from 'react';
 import { getDraggableItemData } from '~/lib/utils';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '../../common/drop-indicator';
 import type { Task } from '../../common/electric/electrify';
 import { TaskCard } from './task-card';
 import { useTaskContext } from './task-context';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-  return data.dragItem === true && typeof data.index === 'number' && data.type === 'task';
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
 };
 
-export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
+export const DraggableTaskCard = () => {
   const { task } = useTaskContext(({ task }) => ({ task }));
   const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -43,7 +42,7 @@ export const DraggableTaskCard = ({ taskIndex }: { taskIndex: number }) => {
   useEffect(() => {
     const element = taskDragRef.current;
     const dragButton = taskDragButtonRef.current;
-    const data = getDraggableItemData<Task>(task, taskIndex, 'task');
+    const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'PROJECT');
     if (!element || !dragButton) return;
 
     return combine(

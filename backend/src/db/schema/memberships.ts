@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { relations } from 'drizzle-orm';
-import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
@@ -11,9 +11,7 @@ const roleEnum = config.rolesByType.entityRoles;
 
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
-  type: varchar('type', {
-    enum: config.contextEntityTypes,
-  }).notNull(),
+  type: varchar('type', { enum: config.contextEntityTypes }).notNull(),
   organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
@@ -29,6 +27,7 @@ export const membershipsTable = pgTable('memberships', {
   }),
   inactive: boolean('inactive').default(false).notNull(),
   muted: boolean('muted').default(false).notNull(),
+  order: doublePrecision('sort_order').notNull(),
 });
 
 export const membershipsTableRelations = relations(membershipsTable, ({ one }) => ({

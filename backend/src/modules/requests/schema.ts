@@ -2,27 +2,18 @@ import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '../../db/schema/requests';
-import {
-  paginationQuerySchema,
-} from '../../lib/common-schemas';
+import { paginationQuerySchema } from '../../lib/common-schemas';
 
-export const requestsSchema = createSelectSchema(requestsTable);
+const requestsTableSchema = createSelectSchema(requestsTable);
 
-export const createRequestSchema = z.object({
+export const requestsSchema = z.object({
   email: z.string().min(1).email(),
-  type: requestsSchema.shape.type,
-  message: z.string().nullable(),
+  type: requestsTableSchema.shape.type,
 });
 
-export const requestResponseSchema = z.object({
-  email: z.string().min(1).email(),
-  type: requestsSchema.shape.type,
-});
+export const createRequestSchema = requestsSchema.extend({ message: z.string().nullable() });
 
-export const apiRequestSchema = z.object({
-  ...createSelectSchema(requestsTable).shape,
-  createdAt: z.string(),
-});
+export const requestsInfoSchema = requestsTableSchema.extend({ createdAt: z.string() });
 
 export const getRequestsQuerySchema = paginationQuerySchema.merge(
   z.object({

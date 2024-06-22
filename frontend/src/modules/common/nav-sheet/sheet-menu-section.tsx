@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenu } from '~/types';
+import type { ContextEntity, UserMenuItem } from '~/types';
 import { dialog } from '../dialoger/state';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import { MenuSectionSticky } from './menu-section-sticky';
@@ -11,14 +11,11 @@ import { SheetMenuItems } from './sheet-menu-items';
 import { SheetMenuItemsOptions } from './sheet-menu-items-options';
 
 interface MenuSectionProps {
-  data: UserMenu[keyof UserMenu];
+  data: UserMenuItem[];
   sectionType: 'workspaces' | 'organizations';
   entityType: ContextEntity;
   createForm: ReactNode;
 }
-
-export type MenuList = UserMenu[keyof UserMenu];
-export type MenuItem = MenuList[number];
 
 export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuSectionProps) => {
   const { t } = useTranslation();
@@ -27,7 +24,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
   const [globalDragging, setGlobalDragging] = useState(false);
   const { activeSections } = useNavigationStore();
   const isSectionVisible = activeSections[sectionType];
-  const mainItemId = data.length > 0 ? data[0].mainId : '';
+  const parentItemId = data.length > 0 ? data[0].parentId : '';
 
   const sectionRef = useRef<HTMLDivElement>(null);
   const archivedRef = useRef<HTMLDivElement>(null);
@@ -74,7 +71,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
 
   return (
     <>
-      {!mainItemId && (
+      {!parentItemId && (
         <MenuSectionSticky
           data={data}
           sectionType={sectionType}
@@ -97,7 +94,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
           {!!data.length && (
             <>
               <MenuArchiveToggle
-                isSubmenu={typeof mainItemId === 'string'}
+                isSubmenu={typeof parentItemId === 'string'}
                 archiveToggleClick={archiveToggleClick}
                 inactiveCount={data.filter((i) => i.membership.archived).length}
                 isArchivedVisible={isArchivedVisible}

@@ -1,13 +1,8 @@
-import {
-  errorResponses,
-  successResponseWithDataSchema,
-  successResponseWithErrorsSchema,
-  successResponseWithPaginationSchema,
-} from '../../lib/common-responses';
-import { deleteByIdsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '../../lib/common-responses';
+import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
-import { apiUserSchema, getUsersQuerySchema, updateUserJsonSchema } from './schema';
+import { userSchema, usersQuerySchema, updateUserBodySchema } from './schema';
 
 class UsersRoutesConfig {
   public getUsers = createRouteConfig({
@@ -18,14 +13,14 @@ class UsersRoutesConfig {
     summary: 'Get list of users',
     description: 'Get a list of users on system level.',
     request: {
-      query: getUsersQuerySchema,
+      query: usersQuerySchema,
     },
     responses: {
       200: {
         description: 'Users',
         content: {
           'application/json': {
-            schema: successResponseWithPaginationSchema(apiUserSchema),
+            schema: successWithPaginationSchema(userSchema),
           },
         },
       },
@@ -41,14 +36,14 @@ class UsersRoutesConfig {
     summary: 'Delete users',
     description: 'Delete users from system by list of ids.',
     request: {
-      query: deleteByIdsQuerySchema,
+      query: idsQuerySchema,
     },
     responses: {
       200: {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successResponseWithErrorsSchema(),
+            schema: successWithErrorsSchema(),
           },
         },
       },
@@ -71,7 +66,7 @@ class UsersRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiUserSchema),
+            schema: successWithDataSchema(userSchema),
           },
         },
       },
@@ -91,7 +86,7 @@ class UsersRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateUserJsonSchema,
+            schema: updateUserBodySchema,
           },
         },
       },
@@ -101,7 +96,7 @@ class UsersRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiUserSchema),
+            schema: successWithDataSchema(userSchema),
           },
         },
       },

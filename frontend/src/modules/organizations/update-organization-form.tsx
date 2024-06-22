@@ -1,13 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type DefaultError, useMutation } from '@tanstack/react-query';
-import { updateOrganizationJsonSchema } from 'backend/modules/organizations/schema';
+import { updateOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
 import type { Organization } from '~/types';
 
-import { Loader2 } from 'lucide-react';
-import { Suspense, lazy, useEffect } from 'react';
+import { useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -23,10 +22,8 @@ import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
 import UnsavedBadge from '../common/unsaved-badge';
-
-// Lazy load to prevent JSON from being loaded on initial load
-const SelectTimezone = lazy(() => import('~/modules/common/form-fields/select-timezone'));
-const SelectCountry = lazy(() => import('~/modules/common/form-fields/select-country'));
+import SelectTimezone from '~/modules/common/form-fields/select-timezone';
+import SelectCountry from '~/modules/common/form-fields/select-country';
 
 interface Props {
   organization: Organization;
@@ -34,7 +31,7 @@ interface Props {
   sheet?: boolean;
 }
 
-const formSchema = updateOrganizationJsonSchema;
+const formSchema = updateOrganizationBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -42,8 +39,8 @@ export const useUpdateOrganizationMutation = (idOrSlug: string) => {
   return useMutation<Organization, DefaultError, UpdateOrganizationParams>({
     mutationKey: ['organizations', 'update', idOrSlug],
     mutationFn: (params) => updateOrganization(idOrSlug, params),
-    onSuccess: (organization) => {
-      queryClient.setQueryData(['organizations', idOrSlug], organization);
+    onSuccess: (updatedOrganization) => {
+      queryClient.setQueryData(['organizations', idOrSlug], updatedOrganization);
     },
     gcTime: 1000 * 10,
   });
@@ -77,9 +74,9 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
 
   const onSubmit = (values: FormValues) => {
     mutate(values, {
-      onSuccess: (data) => {
-        if (isSheet) sheet.remove('edit-organization');
-        callback?.(data);
+      onSuccess: (updatedOrganization) => {
+        if (isSheet) sheet.remove('update-organization');
+        callback?.(updatedOrganization);
         toast.success(t('common:success.update_resource', { resource: t('common:organization') }));
       },
     });
@@ -105,24 +102,17 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
-  // useEffect(() => {
-  //   if (form.formState.isSubmitSuccessful) {
-  //     form.reset(form.getValues());
-  //   }
-  // }, [form.formState.isSubmitSuccessful]);
-
-  // Update sheet title with unsaved changes
   useEffect(() => {
     if (form.unsavedChanges) {
-      const targetSheet = sheet.get('edit-organization');
+      const targetSheet = sheet.get('update-organization');
       if (targetSheet && checkSheet(targetSheet)) {
-        sheet.update('edit-organization', {
+        sheet.update('update-organization', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
       }
       return;
     }
-    sheet.reset('edit-organization');
+    sheet.reset('update-organization');
   }, [form.unsavedChanges]);
 
   return (
@@ -181,9 +171,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
             <FormItem name="country">
               <FormLabel>{t('common:country')}</FormLabel>
               <FormControl>
-                <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectCountry onChange={onChange} />
-                </Suspense>
+                <SelectCountry onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -196,9 +184,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
             <FormItem name="timezone">
               <FormLabel>{t('common:timezone')}</FormLabel>
               <FormControl>
-                <Suspense fallback={<Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}>
-                  <SelectTimezone onChange={onChange} />
-                </Suspense>
+                <SelectTimezone onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

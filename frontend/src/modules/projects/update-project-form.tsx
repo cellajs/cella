@@ -1,23 +1,25 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-// import { queryClient } from '~/lib/router';
+import { queryClient } from '~/lib/router';
 import { dialog } from '~/modules/common/dialoger/state';
 import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import type { Project } from '~/types';
-import InputFormField from '../common/form-fields/input';
-import SelectParentFormField from '../common/form-fields/select-parent';
-import { SlugFormField } from '../common/form-fields/slug';
-import UnsavedBadge from '../common/unsaved-badge';
+import InputFormField from '~/modules/common/form-fields/input';
+import SelectParentFormField from '~/modules/common/form-fields/select-parent';
+import { SlugFormField } from '~/modules/common/form-fields/slug';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { updateProjectBodySchema } from 'backend/modules/projects/schema';
+import { type UpdateProjectParams, updateProject } from '~/api/projects';
 
 interface Props {
   project: Project;
@@ -26,29 +28,19 @@ interface Props {
   sheet?: boolean;
 }
 
-const formSchema = z.object({
-  id: z.string(),
-  slug: z.string(),
-  name: z.string(),
-  color: z.string(),
-});
+const formSchema = updateProjectBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
 export const useUpdateProjectMutation = (idOrSlug: string) => {
-  return useMutation({
-    onSuccess: () => {
-      console.log(idOrSlug);
+  return useMutation<Project, DefaultError, UpdateProjectParams>({
+    mutationKey: ['project', 'update', idOrSlug],
+    mutationFn: (params) => updateProject(idOrSlug, params),
+    onSuccess: (updatedProject) => {
+      queryClient.setQueryData(['project', idOrSlug], updatedProject);
     },
+    gcTime: 1000 * 10,
   });
-  //   return useMutation<Project, DefaultError, UpdateProjectParams>({
-  //     mutationKey: ['project', 'update', idOrSlug],
-  //     mutationFn: (params) => UpdateProjectForm(idOrSlug, params),
-  //     onSuccess: (project) => {
-  //       queryClient.setQueryData(['project', idOrSlug], project);
-  //     },
-  //     gcTime: 1000 * 10,
-  //   });
 };
 
 const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet }: Props) => {
@@ -62,6 +54,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
       slug: project.slug,
       name: project.name,
       color: project.color,
+      ...(project.workspaceId && { workspaceId: project.workspaceId }),
     },
   };
 
@@ -71,19 +64,14 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
-    if (isDialog) dialog.remove();
-    callback?.({} as Project);
-    mutate();
-    console.log(values);
-
-    toast.success(t('common:success.update_resource', { resource: t('common:project') }));
-    // mutate(values, {
-    //   onSuccess: (data) => {
-    //     callback?.(data as Project);
-    //     if (isDialog) dialog.remove();
-    //     toast.success(t('common:success.update_resource', { resource: t('common:project') }));
-    //   },
-    // });
+    mutate(values, {
+      onSuccess: (updatedProject) => {
+        callback?.(updatedProject as Project);
+        if (isDialog) dialog.remove();
+        if (isSheet) sheet.remove();
+        toast.success(t('common:success.update_resource', { resource: t('common:project') }));
+      },
+    });
   };
 
   // Update sheet title with unsaved changes

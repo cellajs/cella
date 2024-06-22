@@ -3,7 +3,7 @@ import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
 import { Send } from 'lucide-react';
-import { terminateMySessions as baseTerminateMySessions } from '~/api/me';
+import { deleteMySessions as baseTerminateMySessions } from '~/api/me';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
@@ -40,11 +40,11 @@ const tabs = [
 
 interface SessionTileProps {
   session: Session;
-  terminateMySessions: (sessionIds: string[]) => void;
+  deleteMySessions: (sessionIds: string[]) => void;
   isPending: boolean;
 }
 
-const SessionTile = ({ session, terminateMySessions, isPending }: SessionTileProps) => {
+const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps) => {
   const { t } = useTranslation();
 
   return (
@@ -67,7 +67,7 @@ const SessionTile = ({ session, terminateMySessions, isPending }: SessionTilePro
           className="w-auto font-light text-sm"
           disabled={isPending}
           onClick={() => {
-            terminateMySessions([session.id]);
+            deleteMySessions([session.id]);
           }}
         >
           <ZapOff size={14} className="mr-2" />
@@ -86,9 +86,9 @@ const UserSettings = () => {
   const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.current), [user.sessions]);
   const sessions = Array.from(user.sessions).sort((a) => (a.current ? -1 : 1));
 
-  const { mutate: terminateMySessions, isPending } = useMutation({
+  const { mutate: deleteMySessions, isPending } = useMutation({
     mutationFn: baseTerminateMySessions,
-    onSuccess: (_data, variables) => {
+    onSuccess: (_, variables) => {
       useUserStore.setState((state) => {
         state.user.sessions = state.user.sessions.filter((session) => !variables.includes(session.id));
       });
@@ -159,7 +159,7 @@ const UserSettings = () => {
                   size="sm"
                   disabled={isPending}
                   onClick={() => {
-                    terminateMySessions(sessionsWithoutCurrent.map((session) => session.id));
+                    deleteMySessions(sessionsWithoutCurrent.map((session) => session.id));
                   }}
                 >
                   <ZapOff size={16} className="mr-2" />
@@ -170,7 +170,7 @@ const UserSettings = () => {
                 <ExpandableList
                   items={sessions}
                   renderItem={(session) => (
-                    <SessionTile session={session} key={session.id} terminateMySessions={terminateMySessions} isPending={isPending} />
+                    <SessionTile session={session} key={session.id} deleteMySessions={deleteMySessions} isPending={isPending} />
                   )}
                   initialDisplayCount={3}
                   expandText="common:more_sessions"

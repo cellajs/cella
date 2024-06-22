@@ -8,11 +8,13 @@ import { type RefObject, useEffect } from 'react';
  * @param {function} onSingleClick A callback function for single click events
  * @param {function} onDoubleClick A callback function for double click events
  * @param {string[]} allowedTargets Set a Lover case element name that allow to be tracked by hook
+ * @param {string[]} excludeIds Set a element id that excluded from tracking by hook
  */
 
 interface UseDoubleClickOptions {
   ref: RefObject<HTMLButtonElement | HTMLElement>;
   allowedTargets?: string[];
+  excludeIds?: string[];
   latency?: number;
   onSingleClick?: (event: MouseEvent) => void;
   onDoubleClick?: (event: MouseEvent) => void;
@@ -21,6 +23,7 @@ interface UseDoubleClickOptions {
 const useDoubleClick = ({
   ref,
   latency = 300,
+  excludeIds = [],
   allowedTargets = [],
   onSingleClick = () => null,
   onDoubleClick = () => null,
@@ -31,10 +34,24 @@ const useDoubleClick = ({
 
     let clickCount = 0;
     const handleClick = (e: Event) => {
-      // Ignore the click if it matches an allowed target
-      if (allowedTargets.length > 0 && e.target) {
-        const targetElement = e.target as Element;
-        if (!allowedTargets.includes(targetElement.localName)) return;
+      const targetElement = e.target as HTMLElement | null;
+
+      // Ensure targetElement is not null before accessing its properties
+      if (!targetElement) return;
+
+      let isExcluded = false;
+      let parentElement: HTMLElement | null = targetElement;
+      while (parentElement) {
+        if (excludeIds.includes(parentElement.id)) {
+          isExcluded = true;
+          break;
+        }
+        parentElement = parentElement.parentElement;
+      }
+
+      // Ignore the click if it matches an allowed target or if it's excluded
+      if ((allowedTargets.length > 0 && !allowedTargets.includes(targetElement.localName)) || isExcluded) {
+        return;
       }
 
       // Update the type of the event parameter to Event

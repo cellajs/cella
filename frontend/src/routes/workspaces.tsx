@@ -9,6 +9,8 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { workspaceQueryOptions } from '~/modules/workspaces';
 import { IndexRoute } from './routeTree';
+import { membersSearchSchema } from './organizations';
+import { z } from 'zod';
 
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));
@@ -18,12 +20,14 @@ const ElectricSuspense = lazy(() => import('~/modules/common/electric/suspense')
 
 export const WorkspaceRoute = createRoute({
   path: 'workspace/$idOrSlug',
+  validateSearch: z.object({
+    ...membersSearchSchema.shape,
+    projectSettings: z.enum(['general', 'members']).default('general').optional(),
+  }),
   staticData: { pageTitle: 'Workspace', hideFooter: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => IndexRoute,
-  loader: async ({ params: { idOrSlug } }) => {
-    queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
-  },
+  loader: async ({ params: { idOrSlug } }) => queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug)),
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
     return (
@@ -69,7 +73,7 @@ export const WorkspaceOverviewRoute = createRoute({
         title="Not built yet."
         text={
           <>
-            <p>Here will be a grid with tiles/cards that summarize projects with stats.</p>
+            <p>Here will be a grid of project cards for stats, analytics and advisory.</p>
             <p className="mt-4">
               Please connect on
               <a href={config.company.githubUrl} className="underline underline-offset-2 text-primary mx-1" target="_blank" rel="noreferrer">

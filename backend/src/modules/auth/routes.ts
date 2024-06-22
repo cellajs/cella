@@ -1,13 +1,13 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successResponseWithDataSchema, successResponseWithoutDataSchema } from '../../lib/common-responses';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '../../lib/common-responses';
 import { cookieSchema, passwordSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isPublicAccess } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
-import { apiUserSchema } from '../users/schema';
-import { checkEmailJsonSchema, signInJsonSchema, signUpJsonSchema } from './schema';
+import { userSchema } from '../users/schema';
+import { emailBodySchema, authBodySchema } from './schema';
 
 class AuthRoutesConfig {
   public checkEmail = createRouteConfig({
@@ -23,7 +23,7 @@ class AuthRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: checkEmailJsonSchema,
+            schema: emailBodySchema,
           },
         },
       },
@@ -33,7 +33,7 @@ class AuthRoutesConfig {
         description: 'Email exists',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -54,7 +54,7 @@ class AuthRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: signUpJsonSchema,
+            schema: authBodySchema,
           },
         },
       },
@@ -67,7 +67,7 @@ class AuthRoutesConfig {
         }),
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -88,9 +88,7 @@ class AuthRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              email: z.string(),
-            }),
+            schema: emailBodySchema,
           },
         },
       },
@@ -100,7 +98,7 @@ class AuthRoutesConfig {
         description: 'Verification email sent',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -136,7 +134,7 @@ class AuthRoutesConfig {
         description: 'Verified & session given',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -157,9 +155,7 @@ class AuthRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              email: z.string(),
-            }),
+            schema: emailBodySchema,
           },
         },
       },
@@ -169,7 +165,7 @@ class AuthRoutesConfig {
         description: 'Password reset email sent',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -201,7 +197,7 @@ class AuthRoutesConfig {
         description: 'Password reset successfully',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -222,7 +218,7 @@ class AuthRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: signInJsonSchema,
+            schema: authBodySchema,
           },
         },
       },
@@ -235,7 +231,7 @@ class AuthRoutesConfig {
         }),
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiUserSchema),
+            schema: successWithDataSchema(userSchema),
           },
         },
       },
@@ -401,7 +397,7 @@ class AuthRoutesConfig {
         description: 'User signed out',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },

@@ -1,16 +1,16 @@
 import { z } from '@hono/zod-openapi';
 
-import {
-  errorResponses,
-  successResponseWithDataSchema,
-  successResponseWithErrorsSchema,
-  successResponseWithoutDataSchema,
-} from '../../lib/common-responses';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '../../lib/common-responses';
 import { idSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import { inviteJsonSchema } from '../general/schema';
-import { apiMembershipSchema, createMembershipQuerySchema, deleteMembersQuerySchema, updateMembershipJsonSchema } from './schema';
+import {
+  membershipSchema,
+  createMembershipBodySchema,
+  createMembershipQuerySchema,
+  deleteMembersQuerySchema,
+  updateMembershipBodySchema,
+} from './schema';
 
 class MembershipRoutesConfig {
   public createMembership = createRouteConfig({
@@ -25,7 +25,7 @@ class MembershipRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: inviteJsonSchema,
+            schema: createMembershipBodySchema,
           },
         },
       },
@@ -35,7 +35,7 @@ class MembershipRoutesConfig {
         description: 'Invitation was sent',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -58,7 +58,7 @@ class MembershipRoutesConfig {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successResponseWithErrorsSchema(),
+            schema: successWithErrorsSchema(),
           },
         },
       },
@@ -78,7 +78,7 @@ class MembershipRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateMembershipJsonSchema,
+            schema: updateMembershipBodySchema,
           },
         },
       },
@@ -88,7 +88,7 @@ class MembershipRoutesConfig {
         description: 'Membership updated',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(apiMembershipSchema),
+            schema: successWithDataSchema(membershipSchema),
           },
         },
       },

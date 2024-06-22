@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import type { EntityType } from 'backend/types/common';
+import type { Entity } from 'backend/types/common';
 import { Building, ChevronRight, Home, Layers } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,7 @@ import { PageCover } from './page-cover';
 // PageHeaderProps Interface
 interface PageHeaderProps {
   title?: string | null;
-  type: EntityType;
+  type: Entity;
   id: string;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;

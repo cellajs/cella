@@ -13,7 +13,7 @@ interface Props {
   tabIndex: number;
 }
 
-const RowEdit = ({ user, callback, tabIndex }: Props) => {
+const UpdateRow = ({ user, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
   const openUpdateSheet = () => {
@@ -27,8 +27,8 @@ const RowEdit = ({ user, callback, tabIndex }: Props) => {
         </CardContent>
       </Card>,
       {
-        id: 'edit-user',
-        className: 'sm:max-w-2xl',
+        id: 'update-user',
+        className: 'max-w-full lg:max-w-[900px]',
         title: t('common:edit_user'),
       },
     );
@@ -41,4 +41,4 @@ const RowEdit = ({ user, callback, tabIndex }: Props) => {
   );
 };
 
-export default RowEdit;
+export default UpdateRow;

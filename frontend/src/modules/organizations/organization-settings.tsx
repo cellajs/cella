@@ -12,18 +12,14 @@ import { AsideAnchor } from '../common/aside-anchor';
 import { dialog } from '../common/dialoger/state';
 import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
-import { useContext } from 'react';
-import { EntityContext } from '../common/entity-context';
+import type { Organization } from '~/types';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
   { id: 'delete-organization', label: 'common:delete_resource', resource: 'common:organization' },
 ];
 
-const OrganizationSettings = () => {
-  const { organization } = useContext(EntityContext);
-  if (!organization) return null;
-
+const OrganizationSettings = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });

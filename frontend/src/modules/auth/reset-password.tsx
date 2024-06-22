@@ -6,6 +6,8 @@ import * as z from 'zod';
 import { Button } from '~/modules/ui/button';
 import AuthPage from './auth-page';
 
+import { passwordSchema } from 'backend/lib/common-schemas';
+import { config } from 'config';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -15,8 +17,6 @@ import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { passwordSchema } from 'backend/lib/common-schemas';
-import { config } from 'config';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -35,7 +35,7 @@ const ResetPassword = () => {
   // Check reset password token and get email
   const { mutate: checkToken } = useMutation({
     mutationFn: baseCheckToken,
-    onSuccess: (data) => setEmail(data.email),
+    onSuccess: (result) => setEmail(result.email),
     onError: (error) => setError(error),
   });
 
@@ -57,10 +57,8 @@ const ResetPassword = () => {
 
   // Submit new password
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    resetPassword({
-      token,
-      password: values.password,
-    });
+    const { password } = values;
+    resetPassword({ token, password });
   };
 
   useEffect(() => {

@@ -1,19 +1,13 @@
 import { z } from 'zod';
 import { passwordSchema } from '../../lib/common-schemas';
-import { apiUserSchema } from '../users/schema';
+import { userSchema } from '../users/schema';
 
-export const signInJsonSchema = z.object({
-  email: apiUserSchema.shape.email,
+export const authBodySchema = z.object({
+  email: userSchema.shape.email,
   password: passwordSchema,
   token: z.string().optional(),
 });
 
-export const signUpJsonSchema = z.object({
-  email: apiUserSchema.shape.email,
-  password: passwordSchema,
-  token: z.string().optional(),
-});
-
-export const checkEmailJsonSchema = z.object({
-  email: apiUserSchema.shape.email,
+export const emailBodySchema = z.object({
+  email: userSchema.shape.email,
 });

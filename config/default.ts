@@ -41,8 +41,7 @@ export const config = {
   sentSentrySourceMaps: true,
 
   // Customer support with Gleap
-  //gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
-  gleapToken: '',
+  gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
 
   // Google maps key
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',

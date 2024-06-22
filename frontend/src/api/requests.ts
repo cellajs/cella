@@ -1,23 +1,12 @@
-import type { RequestType } from 'backend/db/schema/requests';
 import { apiClient, handleResponse } from '.';
+import type { RequestProp } from '~/types';
 
 const client = apiClient.requests;
 
-//TODO: infer from backend?
-interface CreateRequestProp {
-  email: string;
-  type: RequestType;
-  message?: string;
-}
-
 // Request access or request info
-export const createRequest = async (requestInfo: CreateRequestProp) => {
+export const createRequest = async (requestInfo: RequestProp) => {
   const response = await client.$post({
-    json: {
-      type: requestInfo.type,
-      email: requestInfo.email,
-      message: requestInfo.message || null,
-    },
+    json: requestInfo,
   });
 
   await handleResponse(response);

@@ -9,23 +9,22 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import { useElectric, type Label, type Task } from '../../common/electric/electrify.ts';
+import { type Label, type Task, useElectric } from '../../common/electric/electrify.ts';
 import { Checkbox } from '../../ui/checkbox.tsx';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
 import { SelectImpact } from './task-selectors/select-impact.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
+import { useLiveQuery } from 'electric-sql/react';
+import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 import { useProjectContext } from '../board/project-context.tsx';
+import { useTaskContext } from './task-context.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
-import SelectParent from './task-selectors/select-parent.tsx';
-import SetSubTasks from './task-selectors/select-sub-tasks.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
-import { useTaskContext } from './task-context.tsx';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
-import { useLiveQuery } from 'electric-sql/react';
-
+import SubTask from './sub-task-card.tsx';
+import CreateSubTaskForm from './create-sub-task-form.tsx';
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
   taskDragButtonRef: React.RefObject<HTMLButtonElement>;
@@ -55,10 +54,10 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     }),
   );
 
-  const parentTask = tasks.find((p) => p.id === task.parent_id);
   const subTasks = tasks.filter((t) => t.parent_id === task.id);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [createSubTask, setCreateSubTask] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -78,46 +77,8 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   };
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const handleChange = (field: keyof Task, value: any) => {
+  const handleChange = (field: keyof Task, value: any, taskId: string) => {
     const db = electric.db;
-
-    if (field === 'parent_id') {
-      if (Array.isArray(value)) {
-        const newSubTasks = value.filter((t) => !subTasks.find((ct) => ct.id === t.id));
-        for (const subTask of newSubTasks) {
-          db.tasks.update({
-            data: {
-              parent_id: task.id,
-            },
-            where: {
-              id: subTask.id,
-            },
-          });
-        }
-        const removedSubTasks = subTasks.filter((t) => !value.find((vt) => vt.id === t.id));
-        for (const subTask of removedSubTasks) {
-          db.tasks.update({
-            data: {
-              parent_id: null,
-            },
-            where: {
-              id: subTask.id,
-            },
-          });
-        }
-        return;
-      }
-
-      db.tasks.update({
-        data: {
-          parent_id: value,
-        },
-        where: {
-          id: task.id,
-        },
-      });
-      return;
-    }
 
     if (field === 'assigned_to' && Array.isArray(value)) {
       db.tasks.update({
@@ -125,7 +86,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
           assigned_to: value.map((user) => user.id),
         },
         where: {
-          id: task.id,
+          id: taskId,
         },
       });
       return;
@@ -138,7 +99,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
           labels: value.map((label) => label.id),
         },
         where: {
-          id: task.id,
+          id: taskId,
         },
       });
       return;
@@ -149,7 +110,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
         [field]: value,
       },
       where: {
-        id: task.id,
+        id: taskId,
       },
     });
   };
@@ -188,6 +149,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
       setIsExpanded(true);
     },
     allowedTargets: ['p', 'div'],
+    excludeIds: ['sub-item'],
     ref: taskRef,
     latency: 250,
   });
@@ -215,7 +177,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   return (
     <Card
       onMouseDown={() => {
-        if (isExpanded) return;
         setFocusedTaskId(task.id);
         setFocusedProjectIndex(projects.findIndex((p) => p.id === task.project_id) || 0);
         taskRef.current?.focus();
@@ -234,7 +195,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
         className,
       )}
     >
-      <CardContent id={`${task.id}-content`} className="p-1 space-between gap-1 flex flex-col relative">
+      <CardContent id={`${task.id}-content`} className="p-1 pb-2 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
             <div className="flex flex-col justify-between gap-[2px] relative">
@@ -258,7 +219,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               <SelectTaskType
                 className={cn('group-[.is-selected]/column:mt-[34px] transition-spacing', isExpanded && 'mt-[34px]')}
                 currentType={task.type as TaskType}
-                changeTaskType={(newType) => handleChange('type', newType)}
+                changeTaskType={(newType) => handleChange('type', newType, task.id)}
               />
               <Button
                 ref={taskDragButtonRef}
@@ -275,8 +236,8 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                 <TaskEditor
                   mode={mode}
                   markdown={task.markdown || ''}
-                  setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown)}
-                  setSummary={(newSummary) => handleChange('summary', newSummary)}
+                  setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown, task.id)}
+                  setSummary={(newSummary) => handleChange('summary', newSummary, task.id)}
                   toggleEditorState={toggleEditorState}
                   id={task.id}
                 />
@@ -314,12 +275,37 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               )}
 
               {isExpanded && (
-                <div>
-                  <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>
-                  <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 h-5 -ml-1 opacity-70">
-                    {t('common:less').toLowerCase()}
-                  </Button>
-                </div>
+                <>
+                  {subTasks.length > 0 && (
+                    <div className="inline-flex py-0 h-4 items-center mt-4 gap-1">
+                      <span className="text-success">{subTasks.filter((t) => t.status === 6).length}</span>
+                      <span>/</span>
+                      <span>{subTasks.length}</span>
+                      <span>{t('common:completed_todo')}</span>
+                    </div>
+                  )}
+
+                  <div className="-ml-10 -mr-2">
+                    <div className="flex flex-col">
+                      {subTasks.map((task) => (
+                        <SubTask key={task.id} task={task} handleChange={handleChange} />
+                      ))}
+                    </div>
+
+                    <CreateSubTaskForm
+                      firstSubTask={subTasks.length < 1}
+                      formOpen={createSubTask}
+                      setFormState={(value) => setCreateSubTask(value)}
+                      parentTaskId={task.id}
+                    />
+                  </div>
+
+                  <div>
+                    <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
+                      {t('common:less').toLowerCase()}
+                    </Button>
+                  </div>
+                </>
               )}
 
               <div className="flex items-start justify-between">
@@ -327,7 +313,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   <SelectImpact
                     viewValue={task.impact as TaskImpact}
                     mode="edit"
-                    changeTaskImpact={(newImpact) => handleChange('impact', newImpact)}
+                    changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)}
                   />
                 )}
 
@@ -338,7 +324,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   labels={labels}
                   organizationId={task.organization_id}
                   projectId={task.project_id}
-                  changeLabels={(newLabels) => handleChange('labels', newLabels)}
+                  changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
                   viewValue={labels}
                   mode="edit"
                 />
@@ -348,46 +334,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                     mode="edit"
                     users={members}
                     viewValue={members.filter((member) => task.assigned_to?.includes(member.id))}
-                    changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers)}
+                    changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
                   />
-                  <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus)} />
+                  <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            {parentTask && (
-              <SelectParent
-                mode="edit"
-                tasks={tasks.filter((t) => t.id !== task.id)}
-                parent={parentTask}
-                onChange={(newParentTask) => handleChange('parent_id', newParentTask?.id || null)}
-              />
-            )}
-            {subTasks.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {isExpanded && (
-                  <div>
-                    {subTasks.map(({ summary, id, status }) => {
-                      return (
-                        <div key={id} className="flex bg-secondary items-center gap-1 p-1">
-                          <Checkbox checked={status === 6} />
-                          {summary}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-            <SetSubTasks
-              mode="edit"
-              tasks={tasks.filter((t) => t.id !== task.id && t.id !== task.parent_id)}
-              // TODO: refactor this with db relation
-              viewValue={subTasks}
-              onChange={(newSubTasks) => handleChange('parent_id', newSubTasks)}
-            />
           </div>
         </div>
       </CardContent>

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
 
 import { Link } from '@tanstack/react-router';
+import { config } from 'config';
 import { Shield, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -11,8 +12,7 @@ import { AvatarWrap } from '../../common/avatar-wrap';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import { renderSelect } from '../../common/data-table/select-column';
-import RowEdit from './row-edit';
-import { config } from 'config';
+import UpdateRow from './update-row';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
@@ -43,7 +43,10 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
       name: '',
       visible: true,
       width: 32,
-      renderCell: ({ row, tabIndex }) => <RowEdit organization={row} tabIndex={tabIndex} callback={callback} />,
+      renderCell: ({ row, tabIndex }) => {
+        if (row.counts.memberships.admins > 0 || row.counts.memberships.members > 0)
+          return <UpdateRow organization={row} tabIndex={tabIndex} callback={callback} />;
+      },
     },
   ];
 

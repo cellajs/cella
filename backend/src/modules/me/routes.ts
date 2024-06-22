@@ -1,17 +1,12 @@
-import {
-  errorResponses,
-  successResponseWithDataSchema,
-  successResponseWithErrorsSchema,
-  successResponseWithoutDataSchema,
-} from '../../lib/common-responses';
-import { deleteByIdsQuerySchema } from '../../lib/common-schemas';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '../../lib/common-responses';
+import { idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import { updateUserJsonSchema } from '../users/schema';
+import { userSchema, updateUserBodySchema } from '../users/schema';
 import { meUserSchema, userMenuSchema } from './schema';
 
 class MeRoutesConfig {
-  public me = createRouteConfig({
+  public getSelf = createRouteConfig({
     method: 'get',
     path: '/',
     guard: isAuthenticated,
@@ -23,7 +18,7 @@ class MeRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(meUserSchema),
+            schema: successWithDataSchema(meUserSchema),
           },
         },
       },
@@ -42,7 +37,7 @@ class MeRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateUserJsonSchema.omit({
+            schema: updateUserBodySchema.omit({
               role: true,
             }),
           },
@@ -54,7 +49,7 @@ class MeRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(meUserSchema),
+            schema: successWithDataSchema(userSchema),
           },
         },
       },
@@ -74,7 +69,7 @@ class MeRoutesConfig {
         description: 'User deleted',
         content: {
           'application/json': {
-            schema: successResponseWithoutDataSchema,
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -95,7 +90,7 @@ class MeRoutesConfig {
         description: 'Menu of user',
         content: {
           'application/json': {
-            schema: successResponseWithDataSchema(userMenuSchema),
+            schema: successWithDataSchema(userMenuSchema),
           },
         },
       },
@@ -103,7 +98,7 @@ class MeRoutesConfig {
     },
   });
 
-  public terminateSessions = createRouteConfig({
+  public deleteSessions = createRouteConfig({
     method: 'delete',
     path: '/sessions',
     guard: isAuthenticated,
@@ -111,14 +106,14 @@ class MeRoutesConfig {
     summary: 'Terminate sessions',
     description: 'Terminate all sessions of the current user, except for current session.',
     request: {
-      query: deleteByIdsQuerySchema,
+      query: idsQuerySchema,
     },
     responses: {
       200: {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successResponseWithErrorsSchema(),
+            schema: successWithErrorsSchema(),
           },
         },
       },
