@@ -110,7 +110,7 @@ services:
     - key: PG_PROXY_PASSWORD
       sync: false
     - key: LOGICAL_PUBLISHER_HOST
-      value: cella-electric-sync.onrender.com
+      value: electric-sync.cellajs.com
       sync: true
     - key: ELECTRIC_WRITE_TO_PG_MODE
       value: direct_writes
