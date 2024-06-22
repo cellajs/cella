@@ -1,6 +1,6 @@
 import { Outlet, ScrollRestoration } from '@tanstack/react-router';
 import { config } from 'config';
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 
 import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 import { Dialoger } from '~/modules/common/dialoger';
@@ -10,11 +10,11 @@ import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { DownAlert } from './down-alert';
 
-const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
 function Root() {
-  // Lazy load gleap chat support
+  // Lazy load
   const GleapSupport = config.gleapToken ? useLazyComponent(() => import('~/modules/common/gleap'), 5000) : () => null; // 5 seconds delay
+  const DebugToolbars = config.mode === 'development' ? useLazyComponent(() => import('~/modules/common/debug-toolbars'), 1000) : () => null;
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
@@ -27,7 +27,7 @@ function Root() {
       <Toaster richColors />
 
       <Suspense fallback={null}>
-        {config.mode === 'development' ? <DebugToolbars /> : null}
+        {DebugToolbars ? <DebugToolbars /> : null}
       </Suspense>
       <DownAlert />
 

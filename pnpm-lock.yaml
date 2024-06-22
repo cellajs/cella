@@ -461,6 +461,9 @@ importers:
       react-intersection-observer:
         specifier: ^9.10.2
         version: 9.10.2(react-dom@18.3.1)(react@18.3.1)
+      react-lazy-with-preload:
+        specifier: ^2.2.1
+        version: 2.2.1
       react-resizable-panels:
         specifier: ^2.0.19
         version: 2.0.19(react-dom@18.3.1)(react@18.3.1)
@@ -15763,6 +15766,10 @@ packages:
       shallow-equal: 1.2.1
       theming: 3.3.0(react@18.3.1)
       tiny-warning: 1.0.3
+    dev: false
+
+  /react-lazy-with-preload@2.2.1:
+    resolution: {integrity: sha512-ONSb8gizLE5jFpdHAclZ6EAAKuFX2JydnFXPPPjoUImZlLjGtKzyBS8SJgJq7CpLgsGKh9QCZdugJyEEOVC16Q==}
     dev: false
 
   /react-markdown@9.0.1(@types/react@18.3.3)(react@18.3.1):

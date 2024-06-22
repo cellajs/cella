@@ -4,6 +4,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import useMounted from '~/hooks/use-mounted';
 import './style.css';
+import { queryClient } from '~/lib/router';
 
 interface DebugItem {
   id: string;
@@ -34,7 +35,7 @@ const DebugToolbars = () => {
   return (
     <>
       <TanStackRouterDevtools />
-      <ReactQueryDevtools />
+      <ReactQueryDevtools client={queryClient} />
       <div
         className={`max-sm:hidden left-3 bottom-0 fixed z-[99] transition-transform ease-out'
           ${!hasStarted && 'sm:-translate-x-full'}`}
