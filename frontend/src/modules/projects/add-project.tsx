@@ -67,7 +67,7 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
             exit={{ scale: 0.9, opacity: 0 }}
           >
             <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col">
-              <ToggleGroupItem size="tile" variant="tile" value="create" aria-label="Create project" id="create-project-option">
+              <ToggleGroupItem size="tile" variant="tile" value="create" aria-label="Create project" className="h-auto" id="create-project-option">
                 <Shrub size={48} strokeWidth={1} />
                 <div className="flex flex-col p-4">
                   <p className="font-light">{t('common:create_project.text')}</p>
@@ -77,7 +77,7 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
                   </div>
                 </div>
               </ToggleGroupItem>
-              <ToggleGroupItem size="tile" variant="tile" value="select" aria-label="Select from existed project">
+              <ToggleGroupItem size="tile" variant="tile" value="select" aria-label="Select project" className="h-auto">
                 <SquareMousePointer size={48} strokeWidth={1} />
                 <div className="flex flex-col p-4">
                   <div className="font-light">{t('common:select_project.text')}</div>

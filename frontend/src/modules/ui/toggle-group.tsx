@@ -37,7 +37,7 @@ const ToggleGroupItem = React.forwardRef<
           variant: context.variant || variant,
           size: context.size || size,
         }),
-        'h-auto',
+        
         className,
       )}
       disabled={disabled}

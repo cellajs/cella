@@ -63,7 +63,7 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
         {!inviteMode && (
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
             <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col">
-              <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users">
+              <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users" className="h-auto">
                 <Search size={48} strokeWidth={1} />
                 <div className="flex flex-col p-4">
                   <div className="font-light">{t('common:invite_by_name')}</div>
@@ -73,7 +73,7 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
                   </div>
                 </div>
               </ToggleGroupItem>
-              <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by emails">
+              <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="h-auto">
                 <AtSign size={48} strokeWidth={1} />
                 <div className="flex flex-col p-4">
                   <p className="font-light">{t('common:invite_by_email')}</p>
