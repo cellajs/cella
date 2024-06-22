@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type GetProjectsParams, getProjects } from '~/api/projects';
 import { useDebounce } from '~/hooks/use-debounce';
-import useQueryResultEffect from '~/hooks/use-query-result-effect';
+import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { Project } from '~/types';
@@ -52,15 +52,6 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
   const [query, setQuery] = useState<GetProjectsParams['q']>('');
   const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'createdAt', direction: 'DESC' }]);
 
-  const onRowsChange = (changedRows: Project[]) => {
-    setRows(changedRows);
-  };
-
-  const onResetFilters = () => {
-    setQuery('');
-    setSelectedRows(new Set<string>());
-  };
-
   // Search query options
   const q = useDebounce(query, 200);
   const sort = sortColumns[0]?.columnKey as ProjectsSearch['sort'];
@@ -76,25 +67,41 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
 
   const isFiltered = !!q;
 
-  const callback = useMutateInfiniteQueryData(['projects', q, sortColumns]);
+  const callback = useMutateInfiniteQueryData(['projects', q, sort, order]);
 
+  useMapQueryDataToRows<Project>({ queryResult, setSelectedRows, setRows, selectedRows });
+
+  const onRowsChange = (changedRows: Project[]) => {
+    setRows(changedRows);
+  };
+
+  const onResetFilters = () => {
+    setQuery('');
+    setSelectedRows(new Set<string>());
+  };
+  
   const selectedProjects = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
   const openDeleteDialog = () => {
-    dialog(<DeleteProjects dialog projects={selectedProjects} callback={(projects) => {
-      callback(projects, 'delete');
-      toast.success(t('common:success.delete_resources', { resources: t('common:projects') }));
-    }} />, {
-      drawerOnMobile: false,
-      className: 'max-w-xl',
-      title: t('common:delete'),
-      text: t('common:confirm.delete_resources', { resources: t('common:projects').toLowerCase() }),
-    });
+    dialog(
+      <DeleteProjects
+        dialog
+        projects={selectedProjects}
+        callback={(projects) => {
+          callback(projects, 'delete');
+          toast.success(t('common:success.delete_resources', { resources: t('common:projects') }));
+        }}
+      />,
+      {
+        drawerOnMobile: false,
+        className: 'max-w-xl',
+        title: t('common:delete'),
+        text: t('common:confirm.delete_resources', { resources: t('common:projects').toLowerCase() }),
+      },
+    );
   };
-
-  useQueryResultEffect<Project>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

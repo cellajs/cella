@@ -7,12 +7,12 @@ import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
-import OrganizationSettings from '~/modules/organizations/organization-settings';
 import { IndexRoute } from './routeTree';
-import type { Organization as OrganizationType} from '~/types';
+import type { Organization as OrganizationType } from '~/types';
 
 //Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
+const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 // Search query schema
 export const membersSearchSchema = membersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
@@ -65,6 +65,10 @@ export const OrganizationSettingsRoute = createRoute({
     const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
     const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
     if (!organization) return;
-    return <OrganizationSettings organization={organization} />;
+    return (
+      <Suspense>
+        <OrganizationSettings organization={organization} />
+      </Suspense>
+    );
   },
 });

@@ -27,7 +27,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
-import useQueryResultEffect from '~/hooks/use-query-result-effect';
+import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -167,7 +167,7 @@ const UsersTable = () => {
     );
   };
 
-  useQueryResultEffect<User>({ queryResult, setSelectedRows, setRows, selectedRows });
+  useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

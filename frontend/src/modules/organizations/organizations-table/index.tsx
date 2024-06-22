@@ -18,7 +18,7 @@ import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import useQueryResultEffect from '~/hooks/use-query-result-effect';
+import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { DataTable } from '~/modules/common/data-table';
 import { useColumns } from './columns';
 import { config } from 'config';
@@ -155,7 +155,7 @@ const OrganizationsTable = () => {
     setSelectedRows(new Set<string>());
   };
 
-  useQueryResultEffect<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
+  useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

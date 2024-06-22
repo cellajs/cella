@@ -105,7 +105,7 @@ export const CreateSubTaskForm = ({
       })
       .then(() => {
         form.reset();
-        toast.success(t('success.create_resource', { resource: t('common:task') }));
+        toast.success(t('common:success.create_resource', { resource: t('common:task') }));
         setFormState(false);
       });
   };
@@ -119,7 +119,7 @@ export const CreateSubTaskForm = ({
   // Fix types
   return (
     <Form {...form}>
-      <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 border-b flex gap-2 flex-col shadow-inner">
+      <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary">
         <FormField
           control={form.control}
           name="markdown"
@@ -159,16 +159,23 @@ export const CreateSubTaskForm = ({
               size={'xs'}
               type="reset"
               variant="secondary"
-              className={form.formState.isDirty ? '' : 'invisible'}
+              className={form.formState.isDirty ? '' : 'hidden'}
               aria-label="Cancel"
               onClick={() => form.reset()}
             >
               {t('common:cancel')}
             </Button>
+            <Button
+              size={'xs'}
+              type="button"
+              variant="secondary"
+              aria-label="close"
+              onClick={() => setFormState(false)}
+              className={form.formState.isDirty ? 'hidden' : ''}
+            >
+              {t('common:close')}
+            </Button>
           </div>
-          <Button size={'xs'} type="button" variant="secondary" aria-label="close" onClick={() => setFormState(false)}>
-            {t('common:close')}
-          </Button>
         </div>
       </form>
     </Form>

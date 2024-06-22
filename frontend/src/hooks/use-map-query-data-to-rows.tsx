@@ -15,7 +15,7 @@ interface UseQueryResultEffectProps<T> {
   setRows: (rows: T[]) => void;
 }
 
-const useQueryResultEffect = <T extends { id: string } & object>({
+const useMapQueryDataToRows = <T extends { id: string } & object>({
   queryResult,
   selectedRows,
   setSelectedRows,
@@ -31,4 +31,4 @@ const useQueryResultEffect = <T extends { id: string } & object>({
   }, [queryResult.data, selectedRows, setSelectedRows, setRows]);
 };
 
-export default useQueryResultEffect;
+export default useMapQueryDataToRows;

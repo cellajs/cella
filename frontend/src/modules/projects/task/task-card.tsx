@@ -195,7 +195,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
         className,
       )}
     >
-      <CardContent id={`${task.id}-content`} className="p-1 space-between flex flex-col relative">
+      <CardContent id={`${task.id}-content`} className="p-1 pb-2 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
             <div className="flex flex-col justify-between gap-[2px] relative">
@@ -275,12 +275,37 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               )}
 
               {isExpanded && (
-                <div>
-                  <div className="font-light py-4">[here will we show attachments and todos as a checklist]</div>
-                  <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 h-5 -ml-1 opacity-70">
-                    {t('common:less').toLowerCase()}
-                  </Button>
-                </div>
+                <>
+                  {subTasks.length > 0 && (
+                    <div className="inline-flex py-0 h-4 items-center mt-4 gap-1">
+                      <span className="text-success">{subTasks.filter((t) => t.status === 6).length}</span>
+                      <span>/</span>
+                      <span>{subTasks.length}</span>
+                      <span>{t('common:completed_todo')}</span>
+                    </div>
+                  )}
+
+                  <div className="-ml-10 -mr-2">
+                    <div className="flex flex-col">
+                      {subTasks.map((task) => (
+                        <SubTask key={task.id} task={task} handleChange={handleChange} />
+                      ))}
+                    </div>
+
+                    <CreateSubTaskForm
+                      firstSubTask={subTasks.length < 1}
+                      formOpen={createSubTask}
+                      setFormState={(value) => setCreateSubTask(value)}
+                      parentTaskId={task.id}
+                    />
+                  </div>
+
+                  <div>
+                    <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
+                      {t('common:less').toLowerCase()}
+                    </Button>
+                  </div>
+                </>
               )}
 
               <div className="flex items-start justify-between">
@@ -316,37 +341,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
               </div>
             </div>
           </div>
-
-          {subTasks.length > 0 && (
-            <>
-              {isExpanded && (
-                <>
-                  <div className="inline-flex py-0 h-4 items-center ml-4 gap-1">
-                    <span className="text-success text-xs">{subTasks.filter((t) => t.status === 6).length}</span>
-                    <span className="font-light text-xs">/</span>
-                    <span className="font-light text-xs">{subTasks.length}</span>
-                    <span className="font-light text-zinc-400 text-xs">{t('common:completed_todo')}</span>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <div>
-                      {subTasks.map((task) => (
-                        <SubTask key={task.id} task={task} handleChange={handleChange} />
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </>
-          )}
         </div>
-        {isExpanded && (
-          <CreateSubTaskForm
-            firstSubTask={subTasks.length < 1}
-            formOpen={createSubTask}
-            setFormState={(value) => setCreateSubTask(value)}
-            parentTaskId={task.id}
-          />
-        )}
       </CardContent>
     </Card>
   );

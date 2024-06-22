@@ -35,12 +35,12 @@ const SubTask = ({
   });
 
   return (
-    <div ref={subTaskRef} id="sub-item" className="flex gap-1 bg-secondary border-b-2 border-background">
+    <div ref={subTaskRef} id="sub-item" className="flex gap-1 p-1 bg-secondary border-b-2 border-background">
       <div className="flex flex-col justify-between items-center gap-[4px] relative">
         <Checkbox
           className={cn(
             'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
-            'transition-all bg-background w-3.5 h-3.5 m-1',
+            'transition-all bg-background w-5 h-5 m-1',
           )}
           checked={task.status === 6}
           onCheckedChange={(checkStatus) => {
@@ -58,7 +58,7 @@ const SubTask = ({
           <GripVertical size={14} />
         </Button>
       </div>
-      <div className="flex flex-col grow gap-2 mt-[6px] mr-1">
+      <div className="flex flex-col grow gap-2 mt-1 mx-1">
         {isEditing && (
           <TaskEditor
             mode={mode}

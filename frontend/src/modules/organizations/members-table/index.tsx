@@ -16,7 +16,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import type { EntityPage, Member, Organization, Project } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import useQueryResultEffect from '~/hooks/use-query-result-effect';
+import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { getColumns } from './columns';
 import { motion } from 'framer-motion';
@@ -196,7 +196,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     );
   };
 
-  useQueryResultEffect<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
+  useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   useEffect(() => {
     setColumns(getColumns(t, isMobile, isAdmin));
