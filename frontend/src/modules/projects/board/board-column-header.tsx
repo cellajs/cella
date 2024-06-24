@@ -38,7 +38,7 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
       </Button>
       {/* Omit style background if projects will be without a color preference. */}
       <AvatarWrap className="h-8 w-8 text-xs" name={project.name} style={{ background: `#${project.color}` }} />
-      <div className="truncate">{project.name}</div>
+      <div className="truncate leading-6">{project.name}</div>
       <div className="grow" />
       <ToolTipButtons rolledUp={false} onSettingsClick={openSettings} onMinimizeClick={MinimizeClick} />
       <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>

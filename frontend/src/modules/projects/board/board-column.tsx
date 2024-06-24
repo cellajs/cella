@@ -367,7 +367,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
 
   // Hides underscroll elements
   // 64px refers to the header height
-  const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30" />;
+  const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
   return (
     <ProjectProvider key={project.id} project={project} tasks={sortedTasks} labels={labels} members={members}>
