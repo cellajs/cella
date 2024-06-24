@@ -18,12 +18,13 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
   const [domains, setDomains] = useState<Tag[]>(formValue.map((dom: string) => ({ id: dom, text: dom })));
 
   const checkValidDomain = (domain: string) => {
-    return /^[a-z0-9].*[a-z0-9]$/i.test(domain) && domain.includes('.') && domain.length > 2 && domain.length < 100;
+    return /^[a-z0-9].*[a-z0-9]$/i.test(domain) && domain.includes('.');
   };
 
   useEffect(() => {
     setDomains(formValue.map((dom: string) => ({ id: dom, text: dom })));
   }, [formValue]);
+
   return (
     <FormField
       control={control}
@@ -38,6 +39,8 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
             {description && <FormDescription>{description}</FormDescription>}
             <FormControl>
               <TagInput
+                maxLength={100}
+                minLength={4}
                 placeholder={t('common:placeholder.email_domains')}
                 tags={domains}
                 allowDuplicates={false}
@@ -47,8 +50,8 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
                 }}
                 validateTag={checkValidDomain}
                 activeTagIndex={null}
-                inputProps={{ className: 'px-0' }}
                 setActiveTagIndex={() => {}}
+                styleClasses={{ input: 'px-1 py-0' }}
               />
             </FormControl>
             <FormMessage />
