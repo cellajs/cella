@@ -115,7 +115,10 @@ export default function Board() {
     );
   }, [menu]);
 
+  // On desktop we render all columns in a board
   if (isDesktopLayout) return <BoardDesktop projects={mappedProjects} workspaceId={workspace.id} />;
+
+  // On mobile we just render one column
   return (
     <div className="flex flex-col gap-4">
       {mappedProjects.map((project) => (

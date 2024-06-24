@@ -38,7 +38,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
   };
 
   return (
-    <div className="container flex flex-col min-h-screen items-center">
+    <div className="container flex flex-col min-h-[calc(100vh-200px)] items-center">
       <div className="mt-auto mb-auto">
         <Card className="max-w-[36rem] m-4">
           <CardHeader className="text-center">

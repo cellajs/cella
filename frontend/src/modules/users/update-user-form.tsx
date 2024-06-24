@@ -189,7 +189,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           control={form.control}
           name="newsletter"
           render={({ field }) => (
-            <FormItem className="flex-row" name="newsletter">
+            <FormItem className="flex-row items-center" name="newsletter">
               <FormControl>
                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
