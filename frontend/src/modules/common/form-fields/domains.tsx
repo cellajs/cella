@@ -1,6 +1,7 @@
-import type { Control } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { useFormContext, type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import MultipleSelector from '~/modules/common/multi-select';
+import { type Tag, TagInput } from 'emblor';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 type Props = {
@@ -12,12 +13,22 @@ type Props = {
 
 const DomainsFormField = ({ control, label, description, required }: Props) => {
   const { t } = useTranslation();
+  const { getValues } = useFormContext();
+  const formValue = getValues('emailDomains');
+  const [domains, setDomains] = useState<Tag[]>(formValue.map((dom: string) => ({ id: dom, text: dom })));
+
+  const checkValidDomain = (domain: string) => {
+    return /^[a-z0-9].*[a-z0-9]$/i.test(domain) && domain.includes('.') && domain.length > 2 && domain.length < 100;
+  };
+
+  useEffect(() => {
+    setDomains(formValue.map((dom: string) => ({ id: dom, text: dom })));
+  }, [formValue]);
   return (
     <FormField
       control={control}
-      name={'emailDomains'}
-      render={({ field: { onChange, value } }) => {
-        const defaultValue = value ? value.map((val: string) => ({ label: val, value: val })) : [];
+      name="emailDomains"
+      render={({ field: { onChange } }) => {
         return (
           <FormItem>
             <FormLabel>
@@ -26,20 +37,19 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
             </FormLabel>
             {description && <FormDescription>{description}</FormDescription>}
             <FormControl>
-              <>
-                <MultipleSelector
-                  formControlName="emailDomains"
-                  // value={defaultValue}
-                  onChange={(value) => {
-                    onChange(value.map((domain) => domain.value));
-                  }}
-                  defaultOptions={defaultValue}
-                  creatable
-                  createPlaceholder={t('common:add_domain')}
-                  hidePlaceholderWhenSelected
-                  placeholder={t('common:placeholder.email_domains')}
-                />
-              </>
+              <TagInput
+                placeholder={t('common:placeholder.email_domains')}
+                tags={domains}
+                allowDuplicates={false}
+                setTags={(newTags) => {
+                  setDomains(newTags);
+                  if (Array.isArray(newTags)) onChange(newTags.map((tag) => tag.text));
+                }}
+                validateTag={checkValidDomain}
+                activeTagIndex={null}
+                inputProps={{ className: 'px-0' }}
+                setActiveTagIndex={() => {}}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
