@@ -13,7 +13,6 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { queryClient } from '~/lib/router';
 import AcceptInvite from '~/modules/common/accept-invite';
 
-import { Loader2 } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import type { ApiError } from '~/api';
 import { onError } from '~/lib/query-client';
@@ -24,6 +23,7 @@ import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute 
 import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
+import Spinner from '~/modules/common/spinner';
 
 const App = lazy(() => import('~/modules/common/app'));
 
@@ -86,7 +86,7 @@ export const IndexRoute = createRoute({
     }
   },
   component: () => (
-    <Suspense fallback={<Loader2 className="text-muted-foreground mx-auto mt-[40vh] h-10 w-10 animate-spin" />}>
+    <Suspense fallback={<Spinner />}>
       <App />
     </Suspense>
   ),

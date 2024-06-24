@@ -21,7 +21,7 @@ export const DataTableSkeleton = ({
   const { hasStarted } = useMounted();
 
   return (
-    <div className={`w-full space-y-3 overflow-auto transition-opacity ${hasStarted ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`w-full space-y-3 overflow-auto duration-300 transition-opacity ${hasStarted ? 'opacity-100' : 'opacity-0'}`}>
       <Table>
         <TableHeader>
           {Array.from({ length: 1 }).map((_, i) => (

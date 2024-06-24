@@ -27,7 +27,7 @@ import { DraggableTaskCard, isTaskData } from '../task/draggable-task-card';
 import { TaskProvider } from '../task/task-context';
 import { taskStatuses } from '../task/task-selectors/select-status';
 import { BoardColumnHeader } from './board-column-header';
-import { ColumnSkeleton } from './board-column-skeleton';
+import { ColumnSkeleton } from './column-skeleton';
 import { ProjectProvider } from './project-context';
 import { ProjectSettings } from '../project-settings';
 import { SheetNav } from '~/modules/common/sheet-nav';
