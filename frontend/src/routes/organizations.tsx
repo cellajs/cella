@@ -22,7 +22,9 @@ export const OrganizationRoute = createRoute({
   staticData: { pageTitle: 'Organization' },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
   getParentRoute: () => IndexRoute,
-  loader: async ({ params: { idOrSlug } }) => await queryClient.ensureQueryData(organizationQueryOptions(idOrSlug)),
+  loader: async ({ params: { idOrSlug } }) => {
+    await queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
+  },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
     <Suspense>
