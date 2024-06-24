@@ -121,15 +121,18 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     onError: () => toast.error('Error updating role'),
   });
 
-  const callback = useMutateInfiniteQueryData([
-    'members',
-    entity.id,
-    entityType,
-    q,
-    sortColumns[0]?.columnKey as MemberSearch['sort'],
-    sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
-    role,
-  ]);
+  const callback = useMutateInfiniteQueryData(
+    [
+      'members',
+      entity.id,
+      entityType,
+      q,
+      sortColumns[0]?.columnKey as MemberSearch['sort'],
+      sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
+      role,
+    ],
+    (item) => ['members', item.id],
+  );
 
   const onResetFilters = () => {
     setQuery('');

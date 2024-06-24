@@ -47,7 +47,7 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
 };
 
 // This hook is used to mutate the data of an infinite query
-export const useMutateInfiniteQueryData = (queryKey: QueryKey) => {
+export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
   return (items: Item[], action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<
       InfiniteData<{
@@ -55,7 +55,6 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey) => {
         total: number;
       }>
     >(queryKey, (data) => {
-      console.log('queryKey:', queryKey);
       if (!data) {
         return;
       }
@@ -105,5 +104,13 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey) => {
         };
       }
     });
+
+    if (invalidateKeyGetter) {
+      for (const item of items) {
+        queryClient.invalidateQueries({
+          queryKey: invalidateKeyGetter(item),
+        });
+      }
+    }
   };
 };

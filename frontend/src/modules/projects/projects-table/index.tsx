@@ -67,7 +67,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
 
   const isFiltered = !!q;
 
-  const callback = useMutateInfiniteQueryData(['projects', q, sort, order]);
+  const callback = useMutateInfiniteQueryData(['projects', q, sort, order], (item) => ['projects', item.id]);
 
   useMapQueryDataToRows<Project>({ queryResult, setSelectedRows, setRows, selectedRows });
 
@@ -79,7 +79,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
     setQuery('');
     setSelectedRows(new Set<string>());
   };
-  
+
   const selectedProjects = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);

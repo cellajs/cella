@@ -121,7 +121,7 @@ const OrganizationsTable = () => {
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 
-  const callback = useMutateInfiniteQueryData(['organizations', q, sort, order]);
+  const callback = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
   const [columns, setColumns] = useColumns(callback);
 
   const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
