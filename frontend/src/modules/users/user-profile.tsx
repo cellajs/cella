@@ -42,7 +42,7 @@ export const UserProfile = ({ user }: { user: User }) => {
                 <div className="flex items-center p-2">
                   <Button size="sm" onClick={handleSettingCLick} aria-label="Account settings">
                     <UserCog size={16} />
-                    <span className="ml-1">{t('common:settings')}</span>
+                    <span className="max-xs:hidden ml-1">{t('common:settings')}</span>
                   </Button>
                 </div>
               )}

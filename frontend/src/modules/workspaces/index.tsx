@@ -79,7 +79,7 @@ const WorkspacePage = () => {
         />
       )}
       <FocusViewContainer>
-        <div className="flex flex-col gap-2 md:gap-4 p-2 md:p-4 group/workspace">
+        <div className="flex flex-col gap-2 md:gap-3 p-2 md:p-3 group/workspace">
           <BoardHeader showPageHeader={showPageHeader} handleShowPageHeader={togglePageHeader} />
           {!!projects.length && <Outlet />}
           {!projects.length && (

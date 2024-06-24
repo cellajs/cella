@@ -30,9 +30,9 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizat
     <div className="relative">
       <PageCover type={type} id={id} url={bannerUrl} />
 
-      <div className="absolute flex bottom-0 w-full bg-background/50 backdrop-blur-sm px-2 py-1" ref={scrollToRef}>
+      <div className="absolute flex bottom-0 w-full bg-background/50 backdrop-blur-sm px-1 py-1" ref={scrollToRef}>
         <div className="flex items-stretch">
-          <AvatarWrap className="m-2" type={type} id={id} name={title} url={thumbnailUrl} />
+          <AvatarWrap className={type === 'USER' ? 'h-24 w-24 -my-6 text-2xl ml-2 mr-3 border-bg border-2 rounded-full' : 'm-2 mr-3'} type={type} id={id} name={title} url={thumbnailUrl} />
           <div className="my-auto">
             {/* Page title */}
             <h1 className="md:text-xl -mt-1 truncate font-semibold">{title}</h1>

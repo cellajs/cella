@@ -63,7 +63,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
       <div className={cn('flex justify-center border-b sticky top-0 bg-background/75 backdrop-blur-sm z-[80]', className)} ref={tabsRef}>
         <div className="hidden" ref={nameRef}>
           <div className="absolute left-0 h-full flex items-center">
-            {avatar && <AvatarWrap className="m-2 h-8 w-8" type="ORGANIZATION" id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
+            {avatar && <AvatarWrap className="m-3 h-6 w-6 text-xs" type="ORGANIZATION" id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
             <div className="truncate hidden leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>
           </div>
         </div>
