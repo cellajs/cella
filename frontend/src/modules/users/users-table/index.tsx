@@ -74,6 +74,7 @@ const UsersTable = () => {
 
   // Query users
   const queryResult = useInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
+
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 
@@ -87,18 +88,22 @@ const UsersTable = () => {
     }),
     [q, role, sortColumns],
   );
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
+  // Map (updated) query data to rows
+  useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows });
+
+  // Table selection
   const selectedUsers = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
-
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   const callback = useMutateInfiniteQueryData(
     ['users', q, sortColumns[0]?.columnKey as UsersSearch['sort'], sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'], role],
     (item) => ['users', item.id],
   );
 
+  // Build columns
   const [columns, setColumns] = useColumns(callback);
 
   // Update user role
@@ -149,7 +154,7 @@ const UsersTable = () => {
         users={selectedUsers}
         callback={(users) => {
           callback(users, 'delete');
-          toast.success(t('success.delete_resources', { resources: t('common:users') }));
+          toast.success(t('common:success.delete_resources', { resources: t('common:users') }));
         }}
       />,
       {
@@ -163,8 +168,6 @@ const UsersTable = () => {
       },
     );
   };
-
-  useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

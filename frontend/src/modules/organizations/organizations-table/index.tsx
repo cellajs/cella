@@ -72,9 +72,66 @@ const OrganizationsTable = () => {
   const order = sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'];
   const limit = LIMIT;
 
+  const isFiltered = !!q;
+
+  // Query organizations
+  const queryResult = useInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
+
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
+
+  // Map (updated) query data to rows
+  useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
+
+  const callback = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
+
+  // Build columns
+  const [columns, setColumns] = useColumns(callback);
+
+  // Save filters in search params
+  const filters = useMemo(
+    () => ({
+      q,
+      sort,
+      order,
+    }),
+    [q, sort, order],
+  );
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+
+  // Table selection
   const selectedOrganizations = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [rows, selectedRows]);
+
+  const onResetFilters = () => {
+    setQuery('');
+    setSelectedRows(new Set<string>());
+  };
+
+  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
+    // mutate member
+    for (const index of indexes) {
+      const organization = changedRows[index];
+      if (column.key === 'userRole' && organization.membership?.role) {
+        inviteMembers({
+          idOrSlug: organization.id,
+          emails: [user.email],
+          role: organization.membership?.role,
+          entityType: 'ORGANIZATION',
+          organizationId: organization.id,
+        })
+          .then(() => {
+            toast.success(t('common:success.your_role_updated'));
+          })
+          .catch(() => {
+            toast.error(t('common:error.error'));
+          });
+      }
+    }
+
+    setRows(changedRows);
+  };
 
   const openDeleteDialog = () => {
     dialog(
@@ -103,59 +160,6 @@ const OrganizationsTable = () => {
       id: 'newsletter-form',
     });
   };
-
-  // Save filters in search params
-  const filters = useMemo(
-    () => ({
-      q,
-      sort,
-      order,
-    }),
-    [q, sort, order],
-  );
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-
-  // Query organizations
-  const queryResult = useInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
-
-  // Total count
-  const totalCount = queryResult.data?.pages[0].total;
-
-  const callback = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
-  const [columns, setColumns] = useColumns(callback);
-
-  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
-    // mutate member
-    for (const index of indexes) {
-      const organization = changedRows[index];
-      if (column.key === 'userRole' && organization.membership?.role) {
-        inviteMembers({
-          idOrSlug: organization.id,
-          emails: [user.email],
-          role: organization.membership?.role,
-          entityType: 'ORGANIZATION',
-          organizationId: organization.id,
-        })
-          .then(() => {
-            toast.success(t('common:success.your_role_updated'));
-          })
-          .catch(() => {
-            toast.error(t('common:error.error'));
-          });
-      }
-    }
-
-    setRows(changedRows);
-  };
-
-  const isFiltered = !!q;
-
-  const onResetFilters = () => {
-    setQuery('');
-    setSelectedRows(new Set<string>());
-  };
-
-  useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">

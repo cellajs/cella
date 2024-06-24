@@ -10,8 +10,9 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { TFunction } from 'i18next';
 import { Link } from '@tanstack/react-router';
 import { openUserPreviewSheet } from '~/modules/users/users-table/columns';
+import { useState } from 'react';
 
-export const getColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean) => {
+export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean) => {
   const mobileColumns: ColumnOrColumnGroup<Member>[] = [
     {
       key: 'name',
@@ -90,5 +91,5 @@ export const getColumns = (t: TFunction<'translation', undefined>, isMobile: boo
 
   if (isAdmin) mobileColumns.unshift(CheckboxColumn);
 
-  return isMobile ? mobileColumns : [...mobileColumns, ...columns];
+  return useState<ColumnOrColumnGroup<Member>[]>(isMobile ? mobileColumns : [...mobileColumns, ...columns]);
 };

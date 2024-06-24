@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef } from 'react';
 
 import type { membersQuerySchema } from 'backend/modules/general/schema';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
@@ -18,7 +18,7 @@ import type { EntityPage, Member, Organization, Project } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { getColumns } from './columns';
+import { useColumns } from './columns';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import Export from '~/modules/common/data-table/export';
@@ -33,7 +33,6 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 
 const LIMIT = 40;
 
@@ -67,12 +66,13 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
 
   const entityType = entity.entity;
   const isAdmin = entity.membership?.role === 'ADMIN';
+
   const isMobile = useBreakpoints('max', 'sm');
+
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<MemberSearch['q']>(search.q);
   const [role, setRole] = useState<MemberSearch['role']>(search.role);
-  const [columns, setColumns] = useState<ColumnOrColumnGroup<Member>[]>([]);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
@@ -90,9 +90,12 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 
-  const onRoleChange = (role?: string) => {
-    setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
-  };
+  // Build columns
+  const [columns, setColumns] = useColumns(t, isMobile, isAdmin);
+
+  // Map (updated) query data to rows
+  useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
+
   // Save filters in search params
   if (!isSheet) {
     const filters = useMemo(
@@ -107,6 +110,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   }
 
+  // Table selection
   const selectedMembers = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
@@ -138,6 +142,10 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     setQuery('');
     setSelectedRows(new Set<string>());
     setRole(undefined);
+  };
+
+  const onRoleChange = (role?: string) => {
+    setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
   };
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
@@ -198,12 +206,6 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
       },
     );
   };
-
-  useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
-
-  useEffect(() => {
-    setColumns(getColumns(t, isMobile, isAdmin));
-  }, [isAdmin]);
 
   return (
     <div className="space-y-4 h-full">

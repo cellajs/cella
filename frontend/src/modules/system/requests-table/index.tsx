@@ -63,6 +63,20 @@ const RequestsTable = () => {
   const order = sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'];
   const limit = LIMIT;
 
+  const isFiltered = !!q;
+
+  // Query organizations
+  const queryResult = useInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
+
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
+
+  // Build columns
+  const [columns, setColumns] = useColumns();
+
+  // Map (updated) query data to rows
+  useMapQueryDataToRows<Request>({ queryResult, setSelectedRows, setRows, selectedRows });
+
   // Save filters in search params
   const filters = useMemo(
     () => ({
@@ -74,19 +88,9 @@ const RequestsTable = () => {
   );
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-  // Query organizations
-  const queryResult = useInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
-
-  // Total count
-  const totalCount = queryResult.data?.pages[0].total;
-
-  const [columns, setColumns] = useColumns();
-
   const onRowsChange = async (changedRows: Request[]) => {
     setRows(changedRows);
   };
-
-  const isFiltered = !!q;
 
   const onResetFilters = () => {
     setQuery('');
@@ -109,8 +113,6 @@ const RequestsTable = () => {
       id: 'newsletter-form',
     });
   };
-
-  useMapQueryDataToRows<Request>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">
