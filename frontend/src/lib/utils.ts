@@ -10,7 +10,6 @@ import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
-import type { Task } from '~/modules/common/electric/electrify';
 import type { DraggableItemData, UserMenuItem } from '~/types';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -117,15 +116,6 @@ export const translationExists = (key: string) => {
 export const noDirectAccess = (pathname: string, param: string, redirectLocation: string) => {
   if (!pathname.endsWith(param)) return;
   throw redirect({ to: pathname + redirectLocation, replace: true });
-};
-
-// To sort Tasks by its status & order
-export const sortTaskOrder = (task1: Pick<Task, 'status' | 'sort_order'>, task2: Pick<Task, 'status' | 'sort_order'>) => {
-  if (task1.status !== task2.status) return task2.status - task1.status;
-  // same status, sort by sort_order
-  if (task1.sort_order !== null && task2.sort_order !== null) return task1.sort_order - task2.sort_order;
-  // sort_order is null
-  return 0;
 };
 
 export const getDraggableItemData = <T>(item: T, itemOrder: number, type: 'task' | 'column' | 'menuItem', itemType: Entity): DraggableItemData<T> => {
