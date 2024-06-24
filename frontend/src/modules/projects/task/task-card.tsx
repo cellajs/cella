@@ -16,33 +16,28 @@ import { SelectImpact } from './task-selectors/select-impact.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
-import { useLiveQuery } from 'electric-sql/react';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
-import { useProjectContext } from '../board/project-context.tsx';
-import { useTaskContext } from './task-context.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
 import SubTask from './sub-task-card.tsx';
 import CreateSubTaskForm from './create-sub-task-form.tsx';
+import type { Member } from '~/types/index.ts';
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
   taskDragButtonRef: React.RefObject<HTMLButtonElement>;
+  task: Task;
+  labels: Label[];
+  subTasks: Task[];
+  members: Member[];
   className?: string;
   dragging?: boolean;
   dragOver?: boolean;
 }
 
-export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
+export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { task } = useTaskContext(({ task }) => ({
-    task,
-  }));
-  const { tasks, members } = useProjectContext(({ tasks, members }) => ({
-    tasks,
-    members,
-  }));
   const { setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex } = useWorkspaceContext(
     ({ setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex }) => ({
       setSelectedTasks,
@@ -54,7 +49,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     }),
   );
 
-  const subTasks = tasks.filter((t) => t.parent_id === task.id);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [createSubTask, setCreateSubTask] = useState(false);
@@ -63,18 +57,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
-
-  const { results: labels = [] } = useLiveQuery(
-    electric.db.labels.liveMany({
-      where: {
-        id: {
-          in: task.labels || [],
-        },
-      },
-    }),
-  ) as {
-    results: Label[];
-  };
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any, taskId: string) => {
