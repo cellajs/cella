@@ -41,6 +41,9 @@ export const useUpdateOrganizationMutation = (idOrSlug: string) => {
     mutationFn: (params) => updateOrganization(idOrSlug, params),
     onSuccess: (updatedOrganization) => {
       queryClient.setQueryData(['organizations', idOrSlug], updatedOrganization);
+      queryClient.invalidateQueries({
+        queryKey: ['organizations'],
+      });
     },
     gcTime: 1000 * 10,
   });

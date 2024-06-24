@@ -28,7 +28,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
         className,
       )}
       aria-label={item.name}
-      to={type === 'ORGANIZATION' ? '/$idOrSlug' : '/workspace/$idOrSlug'}
+      to={type === 'ORGANIZATION' ? '/$idOrSlug' : '/workspaces/$idOrSlug'}
       params={{ idOrSlug: mainItemId ? mainItemId : item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >

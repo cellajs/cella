@@ -19,7 +19,7 @@ const TasksTable = lazy(() => import('~/modules/projects/tasks-table'));
 const ElectricSuspense = lazy(() => import('~/modules/common/electric/suspense'));
 
 export const WorkspaceRoute = createRoute({
-  path: 'workspace/$idOrSlug',
+  path: 'workspaces/$idOrSlug',
   validateSearch: z.object({
     ...membersSearchSchema.shape,
     projectSettings: z.enum(['general', 'members']).default('general').optional(),
@@ -28,7 +28,7 @@ export const WorkspaceRoute = createRoute({
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => IndexRoute,
   loader: async ({ params: { idOrSlug } }) => {
-    queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {

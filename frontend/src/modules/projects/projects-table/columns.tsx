@@ -27,7 +27,7 @@ export const useColumns = () => {
       renderCell: ({ row, tabIndex }) => {
         return (
           <Link
-            to="/workspace/$idOrSlug"
+            to="/workspaces/$idOrSlug"
             tabIndex={tabIndex}
             // TODO: Fix this
             params={{ idOrSlug: row.workspaceId || row.id }}

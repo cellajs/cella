@@ -41,7 +41,7 @@ type MemberSearch = z.infer<typeof membersQuerySchema>;
 
 interface MembersTableProps {
   entity: Project | Organization;
-  route: '/layout/$idOrSlug/members' | '/layout/workspace/$idOrSlug';
+  route: '/layout/$idOrSlug/members' | '/layout/workspaces/$idOrSlug';
   isSheet?: boolean;
 }
 
