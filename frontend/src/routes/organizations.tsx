@@ -1,4 +1,4 @@
-import { createRoute, useParams } from '@tanstack/react-router';
+import { createRoute, useParams, useRouteContext } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { membersQuerySchema } from 'backend/modules/general/schema';
 import { Suspense, lazy } from 'react';
@@ -20,11 +20,19 @@ export const membersSearchSchema = membersQuerySchema.pick({ q: true, sort: true
 export const OrganizationRoute = createRoute({
   path: '$idOrSlug',
   staticData: { pageTitle: 'Organization' },
-  beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
-  getParentRoute: () => IndexRoute,
-  loader: async ({ params: { idOrSlug } }) => {
-    await queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
+  beforeLoad: async ({ location, params: { idOrSlug } }) => {
+    noDirectAccess(location.pathname, idOrSlug, '/members');
+
+    const organization = await queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
+
+    return {
+      organization,
+    };
   },
+  getParentRoute: () => IndexRoute,
+  // loader: async ({ params: { idOrSlug } }) => {
+  //   await queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
+  // },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
     <Suspense>
@@ -48,8 +56,9 @@ export const OrganizationMembersRoute = createRoute({
     }
   },
   component: () => {
-    const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
-    const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
+    const { organization } = useRouteContext({
+      from: '/layout/$idOrSlug/members',
+    });
     if (!organization) return;
     return (
       <Suspense>

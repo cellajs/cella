@@ -24,6 +24,7 @@ import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute 
 import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
+import type { Organization, Project } from '~/types';
 
 const App = lazy(() => import('~/modules/common/app'));
 
@@ -39,7 +40,11 @@ export const getAndSetMenu = async () => {
   return menu;
 };
 
-export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const rootRoute = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  organization?: Organization;
+  project?: Project;
+}>()({
   staticData: { pageTitle: '' },
   component: () => <Root />,
 });
