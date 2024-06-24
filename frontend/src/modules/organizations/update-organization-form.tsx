@@ -14,16 +14,16 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import AvatarFormField from '../common/form-fields/avatar';
-import DomainsFormField from '../common/form-fields/domains';
-import InputFormField from '../common/form-fields/input';
-import LanguageFormField from '../common/form-fields/language';
-import { SlugFormField } from '../common/form-fields/slug';
-import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
-import UnsavedBadge from '../common/unsaved-badge';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import AvatarFormField from '~/modules/common/form-fields/avatar';
+import DomainsFormField from '~/modules/common/form-fields/domains';
+import InputFormField from '~/modules/common/form-fields/input';
+import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import SelectCountry from '~/modules/common/form-fields/select-country';
+import { SelectLanguages, SelectLanguage } from '~/modules/common/form-fields/language-selector';
 
 interface Props {
   organization: Organization;
@@ -146,23 +146,42 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           description={t('common:notification_email.text')}
         />
         <InputFormField control={form.control} name="websiteUrl" label={t('common:website_url')} placeholder="https://" type="url" />
-        <LanguageFormField
+        <FormField
           control={form.control}
           name="languages"
-          label={t('common:languages')}
-          mode="multiple"
-          placeholder={t('common:placeholder.select_languages')}
-          emptyIndicator={t('common:empty_languages')}
-          required
+          render={({ field: { onChange } }) => (
+            <FormItem name="languages">
+              <FormLabel>
+                {t('common:languages')}
+                <span className="ml-1 opacity-50">*</span>
+              </FormLabel>
+              <FormControl>
+                <SelectLanguages onChange={onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <LanguageFormField
+        <FormField
           control={form.control}
           name="defaultLanguage"
-          label={t('common:default_language')}
-          description={t('common:default_language.text')}
-          placeholder={t('common:placeholder.select_language')}
-          disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
-          required
+          render={({ field: { onChange } }) => (
+            <FormItem name="defaultLanguage">
+              <FormLabel>
+                {t('common:default_language')}
+                <span className="ml-1 opacity-50">*</span>
+              </FormLabel>
+              <FormDescription>{t('common:default_language.text')}</FormDescription>
+              <FormControl>
+                <SelectLanguage
+                  name="defaultLanguage"
+                  onChange={onChange}
+                  disabledItemFunction={(value: string) => !form.getValues('languages')?.includes(value)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
         <FormField
           control={form.control}

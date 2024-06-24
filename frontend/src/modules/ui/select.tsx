@@ -24,7 +24,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50 text-foreground" />
+      <ChevronDown className={`h-4 w-4 opacity-50 text-foreground ${props['aria-expanded'] ? '-rotate-90' : 'rotate-0'}`} />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));

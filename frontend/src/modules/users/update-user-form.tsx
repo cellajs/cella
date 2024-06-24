@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -24,10 +24,10 @@ import { cleanUrl } from '~/lib/utils';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../common/form-fields/input';
-import LanguageFormField from '../common/form-fields/language';
 import { SlugFormField } from '../common/form-fields/slug';
 import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
 import { useStepper } from '../common/stepper/use-stepper';
+import { SelectLanguage } from '../common/form-fields/language-selector';
 
 interface UpdateUserFormProps {
   user: User;
@@ -168,12 +168,22 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           required
         />
         <InputFormField inputClassName="border" control={form.control} name="bio" label={t('common:bio')} type="textarea" />
-        <LanguageFormField
+        <FormField
           control={form.control}
           name="language"
-          label={t('common:language')}
-          placeholder={t('common:placeholder.select_language')}
-          required
+          render={({ field: { onChange } }) => (
+            <FormItem name="language">
+              <FormLabel>
+                {t('common:language')}
+                <span className="ml-1 opacity-50">*</span>
+              </FormLabel>
+              <FormDescription>{t('common:placeholder.select_language')}</FormDescription>
+              <FormControl>
+                <SelectLanguage name="language" onChange={onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
         <FormField
           control={form.control}
