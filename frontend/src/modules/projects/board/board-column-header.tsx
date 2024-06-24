@@ -29,8 +29,7 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
     });
   };
 
-  // 72px is 64px for the header and 8px for the gap between the header and content
-  const stickyStyles = 'sticky sm:relative top-2sendVerificationEmailRouteConfig sm:top-0 bg-background z-50';
+  const stickyStyles = 'sticky sm:relative top-2 sm:top-0 bg-background z-50';
 
   return (
     <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>

@@ -367,15 +367,15 @@ export function BoardColumn({ project }: BoardColumnProps) {
 
   // Hides underscroll elements
   // 64px refers to the header height
-  const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-[64px] z-30 -mt-4" />;
+  const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30" />;
 
   return (
     <ProjectProvider key={project.id} project={project} tasks={sortedTasks} labels={labels} members={members}>
-      <div ref={columnRef} className="h-full">
+      <div ref={columnRef} className="flex flex-col h-full">
         <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
         <div
           className={cn(
-            `h-full relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b
+            `flex-1 sm:h-[calc(100vh-146px)]  relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b
           opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
             selectedTasks.length && 'is-selected',
           )}
