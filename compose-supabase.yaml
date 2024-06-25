@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   electric-sync-service:
     container_name: electric-sync-service
