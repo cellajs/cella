@@ -10,7 +10,7 @@ import { lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { cn, getDraggableItemData, findMembershipOrderById, getReorderDestinationOrder } from '~/lib/utils';
+import { cn, getDraggableItemData, getReorderDestinationOrder } from '~/lib/utils';
 import { sortTaskOrder } from '~/modules/projects/task/sort-task-order';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
@@ -264,7 +264,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
     const cardList = cardListRef.current;
     const scrollable = scrollableRef.current;
 
-    const data = getDraggableItemData<Project>(project, findMembershipOrderById(project.id), 'column', 'PROJECT');
+    const data = getDraggableItemData<Project>(project, project.membership ? project.membership.order : 0, 'column', 'PROJECT');
     if (!column || !headerDragButton || !cardList) return;
     // Don't start drag if only 1 project
     if (projects.length <= 1) return;

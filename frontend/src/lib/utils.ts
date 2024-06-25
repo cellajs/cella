@@ -145,24 +145,6 @@ export const getReorderDestinationOrder = (
   return targetOrder;
 };
 
-// finds item order number by it's id in user's menu
-export const findMembershipOrderById = (id: string) => {
-  const menu = useNavigationStore.getState().menu;
-  const search = (items: UserMenuItem[]): number => {
-    const filtered = items.filter((i) => !i.membership.archived);
-    for (const item of filtered) {
-      if (item.id === id) return item.membership.order;
-      if (item.submenu) {
-        const found = search(item.submenu);
-        if (found) return found;
-      }
-    }
-    return 0;
-  };
-
-  return Object.values(menu).reduce<number>((result, entities) => result || search(entities), 0);
-};
-
 // adding new item on local store user's menu
 export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 'workspaces') => {
   const menu = useNavigationStore.getState().menu;

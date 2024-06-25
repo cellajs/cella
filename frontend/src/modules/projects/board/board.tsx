@@ -3,7 +3,7 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { getReorderDestinationOrder, findMembershipOrderById } from '~/lib/utils';
+import { getReorderDestinationOrder } from '~/lib/utils';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
 import type { Project } from '~/types';
@@ -75,7 +75,10 @@ export default function Board() {
   }));
   const { menu } = useNavigationStore();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects.sort((a, b) => findMembershipOrderById(a.id) - findMembershipOrderById(b.id)),
+    projects.sort((a, b) => {
+      if (a.membership === null || b.membership === null) return 0;
+      return a.membership.order - b.membership.order;
+    }),
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
@@ -91,8 +94,19 @@ export default function Board() {
         .map((p) => {
           return { ...p, ...{ workspaceId: p.parentId } };
         }) as unknown as Project[];
-      if (!currentActiveProjects) return setMappedProjects(projects);
-      setMappedProjects(currentActiveProjects.sort((a, b) => findMembershipOrderById(a.id) - findMembershipOrderById(b.id)));
+      if (!currentActiveProjects)
+        return setMappedProjects(
+          projects.sort((a, b) => {
+            if (a.membership === null || b.membership === null) return 0;
+            return a.membership.order - b.membership.order;
+          }),
+        );
+      setMappedProjects(
+        currentActiveProjects.sort((a, b) => {
+          if (a.membership === null || b.membership === null) return 0;
+          return a.membership.order - b.membership.order;
+        }),
+      );
     }
   }, [currentWorkspace]);
 
