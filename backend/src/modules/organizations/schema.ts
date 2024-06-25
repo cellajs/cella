@@ -18,8 +18,8 @@ export const organizationSchema = z.object({
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
   languages: z.array(z.string()),
-  emailDomains: z.array(z.string()).nullable(),
-  authStrategies: z.array(z.string()).nullable(),
+  emailDomains: z.array(z.string()),
+  authStrategies: z.array(z.string()),
   membership: membershipInfoSchema.nullable(),
   counts: membershipsCountSchema,
 });

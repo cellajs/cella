@@ -1,19 +1,19 @@
 {
-  "version": "1",
+  "version": "7",
   "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "1",
-      "when": 1717592617587,
-      "tag": "0000_parallel_blonde_phantom",
+      "version": "7",
+      "when": 1719305766875,
+      "tag": "0000_funny_skaar",
       "breakpoints": true
     },
     {
       "idx": 1,
-      "version": "1",
-      "when": 1717573404754,
-      "tag": "0001_quiet_doctor_octopus",
+      "version": "7",
+      "when": 1719305786171,
+      "tag": "0001_aromatic_giant_girl",
       "breakpoints": true
     }
   ]

@@ -96,6 +96,8 @@ export const CreateSubTaskForm = ({
           status: 1,
           parent_id: parentTaskId,
           organization_id: project.organizationId,
+          assigned_to: [],
+          labels: [],
           project_id: project.id,
           created_at: new Date(),
           created_by: user.id,

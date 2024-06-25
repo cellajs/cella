@@ -18,6 +18,7 @@
     "seed:data": "tsx seed/data/index.ts",
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
     "generate:electric": "drizzle-kit generate --config drizzle.config.electric.ts",
+    "generate:electric:custom": "drizzle-kit generate --config drizzle.config.electric.ts --custom",
     "push": "drizzle-kit push",
     "migrate:pg": "tsx src/db/migrate.ts",
     "migrate:electric": "tsx src/db/migrate.electric.ts",

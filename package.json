@@ -21,6 +21,7 @@
     "generate": "pnpm run generate:pg && pnpm run generate:electric",
     "generate:pg": "dotenv -e env/.env -- turbo generate:pg --filter backend --force",
     "generate:electric": "dotenv -e env/.env -- turbo generate:electric --filter backend --force",
+    "generate:electric:custom": "dotenv -e env/.env -- turbo generate:electric:custom --filter backend --force",
     "migrate": "pnpm run migrate:pg && pnpm run migrate:electric",
     "migrate:pg": "dotenv -e env/.env -- turbo migrate:pg --filter backend --force",
     "migrate:electric": "dotenv -e env/.env -- turbo migrate:electric --filter backend --force",

@@ -137,6 +137,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           //       }
           //     : undefined,
           labels: values.labels.map((label) => label.id),
+          assigned_to: [],
           // assigned_to: values.assignedTo.map((user) => user.id),
           status: values.status,
           organization_id: project.organizationId,
