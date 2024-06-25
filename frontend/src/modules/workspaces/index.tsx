@@ -84,7 +84,7 @@ const WorkspacePage = () => {
           {!!projects.length && <Outlet />}
           {!projects.length && (
             <ContentPlaceholder
-              className=" h-[calc(100vh-64px-64px)] sm:h-[calc(100vh-88px)]"
+              className=" h-[calc(100vh-64px-64px)] sm:h-[calc(100vh-78px)]"
               Icon={Bird}
               title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })}
               text={

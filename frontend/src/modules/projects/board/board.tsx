@@ -49,7 +49,7 @@ function BoardDesktop({
   }, []);
 
   return (
-    <div className="transition sm:h-[calc(100vh-64px)] md:h-[calc(100vh-88px)] overflow-x-auto" ref={containerRef}>
+    <div className="transition sm:h-[calc(100vh-64px)] md:h-[calc(100vh-78px)] overflow-x-auto" ref={containerRef}>
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
         <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspaceId}>
           {projects.map((project, index) => (
