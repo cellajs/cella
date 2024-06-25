@@ -28,7 +28,7 @@ const useMapQueryDataToRows = <T extends { id: string } & object>({
       setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
       setRows(data);
     }
-  }, [queryResult.data, selectedRows, setSelectedRows, setRows]);
+  }, [queryResult.data]);
 };
 
 export default useMapQueryDataToRows;
