@@ -47,9 +47,9 @@ export const DownAlert = () => {
   if (!downAlert) return;
 
   return (
-    <div className="fixed z-[2000] bottom-4 left-4 right-4 border-0 justify-center">
+    <div className="fixed z-[2000] bottom-20 min-md:bottom-4 left-4 right-4 border-0 justify-center">
       <Alert variant="destructive" className="border-0 w-auto">
-        <Button variant="ghost" size="sm" className="absolute top-2 right-1" onClick={cancelAlert}>
+        <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={cancelAlert}>
           <X size={16} />
         </Button>
         {downAlert === 'maintenance' ? <Construction size={16} /> : <CloudOff size={16} />}

@@ -22,7 +22,7 @@ function Root() {
       <Sheeter />
       <ReloadPrompt />
 
-      <Toaster richColors />
+      <Toaster richColors toastOptions={{className: 'max-sm:mb-16'}} />
       <DownAlert />
 
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
