@@ -13,7 +13,6 @@ import { DownAlert } from './down-alert';
 function Root() {
   // Lazy load
   const GleapSupport = config.gleapToken ? useLazyComponent(() => import('~/modules/common/gleap'), 5000) : () => null; // 5 seconds delay
-  const DebugToolbars = config.mode === 'development' ? useLazyComponent(() => import('~/modules/common/debug-toolbars'), 1000) : () => null;
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
@@ -24,8 +23,6 @@ function Root() {
       <ReloadPrompt />
 
       <Toaster richColors />
-
-      <Suspense fallback={null}>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
       <DownAlert />
 
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
