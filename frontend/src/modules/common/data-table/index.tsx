@@ -1,6 +1,6 @@
 import 'react-data-grid/lib/styles.css';
 
-import { Loader2, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { type Key, type ReactNode, useEffect, useState } from 'react';
 import DataGrid, { type RenderRowProps, type CellClickArgs, type CellMouseEvent, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ import type { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
 import ContentPlaceholder from '../content-placeholder';
 import { DataTableSkeleton } from './table-skeleton';
+import Spinner from '../spinner';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -100,6 +101,7 @@ export const DataTable = <TData,>({
   });
 
   useEffect(() => {
+    console.log('rows', rows.length, totalCount, isFetching, inView)
     if (!rows.length) return;
 
     if (inView && !isFetching) {
@@ -168,12 +170,12 @@ export const DataTable = <TData,>({
               {/* Infinite loading measure ref */}
               <div
                 ref={measureRef}
-                className="h-0 w-0 relative z-[200]"
+                className="h-4 w-4 bg-red-700 relative z-[200]"
                 style={{ marginTop: -Number(rowHeight || 40) * limit * (rows.length < 60 ? 0.5 : 1) }}
               />
 
               {/* Loading */}
-              {isFetching && !error && <Loader2 className="text-muted-foreground h-6 w-6 mx-auto my-4 animate-spin" />}
+              {isFetching && !error && <Spinner inline />}
 
               {/* Error */}
               {error && <div className="text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}

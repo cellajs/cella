@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, Minimize2, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -6,7 +6,7 @@ import { Button } from '~/modules/ui/button';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useProjectContext } from './project-context';
-import ToolTipButtons from './tooltip-buttons';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 
 interface BoardColumnHeaderProps {
   createFormOpen: boolean;
@@ -36,7 +36,16 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
       <AvatarWrap className="h-8 w-8 text-xs" name={project.name} style={{ background: `#${project.color}` }} />
       <div className="truncate leading-6">{project.name}</div>
       <div className="grow" />
-      <ToolTipButtons rolledUp={false} onSettingsClick={openSettings} onMinimizeClick={MinimizeClick} />
+      <TooltipButton toolTipContent={t('common:project_settings')} side="bottom" sideOffset={13} className="max-sm:hidden">
+        <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={openSettings}>
+          <Settings size={16} />
+        </Button>
+      </TooltipButton>
+      <TooltipButton toolTipContent={t('common:minimize')} side="bottom" sideOffset={13}>
+        <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={MinimizeClick}>
+          <Minimize2 size={16} />
+        </Button>
+      </TooltipButton>
       <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>
         <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />
         <span className="ml-1">{t('common:task')}</span>
