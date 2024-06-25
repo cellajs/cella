@@ -1,15 +1,10 @@
-import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { getReorderDestinationOrder } from '~/lib/utils';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
 import type { Project } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
-import { BoardColumn, isProjectData } from './board-column';
-import { updateMembership } from '~/api/memberships';
+import { BoardColumn } from './board-column';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -32,6 +27,7 @@ function BoardDesktop({
   const scrollerWidth = getScrollerWidth(containerWidth, projects.length);
   const panelMinSize = typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
 
+  // TODO: do we have a hook for this already?
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -109,25 +105,6 @@ export default function Board() {
       );
     }
   }, [currentWorkspace]);
-
-  useEffect(() => {
-    return combine(
-      monitorForElements({
-        canMonitor({ source }) {
-          return source.data.type === 'column';
-        },
-        async onDrop({ location, source }) {
-          const target = location.current.dropTargets[0];
-          if (!target || !isProjectData(target.data) || !isProjectData(source.data)) return;
-          // Cos of Header contain the edge, if 2 element we use second if one use it
-          const targetEdge = location.current.dropTargets.length > 1 ? location.current.dropTargets[1].data : location.current.dropTargets[0].data;
-          const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetEdge);
-          const newOrder = getReorderDestinationOrder(target.data.order, closestEdgeOfTarget, 'horizontal', source.data.order);
-          if (source.data.item.membership) await updateMembership({ membershipId: source.data.item.membership.id, order: newOrder });
-        },
-      }),
-    );
-  }, [menu]);
 
   // On desktop we render all columns in a board
   if (isDesktopLayout) return <BoardDesktop projects={mappedProjects} workspaceId={workspace.id} />;

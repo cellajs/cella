@@ -1,4 +1,4 @@
-import { GripVertical, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -10,12 +10,11 @@ import ToolTipButtons from './tooltip-buttons';
 
 interface BoardColumnHeaderProps {
   createFormOpen: boolean;
-  dragRef: React.RefObject<HTMLButtonElement>;
   openSettings: () => void;
   createFormClick: () => void;
 }
 
-export function BoardColumnHeader({ createFormOpen, openSettings, createFormClick, dragRef }: BoardColumnHeaderProps) {
+export function BoardColumnHeader({ createFormOpen, openSettings, createFormClick }: BoardColumnHeaderProps) {
   const { project } = useProjectContext(({ project }) => ({ project }));
   const { workspace } = useWorkspaceContext(({ workspace }) => ({ workspace }));
   const { changeColumn } = useWorkspaceStore();
@@ -33,9 +32,6 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
 
   return (
     <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
-      <Button ref={dragRef} variant={'ghost'} size="xs" className="max-sm:hidden px-0 text-primary/50 cursor-grab relative">
-        <GripVertical size={16} />
-      </Button>
       {/* Omit style background if projects will be without a color preference. */}
       <AvatarWrap className="h-8 w-8 text-xs" name={project.name} style={{ background: `#${project.color}` }} />
       <div className="truncate leading-6">{project.name}</div>

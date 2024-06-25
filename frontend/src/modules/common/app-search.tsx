@@ -70,10 +70,10 @@ export const AppSearch = () => {
   };
 
   const { data: suggestions, isFetching } = useQuery({
+    initialData: { items: [], total: 0 },
     queryKey: ['search', searchValue],
     queryFn: () => getSuggestions(searchValue),
     enabled: searchValue.length > 0,
-    initialData: { items: [], total: 0 },
   });
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {

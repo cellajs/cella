@@ -1,8 +1,6 @@
-import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
-import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
-import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useQuery } from '@tanstack/react-query';
 import { useLiveQuery } from 'electric-sql/react';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
@@ -10,16 +8,15 @@ import { lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { cn, getDraggableItemData, getReorderDestinationOrder } from '~/lib/utils';
+import { cn, getReorderDestinationOrder } from '~/lib/utils';
 import { sortTaskOrder } from '~/modules/projects/task/sort-task-order';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { DraggableItemData, Project } from '~/types/index.ts';
+import type { Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
-import { DropIndicator } from '../../common/drop-indicator';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
 import CreateTaskForm from '../task/create-task-form';
@@ -39,24 +36,13 @@ interface BoardColumnProps {
   project: Project;
 }
 
-type ProjectDraggableItemData = DraggableItemData<Project> & { type: 'column' };
-
-export const isProjectData = (data: Record<string | symbol, unknown>): data is ProjectDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number';
-};
-
 export function BoardColumn({ project }: BoardColumnProps) {
   const { t } = useTranslation();
 
   const columnRef = useRef<HTMLDivElement | null>(null);
-  const headerRef = useRef<HTMLButtonElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
   const scrollableRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
-
-  const [dragging, setDragging] = useState(false);
-  const [isDraggedOver, setIsDraggedOver] = useState(false);
-  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const { menu } = useNavigationStore();
   const { workspace, searchQuery, selectedTasks, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId } =
@@ -187,17 +173,6 @@ export function BoardColumn({ project }: BoardColumnProps) {
     setCreateForm(!createForm);
   };
 
-  const dragIsOver = () => {
-    setClosestEdge(null);
-    setIsDraggedOver(false);
-  };
-
-  const dragStarted = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
-    setIsDraggedOver(true);
-    if (!isProjectData(source.data) || !isProjectData(self.data) || source.data.item.id === project.id) return;
-    setClosestEdge(extractClosestEdge(self.data));
-  };
-
   const handleArrowKeyDown = (event: KeyboardEvent) => {
     if (focusedProjectIndex === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
     if (projects[focusedProjectIndex || 0].id !== project.id) return;
@@ -257,66 +232,6 @@ export function BoardColumn({ project }: BoardColumnProps) {
     if (workspaces[workspace.id].viewOptions) setViewOptions(workspaces[workspace.id].viewOptions);
   }, [workspaces[workspace.id]]);
 
-  // create draggable & dropTarget elements and auto scroll
-  useEffect(() => {
-    const column = columnRef.current;
-    const headerDragButton = headerRef.current;
-    const cardList = cardListRef.current;
-    const scrollable = scrollableRef.current;
-
-    const data = getDraggableItemData<Project>(project, project.membership ? project.membership.order : 0, 'column', 'PROJECT');
-    if (!column || !headerDragButton || !cardList) return;
-    // Don't start drag if only 1 project
-    if (projects.length <= 1) return;
-    return combine(
-      draggable({
-        element: column,
-        dragHandle: headerDragButton,
-        getInitialData: () => data,
-        onDragStart: () => setDragging(true),
-        onDrop: () => setDragging(false),
-      }),
-      dropTargetForElements({
-        element: cardList,
-        getData: () => data,
-        canDrop({ source }) {
-          const data = source.data;
-          return isProjectData(data) && data.item.id !== project.id && data.type === 'column';
-        },
-        getIsSticky: () => true,
-        onDragEnter: ({ self, source }) => dragStarted({ self, source }),
-        onDragStart: ({ self, source }) => dragStarted({ self, source }),
-        onDragLeave: () => dragIsOver(),
-        onDrop: () => dragIsOver(),
-      }),
-      dropTargetForElements({
-        element: column,
-        canDrop: ({ source }) => {
-          const data = source.data;
-          return isProjectData(data) && source.data.type === 'column';
-        },
-        getIsSticky: () => true,
-        getData: ({ input }) => {
-          return attachClosestEdge(data, {
-            input,
-            element: column,
-            allowedEdges: ['right', 'left'],
-          });
-        },
-        onDragEnter: ({ self, source }) => dragStarted({ self, source }),
-        onDrag: ({ self, source }) => dragStarted({ self, source }),
-        onDragLeave: () => dragIsOver(),
-        onDrop: () => dragIsOver(),
-      }),
-      scrollable
-        ? autoScrollForElements({
-            element: scrollable,
-            canScroll: ({ source }) => isProjectData(data) && source.data.type === 'column',
-          })
-        : () => {},
-    );
-  }, [project, projects, menu, sortedTasks]);
-
   useEffect(() => {
     return combine(
       monitorForElements({
@@ -372,11 +287,10 @@ export function BoardColumn({ project }: BoardColumnProps) {
   return (
     <ProjectProvider key={project.id} project={project} tasks={sortedTasks} labels={labels} members={members}>
       <div ref={columnRef} className="flex flex-col h-full">
-        <BoardColumnHeader dragRef={headerRef} createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
+        <BoardColumnHeader createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
         <div
           className={cn(
-            `flex-1 sm:h-[calc(100vh-146px)]  relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b
-          opacity-${dragging ? '30 border-primary' : '100'} ${isDraggedOver ? 'bg-card/20' : ''}`,
+            'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b opacity-100',
             selectedTasks.length && 'is-selected',
           )}
         >
@@ -462,7 +376,6 @@ export function BoardColumn({ project }: BoardColumnProps) {
               </>
             )}
           </div>
-          {closestEdge && <DropIndicator className="w-[2px] mp-[58px]" edge={closestEdge} />}
         </div>
       </div>
     </ProjectProvider>
