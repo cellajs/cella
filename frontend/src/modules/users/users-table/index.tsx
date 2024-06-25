@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState, useRef } from 'react';
 import { type GetUsersParams, getUsers, updateUser } from '~/api/users';
@@ -73,7 +73,7 @@ const UsersTable = () => {
   const isFiltered = role !== undefined || !!q;
 
   // Query users
-  const queryResult = useInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
+  const queryResult = useSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;

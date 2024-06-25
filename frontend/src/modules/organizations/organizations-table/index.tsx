@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
@@ -75,7 +75,7 @@ const OrganizationsTable = () => {
   const isFiltered = !!q;
 
   // Query organizations
-  const queryResult = useInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
+  const queryResult = useSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;

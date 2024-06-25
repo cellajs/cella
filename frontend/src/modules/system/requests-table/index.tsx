@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
@@ -66,7 +66,7 @@ const RequestsTable = () => {
   const isFiltered = !!q;
 
   // Query organizations
-  const queryResult = useInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
+  const queryResult = useSuspenseInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
