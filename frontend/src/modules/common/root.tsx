@@ -10,7 +10,6 @@ import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { DownAlert } from './down-alert';
 
-
 function Root() {
   // Lazy load
   const GleapSupport = config.gleapToken ? useLazyComponent(() => import('~/modules/common/gleap'), 5000) : () => null; // 5 seconds delay
@@ -26,9 +25,7 @@ function Root() {
 
       <Toaster richColors />
 
-      <Suspense fallback={null}>
-        {DebugToolbars ? <DebugToolbars /> : null}
-      </Suspense>
+      <Suspense fallback={null}>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
       <DownAlert />
 
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>

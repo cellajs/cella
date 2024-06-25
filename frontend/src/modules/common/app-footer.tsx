@@ -6,6 +6,7 @@ import Logo from '~/modules/common/logo';
 import UserTheme from '~/modules/common/user-theme';
 import { dialog } from './dialoger/state';
 import UserLanguage from './user-language';
+import { useEffect } from 'react';
 
 export interface FooterLinkProps {
   id: string;
@@ -39,6 +40,23 @@ interface FooterLinksProps {
 export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: FooterLinksProps) => {
   const { t } = useTranslation();
 
+  const handleOpenContactForm = () => {
+    dialog(<ContactForm dialog />, {
+      id: 'contact-form',
+      drawerOnMobile: false,
+      className: 'sm:max-w-[64rem]',
+      title: t('common:contact_us'),
+      text: t('common:contact_us.text'),
+    });
+  };
+
+  useEffect(() => {
+    document.addEventListener('openContactForm', handleOpenContactForm);
+    return () => {
+      document.removeEventListener('openContactForm', handleOpenContactForm);
+    };
+  }, []);
+
   return (
     <ul className={cn('text-foreground/60 mb-8 flex flex-wrap justify-center gap-x-6 gap-y-4 text-center text-xs', className)}>
       {links.map((link) => (
@@ -49,15 +67,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
           className="underline-offset-4 transition hover:underline"
           type="button"
           aria-label="Open contact form"
-          onClick={() => {
-            dialog(<ContactForm dialog />, {
-              id: 'contact-form',
-              drawerOnMobile: false,
-              className: 'sm:max-w-[64rem]',
-              title: t('common:contact_us'),
-              text: t('common:contact_us.text'),
-            });
-          }}
+          onClick={handleOpenContactForm}
         >
           {t('common:contact')}
         </button>
