@@ -2,6 +2,7 @@ import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState, useRef } from 'react';
 
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { membersQuerySchema } from 'backend/modules/general/schema';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation, Trans } from 'react-i18next';
@@ -91,8 +92,8 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
   const totalCount = queryResult.data?.pages[0].total;
 
   // Build columns
-  const [columns, setColumns] = useColumns(t, isMobile, isAdmin);
-
+  const [columns, setColumns] = useState<ColumnOrColumnGroup<Member>[]>([]);
+  useMemo(() => setColumns(useColumns(t, isMobile, isAdmin)), [isAdmin]);
   // Map (updated) query data to rows
   useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
 
@@ -115,6 +116,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
+  const callback = useMutateInfiniteQueryData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
   // Update member role
   const { mutate: updateMemberRole } = useMutation({
     mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role }),
@@ -124,19 +126,6 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     },
     onError: () => toast.error('Error updating role'),
   });
-
-  const callback = useMutateInfiniteQueryData(
-    [
-      'members',
-      entity.id,
-      entityType,
-      q,
-      sortColumns[0]?.columnKey as MemberSearch['sort'],
-      sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
-      role,
-    ],
-    (item) => ['members', item.id],
-  );
 
   const onResetFilters = () => {
     setQuery('');

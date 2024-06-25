@@ -98,10 +98,7 @@ const UsersTable = () => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
-  const callback = useMutateInfiniteQueryData(
-    ['users', q, sortColumns[0]?.columnKey as UsersSearch['sort'], sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'], role],
-    (item) => ['users', item.id],
-  );
+  const callback = useMutateInfiniteQueryData(['users', q, sort, order, role], (item) => ['users', item.id]);
 
   // Build columns
   const [columns, setColumns] = useColumns(callback);

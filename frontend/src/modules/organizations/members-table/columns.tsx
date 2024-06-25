@@ -10,7 +10,6 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { TFunction } from 'i18next';
 import { Link } from '@tanstack/react-router';
 import { openUserPreviewSheet } from '~/modules/users/users-table/columns';
-import { useState } from 'react';
 
 export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean) => {
   const mobileColumns: ColumnOrColumnGroup<Member>[] = [
@@ -62,11 +61,19 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => t(row.membership.role.toLowerCase()),
       width: 100,
-      renderEditCell: (props) =>
+      // ...(isAdmin && {
+      //   renderEditCell: ({ row, onRowChange }) =>
+      //     renderSelect({
+      //       row,
+      //       onRowChange,
+      //       options: config.rolesByType.entityRoles,
+      //     }),
+      // }),
+      renderEditCell: ({ row, onRowChange }) =>
         renderSelect({
-          props,
+          row,
+          onRowChange,
           options: config.rolesByType.entityRoles,
-          key: 'role',
         }),
     },
     {
@@ -91,5 +98,5 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
 
   if (isAdmin) mobileColumns.unshift(CheckboxColumn);
 
-  return useState<ColumnOrColumnGroup<Member>[]>(isMobile ? mobileColumns : [...mobileColumns, ...columns]);
+  return isMobile ? mobileColumns : [...mobileColumns, ...columns];
 };
