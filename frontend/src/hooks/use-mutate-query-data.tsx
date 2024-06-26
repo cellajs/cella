@@ -29,7 +29,6 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
             if (item.id === updatedItem?.id) {
               return updatedItem;
             }
-
             return item;
           }),
           total: data.total,
@@ -37,9 +36,11 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
       }
 
       if (action === 'delete') {
+        const updatedItems = data.items.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id));
+        const updatedTotal = data.total - (data.items.length - updatedItems.length);
         return {
-          items: data.items.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id)),
-          total: data.total - 1,
+          items: updatedItems,
+          total: updatedTotal,
         };
       }
     });
@@ -70,31 +71,35 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
       }
 
       if (action === 'update') {
+        const updatedPages = data.pages.map((page) => {
+          return {
+            items: page.items.map((item) => {
+              const updatedItem = items.find((items) => items.id === item.id);
+              if (item.id === updatedItem?.id) return updatedItem;
+              return item;
+            }),
+            total: page.total,
+          };
+        });
+
         return {
-          pages: [
-            {
-              items: data.pages[0].items.map((item) => {
-                const updatedItem = items.find((items) => items.id === item.id);
-                if (item.id === updatedItem?.id) return updatedItem;
-                return item;
-              }),
-              total: data.pages[0].total,
-            },
-            ...data.pages.slice(1),
-          ],
+          pages: updatedPages,
           pageParams: data.pageParams,
         };
       }
 
       if (action === 'delete') {
+        const updatedPages = data.pages.map((page) => {
+          const updatedItems = page.items.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id));
+          const updatedTotal = page.total - (page.items.length - updatedItems.length);
+          return {
+            items: updatedItems,
+            total: updatedTotal,
+          };
+        });
+
         return {
-          pages: [
-            {
-              items: data.pages[0].items.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id)),
-              total: data.pages[0].total - 1,
-            },
-            ...data.pages.slice(1),
-          ],
+          pages: updatedPages,
           pageParams: data.pageParams,
         };
       }
