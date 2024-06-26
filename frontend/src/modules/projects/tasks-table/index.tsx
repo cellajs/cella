@@ -12,7 +12,7 @@ import { useColumns } from './columns';
 
 const renderRow = (key: Key, props: RenderRowProps<Task>) => {
   return (
-    <TaskProvider key={key} task={props.row} taskIndex={-1}>
+    <TaskProvider key={key} task={props.row}>
       <Row {...props} />
     </TaskProvider>
   );

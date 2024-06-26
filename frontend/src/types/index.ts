@@ -19,7 +19,6 @@ export type DraggableItemData<T> = {
   itemType: Entity;
   dragItem: true;
   order: number;
-  index: number;
 };
 
 export type Entity = (typeof config.entityTypes)[number];

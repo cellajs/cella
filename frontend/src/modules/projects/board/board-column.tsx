@@ -247,9 +247,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
           if (isTaskData(sourceData) && isTaskData(targetData)) {
             // Drag a task in different column
             if (sourceData.item.project_id !== targetData.item.project_id) {
-              let edge: Edge | null = extractClosestEdge(targetData);
-              if (edge === 'bottom' && sourceData.index - 1 === targetData.index) edge = 'top';
-              if (edge === 'top' && sourceData.index + 1 === targetData.index) edge = 'bottom';
+              const edge: Edge | null = extractClosestEdge(targetData);
               const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
               // Update order of dragged task
               electric?.db.tasks.update({
@@ -264,9 +262,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
             }
             // Drag a task in same column
             if (sourceData.item.project_id === targetData.item.project_id) {
-              let edge: Edge | null = extractClosestEdge(targetData);
-              if (edge === 'bottom' && sourceData.index - 1 === targetData.index) edge = 'top';
-              if (edge === 'top' && sourceData.index + 1 === targetData.index) edge = 'bottom';
+              const edge: Edge | null = extractClosestEdge(targetData);
               const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
               // Update order of dragged task
               electric?.db.tasks.update({
@@ -328,8 +324,8 @@ export function BoardColumn({ project }: BoardColumnProps) {
                             <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
                           )}
                         </Button>
-                        {showingTasks.map((task, index) => (
-                          <TaskProvider key={task.id} task={task} taskIndex={index}>
+                        {showingTasks.map((task) => (
+                          <TaskProvider key={task.id} task={task}>
                             <DraggableTaskCard />
                           </TaskProvider>
                         ))}
