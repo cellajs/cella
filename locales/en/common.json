@@ -426,5 +426,6 @@
   "your_role": "Your role",
   "accept_invite": "Accept invitation",
   "accept_invite_text": "Hi {{email}}, click accept to become part of organization {{organization}}.",
-  "hide_projects": "Hide projects"
+  "hide_projects": "Hide projects",
+  "click_fetch.text": "Click to load more"
 }
