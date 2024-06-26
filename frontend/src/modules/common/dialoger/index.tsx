@@ -11,9 +11,7 @@ export function Dialoger() {
   const prevFocusedElement = useRef<HTMLElement | null>(null);
 
   const onOpenChange = (dialog: DialogT) => (open: boolean) => {
-    if (!open) {
-      removeDialog(dialog);
-    }
+    if (!open) removeDialog(dialog);
   };
 
   const removeDialog = useCallback((dialog: DialogT | DialogToRemove) => {
@@ -76,16 +74,14 @@ export function Dialoger() {
             className={existingDialog?.className ? existingDialog.className : dialog.className}
             container={existingDialog?.container ? existingDialog.container : dialog.container}
           >
-            {dialog.title || dialog.text ? (
-              <DialogHeader>
-                {existingDialog?.title ? (
-                  <DialogTitle>{existingDialog.title}</DialogTitle>
-                ) : dialog.title ? (
-                  <DialogTitle>{typeof dialog.title === 'string' ? <span>{dialog.title}</span> : dialog.title}</DialogTitle>
-                ) : null}
-                {dialog.text && <DialogDescription>{dialog.text}</DialogDescription>}
-              </DialogHeader>
-            ) : null}
+            <DialogHeader>
+              <DialogTitle className="h-6">
+                {existingDialog?.title
+                  ? existingDialog.title
+                  : dialog.title && (typeof dialog.title === 'string' ? <span>{dialog.title}</span> : dialog.title)}
+              </DialogTitle>
+              {dialog.text && <DialogDescription>{dialog.text}</DialogDescription>}
+            </DialogHeader>
             {existingDialog?.content ? existingDialog.content : dialog.content}
           </DialogContent>
         </Dialog>

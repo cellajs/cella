@@ -78,12 +78,13 @@ export const DraggableTaskCard = () => {
       }),
     );
   }, [task]);
+
   return (
     <div className="relative">
       <TaskCard
         task={task}
-        labels={labels.filter((label) => task.labels?.includes(label.id))}
-        members={members.filter((member) => task.assigned_to?.includes(member.id))}
+        labels={labels}
+        members={members}
         subTasks={tasks.filter((t) => t.parent_id === task.id)}
         taskRef={taskDragRef}
         taskDragButtonRef={taskDragButtonRef}

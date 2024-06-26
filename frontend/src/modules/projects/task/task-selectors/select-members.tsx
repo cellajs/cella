@@ -22,12 +22,15 @@ interface AssignMembersProps {
 const AssignMembers = ({ users, mode, viewValue, changeAssignedTo }: AssignMembersProps) => {
   // const { project } = useContext(ProjectContext);
   const { t } = useTranslation();
+  const { ref, bounds } = useMeasure();
   const formValue = useFormContext?.()?.getValues('assignedTo');
+
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Member[]>(viewValue ? viewValue : formValue || []);
   const [searchValue, setSearchValue] = useState('');
+
   const isSearching = searchValue.length > 0;
-  const { ref, bounds } = useMeasure();
+
   const handleSelectClick = (id: string) => {
     if (!id) return;
     const existingUser = selectedUsers.find((user) => user.id === id);

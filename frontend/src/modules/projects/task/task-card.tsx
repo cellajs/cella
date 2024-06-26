@@ -310,10 +310,9 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                   organizationId={task.organization_id}
                   projectId={task.project_id}
                   changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
-                  viewValue={labels}
+                  viewValue={labels.filter((label) => task.labels?.includes(label.id))}
                   mode="edit"
                 />
-
                 <div className="flex gap-1 ml-auto mr-1">
                   <AssignMembers
                     mode="edit"
