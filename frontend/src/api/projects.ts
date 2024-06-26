@@ -46,6 +46,7 @@ export const getProjects = async (
     workspaceId,
     organizationId,
     requestedUserId,
+    offset
   }: GetProjectsParams = {},
   signal?: AbortSignal,
 ) => {
@@ -55,7 +56,7 @@ export const getProjects = async (
         q,
         sort,
         order,
-        offset: String(page * limit),
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
         limit: String(limit),
         workspaceId,
         organizationId,

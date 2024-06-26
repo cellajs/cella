@@ -35,7 +35,7 @@ import DeleteUsers from '../delete-users';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 
-const LIMIT = 40;
+const LIMIT = 100;
 
 export const usersQueryOptions = ({
   q,

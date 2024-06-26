@@ -18,6 +18,8 @@ const renderRow = (key: Key, props: RenderRowProps<Task>) => {
   );
 };
 
+const LIMIT = 100;
+
 export default function TasksTable() {
   const { t } = useTranslation();
   const { searchQuery, selectedTasks, setSelectedTasks, projects } = useWorkspaceContext(
@@ -30,16 +32,19 @@ export default function TasksTable() {
   );
   const [columns] = useColumns();
   const [rows, setRows] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
-  const { results: tasks, updatedAt } = useLiveQuery(
+  const { results, updatedAt } = useLiveQuery(
     electric.db.tasks.liveMany({
       where: {
         project_id: {
           in: projects.map((project) => project.id),
         },
       },
+      take: LIMIT,
+      skip: rows.length,
       orderBy: {
         sort_order: 'asc',
       },
@@ -48,6 +53,12 @@ export default function TasksTable() {
     results: Task[] | undefined;
     updatedAt: Date | undefined;
   };
+
+  useEffect(() => {
+    if (results) {
+      setTasks((tasks) => [...tasks, ...results]);
+    }
+  }, [results]);
 
   const filteredTasks = useMemo(() => {
     if (!tasks) return;

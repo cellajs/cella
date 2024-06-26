@@ -21,7 +21,7 @@ export type GetRequestsParams = Partial<
 >;
 
 export const getRequests = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {},
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetRequestsParams = {},
   signal?: AbortSignal,
 ) => {
   const response = await client.$get(
@@ -30,7 +30,7 @@ export const getRequests = async (
         q,
         sort,
         order,
-        offset: String(page * limit),
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
         limit: String(limit),
       },
     },

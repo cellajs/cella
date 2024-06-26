@@ -22,7 +22,7 @@ export type GetUsersParams = Partial<
 
 // Get a list of users in system
 export const getUsers = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 2, role }: GetUsersParams = {},
+  { q, sort = 'id', order = 'asc', page = 0, limit = 2, role, offset }: GetUsersParams = {},
   signal?: AbortSignal,
 ) => {
   const response = await client.$get(
@@ -32,7 +32,7 @@ export const getUsers = async (
         sort,
         order,
         role,
-        offset: String(page * limit),
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
         limit: String(limit),
       },
     },
