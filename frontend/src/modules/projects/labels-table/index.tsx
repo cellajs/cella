@@ -46,6 +46,11 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
 
   const isFiltered = !!query;
 
+  const onSearch = (searchString: string) => {
+    setSelectedLabels([]);
+    setQuery(searchString);
+  };
+
   const onResetFilters = () => {
     setQuery('');
     setSelectedLabels([]);
@@ -107,7 +112,7 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
             </div>
           )}
           <FilterBarContent className="w-full">
-            <TableSearch value={query || ''} setQuery={setQuery} />
+            <TableSearch value={query || ''} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
       </div>

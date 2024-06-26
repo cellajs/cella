@@ -159,9 +159,12 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
   return (
     <Card
       onMouseDown={() => {
+        if (isEditing) return;
+        taskRef.current?.focus();
+      }}
+      onFocus={() => {
         setFocusedTaskId(task.id);
         setFocusedProjectIndex(projects.findIndex((p) => p.id === task.project_id) || 0);
-        taskRef.current?.focus();
       }}
       tabIndex={focusedTaskId === task.id ? 0 : -1}
       ref={taskRef}
@@ -258,6 +261,12 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
 
               {isExpanded && (
                 <>
+                  <div>
+                    <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
+                      {t('common:less').toLowerCase()}
+                    </Button>
+                  </div>
+
                   {subTasks.length > 0 && (
                     <div className="inline-flex py-0 h-4 items-center mt-4 gap-1">
                       <span className="text-success">{subTasks.filter((t) => t.status === 6).length}</span>
@@ -280,12 +289,6 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                       setFormState={(value) => setCreateSubTask(value)}
                       parentTaskId={task.id}
                     />
-                  </div>
-
-                  <div>
-                    <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
-                      {t('common:less').toLowerCase()}
-                    </Button>
                   </div>
                 </>
               )}

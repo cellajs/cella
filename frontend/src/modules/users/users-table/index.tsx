@@ -120,8 +120,15 @@ const UsersTable = () => {
     setRole(undefined);
   };
 
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    setSelectedRows(new Set<string>());
+    setQuery(searchString);
+  };
+
   // Change role filter
   const onRoleChange = (role?: string) => {
+    setSelectedRows(new Set<string>());
     setRole(role === 'all' ? undefined : (role as SystemRoles));
   };
 
@@ -218,7 +225,7 @@ const UsersTable = () => {
           <div className="sm:grow" />
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={onSearch} />
             <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>

@@ -59,6 +59,12 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
   const limit = LIMIT;
   const requestedUserId = userId;
 
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    setSelectedRows(new Set<string>());
+    setQuery(searchString);
+  };
+
   // Query projects
   const queryResult = useInfiniteQuery(projectsQueryOptions({ q, sort, order, limit, requestedUserId }));
 
@@ -130,7 +136,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch value={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />

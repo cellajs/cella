@@ -71,6 +71,12 @@ const RequestsTable = () => {
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    setSelectedRows(new Set<string>());
+    setQuery(searchString);
+  };
+
   // Build columns
   const [columns, setColumns] = useColumns();
 
@@ -145,7 +151,7 @@ const RequestsTable = () => {
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch value={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />

@@ -98,7 +98,11 @@ const OrganizationsTable = () => {
     [q, sort, order],
   );
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    setSelectedRows(new Set<string>());
+    setQuery(searchString);
+  };
   // Table selection
   const selectedOrganizations = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
@@ -208,7 +212,7 @@ const OrganizationsTable = () => {
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch value={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
