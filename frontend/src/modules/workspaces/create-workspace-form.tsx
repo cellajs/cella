@@ -71,7 +71,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
         menu: addMenuItem(createdWorkspace as UserMenuItem, 'workspaces'),
       });
       navigate({
-        to: '/workspace/$idOrSlug/board',
+        to: '/workspaces/$idOrSlug/board',
         params: { idOrSlug: createdWorkspace.slug },
       });
     },

@@ -1,17 +1,17 @@
 import useMounted from '~/hooks/use-mounted';
 import { Skeleton } from '~/modules/ui/skeleton';
 
-interface DataTableSkeletonProps {
+interface Props {
   rowCount?: number;
   rowHeight?: number;
   columnCount?: number;
 }
 
-export const ColumnSkeleton = ({ rowHeight = 88, rowCount = 8 }: DataTableSkeletonProps) => {
+export const ColumnSkeleton = ({ rowHeight = 88, rowCount = 8 }: Props) => {
   const renderRowHeight = rowHeight - 8;
   const { hasStarted } = useMounted();
   return (
-    <div className={`w-full  overflow-auto  flex flex-col transition-opacity ${hasStarted ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`w-full  overflow-auto  flex flex-col transition-opacity duration-300 ${hasStarted ? 'opacity-100' : 'opacity-0'}`}>
       <div className="flex justify-start w-full h-9 rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 -mt-[1px]" />
       {Array.from({ length: rowCount }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: skeleton is not undergoing mutations

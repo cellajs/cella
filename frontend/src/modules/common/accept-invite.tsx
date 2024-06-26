@@ -14,6 +14,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { cn } from '~/lib/utils';
 import AuthPage from '../auth/auth-page';
 import { Button, buttonVariants } from '../ui/button';
+import Spinner from './spinner';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 
@@ -51,7 +52,7 @@ const AcceptInvite = () => {
     checkToken(token);
   }, [token]);
 
-  if (isChecking) return <Loader2 className="text-muted-foreground mx-auto mt-[40vh] h-10 w-10 animate-spin" />;
+  if (isChecking) return <Spinner />;
 
   return (
     <AuthPage>

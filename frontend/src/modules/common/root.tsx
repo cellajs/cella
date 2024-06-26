@@ -10,11 +10,9 @@ import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { DownAlert } from './down-alert';
 
-
 function Root() {
   // Lazy load
   const GleapSupport = config.gleapToken ? useLazyComponent(() => import('~/modules/common/gleap'), 5000) : () => null; // 5 seconds delay
-  const DebugToolbars = config.mode === 'development' ? useLazyComponent(() => import('~/modules/common/debug-toolbars'), 1000) : () => null;
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
@@ -24,11 +22,7 @@ function Root() {
       <Sheeter />
       <ReloadPrompt />
 
-      <Toaster richColors />
-
-      <Suspense fallback={null}>
-        {DebugToolbars ? <DebugToolbars /> : null}
-      </Suspense>
+      <Toaster richColors toastOptions={{className: 'max-sm:mb-16'}} />
       <DownAlert />
 
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>

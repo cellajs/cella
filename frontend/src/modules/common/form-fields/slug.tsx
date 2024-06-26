@@ -92,7 +92,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
         previousSlug &&
         previousSlug !== slug && (
           <div id="slug-subComponent" className="absolute inset-y-1 right-1 flex justify-end">
-            <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
+            <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full p-0.5">
               <Undo size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert_to')}</span>
               <strong className="max-sm:hidden ml-1">{previousSlug}</strong>
             </Button>

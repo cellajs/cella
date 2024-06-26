@@ -20,7 +20,9 @@ export const UserProfileRoute = createRoute({
   path: '/user/$idOrSlug',
   staticData: { pageTitle: 'Profile' },
   getParentRoute: () => IndexRoute,
-  loader: async ({ params: { idOrSlug } }) => queryClient.ensureQueryData(userQueryOptions(idOrSlug)),
+  loader: async ({ params: { idOrSlug } }) => {
+    queryClient.ensureQueryData(userQueryOptions(idOrSlug));
+  },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
     const { idOrSlug } = useParams({ from: UserProfileRoute.id });

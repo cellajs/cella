@@ -34,8 +34,8 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null; hideClose?: boolean }
->(({ className, children, container, hideClose, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null; hideClose?: boolean, animate?: boolean}
+>(({ className, children, container, hideClose, animate, ...props }, ref) => {
   const { ref: MeasureRef, bounds } = useMeasure<HTMLDivElement>();
 
   const renderContent = () => (
@@ -47,7 +47,7 @@ const DialogContent = React.forwardRef<
       )}
       {...props}
     >
-      <motion.div animate={{ height: bounds.height }} transition={{ type: 'spring', duration: 0.2, bounce: 0 }}>
+      <motion.div animate={ animate ? { height: bounds.height } : false } transition={{ type: 'spring', duration: 0.2, bounce: 0 }}>
         <div ref={MeasureRef} className="gap-4 grid">
           {children}
           {!hideClose && (

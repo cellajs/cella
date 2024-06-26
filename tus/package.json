@@ -1,6 +1,6 @@
 {
   "name": "tus",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "TUS server to handle file uploading with imado",
   "type": "module",
   "scripts": {

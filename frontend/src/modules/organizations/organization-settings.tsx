@@ -43,7 +43,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
   };
 
   return (
-    <div className="md:flex md:flex-row mx-auto max-w-[1200px] gap-4">
+    <div className="md:flex md:flex-row mx-auto gap-4">
       <div className="mx-auto md:min-w-[200px] md:w-[30%] flex h-auto flex-col">
         <StickyBox offsetTop={60} className="md:mt-2 z-10 max-md:!block">
           <AsideNav tabs={tabs} className="pb-2" />

@@ -14,13 +14,17 @@ export const getUser = async (idOrSlug: string) => {
 
 export type GetUsersParams = Partial<
   Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit: number;
-    page: number;
+    limit?: number;
+    offset?: number;
+    page?: number;
   }
 >;
 
 // Get a list of users in system
-export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 2, role }: GetUsersParams = {}, signal?: AbortSignal) => {
+export const getUsers = async (
+  { q, sort = 'id', order = 'asc', page = 0, limit = 2, role, offset }: GetUsersParams = {},
+  signal?: AbortSignal,
+) => {
   const response = await client.$get(
     {
       query: {
@@ -28,7 +32,7 @@ export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit 
         sort,
         order,
         role,
-        offset: String(page * limit),
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
         limit: String(limit),
       },
     },

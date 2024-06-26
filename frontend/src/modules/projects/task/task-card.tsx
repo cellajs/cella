@@ -16,33 +16,28 @@ import { SelectImpact } from './task-selectors/select-impact.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
-import { useLiveQuery } from 'electric-sql/react';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
-import { useProjectContext } from '../board/project-context.tsx';
-import { useTaskContext } from './task-context.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
 import SubTask from './sub-task-card.tsx';
 import CreateSubTaskForm from './create-sub-task-form.tsx';
+import type { Member } from '~/types/index.ts';
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
   taskDragButtonRef: React.RefObject<HTMLButtonElement>;
+  task: Task;
+  labels: Label[];
+  subTasks: Task[];
+  members: Member[];
   className?: string;
   dragging?: boolean;
   dragOver?: boolean;
 }
 
-export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
+export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { task } = useTaskContext(({ task }) => ({
-    task,
-  }));
-  const { tasks, members } = useProjectContext(({ tasks, members }) => ({
-    tasks,
-    members,
-  }));
   const { setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex } = useWorkspaceContext(
     ({ setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex }) => ({
       setSelectedTasks,
@@ -54,7 +49,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
     }),
   );
 
-  const subTasks = tasks.filter((t) => t.parent_id === task.id);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [createSubTask, setCreateSubTask] = useState(false);
@@ -63,18 +57,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
-
-  const { results: labels = [] } = useLiveQuery(
-    electric.db.labels.liveMany({
-      where: {
-        id: {
-          in: task.labels || [],
-        },
-      },
-    }),
-  ) as {
-    results: Label[];
-  };
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any, taskId: string) => {
@@ -177,9 +159,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
   return (
     <Card
       onMouseDown={() => {
+        if (isEditing) return;
+        taskRef.current?.focus();
+      }}
+      onFocus={() => {
         setFocusedTaskId(task.id);
         setFocusedProjectIndex(projects.findIndex((p) => p.id === task.project_id) || 0);
-        taskRef.current?.focus();
       }}
       tabIndex={focusedTaskId === task.id ? 0 : -1}
       ref={taskRef}
@@ -225,7 +210,7 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                 ref={taskDragButtonRef}
                 variant={'ghost'}
                 size="xs"
-                className="max-sm:hidden text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none"
+                className="text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none"
               >
                 <span className="sr-only"> {t('common:move_task')}</span>
                 <GripVertical size={16} />
@@ -276,6 +261,12 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
 
               {isExpanded && (
                 <>
+                  <div>
+                    <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
+                      {t('common:less').toLowerCase()}
+                    </Button>
+                  </div>
+
                   {subTasks.length > 0 && (
                     <div className="inline-flex py-0 h-4 items-center mt-4 gap-1">
                       <span className="text-success">{subTasks.filter((t) => t.status === 6).length}</span>
@@ -299,12 +290,6 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                       parentTaskId={task.id}
                     />
                   </div>
-
-                  <div>
-                    <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
-                      {t('common:less').toLowerCase()}
-                    </Button>
-                  </div>
                 </>
               )}
 
@@ -325,10 +310,9 @@ export function TaskCard({ taskRef, taskDragButtonRef, dragging, dragOver, class
                   organizationId={task.organization_id}
                   projectId={task.project_id}
                   changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
-                  viewValue={labels}
+                  viewValue={labels.filter((label) => task.labels?.includes(label.id))}
                   mode="edit"
                 />
-
                 <div className="flex gap-1 ml-auto mr-1">
                   <AssignMembers
                     mode="edit"

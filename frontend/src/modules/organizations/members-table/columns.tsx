@@ -11,7 +11,7 @@ import type { TFunction } from 'i18next';
 import { Link } from '@tanstack/react-router';
 import { openUserPreviewSheet } from '~/modules/users/users-table/columns';
 
-export const getColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean) => {
+export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean) => {
   const mobileColumns: ColumnOrColumnGroup<Member>[] = [
     {
       key: 'name',
@@ -61,12 +61,14 @@ export const getColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => t(row.membership.role.toLowerCase()),
       width: 100,
-      renderEditCell: (props) =>
-        renderSelect({
-          props,
-          options: config.rolesByType.entityRoles,
-          key: 'role',
-        }),
+      ...(isAdmin && {
+        renderEditCell: ({ row, onRowChange }) =>
+          renderSelect({
+            row,
+            onRowChange,
+            options: config.rolesByType.entityRoles,
+          }),
+      }),
     },
     {
       key: 'createdAt',

@@ -29,7 +29,6 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
             if (item.id === updatedItem?.id) {
               return updatedItem;
             }
-
             return item;
           }),
           total: data.total,
@@ -37,9 +36,11 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
       }
 
       if (action === 'delete') {
+        const updatedItems = data.items.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id));
+        const updatedTotal = data.total - (data.items.length - updatedItems.length);
         return {
-          items: data.items.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id)),
-          total: data.total - 1,
+          items: updatedItems,
+          total: updatedTotal,
         };
       }
     });
@@ -47,7 +48,7 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
 };
 
 // This hook is used to mutate the data of an infinite query
-export const useMutateInfiniteQueryData = (queryKey: QueryKey) => {
+export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
   return (items: Item[], action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<
       InfiniteData<{
@@ -55,10 +56,7 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey) => {
         total: number;
       }>
     >(queryKey, (data) => {
-      console.log('queryKey:', queryKey);
-      if (!data) {
-        return;
-      }
+      if (!data) return;
       if (action === 'create') {
         return {
           pages: [
@@ -73,37 +71,46 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey) => {
       }
 
       if (action === 'update') {
-        return {
-          pages: [
-            {
-              items: data.pages[0].items.map((item) => {
-                const updatedItem = items.find((items) => items.id === item.id);
-                if (item.id === updatedItem?.id) {
-                  return updatedItem;
-                }
+        const updatedPages = data.pages.map((page) => {
+          return {
+            items: page.items.map((item) => {
+              const updatedItem = items.find((items) => items.id === item.id);
+              if (item.id === updatedItem?.id) return updatedItem;
+              return item;
+            }),
+            total: page.total,
+          };
+        });
 
-                return item;
-              }),
-              total: data.pages[0].total,
-            },
-            ...data.pages.slice(1),
-          ],
+        return {
+          pages: updatedPages,
           pageParams: data.pageParams,
         };
       }
 
       if (action === 'delete') {
+        const updatedPages = data.pages.map((page) => {
+          const updatedItems = page.items.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id));
+          const updatedTotal = page.total - (page.items.length - updatedItems.length);
+          return {
+            items: updatedItems,
+            total: updatedTotal,
+          };
+        });
+
         return {
-          pages: [
-            {
-              items: data.pages[0].items.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id)),
-              total: data.pages[0].total - 1,
-            },
-            ...data.pages.slice(1),
-          ],
+          pages: updatedPages,
           pageParams: data.pageParams,
         };
       }
     });
+
+    if (invalidateKeyGetter) {
+      for (const item of items) {
+        queryClient.invalidateQueries({
+          queryKey: invalidateKeyGetter(item),
+        });
+      }
+    }
   };
 };

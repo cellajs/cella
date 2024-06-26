@@ -29,7 +29,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
 
   const mobileColumns: ColumnOrColumnGroup<User>[] = [
     CheckboxColumn,
-   {
+    {
       key: 'name',
       name: t('common:name'),
       visible: true,
@@ -84,11 +84,11 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => t(row.role.toLowerCase()),
       width: 100,
-      renderEditCell: (props) =>
+      renderEditCell: ({ row, onRowChange }) =>
         renderSelect({
-          props,
+          row,
+          onRowChange,
           options: config.rolesByType.systemRoles,
-          key: 'role',
         }),
     },
     {

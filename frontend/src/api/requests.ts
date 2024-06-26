@@ -14,19 +14,23 @@ export const createRequest = async (requestInfo: RequestProp) => {
 
 export type GetRequestsParams = Partial<
   Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit: number;
-    page: number;
+    limit?: number;
+    offset?: number;
+    page?: number;
   }
 >;
 
-export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetRequestsParams = {}, signal?: AbortSignal) => {
+export const getRequests = async (
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetRequestsParams = {},
+  signal?: AbortSignal,
+) => {
   const response = await client.$get(
     {
       query: {
         q,
         sort,
         order,
-        offset: String(page * limit),
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
         limit: String(limit),
       },
     },

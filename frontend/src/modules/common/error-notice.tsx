@@ -4,7 +4,6 @@ import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-reac
 import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { AppFooter } from '~/modules/common/app-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
@@ -33,12 +32,12 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
   };
 
   const handleAskForHelp = () => {
-    if (!window.Gleap) return toast.error(t('common:error.gleap_not_initialized'));
+    if (!window.Gleap) return document.dispatchEvent(new CustomEvent('openContactForm'));
     window.Gleap.openConversations();
   };
 
   return (
-    <div className="container flex flex-col min-h-screen items-center">
+    <div className="container flex flex-col min-h-[calc(100vh-200px)] items-center">
       <div className="mt-auto mb-auto">
         <Card className="max-w-[36rem] m-4">
           <CardHeader className="text-center">

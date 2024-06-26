@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState, useRef } from 'react';
 import { type GetUsersParams, getUsers, updateUser } from '~/api/users';
@@ -35,9 +35,18 @@ import DeleteUsers from '../delete-users';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 
-const LIMIT = 40;
+const LIMIT = 100;
 
-export const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, role, limit }: GetUsersParams) => {
+export const usersQueryOptions = ({
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  role,
+  limit = LIMIT,
+  rowsLength = 0,
+}: GetUsersParams & {
+  rowsLength?: number;
+}) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -46,7 +55,21 @@ export const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, r
     initialPageParam: 0,
     refetchOnWindowFocus: false,
     retry: 1,
-    queryFn: async ({ pageParam: page, signal }) => await getUsers({ page, q, sort, order, role, limit }, signal),
+    queryFn: async ({ pageParam: page, signal }) =>
+      await getUsers(
+        {
+          page,
+          q,
+          sort,
+          order,
+          role,
+          // Fetch more items than the limit if some items were deleted
+          limit: limit + Math.max(page * limit - rowsLength, 0),
+          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
+          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+        },
+        signal,
+      ),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
@@ -73,7 +96,8 @@ const UsersTable = () => {
   const isFiltered = role !== undefined || !!q;
 
   // Query users
-  const queryResult = useInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
+  const queryResult = useSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit, rowsLength: rows.length }));
+
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 
@@ -87,21 +111,19 @@ const UsersTable = () => {
     }),
     [q, role, sortColumns],
   );
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
+  // Map (updated) query data to rows
+  useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows });
+
+  // Table selection
   const selectedUsers = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+  const callback = useMutateInfiniteQueryData(['users', q, sort, order, role], (item) => ['users', item.id]);
 
-  const callback = useMutateInfiniteQueryData([
-    'users',
-    q,
-    sortColumns[0]?.columnKey as UsersSearch['sort'],
-    sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'],
-    role,
-  ]);
-
+  // Build columns
   const [columns, setColumns] = useColumns(callback);
 
   // Update user role
@@ -121,8 +143,15 @@ const UsersTable = () => {
     setRole(undefined);
   };
 
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    setSelectedRows(new Set<string>());
+    setQuery(searchString);
+  };
+
   // Change role filter
   const onRoleChange = (role?: string) => {
+    setSelectedRows(new Set<string>());
     setRole(role === 'all' ? undefined : (role as SystemRoles));
   };
 
@@ -152,7 +181,7 @@ const UsersTable = () => {
         users={selectedUsers}
         callback={(users) => {
           callback(users, 'delete');
-          toast.success(t('success.delete_resources', { resources: t('common:users') }));
+          toast.success(t('common:success.delete_resources', { resources: t('common:users') }));
         }}
       />,
       {
@@ -166,8 +195,6 @@ const UsersTable = () => {
       },
     );
   };
-
-  useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">
@@ -221,7 +248,7 @@ const UsersTable = () => {
           <div className="sm:grow" />
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={onSearch} />
             <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>

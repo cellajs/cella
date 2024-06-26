@@ -83,7 +83,7 @@ const Combobox: React.FC<ComboboxProps> = ({
           ) : (
             placeholder || ''
           )}
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronDown className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
 

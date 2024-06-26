@@ -78,6 +78,23 @@
     @apply bg-background text-foreground min-h-full;
   }
 
+  @media (max-width: 639px) {
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    #root {
+      flex: 1;
+      height: 100%;
+      overflow-y: auto;
+    }
+  }
+
   #root {
     @apply flex flex-col min-h-full;
   }

@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import { config } from 'config';
 import { Shield, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +9,6 @@ import type { Project } from '~/types';
 import { AvatarWrap } from '../../common/avatar-wrap';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import { renderSelect } from '../../common/data-table/select-column';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -27,7 +25,7 @@ export const useColumns = () => {
       renderCell: ({ row, tabIndex }) => {
         return (
           <Link
-            to="/workspace/$idOrSlug"
+            to="/workspaces/$idOrSlug"
             tabIndex={tabIndex}
             // TODO: Fix this
             params={{ idOrSlug: row.workspaceId || row.id }}
@@ -47,19 +45,13 @@ export const useColumns = () => {
       : [
           ...mobileColumns,
           {
-            key: 'userRole',
+            key: 'role',
             name: t('common:role'),
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role.toLowerCase()) : '-'),
             width: 120,
-            renderEditCell: (props) =>
-              renderSelect({
-                props,
-                key: 'userRole',
-                options: config.rolesByType.entityRoles,
-              }),
           },
           {
             key: 'createdAt',

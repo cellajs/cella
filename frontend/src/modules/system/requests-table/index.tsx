@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
@@ -33,7 +33,15 @@ import { Button } from '~/modules/ui/button';
 
 type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
-export const requestsQueryOptions = ({ q, sort: initialSort, order: initialOrder, limit }: GetRequestsParams) => {
+export const requestsQueryOptions = ({
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  limit = LIMIT,
+  rowsLength = 0,
+}: GetRequestsParams & {
+  rowsLength?: number;
+}) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -42,7 +50,20 @@ export const requestsQueryOptions = ({ q, sort: initialSort, order: initialOrder
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
-    queryFn: async ({ pageParam: page, signal }) => await getRequests({ page, q, sort, order, limit }, signal),
+    queryFn: async ({ pageParam: page, signal }) =>
+      await getRequests(
+        {
+          page,
+          q,
+          sort,
+          order,
+          // Fetch more items than the limit if some items were deleted
+          limit: limit + Math.max(page * limit - rowsLength, 0),
+          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
+          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+        },
+        signal,
+      ),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
@@ -63,6 +84,26 @@ const RequestsTable = () => {
   const order = sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'];
   const limit = LIMIT;
 
+  const isFiltered = !!q;
+
+  // Query organizations
+  const queryResult = useSuspenseInfiniteQuery(requestsQueryOptions({ q, sort, order, limit, rowsLength: rows.length, }));
+
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
+
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    setSelectedRows(new Set<string>());
+    setQuery(searchString);
+  };
+
+  // Build columns
+  const [columns, setColumns] = useColumns();
+
+  // Map (updated) query data to rows
+  useMapQueryDataToRows<Request>({ queryResult, setSelectedRows, setRows, selectedRows });
+
   // Save filters in search params
   const filters = useMemo(
     () => ({
@@ -74,19 +115,9 @@ const RequestsTable = () => {
   );
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
-  // Query organizations
-  const queryResult = useInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
-
-  // Total count
-  const totalCount = queryResult.data?.pages[0].total;
-
-  const [columns, setColumns] = useColumns();
-
   const onRowsChange = async (changedRows: Request[]) => {
     setRows(changedRows);
   };
-
-  const isFiltered = !!q;
 
   const onResetFilters = () => {
     setQuery('');
@@ -109,8 +140,6 @@ const RequestsTable = () => {
       id: 'newsletter-form',
     });
   };
-
-  useMapQueryDataToRows<Request>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">
@@ -143,7 +172,7 @@ const RequestsTable = () => {
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch value={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />

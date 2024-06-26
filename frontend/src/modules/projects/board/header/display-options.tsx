@@ -18,7 +18,7 @@ const DisplayOptions = ({ className = '' }: Props) => {
         <TooltipButton key={value} portal={true} toolTipContent={t(`common:${value}_view`)}>
           <ToggleGroupItem key={value} value={value} asChild>
             <Link
-              to={`/workspace/${idOrSlug}/${value}`}
+              to={`/workspaces/${idOrSlug}/${value}`}
               params={{ idOrSlug }}
               activeOptions={{ exact: true, includeSearch: false }}
               activeProps={{ className: '!bg-accent' }}

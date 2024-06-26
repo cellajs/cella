@@ -56,6 +56,8 @@ const InputFormField = <TFieldValues extends FieldValues>({
       const element = subComponentRef.current?.children[0] as HTMLElement;
       setSubComponentPadding(`${element.offsetWidth + 6}px`);
     }
+    if (!subComponent) setSubComponentPadding('12px');
+    if (!prefix) setSubComponentPadding('12px');
   }, [subComponent, prefix]);
 
   const prefixClick = () => {

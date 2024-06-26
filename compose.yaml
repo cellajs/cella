@@ -1,5 +1,3 @@
-version: '3.8'
-
 volumes:
   pg_data:
 
@@ -22,7 +20,7 @@ services:
 
   electric-sync-service:
     container_name: electric-sync-service
-    image: electricsql/electric:latest
+    image: electricsql/electric:0.12.0
     depends_on:
       - db
     environment:

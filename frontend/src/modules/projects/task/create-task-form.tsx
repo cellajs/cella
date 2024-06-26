@@ -137,6 +137,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           //       }
           //     : undefined,
           labels: values.labels.map((label) => label.id),
+          assigned_to: [],
           // assigned_to: values.assignedTo.map((user) => user.id),
           status: values.status,
           organization_id: project.organizationId,
@@ -149,7 +150,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
       })
       .then(() => {
         form.reset();
-        toast.success(t('success.create_resource', { resource: t('common:task') }));
+        toast.success(t('common:success.create_resource', { resource: t('common:task') }));
         handleCloseForm();
       });
   };
@@ -157,6 +158,37 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   return (
     <Form {...form}>
       <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 border-b flex gap-2 flex-col shadow-inner">
+        <FormField
+          control={form.control}
+          name="markdown"
+          render={({ field: { value, onChange } }) => {
+            return (
+              <FormItem>
+                <FormControl>
+                  <MDEditor
+                    onKeyDown={handleMDEscKeyPress}
+                    value={value}
+                    textareaProps={{ placeholder: t('common:placeholder.mdEditor') }}
+                    defaultTabEnable={true}
+                    preview={'edit'}
+                    onChange={(newValue) => {
+                      if (typeof newValue === 'string') onChange(newValue);
+                    }}
+                    autoFocus={true}
+                    hideToolbar={true}
+                    visibleDragbar={false}
+                    height={'auto'}
+                    minHeight={40}
+                    className="text-sm my-1"
+                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', padding: '0' }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+
         <FormField
           control={form.control}
           name="type"
@@ -182,37 +214,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                       </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-
-        <FormField
-          control={form.control}
-          name="markdown"
-          render={({ field: { value, onChange } }) => {
-            return (
-              <FormItem>
-                <FormControl>
-                  <MDEditor
-                    onKeyDown={handleMDEscKeyPress}
-                    value={value}
-                    textareaProps={{ placeholder: t('common:placeholder.mdEditor') }}
-                    defaultTabEnable={true}
-                    preview={'edit'}
-                    onChange={(newValue) => {
-                      if (typeof newValue === 'string') onChange(newValue);
-                    }}
-                    autoFocus={true}
-                    hideToolbar={true}
-                    visibleDragbar={false}
-                    height={'auto'}
-                    minHeight={40}
-                    className="text-sm my-1"
-                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', padding: '0' }}
-                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

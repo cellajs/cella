@@ -8,7 +8,7 @@ export const alertVariants = cva('relative w-full rounded-lg border p-4 [&>svg~*
     variant: {
       default: 'bg-background text-foreground',
       success: 'bg-success/5 text-success border-success/10',
-      plain: 'text-primary bg-primary/5 border-primary/10',
+      plain: 'text-primary bg-background/80 border-primary/10',
       secondary: 'bg-secondary text-secondary-foreground',
       destructive: 'bg-destructive text-destructive-foreground',
     },

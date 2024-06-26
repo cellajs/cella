@@ -29,14 +29,25 @@ export const getProject = async (idOrSlug: string) => {
 
 export type GetProjectsParams = Partial<
   Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit: number;
-    page: number;
+    limit?: number;
+    offset?: number;
+    page?: number;
   }
 >;
 
 // Get a list of projects
 export const getProjects = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, workspaceId, organizationId, requestedUserId }: GetProjectsParams = {},
+  {
+    q,
+    sort = 'id',
+    order = 'asc',
+    page = 0,
+    limit = 50,
+    workspaceId,
+    organizationId,
+    requestedUserId,
+    offset
+  }: GetProjectsParams = {},
   signal?: AbortSignal,
 ) => {
   const response = await client.$get(
@@ -45,7 +56,7 @@ export const getProjects = async (
         q,
         sort,
         order,
-        offset: String(page * limit),
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
         limit: String(limit),
         workspaceId,
         organizationId,

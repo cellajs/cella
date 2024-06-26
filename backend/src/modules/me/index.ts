@@ -129,7 +129,7 @@ const meRoutes = app
         organizationId: workspace.organizationId,
         entity: workspace.entity,
         membership: toMembershipInfo.required(membership),
-        submenu: projects.filter((p) => p.parentId === workspace.id),
+        submenu: projects.filter((p) => p.parentId === workspace.id).sort((a, b) => a.membership.order - b.membership.order),
       };
     });
 
@@ -137,8 +137,8 @@ const meRoutes = app
       {
         success: true,
         data: {
-          organizations: organizations,
-          workspaces: workspaces,
+          organizations: organizations.sort((a, b) => a.membership.order - b.membership.order),
+          workspaces: workspaces.sort((a, b) => a.membership.order - b.membership.order),
         },
       },
       200,

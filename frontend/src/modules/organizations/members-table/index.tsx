@@ -1,7 +1,8 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef } from 'react';
 
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { membersQuerySchema } from 'backend/modules/general/schema';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation, Trans } from 'react-i18next';
@@ -18,7 +19,7 @@ import type { EntityPage, Member, Organization, Project } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { getColumns } from './columns';
+import { useColumns } from './columns';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import Export from '~/modules/common/data-table/export';
@@ -33,7 +34,6 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 
 const LIMIT = 40;
 
@@ -41,12 +41,23 @@ type MemberSearch = z.infer<typeof membersQuerySchema>;
 
 interface MembersTableProps {
   entity: Project | Organization;
-  route: '/layout/$idOrSlug/members' | '/layout/workspace/$idOrSlug';
+  route: '/layout/$idOrSlug/members' | '/layout/workspaces/$idOrSlug';
   isSheet?: boolean;
 }
 
 // Build query to get members with infinite scroll
-export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort, order: initialOrder, role, limit }: GetMembersParams) => {
+export const membersQueryOptions = ({
+  idOrSlug,
+  entityType,
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  role,
+  limit = LIMIT,
+  rowsLength = 0,
+}: GetMembersParams & {
+  rowsLength?: number;
+}) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -55,7 +66,23 @@ export const membersQueryOptions = ({ idOrSlug, entityType, q, sort: initialSort
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
-    queryFn: async ({ pageParam: page, signal }) => getMembers({ page, q, sort, order, role, limit, idOrSlug, entityType }, signal),
+    queryFn: async ({ pageParam: page, signal }) =>
+      getMembers(
+        {
+          page,
+          q,
+          sort,
+          order,
+          role,
+          // Fetch more items than the limit if some items were deleted
+          limit: limit + Math.max(page * limit - rowsLength, 0),
+          idOrSlug,
+          entityType,
+          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
+          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+        },
+        signal,
+      ),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
@@ -67,12 +94,13 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
 
   const entityType = entity.entity;
   const isAdmin = entity.membership?.role === 'ADMIN';
+
   const isMobile = useBreakpoints('max', 'sm');
+
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<MemberSearch['q']>(search.q);
   const [role, setRole] = useState<MemberSearch['role']>(search.role);
-  const [columns, setColumns] = useState<ColumnOrColumnGroup<Member>[]>([]);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
@@ -85,14 +113,28 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
   const isFiltered = role !== undefined || !!q;
 
   // Query members
-  const queryResult = useInfiniteQuery(membersQueryOptions({ idOrSlug: entity.id, entityType, q, sort, order, role, limit }));
+  const queryResult = useSuspenseInfiniteQuery(
+    membersQueryOptions({
+      idOrSlug: entity.slug,
+      entityType,
+      q,
+      sort,
+      order,
+      role,
+      limit,
+      rowsLength: rows.length,
+    }),
+  );
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 
-  const onRoleChange = (role?: string) => {
-    setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
-  };
+  // Build columns
+  const [columns, setColumns] = useState<ColumnOrColumnGroup<Member>[]>([]);
+  useMemo(() => setColumns(useColumns(t, isMobile, isAdmin)), [isAdmin]);
+  // Map (updated) query data to rows
+  useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
+
   // Save filters in search params
   if (!isSheet) {
     const filters = useMemo(
@@ -107,10 +149,12 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   }
 
+  // Table selection
   const selectedMembers = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
+  const callback = useMutateInfiniteQueryData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
   // Update member role
   const { mutate: updateMemberRole } = useMutation({
     mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role }),
@@ -121,20 +165,21 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     onError: () => toast.error('Error updating role'),
   });
 
-  const callback = useMutateInfiniteQueryData([
-    'members',
-    entity.id,
-    entityType,
-    q,
-    sortColumns[0]?.columnKey as MemberSearch['sort'],
-    sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
-    role,
-  ]);
-
   const onResetFilters = () => {
     setQuery('');
     setSelectedRows(new Set<string>());
     setRole(undefined);
+  };
+
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    setSelectedRows(new Set<string>());
+    setQuery(searchString);
+  };
+
+  const onRoleChange = (role?: string) => {
+    setSelectedRows(new Set<string>());
+    setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
   };
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
@@ -196,12 +241,6 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     );
   };
 
-  useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
-
-  useEffect(() => {
-    setColumns(getColumns(t, isMobile, isAdmin));
-  }, [isAdmin]);
-
   return (
     <div className="space-y-4 h-full">
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
@@ -254,7 +293,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={onSearch} />
             <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>

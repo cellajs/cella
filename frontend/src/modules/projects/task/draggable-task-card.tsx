@@ -11,6 +11,7 @@ import { DropIndicator } from '../../common/drop-indicator';
 import type { Task } from '../../common/electric/electrify';
 import { TaskCard } from './task-card';
 import { useTaskContext } from './task-context';
+import { useProjectContext } from '../board/project-context';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
@@ -20,6 +21,7 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
 
 export const DraggableTaskCard = () => {
   const { task } = useTaskContext(({ task }) => ({ task }));
+  const { labels, tasks, members } = useProjectContext(({ labels, tasks, members }) => ({ labels, tasks, members }));
   const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
   const taskDragRef = useRef(null);
   const taskDragButtonRef = useRef<HTMLButtonElement>(null);
@@ -76,9 +78,14 @@ export const DraggableTaskCard = () => {
       }),
     );
   }, [task]);
+
   return (
     <div className="relative">
       <TaskCard
+        task={task}
+        labels={labels}
+        members={members}
+        subTasks={tasks.filter((t) => t.parent_id === task.id)}
         taskRef={taskDragRef}
         taskDragButtonRef={taskDragButtonRef}
         dragging={dragging}

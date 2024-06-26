@@ -27,7 +27,16 @@ import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 
 export type ProjectsSearch = z.infer<typeof getProjectsQuerySchema>;
 
-export const projectsQueryOptions = ({ q, sort: initialSort, order: initialOrder, limit, requestedUserId }: GetProjectsParams) => {
+export const projectsQueryOptions = ({
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  limit = LIMIT,
+  requestedUserId,
+  rowsLength = 0,
+}: GetProjectsParams & {
+  rowsLength?: number;
+}) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -36,7 +45,21 @@ export const projectsQueryOptions = ({ q, sort: initialSort, order: initialOrder
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
-    queryFn: async ({ pageParam: page, signal }) => await getProjects({ page, q, sort, order, limit, requestedUserId }, signal),
+    queryFn: async ({ pageParam: page, signal }) =>
+      await getProjects(
+        {
+          page,
+          q,
+          sort,
+          order,
+          // Fetch more items than the limit if some items were deleted
+          limit: limit + Math.max(page * limit - rowsLength, 0),
+          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
+          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+          requestedUserId,
+        },
+        signal,
+      ),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
@@ -59,15 +82,21 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
   const limit = LIMIT;
   const requestedUserId = userId;
 
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    setSelectedRows(new Set<string>());
+    setQuery(searchString);
+  };
+
   // Query projects
-  const queryResult = useInfiniteQuery(projectsQueryOptions({ q, sort, order, limit, requestedUserId }));
+  const queryResult = useInfiniteQuery(projectsQueryOptions({ q, sort, order, limit, requestedUserId, rowsLength: rows.length }));
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 
   const isFiltered = !!q;
 
-  const callback = useMutateInfiniteQueryData(['projects', q, sort, order]);
+  const callback = useMutateInfiniteQueryData(['projects', q, sort, order], (item) => ['projects', item.id]);
 
   useMapQueryDataToRows<Project>({ queryResult, setSelectedRows, setRows, selectedRows });
 
@@ -79,7 +108,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
     setQuery('');
     setSelectedRows(new Set<string>());
   };
-  
+
   const selectedProjects = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
@@ -130,7 +159,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch value={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />

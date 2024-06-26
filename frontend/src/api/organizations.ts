@@ -26,14 +26,15 @@ export const getOrganization = async (idOrSlug: string) => {
 
 export type GetOrganizationsParams = Partial<
   Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit: number;
-    page: number;
+    limit?: number;
+    offset?: number;
+    page?: number;
   }
 >;
 
 // Get a list of organizations
 export const getOrganizations = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50 }: GetOrganizationsParams = {},
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetOrganizationsParams = {},
   signal?: AbortSignal,
 ) => {
   const response = await client.$get(
@@ -42,7 +43,7 @@ export const getOrganizations = async (
         q,
         sort,
         order,
-        offset: String(page * limit),
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
         limit: String(limit),
       },
     },

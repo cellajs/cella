@@ -9,16 +9,15 @@ import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
-import { getSuggestions } from '~/api/general';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import SelectRole from '~/modules/common/form-fields/select-role-radio';
-import MultipleSelector from '~/modules/common/multi-select';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types';
+import { QueryCombobox } from '~/modules/common/query-combobox';
 
 interface Props {
   entity?: EntityPage;
@@ -83,26 +82,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
           render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
-                <MultipleSelector
-                  formControlName="emails"
-                  value={value ? value.map((val: string) => ({ label: val, value: val })) : []}
-                  onChange={(options) => onChange(options.map((o) => o.value))}
-                  onSearch={async (query) => {
-                    const data = await getSuggestions(query, 'USER');
-                    if (data.items.length > 0) {
-                      return data.items.map((u) => ({
-                        label: u.name || u.email || '',
-                        value: u.email || '',
-                      }));
-                    }
-                    return [];
-                  }}
-                  basicSignValue={t('common:invite_members_search.text', { appName: config.name })}
-                  hidePlaceholderWhenSelected
-                  defaultOptions={value ? value.map((val: string) => ({ label: val, value: val })) : []}
-                  placeholder={t('common:search_users')}
-                  emptyValue={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })}
-                />
+                <QueryCombobox value={value} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

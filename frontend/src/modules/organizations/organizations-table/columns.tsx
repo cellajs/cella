@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
 
 import { Link } from '@tanstack/react-router';
-import { config } from 'config';
 import { Shield, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -11,7 +10,6 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import { AvatarWrap } from '../../common/avatar-wrap';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import { renderSelect } from '../../common/data-table/select-column';
 import UpdateRow from './update-row';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
@@ -56,19 +54,13 @@ export const useColumns = (callback: (organizations: Organization[], action: 'cr
       : [
           ...mobileColumns,
           {
-            key: 'userRole',
+            key: 'role',
             name: t('common:your_role'),
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role.toLowerCase()) : '-'),
             width: 120,
-            renderEditCell: (props) =>
-              renderSelect({
-                props,
-                key: 'userRole',
-                options: config.rolesByType.entityRoles,
-              }),
           },
           {
             key: 'subscription',

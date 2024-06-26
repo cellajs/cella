@@ -1,11 +1,23 @@
 {
   "name": "cella",
-  "version": "0.2.4",
+  "version": "0.0.1",
   "private": false,
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
   "description": "Intuivive TypeScript template to build local-first web apps. Implementation-ready. MIT licensed.",
-  "keywords": ["template", "monorepo", "fullstack", "typescript", "hono", "drizzle", "shadcn", "postgres", "react", "vite", "PWA"],
+  "keywords": [
+    "template",
+    "monorepo",
+    "fullstack",
+    "typescript",
+    "hono",
+    "drizzle",
+    "shadcn",
+    "postgres",
+    "react",
+    "vite",
+    "PWA"
+  ],
   "author": "CellaJS <info@cellajs.com>",
   "homepage": "https://cellajs.com",
   "type": "module",
@@ -21,6 +33,7 @@
     "generate": "pnpm run generate:pg && pnpm run generate:electric",
     "generate:pg": "dotenv -e env/.env -- turbo generate:pg --filter backend --force",
     "generate:electric": "dotenv -e env/.env -- turbo generate:electric --filter backend --force",
+    "generate:electric:custom": "dotenv -e env/.env -- turbo generate:electric:custom --filter backend --force",
     "migrate": "pnpm run migrate:pg && pnpm run migrate:electric",
     "migrate:pg": "dotenv -e env/.env -- turbo migrate:pg --filter backend --force",
     "migrate:electric": "dotenv -e env/.env -- turbo migrate:electric --filter backend --force",
@@ -44,15 +57,15 @@
     "electrify": "dotenv -e env/.env -- turbo prepare:electric:dev --filter frontend --force"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.0",
-    "@evilmartians/lefthook": "^1.6.14",
+    "@biomejs/biome": "^1.8.2",
+    "@evilmartians/lefthook": "^1.6.18",
     "@t3-oss/env-core": "^0.9.2",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "dotenv-cli": "^7.4.2",
     "rimraf": "^5.0.7",
-    "turbo": "^1.13.3",
-    "typescript": "^5.4.5",
+    "turbo": "^1.13.4",
+    "typescript": "^5.5.2",
     "zod": "^3.23.8"
   }
 }

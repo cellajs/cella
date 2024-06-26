@@ -62,7 +62,7 @@ export const CreateSubTaskForm = ({
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: nanoid(),
+        id: '',
         markdown: '',
         summary: '',
         parent_id: parentTaskId,
@@ -88,7 +88,7 @@ export const CreateSubTaskForm = ({
     Electric.db.tasks
       .create({
         data: {
-          id: values.id,
+          id: nanoid(),
           markdown: values.markdown,
           summary: summary,
           type: 'chore',
@@ -96,6 +96,8 @@ export const CreateSubTaskForm = ({
           status: 1,
           parent_id: parentTaskId,
           organization_id: project.organizationId,
+          assigned_to: [],
+          labels: [],
           project_id: project.id,
           created_at: new Date(),
           created_by: user.id,

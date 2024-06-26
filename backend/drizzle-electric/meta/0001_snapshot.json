@@ -1,6 +1,6 @@
 {
-  "id": "a6738fe7-9688-4c9d-8bc6-72630db7d8d3",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "f6229716-1bdd-459d-8b21-cfae96c9c98e",
+  "prevId": "a6738fe7-9688-4c9d-8bc6-72630db7d8d3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -168,15 +168,15 @@
         "tasks_parent_id_tasks_id_fk": {
           "name": "tasks_parent_id_tasks_id_fk",
           "tableFrom": "tasks",
-          "tableTo": "tasks",
           "columnsFrom": [
             "parent_id"
           ],
+          "tableTo": "tasks",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},

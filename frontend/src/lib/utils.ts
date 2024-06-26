@@ -10,7 +10,6 @@ import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
-import type { Task } from '~/modules/common/electric/electrify';
 import type { DraggableItemData, UserMenuItem } from '~/types';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -119,15 +118,6 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
   throw redirect({ to: pathname + redirectLocation, replace: true });
 };
 
-// To sort Tasks by its status & order
-export const sortTaskOrder = (task1: Pick<Task, 'status' | 'sort_order'>, task2: Pick<Task, 'status' | 'sort_order'>) => {
-  if (task1.status !== task2.status) return task2.status - task1.status;
-  // same status, sort by sort_order
-  if (task1.sort_order !== null && task2.sort_order !== null) return task1.sort_order - task2.sort_order;
-  // sort_order is null
-  return 0;
-};
-
 export const getDraggableItemData = <T>(item: T, itemOrder: number, type: 'task' | 'column' | 'menuItem', itemType: Entity): DraggableItemData<T> => {
   return { dragItem: true, item, order: itemOrder, type, itemType: itemType };
 };
@@ -153,24 +143,6 @@ export const getReorderDestinationOrder = (
   }
 
   return targetOrder;
-};
-
-// finds item order number by it's id in user's menu
-export const findMembershipOrderById = (id: string) => {
-  const menu = useNavigationStore.getState().menu;
-  const search = (items: UserMenuItem[]): number => {
-    const filtered = items.filter((i) => !i.membership.archived);
-    for (const item of filtered) {
-      if (item.id === id) return item.membership.order;
-      if (item.submenu) {
-        const found = search(item.submenu);
-        if (found) return found;
-      }
-    }
-    return 0;
-  };
-
-  return Object.values(menu).reduce<number>((result, entities) => result || search(entities), 0);
 };
 
 // adding new item on local store user's menu

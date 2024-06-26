@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
@@ -39,7 +39,15 @@ import NewsletterForm from '~/modules/system/newsletter-form';
 
 type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
-export const organizationsQueryOptions = ({ q, sort: initialSort, order: initialOrder, limit }: GetOrganizationsParams) => {
+export const organizationsQueryOptions = ({
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  limit = LIMIT,
+  rowsLength = 0,
+}: GetOrganizationsParams & {
+  rowsLength?: number;
+}) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -48,7 +56,20 @@ export const organizationsQueryOptions = ({ q, sort: initialSort, order: initial
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
-    queryFn: async ({ pageParam: page, signal }) => await getOrganizations({ page, q, sort, order, limit }, signal),
+    queryFn: async ({ pageParam: page, signal }) =>
+      await getOrganizations(
+        {
+          page,
+          q,
+          sort,
+          order,
+          // Fetch more items than the limit if some items were deleted
+          limit: limit + Math.max(page * limit - rowsLength, 0),
+          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
+          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+        },
+        signal,
+      ),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
@@ -72,9 +93,70 @@ const OrganizationsTable = () => {
   const order = sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'];
   const limit = LIMIT;
 
+  const isFiltered = !!q;
+
+  // Query organizations
+  const queryResult = useSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit, rowsLength: rows.length }));
+
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
+
+  // Map (updated) query data to rows
+  useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
+
+  const callback = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
+
+  // Build columns
+  const [columns, setColumns] = useColumns(callback);
+
+  // Save filters in search params
+  const filters = useMemo(
+    () => ({
+      q,
+      sort,
+      order,
+    }),
+    [q, sort, order],
+  );
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    setSelectedRows(new Set<string>());
+    setQuery(searchString);
+  };
+  // Table selection
   const selectedOrganizations = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [rows, selectedRows]);
+
+  const onResetFilters = () => {
+    setQuery('');
+    setSelectedRows(new Set<string>());
+  };
+
+  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
+    // mutate member
+    for (const index of indexes) {
+      const organization = changedRows[index];
+      if (column.key === 'userRole' && organization.membership?.role) {
+        inviteMembers({
+          idOrSlug: organization.id,
+          emails: [user.email],
+          role: organization.membership?.role,
+          entityType: 'ORGANIZATION',
+          organizationId: organization.id,
+        })
+          .then(() => {
+            toast.success(t('common:success.your_role_updated'));
+          })
+          .catch(() => {
+            toast.error(t('common:error.error'));
+          });
+      }
+    }
+
+    setRows(changedRows);
+  };
 
   const openDeleteDialog = () => {
     dialog(
@@ -103,59 +185,6 @@ const OrganizationsTable = () => {
       id: 'newsletter-form',
     });
   };
-
-  // Save filters in search params
-  const filters = useMemo(
-    () => ({
-      q,
-      sort,
-      order,
-    }),
-    [q, sort, order],
-  );
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-
-  // Query organizations
-  const queryResult = useInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
-
-  // Total count
-  const totalCount = queryResult.data?.pages[0].total;
-
-  const callback = useMutateInfiniteQueryData(['organizations', q, sort, order]);
-  const [columns, setColumns] = useColumns(callback);
-
-  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
-    // mutate member
-    for (const index of indexes) {
-      const organization = changedRows[index];
-      if (column.key === 'userRole' && organization.membership?.role) {
-        inviteMembers({
-          idOrSlug: organization.id,
-          emails: [user.email],
-          role: organization.membership?.role,
-          entityType: 'ORGANIZATION',
-          organizationId: organization.id,
-        })
-          .then(() => {
-            toast.success(t('common:success.your_role_updated'));
-          })
-          .catch(() => {
-            toast.error(t('common:error.error'));
-          });
-      }
-    }
-
-    setRows(changedRows);
-  };
-
-  const isFiltered = !!q;
-
-  const onResetFilters = () => {
-    setQuery('');
-    setSelectedRows(new Set<string>());
-  };
-
-  useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   return (
     <div className="space-y-4 h-full">
@@ -204,7 +233,7 @@ const OrganizationsTable = () => {
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch value={query} setQuery={setQuery} />
+            <TableSearch value={query} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />

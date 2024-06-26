@@ -89,7 +89,6 @@
   "error.forbidden": "Forbidden",
   "error.forbidden.text": "Not allowed to perform this action.",
   "error.forbidden_action": "Forbidden: Not allowed to perform this action",
-  "error.gleap_not_initialized": "No chat support: please click 'Contact' on page bottom",
   "error.image_upload_failed": "Image upload failed. Try again later",
   "error.invalid_credentials": "Invalid credentials",
   "error.invalid_credentials.text": "The credentials used during the authentication are invalid.",
@@ -204,7 +203,7 @@
   "menu": "Menu",
   "message": "Message",
   "message_sent.text": "Message sent successfully!",
-  "minimize": "minimize",
+  "minimize": "Minimize",
   "modified": "Modified",
   "modified_by": "Modified by",
   "more": "More",
@@ -427,5 +426,8 @@
   "your_role": "Your role",
   "accept_invite": "Accept invitation",
   "accept_invite_text": "Hi {{email}}, click accept to become part of organization {{organization}}.",
-  "hide_projects": "Hide projects"
+  "hide_projects": "Hide projects",
+  "click_fetch.text": "Click to load more",
+  "summary": "Summary",
+  "status": "Status"
 }
