@@ -210,7 +210,7 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                 ref={taskDragButtonRef}
                 variant={'ghost'}
                 size="xs"
-                className="max-sm:hidden text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none"
+                className="text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none"
               >
                 <span className="sr-only"> {t('common:move_task')}</span>
                 <GripVertical size={16} />

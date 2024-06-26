@@ -41,7 +41,7 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
           <Settings size={16} />
         </Button>
       </TooltipButton>
-      <TooltipButton toolTipContent={t('common:minimize')} side="bottom" sideOffset={13}>
+      <TooltipButton toolTipContent={t('common:minimize')} side="bottom" sideOffset={13} className="max-sm:hidden">
         <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={MinimizeClick}>
           <Minimize2 size={16} />
         </Button>
