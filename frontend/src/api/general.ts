@@ -12,10 +12,14 @@ export const getPublicCounts = async () => {
 };
 
 // Get upload token to securely upload files with imado: https://imado.eu
-export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
+export const getUploadToken = async (
+  type: UploadType,
+  query: UploadParams = { public: false, organizationId: undefined },
+) => {
   const id = query.organizationId;
 
-  if (!id && type === UploadType.Organization) return console.error('Organization id required for organization uploads');
+  if (!id && type === UploadType.Organization)
+    return console.error('Organization id required for organization uploads');
 
   if (id && type === UploadType.Personal) return console.error('Personal uploads should be typed as personal');
 
@@ -96,8 +100,11 @@ type RequiredGetMembersParams = {
   entityType: ContextEntity;
 };
 
-type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
+type OptionalGetMembersParams = Partial<
+  Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>
+> & {
   limit?: number;
+  offset?: number;
   page?: number;
 };
 
@@ -106,7 +113,7 @@ export type GetMembersParams = RequiredGetMembersParams & OptionalGetMembersPara
 
 // Get a list of members in an entity
 export const getMembers = async (
-  { idOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50 }: GetMembersParams,
+  { idOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50, offset }: GetMembersParams,
   signal?: AbortSignal,
 ) => {
   const response = await apiClient.members.$get(
@@ -117,7 +124,7 @@ export const getMembers = async (
         q,
         sort,
         order,
-        offset: String(page * limit),
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
         limit: String(limit),
         role,
       },

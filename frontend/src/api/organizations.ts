@@ -26,8 +26,9 @@ export const getOrganization = async (idOrSlug: string) => {
 
 export type GetOrganizationsParams = Partial<
   Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit: number;
-    page: number;
+    limit?: number;
+    offset?: number;
+    page?: number;
   }
 >;
 

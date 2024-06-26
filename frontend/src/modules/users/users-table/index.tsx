@@ -37,7 +37,16 @@ type UsersSearch = z.infer<typeof usersQuerySchema>;
 
 const LIMIT = 40;
 
-export const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, role, limit }: GetUsersParams) => {
+export const usersQueryOptions = ({
+  q,
+  sort: initialSort,
+  order: initialOrder,
+  role,
+  limit = LIMIT,
+  rowsLength = 0,
+}: GetUsersParams & {
+  rowsLength?: number;
+}) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -46,7 +55,21 @@ export const usersQueryOptions = ({ q, sort: initialSort, order: initialOrder, r
     initialPageParam: 0,
     refetchOnWindowFocus: false,
     retry: 1,
-    queryFn: async ({ pageParam: page, signal }) => await getUsers({ page, q, sort, order, role, limit }, signal),
+    queryFn: async ({ pageParam: page, signal }) =>
+      await getUsers(
+        {
+          page,
+          q,
+          sort,
+          order,
+          role,
+          // Fetch more items than the limit if some items were deleted
+          limit: limit + Math.max(page * limit - rowsLength, 0),
+          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
+          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+        },
+        signal,
+      ),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
@@ -73,7 +96,7 @@ const UsersTable = () => {
   const isFiltered = role !== undefined || !!q;
 
   // Query users
-  const queryResult = useSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
+  const queryResult = useSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit, rowsLength: rows.length }));
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
