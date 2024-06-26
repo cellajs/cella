@@ -1,6 +1,6 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { GripVertical, Paperclip } from 'lucide-react';
+import { GripVertical, Paperclip, UserX } from 'lucide-react';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
@@ -12,7 +12,7 @@ import { useThemeStore } from '~/store/theme';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify.ts';
 import { Checkbox } from '../../ui/checkbox.tsx';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
-import { SelectImpact } from './task-selectors/select-impact.tsx';
+import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
@@ -23,6 +23,10 @@ import { TaskEditor } from './task-selectors/task-editor.tsx';
 import SubTask from './sub-task-card.tsx';
 import CreateSubTaskForm from './create-sub-task-form.tsx';
 import type { Member } from '~/types/index.ts';
+import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
+import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
+import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
+
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
   taskDragButtonRef: React.RefObject<HTMLButtonElement>;
@@ -52,6 +56,8 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [createSubTask, setCreateSubTask] = useState(false);
+
+  const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -295,11 +301,20 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
 
               <div className="flex items-start justify-between">
                 {task.type !== 'bug' && (
-                  <SelectImpact
-                    viewValue={task.impact as TaskImpact}
-                    mode="edit"
-                    changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)}
-                  />
+                  <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)}>
+                    <Button
+                      aria-label="Set impact"
+                      variant="ghost"
+                      size="xs"
+                      className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+                    >
+                      {selectedImpact !== null ? (
+                        <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                      ) : (
+                        <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+                      )}
+                    </Button>
+                  </SelectImpact>
                 )}
 
                 {
@@ -315,11 +330,39 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                 />
                 <div className="flex gap-1 ml-auto mr-1">
                   <AssignMembers
-                    mode="edit"
                     users={members}
-                    viewValue={members.filter((member) => task.assigned_to?.includes(member.id))}
+                    value={members.filter((member) => task.assigned_to?.includes(member.id))}
                     changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
-                  />
+                  >
+                    <Button
+                      aria-label="Assign"
+                      variant="ghost"
+                      size="sm"
+                      className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+                    >
+                      {members.filter((member) => task.assigned_to?.includes(member.id)).length ? (
+                        <AvatarGroup limit={3}>
+                          <AvatarGroupList>
+                            {members
+                              .filter((member) => task.assigned_to?.includes(member.id))
+                              .map((user) => (
+                                <AvatarWrap
+                                  type="USER"
+                                  key={user.id}
+                                  id={user.id}
+                                  name={user.name}
+                                  url={user.thumbnailUrl}
+                                  className="h-6 w-6 text-xs"
+                                />
+                              ))}
+                          </AvatarGroupList>
+                          <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
+                        </AvatarGroup>
+                      ) : (
+                        <UserX className="h-4 w-4 opacity-50" />
+                      )}
+                    </Button>
+                  </AssignMembers>
                   <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
                 </div>
               </div>
