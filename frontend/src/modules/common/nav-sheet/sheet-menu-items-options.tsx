@@ -25,7 +25,7 @@ interface MenuItemProps {
 type PageDraggableItemData = DraggableItemData<UserMenuItem>;
 
 const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number';
+  return data.dragItem === true && typeof data.order === 'number' && typeof data.index === 'number' && data.type === 'menuItem';
 };
 
 export const SheetMenuItemsOptions = ({
@@ -59,13 +59,14 @@ export const SheetMenuItemsOptions = ({
     }));
   };
 
-  return filteredItems.map((item) => {
+  return filteredItems.map((item, index) => {
     const isSubmenuArchivedVisible = submenuVisibility[item.id] || false;
 
     return (
       <div key={item.id}>
         <ItemOptions
           item={item}
+          itemIndex={index}
           itemType={entityType}
           isGlobalDragging={isGlobalDragging}
           setGlobalDragging={setGlobalDragging}
@@ -98,8 +99,9 @@ const ItemOptions = ({
   itemType,
   isGlobalDragging,
   parentItemId,
+  itemIndex,
   setGlobalDragging,
-}: MenuItemProps & { parentItemId?: string; item: UserMenuItem; itemType: ContextEntity }) => {
+}: MenuItemProps & { parentItemId?: string; item: UserMenuItem; itemIndex: number; itemType: ContextEntity }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const dragButtonRef = useRef<HTMLButtonElement>(null);
@@ -154,7 +156,7 @@ const ItemOptions = ({
   useEffect(() => {
     const element = dragRef.current;
     const dragButton = dragButtonRef.current;
-    const data = getDraggableItemData(item, item.membership.order, 'menuItem', itemType);
+    const data = getDraggableItemData(item, item.membership.order, 'menuItem', itemType, itemIndex);
     if (!element || !dragButton) return;
 
     return combine(
@@ -185,11 +187,7 @@ const ItemOptions = ({
             allowedEdges: ['top', 'bottom'],
           });
         },
-        onDrag: ({ self, source }) => {
-          if (isPageData(source.data) && source.data.item.id === item.id) {
-            setClosestEdge(null);
-            return;
-          }
+        onDrag: ({ self }) => {
           setClosestEdge(extractClosestEdge(self.data));
         },
         onDrop: () => onDragOver(),

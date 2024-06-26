@@ -7,8 +7,9 @@ import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/co
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import CountryFlag from '../country-flag';
-import { useEffect, useState } from 'react';
+import { type LegacyRef, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { useMeasure } from '~/hooks/use-measure';
 
 type Language = { value: string; label: string };
 
@@ -16,6 +17,7 @@ const languages: Language[] = config.languages;
 
 export const SelectLanguages = ({ onChange }: { onChange: (value: string[]) => void }) => {
   const { t } = useTranslation();
+  const { ref, bounds } = useMeasure();
 
   const { getValues } = useFormContext();
   const formValue = getValues('languages');
@@ -41,16 +43,23 @@ export const SelectLanguages = ({ onChange }: { onChange: (value: string[]) => v
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="input" aria-label="Select language" className="w-full justify-between font-normal" aria-expanded={open}>
+        <Button
+          ref={ref as LegacyRef<HTMLButtonElement>}
+          variant="input"
+          aria-label="Select language"
+          className="w-full justify-between font-normal"
+          aria-expanded={open}
+        >
           {selectedLanguages.length > 0 ? (
             <div className="flex items-center">
-              {selectedLanguages.map((lang) => {
+              {selectedLanguages.map((lang, index) => {
                 const language = languages.find((l) => l.value === lang);
                 if (!language) return null;
                 return (
                   <span key={lang} className="flex items-center mr-2">
                     <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
                     {language.label}
+                    {index !== selectedLanguages.length - 1 && <span className="ml-1">,</span>}
                   </span>
                 );
               })}
@@ -63,7 +72,7 @@ export const SelectLanguages = ({ onChange }: { onChange: (value: string[]) => v
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="p-0 rounded-lg" align="start" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
+      <PopoverContent className="p-0 rounded-lg" style={{ width: `${bounds.left + bounds.right + 2}px` }} align="start" sideOffset={4}>
         <Command className="relative rounded-lg">
           <CommandList>
             <CommandGroup>

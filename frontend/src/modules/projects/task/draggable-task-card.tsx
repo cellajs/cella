@@ -16,11 +16,11 @@ import { useProjectContext } from '../board/project-context';
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'task' && typeof data.index === 'number';
 };
 
 export const DraggableTaskCard = () => {
-  const { task } = useTaskContext(({ task }) => ({ task }));
+  const { task, taskIndex } = useTaskContext(({ task, taskIndex }) => ({ task, taskIndex }));
   const { labels, tasks, members } = useProjectContext(({ labels, tasks, members }) => ({ labels, tasks, members }));
   const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
   const taskDragRef = useRef(null);
@@ -35,16 +35,19 @@ export const DraggableTaskCard = () => {
   };
 
   const dragIsOver = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
+    const edge = extractClosestEdge(self.data);
     setIsDraggedOver(true);
     if (!isTaskData(source.data) || !isTaskData(self.data)) return;
-    setClosestEdge(extractClosestEdge(self.data));
+    if (edge === 'bottom' && source.data.index - 1 === self.data.index) return setClosestEdge('top');
+    if (edge === 'top' && source.data.index + 1 === self.data.index) return setClosestEdge('bottom');
+    setClosestEdge(edge);
   };
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const element = taskDragRef.current;
     const dragButton = taskDragButtonRef.current;
-    const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'PROJECT');
+    const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'PROJECT', taskIndex);
     if (!element || !dragButton) return;
 
     return combine(
@@ -64,6 +67,7 @@ export const DraggableTaskCard = () => {
           const data = source.data;
           return isTaskData(data) && data.item.id !== task.id && data.item.status === task.status && data.type === 'task';
         },
+        getIsSticky: () => true,
         getData({ input }) {
           return attachClosestEdge(data, {
             element,

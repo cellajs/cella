@@ -5,6 +5,7 @@ import type { Task } from '~/modules/common/electric/electrify';
 
 interface TaskProps {
   task: Task;
+  taskIndex: number;
 }
 
 interface TaskState extends TaskProps {}
@@ -14,6 +15,7 @@ type TaskStore = ReturnType<typeof createTaskStore>;
 const createTaskStore = (initProps?: Partial<TaskProps>) => {
   const DEFAULT_PROPS: TaskProps = {
     task: null as unknown as Task,
+    taskIndex: -1,
   };
   return createStore<TaskState>()(() => ({
     ...DEFAULT_PROPS,
