@@ -34,7 +34,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
-  // const navigate = useNavigate();
   const type = 'PROJECT';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({

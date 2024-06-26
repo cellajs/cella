@@ -68,11 +68,9 @@ export function Sheeter() {
           <SheetContent className={`${existingSheet?.className ? existingSheet.className : sheet.className} items-start`}>
             {sheet.title && (
               <StickyBox className="z-10 flex items-center justify-between bg-background py-4">
-                {existingSheet?.title ? (
-                  <SheetTitle>{existingSheet.title}</SheetTitle>
-                ) : (
-                  <SheetTitle>{typeof sheet.title === 'string' ? <span>{sheet.title}</span> : sheet.title}</SheetTitle>
-                )}
+                <SheetTitle>
+                  {existingSheet?.title ? existingSheet.title : typeof sheet.title === 'string' ? <span>{sheet.title}</span> : sheet.title}
+                </SheetTitle>
                 <SheetClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
                   <X size={24} strokeWidth={1.25} />
                   <span className="sr-only">{t('common:close')}</span>

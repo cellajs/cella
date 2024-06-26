@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useKeyPress } from '~/hooks/use-key-press';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { Sheet, SheetContent } from '~/modules/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '~/modules/ui/sheet';
 import type { sheetVariants } from '~/modules/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -43,6 +43,8 @@ const NavSheet = () => {
         />
       )}
       <SheetContent side={sheetSide} ref={containerRef} className={sheetClass}>
+        {/* `SheetContent` requires a `SheetTitle` for the component to be accessible for screen reader users. */}
+        <SheetTitle />
         <ScrollArea className="h-full" id="nav-sheet">
           <div className="p-4">{activeSheet?.sheet}</div>
         </ScrollArea>
