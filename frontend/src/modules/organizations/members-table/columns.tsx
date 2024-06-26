@@ -61,20 +61,14 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => t(row.membership.role.toLowerCase()),
       width: 100,
-      // ...(isAdmin && {
-      //   renderEditCell: ({ row, onRowChange }) =>
-      //     renderSelect({
-      //       row,
-      //       onRowChange,
-      //       options: config.rolesByType.entityRoles,
-      //     }),
-      // }),
-      renderEditCell: ({ row, onRowChange }) =>
-        renderSelect({
-          row,
-          onRowChange,
-          options: config.rolesByType.entityRoles,
-        }),
+      ...(isAdmin && {
+        renderEditCell: ({ row, onRowChange }) =>
+          renderSelect({
+            row,
+            onRowChange,
+            options: config.rolesByType.entityRoles,
+          }),
+      }),
     },
     {
       key: 'createdAt',

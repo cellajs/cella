@@ -1,6 +1,5 @@
 import type { InfiniteData, QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/lib/router';
-import type { Membership } from '~/types';
 
 interface Item {
   id: string;
@@ -76,10 +75,6 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
             {
               items: data.pages[0].items.map((item) => {
                 const updatedItem = items.find((items) => items.id === item.id);
-                // DAVID TODO (REWORK)
-                const updatedMembershipItem = items.find((items) => (items as Membership).userId === item.id);
-                if (updatedMembershipItem) return { membership: updatedMembershipItem } as unknown as Item;
-
                 if (item.id === updatedItem?.id) return updatedItem;
                 return item;
               }),

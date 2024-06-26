@@ -15,8 +15,9 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
   const { t } = useTranslation();
   const { getValues } = useFormContext();
   const formValue = getValues('emailDomains');
+  const [fieldActive, setFieldActive] = useState(false);
   const [domains, setDomains] = useState<Tag[]>(formValue.map((dom: string) => ({ id: dom, text: dom })));
-
+  const [currentValue, setCurrentValue] = useState('');
   const checkValidDomain = (domain: string) => {
     return /^[a-z0-9].*[a-z0-9]$/i.test(domain) && domain.includes('.');
   };
@@ -39,6 +40,14 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
             {description && <FormDescription>{description}</FormDescription>}
             <FormControl>
               <TagInput
+                inputProps={{ value: currentValue }}
+                onInputChange={(newValue) => setCurrentValue(newValue)}
+                onFocus={() => setFieldActive(true)}
+                onBlur={() => {
+                  if (checkValidDomain(currentValue)) setDomains((prev) => [...prev, { id: currentValue, text: currentValue }]);
+                  setCurrentValue('');
+                  setFieldActive(false);
+                }}
                 maxLength={100}
                 minLength={4}
                 placeholder={t('common:placeholder.email_domains')}
@@ -51,7 +60,11 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
                 validateTag={checkValidDomain}
                 activeTagIndex={null}
                 setActiveTagIndex={() => {}}
-                styleClasses={{ input: 'px-1 py-0' }}
+                styleClasses={{
+                  input: 'px-1 py-0 h-[22px]',
+                  tag: { body: 'h-[22px] py-0' },
+                  inlineTagsContainer: `${fieldActive ? 'ring-2 ring-offset-2 ring-white' : ''}`,
+                }}
               />
             </FormControl>
             <FormMessage />
