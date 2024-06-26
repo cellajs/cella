@@ -13,6 +13,7 @@ import './style.css';
 import ContentPlaceholder from '../content-placeholder';
 import { DataTableSkeleton } from './table-skeleton';
 import Spinner from '../spinner';
+import { Button } from '~/modules/ui/button';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -32,7 +33,7 @@ interface DataTableProps<TData> {
   onSelectedRowsChange?: (selectedRows: Set<string>) => void;
   sortColumns?: SortColumn[];
   onSortColumnsChange?: (sortColumns: SortColumn[]) => void;
-  rowHeight?: number | ((row: TData) => number);
+  rowHeight?: number;
   enableVirtualization?: boolean;
   onRowsChange?: (rows: TData[], data: RowsChangeData<TData>) => void;
   fetchMore?: () => Promise<unknown>;
@@ -86,7 +87,7 @@ export const DataTable = <TData,>({
   onSelectedRowsChange,
   sortColumns,
   onSortColumnsChange,
-  rowHeight,
+  rowHeight = 40,
   enableVirtualization,
   onRowsChange,
   fetchMore,
@@ -101,8 +102,7 @@ export const DataTable = <TData,>({
   });
 
   useEffect(() => {
-    console.log('rows', rows.length, totalCount, isFetching, inView)
-    if (!rows.length) return;
+    if (!rows.length || error) return;
 
     if (inView && !isFetching) {
       if (typeof totalCount === 'number' && rows.length >= totalCount) {
@@ -110,13 +110,12 @@ export const DataTable = <TData,>({
       }
       fetchMore?.();
     }
-  }, [inView, fetchMore]);
+  }, [inView, error, fetchMore]);
 
   useEffect(() => {
-    if (error || !isLoading) {
-      setInitialDone(true);
-    }
-  }, [isLoading, error]);
+    if (initialDone) return;
+    if (!isLoading) setInitialDone(true);
+  }, [isLoading]);
 
   return (
     <div className="w-full h-full">
@@ -127,7 +126,7 @@ export const DataTable = <TData,>({
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
-            <div className="grid rdg-wrapper">
+            <div className="grid rdg-wrapper relative">
               <DataGrid
                 rowHeight={rowHeight}
                 enableVirtualization={enableVirtualization}
@@ -169,13 +168,28 @@ export const DataTable = <TData,>({
 
               {/* Infinite loading measure ref */}
               <div
+                key={totalCount}
                 ref={measureRef}
-                className="h-4 w-4 bg-red-700 relative z-[200]"
-                style={{ marginTop: -Number(rowHeight || 40) * limit * (rows.length < 60 ? 0.5 : 1) }}
+                className="h-4 w-0 bg-red-700 absolute bottom-0 z-[200]"
+                style={{
+                  height: `${rows.length * 0.2 * rowHeight}px`,
+                  maxHeight: `${rowHeight * limit}px`,
+                }}
               />
 
               {/* Loading */}
-              {isFetching && !error && <Spinner inline />}
+              {isFetching && !error && (
+                <div className="my-4">
+                  <Spinner inline noDelay />
+                </div>
+              )}
+
+              {/* Infinite scroll is stuck */}
+              {!isFetching && !error && totalCount && totalCount > rows.length && (
+                <Button variant="link" className="w-full my-6 opacity-30" onClick={fetchMore}>
+                  {t('common:click_fetch.text')} {totalCount} {rows.length}
+                </Button>
+              )}
 
               {/* Error */}
               {error && <div className="text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}
