@@ -18,8 +18,8 @@ export const useColumns = () => {
   const mobileColumns: ColumnOrColumnGroup<Task>[] = [
     CheckboxColumn,
     {
-      key: 'name',
-      name: t('common:name'),
+      key: 'summary',
+      name: t('common:summary'),
       visible: true,
       minWidth: 180,
       sortable: true,

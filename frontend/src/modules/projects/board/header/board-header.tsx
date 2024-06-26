@@ -155,7 +155,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
           <Settings size={16} />
         </Button>
       </TooltipButton>
-      <WorkspaceView className="max-sm:hidden" />
+      <WorkspaceView className="hidden" />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />
     </div>
