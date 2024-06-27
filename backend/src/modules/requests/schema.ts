@@ -3,11 +3,15 @@ import { z } from 'zod';
 import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '../../db/schema/requests';
 import { paginationQuerySchema } from '../../lib/common-schemas';
+import { t } from '../../lib/utils';
 
 const requestsTableSchema = createSelectSchema(requestsTable);
 
 export const requestsSchema = z.object({
-  email: z.string().min(1).email(),
+  email: z
+    .string()
+    .email(t('backend:invalid.email'))
+    .min(1, { message: t('backend:required') }),
   type: requestsTableSchema.shape.type,
 });
 

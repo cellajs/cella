@@ -6,7 +6,6 @@ import Logo from '~/modules/common/logo';
 import UserTheme from '~/modules/common/user-theme';
 import { dialog } from './dialoger/state';
 import UserLanguage from './user-language';
-import { useEffect } from 'react';
 
 export interface FooterLinkProps {
   id: string;
@@ -49,13 +48,13 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
       text: t('common:contact_us.text'),
     });
   };
-
-  useEffect(() => {
-    document.addEventListener('openContactForm', handleOpenContactForm);
-    return () => {
-      document.removeEventListener('openContactForm', handleOpenContactForm);
-    };
-  }, []);
+  // Not on every page we have footer e.g. workspace
+  // useEffect(() => {
+  //   document.addEventListener('openContactForm', handleOpenContactForm);
+  //   return () => {
+  //     document.removeEventListener('openContactForm', handleOpenContactForm);
+  //   };
+  // }, []);
 
   return (
     <ul className={cn('text-foreground/60 mb-8 flex flex-wrap justify-center gap-x-6 gap-y-4 text-center text-xs', className)}>

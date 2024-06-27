@@ -17,5 +17,17 @@
   "email.reset_password_text_3": "Ignore this email if you don't want to change your password or didn't request it.",
   "email.reset_password_text_2": "This link will expire in 3 hours. To get a new password reset link, visit:",
   "email.reset_password_text_1": "A password reset link has been requested for your Cella account. If this was you, you can set a new password here:",
-  "email.hi": "Hi"
+  "email.hi": "Hi",
+  "invalid.min_items": "Please add at least {{items_count}} {{item}} to the list.",
+  "invalid.min_length_greater": "Must be greater than {{length}}",
+  "invalid.min_length_greater_or_eq": "Must be greater or equal to {{length}}",
+  "invalid.max_length": "{{prefix}} be at most {{length}} characters.",
+  "invalid.name": "Name may only contain letters, numbers, spaces and these characters: ,.'-",
+  "invalid.url": "URL must start with https://",
+  "invalid.image_url": "Search params not allowed",
+  "invalid.color": "Color may only contain letters, numbers & starts with #",
+  "invalid.domain": "Domain must not contain @, no special chars and at least one dot (.) in between.",
+  "invalid.slug": "Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.",
+  "invalid.email": "Invalid email address.",
+  "required": "This field is required."
 }

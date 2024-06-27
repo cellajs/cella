@@ -14,7 +14,7 @@ import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import Features from './features';
 import { Hero } from './hero';
 import Integrations from './integrations';
-import Pricing from './pricing';
+// import Pricing from './pricing';
 import Why from './why';
 
 interface AboutSectionProps {
@@ -40,7 +40,7 @@ const AboutSection = ({ title, text, section, children, alternate = false }: Abo
   );
 };
 
-const sectionIds = ['cella', 'why', 'features', 'integrations', 'pricing'];
+const sectionIds = ['cella', 'why', 'features', 'integrations'];
 
 const About = () => {
   const { t } = useTranslation();
@@ -66,7 +66,7 @@ const About = () => {
         <Hero key={'hero'} title="about:title_1" subtitle="about:subtitle" text="about:text_1">
           <div className="mb-8">
             <a href={config.company.githubUrl} className={cn(buttonVariants({ variant: 'glow', size: 'xl' }))} aria-label="Get started">
-              {t('common:start.github.message')}
+              {t('about:start_github.text')}
             </a>
           </div>
           <Link
@@ -104,9 +104,9 @@ const About = () => {
           </AboutSection> */}
 
           {/* Pricing */}
-          <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
+          {/* <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
             <Pricing />
-          </AboutSection>
+          </AboutSection> */}
 
           {/* FAQs */}
           {/* <AboutSection key={'faqs'} section="faqs" title="about:title_7" text="about:text_7" alternate={true}>

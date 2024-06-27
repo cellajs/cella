@@ -91,9 +91,7 @@ const ElectricProvider = ({ children }: Props) => {
         await labelsShape.synced;
 
         const timeToSync = performance.now();
-        if (debug) {
-          console.log(`Synced in ${timeToSync}ms from page load`);
-        }
+        if (debug) console.log(`Synced in ${timeToSync}ms from page load`);
       } catch (error) {
         if ((error as Error).message.startsWith('Local database schema mismatches with server schema')) {
           deleteDB(scopedDbName);

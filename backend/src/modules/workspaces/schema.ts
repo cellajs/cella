@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import { createSelectSchema } from 'drizzle-zod';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { workspacesTable } from '../../db/schema/workspaces';
-import { idSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const workspaceSchema = z.object({
@@ -12,8 +12,22 @@ export const workspaceSchema = z.object({
   membership: membershipInfoSchema.nullable(),
 });
 
-export const workspaceBodySchema = z.object({
+export const createWorkspaceBodySchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
   organizationId: idSchema,
 });
+
+export const updateWorkspaceBodySchema = createInsertSchema(workspacesTable, {
+  name: nameSchema,
+  slug: validSlugSchema,
+  organizationId: idSchema,
+  thumbnailUrl: imageUrlSchema,
+})
+  .pick({
+    slug: true,
+    name: true,
+    thumbnailUrl: true,
+    organizationId: true,
+  })
+  .partial();

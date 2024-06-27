@@ -12,6 +12,7 @@ import {
   validUrlSchema,
 } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
+import { t } from '../../lib/utils';
 
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
@@ -33,7 +34,10 @@ export const updateOrganizationBodySchema = createInsertSchema(organizationsTabl
   slug: validSlugSchema,
   name: nameSchema,
   shortName: nameSchema,
-  languages: z.array(z.string()).min(1).optional(),
+  languages: z
+    .array(z.string())
+    .min(1, { message: t('invalid.min_items', { items_count: 'one', item: 'language' }) })
+    .optional(),
   emailDomains: validDomainsSchema,
   authStrategies: z.array(z.string()).optional(),
   websiteUrl: validUrlSchema,

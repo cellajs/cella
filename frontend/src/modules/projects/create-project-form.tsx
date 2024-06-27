@@ -4,7 +4,7 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { workspaceBodySchema } from 'backend/modules/workspaces/schema';
+import { createProjectBodySchema } from 'backend/modules/projects/schema';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { createProject } from '~/api/projects';
@@ -28,7 +28,7 @@ interface CreateProjectFormProps {
   dialog?: boolean;
 }
 
-const formSchema = workspaceBodySchema;
+const formSchema = createProjectBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -41,6 +41,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       defaultValues: {
         name: '',
         slug: '',
+        color: '#000000',
         workspaceId: workspace.id,
         organizationId: workspace.organizationId,
       },
@@ -53,15 +54,11 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
-  const callback = useMutateQueryData(['workspaces', workspace.id, 'projects']);
+  const callback = useMutateQueryData(['projects', workspace.id]);
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      return createProject(workspace.id, {
-        ...values,
-        color: '#000000',
-        organizationId: workspace.organizationId,
-      });
+      return createProject(workspace.id, values);
     },
     onSuccess: (createdProject) => {
       form.reset();

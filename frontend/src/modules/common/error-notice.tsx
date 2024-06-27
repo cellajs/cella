@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { AppFooter } from '~/modules/common/app-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
+import { dialog } from './dialoger/state';
+import ContactForm from './contact-form/contact-form';
 
 interface ErrorNoticeProps {
   error?: ErrorType;
@@ -32,10 +34,19 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
   };
 
   const handleAskForHelp = () => {
-    if (!window.Gleap) return document.dispatchEvent(new CustomEvent('openContactForm'));
+    // Not on every page we have footer e.g. workspace
+    // if (!window.Gleap) return document.dispatchEvent(new CustomEvent('openContactForm'));
+    if (!window.Gleap) {
+      return dialog(<ContactForm dialog />, {
+        id: 'contact-form',
+        drawerOnMobile: false,
+        className: 'sm:max-w-[64rem]',
+        title: t('common:contact_us'),
+        text: t('common:contact_us.text'),
+      });
+    }
     window.Gleap.openConversations();
   };
-
   return (
     <div className="container flex flex-col min-h-[calc(100vh-200px)] items-center">
       <div className="mt-auto mb-auto">

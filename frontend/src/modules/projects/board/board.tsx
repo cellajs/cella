@@ -1,8 +1,7 @@
-import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
+import { Fragment, type LegacyRef, useEffect, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
-import { useNavigationStore } from '~/store/navigation';
 import type { Project } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
@@ -55,7 +54,6 @@ export default function Board() {
     projects,
   }));
   const { t } = useTranslation();
-  const { menu } = useNavigationStore();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
     projects.sort((a, b) => {
       if (a.membership === null || b.membership === null) return 0;
@@ -64,33 +62,14 @@ export default function Board() {
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
-  const currentWorkspace = useMemo(() => {
-    return menu.workspaces.find((w) => w.id === workspace.id);
-  }, [menu.workspaces, workspace.id]);
-
   useEffect(() => {
-    //Fix types
-    if (currentWorkspace) {
-      const currentActiveProjects = currentWorkspace.submenu
-        ?.filter((p) => !p.membership.archived)
-        .map((p) => {
-          return { ...p, ...{ workspaceId: p.parentId } };
-        }) as unknown as Project[];
-      if (!currentActiveProjects)
-        return setMappedProjects(
-          projects.sort((a, b) => {
-            if (a.membership === null || b.membership === null) return 0;
-            return a.membership.order - b.membership.order;
-          }),
-        );
-      setMappedProjects(
-        currentActiveProjects.sort((a, b) => {
-          if (a.membership === null || b.membership === null) return 0;
-          return a.membership.order - b.membership.order;
-        }),
-      );
-    }
-  }, [currentWorkspace]);
+    setMappedProjects(
+      projects.sort((a, b) => {
+        if (a.membership === null || b.membership === null) return 0;
+        return a.membership.order - b.membership.order;
+      }),
+    );
+  }, [projects]);
 
   if (!mappedProjects.length) {
     return (

@@ -20,6 +20,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types';
 import { idOrSlugSchema } from 'backend/lib/common-schemas';
+import { i18n } from '~/lib/i18n';
 
 interface Props {
   entity?: EntityPage;
@@ -29,7 +30,9 @@ interface Props {
 }
 
 const formSchema = z.object({
-  emails: z.array(z.string().email('Invalid email')).min(1),
+  emails: z
+    .array(z.string().email(i18n.t('backend:invalid.email')))
+    .min(1, { message: i18n.t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
   role: z.enum(config.rolesByType.allRoles),
   idOrSlug: idOrSlugSchema.optional(),
 });

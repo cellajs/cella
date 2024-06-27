@@ -4,7 +4,7 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { workspaceBodySchema } from 'backend/modules/workspaces/schema';
+import { createWorkspaceBodySchema } from 'backend/modules/workspaces/schema';
 import { createWorkspace } from '~/api/workspaces';
 
 import { useNavigate } from '@tanstack/react-router';
@@ -30,7 +30,7 @@ interface CreateWorkspaceFormProps {
   dialog?: boolean;
 }
 
-const formSchema = workspaceBodySchema;
+const formSchema = createWorkspaceBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

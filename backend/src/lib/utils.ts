@@ -1,5 +1,7 @@
 import { env } from 'env';
 import { sign } from 'hono/jwt';
+import { i18n } from './i18n';
+import { config } from 'config';
 
 interface GenerateTokenOptions {
   userId: string;
@@ -24,3 +26,7 @@ export const generateElectricJWTToken = async ({ userId }: GenerateTokenOptions)
     'ES256',
   );
 };
+
+export const { t } = i18n.cloneInstance({
+  lng: config.defaultLanguage,
+});

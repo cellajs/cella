@@ -1,4 +1,3 @@
-import { useParams } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -14,10 +13,7 @@ import UpdateProjectForm from './update-project-form';
 export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();
 
-  const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
-
-  // const callback = useMutateQueryData(['workspaces', project.workspaceId, 'projects']);
-  const callback = useMutateQueryData([]);
+  const callback = useMutateQueryData(['projects', project.workspaceId]);
 
   const openDeleteDialog = () => {
     dialog(
@@ -44,19 +40,7 @@ export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; 
           <CardTitle>{t('common:general')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <UpdateProjectForm
-            project={project}
-            callback={(project) => {
-              if (idOrSlug !== project.slug) {
-                // navigate({
-                //   to: '/Project/$idOrSlug/board',
-                //   params: { idOrSlug: project.slug },
-                //   replace: true,
-                // });
-              }
-            }}
-            sheet={isSheet}
-          />
+          <UpdateProjectForm project={project} callback={(project) => callback([project], 'update')} sheet={isSheet} />
         </CardContent>
       </Card>
       <Card>
