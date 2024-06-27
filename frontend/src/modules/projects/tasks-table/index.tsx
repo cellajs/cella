@@ -1,5 +1,5 @@
 import { Bird } from 'lucide-react';
-import { type Key, useEffect, useMemo, useState } from 'react';
+import { type Key, useEffect, useState } from 'react';
 import { type RenderRowProps, Row, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -45,14 +45,28 @@ export default function TasksTable() {
   useEffect(() => {
     (async () => {
       setIsFetching(true);
+      const newOffset = 0;
+      setOffset(newOffset);
       const results = await electric.db.tasks.findMany({
         where: {
           project_id: {
             in: projects.map((project) => project.id),
           },
+          OR: [
+            {
+              summary: {
+                contains: searchQuery,
+              },
+            },
+            {
+              markdown: {
+                contains: searchQuery,
+              },
+            },
+          ],
         },
         take: LIMIT,
-        skip: offset,
+        skip: newOffset,
         orderBy: {
           [sort]: order,
         },
@@ -60,18 +74,18 @@ export default function TasksTable() {
       setTasks(results as Task[]);
       setIsFetching(false);
     })();
-  }, [projects, sort, order]);
+  }, [projects, sort, order, searchQuery]);
 
-  const filteredTasks = useMemo(() => {
-    if (!tasks) return;
-    if (!searchQuery) return tasks;
-    return tasks.filter(
-      (task) =>
-        task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [tasks, searchQuery]);
+  // const filteredTasks = useMemo(() => {
+  //   if (!tasks) return;
+  //   if (!searchQuery) return tasks;
+  //   return tasks.filter(
+  //     (task) =>
+  //       task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+  //   );
+  // }, [tasks, searchQuery]);
 
   const fetchMore = async () => {
     setIsFetching(true);
@@ -82,6 +96,18 @@ export default function TasksTable() {
         project_id: {
           in: projects.map((project) => project.id),
         },
+        OR: [
+          {
+            summary: {
+              contains: searchQuery,
+            },
+          },
+          {
+            markdown: {
+              contains: searchQuery,
+            },
+          },
+        ],
       },
       take: LIMIT,
       skip: newOffset,
@@ -102,8 +128,8 @@ export default function TasksTable() {
   };
 
   useEffect(() => {
-    if (filteredTasks) setRows(filteredTasks);
-  }, [filteredTasks]);
+    if (tasks) setRows(tasks);
+  }, [tasks]);
 
   return (
     <div className="space-y-4 h-full">
