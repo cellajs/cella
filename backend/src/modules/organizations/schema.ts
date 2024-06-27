@@ -12,7 +12,6 @@ import {
   validUrlSchema,
 } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
-import { i18n } from '../../lib/i18n';
 
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
@@ -34,10 +33,7 @@ export const updateOrganizationBodySchema = createInsertSchema(organizationsTabl
   slug: validSlugSchema,
   name: nameSchema,
   shortName: nameSchema,
-  languages: z
-    .array(z.string())
-    .min(1, { message: i18n.t('backend:invalid.min_items', { items_count: 'one', item: 'language' }) })
-    .optional(),
+  languages: z.array(z.string()).min(1).optional(),
   emailDomains: validDomainsSchema,
   authStrategies: z.array(z.string()).optional(),
   websiteUrl: validUrlSchema,
