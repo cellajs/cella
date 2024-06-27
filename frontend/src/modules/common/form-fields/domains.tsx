@@ -19,7 +19,12 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
   const [domains, setDomains] = useState<Tag[]>(formValue.map((dom: string) => ({ id: dom, text: dom })));
   const [currentValue, setCurrentValue] = useState('');
   const checkValidDomain = (domain: string) => {
-    return /^[a-z0-9].*[a-z0-9]$/i.test(domain) && domain.includes('.');
+    return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i.test(domain.trim());
+  };
+
+  const checkValidInput = (value: string) => {
+    if (!value || value.trim().length < 2) return true;
+    return checkValidDomain(value);
   };
 
   useEffect(() => {
@@ -56,6 +61,7 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
                 setTags={(newTags) => {
                   setDomains(newTags);
                   if (Array.isArray(newTags)) onChange(newTags.map((tag) => tag.text));
+                  setCurrentValue('');
                 }}
                 validateTag={checkValidDomain}
                 activeTagIndex={null}
@@ -63,7 +69,7 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
                 styleClasses={{
                   input: 'px-1 py-0 h-[22px]',
                   tag: { body: 'h-[22px] py-0' },
-                  inlineTagsContainer: `${fieldActive ? 'ring-2 ring-offset-2 ring-white' : ''}`,
+                  inlineTagsContainer: `${fieldActive ? (!checkValidInput(currentValue) ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : 'ring-2 ring-offset-2 ring-white') : ''}`,
                 }}
               />
             </FormControl>
