@@ -80,6 +80,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       onSuccess: (updatedOrganization) => {
         if (isSheet) sheet.remove('update-organization');
         callback?.(updatedOrganization);
+        form.reset(updatedOrganization);
         toast.success(t('common:success.update_resource', { resource: t('common:organization') }));
       },
     });
