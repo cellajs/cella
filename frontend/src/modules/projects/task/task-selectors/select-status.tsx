@@ -1,14 +1,11 @@
 import { cva } from 'class-variance-authority';
-import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, CircleDotDashed, Dot, type LucideIcon, Snowflake } from 'lucide-react';
+import { Check, Circle, CircleCheck, CircleDashed, CircleDot, CircleDotDashed, Dot, type LucideIcon, Snowflake } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 // import { useHotkeys } from '~/hooks/use-hot-keys';
-import { cn } from '~/lib/utils';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Kbd } from '../../../common/kbd';
-import { Button } from '../../../ui/button';
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];
@@ -31,12 +28,13 @@ export type TaskStatus = (typeof taskStatuses)[number]['value'];
 
 interface SelectStatusProps {
   taskStatus: TaskStatus;
+  trigger: React.ReactNode;
   changeTaskStatus: (newStatus: number) => void;
-  mode?: 'create' | 'edit';
-  className?: string;
+  inputPlaceholder: string;
+  nextButton?: React.ReactNode;
 }
 
-const variants = cva('', {
+export const statusVariants = cva('', {
   variants: {
     status: {
       0: 'bg-background/50 border-sky-500/40 hover:bg-sky-500/10 hover:border-sky-500/60 text-sky-600',
@@ -50,7 +48,7 @@ const variants = cva('', {
   },
 });
 
-const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectStatusProps) => {
+const SelectStatus = ({ taskStatus, inputPlaceholder, trigger, changeTaskStatus, nextButton }: SelectStatusProps) => {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -71,12 +69,6 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
     const newStatus = taskStatuses[index];
     setSelectedStatus(newStatus);
     changeTaskStatus(index);
-    if (mode === 'edit') toast.success(t('common:success.new_status', { status: t(newStatus.status).toLowerCase() }));
-  };
-
-  const nextStatusClick = () => {
-    const statusIndex = selectedStatus.value;
-    statusChange(statusIndex + 1);
   };
 
   const handleStatusChangeClick = (index: number) => {
@@ -92,42 +84,11 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <div className="flex gap-2 [&:not(.absolute)]:active:translate-y-px">
-        {mode === 'edit' && (
-          <Button
-            variant="outlineGhost"
-            size="xs"
-            className={cn(
-              'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100',
-              variants({ status: selectedStatus.value }),
-            )}
-            onClick={nextStatusClick}
-            disabled={selectedStatus.value === 6}
-          >
-            {t(taskStatuses[selectedStatus.value].action)}
-          </Button>
-        )}
-        <PopoverTrigger asChild>
-          <Button
-            aria-label="Set status"
-            variant={mode === 'edit' ? 'outlineGhost' : 'default'}
-            size="xs"
-            className={cn(
-              mode === 'edit' && variants({ status: selectedStatus.value }),
-              mode === 'edit' ? 'rounded-none rounded-r -ml-2' : 'rounded-none rounded-r border-l border-l-background/25',
-              '[&:not(.absolute)]:active:translate-y-0',
-            )}
-          >
-            <ChevronDown size={mode === 'edit' ? 12 : 16} className={`transition-transform ${openPopover ? 'rotate-180' : 'rotate-0'}`} />
-          </Button>
-        </PopoverTrigger>
+        {nextButton && nextButton}
+        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       </div>
 
-      <PopoverContent
-        className="w-60 p-0 rounded-lg"
-        align={mode === 'edit' ? 'end' : 'start'}
-        onCloseAutoFocus={(e) => e.preventDefault()}
-        sideOffset={4}
-      >
+      <PopoverContent className="w-60 p-0 rounded-lg" align="end" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
@@ -140,7 +101,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus, mode = 'edit' }: SelectSta
               }
               setSearchValue(searchValue);
             }}
-            placeholder={mode === 'edit' ? t('common:placeholder.set_status') : t('common:placeholder.create_with_status')}
+            placeholder={inputPlaceholder}
           />
           {!isSearching && <Kbd value="S" className="absolute top-3 right-[10px]" />}
 

@@ -1,10 +1,10 @@
 import { Check } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 // import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { Member } from '~/types/index.ts';
-import { Kbd } from '../../../common/kbd.tsx';
+import { Kbd } from '~/modules/common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
 import { useDebounce } from '~/hooks/use-debounce.tsx';
@@ -13,7 +13,7 @@ interface AssignMembersProps {
   users: Member[];
   value: Member[];
   children: React.ReactNode;
-  changeAssignedTo?: (users: Member[]) => void;
+  changeAssignedTo: (users: Member[]) => void;
   triggerWidth?: number;
 }
 
@@ -34,20 +34,20 @@ const AssignMembers = ({ users, children, value, changeAssignedTo, triggerWidth 
     if (existingUser) {
       const updatedList = selectedUsers.filter((user) => user.id !== id);
       setSelectedUsers(updatedList);
-      changeAssignedTo?.(updatedList);
+      changeAssignedTo(updatedList);
       return;
     }
     const newUser = users.find((user) => user.id === id);
     if (newUser) {
       const updatedList = [...selectedUsers, newUser];
       setSelectedUsers(updatedList);
-      changeAssignedTo?.(updatedList);
+      changeAssignedTo(updatedList);
       return;
     }
   };
 
   // TODO prevent search results from blick
-  useEffect(() => {
+  useMemo(() => {
     if (!indexArray.includes(Number.parseInt(debouncedSearchQuery))) return;
     handleSelectClick(users[Number.parseInt(searchValue)]?.id);
     setSearchValue('');

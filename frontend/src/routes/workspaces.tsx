@@ -55,6 +55,9 @@ export const WorkspaceBoardRoute = createRoute({
 
 export const WorkspaceTableRoute = createRoute({
   path: '/table',
+  validateSearch: z.object({
+    sort: z.enum(['summary', 'project_id', 'status', 'created_at']).default('created_at').optional(),
+  }),
   staticData: { pageTitle: 'Table' },
   getParentRoute: () => WorkspaceRoute,
   component: () => (

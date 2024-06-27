@@ -90,6 +90,7 @@ export const membersQueryOptions = ({
 const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
   const search = useSearch({ from: route });
+  console.log('search:', search);
   const containerRef = useRef(null);
 
   const entityType = entity.entity;

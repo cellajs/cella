@@ -1,6 +1,6 @@
 import { Bird } from 'lucide-react';
 import { type Key, useEffect, useMemo, useState } from 'react';
-import { type RenderRowProps, Row } from 'react-data-grid';
+import { type RenderRowProps, Row, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -34,6 +34,10 @@ export default function TasksTable() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [offset, setOffset] = useState(0);
   const [isFetching, setIsFetching] = useState(false);
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'created_at', direction: 'DESC' }]);
+
+  const sort = sortColumns[0]?.columnKey;
+  const order = sortColumns[0]?.direction.toLowerCase();
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
@@ -50,13 +54,13 @@ export default function TasksTable() {
         take: LIMIT,
         skip: offset,
         orderBy: {
-          sort_order: 'asc',
+          [sort]: order,
         },
       });
       setTasks(results as Task[]);
       setIsFetching(false);
     })();
-  }, [projects]);
+  }, [projects, sort, order]);
 
   const filteredTasks = useMemo(() => {
     if (!tasks) return;
@@ -82,7 +86,7 @@ export default function TasksTable() {
       take: LIMIT,
       skip: newOffset,
       orderBy: {
-        sort_order: 'asc',
+        [sort]: order,
       },
     });
     setTasks((prevTasks) => [...prevTasks, ...(results as Task[])]);
@@ -119,6 +123,8 @@ export default function TasksTable() {
           fetchMore,
           rowKeyGetter: (row) => row.id,
           enableVirtualization: false,
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
         }}
       />

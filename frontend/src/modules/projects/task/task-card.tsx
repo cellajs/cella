@@ -1,6 +1,6 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { GripVertical, Paperclip, UserX } from 'lucide-react';
+import { GripVertical, Paperclip, UserX, Tag, ChevronDown } from 'lucide-react';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
@@ -13,11 +13,11 @@ import { type Label, type Task, useElectric } from '../../common/electric/electr
 import { Checkbox } from '../../ui/checkbox.tsx';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
 import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
-import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
+import SelectStatus, { taskStatuses, statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
 import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
-import SetLabels from './task-selectors/select-labels.tsx';
+import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
 import SubTask from './sub-task-card.tsx';
@@ -26,6 +26,8 @@ import type { Member } from '~/types/index.ts';
 import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { toast } from 'sonner';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
@@ -61,13 +63,12 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
 
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
+  const Electric = useElectric();
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any, taskId: string) => {
-    const db = electric.db;
-
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    const db = Electric.db;
     if (field === 'assigned_to' && Array.isArray(value)) {
       db.tasks.update({
         data: {
@@ -322,16 +323,44 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                 }
                 <SetLabels
                   labels={labels}
+                  value={labels.filter((l) => task.labels?.includes(l.id))}
                   organizationId={task.organization_id}
                   projectId={task.project_id}
                   changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
-                  viewValue={labels.filter((label) => task.labels?.includes(label.id))}
-                  mode="edit"
-                />
+                >
+                  <Button
+                    aria-label="Set labels"
+                    variant="ghost"
+                    size="xs"
+                    className="flex h-auto justify-start font-light py-[2px] min-h-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
+                  >
+                    <div className="flex truncate flex-wrap gap-[1px]">
+                      {labels.filter((l) => task.labels?.includes(l.id)).length > 0 ? (
+                        labels
+                          .filter((l) => task.labels?.includes(l.id))
+                          .map(({ name, id, color }) => {
+                            return (
+                              <div
+                                key={id}
+                                style={badgeStyle(color)}
+                                className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
+                              >
+                                <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[12px] h-5 bg-transparent last:mr-0">
+                                  {name}
+                                </Badge>
+                              </div>
+                            );
+                          })
+                      ) : (
+                        <Tag size={16} className="opacity-50" />
+                      )}
+                    </div>
+                  </Button>
+                </SetLabels>
                 <div className="flex gap-1 ml-auto mr-1">
                   <AssignMembers
                     users={members}
-                    value={members.filter((member) => task.assigned_to?.includes(member.id))}
+                    value={members.filter((m) => task.assigned_to?.includes(m.id))}
                     changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
                   >
                     <Button
@@ -340,11 +369,11 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                       size="sm"
                       className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
                     >
-                      {members.filter((member) => task.assigned_to?.includes(member.id)).length ? (
+                      {members.filter((m) => task.assigned_to?.includes(m.id)).length ? (
                         <AvatarGroup limit={3}>
                           <AvatarGroupList>
                             {members
-                              .filter((member) => task.assigned_to?.includes(member.id))
+                              .filter((m) => task.assigned_to?.includes(m.id))
                               .map((user) => (
                                 <AvatarWrap
                                   type="USER"
@@ -363,7 +392,46 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                       )}
                     </Button>
                   </AssignMembers>
-                  <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
+                  <SelectStatus
+                    taskStatus={task.status as TaskStatus}
+                    changeTaskStatus={(newStatus) => {
+                      handleChange('status', newStatus, task.id);
+                      toast.success(t('common:success.new_status', { status: t(taskStatuses[newStatus as TaskStatus].status).toLowerCase() }));
+                    }}
+                    nextButton={
+                      <Button
+                        variant="outlineGhost"
+                        size="xs"
+                        className={cn(
+                          'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100',
+                          statusVariants({ status: task.status as TaskStatus }),
+                        )}
+                        onClick={() => {
+                          handleChange('status', task.status + 1, task.id);
+                          toast.success(
+                            t('common:success.new_status', { status: t(taskStatuses[(task.status + 1) as TaskStatus].status).toLowerCase() }),
+                          );
+                        }}
+                        disabled={(task.status as TaskStatus) === 6}
+                      >
+                        {t(taskStatuses[task.status as TaskStatus].action)}
+                      </Button>
+                    }
+                    inputPlaceholder={t('common:placeholder.set_status')}
+                    trigger={
+                      <Button
+                        aria-label="Set status"
+                        variant="outlineGhost"
+                        size="xs"
+                        className={cn(
+                          statusVariants({ status: task.status as TaskStatus }),
+                          'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
+                        )}
+                      >
+                        <ChevronDown size={12} />
+                      </Button>
+                    }
+                  />
                 </div>
               </div>
             </div>
