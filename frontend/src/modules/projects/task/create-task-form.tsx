@@ -134,16 +134,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           summary: summary,
           type: values.type as TaskType,
           impact: values.impact as TaskImpact,
-          // assignedTo: values.assignedTo as TaskUser[],
-          // labels: values.labels,
-          // task_labels:
-          //   values.labels.length > 0
-          //     ? {
-          //         create: values.labels.map((label) => ({
-          //           label_id: label.id,
-          //         })),
-          //       }
-          //     : undefined,
           labels: values.labels.map((label) => label.id),
           assigned_to: values.assignedTo.map((user) => user.id),
           status: values.status,
@@ -258,7 +248,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                         ) : (
                           <>
                             <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
-                            Set impact
+                            {t('common:set_impact')}
                           </>
                         )}
                       </Button>
@@ -279,7 +269,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               <FormItem>
                 <FormControl>
                   <AssignMembers users={members} value={value as Member[]} triggerWidth={bounds.width} changeAssignedTo={onChange}>
-                    <Button aria-label="Assign" variant="ghost" size="sm" className="flex justify-start gap-2  font-light w-full text-left border">
+                    <Button aria-label="Assign" variant="ghost" size="sm" className="flex justify-start gap-2 font-light w-full text-left border">
                       {value.length ? (
                         <>
                           <AvatarGroup limit={3}>
@@ -306,7 +296,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                         </>
                       ) : (
                         <>
-                          <UserX className="h-4 w-4 opacity-50" /> Assign to
+                          <UserX className="h-4 w-4 opacity-50" /> {t('common:assign_to')}
                         </>
                       )}
                     </Button>
@@ -340,7 +330,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                       aria-label="Set labels"
                       variant="ghost"
                       size="sm"
-                      className="flex h-auto justify-start font-light w-full text-left min-h-9 py-1 border hover:bg-accent/20"
+                      className="flex h-auto justify-start font-light w-full  text-left min-h-9 py-1 border hover:bg-accent/20"
                     >
                       <div className="flex truncate flex-wrap gap-[1px]">
                         {value.length > 0 ? (
@@ -374,7 +364,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                         ) : (
                           <>
                             <Tag size={16} className="opacity-50" />
-                            <span className="ml-2">Choose labels</span>
+                            <span className="ml-2">{t('common:choose_labels')}</span>
                           </>
                         )}
                       </div>
