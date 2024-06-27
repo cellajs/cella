@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { Workspace } from '~/types';
 
-import { workspaceBodySchema } from 'backend/modules/workspaces/schema';
+import { updateWorkspaceBodySchema } from 'backend/modules/workspaces/schema';
 import { useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -20,6 +20,8 @@ import InputFormField from '../common/form-fields/input';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { SlugFormField } from '../common/form-fields/slug';
 import UnsavedBadge from '../common/unsaved-badge';
+import { cleanUrl } from '~/lib/utils';
+import AvatarFormField from '~/modules/common/form-fields/avatar';
 
 interface Props {
   workspace: Workspace;
@@ -28,7 +30,7 @@ interface Props {
   sheet?: boolean;
 }
 
-const formSchema = workspaceBodySchema;
+const formSchema = updateWorkspaceBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -56,6 +58,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
     defaultValues: {
       slug: workspace.slug,
       name: workspace.name,
+      thumbnailUrl: cleanUrl(workspace.thumbnailUrl),
       organizationId: workspace.organizationId,
     },
   };
@@ -64,6 +67,9 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
+  const setImageUrl = (url: string) => {
+    form.setValue('thumbnailUrl', url, { shouldDirty: true });
+  };
 
   const onSubmit = (values: FormValues) => {
     mutate(values, {
@@ -93,6 +99,15 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <AvatarFormField
+          control={form.control}
+          label={t('common:workspace_logo')}
+          type="WORKSPACE"
+          name="thumbnailUrl"
+          entity={workspace}
+          url={form.getValues('thumbnailUrl')}
+          setUrl={setImageUrl}
+        />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}

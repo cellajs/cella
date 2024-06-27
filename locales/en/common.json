@@ -421,6 +421,7 @@
   "website_url": "Website url",
   "welcome_back": "Welcome back",
   "workspace": "Workspace",
+  "workspace_logo": "Workspace logo",
   "workspace_handle": "Workspace handle",
   "workspace_handle.text": "A unique handle for workspace URL",
   "workspace_settings": "Workspace settings",
