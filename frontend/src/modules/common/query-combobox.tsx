@@ -86,7 +86,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
               </Badge>
             ))
           ) : (
-            <span className="text-sm">{t('common:search_users')}</span>
+            <span className="text-sm ml-1">{t('common:search_users')}</span>
           )}
           <ChevronsUpDown className="absolute right-0 mx-2 h-4 w-4 shrink-0 opacity-50" />
         </button>

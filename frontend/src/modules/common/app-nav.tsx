@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Bell, Home, type LucideProps, Menu, Search, User } from 'lucide-react';
+import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
 import { Fragment } from 'react';
 import { useThemeStore } from '~/store/theme';
 import { config } from 'config';
@@ -13,7 +13,6 @@ import { useNavigationStore } from '~/store/navigation';
 import { NavSheet } from './nav-sheet';
 import { SheetAccount } from './nav-sheet/sheet-account';
 import { SheetMenu } from './nav-sheet/sheet-menu';
-import { SheetNotifications } from './nav-sheet/sheet-notifications';
 
 import useMounted from '~/hooks/use-mounted';
 import { NavButton } from './app-nav-button';
@@ -30,7 +29,6 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { id: 'menu', sheet: <SheetMenu />, icon: Menu },
   { id: 'home', icon: Home, href: '/' },
-  { id: 'notifications', sheet: <SheetNotifications />, icon: Bell, mirrorOnMobile: true },
   { id: 'search', icon: Search },
   { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
 ];

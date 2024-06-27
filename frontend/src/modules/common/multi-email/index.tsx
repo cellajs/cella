@@ -352,7 +352,7 @@ export function MultiEmail(props: MultiEmailProps) {
           onKeyUp={handleOnKeyup}
           className={cn(
             inputClassName,
-            'ml-2 grow placeholder:text-muted-foreground w-auto outline-none !bg-transparent border-0 inline-block leading-none py-1',
+            'ml-1 grow placeholder:text-muted-foreground w-auto outline-none !bg-transparent border-0 inline-block leading-none py-1',
           )}
           autoComplete={autoComplete}
         />

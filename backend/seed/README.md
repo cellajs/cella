@@ -1,12 +1,12 @@
 
 # Seed Scripts Overview
 
-1. userSeed
+1. user seed (required)
 This script seeds the database with an admin user.
 
 Admin User: Creates an admin user with a verified email(admin-test@cellajs.com) and a predefined password(12345678).
 
-2. organizationsSeed
+2. organizations seed
 This script seeds the database with organizations, users, and memberships.
 
 - Organizations: Generates 10 unique organizations.
@@ -14,10 +14,8 @@ This script seeds the database with organizations, users, and memberships.
 - Memberships: Associates users with their respective organizations.
 - Admin User: Adds an admin user to every even organization.
 
-
-
-3. dataSeed(optional specific for every app)
-In our case script seeds additional data for organizations, workspaces, projects, tasks, and labels.
+3. data seed
+This is an app-specific seed. Currently, this script seeds additional data for organizations, workspaces, projects, tasks, and labels.
 
 Workspaces: Creates 5 workspaces for each organization.
 Memberships: Assigns 10 users to each workspace and adds an admin user to every even workspace.
