@@ -56,7 +56,7 @@ export default defineConfig(() => {
             description: config.description,
             keywords: config.keywords,
             author: config.company.name,
-            color: config.theme.rose.primary,
+            color: config.theme.dark.primary,
             url: config.frontendUrl,
             twitter: config.company.twitterHandle,
           },
@@ -64,7 +64,7 @@ export default defineConfig(() => {
       }),
       terser({
         compress: {
-          pure_funcs: ['console.debug'], // Remove only console.debug
+          pure_funcs: ['console.debug'], // Remove console.debug
         },
       }),
       visualizer({ open: true, gzipSize: true }) as PluginOption,
@@ -91,7 +91,7 @@ export default defineConfig(() => {
         name: config.name,
         short_name: config.name,
         description: config.description,
-        theme_color: config.theme.rose.primary,
+        theme_color: config.theme.dark.primary,
         icons: [
           {
             src: '/static/icons/icon-192x192.png',

@@ -4,8 +4,8 @@ import DeviceMockup from '~/modules/marketing/device-mockup';
 const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 
 // Slides for light and dark themes
-const lightSlides = [{ src: 'signin-with-cella.png' }, { src: 'app-with-cella.png' }, { src: 'org-page.png' }];
-const darkSlides = [{ src: 'dark/signin-with-cella.png' }, { src: 'dark/app-with-cella.png' }];
+const lightSlides = [{ src: 'signin-with-cella.jpg' }, { src: 'onboarding.jpg' }, { src: 'org-page.jpg' }, { src: 'user-sheet-cella.jpg' }];
+const darkSlides = [{ src: 'dark/signin-with-cella.jpg' }, { src: 'dark/onboarding.jpg' }, { src: 'dark/org-page.jpg' }, { src: 'dark/user-sheet-cella.jpg' }];
 
 const Why = () => {
   const { t } = useTranslation();

@@ -177,7 +177,7 @@
   "is_built_by": "is built by",
   "join": "Join",
   "joined": "Joined",
-  "keep_menu_open": "Keep menu open",
+  "keep_menu_open": "Keep open",
   "label": "Label",
   "labels": "Labels",
   "language": "Language",
@@ -306,7 +306,7 @@
   "remove_task": "Remove selected task",
   "request_access": "Request access",
   "request_info": "Request info",
-  "request_info.text": "Interested in becoming a donate or build member? Leave your email and we will contact you.",
+  "request_info.text": "Interested in more info about Cella and its roadmap? Leave your email and we will contact you.",
   "resend_email": "Resend email",
   "reset": "Reset",
   "reset_password": "Reset password",
@@ -325,7 +325,7 @@
   "schedule_call.text": "Schedule a call",
   "skip_org_creation.text": "You are not part of an organization yet. To complete the onboarding process, please create one.",
   "search": "Search",
-  "search_users": "Search users by name",
+  "search_users": "Search & select users",
   "secondary": "Secondary labels",
   "set_impact": "Set impact",
   "select": "Select",
@@ -435,5 +435,6 @@
   "hide_projects": "Hide projects",
   "click_fetch.text": "Click to load more",
   "summary": "Summary",
-  "status": "Status"
+  "status": "Status",
+  "manage": "Manage"
 }

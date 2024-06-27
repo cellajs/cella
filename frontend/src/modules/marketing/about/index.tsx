@@ -14,7 +14,7 @@ import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import Features from './features';
 import { Hero } from './hero';
 import Integrations from './integrations';
-import Pricing from './pricing';
+// import Pricing from './pricing';
 import Why from './why';
 
 interface AboutSectionProps {
@@ -104,9 +104,9 @@ const About = () => {
           </AboutSection> */}
 
           {/* Pricing */}
-          <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
+          {/* <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
             <Pricing />
-          </AboutSection>
+          </AboutSection> */}
 
           {/* FAQs */}
           {/* <AboutSection key={'faqs'} section="faqs" title="about:title_7" text="about:text_7" alternate={true}>

@@ -15,7 +15,7 @@ import UserLanguage from '../common/user-language';
 
 const marketingNavConfig = [
   { id: 'features', url: '/about', hash: 'features' },
-  { id: 'pricing', url: '/about', hash: 'pricing' },
+  // { id: 'pricing', url: '/about', hash: 'pricing' },
   { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 

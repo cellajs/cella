@@ -46,7 +46,7 @@ const NavSheet = () => {
         {/* `SheetContent` requires a `SheetTitle` for the component to be accessible for screen reader users. */}
         <SheetTitle />
         <ScrollArea className="h-full" id="nav-sheet">
-          <div className="p-4">{activeSheet?.sheet}</div>
+          <div className="p-4 min-h-screen flex flex-col">{activeSheet?.sheet}</div>
         </ScrollArea>
       </SheetContent>
     </Sheet>

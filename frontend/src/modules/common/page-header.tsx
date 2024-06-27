@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import type { Entity } from 'backend/types/common';
-import { Building, ChevronRight, Home, Layers } from 'lucide-react';
+import { ChevronRight, Home } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useScrollTo from '~/hooks/use-scroll-to';
@@ -55,8 +55,7 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizat
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center" asChild>
                         <Link to="/$idOrSlug/members" params={{ idOrSlug: organizationId }}>
-                          <Building size={12} />
-                          <span className="ml-1">{t('common:organization').toLowerCase()}</span>
+                          <span>{t('common:organization').toLowerCase()}</span>
                         </Link>
                       </BreadcrumbLink>
                     </BreadcrumbItem>
@@ -66,8 +65,7 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizat
                   </>
                 )}
                 <BreadcrumbItem className="flex items-center">
-                  <Layers size={12} />
-                  <span className="ml-1">{t(type.toLowerCase()).toLowerCase()}</span>
+                  <span>{t(type.toLowerCase()).toLowerCase()}</span>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

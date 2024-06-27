@@ -26,8 +26,12 @@ export const createSession = (ctx: Context, provider: string, state: string, cod
 // Get the redirect URL from the cookie or use default
 export const getRedirectUrl = (ctx: Context, firstSignIn?: boolean): string => {
   const redirectCookie = getCookie(ctx, 'oauth_redirect');
+  const redirectCookieUrl = redirectCookie ? decodeURIComponent(redirectCookie) : '';
   let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
-  if (redirectCookie) redirectUrl = config.frontendUrl + decodeURIComponent(redirectCookie);
+
+  if (redirectCookie) {
+    redirectUrl = redirectCookieUrl.startsWith('http') ? decodeURIComponent(redirectCookie) : config.frontendUrl + redirectCookieUrl;
+  }
   if (firstSignIn) redirectUrl = config.frontendUrl + config.firstSignInRedirectPath;
   return redirectUrl;
 };

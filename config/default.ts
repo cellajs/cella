@@ -55,6 +55,7 @@ export const config = {
 
   // Theme settings
   theme: {
+    dark: { primary: '#26262b' },
     rose: { primary: '#e11d48' },
     colorDarkBackground: 'hsl(240 10% 9%)',
     strokeWidth: 1.5,
