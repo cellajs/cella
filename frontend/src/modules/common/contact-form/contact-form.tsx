@@ -12,7 +12,6 @@ import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
-import { i18n } from '~/lib/i18n';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -21,19 +20,19 @@ import InputFormField from '../form-fields/input';
 
 const ContactFormMap = lazy(() => import('./contact-form-map'));
 
-const formSchema = z.object({
-  name: z.string().min(2, i18n.t('common:error.name_required')).default(''),
-  email: z.string().email(i18n.t('common:error.invalid_email')).default(''),
-  message: z.string().default(''),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 // Main contact form map component
 const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const isMediumScreen = useBreakpoints('min', 'md');
   const { user } = useUserStore(({ user }) => ({ user }));
   const { t } = useTranslation();
+
+  const formSchema = z.object({
+    name: z.string().min(2, t('common:error.name_required')).default(''),
+    email: z.string().email(t('common:error.invalid_email')).default(''),
+    message: z.string().default(''),
+  });
+
+  type FormValues = z.infer<typeof formSchema>;
 
   const form = useFormWithDraft<FormValues>('contact-form', {
     resolver: zodResolver(formSchema),
