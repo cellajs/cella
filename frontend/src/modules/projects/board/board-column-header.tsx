@@ -33,7 +33,7 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
   return (
     <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
       {/* Omit style background if projects will be without a color preference. */}
-      <AvatarWrap className="h-8 w-8 text-xs" name={project.name} style={{ background: `#${project.color}` }} />
+      <AvatarWrap className="h-8 w-8 text-xs" name={project.name} backgroundColor={project.color} />
       <div className="truncate leading-6">{project.name}</div>
       <div className="grow" />
       <TooltipButton toolTipContent={t('common:project_settings')} side="bottom" sideOffset={13} className="max-sm:hidden">
