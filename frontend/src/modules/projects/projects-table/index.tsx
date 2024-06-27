@@ -41,7 +41,7 @@ export const projectsQueryOptions = ({
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['projects', q, sort, order],
+    queryKey: ['projects', requestedUserId, q, sort, order],
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
