@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { z } from 'zod';
-import { t } from './utils';
+import { i18n } from './i18n';
 
 export const passwordSchema = z.string().min(8).max(100);
 
@@ -49,12 +49,12 @@ export const paginationQuerySchema = z.object({
     .string()
     .default('0')
     .optional()
-    .refine(offsetRefine, { message: t('invalid.min_length_greater_or_eq', { length: 0 }) }),
+    .refine(offsetRefine, { message: i18n.t('backend:invalid.min_length_greater_or_eq', { length: 0 }) }),
   limit: z
     .string()
     .default('50')
     .optional()
-    .refine(limitRefine, { message: t('invalid.min_length_greater', { length: 0 }) }),
+    .refine(limitRefine, { message: i18n.t('backend:invalid.min_length_greater', { length: 0 }) }),
 });
 
 export const idsQuerySchema = z.object({
@@ -66,7 +66,7 @@ export const validSlugSchema = z
   .min(2)
   .max(100)
   .refine((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), {
-    message: t('invalid.slug'),
+    message: i18n.t('backend:invalid.slug'),
   })
   .transform((str) => str.toLowerCase().trim());
 
@@ -77,7 +77,7 @@ export const validDomainsSchema = z
       .min(4)
       .max(100)
       .refine((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), {
-        message: t('invalid.domain'),
+        message: i18n.t('backend:invalid.domain'),
       })
       .transform((str) => str.toLowerCase().trim()),
   )
@@ -99,7 +99,7 @@ export const imageUrlSchema = z
   .string()
   .url()
   .refine((url) => new URL(url).search === '', {
-    message: t('invalid.image_url'),
+    message: i18n.t('backend:invalid.image_url'),
   });
 
 export const nameSchema = z
@@ -107,7 +107,7 @@ export const nameSchema = z
   .min(2)
   .max(100)
   .refine((s) => /^[a-z0-9 ,.'-]+$/i.test(s), {
-    message: t('invalid.name'),
+    message: i18n.t('backend:invalid.name'),
   });
 
 export const colorSchema = z
@@ -115,9 +115,9 @@ export const colorSchema = z
   .min(3)
   .max(7)
   .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, {
-    message: t('invalid.color'),
+    message: i18n.t('backend:invalid.color'),
   });
 
 export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), {
-  message: t('invalid.url'),
+  message: i18n.t('backend:invalid.url'),
 });

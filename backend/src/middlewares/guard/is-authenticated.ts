@@ -1,8 +1,5 @@
-import { eq } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
-import { db } from '../../db/db';
 import { auth as luciaAuth } from '../../db/lucia';
-import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { removeSessionCookie } from '../../modules/auth/helpers/cookies';
@@ -24,26 +21,15 @@ const isAuthenticated: MiddlewareHandler = async (ctx, next) => {
     return errorResponse(ctx, 401, 'no_session', 'warn');
   }
 
-  if (session?.fresh) {
+  if (session.fresh) {
     const sessionCookie = luciaAuth.createSessionCookie(session.id);
     ctx.header('Set-Cookie', sessionCookie.serialize());
   }
 
-  const method = ctx.req.method.toLowerCase();
-  const path = ctx.req.path;
-
-  await db
-    .update(usersTable)
-    .set({
-      lastSeenAt: new Date(),
-      lastVisitAt: method === 'get' && path === '/me' ? new Date() : undefined,
-    })
-    .where(eq(usersTable.id, user.id));
-
   ctx.set('user', user);
 
-  await i18n.changeLanguage(user.language || 'en');
-
+  // TODO: Does this affect perf?
+  await i18n.changeLanguage(user.language);
   await next();
 };
 

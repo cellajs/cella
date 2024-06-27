@@ -20,7 +20,6 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types';
 import { idOrSlugSchema } from 'backend/lib/common-schemas';
-import { i18n } from '~/lib/i18n';
 
 interface Props {
   entity?: EntityPage;
@@ -29,20 +28,20 @@ interface Props {
   children?: React.ReactNode;
 }
 
-const formSchema = z.object({
-  emails: z
-    .array(z.string().email(i18n.t('backend:invalid.email')))
-    .min(1, { message: i18n.t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-  role: z.enum(config.rolesByType.allRoles),
-  idOrSlug: idOrSlugSchema.optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 // When no entity type, it's a system invite
 const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
+
+  const formSchema = z.object({
+    emails: z
+      .array(z.string().email(t('backend:invalid.email')))
+      .min(1, { message: t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
+    role: z.enum(config.rolesByType.allRoles),
+    idOrSlug: idOrSlugSchema.optional(),
+  });
+  
+  type FormValues = z.infer<typeof formSchema>;  
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({

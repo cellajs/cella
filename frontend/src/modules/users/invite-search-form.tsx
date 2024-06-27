@@ -18,7 +18,6 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types';
 import { QueryCombobox } from '~/modules/common/query-combobox';
-import { i18n } from '~/lib/i18n';
 
 interface Props {
   entity?: EntityPage;
@@ -26,19 +25,20 @@ interface Props {
   dialog?: boolean;
 }
 
-const formSchema = z.object({
-  emails: z.array(z.string().email(i18n.t('backend:invalid.email'))).min(1, { message: i18n.t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-  role: z.enum(config.rolesByType.entityRoles).optional(),
-  idOrSlug: idOrSlugSchema.optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 // Invite members by seaching for users which are already in the system
 const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
+  const { t } = useTranslation();
   if (!entity) return null;
 
-  const { t } = useTranslation();
+  const formSchema = z.object({
+    emails: z
+      .array(z.string().email(t('backend:invalid.email')))
+      .min(1, { message: t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
+    role: z.enum(config.rolesByType.entityRoles).optional(),
+    idOrSlug: idOrSlugSchema.optional(),
+  });
+
+  type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({

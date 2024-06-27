@@ -4,7 +4,7 @@ import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '../../db/schema/memberships';
 import { contextEntityTypeSchema, idOrSlugSchema, idSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { userSchema } from '../users/schema';
-import { t } from '../../lib/utils';
+import { i18n } from '../../lib/i18n';
 
 const membershipTableSchema = createSelectSchema(membershipsTable);
 
@@ -16,7 +16,7 @@ export const membershipSchema = membershipTableSchema.extend({
 });
 
 export const createMembershipBodySchema = z.object({
-  emails: userSchema.shape.email.array().min(1, { message: t('invalid.min_items', { items_count: 'one', item: 'email' }) }),
+  emails: userSchema.shape.email.array().min(1, { message: i18n.t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
   role: membershipSchema.shape.role,
 });
 
