@@ -1,4 +1,3 @@
-import { useLiveQuery } from 'electric-sql/react';
 import { Bird } from 'lucide-react';
 import { type Key, useEffect, useMemo, useState } from 'react';
 import { type RenderRowProps, Row } from 'react-data-grid';
@@ -33,32 +32,31 @@ export default function TasksTable() {
   const [columns] = useColumns();
   const [rows, setRows] = useState<Task[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [isFetching, setIsFetching] = useState(false);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
-  const { results, updatedAt } = useLiveQuery(
-    electric.db.tasks.liveMany({
-      where: {
-        project_id: {
-          in: projects.map((project) => project.id),
-        },
-      },
-      take: LIMIT,
-      skip: rows.length,
-      orderBy: {
-        sort_order: 'asc',
-      },
-    }),
-  ) as {
-    results: Task[] | undefined;
-    updatedAt: Date | undefined;
-  };
 
   useEffect(() => {
-    if (results) {
-      setTasks((tasks) => [...tasks, ...results]);
-    }
-  }, [results]);
+    (async () => {
+      setIsFetching(true);
+      const results = await electric.db.tasks.findMany({
+        where: {
+          project_id: {
+            in: projects.map((project) => project.id),
+          },
+        },
+        take: LIMIT,
+        skip: offset,
+        orderBy: {
+          sort_order: 'asc',
+        },
+      });
+      setTasks(results as Task[]);
+      setIsFetching(false);
+    })();
+  }, [projects]);
 
   const filteredTasks = useMemo(() => {
     if (!tasks) return;
@@ -69,7 +67,27 @@ export default function TasksTable() {
         task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
     );
-  }, [searchQuery, updatedAt]);
+  }, [tasks, searchQuery]);
+
+  const fetchMore = async () => {
+    setIsFetching(true);
+    const newOffset = offset + LIMIT;
+    setOffset(newOffset);
+    const results = await electric.db.tasks.findMany({
+      where: {
+        project_id: {
+          in: projects.map((project) => project.id),
+        },
+      },
+      take: LIMIT,
+      skip: newOffset,
+      orderBy: {
+        sort_order: 'asc',
+      },
+    });
+    setTasks((prevTasks) => [...prevTasks, ...(results as Task[])]);
+    setIsFetching(false);
+  };
 
   const onRowsChange = (changedRows: Task[]) => {
     setRows(changedRows);
@@ -93,11 +111,12 @@ export default function TasksTable() {
           rowHeight: 42,
           onRowsChange,
           isLoading: tasks === undefined,
-          isFetching: tasks === undefined,
+          isFetching,
           renderRow,
           isFiltered: !!searchQuery,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,
+          fetchMore,
           rowKeyGetter: (row) => row.id,
           enableVirtualization: false,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
