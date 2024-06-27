@@ -18,7 +18,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types';
 import { QueryCombobox } from '~/modules/common/query-combobox';
-import { t } from 'backend/lib/utils';
+import { i18n } from '~/lib/i18n';
 
 interface Props {
   entity?: EntityPage;
@@ -27,7 +27,7 @@ interface Props {
 }
 
 const formSchema = z.object({
-  emails: z.array(z.string().email(t('invalid.email'))).min(1, { message: t('invalid.min_items', { items_count: 'one', item: 'email' }) }),
+  emails: z.array(z.string().email(i18n.t('backend:invalid.email'))).min(1, { message: i18n.t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
   role: z.enum(config.rolesByType.entityRoles).optional(),
   idOrSlug: idOrSlugSchema.optional(),
 });

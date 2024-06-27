@@ -40,7 +40,7 @@ const AboutSection = ({ title, text, section, children, alternate = false }: Abo
   );
 };
 
-const sectionIds = ['cella', 'why', 'features', 'integrations', 'pricing'];
+const sectionIds = ['cella', 'why', 'features', 'integrations'];
 
 const About = () => {
   const { t } = useTranslation();
@@ -66,7 +66,7 @@ const About = () => {
         <Hero key={'hero'} title="about:title_1" subtitle="about:subtitle" text="about:text_1">
           <div className="mb-8">
             <a href={config.company.githubUrl} className={cn(buttonVariants({ variant: 'glow', size: 'xl' }))} aria-label="Get started">
-              {t('common:start.github.message')}
+              {t('about:start_github.text')}
             </a>
           </div>
           <Link

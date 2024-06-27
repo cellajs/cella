@@ -10,7 +10,6 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 
 import { config } from 'config';
-import { t } from 'i18next';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
@@ -117,6 +116,7 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
 };
 
 export const ResetPasswordRequest = ({ email }: { email: string }) => {
+  const { t } = useTranslation();
   const resetEmailRef = useRef(email);
 
   const { mutate: sendResetPasswordEmail, isPending } = useMutation({

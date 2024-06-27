@@ -10,8 +10,8 @@ const requestsTableSchema = createSelectSchema(requestsTable);
 export const requestsSchema = z.object({
   email: z
     .string()
-    .email(t('invalid.email'))
-    .min(1, { message: t('required') }),
+    .email(t('backend:invalid.email'))
+    .min(1, { message: t('backend:required') }),
   type: requestsTableSchema.shape.type,
 });
 
