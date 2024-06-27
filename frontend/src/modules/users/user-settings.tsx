@@ -220,7 +220,6 @@ const UserSettings = () => {
           <Card className="mx-auto sm:w-full">
             <CardHeader>
               <CardTitle>{t('common:reset_password')}</CardTitle>
-              {/* TODO: create identifier for this text */}
               <CardDescription>Reset your password by sending a reset link to your email address.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -228,7 +227,6 @@ const UserSettings = () => {
                 <Send size={16} className="mr-2" />
                 {t('common:send_reset_link')}
               </Button>
-              {/* TODO: create identifier for this text */}
               {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">Wait 1 minute before sending another reset link.</p>}
             </CardContent>
           </Card>
