@@ -220,10 +220,10 @@ const projectsRoutes = app
       .returning();
 
     const [workspaceRelation] = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.projectId, project.id));
-    if (workspaceRelation.workspaceId !== workspaceId) {
+    if (workspaceId && workspaceRelation.workspaceId !== workspaceId) {
       await db.update(projectsToWorkspacesTable).set({
         projectId: project.id,
-        workspaceId: workspaceId,
+        workspaceId,
       });
     }
 

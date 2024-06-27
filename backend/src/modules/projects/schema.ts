@@ -46,6 +46,6 @@ export const updateProjectBodySchema = createInsertSchema(projectsTable, {
   })
   .merge(
     z.object({
-      workspaceId: idSchema,
+      workspaceId: idSchema.nullable(),
     }),
   );

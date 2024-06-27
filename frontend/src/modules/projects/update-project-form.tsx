@@ -57,7 +57,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
       slug: project.slug,
       name: project.name,
       color: project.color,
-      ...(project.workspaceId && { workspaceId: project.workspaceId }),
+      workspaceId: project.workspaceId,
     },
   };
 
@@ -72,6 +72,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
         callback?.(updatedProject as Project);
         if (isDialog) dialog.remove();
         if (isSheet) sheet.remove();
+        form.reset(updatedProject);
         toast.success(t('common:success.update_resource', { resource: t('common:project') }));
       },
     });

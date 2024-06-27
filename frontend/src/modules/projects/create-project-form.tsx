@@ -54,7 +54,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
-  const callback = useMutateQueryData(['workspaces', workspace.id, 'projects']);
+  const callback = useMutateQueryData(['projects', workspace.id]);
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
