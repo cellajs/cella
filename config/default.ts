@@ -77,9 +77,6 @@ export const config = {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
     signUp: true, // Allow users to sign up. If disabled, the app is by invitation only
     waitList: false, // Suggest a waitlist for unknown emails when sign up is disabled
-    onboarding: true, // TODO: Show onboarding steps for new users
-    oauth: true, // TODO: Enable OAuth authentication
-    password: true, // TODO: Enable password authentication
   },
 
   // Languages

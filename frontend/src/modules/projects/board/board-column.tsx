@@ -247,8 +247,8 @@ export function BoardColumn({ project }: BoardColumnProps) {
           if (isTaskData(sourceData) && isTaskData(targetData)) {
             // Drag a task in different column
             if (sourceData.item.project_id !== targetData.item.project_id) {
-              const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
-              const newOrder = getReorderDestinationOrder(targetData.order, closestEdgeOfTarget, 'vertical', sourceData.order);
+              const edge: Edge | null = extractClosestEdge(targetData);
+              const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
               // Update order of dragged task
               electric?.db.tasks.update({
                 data: {
@@ -262,8 +262,8 @@ export function BoardColumn({ project }: BoardColumnProps) {
             }
             // Drag a task in same column
             if (sourceData.item.project_id === targetData.item.project_id) {
-              const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
-              const newOrder = getReorderDestinationOrder(targetData.order, closestEdgeOfTarget, 'vertical', sourceData.order);
+              const edge: Edge | null = extractClosestEdge(targetData);
+              const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
               // Update order of dragged task
               electric?.db.tasks.update({
                 data: {

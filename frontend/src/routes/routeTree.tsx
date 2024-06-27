@@ -75,7 +75,7 @@ export const IndexRoute = createRoute({
 
       await Promise.all([getSelf(), getMenu()]);
     } catch (error) {
-      // TODO but sentry and onError in a reusable wrapper to reuse it in frontend catch blocks
+      // TODO put sentry and onError in a reusable wrapper to reuse it in frontend catch blocks
       Sentry.captureException(error);
       onError(error as ApiError);
 

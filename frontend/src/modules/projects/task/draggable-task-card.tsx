@@ -64,6 +64,7 @@ export const DraggableTaskCard = () => {
           const data = source.data;
           return isTaskData(data) && data.item.id !== task.id && data.item.status === task.status && data.type === 'task';
         },
+        getIsSticky: () => true,
         getData({ input }) {
           return attachClosestEdge(data, {
             element,

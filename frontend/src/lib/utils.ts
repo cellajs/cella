@@ -118,7 +118,7 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
   throw redirect({ to: pathname + redirectLocation, replace: true });
 };
 
-export const getDraggableItemData = <T>(item: T, itemOrder: number, type: 'task' | 'column' | 'menuItem', itemType: Entity): DraggableItemData<T> => {
+export const getDraggableItemData = <T>(item: T, itemOrder: number, type: 'task' | 'menuItem', itemType: Entity): DraggableItemData<T> => {
   return { dragItem: true, item, order: itemOrder, type, itemType: itemType };
 };
 

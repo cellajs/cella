@@ -25,7 +25,7 @@ interface MenuItemProps {
 type PageDraggableItemData = DraggableItemData<UserMenuItem>;
 
 const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number';
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'menuItem';
 };
 
 export const SheetMenuItemsOptions = ({
@@ -185,11 +185,7 @@ const ItemOptions = ({
             allowedEdges: ['top', 'bottom'],
           });
         },
-        onDrag: ({ self, source }) => {
-          if (isPageData(source.data) && source.data.item.id === item.id) {
-            setClosestEdge(null);
-            return;
-          }
+        onDrag: ({ self }) => {
           setClosestEdge(extractClosestEdge(self.data));
         },
         onDrop: () => onDragOver(),

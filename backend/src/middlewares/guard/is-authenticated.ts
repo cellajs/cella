@@ -42,7 +42,6 @@ const isAuthenticated: MiddlewareHandler = async (ctx, next) => {
 
   ctx.set('user', user);
 
-  // TODO: Perf impact test
   await i18n.changeLanguage(user.language || 'en');
 
   await next();

@@ -5,23 +5,30 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
 import MDEditor from '@uiw/react-md-editor';
-import { Bolt, Bug, Star } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
+import { Bolt, Bug, Star, UserX, Tag, X, ChevronDown } from 'lucide-react';
+import { type LegacyRef, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { nanoid } from '~/lib/utils.ts';
-import { Button } from '~/modules/ui/button';
+import { cn, nanoid } from '~/lib/utils.ts';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import { dialog } from '../../common/dialoger/state.ts';
-import { type Task, useElectric } from '../../common/electric/electrify.ts';
+import { dialog } from '~/modules/common/dialoger/state.ts';
+import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
 import { useProjectContext } from '../board/project-context.tsx';
-import { SelectImpact } from './task-selectors/select-impact.tsx';
-import SetLabels from './task-selectors/select-labels.tsx';
+import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
+import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
 import SelectStatus from './task-selectors/select-status.tsx';
+import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
+import { useMeasure } from '~/hooks/use-measure';
+import AssignMembers from './task-selectors/select-members.tsx';
+import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
+import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
+import type { Member } from '~/types/index.ts';
+import { Badge } from '../../ui/badge.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -41,14 +48,14 @@ const formSchema = z.object({
   markdown: z.string(),
   type: z.string(),
   impact: z.number().nullable(),
-  // assignedTo: z.array(
-  //   z.object({
-  //     id: z.string(),
-  //     name: z.string(),
-  //     thumbnailUrl: z.number().nullable(),
-  //     bio: z.string(),
-  //   }),
-  // ),
+  assignedTo: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      thumbnailUrl: z.string().nullable(),
+      bio: z.string(),
+    }),
+  ),
   labels: z.array(
     z.object({
       id: z.string(),
@@ -67,9 +74,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   const { mode } = useThemeStore();
   const { user } = useUserStore(({ user }) => ({ user }));
 
+  const { ref, bounds } = useMeasure();
   const Electric = useElectric();
 
-  const { project, tasks, labels } = useProjectContext(({ project, tasks, labels }) => ({ project, tasks, labels }));
+  const { project, tasks, labels, members } = useProjectContext(({ project, tasks, labels, members }) => ({ project, tasks, labels, members }));
 
   const handleCloseForm = () => {
     if (isDialog) dialog.remove();
@@ -126,19 +134,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           summary: summary,
           type: values.type as TaskType,
           impact: values.impact as TaskImpact,
-          // assignedTo: values.assignedTo as TaskUser[],
-          // labels: values.labels,
-          // task_labels:
-          //   values.labels.length > 0
-          //     ? {
-          //         create: values.labels.map((label) => ({
-          //           label_id: label.id,
-          //         })),
-          //       }
-          //     : undefined,
           labels: values.labels.map((label) => label.id),
-          assigned_to: [],
-          // assigned_to: values.assignedTo.map((user) => user.id),
+          assigned_to: values.assignedTo.map((user) => user.id),
           status: values.status,
           organization_id: project.organizationId,
           project_id: project.id,
@@ -157,7 +154,12 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   // Fix types
   return (
     <Form {...form}>
-      <form id="create-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 border-b flex gap-2 flex-col shadow-inner">
+      <form
+        ref={ref as LegacyRef<HTMLFormElement>}
+        id="create-task"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="p-3 border-b flex gap-2 flex-col shadow-inner"
+      >
         <FormField
           control={form.control}
           name="markdown"
@@ -225,11 +227,32 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           <FormField
             control={form.control}
             name="impact"
-            render={({ field: { onChange } }) => {
+            render={({ field: { onChange, value } }) => {
+              const selectedImpactValue = value as TaskImpact;
+              const selectedImpact = selectedImpactValue !== null ? impacts[selectedImpactValue] : null;
               return (
                 <FormItem>
                   <FormControl>
-                    <SelectImpact mode="create" changeTaskImpact={onChange} />
+                    <SelectImpact value={selectedImpactValue} triggerWidth={bounds.width} changeTaskImpact={onChange}>
+                      <Button
+                        aria-label="Set impact"
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-left font-light flex gap-2 justify-start border"
+                      >
+                        {selectedImpact !== null ? (
+                          <>
+                            <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                            {selectedImpact.label}
+                          </>
+                        ) : (
+                          <>
+                            <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
+                            {t('common:set_impact')}
+                          </>
+                        )}
+                      </Button>
+                    </SelectImpact>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -238,20 +261,52 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           />
         )}
 
-        {/* <FormField
+        <FormField
           control={form.control}
           name="assignedTo"
-          render={({ field: { onChange } }) => {
+          render={({ field: { onChange, value } }) => {
             return (
               <FormItem>
                 <FormControl>
-                  <AssignMembers {...register('assignedTo')} mode="create" changeAssignedTo={onChange} />
+                  <AssignMembers users={members} value={value as Member[]} triggerWidth={bounds.width} changeAssignedTo={onChange}>
+                    <Button aria-label="Assign" variant="ghost" size="sm" className="flex justify-start gap-2 font-light w-full text-left border">
+                      {value.length ? (
+                        <>
+                          <AvatarGroup limit={3}>
+                            <AvatarGroupList>
+                              {value.map((user) => (
+                                <AvatarWrap
+                                  type="USER"
+                                  key={user.id}
+                                  id={user.id}
+                                  name={user.name}
+                                  url={user.thumbnailUrl}
+                                  className="h-6 w-6 text-xs"
+                                />
+                              ))}
+                            </AvatarGroupList>
+                            <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
+                          </AvatarGroup>
+                          <span className="ml-2 truncate">
+                            {value.length === 0 && 'Assign to'}
+                            {value.length === 1 && value[0].name}
+                            {value.length === 2 && value.map(({ name }) => name).join(', ')}
+                            {value.length > 2 && `${value.length} assigned`}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <UserX className="h-4 w-4 opacity-50" /> {t('common:assign_to')}
+                        </>
+                      )}
+                    </Button>
+                  </AssignMembers>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             );
           }}
-        /> */}
+        />
 
         {
           // TODO: Bind the entire project object instead of individual IDs
@@ -259,11 +314,62 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
         <FormField
           control={form.control}
           name="labels"
-          render={({ field: { onChange } }) => {
+          render={({ field: { onChange, value } }) => {
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels labels={labels} projectId={project.id} organizationId={project.organizationId} mode="create" changeLabels={onChange} />
+                  <SetLabels
+                    labels={labels}
+                    value={value as Label[]}
+                    triggerWidth={bounds.width}
+                    projectId={project.id}
+                    organizationId={project.organizationId}
+                    changeLabels={onChange}
+                  >
+                    <Button
+                      aria-label="Set labels"
+                      variant="ghost"
+                      size="sm"
+                      className="flex h-auto justify-start font-light w-full  text-left min-h-9 py-1 border hover:bg-accent/20"
+                    >
+                      <div className="flex truncate flex-wrap gap-[1px]">
+                        {value.length > 0 ? (
+                          value.map(({ name, id, color }) => {
+                            return (
+                              <div
+                                key={id}
+                                style={badgeStyle(color)}
+                                className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
+                              >
+                                <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[12px] text-sm h-6 last:mr-0">
+                                  {name}
+                                </Badge>
+
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    buttonVariants({ size: 'micro', variant: 'ghost' }),
+                                    'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0',
+                                  )}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    onChange(value.filter((l) => l.name !== name));
+                                  }}
+                                >
+                                  <X size={16} strokeWidth={3} />
+                                </button>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <>
+                            <Tag size={16} className="opacity-50" />
+                            <span className="ml-2">{t('common:choose_labels')}</span>
+                          </>
+                        )}
+                      </div>
+                    </Button>
+                  </SetLabels>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -295,7 +401,17 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                             onChange(newStatus);
                             onSubmit(form.getValues());
                           }}
-                          mode="create"
+                          trigger={
+                            <Button
+                              aria-label="Set status"
+                              variant={'default'}
+                              size="xs"
+                              className="rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
+                            >
+                              <ChevronDown size={16} />
+                            </Button>
+                          }
+                          inputPlaceholder={t('common:placeholder.create_with_status')}
                         />
                       </FormControl>
                       <FormMessage />

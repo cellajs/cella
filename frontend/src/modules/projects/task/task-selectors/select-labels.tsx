@@ -1,53 +1,54 @@
 import { CommandEmpty } from 'cmdk';
-import { Check, Dot, History, Tag, X } from 'lucide-react';
+import { Check, Dot, History } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 // import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { useMeasure } from '~/hooks/use-measure.tsx';
-import { cn, nanoid } from '~/lib/utils.ts';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { nanoid } from '~/lib/utils.ts';
 import { type Label, useElectric } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
 
-const badgeStyle = (color?: string | null) => {
+export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
-  return {};
+  return { background: color };
 };
 
 interface SetLabelsProps {
-  mode: 'create' | 'edit';
+  labels: Label[];
+  value: Label[];
+  children: React.ReactNode;
   organizationId: string;
   projectId: string;
-  viewValue?: Label[];
-  changeLabels?: (labels: Label[]) => void;
-  labels: Label[];
+  changeLabels: (labels: Label[]) => void;
+  triggerWidth?: number;
 }
 
-const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, labels }: SetLabelsProps) => {
+const SetLabels = ({ value, changeLabels, children, projectId, organizationId, labels, triggerWidth = 260 }: SetLabelsProps) => {
   const { t } = useTranslation();
-  const formValue = useFormContext?.()?.getValues('labels');
   const [openPopover, setOpenPopover] = useState(false);
-  const [selectedLabels, setSelectedLabels] = useState<Label[]>(viewValue ? viewValue : formValue || []);
+  const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
-  const { ref, bounds } = useMeasure();
+
   const Electric = useElectric();
 
   const handleSelectClick = (value?: string) => {
     if (!value) return;
     const existingLabel = selectedLabels.find((label) => label.name === value);
     if (existingLabel) {
-      setSelectedLabels(selectedLabels.filter((label) => label.name !== value));
+      const updatedLabels = selectedLabels.filter((label) => label.name !== value);
+      setSelectedLabels(updatedLabels);
+      changeLabels(updatedLabels);
       return;
     }
     const newLabel = labels.find((label) => label.name === value);
     if (newLabel) {
-      setSelectedLabels([...selectedLabels, newLabel]);
+      const updatedLabels = [...selectedLabels, newLabel];
+      setSelectedLabels(updatedLabels);
+      changeLabels(updatedLabels);
       return;
     }
   };
@@ -68,8 +69,6 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, l
     // TODO: Implement the following
     // Save the new label to the database
     Electric.db.labels.create({ data: newLabel });
-
-    //  changeLabels?.([...passedLabels, newLabel]);
   };
 
   const renderLabels = (labels: Label[]) => {
@@ -109,77 +108,15 @@ const SetLabels = ({ mode, viewValue, changeLabels, projectId, organizationId, l
   //   ],
   // ]);
 
-  // callback to change labels in task card
   useEffect(() => {
-    if (changeLabels && JSON.stringify(selectedLabels) !== JSON.stringify(viewValue)) changeLabels(selectedLabels);
-  }, [selectedLabels]);
-
-  // Whenever the form value changes (also on reset), update the internal state
-  useEffect(() => {
-    if (mode === 'edit') return;
-    setSelectedLabels(formValue || []);
-  }, [formValue]);
-
-  // watch for changes in the viewValue
-  useEffect(() => {
-    if (mode === 'create') return;
-    setSelectedLabels(viewValue || []);
-  }, [viewValue]);
+    setSelectedLabels(value);
+  }, [value]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <PopoverTrigger asChild>
-        <Button
-          ref={ref as React.LegacyRef<HTMLButtonElement>}
-          aria-label="Set labels"
-          variant="ghost"
-          size={mode === 'create' ? 'sm' : 'xs'}
-          className={`flex h-auto justify-start font-light ${
-            mode === 'create'
-              ? 'w-full text-left min-h-9 py-1 border hover:bg-accent/20'
-              : 'py-[2px] min-h-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50'
-          } ${mode === 'edit' && selectedLabels.length && ''}`}
-        >
-          {!selectedLabels.length && <Tag size={16} className="opacity-50" />}
-          <div className="flex truncate flex-wrap gap-[1px]">
-            {mode === 'create' && selectedLabels.length === 0 && <span className="ml-2">Choose labels</span>}
-            {selectedLabels.length > 0 &&
-              selectedLabels.map(({ name, id, color }) => {
-                return (
-                  <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
-                    <Badge
-                      variant="outline"
-                      key={id}
-                      className={`border-0 font-normal px-1 text-[12px] ${mode === 'create' ? 'text-sm h-6' : 'h-5 bg-transparent'} last:mr-0`}
-                      style={badgeStyle(color)}
-                    >
-                      {name}
-                    </Badge>
-                    {mode === 'create' && (
-                      // biome-ignore lint/a11y/useValidAnchor: <explanation>
-                      <a
-                        href="#"
-                        className={cn(
-                          buttonVariants({ size: 'micro', variant: 'ghost' }),
-                          'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0',
-                        )}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleSelectClick(name);
-                        }}
-                      >
-                        <X size={16} strokeWidth={3} />
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        </Button>
-      </PopoverTrigger>
-
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
-        style={{ width: `${mode === 'create' ? `${Math.round(bounds.left + bounds.right + 2)}` : '260'}px` }}
+        style={{ width: `${triggerWidth}px` }}
         className="p-0 rounded-lg"
         align="start"
         onCloseAutoFocus={(e) => e.preventDefault()}

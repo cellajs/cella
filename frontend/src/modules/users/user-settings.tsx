@@ -207,7 +207,7 @@ const UserSettings = () => {
                         className={`w-4 h-4 mr-2 ${option.id === 'GITHUB' ? invertClass : ''}`}
                         loading="lazy"
                       />
-                      Add {option.name} account
+                      {`${t('common:add')} ${option.name} ${t('common:account').toLowerCase()}`}
                     </Button>
                   );
                 })}
@@ -220,16 +220,14 @@ const UserSettings = () => {
           <Card className="mx-auto sm:w-full">
             <CardHeader>
               <CardTitle>{t('common:reset_password')}</CardTitle>
-              {/* TODO: create identifier for this text */}
-              <CardDescription>Reset your password by sending a reset link to your email address.</CardDescription>
+              <CardDescription>{t('common:reset_password.description')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full sm:w-auto" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
                 <Send size={16} className="mr-2" />
                 {t('common:send_reset_link')}
               </Button>
-              {/* TODO: create identifier for this text */}
-              {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">Wait 1 minute before sending another reset link.</p>}
+              {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:reset_password.retry_text')}</p>}
             </CardContent>
           </Card>
         </AsideAnchor>

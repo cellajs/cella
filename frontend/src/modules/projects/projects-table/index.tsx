@@ -41,7 +41,7 @@ export const projectsQueryOptions = ({
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['projects', q, sort, order],
+    queryKey: ['projects', requestedUserId, q, sort, order],
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
@@ -177,6 +177,7 @@ export default function ProjectsTable({ userId }: { userId?: string }) {
           onSelectedRowsChange: setSelectedRows,
           rowKeyGetter: (row) => row.id,
           enableVirtualization: false,
+          sortColumns,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })} />,
         }}
