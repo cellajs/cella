@@ -53,19 +53,26 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
     }
   };
 
-  const createLabel = (value: string) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+  const handleCreateClick = (value: string) => {
+    setSearchValue('');
+    if (labels.find((l) => l.name === value)) return handleSelectClick(value);
 
     const newLabel: Label = {
       id: nanoid(),
       name: value,
-      color: '#fff',
+      color: '#FFA9BA',
       organization_id: organizationId,
       project_id: projectId,
     };
-    setSelectedLabels((prev) => [...prev, newLabel]);
-    setSearchValue('');
 
+    createLabel(newLabel);
+    const updatedLabels = [...selectedLabels, newLabel];
+    setSelectedLabels(updatedLabels);
+    changeLabels(updatedLabels);
+  };
+
+  const createLabel = (newLabel: Label) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
     // TODO: Implement the following
     // Save the new label to the database
     Electric.db.labels.create({ data: newLabel });
@@ -152,7 +159,7 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
                 </>
               )}
             </CommandGroup>
-            <CommandItemCreate onSelect={() => createLabel(searchValue)} {...{ searchValue, labels }} />
+            <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} {...{ searchValue, labels }} />
           </CommandList>
         </Command>
       </PopoverContent>
