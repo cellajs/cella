@@ -21,5 +21,5 @@ This is an app-specific seed. Currently, this script seeds additional data: work
 App-specific seed to migrate data from pivotal to cella.
 
 ```
-pnpm seed:pivotal -- --file '/Users/flip/pivotal-cella.zip' --project wppoiso9icl77yyb4n519
+pnpm seed:pivotal -- --file '/Users/flip/Sites/cella/pivotal-cella.zip' --project vu9mbeo6yl4v59psfjc8t
 ```

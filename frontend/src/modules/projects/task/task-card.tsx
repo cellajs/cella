@@ -172,6 +172,8 @@ export function TaskCard({
     latency: 250,
   });
 
+  console.log('rerender task');
+
   const handleEscKeyPress = () => {
     if (focusedTaskId !== task.id) return;
     setIsExpanded(false);
@@ -319,8 +321,9 @@ export function TaskCard({
                   </div>
                 </>
               )}
-
-              <div className="flex items-start justify-between">
+            </div>
+          </div>
+          <div className="flex items-start justify-between gap-1">
                 {task.type !== 'bug' && (
                   <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)}>
                     <Button
@@ -352,7 +355,7 @@ export function TaskCard({
                     aria-label="Set labels"
                     variant="ghost"
                     size="xs"
-                    className="flex h-auto justify-start font-light py-0.5 min-h-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
+                    className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
                   >
                     <div className="flex truncate flex-wrap gap-[.07rem]">
                       {labels.filter((l) => task.labels?.includes(l.id)).length > 0 ? (
@@ -386,7 +389,7 @@ export function TaskCard({
                     <Button
                       aria-label="Assign"
                       variant="ghost"
-                      size="sm"
+                      size="xs"
                       className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
                     >
                       {members.filter((m) => task.assigned_to?.includes(m.id)).length ? (
@@ -454,8 +457,6 @@ export function TaskCard({
                   />
                 </div>
               </div>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>

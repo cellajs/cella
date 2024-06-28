@@ -194,6 +194,8 @@ export function BoardColumn({ project }: BoardColumnProps) {
     }
   };
 
+  console.log('focusedProjectIndex', focusedProjectIndex);
+
   const handlePlusKeyDown = () => {
     if (focusedProjectIndex === null) setFocusedProjectIndex(0);
     if (projects[focusedProjectIndex || 0].id !== project.id) return;

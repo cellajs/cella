@@ -78,7 +78,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
         },
       })
       .then(() => {
-        toast.success(t(`common:success.delete_${selectedTasks.length > 1 ? 'tasks' : 'task'}`));
+        toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
         setSelectedTasks([]);
       });
   };
