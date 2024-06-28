@@ -29,7 +29,7 @@ const AuthPage = ({ children }: AuthPageProps) => {
       </Suspense>
 
       <div className="mt-auto mb-auto">
-        <div className={cn('mx-auto mb-40 mt-8 flex flex-col justify-center gap-4 w-[280px] sm:w-[360px]', animateClass)}>
+        <div className={cn('mx-auto mb-40 mt-8 flex flex-col justify-center gap-4 w-72 sm:w-96', animateClass)}>
           {children}
 
           <Link to="/about" className="hover:opacity-90 p-4 active:scale-95">

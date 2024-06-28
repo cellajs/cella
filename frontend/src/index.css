@@ -79,16 +79,25 @@
   }
 
   @media (max-width: 639px) {
-    body {
+    html {
+      font-size: 18px;
+    }
+
+    #app-root {
       margin: 0;
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 64px);
+      height: calc(100vh - 4rem);
       overflow: hidden;
       position: relative;
     }
 
-    #root {
+    #app-root > .container {
+      padding-left: .75rem;
+      padding-right: 0.75rem;
+    }
+
+    #app-content {
       flex: 1;
       height: 100%;
       overflow-y: auto;

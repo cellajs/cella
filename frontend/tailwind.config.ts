@@ -6,6 +6,11 @@ import animatePlugin from 'tailwindcss-animate';
 
 export default {
   darkMode: 'media',
+  variants: {
+    extend: {
+      display: ['empty'],
+    },
+  },
   content: ['./pages/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
   theme: {
     screens: config.theme.screenSizes,

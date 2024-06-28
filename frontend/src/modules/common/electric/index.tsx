@@ -111,7 +111,7 @@ const ElectricProvider = ({ children }: Props) => {
     <>
       <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>
       {electric === undefined && (
-        <div className="fixed z-[300] max-sm:bottom-[64px] bottom-0 border-0 p-4 flex w-full justify-center">
+        <div className="fixed z-[300] max-sm:bottom-[4rem] bottom-0 border-0 p-4 flex w-full justify-center">
           <Alert variant="plain" className="border-0 w-auto">
             <AlertDescription className="pr-8 font-light flex items-center justify-center">
               <Loader2 className="h-4 w-4 animate-spin" />

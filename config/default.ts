@@ -109,7 +109,7 @@ export const config = {
     twitterUrl: 'https://twitter.com/flipvanhaaren',
     twitterHandle: '@flipvanhaaren',
     githubUrl: 'https://github.com/cellajs/cella',
-    mapZoom: 3,
+    mapZoom: 4,
     coordinates: {
       lat: 51.92760809717153,
       lng: 4.47421039909924,

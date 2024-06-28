@@ -50,7 +50,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet workspace={workspace} />, {
-      className: 'max-w-full lg:max-w-[900px]',
+      className: 'max-w-full lg:max-w-4xl',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),
       id: 'edit-workspace',
@@ -59,7 +59,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
 
   const openLabelsSheet = () => {
     sheet(<LabelsTable labels={labels} />, {
-      className: 'max-w-full lg:max-w-[900px]',
+      className: 'max-w-full lg:max-w-4xl',
       title: t('common:manage_labels'),
       // text: '',
       id: 'workspace_settings',
@@ -78,7 +78,7 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
         },
       })
       .then(() => {
-        toast.success(t(`common:success.delete_${selectedTasks.length > 1 ? 'tasks' : 'task'}`));
+        toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
         setSelectedTasks([]);
       });
   };

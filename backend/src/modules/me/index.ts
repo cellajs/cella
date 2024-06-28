@@ -37,6 +37,9 @@ const meRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, user.id));
 
+    // Update last visit date
+    await db.update(usersTable).set({ lastVisitAt: new Date() }).where(eq(usersTable.id, user.id));
+
     // Generate a JWT token for electric
     const electricJWTToken = await generateElectricJWTToken({ userId: user.id });
 

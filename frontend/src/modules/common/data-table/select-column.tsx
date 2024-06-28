@@ -23,7 +23,7 @@ export const renderSelect = <TRow extends User | Member>({
   const role = 'membership' in row && row.membership ? row.membership.role : row.role;
   return (
     <Select open={true} value={role} onValueChange={onChooseValue}>
-      <SelectTrigger className="h-[30px] border-none p-2 text-xs tracking-wider">
+      <SelectTrigger className="h-8 border-none p-2 text-xs tracking-wider">
         <SelectValue placeholder={role} />
       </SelectTrigger>
       <SelectContent sideOffset={-41} alignOffset={-5} className="!duration-0">

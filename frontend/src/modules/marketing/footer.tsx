@@ -95,7 +95,7 @@ export function MarketingFooter() {
       </div>
 
       <section className={sectionClass}>
-        <div className="container flex max-w-[64rem] pt-8 px-8 flex-col items-center gap-4">
+        <div className="container flex max-w-5xl pt-8 px-8 flex-col items-center gap-4">
           <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
             <FooterLinks />
             <div className="">
@@ -117,7 +117,7 @@ export function MarketingFooter() {
             <Logo textColor="white" iconColor="#793f599e" />
           </Link>
 
-          <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-6 gap-y-4 border-t border-white/20 pt-12 text-center text-xs text-white/60">
+          <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-6 gap-y-4 border-t border-white/20 pt-12 text-center text-sm text-white/60">
             {legalLinks.map((link) => (
               <li key={link.title}>
                 <Link to={link.href} className="underline-offset-4 transition hover:underline">

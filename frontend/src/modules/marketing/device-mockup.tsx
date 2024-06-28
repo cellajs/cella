@@ -41,7 +41,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
         <CarouselContent className="h-full">
           {slides?.map((slide, idx) => (
             <CarouselItem key={slide.src} onClick={() => onOpenChange(true, idx)}>
-              <div className="overflow-hidden h-full">
+              <div className="overflow-hidden h-full rounded-t-[.5rem]">
                 <img src={`/static/screenshots/${slide.src}`} alt={`Slide ${idx}`} className={`${imageClass} w-full h-full`} />
               </div>
             </CarouselItem>
@@ -49,7 +49,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
         </CarouselContent>
         <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-100" />
         <CarouselNext className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-100" />
-        {!inDialog && <CarouselDots className="relative mt-[calc(20px+2%)]" />}
+        {!inDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)]" />}
       </Carousel>
     );
   };
@@ -58,11 +58,11 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
     switch (type) {
       case 'tablet':
         return (
-          <div className="relative mx-auto border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] aspect-[3/4]">
-            <div className="h-[32px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[72px] rounded-s-lg" />
-            <div className="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[124px] rounded-s-lg" />
-            <div className="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[178px] rounded-s-lg" />
-            <div className="h-[64px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -end-[17px] top-[142px] rounded-e-lg" />
+          <div className="relative mx-auto border-gray-800 bg-gray-800 border-[.88rem] rounded-[2.5rem] aspect-[3/4]">
+            <div className="h-8 w-1 bg-gray-800 dark:bg-gray-800 absolute -start-4 top-20 rounded-s-lg" />
+            <div className="h-12 w-1 bg-gray-800 dark:bg-gray-800 absolute -start-4 top-32 rounded-s-lg" />
+            <div className="h-12 w-1 bg-gray-800 dark:bg-gray-800 absolute -start-4 top-44 rounded-s-lg" />
+            <div className="h-16 w-1 bg-gray-800 dark:bg-gray-800 absolute -end-4 top-36 rounded-e-lg" />
             <div className="rounded-[2rem] bg-white dark:bg-gray-800 h-full w-full cursor-pointer">
               {inView && renderCarousel({ inDialog: false })}
             </div>
@@ -71,24 +71,22 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
       case 'pc':
         return (
           <div className="w-full">
-            <div className="relative mx-auto border-gray-400/75 mb-[1px] dark:border-gray-600 border-[8px] rounded-t-xl max-w-[85%] aspect-video">
+            <div className="relative mx-auto border-gray-400/75 mb-[.07rem] dark:border-gray-600 border-[.25rem] rounded-t-xl max-w-[85%] aspect-video">
               <div className="rounded-lg h-full w-full bg-background cursor-pointer">{inView && renderCarousel({ inDialog: false })}</div>
             </div>
-            <div className="relative mx-auto bg-gray-300 dark:bg-gray-700 rounded-b-xl rounded-t-sm h-[17px] md:h-[21px]">
-              <div className="absolute left-1/2 top-0 -translate-x-1/2 rounded-b-xl w-[56px] h-[5px] md:w-[96px] md:h-[8px] bg-gray-500/25 dark:bg-gray-900/25 border-background border border-t-0" />
+            <div className="relative mx-auto bg-gray-300 dark:bg-gray-700 rounded-b-xl rounded-t-sm h-4 md:h-5">
+              <div className="absolute left-1/2 top-0 -translate-x-1/2 rounded-b-xl w-14 h-1 md:w-24 md:h-2 bg-gray-500/25 dark:bg-gray-900/25 border-background border border-t-0" />
             </div>
           </div>
         );
       case 'mobile':
         return (
-          <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] aspect-[1/2]">
-            <div className="h-[32px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[72px] rounded-s-lg" />
-            <div className="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[124px] rounded-s-lg" />
-            <div className="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[178px] rounded-s-lg" />
-            <div className="h-[64px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -end-[17px] top-[142px] rounded-e-lg" />
-            <div className="rounded-[2rem] w-[272px] h-[572px] bg-white dark:bg-gray-800 cursor-pointer">
-              {inView && renderCarousel({ inDialog: false })}
-            </div>
+          <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[.88rem] rounded-[2.5rem] aspect-[1/2]">
+            <div className="h-8 w-[.19rem] bg-gray-800 dark:bg-gray-800 absolute -start-4 top-20 rounded-s-lg" />
+            <div className="h-12 w-[.19rem] bg-gray-800 dark:bg-gray-800 absolute -start-4 top-32 rounded-s-lg" />
+            <div className="h-12 w-[.19rem] bg-gray-800 dark:bg-gray-800 absolute -start-4 top-44 rounded-s-lg" />
+            <div className="h-12 w-[.19rem] bg-gray-800 dark:bg-gray-800 absolute -end-4 top-36 rounded-e-lg" />
+            <div className="rounded-8 w-72 h-[39rem] bg-white dark:bg-gray-800 cursor-pointer">{inView && renderCarousel({ inDialog: false })}</div>
           </div>
         );
     }

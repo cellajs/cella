@@ -36,7 +36,7 @@ const SubTask = ({
 
   return (
     <div ref={subTaskRef} id="sub-item" className="flex gap-1 p-1 bg-secondary border-b-2 border-background">
-      <div className="flex flex-col justify-between items-center gap-[4px] relative">
+      <div className="flex flex-col justify-between items-center gap-2 relative">
         <Checkbox
           className={cn(
             'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
@@ -52,7 +52,7 @@ const SubTask = ({
           //   ref={subTaskDragButtonRef}
           variant={'ghost'}
           size="micro"
-          className="max-sm:hidden text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none"
+          className="max-sm:hidden text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-8 group-[.is-selected]/column:pointer-events-none"
         >
           <span className="sr-only"> {t('common:move_task')}</span>
           <GripVertical size={14} />
@@ -85,7 +85,7 @@ const SubTask = ({
         //   ref={subTaskDragButtonRef}
         variant={'ghost'}
         size="xs"
-        className="max-sm:hidden text-secondary-foreground cursor-pointer opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none"
+        className="max-sm:hidden text-secondary-foreground cursor-pointer opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-8 group-[.is-selected]/column:pointer-events-none"
       >
         <span className="sr-only"> {t('common:move_task')}</span>
         <Trash size={16} />

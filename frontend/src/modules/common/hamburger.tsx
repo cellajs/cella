@@ -12,15 +12,15 @@ const HamburgerLine = ({
 }: {
   className: string;
   lineColor: string;
-}) => <div className={`ease my-[3px] h-[2px] w-6 rounded-full transition duration-300 ${className}`} style={{ backgroundColor: lineColor }} />;
+}) => <div className={`ease my-[.19rem] h-0.5 w-6 rounded-full transition duration-300 ${className}`} style={{ backgroundColor: lineColor }} />;
 
 const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) => {
   const { mode } = useThemeStore();
   const lineColor = mode === 'dark' ? 'white' : 'black';
 
-  const topLineClass = isOpen ? 'rotate-45 translate-y-[8px]' : '';
+  const topLineClass = isOpen ? 'rotate-45 translate-y-2' : '';
   const middleLineClass = isOpen ? 'opacity-0' : 'opacity-100';
-  const bottomLineClass = isOpen ? '-rotate-45 -translate-y-[8px]' : '';
+  const bottomLineClass = isOpen ? '-rotate-45 -translate-y-2' : '';
 
   return (
     <button

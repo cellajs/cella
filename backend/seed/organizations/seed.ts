@@ -6,11 +6,11 @@ import { config } from 'config';
 import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
 
-import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
-import { type InsertOrganizationModel, organizationsTable } from '../../src/db/schema/organizations';
-import { type InsertUserModel, usersTable } from '../../src/db/schema/users';
-import type { Status } from '../progressIndication';
-import { adminUser } from '../user/user';
+import { membershipsTable, type InsertMembershipModel } from '../../src/db/schema/memberships';
+import { organizationsTable, type InsertOrganizationModel } from '../../src/db/schema/organizations';
+import { usersTable, type InsertUserModel } from '../../src/db/schema/users';
+import type { Status } from '../progress';
+import { adminUser } from '../user/seed';
 
 // Seed organizations with data
 export const organizationsSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {

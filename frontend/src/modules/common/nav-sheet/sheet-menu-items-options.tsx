@@ -3,7 +3,7 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import type { ContextEntity } from 'backend/types/common';
 import { motion } from 'framer-motion';
-import { Archive, ArchiveRestore, Bell, BellOff, GripVertical } from 'lucide-react';
+import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -16,11 +16,7 @@ import { useNavigationStore } from '~/store/navigation';
 import type { DraggableItemData, UserMenuItem } from '~/types';
 import { DropIndicator } from '../drop-indicator';
 import { MenuArchiveToggle } from './menu-archive-toggle';
-
-interface MenuItemProps {
-  isGlobalDragging?: boolean;
-  setGlobalDragging?: (dragging: boolean) => void;
-}
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 
 type PageDraggableItemData = DraggableItemData<UserMenuItem>;
 
@@ -28,12 +24,7 @@ const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggab
   return data.dragItem === true && typeof data.order === 'number' && data.type === 'menuItem';
 };
 
-export const SheetMenuItemsOptions = ({
-  data,
-  shownOption,
-  isGlobalDragging,
-  setGlobalDragging,
-}: MenuItemProps & { data: UserMenuItem[]; shownOption: 'archived' | 'unarchive' }) => {
+export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuItem[]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
   const { hideSubmenu } = useNavigationStore();
@@ -64,21 +55,10 @@ export const SheetMenuItemsOptions = ({
 
     return (
       <div key={item.id}>
-        <ItemOptions
-          item={item}
-          itemType={entityType}
-          isGlobalDragging={isGlobalDragging}
-          setGlobalDragging={setGlobalDragging}
-          parentItemId={parentItemId}
-        />
+        <ItemOptions item={item} itemType={entityType} parentItemId={parentItemId} />
         {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
           <>
-            <SheetMenuItemsOptions
-              data={item.submenu}
-              shownOption={shownOption}
-              isGlobalDragging={isGlobalDragging}
-              setGlobalDragging={setGlobalDragging}
-            />
+            <SheetMenuItemsOptions data={item.submenu} shownOption={shownOption} />
             <MenuArchiveToggle
               archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
               inactiveCount={item.submenu.filter((i) => i.membership.archived).length}
@@ -93,16 +73,9 @@ export const SheetMenuItemsOptions = ({
   });
 };
 
-const ItemOptions = ({
-  item,
-  itemType,
-  isGlobalDragging,
-  parentItemId,
-  setGlobalDragging,
-}: MenuItemProps & { parentItemId?: string; item: UserMenuItem; itemType: ContextEntity }) => {
+const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; item: UserMenuItem; itemType: ContextEntity }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
-  const dragButtonRef = useRef<HTMLButtonElement>(null);
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [isItemArchived, setItemArchived] = useState(item.membership.archived);
@@ -110,11 +83,13 @@ const ItemOptions = ({
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { menu } = useNavigationStore();
 
+  const callback = parentItemId ? useMutateQueryData(['projects', parentItemId]) : useMutateQueryData([`${itemType.toLowerCase()}s`, item.id]);
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
       return baseUpdateMembership(values);
     },
     onSuccess: (updatedMembership) => {
+      callback([updatedMembership], 'updateMembership');
       if (updatedMembership.inactive !== isItemArchived) {
         const archived = updatedMembership.inactive || !isItemArchived;
         archiveStateToggle(item.id, archived, parentItemId ? parentItemId : null);
@@ -153,22 +128,19 @@ const ItemOptions = ({
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const element = dragRef.current;
-    const dragButton = dragButtonRef.current;
     const data = getDraggableItemData(item, item.membership.order, 'menuItem', itemType);
-    if (!element || !dragButton) return;
+    if (!element) return;
 
     return combine(
       draggable({
         element,
-        dragHandle: dragButton,
+        dragHandle: element,
         getInitialData: () => data,
         onDragStart: () => {
           setDragging(true);
-          if (setGlobalDragging) setGlobalDragging(true);
         },
         onDrop: () => {
           setDragging(false);
-          if (setGlobalDragging) setGlobalDragging(false);
         },
       }),
       dropTargetForElements({
@@ -185,9 +157,7 @@ const ItemOptions = ({
             allowedEdges: ['top', 'bottom'],
           });
         },
-        onDrag: ({ self }) => {
-          setClosestEdge(extractClosestEdge(self.data));
-        },
+        onDrag: ({ self }) => setClosestEdge(extractClosestEdge(self.data)),
         onDrop: () => onDragOver(),
         onDragLeave: () => onDragOver(),
       }),
@@ -214,22 +184,22 @@ const ItemOptions = ({
     <div key={item.id} className="relative my-1" ref={dragRef}>
       <motion.div
         layoutId={`sheet-menu-item-${item.id}`}
-        ref={dragRef}
+        ref={isItemArchived ? undefined : dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
-        className={`group flex relative items-center sm:max-w-[18rem] ${parentItemId ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0  cursor-pointer justify-start rounded  focus:outline-none
-      ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground space-x-1
-      ${!isItemArchived && 'ring-1'} `}
+        className={`group flex relative items-center sm:max-w-[18rem] ${parentItemId ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 justify-start rounded  focus:outline-none
+      ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
+      ${!isItemArchived && 'ring-1 cursor-grab'} `}
       >
         <AvatarWrap
-          className={`${parentItemId ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'}`}
+          className={`${parentItemId ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${isItemArchived && 'opacity-70'}`}
           type={itemType}
           id={item.id}
           name={item.name}
           url={item.thumbnailUrl}
         />
-        <div className="truncate grow py-2 text-left">
-          <div className={`truncate text-foreground/80 ${parentItemId ? 'text-sm' : 'text-base mb-1'} leading-5`}>{item.name}</div>
-          <div className={`flex items-center gap-4 transition-opacity ${isGlobalDragging ? 'opacity-40 delay-0' : 'delay-500'}`}>
+        <div className="truncate grow py-2 px-1 text-left">
+          <div className={`truncate ${parentItemId ? 'text-sm' : 'text-base mb-1'} leading-5 ${isItemArchived && 'opacity-70'}`}>{item.name}</div>
+          <div className="flex items-center gap-4 transition-opacity delay-500">
             <Button
               variant="link"
               size="sm"
@@ -269,14 +239,8 @@ const ItemOptions = ({
             </Button>
           </div>
         </div>
-
-        {!isItemArchived && (
-          <Button size="xs" variant="none" ref={dragButtonRef} className="p-2 px-3 cursor-grab focus-visible:ring-inset focus-visible:ring-offset-0">
-            <GripVertical size={16} className="opacity-50 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
-          </Button>
-        )}
       </motion.div>
-      {closestEdge && <DropIndicator className="h-[2px] w-full" edge={closestEdge} gap="2px" />}
+      {closestEdge && <DropIndicator className="h-0.5 w-full" edge={closestEdge} gap="0.5" />}
     </div>
   );
 };

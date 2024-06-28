@@ -40,10 +40,10 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
         url={item.thumbnailUrl}
       />
       <div className="truncate py-2 flex flex-col justify-center text-left">
-        <div className={`truncate ${mainItemId ? 'max-sm:pt-[6px] text-sm sm:-mb-1 sm:-mt-[2px]' : 'max-sm:pt-[10px] text-base'} leading-5`}>
+        <div className={`truncate ${mainItemId ? 'max-sm:pt-1.5 text-sm sm:-mb-1 sm:-mt-0.5' : 'max-sm:pt-2.5 text-base'} leading-5`}>
           {item.name}
         </div>
-        <div className={`max-sm:hidden text-muted-foreground ${mainItemId ? 'text-xs mt-[2px]' : 'text-sm'} font-light`}>
+        <div className={`max-sm:hidden text-muted-foreground ${mainItemId ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {/* On new creation cant access role REDO */}

@@ -21,7 +21,6 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
   const { t } = useTranslation();
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
-  const [globalDragging, setGlobalDragging] = useState(false);
   const { activeSections } = useNavigationStore();
   const isSectionVisible = activeSections[sectionType];
   const parentItemId = data.length > 0 ? data[0].parentId : '';
@@ -76,7 +75,6 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
           data={data}
           sectionType={sectionType}
           isSectionVisible={isSectionVisible}
-          globalDragging={globalDragging}
           toggleOptionsView={toggleOptionsView}
           createDialog={createDialog}
         />
@@ -87,7 +85,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
       >
         <ul className="overflow-hidden">
           {optionsView ? (
-            <SheetMenuItemsOptions isGlobalDragging={globalDragging} setGlobalDragging={setGlobalDragging} data={data} shownOption="unarchive" />
+            <SheetMenuItemsOptions data={data} shownOption="unarchive" />
           ) : (
             <SheetMenuItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
           )}
@@ -107,12 +105,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
               >
                 <ul className="overflow-hidden">
                   {optionsView ? (
-                    <SheetMenuItemsOptions
-                      isGlobalDragging={globalDragging}
-                      setGlobalDragging={setGlobalDragging}
-                      data={data}
-                      shownOption="archived"
-                    />
+                    <SheetMenuItemsOptions data={data} shownOption="archived" />
                   ) : (
                     <SheetMenuItems type={entityType} data={data} createDialog={createDialog} shownOption="archived" />
                   )}

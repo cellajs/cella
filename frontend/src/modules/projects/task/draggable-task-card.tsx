@@ -23,8 +23,8 @@ export const DraggableTaskCard = () => {
   const { task } = useTaskContext(({ task }) => ({ task }));
   const { labels, tasks, members } = useProjectContext(({ labels, tasks, members }) => ({ labels, tasks, members }));
   const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
-  const taskDragRef = useRef(null);
-  const taskDragButtonRef = useRef<HTMLButtonElement>(null);
+  const taskRef = useRef(null);
+  const taskDragRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -42,15 +42,15 @@ export const DraggableTaskCard = () => {
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const element = taskDragRef.current;
-    const dragButton = taskDragButtonRef.current;
+    const element = taskRef.current;
+    const dragElement = taskDragRef.current;
     const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'PROJECT');
-    if (!element || !dragButton) return;
+    if (!element || !dragElement) return;
 
     return combine(
       draggable({
         element,
-        dragHandle: dragButton,
+        dragHandle: dragElement,
         getInitialData: () => data,
         onDragStart: () => setDragging(true),
         onDrop: () => setDragging(false),
@@ -86,15 +86,16 @@ export const DraggableTaskCard = () => {
         task={task}
         labels={labels}
         members={members}
+        sameProjectTasks={tasks.filter((t) => t.project_id === task.project_id)}
         subTasks={tasks.filter((t) => t.parent_id === task.id)}
-        taskRef={taskDragRef}
-        taskDragButtonRef={taskDragButtonRef}
+        taskRef={taskRef}
+        taskDragRef={taskDragRef}
         dragging={dragging}
         dragOver={isDraggedOver}
         className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary is-focused' : 'border-l-transparent'}`}
       />
 
-      {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} gap="-2px" />}
+      {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap="-0.5" />}
     </div>
   );
 };

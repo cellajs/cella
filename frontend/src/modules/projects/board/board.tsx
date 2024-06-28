@@ -29,7 +29,7 @@ function BoardDesktop({
   const panelMinSize = typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
 
   return (
-    <div className="transition sm:h-[calc(100vh-64px)] md:h-[calc(100vh-78px)] overflow-x-auto" ref={ref as LegacyRef<HTMLDivElement>}>
+    <div className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto" ref={ref as LegacyRef<HTMLDivElement>}>
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
         <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspaceId}>
           {projects.map((project, index) => (
@@ -38,7 +38,7 @@ function BoardDesktop({
                 <BoardColumn key={project.id} project={project} />
               </ResizablePanel>
               {projects.length > index + 1 && (
-                <ResizableHandle className="w-[6px] rounded border border-background -mx-[7px] bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
+                <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
               )}
             </Fragment>
           ))}
@@ -55,26 +55,30 @@ export default function Board() {
   }));
   const { t } = useTranslation();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects.sort((a, b) => {
-      if (a.membership === null || b.membership === null) return 0;
-      return a.membership.order - b.membership.order;
-    }),
+    projects
+      .filter((p) => p.membership && !p.membership.archived)
+      .sort((a, b) => {
+        if (a.membership === null || b.membership === null) return 0;
+        return a.membership.order - b.membership.order;
+      }),
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
   useEffect(() => {
     setMappedProjects(
-      projects.sort((a, b) => {
-        if (a.membership === null || b.membership === null) return 0;
-        return a.membership.order - b.membership.order;
-      }),
+      projects
+        .filter((p) => p.membership && !p.membership.archived)
+        .sort((a, b) => {
+          if (a.membership === null || b.membership === null) return 0;
+          return a.membership.order - b.membership.order;
+        }),
     );
   }, [projects]);
 
   if (!mappedProjects.length) {
     return (
       <ContentPlaceholder
-        className=" h-[calc(100vh-64px-64px)] sm:h-[calc(100vh-78px)]"
+        className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"
         Icon={Bird}
         title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })}
         text={

@@ -24,7 +24,7 @@
 }
 
 .rdg-cell:not([role="columnheader"]) {
-  border-top: 1px solid var(--rdg-border-color);
+  border-top: .07rem solid var(--rdg-border-color);
 }
 
 .rdg-cell.rdg-expand-cell {

@@ -1,6 +1,6 @@
 import { APIProvider, AdvancedMarker, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { config } from 'config';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -41,9 +41,14 @@ const MarkerWithInfowindow = ({ position }: { position: { lat: number; lng: numb
       </AdvancedMarker>
 
       {infowindowOpen && (
-        <InfoWindow anchor={marker} onCloseClick={() => setInfowindowOpen(false)}>
+        <InfoWindow headerDisabled={true} anchor={marker}>
           <div className="text-xs text-slate-800">
-            <strong className="block">{config.company.name}</strong>
+            <div className="flex justify-between items-center">
+              <strong className="text-primary text-sm ">{config.company.name}</strong>
+              <Button onClick={() => setInfowindowOpen(false)} size="micro" variant="ghost">
+                <X size={14} />
+              </Button>
+            </div>
             <span className="block">{config.company.streetAddress}</span>
             <span className="block">{config.company.country}</span>
             <a href={config.company.googleMapsUrl} target="_blank" className="text-primary" rel="noreferrer">

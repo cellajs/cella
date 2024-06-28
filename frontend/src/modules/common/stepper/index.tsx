@@ -9,9 +9,9 @@ import { useMediaQuery } from './use-media-query';
 import { useStepper } from './use-stepper';
 
 const VARIABLE_SIZES = {
-  sm: '36px',
-  md: '40px',
-  lg: '44px',
+  sm: '2.25rem',
+  md: '2.5rem',
+  lg: '2.75rem',
 };
 
 const Stepper = React.forwardRef<HTMLDivElement, StepperProps>((props, ref: React.Ref<HTMLDivElement>) => {
@@ -54,7 +54,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>((props, ref: Reac
 
   const stepCount = items.length;
 
-  const isMobile = useMediaQuery(`(max-width: ${mobileBreakpoint || '768px'})`);
+  const isMobile = useMediaQuery(`(max-width: ${mobileBreakpoint || '48rem'})`);
 
   const clickable = !!onClickStep;
 
@@ -97,7 +97,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>((props, ref: Reac
         style={
           {
             '--step-icon-size': variables?.['--step-icon-size'] || `${VARIABLE_SIZES[size || 'md']}`,
-            '--step-gap': variables?.['--step-gap'] || '8px',
+            '--step-gap': variables?.['--step-gap'] || '0.5rem',
           } as React.CSSProperties
         }
         {...rest}

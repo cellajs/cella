@@ -9,17 +9,19 @@ import { SSEProvider } from './sse/provider';
 
 const App = () => {
   return (
-    <ErrorBoundary
-      fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} isRootLevel resetErrorBoundary={resetErrorBoundary} />}
-    >
-      <ElectricProvider>
-        <SSEProvider>
-          <AppNav />
-          <SSE />
-          <AppContent />
-        </SSEProvider>
-      </ElectricProvider>
-    </ErrorBoundary>
+    <div id="app-root">
+      <ErrorBoundary
+        fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} isRootLevel resetErrorBoundary={resetErrorBoundary} />}
+      >
+        <ElectricProvider>
+          <SSEProvider>
+            <AppNav />
+            <SSE />
+            <AppContent />
+          </SSEProvider>
+        </ElectricProvider>
+      </ErrorBoundary>
+    </div>
   );
 };
 

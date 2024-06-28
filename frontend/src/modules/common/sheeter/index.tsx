@@ -77,6 +77,8 @@ export function Sheeter() {
                 </SheetClose>
               </StickyBox>
             )}
+            {/* For accessibility */}
+            {!sheet.title && <SheetTitle className="hidden" />}
             {sheet.text && (
               <SheetHeader>
                 <SheetDescription>{sheet.text}</SheetDescription>

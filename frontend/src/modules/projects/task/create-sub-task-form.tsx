@@ -17,6 +17,7 @@ import { useUserStore } from '~/store/user.ts';
 import { useElectric } from '~/modules/common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
 import { useProjectContext } from '../board/project-context.tsx';
+import { getTaskOrder } from './helpers.ts';
 
 const formSchema = z.object({
   id: z.string(),
@@ -83,7 +84,6 @@ export const CreateSubTaskForm = ({
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
     const projectTasks = tasks.filter((task) => task.project_id === project.id);
-    const order = projectTasks.length > 0 ? projectTasks[0].sort_order / 1.1 : 1;
 
     Electric.db.tasks
       .create({
@@ -102,7 +102,7 @@ export const CreateSubTaskForm = ({
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: order,
+          sort_order: getTaskOrder(values.status, values.status, projectTasks),
         },
       })
       .then(() => {

@@ -5,13 +5,18 @@ const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, 
 
 // Slides for light and dark themes
 const lightSlides = [{ src: 'signin-with-cella.jpg' }, { src: 'onboarding.jpg' }, { src: 'org-page.jpg' }, { src: 'user-sheet-cella.jpg' }];
-const darkSlides = [{ src: 'dark/signin-with-cella.jpg' }, { src: 'dark/onboarding.jpg' }, { src: 'dark/org-page.jpg' }, { src: 'dark/user-sheet-cella.jpg' }];
+const darkSlides = [
+  { src: 'dark/signin-with-cella.jpg' },
+  { src: 'dark/onboarding.jpg' },
+  { src: 'dark/org-page.jpg' },
+  { src: 'dark/user-sheet-cella.jpg' },
+];
 
 const Why = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="mx-auto mb-12 mt-20 flex max-w-[86rem] flex-wrap items-center lg:mb-[60px] relative">
+    <div className="mx-auto mb-12 mt-20 flex max-w-7xl flex-wrap items-center lg:mb-16 relative">
       <div className="w-full lg:w-5/12">
         <div className="flex flex-wrap">
           {whyItems.map((item, index) => {
@@ -21,11 +26,11 @@ const Why = () => {
             return (
               <div className="w-full" key={item.id}>
                 <div className="group mb-12 flex">
-                  <div className="border-primary text-l md:text-1xl mr-6 flex h-[32px] w-full max-w-[32px] items-center justify-center rounded-full border-2 font-semibold group-hover:bg-transparent md:-mt-2 md:h-[48px] md:max-w-[48px]">
+                  <div className="border-primary text-l md:text-1xl mr-6 flex h-8 w-full max-w-8 items-center justify-center rounded-full border-2 font-semibold group-hover:bg-transparent md:-mt-2 md:h-12 md:max-w-12">
                     {index + 1}
                   </div>
                   <div className="w-full">
-                    <h3 className="mb-2 text-xl font-medium 2xl:text-[22px]">{t(title)}</h3>
+                    <h3 className="mb-2 text-xl font-medium 2xl:text-[1.38rem]">{t(title)}</h3>
                     <p className="leading-relaxed">{t(text)}</p>
                   </div>
                 </div>

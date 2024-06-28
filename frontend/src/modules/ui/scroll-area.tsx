@@ -11,10 +11,10 @@ const scrollbarVariants = cva('flex touch-none transition-colors', {
       horizontal: 'horizontal',
     },
     size: {
-      defaultVertical: 'h-full w-2.5 border-l border-l-transparent p-[1px]',
-      defaultHorizontal: 'h-2.5 flex-col border-t border-t-transparent p-[1px]',
-      indicatorVertical: 'h-full w-[2px]',
-      indicatorHorizontal: 'h-[2px] w-full border-t border-t-transparent',
+      defaultVertical: 'h-full w-2.5 border-l border-l-transparent p-[.07rem]',
+      defaultHorizontal: 'h-2.5 flex-col border-t border-t-transparent p-[.07rem]',
+      indicatorVertical: 'h-full w-0.5',
+      indicatorHorizontal: 'h-0.5 w-full border-t border-t-transparent',
     },
   },
   defaultVariants: {

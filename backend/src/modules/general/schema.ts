@@ -15,7 +15,6 @@ import {
 } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
-import { t } from '../../lib/utils';
 
 export const publicCountsSchema = z.object({
   users: z.number(),
@@ -34,7 +33,7 @@ export const checkTokenSchema = z.object({
 });
 
 export const inviteBodySchema = z.object({
-  emails: userSchema.shape.email.array().min(1, { message: t('invalid.min_items', { items_count: 'one', item: 'email' }) }),
+  emails: userSchema.shape.email.array().min(1),
   role: userSchema.shape.role,
 });
 

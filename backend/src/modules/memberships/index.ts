@@ -355,7 +355,16 @@ const membershipsRoutes = app
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 
-    return ctx.json({ success: true, data: updatedMembership }, 200);
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          ...updatedMembership,
+          archived: updatedMembership.inactive,
+        },
+      },
+      200,
+    );
   });
 
 export default membershipsRoutes;

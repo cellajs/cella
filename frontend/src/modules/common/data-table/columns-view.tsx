@@ -47,7 +47,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
           </Button>
         </DropdownMenuTrigger>
       </TooltipButton>
-      <DropdownMenuContent align="end" className="min-w-[220px] pt-2" collisionPadding={16}>
+      <DropdownMenuContent align="end" className="min-w-56 pt-2" collisionPadding={16}>
         <div className="overflow-y-auto relative" style={{ height }}>
           {filteredColumns.map((column) => (
             <DropdownMenuCheckboxItem
@@ -71,7 +71,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
               {column.name}
             </DropdownMenuCheckboxItem>
           ))}
-          <div className="sticky bottom-0 h-[8px] bg-gradient-to-t from-popover" />
+          <div className="sticky bottom-0 h-2 bg-gradient-to-t from-popover" />
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

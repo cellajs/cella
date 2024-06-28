@@ -28,16 +28,14 @@ const Pricing = () => {
     dialog(<ContactForm dialog />, {
       id: 'contact-form',
       drawerOnMobile: false,
-      className: 'sm:max-w-[64rem]',
+      className: 'sm:max-w-5xl',
       title: t('common:contact_us'),
       text: t('common:contact_us.text'),
     });
   };
 
   return (
-    <div
-      className={`mx-auto mt-8 max-w-[86rem] ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}
-    >
+    <div className={`mx-auto mt-8 max-w-7xl ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}>
       {pricingPlans.map(({ id, borderColor, featureCount, popular }, planIndex) => {
         const title = `about:pricing.title_${planIndex + 1}`;
         const text = `about:pricing.text_${planIndex + 1}`;

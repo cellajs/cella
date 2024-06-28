@@ -1,6 +1,5 @@
 import { config } from 'config';
 import { z } from 'zod';
-import { t } from './utils';
 
 export const passwordSchema = z.string().min(8).max(100);
 
@@ -45,16 +44,8 @@ export const paginationQuerySchema = z.object({
   q: z.string().optional(),
   sort: z.enum(['createdAt']).default('createdAt').optional(),
   order: z.enum(['asc', 'desc']).default('asc').optional(),
-  offset: z
-    .string()
-    .default('0')
-    .optional()
-    .refine(offsetRefine, { message: t('invalid.min_length_greater_or_eq', { length: 0 }) }),
-  limit: z
-    .string()
-    .default('50')
-    .optional()
-    .refine(limitRefine, { message: t('invalid.min_length_greater', { length: 0 }) }),
+  offset: z.string().default('0').optional().refine(offsetRefine, 'Must be number greater or equal to 0'),
+  limit: z.string().default('50').optional().refine(limitRefine, 'Must be number greater than 0'),
 });
 
 export const idsQuerySchema = z.object({
@@ -65,9 +56,10 @@ export const validSlugSchema = z
   .string()
   .min(2)
   .max(100)
-  .refine((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), {
-    message: t('invalid.slug'),
-  })
+  .refine(
+    (s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s),
+    'Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.',
+  )
   .transform((str) => str.toLowerCase().trim());
 
 export const validDomainsSchema = z
@@ -76,9 +68,10 @@ export const validDomainsSchema = z
       .string()
       .min(4)
       .max(100)
-      .refine((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), {
-        message: t('invalid.domain'),
-      })
+      .refine(
+        (s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'),
+        'Domain must not contain @, no special chars and at least one dot (.) in between.',
+      )
       .transform((str) => str.toLowerCase().trim()),
   )
   .optional();
@@ -98,26 +91,18 @@ export const membershipsCountSchema = z.object({
 export const imageUrlSchema = z
   .string()
   .url()
-  .refine((url) => new URL(url).search === '', {
-    message: t('invalid.image_url'),
-  });
+  .refine((url) => new URL(url).search === '', 'Search params not allowed');
 
 export const nameSchema = z
   .string()
   .min(2)
   .max(100)
-  .refine((s) => /^[a-z0-9 ,.'-]+$/i.test(s), {
-    message: t('invalid.name'),
-  });
+  .refine((s) => /^[a-z0-9 ,.'-]+$/i.test(s), "Name may only contain letters, numbers, spaces and these characters: ,.'-");
 
 export const colorSchema = z
   .string()
   .min(3)
   .max(7)
-  .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, {
-    message: t('invalid.color'),
-  });
+  .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, 'Color may only contain letters, numbers & starts with #');
 
-export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), {
-  message: t('invalid.url'),
-});
+export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');

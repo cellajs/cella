@@ -100,6 +100,7 @@ export const AppSearch = () => {
       <CommandInput
         value={searchValue}
         clearValue={setSearchValue}
+        className="h-12"
         autoFocus
         placeholder={t('common:placeholder.search')}
         onValueChange={(searchValue) => {
@@ -123,7 +124,7 @@ export const AppSearch = () => {
               <>
                 {!!searchValue.length && (
                   <CommandEmpty className="h-full">
-                    <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+                    <ContentPlaceholder className="h-full" Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
                   </CommandEmpty>
                 )}
                 {searchValue.length === 0 && (

@@ -3,18 +3,18 @@ import { queryClient } from '~/lib/router';
 
 interface Item {
   id: string;
+  membership?: { id: string } | null;
 }
 
 // This hook is used to mutate the data of a query
 export const useMutateQueryData = (queryKey: QueryKey) => {
-  return (items: Item[], action: 'create' | 'update' | 'delete') => {
+  return (items: Item[], action: 'create' | 'update' | 'delete' | 'updateMembership') => {
     queryClient.setQueryData<{
       items: Item[];
       total: number;
     }>(queryKey, (data) => {
-      if (!data) {
-        return;
-      }
+      if (!data) return;
+
       if (action === 'create') {
         return {
           items: [...items, ...data.items],
@@ -43,13 +43,26 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
           total: updatedTotal,
         };
       }
+
+      if (action === 'updateMembership') {
+        return {
+          items: data.items.map((item) => {
+            const updatedItem = items.find((items) => item.membership && items.id === item.membership.id);
+            if (item.membership && item.membership.id === updatedItem?.id) {
+              return { ...item, membership: { ...item.membership, ...updatedItem } };
+            }
+            return item;
+          }),
+          total: data.total,
+        };
+      }
     });
   };
 };
 
 // This hook is used to mutate the data of an infinite query
 export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
-  return (items: Item[], action: 'create' | 'update' | 'delete') => {
+  return (items: Item[], action: 'create' | 'update' | 'delete' | 'updateMembership') => {
     queryClient.setQueryData<
       InfiniteData<{
         items: Item[];
@@ -95,6 +108,26 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
           return {
             items: updatedItems,
             total: updatedTotal,
+          };
+        });
+
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'updateMembership') {
+        const updatedPages = data.pages.map((page) => {
+          return {
+            items: page.items.map((item) => {
+              const updatedItem = items.find((items) => item.membership && items.id === item.membership.id);
+              if (item.membership && item.membership.id === updatedItem?.id) {
+                return { ...item, membership: { ...item.membership, ...updatedItem } };
+              }
+              return item;
+            }),
+            total: page.total,
           };
         });
 

@@ -1,6 +1,6 @@
 import { renderWithTask } from 'hanji';
-import { Progress, type State } from '../progressIndication';
-import { dataSeed } from './data';
+import { Progress, type State } from '../progress';
+import { dataSeed } from './seed';
 
 const DataState: State = {
   workspaces: {

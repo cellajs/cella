@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import { cn } from '~/lib/utils';
 
-export const alertVariants = cva('relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[18px]', {
+export const alertVariants = cva('relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[1.13rem]', {
   variants: {
     variant: {
       default: 'bg-background text-foreground',

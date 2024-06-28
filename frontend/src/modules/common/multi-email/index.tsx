@@ -320,7 +320,9 @@ export function MultiEmail(props: MultiEmailProps) {
               {email}
               <button
                 type="button"
-                className={cn('py-1 m-[-4px] ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2')}
+                className={cn(
+                  'py-1 m-[-.25rem] ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                )}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     removeEmail(index);

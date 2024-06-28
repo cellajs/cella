@@ -81,7 +81,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
             className="leading-normal"
             placeholder={t('common:placeholder.type')}
           />
-          {!isSearching && <Kbd value="T" className="absolute top-3 right-[10px]" />}
+          {!isSearching && <Kbd value="T" className="absolute top-3 right-2.5" />}
           <CommandList>
             <CommandGroup>
               {types.map((Type, index) => (

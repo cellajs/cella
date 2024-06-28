@@ -1,4 +1,4 @@
-import { userSeed } from './user';
+import { userSeed } from './seed';
 
 userSeed()
   .catch((error) => {

@@ -83,7 +83,7 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, trigger, changeTaskStatus,
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <div className="flex gap-2 [&:not(.absolute)]:active:translate-y-px">
+      <div className="flex gap-2 [&:not(.absolute)]:active:translate-y-[.07rem]">
         {nextButton && nextButton}
         <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       </div>
@@ -103,7 +103,7 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, trigger, changeTaskStatus,
             }}
             placeholder={inputPlaceholder}
           />
-          {!isSearching && <Kbd value="S" className="absolute top-3 right-[10px]" />}
+          {!isSearching && <Kbd value="S" className="absolute top-3 right-2.5" />}
 
           <CommandGroup>
             <CommandList>

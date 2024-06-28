@@ -17,8 +17,6 @@ export const taskStatuses = [
   { value: 6, action: 'accepted', status: 'accepted', icon: CircleCheck },
 ] as const;
 
-export type TaskStatus = (typeof taskStatuses)[number]['value'];
-
 interface Props {
   selectedStatuses: number[];
   setSelectedStatuses: (statuses: number[]) => void;
@@ -97,7 +95,7 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
             className="leading-normal"
             placeholder={t('common:placeholder.select_status')}
           />
-          {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
+          {!isSearching && <Kbd value="A" className="absolute top-3 right-2.5" />}
           <CommandList>
             {taskStatuses && (
               <CommandGroup>

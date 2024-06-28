@@ -1,6 +1,6 @@
 import { renderWithTask } from 'hanji';
-import { Progress, type State } from '../progressIndication';
-import { organizationsSeed } from './organizations';
+import { Progress, type State } from '../progress';
+import { organizationsSeed } from './seed';
 
 const OrganizationsState: State = {
   organizations: {

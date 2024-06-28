@@ -22,7 +22,7 @@ export interface PageCoverProps {
 
 const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   const { t } = useTranslation();
-  const bannerHeight = url ? 'h-[20vw] min-h-[160px] sm:min-h-[210px]' : 'h-32'; // : 'h-14';
+  const bannerHeight = url ? 'h-[20vw] min-h-40 sm:min-w-52' : 'h-32'; // : 'h-14';
   const bannerClass = url ? 'bg-background' : getColorClass(id);
   const { mutate: mutateOrganization } = useUpdateOrganizationMutation(id);
   const { mutate: mutateUser } = useUpdateUserMutation(id);

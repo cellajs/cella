@@ -11,7 +11,6 @@ interface MenuSectionStickyProp {
   sectionType: 'workspaces' | 'organizations';
   isSectionVisible: boolean;
   data: UserMenuItem[];
-  globalDragging: boolean;
   toggleOptionsView: () => void;
   createDialog?: () => void;
 }
@@ -20,7 +19,6 @@ export const MenuSectionSticky = ({
   data,
   sectionType,
   isSectionVisible,
-  globalDragging,
   createDialog,
   toggleOptionsView,
 }: MenuSectionStickyProp) => {
@@ -50,14 +48,7 @@ export const MenuSectionSticky = ({
           <AnimatePresence mode="popLayout">
             {isSectionVisible && (
               <TooltipButton toolTipContent={t('common:manage')} side="bottom" sideOffset={10}>
-                <Button
-                  disabled={!data.length}
-                  className="w-12 px-3"
-                  variant={`${globalDragging ? 'plain' : 'secondary'}`}
-                  size="icon"
-                  onClick={() => toggleOptionsView()}
-                  asChild
-                >
+                <Button disabled={!data.length} className="w-12 px-3" variant="secondary" size="icon" onClick={() => toggleOptionsView()} asChild>
                   <motion.button
                     key={`sheet-menu-settings-${sectionType}`}
                     transition={{ bounce: 0, duration: 0.2 }}

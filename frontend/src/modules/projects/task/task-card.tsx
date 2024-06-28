@@ -1,6 +1,6 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { GripVertical, Paperclip, UserX, Tag, ChevronDown } from 'lucide-react';
+import { Paperclip, UserX, Tag, ChevronDown } from 'lucide-react';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
@@ -28,20 +28,33 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { Badge } from '../../ui/badge.tsx';
 import { toast } from 'sonner';
+import { getTaskOrder } from './helpers.ts';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
-  taskDragButtonRef: React.RefObject<HTMLButtonElement>;
+  taskDragRef: React.RefObject<HTMLDivElement>;
   task: Task;
   labels: Label[];
   subTasks: Task[];
+  sameProjectTasks: Task[];
   members: Member[];
   className?: string;
   dragging?: boolean;
   dragOver?: boolean;
 }
 
-export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
+export function TaskCard({
+  task,
+  subTasks,
+  labels,
+  sameProjectTasks,
+  members,
+  taskRef,
+  taskDragRef,
+  dragging,
+  dragOver,
+  className = '',
+}: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex } = useWorkspaceContext(
@@ -54,7 +67,6 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
       setFocusedProjectIndex,
     }),
   );
-
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [createSubTask, setCreateSubTask] = useState(false);
@@ -86,6 +98,23 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
       db.tasks.update({
         data: {
           labels: value.map((label) => label.id),
+        },
+        where: {
+          id: taskId,
+        },
+      });
+      return;
+    }
+    if (field === 'status') {
+      const newOrder = getTaskOrder(
+        task.status,
+        value,
+        sameProjectTasks.filter((t) => t.project_id === task.project_id),
+      );
+      db.tasks.update({
+        data: {
+          status: value,
+          ...(newOrder && { sort_order: newOrder }),
         },
         where: {
           id: taskId,
@@ -143,6 +172,8 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
     latency: 250,
   });
 
+  console.log('rerender task');
+
   const handleEscKeyPress = () => {
     if (focusedTaskId !== task.id) return;
     setIsExpanded(false);
@@ -187,14 +218,14 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
         className,
       )}
     >
-      <CardContent id={`${task.id}-content`} className="p-1 pb-2 space-between flex flex-col relative">
+      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-1 pb-2 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
-            <div className="flex flex-col justify-between gap-[2px] relative">
+            <div className="flex flex-col justify-between gap-0.5 relative">
               <Checkbox
                 className={cn(
                   'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
-                  'transition-all bg-background absolute top-[6px] left-[6px]',
+                  'transition-all bg-background absolute top-1.5 left-1.5',
                   !isExpanded && 'opacity-0 -z-[1] pointer-events-none',
                   isExpanded && 'opacity-100',
                 )}
@@ -209,21 +240,12 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                 }}
               />
               <SelectTaskType
-                className={cn('group-[.is-selected]/column:mt-[34px] transition-spacing', isExpanded && 'mt-[34px]')}
+                className={cn('group-[.is-selected]/column:mt-8 transition-spacing', isExpanded && 'mt-8')}
                 currentType={task.type as TaskType}
                 changeTaskType={(newType) => handleChange('type', newType, task.id)}
               />
-              <Button
-                ref={taskDragButtonRef}
-                variant={'ghost'}
-                size="xs"
-                className="text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-[34px] group-[.is-selected]/column:pointer-events-none"
-              >
-                <span className="sr-only"> {t('common:move_task')}</span>
-                <GripVertical size={16} />
-              </Button>
             </div>
-            <div className="flex flex-col grow gap-2 mt-[6px] mr-1">
+            <div className="flex flex-col grow gap-2 mt-1.5 mr-1">
               {isEditing && (
                 <TaskEditor
                   mode={mode}
@@ -251,13 +273,13 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                         {t('common:more').toLowerCase()}
                       </Button>
                       {subTasks.length > 0 && (
-                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
+                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
                           <span className="text-success">{subTasks.filter((t) => t.status === 6).length}</span>
                           <span className="font-light">/</span>
                           <span className="font-light">{subTasks.length}</span>
                         </Button>
                       )}
-                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[1px]">
+                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
                         <Paperclip size={10} className="transition-transform -rotate-45" />
                         <span>3</span>
                       </Button>
@@ -299,8 +321,9 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                   </div>
                 </>
               )}
-
-              <div className="flex items-start justify-between">
+            </div>
+          </div>
+          <div className="flex items-start justify-between gap-1">
                 {task.type !== 'bug' && (
                   <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)}>
                     <Button
@@ -332,9 +355,9 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                     aria-label="Set labels"
                     variant="ghost"
                     size="xs"
-                    className="flex h-auto justify-start font-light py-[2px] min-h-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
+                    className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
                   >
-                    <div className="flex truncate flex-wrap gap-[1px]">
+                    <div className="flex truncate flex-wrap gap-[.07rem]">
                       {labels.filter((l) => task.labels?.includes(l.id)).length > 0 ? (
                         labels
                           .filter((l) => task.labels?.includes(l.id))
@@ -345,7 +368,7 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                                 style={badgeStyle(color)}
                                 className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
                               >
-                                <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[12px] h-5 bg-transparent last:mr-0">
+                                <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
                                   {name}
                                 </Badge>
                               </div>
@@ -366,7 +389,7 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                     <Button
                       aria-label="Assign"
                       variant="ghost"
-                      size="sm"
+                      size="xs"
                       className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
                     >
                       {members.filter((m) => task.assigned_to?.includes(m.id)).length ? (
@@ -434,8 +457,6 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
                   />
                 </div>
               </div>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>

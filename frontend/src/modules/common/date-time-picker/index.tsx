@@ -16,7 +16,7 @@ export function DateTimePicker() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant={'outline'} className={cn('w-[280px] justify-start text-left font-normal', !date && 'text-muted-foreground')}>
+        <Button variant={'outline'} className={cn('w-72 justify-start text-left font-normal', !date && 'text-muted-foreground')}>
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? dayjs(date).format('PPP HH:mm:ss') : <span>Pick a date</span>}
         </Button>

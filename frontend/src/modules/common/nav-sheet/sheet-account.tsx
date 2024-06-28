@@ -8,6 +8,8 @@ import { cn } from '~/lib/utils';
 import { buttonVariants } from '~/modules/ui/button';
 import { SheetTitle } from '~/modules/ui/sheet';
 import { useUserStore } from '~/store/user';
+import { AvatarWrap } from '../avatar-wrap';
+import { AppFooter } from '../app-footer';
 
 type AccountButtonProps = {
   lucideButton: React.ElementType<LucideProps>;
@@ -34,17 +36,24 @@ export const SheetAccount = () => {
   const isSystemAdmin = user.role === 'ADMIN';
 
   const bgClass = user.bannerUrl ? 'bg-background' : getColorClass(user.id);
-  const bannerClass = `relative my-4 opacity-75 group hover:opacity-100 transition-all duration-300 hover:-mx-8 -mx-4 bg-cover bg-center h-24 ${bgClass}`;
+  const bannerClass = `relative my-4 group transition-all duration-300 hover:-mx-8 -mx-4 bg-cover bg-center h-24 ${bgClass}`;
 
   return (
-    <>
+    <div className="flex flex-col gap-4 min-h-[calc(100vh-2rem)]">
       <SheetTitle>{t('common:account')}</SheetTitle>
 
       <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full">
         <div className={bannerClass} style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}>
-          <div className="flex justify-center items-center bg-background/75 w-full group-hover:opacity-100 transition duration-300 h-full opacity-0">
+          <div className="absolute z-10 flex justify-center items-center bg-background/50 w-full group-hover:opacity-100 group-hover:delay-300 transition duration-300 h-full opacity-0">
             {t('common:view_profile')}
           </div>
+          <AvatarWrap
+            className="h-16 w-16 relative top-4 text-2xl transition duration-300 delay-300 group-hover:-translate-x-24 group-hover:delay-0 mx-auto border-bg border-2 rounded-full"
+            type="USER"
+            id={user.id}
+            name={user.name}
+            url={user.thumbnailUrl}
+          />
         </div>
       </Link>
 
@@ -54,6 +63,10 @@ export const SheetAccount = () => {
         {isSystemAdmin && <AccountButton lucideButton={Wrench} id="btn-system" label={t('common:system_panel')} accountAction="/system/users" />}
         <AccountButton lucideButton={LogOut} id="btn-signout" label={t('common:sign_out')} accountAction="/sign-out" />
       </div>
-    </>
+
+      <div className="grow" />
+
+      <AppFooter className="scale-90" />
+    </div>
   );
 };

@@ -12,7 +12,7 @@ export const OnboardingStart = ({ setOnboarding }: OnboardingStartProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center text-center mx-auto space-y-6 p-4 max-w-[700px]">
+    <div className="flex flex-col items-center text-center mx-auto space-y-6 p-4 max-w-3xl">
       <h1 className="text-3xl font-bold">{t('common:onboarding_welcome', { appName: config.name })}</h1>
       <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">{t('common:onboarding_welcome.text')}</p>
       <Button onClick={() => setOnboarding('stepper')} className="max-sm:w-full">
