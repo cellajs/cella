@@ -4,7 +4,7 @@ import { i18n } from '../../../backend/src/lib/i18n';
 
 export const EmailReplyTo = ({ email }: { email: string }) => (
   <>
-    <Text className="text-[12px] leading-[18px] text-[#6a737d] mt-[20px] gap-1">
+    <Text className="text-[.75rem] leading-[1.13rem] text-[#6a737d] mt-[1.25rem] gap-1">
       {i18n.t('backend:email.invite_reply_to')}
       <a className="ml-1" href={`mailto:${email}`}>
         {email}
@@ -14,6 +14,6 @@ export const EmailReplyTo = ({ email }: { email: string }) => (
         {config.supportEmail}
       </a>
     </Text>
-    <Text className="text-[12px] leading-[18px] text-[#6a737d] mt-[20px]">{i18n.t('backend:email.invite_expire')}</Text>
+    <Text className="text-[.75rem] leading-[1.13rem] text-[#6a737d] mt-[1.25rem]">{i18n.t('backend:email.invite_expire')}</Text>
   </>
 );

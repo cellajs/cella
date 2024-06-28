@@ -41,7 +41,7 @@
   "color": "Color",
   "columns_view": "Column view",
   "contact_request": "Contact",
-  "configure_menu.text": "Configure your menu items. Changes will be saved automatically.",
+  "configure_menu.text": "Manage your menu. You can drag items to change menu order. Changes are saved automatically.",
   "confirm.delete_account": "Are you sure you want to delete your account with {{email}} email?",
   "confirm.delete_resource": "Are you sure you want to delete {{resource}} {{name}} ?",
   "confirm.delete_resources": "Are you sure you want to delete these {{resources}}?",

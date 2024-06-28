@@ -158,7 +158,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
     ];
 
     sheet(<SheetNav tabs={projectTabs} />, {
-      className: 'max-w-full lg:max-w-[900px]',
+      className: 'max-w-full lg:max-w-4xl',
       title: t('common:project_settings'),
       text: t('common:project_settings.text'),
       id: 'edit-project',
@@ -281,7 +281,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
   }, [menu]);
 
   // Hides underscroll elements
-  // 64px refers to the header height
+  // 4rem refers to the header height
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
   return (
@@ -307,7 +307,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
               <>
                 <div className="h-full" ref={cardListRef}>
                   {!!tasks.length && (
-                    <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-1px]">
+                    <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
                       <ScrollBar size="indicatorVertical" />
                       <div className="flex flex-col px-0">
                         <Button
@@ -315,7 +315,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
                           variant="ghost"
                           disabled={!acceptedCount}
                           size="sm"
-                          className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[1px]"
+                          className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[.07rem]"
                         >
                           <span className="text-xs">
                             {acceptedCount} {t('common:accepted').toLowerCase()}
@@ -334,7 +334,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
                           variant="ghost"
                           disabled={!icedCount}
                           size="sm"
-                          className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[1px]"
+                          className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[.07rem]"
                         >
                           <span className="text-xs">
                             {icedCount} {t('common:iced').toLowerCase()}

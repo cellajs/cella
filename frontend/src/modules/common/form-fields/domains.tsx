@@ -67,8 +67,8 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
                 activeTagIndex={null}
                 setActiveTagIndex={() => {}}
                 styleClasses={{
-                  input: 'px-1 py-0 h-[22px]',
-                  tag: { body: 'h-[22px] py-0' },
+                  input: 'px-1 py-0 h-[1.38rem]',
+                  tag: { body: 'h-[1.38rem] py-0' },
                   inlineTagsContainer: `${fieldActive ? (!checkValidInput(currentValue) ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : 'ring-2 ring-offset-2 ring-white') : ''}`,
                 }}
               />

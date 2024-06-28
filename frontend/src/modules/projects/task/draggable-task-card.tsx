@@ -24,7 +24,7 @@ export const DraggableTaskCard = () => {
   const { labels, tasks, members } = useProjectContext(({ labels, tasks, members }) => ({ labels, tasks, members }));
   const { focusedTaskId } = useWorkspaceContext(({ focusedTaskId }) => ({ focusedTaskId }));
   const taskDragRef = useRef(null);
-  const taskDragButtonRef = useRef<HTMLButtonElement>(null);
+  const taskDragButtonRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -94,7 +94,7 @@ export const DraggableTaskCard = () => {
         className={`relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary is-focused' : 'border-l-transparent'}`}
       />
 
-      {closestEdge && <DropIndicator className="h-[2px]" edge={closestEdge} gap="-2px" />}
+      {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap="-0.5" />}
     </div>
   );
 };

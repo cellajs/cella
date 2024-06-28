@@ -127,7 +127,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
         </DropdownMenuTrigger>
       </TooltipButton>
 
-      <DropdownMenuContent align="end" className="min-w-[320px] p-2 gap-2 flex flex-col">
+      <DropdownMenuContent align="end" className="min-w-80 p-2 gap-2 flex flex-col">
         {Object.entries(viewOptions)
           .filter(([key]) => key !== 'status')
           .map(([key, options]) => (
@@ -145,7 +145,7 @@ const WorkspaceView = ({ className = '' }: Props) => {
                   size="sm"
                   value={option}
                   className={`w-full ${
-                    getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]?.includes(option) ? variants({ [key]: option }) : 'pb-[1px]'
+                    getWorkspaceViewOptions(workspaceId)[key as keyof ViewOptions]?.includes(option) ? variants({ [key]: option }) : 'pb-[.07rem]'
                   }`}
                 >
                   <span className="text-xs font-normal">{t(`common:${option}`)}</span>

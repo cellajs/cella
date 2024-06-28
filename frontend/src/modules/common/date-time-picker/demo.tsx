@@ -42,7 +42,7 @@ export function DateTimePickerForm() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className={cn('w-[280px] justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
+                      className={cn('w-72 justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {field.value ? dayjs(field.value).format('LLL HH:mm:ss') : <span>Pick a date</span>}

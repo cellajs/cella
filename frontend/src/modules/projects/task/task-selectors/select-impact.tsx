@@ -78,7 +78,7 @@ export const SelectImpact = ({ value, children, changeTaskImpact, triggerWidth =
             className="leading-normal"
             placeholder={t('common:placeholder.impact')}
           />
-          {!isSearching && <Kbd value="I" className="absolute top-3 right-[10px]" />}
+          {!isSearching && <Kbd value="I" className="absolute top-3 right-2.5" />}
           <CommandList>
             <CommandGroup>
               {impacts.map((Impact, index) => (

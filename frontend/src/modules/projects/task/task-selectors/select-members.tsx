@@ -83,7 +83,7 @@ const AssignMembers = ({ users, children, value, changeAssignedTo, triggerWidth 
             className="leading-normal"
             placeholder={t('common:placeholder.assign')}
           />
-          {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
+          {!isSearching && <Kbd value="A" className="absolute top-3 right-2.5" />}
           <CommandList>
             {users && (
               <CommandGroup>

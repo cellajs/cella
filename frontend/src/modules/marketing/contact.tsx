@@ -27,8 +27,8 @@ const Contact = () => {
       <div className="container mb-12 mx-auto">
         <div className="flex flex-wrap justify-evenly gap-2">
           {methods.map((method) => (
-            <div key={t(method.title)} className="mb-10 text-center h-[200px] w-[160px] sm:w-[200px]">
-              <div className="text-primary mx-auto mb-5 flex h-[100px] w-[100px] items-center justify-center rounded-full bg-accent/50 sm:h-[130px] sm:w-[130px]">
+            <div key={t(method.title)} className="mb-10 text-center h-48 w-40 sm:w-48">
+              <div className="text-primary mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-accent/50 sm:h-32 sm:w-32">
                 <method.icon size={48} strokeWidth={1} />
               </div>
               <div className="text-center">

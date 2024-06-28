@@ -20,14 +20,14 @@ export const VerificationEmail = ({ i18n, verificationLink = baseUrl }: Props) =
     <EmailContainer
       previewText={i18n.t('backend:email.please_verify_email')}
       bodyClassName="py-2.5"
-      containerClassName="border-[#f0f0f0] p-[45px] font-light text-[#404040] leading-[26px]"
+      containerClassName="border-[#f0f0f0] p-12 font-light text-[#404040] leading-6"
     >
       <Logo />
       <Section>
         <Text>{i18n.t('backend:email.verification_text_1')}</Text>
         <EmailButton ButtonText={i18n.t('common:verify_my_email')} href={verificationLink} />
       </Section>
-      <Footer hrClassName="mt-[24px]" />
+      <Footer hrClassName="mt-6" />
     </EmailContainer>
   );
 };

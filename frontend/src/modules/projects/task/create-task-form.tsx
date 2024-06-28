@@ -332,7 +332,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                       size="sm"
                       className="flex h-auto justify-start font-light w-full  text-left min-h-9 py-1 border hover:bg-accent/20"
                     >
-                      <div className="flex truncate flex-wrap gap-[1px]">
+                      <div className="flex truncate flex-wrap gap-[.07rem]">
                         {value.length > 0 ? (
                           value.map(({ name, id, color }) => {
                             return (
@@ -341,7 +341,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                                 style={badgeStyle(color)}
                                 className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
                               >
-                                <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[12px] text-sm h-6 last:mr-0">
+                                <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] text-sm h-6 last:mr-0">
                                   {name}
                                 </Badge>
 
@@ -378,7 +378,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex [&:not(.absolute)]:active:translate-y-px">
+          <div className="flex [&:not(.absolute)]:active:translate-y-[.07rem]">
             <Button
               size={'xs'}
               type="submit"

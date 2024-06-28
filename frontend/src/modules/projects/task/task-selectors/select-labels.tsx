@@ -138,7 +138,7 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
             className="leading-normal"
             placeholder={t('common:placeholder.search_labels')}
           />
-          {!isSearching && <Kbd value="L" className="absolute top-3 right-[10px]" />}
+          {!isSearching && <Kbd value="L" className="absolute top-3 right-2.5" />}
           <CommandList>
             <CommandGroup>
               {!searchValue.length && (

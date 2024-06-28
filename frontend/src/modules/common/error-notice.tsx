@@ -40,7 +40,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
       return dialog(<ContactForm dialog />, {
         id: 'contact-form',
         drawerOnMobile: false,
-        className: 'sm:max-w-[64rem]',
+        className: 'sm:max-w-5xl',
         title: t('common:contact_us'),
         text: t('common:contact_us.text'),
       });

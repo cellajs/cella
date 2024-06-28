@@ -97,7 +97,7 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
             className="leading-normal"
             placeholder={t('common:placeholder.select_status')}
           />
-          {!isSearching && <Kbd value="A" className="absolute top-3 right-[10px]" />}
+          {!isSearching && <Kbd value="A" className="absolute top-3 right-2.5" />}
           <CommandList>
             {taskStatuses && (
               <CommandGroup>

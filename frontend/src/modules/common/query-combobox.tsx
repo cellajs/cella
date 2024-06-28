@@ -74,7 +74,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
                 {el}
                 <button
                   type="button"
-                  className="py-1 m-[-4px] ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  className="py-1 m-[-.25rem] ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();

@@ -50,7 +50,7 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
       <div className="mt-auto mb-auto w-full">
         {onboarding === 'start' && <OnboardingStart setOnboarding={setOnboarding} />}
         {onboarding === 'stepper' && (
-          <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 px-4 py-8 sm:w-10/12 max-w-[800px]', animateClass)}>
+          <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 px-4 py-8 sm:w-10/12 max-w-3xl', animateClass)}>
             <Stepper initialStep={0} steps={steps} orientation="vertical">
               {steps.map(({ label, id }) => (
                 <Step key={label} label={label}>

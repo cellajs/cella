@@ -28,10 +28,10 @@ export const InviteSystemEmail = ({ user, targetUser, token }: Props) => {
     <EmailContainer
       previewText={i18nInstance.t('backend:email.invite_preview_text')}
       bodyClassName="m-auto"
-      containerClassName="mx-auto my-[40px] w-[465px] rounded border border-solid border-[#eaeaea] p-[20px]"
+      containerClassName="mx-auto my-10 w-[465px] rounded border border-solid border-[#eaeaea] p-5"
     >
       <EmailHeader headerText={i18nInstance.t('backend:email.invite_title')} />
-      <Text className="text-[14px] leading-[24px] text-black">
+      <Text className="text-sm leading-6 text-black">
         <div
           // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
           dangerouslySetInnerHTML={{
@@ -43,7 +43,7 @@ export const InviteSystemEmail = ({ user, targetUser, token }: Props) => {
         />
       </Text>
       <EmailReplyTo email={user.email} />
-      <Section className="mt-[50px]">
+      <Section className="mt-12">
         <Row>
           <Column align="right">
             <Img className="rounded-full" src={userLogo} width="64" height="64" />

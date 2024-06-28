@@ -23,7 +23,7 @@ const verticalStepVariants = cva(
       variant: {
         circle: cn(
           '[&:not(:last-child)]:pb-[var(--step-gap)] [&:not(:last-child)]:gap-[var(--step-gap)]',
-          "[&:not(:last-child)]:after:content-[''] [&:not(:last-child)]:after:w-[2px] [&:not(:last-child)]:after:bg-border",
+          "[&:not(:last-child)]:after:content-[''] [&:not(:last-child)]:after:w-0.5 [&:not(:last-child)]:after:bg-border",
           '[&:not(:last-child)]:after:inset-x-[calc(var(--step-icon-size)/2)]',
           '[&:not(:last-child)]:after:absolute',
           '[&:not(:last-child)]:after:top-[calc(var(--step-icon-size)+var(--step-gap))]',
@@ -135,7 +135,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
         className={cn(
           'stepper__vertical-step-container',
           'flex items-center',
-          variant === 'line' && 'border-s-[3px] data-[active=true]:border-primary py-2 ps-3',
+          variant === 'line' && 'border-s-[.19rem] data-[active=true]:border-primary py-2 ps-3',
           styles?.['vertical-step-container'],
         )}
       >

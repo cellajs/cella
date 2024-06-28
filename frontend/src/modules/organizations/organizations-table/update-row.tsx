@@ -29,7 +29,7 @@ const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
       </Card>,
       {
         id: 'update-organization',
-        className: 'max-w-full lg:max-w-[900px]',
+        className: 'max-w-full lg:max-w-4xl',
         title: t('common:edit_organization'),
       },
     );

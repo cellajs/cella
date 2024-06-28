@@ -179,7 +179,7 @@ const OrganizationsTable = () => {
 
   const openNewsletterSheet = () => {
     sheet(<NewsletterForm sheet />, {
-      className: 'max-w-full lg:max-w-[900px]',
+      className: 'max-w-full lg:max-w-4xl',
       title: t('common:newsletter'),
       text: t('common:newsletter.text'),
       id: 'newsletter-form',

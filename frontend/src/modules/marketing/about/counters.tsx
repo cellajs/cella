@@ -29,7 +29,7 @@ const Counters = () => {
   });
 
   return (
-    <div ref={ref} className="mx-auto grid gap-4 md:max-w-[64rem] md:grid-cols-2 lg:grid-cols-2">
+    <div ref={ref} className="mx-auto grid gap-4 md:max-w-5xl md:grid-cols-2 lg:grid-cols-2">
       {inView &&
         counts.map(({ id, title, icon: Icon }) => {
           const countValue = countValues[id as keyof typeof countValues];

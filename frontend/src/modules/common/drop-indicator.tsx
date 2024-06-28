@@ -19,7 +19,7 @@ const dropIndicatorEdgeStyles = {
   right: () => {},
 };
 
-export const DropIndicator: React.FC<DropIndicatorProps> = ({ edge, className = '', gap = '0px' }) => {
+export const DropIndicator: React.FC<DropIndicatorProps> = ({ edge, className = '', gap = '0' }) => {
   return (
     <div
       style={{ ...dropIndicatorEdgeStyles[edge](gap), '--gap': gap } as unknown as React.CSSProperties}

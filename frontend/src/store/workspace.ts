@@ -28,7 +28,7 @@ interface WorkspaceState {
 }
 
 const defaultColumnValues = {
-  width: '200px',
+  width: '19rem',
   minimized: false,
   expandAccepted: false,
   expandIced: false,

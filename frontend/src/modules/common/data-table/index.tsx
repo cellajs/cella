@@ -137,7 +137,7 @@ export const DataTable = <TData,>({
                 onCellClick={onCellClick}
                 className="fill-grid"
                 // NOTICE: Hack to rerender html/css by changing width
-                style={{ marginRight: columns.length % 2 === 0 ? '0px' : '1px' }}
+                style={{ marginRight: columns.length % 2 === 0 ? '0' : '.07rem' }}
                 selectedRows={selectedRows}
                 onSelectedRowsChange={onSelectedRowsChange}
                 sortColumns={sortColumns}
@@ -197,7 +197,7 @@ export const DataTable = <TData,>({
           )}
         </>
       ) : (
-        <DataTableSkeleton cellsWidths={['48px', '48px']} cellHeight={Number(rowHeight)} columnCount={columns.length} />
+        <DataTableSkeleton cellsWidths={['3rem', '10rem', '4rem']} cellHeight={Number(rowHeight)} columnCount={columns.length} />
       )}
     </div>
   );

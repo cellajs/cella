@@ -24,7 +24,7 @@ export const ResetPasswordEmail = ({ i18n, username, resetPasswordLink = baseUrl
     <EmailContainer
       previewText={i18n.t('backend:email.please_verify_email')}
       bodyClassName="py-2.5"
-      containerClassName="border-[#f0f0f0] p-[45px] font-light text-[#404040] leading-[26px]"
+      containerClassName="border-[#f0f0f0] p-12 font-light text-[#404040] leading-6"
     >
       <Logo />
       <Section>

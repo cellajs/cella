@@ -11,9 +11,9 @@ export const switchVariants = cva(
   {
     variants: {
       size: {
-        sm: 'h-[20px] w-[40px]',
-        base: 'h-[24px] w-[44px]',
-        lg: 'h-[28px] w-[48px]',
+        sm: 'h-5 w-10',
+        base: 'h-6 w-11',
+        lg: 'h-7 w-12',
       },
     },
     defaultVariants: { size: 'base' },

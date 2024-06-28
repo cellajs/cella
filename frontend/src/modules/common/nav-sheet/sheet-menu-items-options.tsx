@@ -279,7 +279,7 @@ const ItemOptions = ({
           </Button>
         )}
       </motion.div>
-      {closestEdge && <DropIndicator className="h-[2px] w-full" edge={closestEdge} gap="2px" />}
+      {closestEdge && <DropIndicator className="h-0.5 w-full" edge={closestEdge} gap="0.5" />}
     </div>
   );
 };

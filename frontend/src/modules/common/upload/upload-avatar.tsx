@@ -53,7 +53,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
 
   return (
     <div className="flex gap-4">
-      <AvatarWrap type={type} className="h-20 w-20" id={id} name={name} url={url} />
+      <AvatarWrap type={type} className="h-16 w-16" id={id} name={name} url={url} />
 
       <div className="flex flex-col gap-2">
         <p className="font-light text-sm">{t('common:upload_img_max_10mb.text')}</p>

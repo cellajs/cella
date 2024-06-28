@@ -43,7 +43,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
     dialog(<ContactForm dialog />, {
       id: 'contact-form',
       drawerOnMobile: false,
-      className: 'sm:max-w-[64rem]',
+      className: 'sm:max-w-5xl',
       title: t('common:contact_us'),
       text: t('common:contact_us.text'),
     });
@@ -82,7 +82,7 @@ export const AppFooter = () => {
       <div className="flex items-center gap-4">
         <UserLanguage align="start" />
         <div className="mr-1 font-light text-muted">|</div>
-        <Link to="/" className="hover:scale-105 transition-transform active:translate-y-[1px]">
+        <Link to="/" className="hover:scale-105 transition-transform active:translate-y-[.07rem]">
           <Logo height={25} />
         </Link>
         <div className="ml-1 font-light text-muted">|</div>
