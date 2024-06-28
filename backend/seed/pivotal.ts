@@ -54,6 +54,8 @@ zip.loadAsync(data).then(async (zip) => {
         Title: string;
         Type: string;
         Priority: string;
+        Estimate: string;
+        Description: string;
         'Current State': string;
         // Jan 7, 2024
         'Created at': string;
@@ -61,7 +63,6 @@ zip.loadAsync(data).then(async (zip) => {
     ]
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   >(promises as any);
-
   await db
     .insert(tasksTable)
     .values(
@@ -73,6 +74,8 @@ zip.loadAsync(data).then(async (zip) => {
           createdBy: 'pivotal',
           organizationId: project.organizationId,
           projectId: project.id,
+          impact: ['0', '1', '2', '3'].includes(task.Estimate) ? +task.Estimate : 0,
+          markdown: `${task.Title}\n${task.Description}`,
           status:
             task['Current State'] === 'accepted'
               ? 6
