@@ -22,7 +22,7 @@ export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount, isArchive
       } group mb-1 cursor-pointer bg-background p-0 transition duration-300 focus:outline-none ring-1 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`}
     >
       <div className="w-14 py-2 flex justify-center items-center">
-        <Archive size={16} className="mr-1 items-center opacity-75" />
+        <Archive size={16} className="mr-0.5 items-center opacity-75" />
       </div>
       <div className="truncate grow text-left p-2 pl-1 opacity-75">
         <span className={`${isSubmenu ? 'text-xs' : 'text-sm'}`}>{t('common:archived')}</span>

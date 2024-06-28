@@ -18,7 +18,7 @@ const AvatarWrap = memo(({ type, id, name, url, className, backgroundColor, ...p
   return (
     <Avatar {...props} className={className}>
       {url ? (
-        <AvatarImage src={`${url}?width=100&format=avif`} className={type && type === 'USER' ? 'rounded-full' : 'rounded-md'} />
+        <AvatarImage src={`${url}?width=100&format=avif`} draggable="false" className={type && type === 'USER' ? 'rounded-full' : 'rounded-md'} />
       ) : (
         <AvatarFallback
           style={backgroundColor ? { background: backgroundColor } : {}}
