@@ -57,7 +57,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
   // }, []);
 
   return (
-    <ul className={cn('text-foreground/60 mb-8 flex flex-wrap justify-center gap-x-6 gap-y-4 text-center text-xs', className)}>
+    <ul className={cn('text-foreground/60 mb-8 flex flex-wrap justify-center gap-x-6 gap-y-4 text-center text-sm', className)}>
       {links.map((link) => (
         <FooterLink key={link.id} id={link.id} href={link.href} />
       ))}
@@ -78,14 +78,14 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
 // App Footer component
 export const AppFooter = () => {
   return (
-    <footer className="container flex flex-col my-10 items-center gap-4">
+    <footer className="container flex flex-col my-16 items-center gap-4">
       <div className="flex items-center gap-4">
         <UserLanguage align="start" />
-        <div className="mr-1 font-light text-muted text-sm">|</div>
+        <div className="mr-1 font-light text-muted">|</div>
         <Link to="/" className="hover:scale-105 transition-transform active:translate-y-[1px]">
           <Logo height={25} />
         </Link>
-        <div className="ml-1 font-light text-muted text-sm">|</div>
+        <div className="ml-1 font-light text-muted">|</div>
         <UserTheme size={18} />
       </div>
       <FooterLinks />

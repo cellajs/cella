@@ -74,14 +74,20 @@ export function Dialoger() {
             className={existingDialog?.className ? existingDialog.className : dialog.className}
             container={existingDialog?.container ? existingDialog.container : dialog.container}
           >
-            <DialogHeader>
-              <DialogTitle className="h-6">
-                {existingDialog?.title
-                  ? existingDialog.title
-                  : dialog.title && (typeof dialog.title === 'string' ? <span>{dialog.title}</span> : dialog.title)}
-              </DialogTitle>
-              {dialog.text && <DialogDescription>{dialog.text}</DialogDescription>}
-            </DialogHeader>
+            {(dialog.text || dialog.title) && (
+              <DialogHeader>
+                <DialogTitle className="h-6">
+                  {existingDialog?.title
+                    ? existingDialog.title
+                    : dialog.title && (typeof dialog.title === 'string' ? <span>{dialog.title}</span> : dialog.title)}
+                </DialogTitle>
+                {dialog.text && <DialogDescription>{dialog.text}</DialogDescription>}
+              </DialogHeader>
+            )}
+            {/* For accessibility */}
+             {!dialog.text && !dialog.title && (
+                <DialogTitle className="hidden" />
+            )}
             {existingDialog?.content ? existingDialog.content : dialog.content}
           </DialogContent>
         </Dialog>

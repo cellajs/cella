@@ -100,6 +100,7 @@ export const AppSearch = () => {
       <CommandInput
         value={searchValue}
         clearValue={setSearchValue}
+        className="h-12"
         autoFocus
         placeholder={t('common:placeholder.search')}
         onValueChange={(searchValue) => {
