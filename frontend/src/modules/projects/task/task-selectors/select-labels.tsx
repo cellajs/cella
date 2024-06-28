@@ -1,6 +1,6 @@
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 // import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -31,7 +31,12 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
+
   const isSearching = searchValue.length > 0;
+  const searchedLabels: Label[] = useMemo(() => {
+    if (isSearching) return labels.filter((l) => l.name.includes(searchValue));
+    return [];
+  }, [searchValue, labels]);
 
   const Electric = useElectric();
 
@@ -92,7 +97,7 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
             className="group rounded-md flex justify-between items-center w-full leading-normal"
           >
             <div className="flex items-center gap-2">
-              {isSearching ? <Dot size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
+              {isSearching ? <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
               <span>{label.name}</span>
             </div>
             <div className="flex items-center">
@@ -148,7 +153,7 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
           {!isSearching && <Kbd value="L" className="absolute top-3 right-2.5" />}
           <CommandList>
             <CommandGroup>
-              {!searchValue.length && (
+              {!isSearching ? (
                 <>
                   {labels.length === 0 && (
                     <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
@@ -157,9 +162,12 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
                   )}
                   {renderLabels(labels)}
                 </>
+              ) : searchedLabels.length > 0 ? (
+                renderLabels(searchedLabels)
+              ) : (
+                <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} {...{ searchValue, labels }} />
               )}
             </CommandGroup>
-            <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} {...{ searchValue, labels }} />
           </CommandList>
         </Command>
       </PopoverContent>
