@@ -21,7 +21,7 @@ import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
 import { useProjectContext } from '../board/project-context.tsx';
 import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
 import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
-import SelectStatus from './task-selectors/select-status.tsx';
+import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 import { useMeasure } from '~/hooks/use-measure';
 import AssignMembers from './task-selectors/select-members.tsx';
@@ -29,9 +29,9 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import type { Member } from '~/types/index.ts';
 import { Badge } from '../../ui/badge.tsx';
+import { getTaskOrder } from './helpers.ts';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
-export type TaskStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
 
 export const taskTypes = ['feature', 'chore', 'bug'];
@@ -120,11 +120,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
 
   const onSubmit = (values: FormValues) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
     const projectTasks = tasks.filter((task) => task.project_id === project.id);
-    const order = projectTasks.length > 0 ? projectTasks[0].sort_order / 1.1 : 1;
 
     Electric.db.tasks
       .create({
@@ -142,7 +140,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: order,
+          sort_order: getTaskOrder(values.status, values.status, projectTasks),
         },
       })
       .then(() => {

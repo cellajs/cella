@@ -28,20 +28,33 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { Badge } from '../../ui/badge.tsx';
 import { toast } from 'sonner';
+import { getTaskOrder } from './helpers.ts';
 
 interface TaskCardProps {
   taskRef: React.RefObject<HTMLDivElement>;
-  taskDragButtonRef: React.RefObject<HTMLDivElement>;
+  taskDragRef: React.RefObject<HTMLDivElement>;
   task: Task;
   labels: Label[];
   subTasks: Task[];
+  sameProjectTasks: Task[];
   members: Member[];
   className?: string;
   dragging?: boolean;
   dragOver?: boolean;
 }
 
-export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragButtonRef, dragging, dragOver, className = '' }: TaskCardProps) {
+export function TaskCard({
+  task,
+  subTasks,
+  labels,
+  sameProjectTasks,
+  members,
+  taskRef,
+  taskDragRef,
+  dragging,
+  dragOver,
+  className = '',
+}: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex } = useWorkspaceContext(
@@ -54,7 +67,6 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
       setFocusedProjectIndex,
     }),
   );
-
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [createSubTask, setCreateSubTask] = useState(false);
@@ -86,6 +98,23 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
       db.tasks.update({
         data: {
           labels: value.map((label) => label.id),
+        },
+        where: {
+          id: taskId,
+        },
+      });
+      return;
+    }
+    if (field === 'status') {
+      const newOrder = getTaskOrder(
+        task.status,
+        value,
+        sameProjectTasks.filter((t) => t.project_id === task.project_id),
+      );
+      db.tasks.update({
+        data: {
+          status: value,
+          ...(newOrder && { sort_order: newOrder }),
         },
         where: {
           id: taskId,
@@ -187,7 +216,7 @@ export function TaskCard({ task, subTasks, labels, members, taskRef, taskDragBut
         className,
       )}
     >
-      <CardContent id={`${task.id}-content`} ref={taskDragButtonRef} className="p-1 pb-2 space-between flex flex-col relative">
+      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-1 pb-2 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
             <div className="flex flex-col justify-between gap-0.5 relative">

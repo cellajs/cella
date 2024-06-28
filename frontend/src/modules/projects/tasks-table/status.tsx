@@ -17,8 +17,6 @@ export const taskStatuses = [
   { value: 6, action: 'accepted', status: 'accepted', icon: CircleCheck },
 ] as const;
 
-export type TaskStatus = (typeof taskStatuses)[number]['value'];
-
 interface Props {
   selectedStatuses: number[];
   setSelectedStatuses: (statuses: number[]) => void;

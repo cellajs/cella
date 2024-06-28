@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { cn, getReorderDestinationOrder } from '~/lib/utils';
-import { sortTaskOrder } from '~/modules/projects/task/sort-task-order';
+import { sortTaskOrder } from '~/modules/projects/task/helpers';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
