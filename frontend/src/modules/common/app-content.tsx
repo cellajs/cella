@@ -58,7 +58,7 @@ export const AppContent = () => {
 
           <Outlet />
         </main>
-        {showFooter && <AppFooter />}
+        {showFooter && <AppFooter className="container my-16" />}
       </div>
     </div>
   );

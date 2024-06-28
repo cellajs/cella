@@ -76,9 +76,9 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
 };
 
 // App Footer component
-export const AppFooter = () => {
+export const AppFooter = ({className = '' }) => {
   return (
-    <footer className="container flex flex-col my-16 items-center gap-4">
+    <footer className={cn('flex flex-col items-center gap-4', className)}>
       <div className="flex items-center gap-4">
         <UserLanguage align="start" />
         <div className="mr-1 font-light text-muted">|</div>

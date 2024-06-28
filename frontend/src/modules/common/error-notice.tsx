@@ -48,7 +48,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
     window.Gleap.openConversations();
   };
   return (
-    <div className="container flex flex-col min-h-[calc(100vh-200px)] items-center">
+    <div className="container flex flex-col min-h-[calc(100vh-20rem)] items-center">
       <div className="mt-auto mb-auto">
         <Card className="max-w-[36rem] m-4">
           <CardHeader className="text-center">
