@@ -159,7 +159,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
   const { mutate: updateMemberRole } = useMutation({
     mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role }),
     onSuccess: (updatedMembership) => {
-      callback([updatedMembership], 'update');
+      callback([updatedMembership], 'updateMembership');
       toast.success(t('common:success:user_role_updated'));
     },
     onError: () => toast.error('Error updating role'),

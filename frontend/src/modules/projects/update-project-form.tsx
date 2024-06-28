@@ -111,7 +111,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
           control={form.control}
           label={t('common:workspace')}
           name="workspaceId"
-          required
+          disabled
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>

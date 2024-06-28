@@ -16,6 +16,7 @@ import { useNavigationStore } from '~/store/navigation';
 import type { DraggableItemData, UserMenuItem } from '~/types';
 import { DropIndicator } from '../drop-indicator';
 import { MenuArchiveToggle } from './menu-archive-toggle';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 
 interface MenuItemProps {
   isGlobalDragging?: boolean;
@@ -110,11 +111,13 @@ const ItemOptions = ({
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { menu } = useNavigationStore();
 
+  const callback = parentItemId ? useMutateQueryData(['projects', parentItemId]) : useMutateQueryData([`${itemType.toLowerCase()}s`, item.id]);
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
       return baseUpdateMembership(values);
     },
     onSuccess: (updatedMembership) => {
+      callback([updatedMembership], 'updateMembership');
       if (updatedMembership.inactive !== isItemArchived) {
         const archived = updatedMembership.inactive || !isItemArchived;
         archiveStateToggle(item.id, archived, parentItemId ? parentItemId : null);

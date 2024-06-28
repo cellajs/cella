@@ -55,19 +55,23 @@ export default function Board() {
   }));
   const { t } = useTranslation();
   const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects.sort((a, b) => {
-      if (a.membership === null || b.membership === null) return 0;
-      return a.membership.order - b.membership.order;
-    }),
+    projects
+      .filter((p) => p.membership && !p.membership.archived)
+      .sort((a, b) => {
+        if (a.membership === null || b.membership === null) return 0;
+        return a.membership.order - b.membership.order;
+      }),
   );
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
   useEffect(() => {
     setMappedProjects(
-      projects.sort((a, b) => {
-        if (a.membership === null || b.membership === null) return 0;
-        return a.membership.order - b.membership.order;
-      }),
+      projects
+        .filter((p) => p.membership && !p.membership.archived)
+        .sort((a, b) => {
+          if (a.membership === null || b.membership === null) return 0;
+          return a.membership.order - b.membership.order;
+        }),
     );
   }, [projects]);
 
