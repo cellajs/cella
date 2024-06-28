@@ -14,9 +14,8 @@ export const getTaskOrder = (currentStatus: number, newStatus: number, tasks: Ta
   const filteredTasks = tasks.filter((t) => t.status === newStatus).sort((a, b) => a.sort_order - b.sort_order);
   // Handle case where there are no tasks
   if (filteredTasks.length === 0) return 1;
-  if (currentStatus < newStatus || currentStatus === newStatus)
-    // If new status is higher or the same set order to bottom of a list
-    return filteredTasks.slice(-1)[0].sort_order + 0.01;
-  // If new status is lower set order to top of the list
+  // If new status is higher set order to bottom of a list
+  if (currentStatus < newStatus) return filteredTasks.slice(-1)[0].sort_order + 0.01;
+  // If new status is lower or the same set order to top of the list
   return filteredTasks[0].sort_order - 0.01;
 };
