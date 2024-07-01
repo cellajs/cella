@@ -57,16 +57,11 @@ export function TaskCard({
 }: TaskCardProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex } = useWorkspaceContext(
-    ({ setSelectedTasks, selectedTasks, projects, focusedTaskId, setFocusedTaskId, setFocusedProjectIndex }) => ({
-      setSelectedTasks,
-      selectedTasks,
-      projects,
-      focusedTaskId,
-      setFocusedTaskId,
-      setFocusedProjectIndex,
-    }),
-  );
+  const { setSelectedTasks, selectedTasks, focusedTaskId } = useWorkspaceContext(({ setSelectedTasks, selectedTasks, focusedTaskId }) => ({
+    setSelectedTasks,
+    selectedTasks,
+    focusedTaskId,
+  }));
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [createSubTask, setCreateSubTask] = useState(false);
@@ -188,6 +183,16 @@ export function TaskCard({
     ['Enter', handleEnterKeyPress],
   ]);
 
+  const dispatchCustomFocusEvent = (taskId: string, projectId: string) => {
+    const event = new CustomEvent('task-card-focus', {
+      detail: {
+        taskId,
+        projectId,
+      },
+    });
+    document.dispatchEvent(event);
+  };
+
   useEffect(() => {
     if (!dragging) return;
     setIsEditing(false);
@@ -200,10 +205,7 @@ export function TaskCard({
         if (isEditing) return;
         taskRef.current?.focus();
       }}
-      onFocus={() => {
-        setFocusedTaskId(task.id);
-        setFocusedProjectIndex(projects.findIndex((p) => p.id === task.project_id) || 0);
-      }}
+      onFocus={() => dispatchCustomFocusEvent(task.id, task.project_id)}
       tabIndex={focusedTaskId === task.id ? 0 : -1}
       ref={taskRef}
       className={cn(

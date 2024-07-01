@@ -2,7 +2,7 @@ import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
-import type { Project } from '~/types';
+import type { Project, TaskCardFocusEvent } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
 import { Bird, Redo } from 'lucide-react';
@@ -188,6 +188,20 @@ export default function Board() {
   useEffect(() => {
     if (workspaces[workspace.id].viewOptions) setViewOptions(workspaces[workspace.id].viewOptions);
   }, [workspaces[workspace.id]]);
+
+  useEffect(() => {
+    const handleFocus = (event: Event) => {
+      const { taskId, projectId } = (event as TaskCardFocusEvent).detail;
+      setFocusedTaskId(taskId);
+      setFocusedProjectIndex(mappedProjects.findIndex((p) => p.id === projectId) || 0);
+    };
+
+    document.addEventListener('task-card-focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('task-card-focus', handleFocus);
+    };
+  }, []);
 
   if (!mappedProjects.length) {
     return (
