@@ -14,7 +14,7 @@ import SelectStatus, { statusVariants, taskStatuses, type TaskStatus } from '../
 import { toast } from 'sonner';
 import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
-import { Project } from '~/types';
+import type { Project } from '~/types';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useQuery } from '@tanstack/react-query';
 import { getProject } from '~/api/projects';
@@ -52,9 +52,9 @@ export const useColumns = () => {
           tabIndex={tabIndex}
           to="/user/$idOrSlug"
           params={{ idOrSlug: row.slug }}
-          className="flex space-x-2 items-center outline-0 ring-0 group"
+          className="inline-flex flex-wrap w-auto outline-0 ring-0 group"
         >
-          <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.summary || '-'}</span>
+          <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>
         </Link>
       ),
     },
@@ -119,7 +119,7 @@ export const useColumns = () => {
               const { data: project } = useQuery<Project>({
                 queryKey: ['projects', row.project_id],
                 queryFn: () => getProject(row.project_id),
-                staleTime: Infinity,
+                staleTime: Number.POSITIVE_INFINITY,
               });
 
               if (!project) return row.project_id;
