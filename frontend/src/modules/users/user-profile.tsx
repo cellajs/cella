@@ -39,17 +39,17 @@ export const UserProfile = ({ user }: { user: User }) => {
           panel={
             <>
               {isSelf && (
-                <div className="flex items-center p-2">
+                <div className="max-xs:hidden flex items-center p-2">
                   <Button size="sm" onClick={handleSettingCLick} aria-label="Account settings">
                     <UserCog size={16} />
-                    <span className="max-xs:hidden ml-1">{t('common:settings')}</span>
+                    <span className="max-sm:hidden ml-1">{t('common:settings')}</span>
                   </Button>
                 </div>
               )}
             </>
           }
         />
-        <div className="container mt-4">
+        <div className="container mt-4 mb-12">
           <ProjectsTable userId={user.id} />
         </div>
       </UserContext.Provider>

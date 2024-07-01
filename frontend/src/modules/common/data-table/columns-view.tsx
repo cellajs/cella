@@ -30,8 +30,6 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
     [columns, columnSearch],
   );
 
-  const height = useMemo(() => (filteredColumns.length > 5 ? 6 * 32 - 16 + 4 : filteredColumns.length * 32 + 8), [filteredColumns.length]);
-
   return (
     <DropdownMenu
       onOpenChange={() => {
@@ -47,32 +45,29 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
           </Button>
         </DropdownMenuTrigger>
       </TooltipButton>
-      <DropdownMenuContent align="end" className="min-w-56 pt-2" collisionPadding={16}>
-        <div className="overflow-y-auto relative" style={{ height }}>
-          {filteredColumns.map((column) => (
-            <DropdownMenuCheckboxItem
-              key={column.name as string}
-              className="mx-1"
-              checked={column.visible}
-              onCheckedChange={() =>
-                setColumns((columns) =>
-                  columns.map((c) =>
-                    c.name === column.name
-                      ? {
-                          ...c,
-                          visible: !c.visible,
-                        }
-                      : c,
-                  ),
-                )
-              }
-              onSelect={(e) => e.preventDefault()}
-            >
-              {column.name}
-            </DropdownMenuCheckboxItem>
-          ))}
-          <div className="sticky bottom-0 h-2 bg-gradient-to-t from-popover" />
-        </div>
+      <DropdownMenuContent align="end" className="min-w-56" collisionPadding={16}>
+        {filteredColumns.map((column) => (
+          <DropdownMenuCheckboxItem
+            key={column.name as string}
+            className="min-h-8"
+            checked={column.visible}
+            onCheckedChange={() =>
+              setColumns((columns) =>
+                columns.map((c) =>
+                  c.name === column.name
+                    ? {
+                        ...c,
+                        visible: !c.visible,
+                      }
+                    : c,
+                ),
+              )
+            }
+            onSelect={(e) => e.preventDefault()}
+          >
+            {column.name}
+          </DropdownMenuCheckboxItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

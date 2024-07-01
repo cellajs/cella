@@ -70,18 +70,18 @@ const Combobox: React.FC<ComboboxProps> = ({
           variant="input"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between font-normal"
+          className="w-full justify-between truncate font-normal"
           disabled={disabled}
         >
           {selectedOption ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center truncate gap-2">
               {name !== 'timezone' && name !== 'country' && (
-                <AvatarWrap className="h-6 w-6 text-xs" id={selectedOption.value} name={name} url={selectedOption.url} />
+                <AvatarWrap className="h-6 w-6 text-xs shrink-0" id={selectedOption.value} name={name} url={selectedOption.url} />
               )}
-              {renderOption && selectedOption ? renderOption(selectedOption) : selectedOption.label}
+              {renderOption && selectedOption ? renderOption(selectedOption) : <span className="truncate">{selectedOption.label}</span>}
             </div>
           ) : (
-            placeholder || ''
+            <span className="truncate">{placeholder || ''}</span>
           )}
           <ChevronDown className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
