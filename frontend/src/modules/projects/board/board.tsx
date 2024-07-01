@@ -12,7 +12,6 @@ import { boardProjectFiltering } from '../helpers';
 import { type Task, useElectric } from '../../common/electric/electrify';
 import { useLiveQuery } from 'electric-sql/react';
 import { taskStatuses } from '../tasks-table/status';
-import { boardTaskFiltering } from '../helpers';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 
@@ -75,13 +74,11 @@ function BoardDesktop({
 }
 
 export default function Board() {
-  const { workspace, searchQuery, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId } = useWorkspaceContext(
-    ({ workspace, searchQuery, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId }) => ({
+  const { workspace, searchQuery, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceContext(
+    ({ workspace, searchQuery, projects, focusedTaskId, setFocusedTaskId }) => ({
       workspace,
       searchQuery,
       projects,
-      focusedProjectIndex,
-      setFocusedProjectIndex,
       focusedTaskId,
       setFocusedTaskId,
     }),
@@ -141,39 +138,45 @@ export default function Board() {
     }));
   };
 
-  const focusedProjectTasks = useMemo(() => {
-    const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === mappedProjects[focusedProjectIndex || 0]?.id);
-    return boardTaskFiltering(tasks, mappedProjects[focusedProjectIndex || 0]?.id, projectSettings);
-  }, [tasks, mappedProjects, focusedProjectIndex, workspaces, workspace.id]);
-
   const handleVerticalArrowKeyDown = (event: KeyboardEvent) => {
-    if (focusedProjectIndex === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
-    if (!focusedProjectTasks.length) return;
+    if (!tasks.length || !mappedProjects.length) return;
 
-    const currentIndex = focusedProjectTasks.findIndex((t) => t.id === focusedTaskId);
-    let nextIndex = currentIndex;
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
+    const direction = (event.key === 'ArrowDown') ? 1 : -1;
 
-    if (event.key === 'ArrowDown') nextIndex = currentIndex === focusedProjectTasks.length - 1 ? 0 : currentIndex + 1;
-    if (event.key === 'ArrowUp') nextIndex = currentIndex === 0 ? focusedProjectTasks.length - 1 : currentIndex - 1;
-    setFocusedTaskId(focusedProjectTasks[nextIndex].id); // Set the focused task id
+    console.log('focusedTask', focusedTask.project_id, focusedTask.id, direction);
+
+    // TODO, dispatch CustomEvent to board-column of project to find the correct task AND then scroll to it.
+    // 
   };
 
   const handleHorizontalArrowKeyDown = (event: KeyboardEvent) => {
-    if (!tasks.length) return;
-    const projectIndex = focusedProjectIndex || 0;
+    if (!tasks.length || !mappedProjects.length) return;
+
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
+    const projectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
+
     let nextIndex = projectIndex;
-    if (event.key === 'ArrowRight') nextIndex = projectIndex === mappedProjects.length - 1 ? 0 : projectIndex + 1;
-    if (event.key === 'ArrowLeft') nextIndex = projectIndex <= 0 ? mappedProjects.length - 1 : projectIndex - 1;
-    setFocusedProjectIndex(nextIndex);
-    const newProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === mappedProjects[nextIndex]?.id);
-    const newProjectTasks = boardTaskFiltering(tasks, mappedProjects[nextIndex]?.id, newProjectSettings);
-    if (newProjectTasks.length > 0) return setFocusedTaskId(newProjectTasks[0].id);
-    return setFocusedTaskId(null);
+    if (event.key === 'ArrowRight') nextIndex = projectIndex + 1;
+    else nextIndex = projectIndex - 1;
+
+    const nextProject = mappedProjects[nextIndex];
+    if (!nextProject) return;
+
+    console.log('go to this project and focus on first task', nextProject.id);
+
+        // TODO, dispatch CustomEvent to board-column of project to find the FIRST task AND then scroll to it.
+
   };
 
-  const handlePlusKeyDown = () => {
-    if (focusedProjectIndex === null) setFocusedProjectIndex(0);
-    const projectIndex = focusedProjectIndex === null ? 0 : focusedProjectIndex;
+  const handleTKeyDown = () => {
+    if (!tasks.length || !mappedProjects.length) return;
+
+    console.log('create task in focused project');
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
+    const projectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
+    if (projectIndex === -1) return;
+
     toggleCreateTaskForm(mappedProjects[projectIndex].id);
   };
 
@@ -182,7 +185,7 @@ export default function Board() {
     ['ArrowLeft', handleHorizontalArrowKeyDown],
     ['ArrowDown', handleVerticalArrowKeyDown],
     ['ArrowUp', handleVerticalArrowKeyDown],
-    ['+', handlePlusKeyDown],
+    ['T', handleTKeyDown],
   ]);
 
   useEffect(() => {
@@ -191,9 +194,8 @@ export default function Board() {
 
   useEffect(() => {
     const handleFocus = (event: Event) => {
-      const { taskId, projectId } = (event as TaskCardFocusEvent).detail;
+      const { taskId } = (event as TaskCardFocusEvent).detail;
       setFocusedTaskId(taskId);
-      setFocusedProjectIndex(mappedProjects.findIndex((p) => p.id === projectId) || 0);
     };
 
     document.addEventListener('task-card-focus', handleFocus);
