@@ -172,7 +172,7 @@ export function TaskCard({
     latency: 250,
   });
 
-  console.log('rerender task');
+  // console.log('rerender task');
 
   const handleEscKeyPress = () => {
     if (focusedTaskId !== task.id) return;
@@ -235,7 +235,6 @@ export function TaskCard({
                     setSelectedTasks([...selectedTasks, task.id]);
                     return;
                   }
-
                   setSelectedTasks(selectedTasks.filter((id) => id !== task.id));
                 }}
               />
@@ -324,139 +323,132 @@ export function TaskCard({
             </div>
           </div>
           <div className="flex items-start justify-between gap-1">
-                {task.type !== 'bug' && (
-                  <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)}>
-                    <Button
-                      aria-label="Set impact"
-                      variant="ghost"
-                      size="xs"
-                      className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
-                    >
-                      {selectedImpact !== null ? (
-                        <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
-                      ) : (
-                        <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
-                      )}
-                    </Button>
-                  </SelectImpact>
-                )}
-
-                {
-                  // TODO: Bind the entire task object instead of individual IDs
-                }
-                <SetLabels
-                  labels={labels}
-                  value={labels.filter((l) => task.labels?.includes(l.id))}
-                  organizationId={task.organization_id}
-                  projectId={task.project_id}
-                  changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
+            {task.type !== 'bug' && (
+              <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)}>
+                <Button
+                  aria-label="Set impact"
+                  variant="ghost"
+                  size="xs"
+                  className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
                 >
-                  <Button
-                    aria-label="Set labels"
-                    variant="ghost"
-                    size="xs"
-                    className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
-                  >
-                    <div className="flex truncate flex-wrap gap-[.07rem]">
-                      {labels.filter((l) => task.labels?.includes(l.id)).length > 0 ? (
-                        labels
-                          .filter((l) => task.labels?.includes(l.id))
-                          .map(({ name, id, color }) => {
-                            return (
-                              <div
-                                key={id}
-                                style={badgeStyle(color)}
-                                className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
-                              >
-                                <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
-                                  {name}
-                                </Badge>
-                              </div>
-                            );
-                          })
-                      ) : (
-                        <Tag size={16} className="opacity-50" />
-                      )}
-                    </div>
-                  </Button>
-                </SetLabels>
-                <div className="flex gap-1 ml-auto mr-1">
-                  <AssignMembers
-                    users={members}
-                    value={members.filter((m) => task.assigned_to?.includes(m.id))}
-                    changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
-                  >
-                    <Button
-                      aria-label="Assign"
-                      variant="ghost"
-                      size="xs"
-                      className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
-                    >
-                      {members.filter((m) => task.assigned_to?.includes(m.id)).length ? (
-                        <AvatarGroup limit={3}>
-                          <AvatarGroupList>
-                            {members
-                              .filter((m) => task.assigned_to?.includes(m.id))
-                              .map((user) => (
-                                <AvatarWrap
-                                  type="USER"
-                                  key={user.id}
-                                  id={user.id}
-                                  name={user.name}
-                                  url={user.thumbnailUrl}
-                                  className="h-6 w-6 text-xs"
-                                />
-                              ))}
-                          </AvatarGroupList>
-                          <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
-                        </AvatarGroup>
-                      ) : (
-                        <UserX className="h-4 w-4 opacity-50" />
-                      )}
-                    </Button>
-                  </AssignMembers>
-                  <SelectStatus
-                    taskStatus={task.status as TaskStatus}
-                    changeTaskStatus={(newStatus) => {
-                      handleChange('status', newStatus, task.id);
-                      toast.success(t('common:success.new_status', { status: t(taskStatuses[newStatus as TaskStatus].status).toLowerCase() }));
-                    }}
-                    nextButton={
-                      <Button
-                        variant="outlineGhost"
-                        size="xs"
-                        className={cn(
-                          'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100',
-                          statusVariants({ status: task.status as TaskStatus }),
-                        )}
-                        onClick={() => {
-                          handleChange('status', task.status + 1, task.id);
-                          toast.success(
-                            t('common:success.new_status', { status: t(taskStatuses[(task.status + 1) as TaskStatus].status).toLowerCase() }),
-                          );
-                        }}
-                        disabled={(task.status as TaskStatus) === 6}
-                      >
-                        {t(taskStatuses[task.status as TaskStatus].action)}
-                      </Button>
-                    }
-                    inputPlaceholder={t('common:placeholder.set_status')}
-                    trigger={
-                      <Button
-                        aria-label="Set status"
-                        variant="outlineGhost"
-                        size="xs"
-                        className={cn(
-                          statusVariants({ status: task.status as TaskStatus }),
-                          'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
-                        )}
-                      >
-                        <ChevronDown size={12} />
-                      </Button>
-                    }
-                  />
+                  {selectedImpact !== null ? (
+                    <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                  ) : (
+                    <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+                  )}
+                </Button>
+              </SelectImpact>
+            )}
+
+            {
+              // TODO: Bind the entire task object instead of individual IDs
+            }
+            <SetLabels
+              labels={labels}
+              value={labels.filter((l) => task.labels?.includes(l.id))}
+              organizationId={task.organization_id}
+              projectId={task.project_id}
+              changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
+            >
+              <Button
+                aria-label="Set labels"
+                variant="ghost"
+                size="xs"
+                className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
+              >
+                <div className="flex truncate flex-wrap gap-[.07rem]">
+                  {labels.filter((l) => task.labels?.includes(l.id)).length > 0 ? (
+                    labels
+                      .filter((l) => task.labels?.includes(l.id))
+                      .map(({ name, id, color }) => {
+                        return (
+                          <div
+                            key={id}
+                            style={badgeStyle(color)}
+                            className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
+                          >
+                            <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
+                              {name}
+                            </Badge>
+                          </div>
+                        );
+                      })
+                  ) : (
+                    <Tag size={16} className="opacity-50" />
+                  )}
                 </div>
-              </div>
+              </Button>
+            </SetLabels>
+            <div className="flex gap-1 ml-auto mr-1">
+              <AssignMembers
+                users={members}
+                value={members.filter((m) => task.assigned_to?.includes(m.id))}
+                changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
+              >
+                <Button
+                  aria-label="Assign"
+                  variant="ghost"
+                  size="xs"
+                  className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+                >
+                  {members.filter((m) => task.assigned_to?.includes(m.id)).length ? (
+                    <AvatarGroup limit={3}>
+                      <AvatarGroupList>
+                        {members
+                          .filter((m) => task.assigned_to?.includes(m.id))
+                          .map((user) => (
+                            <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                          ))}
+                      </AvatarGroupList>
+                      <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
+                    </AvatarGroup>
+                  ) : (
+                    <UserX className="h-4 w-4 opacity-50" />
+                  )}
+                </Button>
+              </AssignMembers>
+              <SelectStatus
+                taskStatus={task.status as TaskStatus}
+                changeTaskStatus={(newStatus) => {
+                  handleChange('status', newStatus, task.id);
+                  toast.success(t('common:success.new_status', { status: t(taskStatuses[newStatus as TaskStatus].status).toLowerCase() }));
+                }}
+                nextButton={
+                  <Button
+                    variant="outlineGhost"
+                    size="xs"
+                    className={cn(
+                      'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100',
+                      statusVariants({ status: task.status as TaskStatus }),
+                    )}
+                    onClick={() => {
+                      handleChange('status', task.status + 1, task.id);
+                      toast.success(
+                        t('common:success.new_status', { status: t(taskStatuses[(task.status + 1) as TaskStatus].status).toLowerCase() }),
+                      );
+                    }}
+                    disabled={(task.status as TaskStatus) === 6}
+                  >
+                    {t(taskStatuses[task.status as TaskStatus].action)}
+                  </Button>
+                }
+                inputPlaceholder={t('common:placeholder.set_status')}
+                trigger={
+                  <Button
+                    aria-label="Set status"
+                    variant="outlineGhost"
+                    size="xs"
+                    className={cn(
+                      statusVariants({ status: task.status as TaskStatus }),
+                      'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
+                    )}
+                  >
+                    <ChevronDown size={12} />
+                  </Button>
+                }
+              />
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

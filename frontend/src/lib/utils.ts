@@ -10,7 +10,7 @@ import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
-import type { DraggableItemData, Project, UserMenuItem } from '~/types';
+import type { DraggableItemData, UserMenuItem } from '~/types';
 import { useNavigationStore } from '~/store/navigation';
 
 dayjs.extend(calendar);
@@ -168,14 +168,4 @@ export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 
     ...menu,
     [storage]: updatedStorage,
   };
-};
-
-// filtering and sort of projects on board
-export const boardProjectFiltering = (projects: Project[]) => {
-  return projects
-    .filter((p) => p.membership && !p.membership.archived)
-    .sort((a, b) => {
-      if (a.membership === null || b.membership === null) return 0;
-      return a.membership.order - b.membership.order;
-    });
 };
