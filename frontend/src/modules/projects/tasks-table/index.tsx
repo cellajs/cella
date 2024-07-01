@@ -13,6 +13,7 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import SelectStatus from './status';
 import { useLiveQuery } from 'electric-sql/react';
+import ColumnsView from '~/modules/common/data-table/columns-view';
 
 const renderRow = (key: Key, props: RenderRowProps<Task>) => {
   return (
@@ -36,7 +37,7 @@ export default function TasksTable() {
       setSearchQuery,
     }),
   );
-  const [columns] = useColumns();
+  const [columns, setColumns] = useColumns();
   const [rows, setRows] = useState<Task[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
@@ -195,7 +196,7 @@ export default function TasksTable() {
             {/* <TableSearch value={query} setQuery={onSearch} /> */}
           </FilterBarContent>
         </TableFilterBar>
-        {/* <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} /> */}
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         {/* <Export
           className="max-lg:hidden"
           filename={`${config.slug}-organizations`}
@@ -227,12 +228,7 @@ export default function TasksTable() {
           enableVirtualization: false,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <ContentPlaceholder
-              Icon={Bird}
-              title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
-            />
-          ),
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
         }}
       />
     </div>

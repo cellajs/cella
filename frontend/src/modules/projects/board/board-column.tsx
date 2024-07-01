@@ -85,7 +85,7 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
       if (showIced && t.status === 0) return true;
       return t.status !== 0 && t.status !== 6;
     });
-    return filteredByStatus.filter((t) => !t.parent_id).sort((a, b) => sortTaskOrder(a, b));
+    return filteredByStatus.sort((a, b) => sortTaskOrder(a, b));
   }, [showAccepted, showIced, tasks]);
 
   const handleIcedClick = () => {
