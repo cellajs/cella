@@ -1,5 +1,5 @@
 import { Bird, Plus } from 'lucide-react';
-import { type Key, useEffect, useState } from 'react';
+import { type Key, useEffect, useState, useMemo } from 'react';
 import { type RenderRowProps, Row, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -49,96 +49,8 @@ export default function TasksTable() {
 
   const isFiltered = !!searchQuery || selectedStatuses.length > 0;
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
-
-  // TODO: Refactor this when Electric supports count
-  const { results: allTasks } = useLiveQuery(
-    electric.db.tasks.liveMany({
-      select: {
-        id: true,
-      },
-
-      where: {
-        project_id: {
-          in: projects.map((project) => project.id),
-        },
-        ...(selectedStatuses.length > 0 && {
-          status: {
-            in: selectedStatuses,
-          },
-        }),
-        OR: [
-          {
-            summary: {
-              contains: searchQuery,
-            },
-          },
-          {
-            markdown: {
-              contains: searchQuery,
-            },
-          },
-        ],
-      },
-    }),
-  );
-
-  useEffect(() => {
-    (async () => {
-      setIsFetching(true);
-      const newOffset = 0;
-      setOffset(newOffset);
-      const results = await electric.db.tasks.findMany({
-        where: {
-          project_id: {
-            in: projects.map((project) => project.id),
-          },
-          ...(selectedStatuses.length > 0 && {
-            status: {
-              in: selectedStatuses,
-            },
-          }),
-          OR: [
-            {
-              summary: {
-                contains: searchQuery,
-              },
-            },
-            {
-              markdown: {
-                contains: searchQuery,
-              },
-            },
-          ],
-        },
-        take: LIMIT,
-        skip: newOffset,
-        orderBy: {
-          [sort]: order,
-        },
-      });
-      setTasks(results as Task[]);
-      setIsFetching(false);
-    })();
-  }, [projects, sort, order, searchQuery, selectedStatuses]);
-
-  // const filteredTasks = useMemo(() => {
-  //   if (!tasks) return;
-  //   if (!searchQuery) return tasks;
-  //   return tasks.filter(
-  //     (task) =>
-  //       task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //       task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //       task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
-  //   );
-  // }, [tasks, searchQuery]);
-
-  const fetchMore = async () => {
-    setIsFetching(true);
-    const newOffset = offset + LIMIT;
-    setOffset(newOffset);
-    const results = await electric.db.tasks.findMany({
+  const queryOptions = useMemo(() => {
+    return {
       where: {
         project_id: {
           in: projects.map((project) => project.id),
@@ -162,10 +74,57 @@ export default function TasksTable() {
         ],
       },
       take: LIMIT,
-      skip: newOffset,
+      skip: offset,
       orderBy: {
         [sort]: order,
       },
+    };
+  }, [projects, sort, order, searchQuery, selectedStatuses, offset]);
+
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const electric = useElectric()!;
+
+  // TODO: Refactor this when Electric supports count
+  const { results: allTasks } = useLiveQuery(
+    electric.db.tasks.liveMany({
+      select: {
+        id: true,
+      },
+      where: queryOptions.where,
+    }),
+  );
+
+  useEffect(() => {
+    (async () => {
+      setIsFetching(true);
+      const newOffset = 0;
+      setOffset(newOffset);
+      const results = await electric.db.tasks.findMany({
+        ...queryOptions,
+      });
+      setTasks(results as Task[]);
+      setIsFetching(false);
+    })();
+  }, [projects, sort, order, searchQuery, selectedStatuses]);
+
+  // const filteredTasks = useMemo(() => {
+  //   if (!tasks) return;
+  //   if (!searchQuery) return tasks;
+  //   return tasks.filter(
+  //     (task) =>
+  //       task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+  //   );
+  // }, [tasks, searchQuery]);
+
+  const fetchMore = async () => {
+    setIsFetching(true);
+    const newOffset = offset + LIMIT;
+    setOffset(newOffset);
+    const results = await electric.db.tasks.findMany({
+      ...queryOptions,
+      skip: newOffset,
     });
     setTasks((prevTasks) => [...prevTasks, ...(results as Task[])]);
     setIsFetching(false);
