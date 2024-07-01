@@ -14,6 +14,7 @@ import { useUserStore } from '~/store/user';
 import SelectStatus from './status';
 import { useLiveQuery } from 'electric-sql/react';
 import ColumnsView from '~/modules/common/data-table/columns-view';
+import SelectProject from './project';
 
 const renderRow = (key: Key, props: RenderRowProps<Task>) => {
   return (
@@ -41,6 +42,7 @@ export default function TasksTable() {
   const [rows, setRows] = useState<Task[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
   const [isFetching, setIsFetching] = useState(false);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'created_at', direction: 'DESC' }]);
@@ -54,7 +56,7 @@ export default function TasksTable() {
     return {
       where: {
         project_id: {
-          in: projects.map((project) => project.id),
+          in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
         },
         ...(selectedStatuses.length > 0 && {
           status: {
@@ -81,7 +83,7 @@ export default function TasksTable() {
         [sort]: order,
       },
     };
-  }, [projects, sort, order, searchQuery, selectedStatuses, offset]);
+  }, [projects, sort, order, searchQuery, selectedStatuses, offset, selectedProjects]);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
@@ -107,7 +109,7 @@ export default function TasksTable() {
       setTasks(results as Task[]);
       setIsFetching(false);
     })();
-  }, [projects, sort, order, searchQuery, selectedStatuses]);
+  }, [queryOptions]);
 
   // const filteredTasks = useMemo(() => {
   //   if (!tasks) return;
@@ -193,6 +195,11 @@ export default function TasksTable() {
 
           <FilterBarContent>
             <SelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
+            <SelectProject
+              projects={projects}
+              selectedProjects={selectedProjects}
+              setSelectedProjects={setSelectedProjects}
+            />
             {/* <TableSearch value={query} setQuery={onSearch} /> */}
           </FilterBarContent>
         </TableFilterBar>
@@ -228,7 +235,12 @@ export default function TasksTable() {
           enableVirtualization: false,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
+          NoRowsComponent: (
+            <ContentPlaceholder
+              Icon={Bird}
+              title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
+            />
+          ),
         }}
       />
     </div>
