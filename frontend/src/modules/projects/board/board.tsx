@@ -1,4 +1,4 @@
-import { Fragment, type LegacyRef, useEffect, useState } from 'react';
+import { Fragment, type LegacyRef, useMemo } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
@@ -8,6 +8,8 @@ import { BoardColumn } from './board-column';
 import { Bird, Redo } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { boardProjectFiltering } from '~/lib/utils';
+
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
 const EMPTY_SPACE_WIDTH = 300;
@@ -54,26 +56,8 @@ export default function Board() {
     projects,
   }));
   const { t } = useTranslation();
-  const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects
-      .filter((p) => p.membership && !p.membership.archived)
-      .sort((a, b) => {
-        if (a.membership === null || b.membership === null) return 0;
-        return a.membership.order - b.membership.order;
-      }),
-  );
   const isDesktopLayout = useBreakpoints('min', 'sm');
-
-  useEffect(() => {
-    setMappedProjects(
-      projects
-        .filter((p) => p.membership && !p.membership.archived)
-        .sort((a, b) => {
-          if (a.membership === null || b.membership === null) return 0;
-          return a.membership.order - b.membership.order;
-        }),
-    );
-  }, [projects]);
+  const mappedProjects = useMemo(() => boardProjectFiltering(projects), [projects]);
 
   if (!mappedProjects.length) {
     return (
