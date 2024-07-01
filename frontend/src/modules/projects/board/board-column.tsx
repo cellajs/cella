@@ -4,11 +4,11 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { useQuery } from '@tanstack/react-query';
 import { useLiveQuery } from 'electric-sql/react';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { cn, getReorderDestinationOrder } from '~/lib/utils';
-import { sortTaskOrder } from '~/modules/projects/task/helpers';
+import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
@@ -57,6 +57,8 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
 
+  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced);
+
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
     queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'PROJECT' }).then((data) => data.items),
@@ -75,18 +77,6 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
   ) as {
     results: Label[] | undefined;
   };
-
-  const acceptedCount = useMemo(() => tasks.filter((t) => !t.parent_id && t.status === 6).length || 0, [tasks]);
-  const icedCount = useMemo(() => tasks.filter((t) => t.status === 0).length || 0, [tasks]);
-
-  const showingTasks = useMemo(() => {
-    const filteredByStatus = tasks.filter((t) => {
-      if (showAccepted && t.status === 6) return true;
-      if (showIced && t.status === 0) return true;
-      return t.status !== 0 && t.status !== 6;
-    });
-    return filteredByStatus.sort((a, b) => sortTaskOrder(a, b));
-  }, [showAccepted, showIced, tasks]);
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
