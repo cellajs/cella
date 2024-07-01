@@ -1,20 +1,21 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
-import type { Entity } from 'backend/types/common';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
+// @ts-ignore
 import calendar from 'dayjs/plugin/calendar';
-import relativeTime from 'dayjs/plugin/relativeTime';
+// import relativeTime from 'dayjs/plugin/relativeTime';
 import i18next from 'i18next';
 import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
-import type { DraggableItemData, UserMenuItem } from '~/types';
-import { useNavigationStore } from '~/store/navigation';
+import type { Task } from '~/modules/common/root/electric';
+import type { DraggableItemData } from '~/types';
 
-dayjs.extend(calendar);
-dayjs.extend(relativeTime);
+// TODO: SSRs do not work and I want to make sure they work at client time
+// dayjs.extend(calendar);
+// dayjs.extend(relativeTime);
 
 // Format a date to a relative time
 export function dateShort(date?: string | null | Date) {
@@ -118,53 +119,44 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
   throw redirect({ to: pathname + redirectLocation, replace: true });
 };
 
-export const getDraggableItemData = <T>(item: T, itemOrder: number, type: 'task' | 'menuItem', itemType: Entity): DraggableItemData<T> => {
-  return { dragItem: true, item, order: itemOrder, type, itemType: itemType };
+// To sort Tasks by its status & order
+export const sortTaskOrder = (task1: Task, task2: Task) => {
+  if (task1.status !== task2.status) return task2.status - task1.status;
+  // same status, sort by sort_order
+  if (task1.sort_order !== null && task2.sort_order !== null) return task2.sort_order - task1.sort_order;
+  // sort_order is null
+  return 0;
 };
 
-// To get target order for drop on DnD
-export const getReorderDestinationOrder = (
-  targetOrder: number,
+export const arrayMove = (array: string[], startIndex: number, endIndex: number) => {
+  const newArray = [...array];
+  const [removedElement] = newArray.splice(startIndex, 1);
+  newArray.splice(endIndex, 0, removedElement);
+  return newArray;
+};
+
+export const getDraggableItemData = <T>(item: T, itemIndex: number, type: 'task' | 'column' | 'menuItem'): DraggableItemData<T> => {
+  return { dragItem: true, item, index: itemIndex, type };
+};
+
+// To get target index for drop on DnD
+export const getReorderDestinationIndex = (
+  currentIndex: number,
   closestEdgeOfTarget: Edge | null,
+  targetIndex: number,
   axis: 'vertical' | 'horizontal',
-  sourceOrder?: number,
 ): number => {
-  if (!closestEdgeOfTarget && sourceOrder) {
-    if (sourceOrder > targetOrder) return targetOrder - 0.01;
-    if (sourceOrder < targetOrder) return targetOrder + 0.01;
-  }
-  if (axis === 'horizontal') {
-    if (closestEdgeOfTarget === 'left') return targetOrder - 0.01;
-    if (closestEdgeOfTarget === 'right') return targetOrder + 0.01;
-  }
+  // if (axis === 'horizontal') {
+  //   if (closestEdgeOfTarget === 'left') {
+  //     return indexOfTarget;
+  //   } else if (closestEdgeOfTarget === 'right') {
+  //     return indexOfTarget + 1;
+  //   }
+  // } else
   if (axis === 'vertical') {
-    if (closestEdgeOfTarget === 'top') return targetOrder - 0.01;
-    if (closestEdgeOfTarget === 'bottom') return targetOrder + 0.01;
+    if (closestEdgeOfTarget === 'top') return targetIndex - 1;
+
+    if (closestEdgeOfTarget === 'bottom') return targetIndex;
   }
-
-  return targetOrder;
-};
-
-// adding new item on local store user's menu
-export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 'workspaces') => {
-  const menu = useNavigationStore.getState().menu;
-
-  const add = (items: UserMenuItem[]): UserMenuItem[] => {
-    return items.map((item) => {
-      if (item.id === newEntity.parentId) {
-        return {
-          ...item,
-          submenu: item.submenu ? [...item.submenu, newEntity] : [newEntity],
-        };
-      }
-      return item;
-    });
-  };
-
-  const updatedStorage = newEntity.parentId ? add(menu[storage]) : [...menu[storage], newEntity];
-
-  return {
-    ...menu,
-    [storage]: updatedStorage,
-  };
+  return currentIndex;
 };
