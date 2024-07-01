@@ -12,6 +12,7 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import SelectStatus from './status';
+import { useLiveQuery } from 'electric-sql/react';
 
 const renderRow = (key: Key, props: RenderRowProps<Task>) => {
   return (
@@ -50,6 +51,38 @@ export default function TasksTable() {
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
+
+  // TODO: Refactor this when Electric supports count
+  const { results: allTasks } = useLiveQuery(
+    electric.db.tasks.liveMany({
+      select: {
+        id: true,
+      },
+
+      where: {
+        project_id: {
+          in: projects.map((project) => project.id),
+        },
+        ...(selectedStatuses.length > 0 && {
+          status: {
+            in: selectedStatuses,
+          },
+        }),
+        OR: [
+          {
+            summary: {
+              contains: searchQuery,
+            },
+          },
+          {
+            markdown: {
+              contains: searchQuery,
+            },
+          },
+        ],
+      },
+    }),
+  );
 
   useEffect(() => {
     (async () => {
@@ -222,6 +255,7 @@ export default function TasksTable() {
           limit: 10,
           rowHeight: 42,
           onRowsChange,
+          totalCount: allTasks?.length,
           isLoading: tasks === undefined,
           isFetching,
           renderRow,
@@ -233,7 +267,12 @@ export default function TasksTable() {
           enableVirtualization: false,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
+          NoRowsComponent: (
+            <ContentPlaceholder
+              Icon={Bird}
+              title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
+            />
+          ),
         }}
       />
     </div>
