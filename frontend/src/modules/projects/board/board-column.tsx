@@ -22,13 +22,13 @@ import { sheet } from '../../common/sheeter/state';
 import CreateTaskForm from '../task/create-task-form';
 import { DraggableTaskCard, isTaskData } from '../task/draggable-task-card';
 import { TaskProvider } from '../task/task-context';
-import { taskStatuses } from '../task/task-selectors/select-status';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
 import { ProjectProvider } from './project-context';
 import { ProjectSettings } from '../project-settings';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { WorkspaceRoute } from '~/routes/workspaces';
+import { taskStatuses } from '../tasks-table/status';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -45,19 +45,36 @@ export function BoardColumn({ project }: BoardColumnProps) {
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
-  const { workspace, searchQuery, selectedTasks, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId } =
-    useWorkspaceContext(
-      ({ workspace, searchQuery, selectedTasks, projects, focusedProjectIndex, setFocusedProjectIndex, focusedTaskId, setFocusedTaskId }) => ({
-        workspace,
-        searchQuery,
-        selectedTasks,
-        projects,
-        focusedProjectIndex,
-        setFocusedProjectIndex,
-        focusedTaskId,
-        setFocusedTaskId,
-      }),
-    );
+  const {
+    workspace,
+    searchQuery,
+    selectedTasks,
+    projects,
+    focusedProjectIndex,
+    setFocusedProjectIndex,
+    focusedTaskId,
+    setFocusedTaskId,
+  } = useWorkspaceContext(
+    ({
+      workspace,
+      searchQuery,
+      selectedTasks,
+      projects,
+      focusedProjectIndex,
+      setFocusedProjectIndex,
+      focusedTaskId,
+      setFocusedTaskId,
+    }) => ({
+      workspace,
+      searchQuery,
+      selectedTasks,
+      projects,
+      focusedProjectIndex,
+      setFocusedProjectIndex,
+      focusedTaskId,
+      setFocusedTaskId,
+    }),
+  );
   const { workspaces, changeColumn, getWorkspaceViewOptions } = useWorkspaceStore();
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
 
@@ -75,10 +92,37 @@ export function BoardColumn({ project }: BoardColumnProps) {
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
 
+  // TODO: Add debounce to searchQuery
   const { results: tasks = [], updatedAt } = useLiveQuery(
     electric.db.tasks.liveMany({
       where: {
         project_id: project.id,
+        // ...(selectedStatuses.length > 0 && {
+        //   status: {
+        //     in: selectedStatuses,
+        //   },
+        // }),
+        ...(viewOptions.type.length > 0 && {
+          type: {
+            in: viewOptions.type,
+          },
+        }),
+        parent_id: null,
+        OR: [
+          {
+            summary: {
+              contains: searchQuery,
+            },
+          },
+          {
+            markdown: {
+              contains: searchQuery,
+            },
+          },
+        ],
+        status: {
+          in: [0, 6, ...viewOptions.status.map((s) => taskStatuses.find(({ status }) => status === s)?.value || 0)],
+        },
       },
       orderBy: {
         sort_order: 'asc',
@@ -99,40 +143,17 @@ export function BoardColumn({ project }: BoardColumnProps) {
     results: Label[] | undefined;
   };
 
-  const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    return tasks.filter(
-      (task) =>
-        task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [searchQuery, tasks]);
-
-  const filteredByViewOptionsTasks = useMemo(() => {
-    return filteredTasks.filter(
-      (task) =>
-        viewOptions.type.includes(task.type) &&
-        (task.status === 0 || task.status === 6 || viewOptions.status.includes(taskStatuses[task.status].status)),
-      // add to task label status and filter by status of label too
-    );
-  }, [viewOptions, filteredTasks]);
-
-  const acceptedCount = useMemo(
-    () => filteredByViewOptionsTasks.filter((t) => !t.parent_id && t.status === 6).length || 0,
-    [filteredByViewOptionsTasks],
-  );
-  const icedCount = useMemo(() => filteredByViewOptionsTasks.filter((t) => t.status === 0).length || 0, [filteredByViewOptionsTasks]);
-  const sortedTasks = useMemo(() => filteredByViewOptionsTasks.sort((a, b) => sortTaskOrder(a, b)) || [], [filteredByViewOptionsTasks]);
+  const acceptedCount = useMemo(() => tasks.filter((t) => !t.parent_id && t.status === 6).length || 0, [tasks]);
+  const icedCount = useMemo(() => tasks.filter((t) => t.status === 0).length || 0, [tasks]);
 
   const showingTasks = useMemo(() => {
-    const filteredByStatus = sortedTasks.filter((t) => {
+    const filteredByStatus = tasks.filter((t) => {
       if (showAccepted && t.status === 6) return true;
       if (showIced && t.status === 0) return true;
       return t.status !== 0 && t.status !== 6;
     });
     return filteredByStatus.filter((t) => !t.parent_id);
-  }, [showAccepted, showIced, sortedTasks]);
+  }, [showAccepted, showIced, tasks]);
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
@@ -177,7 +198,7 @@ export function BoardColumn({ project }: BoardColumnProps) {
     if (focusedProjectIndex === null) setFocusedProjectIndex(0); // if user starts with Arrow Down or Up, set focusProject on index 0
     if (projects[focusedProjectIndex || 0].id !== project.id) return;
 
-    let filteredTasks = sortedTasks;
+    let filteredTasks = tasks;
 
     if (!showAccepted) filteredTasks = filteredTasks.filter((t) => t.status !== 6); // if accepted tasks hidden do not focus on them
     if (!showIced) filteredTasks = filteredTasks.filter((t) => t.status !== 0); // if iced tasks hidden do not focus on them
@@ -203,14 +224,16 @@ export function BoardColumn({ project }: BoardColumnProps) {
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (!filteredByViewOptionsTasks.length) return;
+    if (!tasks.length) return;
     const currentIndex = focusedProjectIndex !== null ? focusedProjectIndex : -1;
     let nextIndex = currentIndex;
     if (event.key === 'ArrowRight') nextIndex = currentIndex === projects.length - 1 ? 0 : currentIndex + 1;
     if (event.key === 'ArrowLeft') nextIndex = currentIndex <= 0 ? projects.length - 1 : currentIndex - 1;
     const indexedProject = projects[nextIndex];
     const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === indexedProject.id);
-    const sortedProjectTasks = filteredByViewOptionsTasks.filter((t) => t.project_id === indexedProject.id).sort((a, b) => sortTaskOrder(a, b));
+    const sortedProjectTasks = tasks
+      .filter((t) => t.project_id === indexedProject.id)
+      .sort((a, b) => sortTaskOrder(a, b));
     const lengthWithoutAccepted = sortedProjectTasks.filter((t) => t.status !== 6).length;
 
     setFocusedProjectIndex(nextIndex);
@@ -287,9 +310,13 @@ export function BoardColumn({ project }: BoardColumnProps) {
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
   return (
-    <ProjectProvider key={project.id} project={project} tasks={sortedTasks} labels={labels} members={members}>
+    <ProjectProvider key={project.id} project={project} tasks={tasks} labels={labels} members={members}>
       <div ref={columnRef} className="flex flex-col h-full">
-        <BoardColumnHeader createFormClick={handleTaskFormClick} openSettings={openSettingsSheet} createFormOpen={createForm} />
+        <BoardColumnHeader
+          createFormClick={handleTaskFormClick}
+          openSettings={openSettingsSheet}
+          createFormOpen={createForm}
+        />
         <div
           className={cn(
             'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b opacity-100',
@@ -309,7 +336,12 @@ export function BoardColumn({ project }: BoardColumnProps) {
               <>
                 <div className="h-full" ref={cardListRef}>
                   {!!tasks.length && (
-                    <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
+                    <ScrollArea
+                      ref={scrollableRef}
+                      id={project.id}
+                      size="indicatorVertical"
+                      className="h-full mx-[-.07rem]"
+                    >
                       <ScrollBar size="indicatorVertical" />
                       <div className="flex flex-col px-0">
                         <Button
@@ -323,7 +355,10 @@ export function BoardColumn({ project }: BoardColumnProps) {
                             {acceptedCount} {t('common:accepted').toLowerCase()}
                           </span>
                           {!!acceptedCount && (
-                            <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+                            <ChevronDown
+                              size={16}
+                              className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`}
+                            />
                           )}
                         </Button>
                         {showingTasks.map((task) => (
@@ -342,7 +377,10 @@ export function BoardColumn({ project }: BoardColumnProps) {
                             {icedCount} {t('common:iced').toLowerCase()}
                           </span>
                           {!!icedCount && (
-                            <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />
+                            <ChevronDown
+                              size={16}
+                              className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`}
+                            />
                           )}
                         </Button>
                       </div>
@@ -372,7 +410,10 @@ export function BoardColumn({ project }: BoardColumnProps) {
                     />
                   )}
                   {!tasks.length && searchQuery && (
-                    <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
+                    <ContentPlaceholder
+                      Icon={Search}
+                      title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })}
+                    />
                   )}
                 </div>
               </>

@@ -60,6 +60,7 @@ export default function TasksTable() {
             in: selectedStatuses,
           },
         }),
+        parent_id: null,
         OR: [
           {
             summary: {
