@@ -14,6 +14,10 @@ import SelectStatus, { statusVariants, taskStatuses, type TaskStatus } from '../
 import { toast } from 'sonner';
 import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
+import { Project } from '~/types';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { useQuery } from '@tanstack/react-query';
+import { getProject } from '~/api/projects';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -44,7 +48,12 @@ export const useColumns = () => {
       sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
-        <Link tabIndex={tabIndex} to="/user/$idOrSlug" params={{ idOrSlug: row.slug }} className="flex space-x-2 items-center outline-0 ring-0 group">
+        <Link
+          tabIndex={tabIndex}
+          to="/user/$idOrSlug"
+          params={{ idOrSlug: row.slug }}
+          className="flex space-x-2 items-center outline-0 ring-0 group"
+        >
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.summary || '-'}</span>
         </Link>
       ),
@@ -106,8 +115,37 @@ export const useColumns = () => {
             sortable: true,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => row.project_id,
-            minWidth: 180,
+            renderCell: ({ row, tabIndex }) => {
+              const { data: project } = useQuery<Project>({
+                queryKey: ['projects', row.project_id],
+                queryFn: () => getProject(row.project_id),
+                staleTime: Infinity,
+              });
+
+              if (!project) return row.project_id;
+
+              if (!project.workspaceId)
+                return (
+                  <div className="flex space-x-2 cursor-default items-center outline-0 ring-0 group">
+                    <AvatarWrap type="PROJECT" className="h-8 w-8" id={project.id} name={project.name} />
+                    <span className="truncate font-medium">{project.name || '-'}</span>
+                  </div>
+                );
+              return (
+                <Link
+                  to="/workspaces/$idOrSlug"
+                  tabIndex={tabIndex}
+                  // TODO: Fix this
+                  params={{ idOrSlug: project.workspaceId || project.id }}
+                  className="flex space-x-2 items-center outline-0 ring-0 group"
+                >
+                  <AvatarWrap type="PROJECT" className="h-8 w-8" id={project.id} name={project.name} />
+                  <span className="group-hover:underline underline-offset-4 truncate font-medium">
+                    {project.name || '-'}
+                  </span>
+                </Link>
+              );
+            },
           },
           {
             key: 'created_at',
