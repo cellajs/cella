@@ -16,7 +16,7 @@ interface UserContextValue {
 
 export const UserContext = createContext({} as UserContextValue);
 
-export const UserProfile = ({ user }: { user: User }) => {
+export const UserProfile = ({ user, sheet }: { user: User; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user: currentUser } = useUserStore();
@@ -50,7 +50,7 @@ export const UserProfile = ({ user }: { user: User }) => {
           }
         />
         <div className="container mt-4 mb-12">
-          <ProjectsTable userId={user.id} />
+          <ProjectsTable sheet={sheet} userId={user.id} />
         </div>
       </UserContext.Provider>
     </>

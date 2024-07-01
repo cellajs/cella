@@ -10,7 +10,7 @@ import { AvatarWrap } from '../../common/avatar-wrap';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 
-export const useColumns = () => {
+export const useColumns = (sheet?: boolean) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -23,6 +23,13 @@ export const useColumns = () => {
       sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
+        if (!row.workspaceId)
+          return (
+            <div className="flex space-x-2 cursor-default items-center outline-0 ring-0 group">
+              <AvatarWrap type="PROJECT" className="h-8 w-8" id={row.id} name={row.name} />
+              <span className="truncate font-medium">{row.name || '-'}</span>
+            </div>
+          );
         return (
           <Link
             to="/workspaces/$idOrSlug"
@@ -53,14 +60,18 @@ export const useColumns = () => {
             renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role.toLowerCase()) : '-'),
             width: 120,
           },
-          {
-            key: 'createdAt',
-            name: t('common:created_at'),
-            sortable: true,
-            visible: true,
-            renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => dateShort(row.createdAt),
-          },
+          ...(!sheet
+            ? [
+                {
+                  key: 'createdAt',
+                  name: t('common:created_at'),
+                  sortable: true,
+                  visible: true,
+                  renderHeaderCell: HeaderCell,
+                  renderCell: ({ row }: { row: Project }) => dateShort(row.createdAt),
+                },
+              ]
+            : []),
           {
             key: 'memberCount',
             name: t('common:members'),

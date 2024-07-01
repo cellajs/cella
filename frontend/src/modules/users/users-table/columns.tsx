@@ -17,7 +17,7 @@ import UpdateRow from './update-row';
 import { Link } from '@tanstack/react-router';
 
 export const openUserPreviewSheet = (user: User) => {
-  sheet(<UserProfile user={user} />, {
+  sheet(<UserProfile sheet user={user} />, {
     className: 'max-w-full lg:max-w-4xl p-0',
     id: 'user-preview',
   });
