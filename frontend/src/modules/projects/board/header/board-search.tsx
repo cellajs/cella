@@ -27,14 +27,12 @@ const BoardSearch = () => {
   useEffect(() => {
     const currentPath = router.state.location.pathname;
     const boardOnTableView = currentPath.endsWith('/table');
-    if (searchQuery.length > 0 && boardOnTableView) {
-      navigate({ to: currentPath, search: (prev) => ({ ...prev, q: searchQuery }) });
-    } else {
-      navigate({ to: currentPath, search: (prev) => ({ ...prev, q: undefined }) });
-    }
+    const q = searchQuery.length > 0 && boardOnTableView ? searchQuery : undefined;
+
+    navigate({ to: currentPath, search: (prev) => ({ ...prev, q }) });
   }, [searchQuery]);
 
-  // Focus input  when filter button clicked(mobile)
+  // Focus input when filter button clicked(mobile)
   useEffect(() => {
     if (isFilterActive) inputRef.current?.focus();
   }, [isFilterActive]);

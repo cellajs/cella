@@ -7,7 +7,6 @@ import type { Member } from '~/types/index.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
-import { useDebounce } from '~/hooks/use-debounce.tsx';
 
 interface AssignMembersProps {
   users: Member[];
@@ -23,7 +22,6 @@ const AssignMembers = ({ users, children, value, changeAssignedTo, triggerWidth 
   const [openPopover, setOpenPopover] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Member[]>(value);
   const [searchValue, setSearchValue] = useState('');
-  const debouncedSearchQuery = useDebounce(searchValue, 300);
 
   const isSearching = searchValue.length > 0;
   const indexArray = [...Array(users.length).keys()];
@@ -46,13 +44,12 @@ const AssignMembers = ({ users, children, value, changeAssignedTo, triggerWidth 
     }
   };
 
-  // TODO prevent search results from blick
   useMemo(() => {
-    if (!indexArray.includes(Number.parseInt(debouncedSearchQuery))) return;
+    if (!indexArray.includes(Number.parseInt(searchValue))) return;
     handleSelectClick(users[Number.parseInt(searchValue)]?.id);
     setSearchValue('');
     return;
-  }, [debouncedSearchQuery]);
+  }, [searchValue]);
 
   // Open on key press
   // useHotkeys([

@@ -3,7 +3,6 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { Label } from '~/modules/common/electric/electrify';
-import { type ViewOptions, viewOptions } from '~/modules/projects/board/header/view-options';
 
 type Column = {
   columnId: string;
@@ -16,15 +15,13 @@ type Column = {
 };
 
 type WorkspaceStorage = {
-  [key: string]: { viewOptions: ViewOptions; columns: Column[] };
+  [key: string]: { columns: Column[] };
 };
 
 interface WorkspaceState {
   workspaces: WorkspaceStorage;
   changeColumn: (workspaceId: string, columnId: string, column: Partial<Column>) => void;
   addNewColumn: (workspaceId: string, column: Column) => void;
-  getWorkspaceViewOptions: (workspaceId: string) => ViewOptions;
-  setWorkspaceViewOptions: (workspaceId: string, viewOption: keyof ViewOptions, values: string[]) => void;
 }
 
 const defaultColumnValues = {
@@ -39,37 +36,13 @@ const defaultColumnValues = {
 export const useWorkspaceStore = create<WorkspaceState>()(
   devtools(
     persist(
-      immer((set, get) => ({
+      immer((set) => ({
         workspaces: {},
-        getWorkspaceViewOptions: (workspaceId: string) => {
-          const workspace = get().workspaces[workspaceId];
-          if (workspace) return workspace.viewOptions;
-
-          // If the workspace doesn't exist, create a new one
-          set((state) => {
-            state.workspaces[workspaceId] = { viewOptions: viewOptions, columns: [] };
-          });
-
-          return viewOptions;
-        },
-
-        setWorkspaceViewOptions: (workspaceId: string, viewOption: keyof ViewOptions, values: string[]) => {
-          set((state) => {
-            const workspace = state.workspaces[workspaceId];
-            if (!workspace) {
-              state.workspaces[workspaceId] = { viewOptions: viewOptions, columns: [] };
-              state.workspaces[workspaceId].viewOptions[viewOption] = values;
-            } else {
-              workspace.viewOptions[viewOption] = values;
-            }
-          });
-        },
         addNewColumn: (workspaceId: string, column: Column) => {
           set((state) => {
             const workspace = state.workspaces[workspaceId];
             if (!workspace) {
               state.workspaces[workspaceId] = {
-                viewOptions: { status: [], type: [], labels: [] },
                 columns: [column],
               };
             } else {

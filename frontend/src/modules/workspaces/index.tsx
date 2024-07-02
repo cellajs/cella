@@ -3,7 +3,6 @@ import { Outlet, useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { getProjects } from '~/api/projects';
 import { getWorkspace } from '~/api/workspaces';
-import BoardHeader from '~/modules/projects/board/header/board-header';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import { FocusViewContainer } from '../common/focus-view';
@@ -59,6 +58,8 @@ const WorkspacePage = () => {
       setSelectedTasks={setSelectedTasks}
       focusedTaskId={focusedTaskId}
       setFocusedTaskId={setFocusedTaskId}
+      showPageHeader={showPageHeader}
+      togglePageHeader={togglePageHeader}
     >
       {showPageHeader && (
         <PageHeader
@@ -72,7 +73,6 @@ const WorkspacePage = () => {
       )}
       <FocusViewContainer>
         <div className="flex flex-col gap-2 md:gap-3 p-2 md:p-3 group/workspace">
-          <BoardHeader showPageHeader={showPageHeader} handleShowPageHeader={togglePageHeader} />
           <Outlet />
         </div>
       </FocusViewContainer>

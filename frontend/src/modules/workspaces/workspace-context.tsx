@@ -12,6 +12,8 @@ interface WorkspaceProps {
   setSearchQuery: (query: string) => void;
   focusedTaskId: string | null;
   setFocusedTaskId: (taskId: string | null) => void;
+  showPageHeader: boolean;
+  togglePageHeader: () => void;
 }
 
 interface WorkspaceState extends WorkspaceProps {}
@@ -28,6 +30,8 @@ const createWorkspaceStore = (initProps?: Partial<WorkspaceProps>) => {
     setSearchQuery: () => {},
     focusedTaskId: null,
     setFocusedTaskId: () => {},
+    showPageHeader: false,
+    togglePageHeader: () => {},
   };
   return createStore<WorkspaceState>()(() => ({
     ...DEFAULT_PROPS,
