@@ -4,7 +4,6 @@ import { Paperclip, UserX, Tag, ChevronDown } from 'lucide-react';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
@@ -43,8 +42,15 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
   return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export function TaskCard({ task, handleTaskChange }: { task: Task; handleTaskChange: (field: keyof Task, value: any, taskId: string) => void }) {
+interface TaskProps {
+  task: Task;
+  isExpanded: boolean;
+  setIsExpanded: (exp: boolean) => void;
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
+}
+
+export function TaskCard({ task, handleTaskChange, isExpanded, setIsExpanded }: TaskProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const taskRef = useRef<HTMLDivElement>(null);
@@ -57,7 +63,6 @@ export function TaskCard({ task, handleTaskChange }: { task: Task; handleTaskCha
     focusedTaskId,
   }));
   const [isEditing, setIsEditing] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [createSubTask, setCreateSubTask] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -105,15 +110,6 @@ export function TaskCard({ task, handleTaskChange }: { task: Task; handleTaskCha
     latency: 250,
   });
 
-  const handleEscKeyPress = () => {
-    if (focusedTaskId !== task.id) return;
-    setIsExpanded(false);
-  };
-  const handleEnterKeyPress = () => {
-    if (focusedTaskId !== task.id) return;
-    setIsExpanded(true);
-  };
-
   const dispatchCustomFocusEvent = (taskId: string, projectId: string) => {
     const event = new CustomEvent('task-card-focus', {
       detail: {
@@ -134,11 +130,6 @@ export function TaskCard({ task, handleTaskChange }: { task: Task; handleTaskCha
     if (!isTaskData(source.data) || !isTaskData(self.data)) return;
     setClosestEdge(extractClosestEdge(self.data));
   };
-
-  useHotkeys([
-    ['Escape', handleEscKeyPress],
-    ['Enter', handleEnterKeyPress],
-  ]);
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {

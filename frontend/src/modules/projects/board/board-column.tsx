@@ -7,6 +7,7 @@ import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
+import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { cn, getReorderDestinationOrder } from '~/lib/utils';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { Button } from '~/modules/ui/button';
@@ -62,11 +63,12 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
-  const { workspace, searchQuery, selectedTasks, setFocusedTaskId } = useWorkspaceContext(
-    ({ workspace, searchQuery, selectedTasks, setFocusedTaskId }) => ({
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId } = useWorkspaceContext(
+    ({ workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId }) => ({
       workspace,
       selectedTasks,
       searchQuery,
+      focusedTaskId,
       setFocusedTaskId,
     }),
   );
@@ -74,6 +76,7 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
+  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
 
   const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced);
 
@@ -148,6 +151,13 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
     });
   };
 
+  const setTaskExpanded = (taskId: string, isExpanded: boolean) => {
+    setExpandedTasks((prevState) => ({
+      ...prevState,
+      [taskId]: isExpanded,
+    }));
+  };
+
   const handleIcedClick = () => {
     setShowIced(!showIced);
     changeColumn(workspace.id, project.id, {
@@ -159,6 +169,14 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
     changeColumn(workspace.id, project.id, {
       expandAccepted: !showAccepted,
     });
+  };
+
+  const handleEscKeyPress = () => {
+    if (focusedTaskId && expandedTasks[focusedTaskId]) setTaskExpanded(focusedTaskId, false);
+  };
+
+  const handleEnterKeyPress = () => {
+    if (focusedTaskId) setTaskExpanded(focusedTaskId, true);
   };
 
   const openSettingsSheet = () => {
@@ -186,6 +204,11 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
     }
     toggleCreateForm(project.id);
   };
+
+  useHotkeys([
+    ['Escape', handleEscKeyPress],
+    ['Enter', handleEnterKeyPress],
+  ]);
 
   useEffect(() => {
     const handleChange = (event: Event) => {
@@ -308,7 +331,13 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
                           )}
                         </Button>
                         {showingTasks.map((task) => (
-                          <TaskCard key={task.id} task={task} handleTaskChange={handleChange} />
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            handleTaskChange={handleChange}
+                            isExpanded={expandedTasks[task.id] || false}
+                            setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
+                          />
                         ))}
                         <Button
                           onClick={handleIcedClick}
