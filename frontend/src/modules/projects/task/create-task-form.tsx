@@ -53,7 +53,7 @@ const formSchema = z.object({
       id: z.string(),
       name: z.string(),
       thumbnailUrl: z.string().nullable(),
-      bio: z.string(),
+      bio: z.string().nullable(),
     }),
   ),
   labels: z.array(
