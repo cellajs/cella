@@ -185,7 +185,7 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
         ref={taskRef}
         className={cn(
           `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
-        focus-visible:none relative border-l-2 ${isFocused ? 'border-l-primary is-focused' : 'border-l-transparent'}
+        focus-visible:none border-l-2 ${isFocused ? 'border-l-primary is-focused' : 'border-l-transparent'}
         via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''} ${
           isExpanded ? 'is-expanded' : 'is-collapsed'
         }`,
@@ -327,22 +327,20 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
                   className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
                 >
                   <div className="flex truncate flex-wrap gap-[.07rem]">
-                    {labels.filter((l) => task.labels?.includes(l.id)).length > 0 ? (
-                      labels
-                        .filter((l) => task.labels?.includes(l.id))
-                        .map(({ name, id, color }) => {
-                          return (
-                            <div
-                              key={id}
-                              style={badgeStyle(color)}
-                              className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
-                            >
-                              <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
-                                {name}
-                              </Badge>
-                            </div>
-                          );
-                        })
+                    {task.virtualLabels.length > 0 ? (
+                      task.virtualLabels.map(({ name, id, color }) => {
+                        return (
+                          <div
+                            key={id}
+                            style={badgeStyle(color)}
+                            className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
+                          >
+                            <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
+                              {name}
+                            </Badge>
+                          </div>
+                        );
+                      })
                     ) : (
                       <Tag size={16} className="opacity-50" />
                     )}

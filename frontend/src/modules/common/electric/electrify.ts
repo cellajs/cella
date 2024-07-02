@@ -7,6 +7,7 @@ export type { Electric, Label };
 
 export type Task = Omit<BaseTask, 'labels' | 'assigned_to'> & {
   labels: string[] | null;
+  virtualLabels: Label[];
   assigned_to: string[] | null;
 };
 

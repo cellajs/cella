@@ -79,8 +79,6 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
 
-  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced);
-
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
     queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'PROJECT' }).then((data) => data.items),
@@ -99,6 +97,8 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
   ) as {
     results: Label[] | undefined;
   };
+
+  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, labels);
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any, taskId: string) => {
